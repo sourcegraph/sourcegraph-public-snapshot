@@ -12,7 +12,7 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -38,7 +38,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
-    onSearchSubmit: (updates: QueryUpdate[]) => void
+    onSearchSubmit: (updates: QueryUpdate[], updatedSearchQuery?: string) => void
     setSidebarCollapsed: (collapsed: boolean) => void
 }
 
@@ -88,8 +88,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     const handleAggregationBarLinkClick = useCallback(
-        (query: string): void => {
-            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        (query: string, updatedSearchQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }], updatedSearchQuery)
         },
         [onSearchSubmit]
     )

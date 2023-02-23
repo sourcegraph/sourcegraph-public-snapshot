@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.3.0"
+	const minimumUpgradeableVersion = "4.5.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -89,6 +89,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
+	case runtype.BazelExpBranch:
+		ops.Merge(BazelOperations())
+	case runtype.WolfiExpBranch:
+		if c.Diff.Has(changed.WolfiPackages) {
+			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
+		}
+
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
@@ -178,6 +194,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// addVsceIntegrationTests,
 		)
 
+	case runtype.AppSnapshotRelease:
+		// If this is an App snapshot build, release a snapshot.
+		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
+
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
@@ -216,10 +236,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(
+			imageBuildOps.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		publishOps := operations.NewNamedSet("Publish images")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"

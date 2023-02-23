@@ -9,6 +9,9 @@ type GetConfigurationPoliciesOptions struct {
 	// Term is a string to search within the configuration title.
 	Term string
 
+	// If supplied, filter the policies by their protected flag.
+	Protected *bool
+
 	// ForIndexing indicates that only configuration policies with data retention enabled
 	// should be returned.
 	ForDataRetention bool

@@ -53,7 +53,6 @@ export interface TreeRootProps extends AbsoluteRepo, TelemetryProps {
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
     repoID: Scalars['ID']
-    enableMergedFileSymbolSidebar: boolean
 }
 
 const LOADING = 'loading' as const
@@ -200,9 +199,6 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                     childrenEntries={singleChildTreeEntry.children}
                                                     onHover={this.fetchChildContents}
                                                     setChildNodes={this.setChildNode}
-                                                    enableMergedFileSymbolSidebar={
-                                                        this.props.enableMergedFileSymbolSidebar
-                                                    }
                                                 />
                                             </TreeRootContext.Provider>
                                         )

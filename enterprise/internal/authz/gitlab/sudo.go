@@ -75,17 +75,18 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	}
 }
 
-func (p *SudoProvider) ValidateConnection(ctx context.Context) (problems []string) {
+func (p *SudoProvider) ValidateConnection(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if _, _, err := p.clientProvider.GetPATClient(p.sudoToken, "1").ListProjects(ctx, "projects"); err != nil {
 		if err == ctx.Err() {
-			problems = append(problems, fmt.Sprintf("GitLab API did not respond within 5s (%s)", err.Error()))
-		} else if !gitlab.IsNotFound(err) {
-			problems = append(problems, "access token did not have sufficient privileges, requires scopes \"sudo\" and \"api\"")
+			return errors.Wrap(err, "GitLab API did not respond within 5s")
+		}
+		if !gitlab.IsNotFound(err) {
+			return errors.New("access token did not have sufficient privileges, requires scopes \"sudo\" and \"api\"")
 		}
 	}
-	return problems
+	return nil
 }
 
 func (p *SudoProvider) URN() string {

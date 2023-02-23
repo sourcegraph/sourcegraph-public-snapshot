@@ -1,11 +1,8 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -13,11 +10,14 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -323,7 +323,7 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "no current user",
-					Path:    []any{string("createOrganization")},
+					Path:    []any{"createOrganization"},
 				},
 			},
 			Variables: map[string]any{
@@ -349,7 +349,7 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: `rejected suspicious name "test"`,
-					Path:    []any{string("createOrganization")},
+					Path:    []any{"createOrganization"},
 				},
 			},
 			Variables: map[string]any{
@@ -382,20 +382,9 @@ func TestAddOrganizationMember(t *testing.T) {
 	// tests below depend on config being there
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
-	// mock repo updater http client
-	oldClient := repoupdater.DefaultClient.HTTPClient
-	repoupdater.DefaultClient.HTTPClient = &http.Client{
-		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte{'{', '}'})),
-			}, nil
-		}),
-	}
-
-	defer func() {
-		repoupdater.DefaultClient.HTTPClient = oldClient
-	}()
+	// mock permission sync scheduling
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	defer func() { permssync.MockSchedulePermsSync = nil }()
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
@@ -442,7 +431,7 @@ func TestAddOrganizationMember(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []any{string("addUserToOrganization")},
+					Path:    []any{"addUserToOrganization"},
 				},
 			},
 			Variables: map[string]any{

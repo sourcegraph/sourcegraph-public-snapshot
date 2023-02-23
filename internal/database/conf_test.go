@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -55,16 +56,17 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	type input struct {
-		lastID         int32
-		author_user_id int32
-		contents       string
+		lastID       int32
+		authorUserID int32
+		contents     string
 	}
 
 	type output struct {
-		ID             int32
-		author_user_id int32
-		contents       string
-		err            error
+		ID               int32
+		authorUserID     int32
+		contents         string
+		redactedContents string
+		err              error
 	}
 
 	type pair struct {
@@ -77,20 +79,34 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 		sequence []pair
 	}
 
+	configRateLimitZero := `{"defaultRateLimit": 0,"auth.providers": []}`
+	configRateLimitOne := `{"defaultRateLimit": 1,"auth.providers": []}`
+
+	jsonConfigRateLimitZero := `{
+  "defaultRateLimit": 0,
+  "auth.providers": []
+}`
+
+	jsonConfigRateLimitOne := `{
+  "defaultRateLimit": 1,
+  "auth.providers": []
+}`
+
 	for _, test := range []test{
 		{
 			name: "create_with_author_user_id",
 			sequence: []pair{
 				{
 					input{
-						lastID:         0,
-						author_user_id: 1,
-						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+						lastID:       0,
+						authorUserID: 1,
+						contents:     configRateLimitZero,
 					},
 					output{
-						ID:             2,
-						author_user_id: 1,
-						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						authorUserID:     1,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 			},
@@ -101,11 +117,12 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 			},
@@ -116,21 +133,23 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 				{
 					input{
 						lastID:   2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: configRateLimitOne,
 					},
 					output{
-						ID:       3,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						ID:               3,
+						contents:         configRateLimitOne,
+						redactedContents: jsonConfigRateLimitOne,
 					},
 				},
 			},
@@ -141,23 +160,25 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 				{
 					input{
 						lastID: 0,
 						// This configuration is now behind the first one, so it shouldn't be saved
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: configRateLimitOne,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
-						err:      errors.Append(ErrNewerEdit),
+						ID:               2,
+						contents:         configRateLimitOne,
+						redactedContents: jsonConfigRateLimitOne,
+						err:              errors.Append(ErrNewerEdit),
 					},
 				},
 			},
@@ -183,6 +204,68 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
              "defaultRateLimit": 42,
              "auth.providers": [],
 						}`,
+						redactedContents: `{
+  "disableAutoGitUpdates": true,
+  // This is a comment.
+  "defaultRateLimit": 42,
+  "auth.providers": [],
+}`,
+					},
+				},
+			},
+		},
+
+		{
+			name: "redact_sensitive_data",
+			sequence: []pair{
+				{
+					input{
+						lastID: 0,
+						contents: `{"disableAutoGitUpdates": true,
+
+		// This is a comment.
+		             "defaultRateLimit": 42,
+					 "auth.providers": [
+					   {
+						 "clientID": "sourcegraph-client-openid",
+						 "clientSecret": "strongsecret",
+						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
+						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "type": "openidconnect"
+					   }
+					 ]
+								}`,
+					},
+					output{
+						ID: 2,
+						contents: `{"disableAutoGitUpdates": true,
+
+		// This is a comment.
+		             "defaultRateLimit": 42,
+					 "auth.providers": [
+					   {
+						 "clientID": "sourcegraph-client-openid",
+						 "clientSecret": "strongsecret",
+						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
+						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "type": "openidconnect"
+					   }
+					 ]
+								}`,
+						redactedContents: `{
+  "disableAutoGitUpdates": true,
+  // This is a comment.
+  "defaultRateLimit": 42,
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "REDACTED-DATA-CHUNK-f434ecc765",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`,
 					},
 				},
 			},
@@ -208,9 +291,14 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 					t.Fatal("got unexpected nil configuration after creation")
 				}
 
-				if output.Contents != p.expected.contents {
-					t.Fatalf("returned configuration contents after creation - expected: %q, got:%q", p.expected.contents, output.Contents)
+				if diff := cmp.Diff(p.expected.contents, output.Contents); diff != "" {
+					t.Fatalf("mismatched configuration contents after creation, (-want +got):\n%s", diff)
 				}
+
+				if diff := cmp.Diff(p.expected.redactedContents, output.RedactedContents); diff != "" {
+					t.Fatalf("mismatched redacted_contents after creation, %v", diff)
+				}
+
 				if output.ID != p.expected.ID {
 					t.Fatalf("returned configuration ID after creation - expected: %v, got:%v", p.expected.ID, output.ID)
 				}
@@ -229,6 +317,211 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				}
 				if latest.ID != p.expected.ID {
 					t.Fatalf("returned configuration ID after GetLatest - expected: %v, got:%v", p.expected.ID, latest.ID)
+				}
+			}
+		})
+	}
+}
+
+func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
+	const config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
+
+	siteConfig, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The first call to SiteCreatedIfUpToDate will always create a default entry if there are no
+	// rows in the table yet and then eventually create another entry.
+	//
+	// lastID should be 2 here.
+	lastID := siteConfig.ID
+
+	// Create two more entries.
+	for lastID < 4 {
+		siteConfig, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		lastID = siteConfig.ID
+	}
+
+	// By this point we have 4 entries instead of 3.
+}
+
+func TestGetSiteConfigCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	s := db.Conf()
+	createDummySiteConfigs(t, ctx, s)
+
+	count, err := s.GetSiteConfigCount(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != 4 {
+		t.Fatalf("Expected 4 site config entries, but got %d", count)
+	}
+}
+
+func TestListSiteConfigs(t *testing.T) {
+	toIntPtr := func(n int) *int { return &n }
+	toStringPtr := func(n string) *string { return &n }
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	s := db.Conf()
+	createDummySiteConfigs(t, ctx, s)
+
+	if _, err := s.ListSiteConfigs(ctx, &PaginationArgs{}); err != nil {
+		t.Error("Expected non-nil error but got nil")
+	}
+
+	testCases := []struct {
+		name        string
+		listOptions *PaginationArgs
+		expectedIDs []int32
+	}{
+		{
+			name:        "nil pagination args",
+			expectedIDs: []int32{1, 2, 3, 4},
+		},
+		{
+			name: "first: 2 (subset of data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(2),
+			},
+			expectedIDs: []int32{4, 3},
+		},
+		{
+			name: "last: 2 (subset of data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(2),
+			},
+			expectedIDs: []int32{1, 2},
+		},
+		{
+			name: "first: 4 (all of data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(4),
+			},
+			expectedIDs: []int32{4, 3, 2, 1},
+		},
+		{
+			name: "last: 4 (all of data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(4),
+			},
+			expectedIDs: []int32{1, 2, 3, 4},
+		},
+		{
+			name: "first: 10 (more than data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(10),
+			},
+			expectedIDs: []int32{4, 3, 2, 1},
+		},
+		{
+			name: "last: 4 (more than data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(10),
+			},
+			expectedIDs: []int32{1, 2, 3, 4},
+		},
+		{
+			name: "first: 2, after: 3",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(2),
+				After: toStringPtr("3"),
+			},
+			expectedIDs: []int32{2, 1},
+		},
+		{
+			name: "first: 5, after: 3 (overflow)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(5),
+				After: toStringPtr("3"),
+			},
+			expectedIDs: []int32{2, 1},
+		},
+		{
+			name: "last: 2, after: 4",
+			listOptions: &PaginationArgs{
+				Last:  toIntPtr(2),
+				After: toStringPtr("4"),
+			},
+			expectedIDs: []int32{1, 2},
+		},
+		{
+			name: "last: 5, after: 4 (overflow)",
+			listOptions: &PaginationArgs{
+				Last:  toIntPtr(5),
+				After: toStringPtr("4"),
+			},
+			expectedIDs: []int32{1, 2, 3},
+		},
+		{
+			name: "first: 2, before: 1",
+			listOptions: &PaginationArgs{
+				First:  toIntPtr(2),
+				Before: toStringPtr("1"),
+			},
+			expectedIDs: []int32{4, 3},
+		},
+		{
+			name: "first: 5, before: 1 (overflow)",
+			listOptions: &PaginationArgs{
+				First:  toIntPtr(5),
+				Before: toStringPtr("1"),
+			},
+			expectedIDs: []int32{4, 3, 2},
+		},
+		{
+			name: "last: 2, before: 1",
+			listOptions: &PaginationArgs{
+				Last:   toIntPtr(2),
+				Before: toStringPtr("1"),
+			},
+			expectedIDs: []int32{2, 3},
+		},
+		{
+			name: "last: 5, before: 1 (overflow)",
+			listOptions: &PaginationArgs{
+				Last:   toIntPtr(5),
+				Before: toStringPtr("1"),
+			},
+			expectedIDs: []int32{2, 3, 4},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			siteConfigs, err := s.ListSiteConfigs(ctx, tc.listOptions)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(siteConfigs) != len(tc.expectedIDs) {
+				t.Fatalf("Expected %d site config entries but got %d", len(tc.expectedIDs), len(siteConfigs))
+			}
+
+			for i, siteConfig := range siteConfigs {
+				if tc.expectedIDs[i] != siteConfig.ID {
+					t.Errorf("Expected ID %d, but got %d", tc.expectedIDs[i], siteConfig.ID)
 				}
 			}
 		})

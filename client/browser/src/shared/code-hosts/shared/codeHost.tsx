@@ -76,7 +76,6 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
@@ -369,11 +368,14 @@ function initCodeIntelligence({
 
     const containerComponentUpdates = new Subject<void>()
 
+    const history = H.createBrowserHistory()
+
     subscription.add(
         registerHoverContributions({
             extensionsController,
             platformContext,
-            history: H.createBrowserHistory(),
+            historyOrNavigate: history,
+            getLocation: () => history.location,
             locationAssign: location.assign.bind(location),
         })
     )
@@ -449,10 +451,7 @@ function initCodeIntelligence({
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
-    class HoverOverlayContainer extends React.Component<
-        {},
-        HoverState<HoverContext, HoverMerged, ActionItemAction> & ThemeProps
-    > {
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
 
@@ -460,7 +459,6 @@ function initCodeIntelligence({
             super(props)
             this.state = {
                 ...hoverifier.hoverState,
-                isLightTheme: true,
             }
         }
         public componentDidMount(): void {
@@ -522,13 +520,6 @@ function initCodeIntelligence({
                     )
                     .subscribe()
             )
-            if (codeHost.isLightTheme) {
-                this.subscription.add(
-                    codeHost.isLightTheme.subscribe(isLightTheme => {
-                        this.setState({ isLightTheme })
-                    })
-                )
-            }
             containerComponentUpdates.next()
         }
         public componentWillUnmount(): void {
@@ -571,7 +562,6 @@ function initCodeIntelligence({
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
-                        isLightTheme={this.state.isLightTheme}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
                         platformContext={platformContext}
@@ -1217,7 +1207,6 @@ export async function handleCodeHost({
                                     })
                                 )
 
-                                // eslint-disable-next-line rxjs/no-nested-subscribe
                                 .subscribe()
                         )
                     }
@@ -1335,7 +1324,6 @@ export async function handleCodeHost({
                 const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
                 let hoverSubscription = new Subscription()
                 codeViewEvent.subscriptions.add(
-                    // eslint-disable-next-line rxjs/no-nested-subscribe
                     nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                         hoverSubscription.unsubscribe()
                         if (!useNativeTooltips) {

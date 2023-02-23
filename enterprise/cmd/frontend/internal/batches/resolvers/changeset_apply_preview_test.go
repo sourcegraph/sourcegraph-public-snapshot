@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -129,7 +130,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			Operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:  "VisibleApplyPreviewTargetsDetach",
-				Changeset: apitest.Changeset{ID: string(marshalChangesetID(closingChangeset.ID))},
+				Changeset: apitest.Changeset{ID: string(bgql.MarshalChangesetID(closingChangeset.ID))},
 			},
 		},
 		{
@@ -146,7 +147,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:      "VisibleApplyPreviewTargetsUpdate",
 				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[1].RandID))},
-				Changeset:     apitest.Changeset{ID: string(marshalChangesetID(updatedChangeset.ID))},
+				Changeset:     apitest.Changeset{ID: string(bgql.MarshalChangesetID(updatedChangeset.ID))},
 			},
 		},
 	}
@@ -370,7 +371,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 				changeset.PublicationState = btypes.ChangesetPublicationStatePublished
 				changeset.ExternalID = "12345"
 				changeset.ExternalState = btypes.ChangesetExternalStateOpen
-				require.Nil(t, bstore.UpsertChangeset(ctx, changeset))
+				require.Nil(t, bstore.UpdateChangeset(ctx, changeset))
 				break
 			}
 		}

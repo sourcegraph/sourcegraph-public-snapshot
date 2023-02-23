@@ -1,14 +1,13 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -48,10 +47,7 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
 
-export interface BatchChangeListPageProps
-    extends TelemetryProps,
-        Pick<RouteComponentProps, 'location'>,
-        SettingsCascadeProps<Settings> {
+export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
@@ -72,18 +68,18 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     canCreate,
     namespaceID,
     headingElement,
-    location,
     openTab,
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
     authenticatedUser,
 }) => {
+    const location = useLocation()
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
-    const { selectedFilters, setSelectedFilters, selectedStates } = useBatchChangeListFilters()
+    const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
         openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
     )
@@ -118,7 +114,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
         variables: {
             namespaceID,
-            states: selectedStates,
+            states: selectedFilters,
             first: BATCH_CHANGES_PER_PAGE_COUNT,
             after: null,
             viewerCanAdminister: null,
@@ -160,13 +156,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     ) : (
                         <Button
                             as={Link}
-                            to={buildCloudTrialURL(authenticatedUser, 'batch')}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            to="https://about.sourcegraph.com"
                             variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
                         >
-                            Try Batch Changes
+                            Get Sourcegraph Enterprise
                         </Button>
                     )
                 }
@@ -192,7 +186,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             )}
             {selectedTab === 'batchChanges' && (
                 <>
-                    <BatchChangeStatsBar className="mb-4" />
+                    {!namespaceID && <BatchChangeStatsBar className="mb-4" />}
                     <Container className="mb-4">
                         <ConnectionContainer>
                             <div className={styles.filtersRow}>
@@ -206,10 +200,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                 )}
 
                                 <BatchChangeListFilters
+                                    filters={availableFilters}
+                                    selectedFilters={selectedFilters}
+                                    onFiltersChange={setSelectedFilters}
                                     className="m-0"
-                                    isExecutionEnabled={isExecutionEnabled}
-                                    value={selectedFilters}
-                                    onChange={setSelectedFilters}
                                 />
                             </div>
                             {error && <ConnectionError errors={[error.message]} />}
@@ -238,9 +232,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         noun="batch change"
                                         pluralNoun="batch changes"
                                         hasNextPage={hasNextPage}
-                                        emptyElement={
-                                            <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
-                                        }
+                                        emptyElement={<BatchChangeListEmptyElement canCreate={canCreate} />}
                                     />
                                     {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                                 </SummaryContainer>
@@ -283,18 +275,21 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<
     )
 }
 
-interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
+interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'canCreate'> {}
 
 const BatchChangeListEmptyElement: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeListEmptyElementProps>
-> = ({ canCreate, location }) => (
-    <div className="w-100 py-5 text-center">
-        <Text>
-            <strong>No batch changes have been created.</strong>
-        </Text>
-        {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
-    </div>
-)
+> = ({ canCreate }) => {
+    const location = useLocation()
+    return (
+        <div className="w-100 py-5 text-center">
+            <Text>
+                <strong>No batch changes have been created.</strong>
+            </Text>
+            {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+        </div>
+    )
+}
 
 const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{

@@ -18,6 +18,11 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--card-border-color);
+    // By using the :where() selector for this class, the specificity is always
+    // zero. This caused issues with some reset classes that would take on a
+    // higher specificity and override the border-radius.
+    //
+    // See https://github.com/sourcegraph/sourcegraph/pull/46274
     border-radius: var(--card-border-radius) !important;
 }
 

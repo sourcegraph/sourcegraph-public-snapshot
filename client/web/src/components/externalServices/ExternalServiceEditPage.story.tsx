@@ -1,19 +1,23 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
-import { subMinutes } from 'date-fns'
-import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
-import { WebStory } from '../WebStory'
+import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { WebStory, WebStoryChildrenProps } from '../WebStory'
 
-import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
+import { FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container">
+        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+            {story}
+        </WebStory>
+    </div>
+)
 
 const config: Meta = {
     title: 'web/External services/ExternalServiceEditPage',
@@ -42,76 +46,13 @@ const externalService = {
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
+    hasConnectionCheck: false,
     namespace: {
         id: 'userid',
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
 }
-
-const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
-    of({
-        totalCount: 4,
-        pageInfo: { endCursor: null, hasNextPage: false },
-        nodes: [
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: null,
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.CANCELING,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: null,
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.PROCESSING,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: 'Very bad error syncing with the code host.',
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: subMinutes(new Date(), 25).toISOString(),
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.FAILED,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: subMinutes(new Date(), 25).toISOString(),
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.COMPLETED,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-        ],
-    })
 
 function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
     return new WildcardMockLink([
@@ -126,90 +67,54 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ViewConfig: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock(externalService)}>
-                <ExternalServiceEditPage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ViewConfig: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock(externalService)}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ViewConfig.storyName = 'View external service config'
 
-export const ConfigWithInvalidUrl: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
-                <ExternalServiceEditPage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
 
-export const ConfigWithWarning: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServiceEditPage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
 
-export const EditingDisabled: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServiceEditPage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={true}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={true}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 EditingDisabled.storyName = 'External service config EXTSVC_CONFIG_FIlE set'

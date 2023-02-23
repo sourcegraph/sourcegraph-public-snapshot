@@ -14,12 +14,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -40,27 +40,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
-	reposDir = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
 
 	// Align these variables with the 'disk_space_remaining' alerts in monitoring
 	wantPctFree     = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
@@ -77,48 +76,42 @@ var (
 
 type EnterpriseInit func(db database.DB)
 
-func Main(enterpriseInit EnterpriseInit) {
-	ctx := context.Background()
+type Config struct {
+	env.BaseConfig
 
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
+	ReposDir string
+}
 
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	))
-	defer liblog.Sync()
+func (c *Config) Load() {
+	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+}
 
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
+func LoadConfig() *Config {
+	var config Config
+	config.Load()
+	return &config
+}
 
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+	logger := observationCtx.Logger
 
-	logger := log.Scoped("server", "the gitserver service")
-	observationCtx := observation.NewContext(logger)
-
-	if reposDir == "" {
-		logger.Fatal("SRC_REPOS_DIR is required")
+	if config.ReposDir == "" {
+		return errors.New("SRC_REPOS_DIR is required")
 	}
-	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
-		logger.Fatal("failed to create SRC_REPOS_DIR", log.Error(err))
+	if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
+		return errors.Wrap(err, "creating SRC_REPOS_DIR")
 	}
 
 	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", log.Error(err))
+		return errors.Wrap(err, "SRC_REPOS_DESIRED_PERCENT_FREE is out of range")
 	}
 
 	sqlDB, err := getDB(observationCtx)
 	if err != nil {
-		logger.Fatal("failed to initialize database stores", log.Error(err))
+		return errors.Wrap(err, "initializing database stores")
 	}
-	db := database.NewDB(logger, sqlDB)
+	db := database.NewDB(observationCtx.Logger, sqlDB)
 
 	repoStore := db.Repos()
 	dependenciesSvc := dependencies.NewService(observationCtx, db)
@@ -126,7 +119,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	err = keyring.Init(ctx)
 	if err != nil {
-		logger.Fatal("failed to initialise keyring", log.Error(err))
+		return errors.Wrap(err, "initializing keyring")
 	}
 
 	if enterpriseInit != nil {
@@ -134,34 +127,40 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	if err != nil {
-		logger.Fatal("Failed to create sub-repo client", log.Error(err))
+		return errors.Wrap(err, "creating sub-repo client")
 	}
 
 	gitserver := server.Server{
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
-		ReposDir:           reposDir,
+		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, reposDir)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
 		},
-		Hostname:                hostname.Get(),
+		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
+		Server: &gitserver,
+	})
+	reflection.Register(grpcServer)
+
 	gitserver.RegisterMetrics(observationCtx, db)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
-		logger.Fatal("failed to setup temporary directory", log.Error(err))
+		return errors.Wrap(err, "failed to setup temporary directory")
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		logger.Fatal("Setting TMP_DIR", log.Error(err))
+		return errors.Wrap(err, "setting TMP_DIR")
 	}
 
 	// Create Handler now since it also initializes state
@@ -171,10 +170,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	handler = requestclient.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-
-	// Ready immediately
-	ready := make(chan struct{})
-	close(ready)
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -185,22 +181,16 @@ func Main(enterpriseInit EnterpriseInit) {
 		logger.Warn("error performing initial rate limit sync", log.Error(err))
 	}
 
+	// Ready immediately
+	ready()
+
 	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
-	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
 
-	addr := os.Getenv("GITSERVER_ADDR")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
-	}
+	addr := getAddr()
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -239,6 +229,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
+
+	return nil
 }
 
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
@@ -582,4 +574,33 @@ func syncRateLimiters(ctx context.Context, logger log.Logger, store database.Ext
 		case <-ticker.C:
 		}
 	}
+}
+
+// externalAddress calculates the name of this gitserver as it would appear in
+// SRC_GIT_SERVERS.
+//
+// Note: we can't just rely on the listen address since more than likely
+// gitserver is behind a k8s service.
+func externalAddress() string {
+	// First we check for it being explicitly set. This should only be
+	// happening in environments were we run gitserver on localhost.
+	if addr := os.Getenv("GITSERVER_EXTERNAL_ADDR"); addr != "" {
+		return addr
+	}
+	// Otherwise we assume we can reach gitserver via its hostname / its
+	// hostname is a prefix of the reachable address (see hostnameMatch).
+	return hostname.Get()
+}
+
+func getAddr() string {
+	addr := os.Getenv("GITSERVER_ADDR")
+	if addr == "" {
+		port := "3178"
+		host := ""
+		if env.InsecureDev {
+			host = "127.0.0.1"
+		}
+		addr = net.JoinHostPort(host, port)
+	}
+	return addr
 }

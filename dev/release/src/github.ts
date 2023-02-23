@@ -1,4 +1,4 @@
-import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
+import { existsSync, mkdtemp as original_mkdtemp, readFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -9,7 +9,8 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
+import { cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink } from './util'
+
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
 
@@ -88,21 +89,17 @@ interface IssueTemplateArguments {
      */
     version: semver.SemVer
     /**
-     * Available as `$ONE_WORKING_WEEK_BEFORE_RELEASE`
+     * Available as `$SECURITY_REVIEW_DATE`
      */
-    oneWorkingWeekBeforeRelease: Date
+    securityReviewDate: Date
     /**
-     * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
+     * Available as `$CODE_FREEZE_DATE`
      */
-    threeWorkingDaysBeforeRelease: Date
+    codeFreezeDate: Date
     /**
      * Available as `$RELEASE_DATE`
      */
     releaseDate: Date
-    /**
-     * Available as `$ONE_WORKING_DAY_AFTER_RELEASE`
-     */
-    oneWorkingDayAfterRelease: Date
 }
 
 /**
@@ -114,22 +111,22 @@ interface IssueTemplateArguments {
 const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
@@ -143,13 +140,7 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    {
-        version,
-        oneWorkingWeekBeforeRelease,
-        threeWorkingDaysBeforeRelease,
-        releaseDate,
-        oneWorkingDayAfterRelease,
-    }: IssueTemplateArguments
+    { version, securityReviewDate, codeFreezeDate, releaseDate }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -158,19 +149,9 @@ async function execTemplate(
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
-        .replace(
-            /\$ONE_WORKING_WEEK_BEFORE_RELEASE/g,
-            dateMarkdown(oneWorkingWeekBeforeRelease, `One working week before ${name} release`)
-        )
-        .replace(
-            /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
-        )
+        .replace(/\$SECURITY_REVIEW_DATE/g, dateMarkdown(securityReviewDate, `One working week before ${name} release`))
+        .replace(/\$CODE_FREEZE_DATE/g, dateMarkdown(codeFreezeDate, `Three working days before ${name} release`))
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
-        .replace(
-            /\$ONE_WORKING_DAY_AFTER_RELEASE/g,
-            dateMarkdown(oneWorkingDayAfterRelease, `One working day after ${name} release`)
-        )
 }
 
 interface MaybeIssue {
@@ -189,17 +170,15 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
-    oneWorkingWeekBeforeRelease,
-    threeWorkingDaysBeforeRelease,
-    oneWorkingDayAfterRelease,
+    securityReviewDate,
+    codeFreezeDate,
     dryRun,
 }: {
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
-    oneWorkingWeekBeforeRelease: Date
-    threeWorkingDaysBeforeRelease: Date
-    oneWorkingDayAfterRelease: Date
+    securityReviewDate: Date
+    codeFreezeDate: Date
     dryRun: boolean
 }): Promise<MaybeIssue[]> {
     const octokit = await getAuthenticatedGitHubClient()
@@ -234,9 +213,8 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
-            oneWorkingWeekBeforeRelease,
-            threeWorkingDaysBeforeRelease,
-            oneWorkingDayAfterRelease,
+            securityReviewDate,
+            codeFreezeDate,
         })
         const issue = await ensureIssue(
             octokit,
@@ -518,7 +496,7 @@ Body: ${change.body || 'none'}`)
     return results
 }
 
-async function cloneRepo(
+export async function cloneRepo(
     octokit: Octokit,
     owner: string,
     repo: string,
@@ -557,7 +535,6 @@ async function cloneRepo(
     // PERF: if we have a local clone using reference avoids needing to fetch
     // all the objects from the remote. We assume the local clone will exist
     // in the same directory as the current sourcegraph/sourcegraph clone.
-    const localSourcegraphRepo = `${process.cwd()}/../..`
     const cloneFlags = `${fetchFlags} --reference-if-able ${localSourcegraphRepo}/../${repo}`
 
     // Set up repository
@@ -571,6 +548,8 @@ ${checkoutCommand};`
         workdir: path.join(tmpdir, repo),
     }
 }
+
+export const localSourcegraphRepo = `${process.cwd()}/../..`
 
 async function createBranchWithChanges(
     octokit: Octokit,
@@ -643,10 +622,10 @@ export interface TagOptions {
  */
 export async function createTag(
     octokit: Octokit,
+    workdir: string,
     { owner, repo, branch: rawBranch, tag: rawTag }: TagOptions,
     dryRun: boolean
 ): Promise<void> {
-    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: rawBranch, revisionMustExist: true })
     const branch = JSON.stringify(rawBranch)
     const tag = JSON.stringify(rawTag)
     const finalizeTag = dryRun ? `git --no-pager show ${tag} --no-patch` : `git push origin ${tag}`

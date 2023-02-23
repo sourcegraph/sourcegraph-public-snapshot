@@ -387,7 +387,7 @@ func getLocalCodeIntel(t *testing.T, path types.RepoCommitPath, contents string)
 	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
-	payload, err := squirrel.localCodeIntel(context.Background(), path)
+	payload, err := squirrel.LocalCodeIntel(context.Background(), path)
 	fatalIfError(t, err)
 
 	return payload

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -105,7 +106,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetAPIID := string(marshalChangesetID(changeset.ID))
+	changesetAPIID := string(bgql.MarshalChangesetID(changeset.ID))
 	nodes := []apitest.ChangesetEvent{
 		{
 			ID:        string(marshalChangesetEventID(events[0].ID)),

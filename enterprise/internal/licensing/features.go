@@ -8,8 +8,117 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Feature is a product feature that is selectively activated based on the current license key.
-type Feature string
+type Feature interface {
+	FeatureName() string
+	// Check checks whether the feature is activated on the provided license info.
+	// If applicable, it is recommended that Check modifies the feature in-place
+	// to reflect the license info (e.g., to set a limit on the number of changesets)
+	Check(*Info) error
+}
+
+// BasicFeature is a product feature that is selectively activated based on the current license key.
+type BasicFeature string
+
+func (f BasicFeature) FeatureName() string {
+	return string(f)
+}
+
+func (f BasicFeature) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f))
+	}
+
+	featureTrimmed := BasicFeature(strings.TrimSpace(f.FeatureName()))
+
+	// Check if the feature is explicitly allowed via license tag.
+	hasFeature := func(want Feature) bool {
+		// if license is expired, do not look at tags anymore
+		if info.IsExpired() {
+			return false
+		}
+		for _, t := range info.Tags {
+			// We have been issuing licenses with trailing spaces in the tags for a while.
+			// Eventually we should be able to remove these `TrimSpace` calls again,
+			// as we now guard against that while generating licenses, but there
+			// are quite a few "wrong" licenses out there as of today (2021-07-19).
+			if BasicFeature(strings.TrimSpace(t)).FeatureName() == want.FeatureName() {
+				return true
+			}
+		}
+		return false
+	}
+	if !(info.Plan().HasFeature(featureTrimmed, info.IsExpired()) || hasFeature(featureTrimmed)) {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f))
+	}
+	return nil
+}
+
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
+	MaxNumChangesets int
+}
+
+func (*FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
+
+func (f *FeatureBatchChanges) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the deprecated campaigns are enabled, use unrestricted batch changes
+	if FeatureCampaigns.Check(info) == nil {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// If the batch changes tag exists on the license, use unrestricted batch changes
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default batch changes feature
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+type FeaturePrivateRepositories struct {
+	// If true, there is no limit to the number of private repositories that can be added.
+	Unrestricted bool
+	// Maximum number of private repositories that can be added. If Unrestricted is true, this is ignored.
+	MaxNumPrivateRepos int
+}
+
+func (*FeaturePrivateRepositories) FeatureName() string {
+	return "private-repositories"
+}
+
+func (f *FeaturePrivateRepositories) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the private repositories tag exists on the license, use unrestricted private repositories
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the defaultprivate repositories feature
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
 
 // Check checks whether the feature is activated based on the current license. If it is
 // disabled, it returns a non-nil error.
@@ -25,33 +134,7 @@ func Check(feature Feature) error {
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
-	return checkFeature(info, feature)
-}
-
-func checkFeature(info *Info, feature Feature) error {
-	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
-	}
-
-	featureTrimmed := Feature(strings.TrimSpace(string(feature)))
-
-	// Check if the feature is explicitly allowed via license tag.
-	hasFeature := func(want Feature) bool {
-		for _, t := range info.Tags {
-			// We have been issuing licenses with trailing spaces in the tags for a while.
-			// Eventually we should be able to remove these `TrimSpace` calls again,
-			// as we now guard against that while generating licenses, but there
-			// are quite a few "wrong" licenses out there as of today (2021-07-19).
-			if Feature(strings.TrimSpace(t)) == want {
-				return true
-			}
-		}
-		return false
-	}
-	if !info.Plan().HasFeature(featureTrimmed) && !hasFeature(featureTrimmed) {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
-	}
-	return nil // feature is activated for current license
+	return feature.Check(info)
 }
 
 func MockCheckFeatureError(expectedError string) {
@@ -71,7 +154,7 @@ var MockCheckFeature func(feature Feature) error
 //
 // It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
 func TestingSkipFeatureChecks() func() {
-	MockCheckFeature = func(Feature) error { return nil }
+	MockCheckFeature = func(feature Feature) error { return nil }
 	return func() { MockCheckFeature = nil }
 }
 

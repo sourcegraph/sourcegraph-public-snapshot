@@ -15,6 +15,7 @@ module.exports = {
       files: 'dev/**/*.ts',
       rules: {
         'no-console': 'off',
+        'no-sync': 'off',
       },
     },
   ],

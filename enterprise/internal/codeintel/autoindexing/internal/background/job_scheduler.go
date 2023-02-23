@@ -51,7 +51,7 @@ func NewScheduler(
 		indexEnqueuer: indexEnqueuer,
 	}
 
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_autoindexing_background",
@@ -70,10 +70,10 @@ func NewScheduler(
 		observationCtx.Operation(observation.Op{
 			Name:              "codeintel.indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.As(err, &inference.LimitError{}) {
-					return observation.EmitForDefault.Without(observation.EmitForMetrics)
+					return observation.EmitForNone
 				}
 				return observation.EmitForDefault
 			},
@@ -135,9 +135,11 @@ func (b indexSchedulerJob) handleScheduler(
 		go func(repositoryID int) {
 			defer sema.Release(1)
 			if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
-				errMu.Lock()
-				errs = errors.Append(errs, repositoryErr)
-				errMu.Unlock()
+				if !errors.As(err, &inference.LimitError{}) {
+					errMu.Lock()
+					errs = errors.Append(errs, repositoryErr)
+					errMu.Unlock()
+				}
 			}
 		}(repositoryID)
 	}

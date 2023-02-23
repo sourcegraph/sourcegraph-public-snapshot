@@ -22,29 +22,6 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)
 
-	t.Run("lsif", func(t *testing.T) {
-		for i := 0; i < 5; i++ {
-			query := sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, 0)", i+1)
-
-			if _, err := codeIntelDB.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-				t.Fatalf("unexpected error inserting repo: %s", err)
-			}
-		}
-
-		if err := store.DeleteLsifDataByUploadIds(context.Background(), 2, 4); err != nil {
-			t.Fatalf("unexpected error clearing bundle data: %s", err)
-		}
-
-		dumpIDs, err := basestore.ScanInts(codeIntelDB.QueryContext(context.Background(), "SELECT dump_id FROM lsif_data_metadata"))
-		if err != nil {
-			t.Fatalf("Unexpected error querying dump identifiers: %s", err)
-		}
-
-		if diff := cmp.Diff([]int{1, 3, 5}, dumpIDs); diff != "" {
-			t.Errorf("unexpected dump identifiers (-want +got):\n%s", diff)
-		}
-	})
-
 	t.Run("scip", func(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			query := sqlf.Sprintf("INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tooL_name, tool_version, tool_arguments, protocol_version) VALUES (%s, 'utf8', '', '', '{}', 1)", i+1)

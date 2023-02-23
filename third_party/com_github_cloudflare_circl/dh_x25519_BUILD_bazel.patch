@@ -1,0 +1,39 @@
+--- dh/x25519/BUILD.bazel	2023-01-30 17:03:08
++++ dh/x25519/BUILD.bazel	2023-01-30 16:07:46
+@@ -13,6 +13,9 @@
+         "key.go",
+         "table.go",
+     ],
++    embed = [
++        "//math/fp25519:headers",
++    ],
+     importpath = "github.com/cloudflare/circl/dh/x25519",
+     visibility = ["//visibility:public"],
+     deps = [
+@@ -23,25 +26,4 @@
+         ],
+         "//conditions:default": [],
+     }),
+-)
+-
+-alias(
+-    name = "go_default_library",
+-    actual = ":x25519",
+-    visibility = ["//visibility:public"],
+-)
+-
+-go_test(
+-    name = "x25519_test",
+-    srcs = [
+-        "curve_test.go",
+-        "key_test.go",
+-    ],
+-    data = glob(["testdata/**"]),
+-    embed = [":x25519"],
+-    deps = [
+-        "//internal/conv",
+-        "//internal/test",
+-        "//math/fp25519",
+-    ],
+ )
+

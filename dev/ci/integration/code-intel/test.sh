@@ -3,34 +3,45 @@
 # This script runs the codeintel-qa tests against a running server.
 # This script is invoked by ./dev/ci/integration/run-integration.sh after running an instance.
 
+set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-set -e
 
-export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
+SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
+export SOURCEGRAPH_BASE_URL
 
-echo '--- initializing Sourcegraph instance'
+echo '--- :go: Building init-sg'
+go build -o init-sg ./internal/cmd/init-sg/...
 
-pushd internal/cmd/init-sg || exit 1
-go build -o "${root_dir}/init-sg"
-popd || exit 1
-
-pushd dev/ci/integration/code-intel || exit 1
+echo '--- Initializing instance'
 "${root_dir}/init-sg" initSG
-# Disable `-x` to avoid printing secrets
-set +x
+
+echo '--- Loading secrets'
+set +x # Avoid printing secrets
 # shellcheck disable=SC1091
 source /root/.sg_envrc
-"${root_dir}/init-sg" addRepos -config repos.json
-popd || exit 1
+set -x
 
-pushd dev/codeintel-qa || exit 1
-echo '--- downloading test data from GCS'
-./scripts/download.sh
-echo '--- integration test ./dev/codeintel-qa/cmd/upload'
-go build ./cmd/upload
-./upload --timeout=5m -verbose
-echo '--- integration test ./dev/codeintel-qa/cmd/query'
-go build ./cmd/query
-./query -verbose
-popd || exit 1
+echo '--- :horse: Running init-sg addRepos'
+"${root_dir}/init-sg" addRepos -config ./dev/ci/integration/code-intel/repos.json
+
+echo '--- Installing local src-cli'
+./dev/ci/integration/code-intel/install-src.sh
+which src
+src version
+
+echo '--- :brain: Running the test suite'
+pushd dev/codeintel-qa
+
+echo '--- :zero: downloading test data from GCS'
+go run ./cmd/download
+
+echo '--- :one: clearing existing state'
+go run ./cmd/clear
+
+echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
+env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
+
+echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
+go run ./cmd/query
+popd

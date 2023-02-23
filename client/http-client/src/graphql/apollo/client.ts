@@ -8,7 +8,7 @@ import { buildGraphQLUrl } from '../graphql'
 import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
 interface GetGraphqlClientOptions {
-    headers: RequestInit['headers']
+    headers?: Record<string, string>
     isAuthenticated: boolean
     cache: InMemoryCache
     baseUrl?: string

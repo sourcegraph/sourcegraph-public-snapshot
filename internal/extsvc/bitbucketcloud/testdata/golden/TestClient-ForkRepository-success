@@ -20,7 +20,8 @@
      "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
     }
    },
-   "fork_policy": ""
+   "fork_policy": "",
+   "owner": null
   },
   "is_private": true,
   "links": {
@@ -38,5 +39,25 @@
     "href": "https://bitbucket.org/sourcegraph-testing/src-cli-fork-00"
    }
   },
-  "fork_policy": "no_public_forks"
+  "fork_policy": "no_public_forks",
+  "owner": {
+   "links": {
+    "avatar": {
+     "href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"
+    },
+    "html": {
+     "href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"
+    }
+   },
+   "username": "",
+   "nickname": "Sourcegraph Testing",
+   "account_status": "",
+   "display_name": "Sourcegraph Testing",
+   "website": "",
+   "created_on": "0001-01-01T00:00:00Z",
+   "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"
+  }
  }

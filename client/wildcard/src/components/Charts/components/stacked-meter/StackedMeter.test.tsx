@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext } from '../../../../testing'
 
 import { StackedMeter } from './StackedMeter'
 

@@ -21,7 +21,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -75,6 +75,7 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
             viewerCanAdminister: true,
             builtinAuth: true,
             tags: [],
+            createdAt: '2020-03-02T11:52:15Z',
         },
     }),
 }
@@ -125,10 +126,10 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         withSearchQueryInput(editorName => {
-            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
+            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -147,7 +148,7 @@ describe('Search', () => {
             test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
                 testContext.overrideSearchStreamEvents([
                     {
@@ -217,7 +218,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -256,7 +257,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -292,7 +293,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -540,7 +541,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 

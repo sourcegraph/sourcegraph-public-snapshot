@@ -1,28 +1,40 @@
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
-import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
-import { useExperimentalFeatures } from '../stores'
+import { EnterprisePageRoutes } from '../routes.constants'
 
-const NotebookPage = lazyComponent(() => import('../notebooks/notebookPage/NotebookPage'), 'NotebookPage')
-const CreateNotebookPage = lazyComponent(
-    () => import('../notebooks/createPage/CreateNotebookPage'),
-    'CreateNotebookPage'
+const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
+const GlobalBatchChangesArea = lazyComponent(
+    () => import('./batches/global/GlobalBatchChangesArea'),
+    'GlobalBatchChangesArea'
 )
-const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const GlobalCodeMonitoringArea = lazyComponent(
+    () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
+    'GlobalCodeMonitoringArea'
+)
+const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const SearchContextsListPage = lazyComponent(
+    () => import('./searchContexts/SearchContextsListPage'),
+    'SearchContextsListPage'
+)
+const CreateSearchContextPage = lazyComponent(
+    () => import('./searchContexts/CreateSearchContextPage'),
+    'CreateSearchContextPage'
+)
+const EditSearchContextPage = lazyComponent(
+    () => import('./searchContexts/EditSearchContextPage'),
+    'EditSearchContextPage'
+)
+const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
+const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
-const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
-
-export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
+export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     {
         path: EnterprisePageRoutes.BatchChanges,
-        render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
+        render: props => <GlobalBatchChangesArea {...props} />,
         // We also render this route on sourcegraph.com as a precaution in case anyone
         // follows an in-app link to /batch-changes from sourcegraph.com; the component
         // will just redirect the visitor to the marketing page
@@ -30,71 +42,40 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: EnterprisePageRoutes.CodeMonitoring,
-        render: lazyComponent(
-            () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
-            'GlobalCodeMonitoringArea'
-        ),
+        render: props => <GlobalCodeMonitoringArea {...props} />,
     },
     {
         path: EnterprisePageRoutes.Insights,
-        render: lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter'),
+        render: props => <CodeInsightsRouter {...props} />,
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {
         path: EnterprisePageRoutes.Contexts,
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        render: props => <SearchContextsListPage {...props} />,
     },
     {
         path: EnterprisePageRoutes.CreateContext,
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        render: props => <CreateSearchContextPage {...props} />,
     },
     {
         path: EnterprisePageRoutes.EditContext,
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        render: props => <EditSearchContextPage {...props} />,
     },
     {
         path: EnterprisePageRoutes.Context,
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        render: props => <SearchContextPage {...props} />,
     },
     {
         path: EnterprisePageRoutes.SearchNotebook,
-        render: () => <Redirect to={EnterprisePageRoutes.Notebooks} />,
-        exact: true,
+        render: () => <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
     {
-        path: EnterprisePageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Redirect to={EnterprisePageRoutes.Notebooks} />
-            ),
-        exact: true,
+        path: EnterprisePageRoutes.Notebooks + '/*',
+        render: props => <GlobalNotebooksArea {...props} />,
     },
     {
-        path: EnterprisePageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook } = useExperimentalFeatures.getState()
-
-            return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
-        },
-        exact: true,
-    },
-    {
-        path: EnterprisePageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <NotebooksListPage {...props} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-        exact: true,
+        path: EnterprisePageRoutes.Cody,
+        render: props => <GlobalCodyArea {...props} />,
     },
     ...routes,
 ]

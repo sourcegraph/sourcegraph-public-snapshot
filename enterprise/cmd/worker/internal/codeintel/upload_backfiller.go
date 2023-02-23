@@ -28,7 +28,7 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadBackfillerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *uploadBackfillerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

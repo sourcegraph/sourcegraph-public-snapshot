@@ -3,6 +3,7 @@
    "slug": "archived-repo",
    "id": 10073,
    "name": "archived-repo",
+   "description": "",
    "scmId": "git",
    "state": "AVAILABLE",
    "statusMessage": "Available",
@@ -25,6 +26,10 @@
    "public": false,
    "links": {
     "clone": [
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/public/archived-repo.git",
+      "name": "ssh"
+     },
      {
       "href": "https://bitbucket.sgdev.org/scm/public/archived-repo.git",
       "name": "http"

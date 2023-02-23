@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
@@ -145,6 +145,8 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
 interface ResetPasswordCodeFormProps {
     userID: number
     code: string
+    email: string | null
+    emailVerifyCode: string | null
 }
 
 interface ResetPasswordCodeFormState {
@@ -231,6 +233,8 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 userID: this.props.userID,
                 code: this.props.code,
                 password: this.state.password,
+                email: this.props.email,
+                emailVerifyCode: this.props.emailVerifyCode,
             }),
         })
             .then(async response => {
@@ -269,8 +273,17 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
         if (searchParameters.has('code') || searchParameters.has('userID')) {
             const code = searchParameters.get('code')
             const userID = parseInt(searchParameters.get('userID') || '', 10)
+            const email = searchParameters.get('email')
+            const emailVerifyCode = searchParameters.get('emailVerifyCode')
             if (code && !isNaN(userID)) {
-                body = <ResetPasswordCodeForm code={code} userID={userID} />
+                body = (
+                    <ResetPasswordCodeForm
+                        code={code}
+                        userID={userID}
+                        email={email}
+                        emailVerifyCode={emailVerifyCode}
+                    />
+                )
             } else {
                 body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
             }

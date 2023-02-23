@@ -25,8 +25,6 @@ This page describes how to launch a verified and pre-configured Sourcegraph inst
 
 <small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
 
-<small>Prefer manually installing on AWS yourself? See our [AMI installation options](aws-ami.md) and [script installation options](../single-node/script.md).</small>
-
 ---
 
 ## Prerequisites
@@ -114,17 +112,13 @@ By default Sourcegraph will be available over HTTP on the public internet. To se
 2. [Configure user authentication](../../../admin/auth/index.md) (SSO, SAML, OpenID Connect, etc.)
 3. [Review the new Network Security Group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to prevent access from the public internet and follow the principle of least privilege.
 
-### Share with your team
-
-[See here](/adopt/trial#3-share-with-the-trial-team) for some tips on how to share Sourcegraph with your team!
-
 ## Managing Sourcegraph
 
 ### Backup and restore
 
 We strongly recommend you taking [snapshots of the entire Sourcegraph data EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html). Only the Sourcegraph data volume (500G) needs to be backed up.
 
-To restore from a backup, simply follow our [upgrade instructions](http://localhost:5080/admin/deploy/machine-images/aws-ami#upgrade) and skip directly to **Step 2: Launch a new instance** - choosing your desired Sourcegraph version and your backed up data volume.
+To restore from a backup, simply follow our [upgrade instructions](https://docs.sourcegraph.com/admin/deploy/machine-images/aws-ami#upgrade) and skip directly to **Step 2: Launch a new instance** - choosing your desired Sourcegraph version and your backed up data volume.
 
 ### Upgrading your Sourcegraph instance
 

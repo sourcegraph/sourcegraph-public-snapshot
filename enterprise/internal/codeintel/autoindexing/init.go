@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
+	autoindexingstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,28 +24,18 @@ var (
 func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
-	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService(db)
+	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 
 	return svc
-}
-
-type serviceDependencies struct {
-	db             database.DB
-	uploadSvc      UploadService
-	depsSvc        DependenciesService
-	policiesSvc    PoliciesService
-	gitserver      GitserverClient
-	observationCtx *observation.Context
 }
 
 func scopedContext(component string, observationCtx *observation.Context) *observation.Context {
@@ -136,6 +126,23 @@ func NewDependencyIndexSchedulers(
 			workerutil.NewMetrics(observationCtx, "codeintel_dependency_index_queueing"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerConcurrency,
+		),
+	}
+}
+
+func NewSummaryBuilder(
+	observationCtx *observation.Context,
+	autoindexingSvc *Service,
+	uploadSvc UploadService,
+) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewSummaryBuilder(
+			observationCtx,
+			autoindexingSvc.store,
+			autoindexingSvc.jobSelector,
+			uploadSvc,
+			SummaryBuilderConfigInst.Interval,
+			SummaryBuilderConfigInst.NumRepositoriesToConfigure,
 		),
 	}
 }

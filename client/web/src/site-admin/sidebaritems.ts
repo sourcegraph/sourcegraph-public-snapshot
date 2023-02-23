@@ -5,6 +5,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
@@ -88,6 +89,11 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },
+        {
+            label: 'Packages',
+            to: '/site-admin/packages',
+            condition: isPackagesEnabled,
+        },
     ],
 }
 
@@ -159,8 +165,13 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             source: 'server',
         },
         {
-            label: 'Slow Requests',
+            label: 'Slow requests',
             to: '/site-admin/slow-requests',
+            source: 'server',
+        },
+        {
+            label: 'Background jobs',
+            to: '/site-admin/background-jobs',
             source: 'server',
         },
     ],

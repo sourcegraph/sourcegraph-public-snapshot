@@ -31,6 +31,11 @@
 	{{if .Manifest.AppCSSBundlePath}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+	{{if .PreloadedAssets}}
+	{{range .PreloadedAssets}}
+	<link rel="preload" href="{{.Href}}" as="{{.As}}" />
+	{{end}}
+	{{end}}
 	{{ if .Context.SourcegraphDotComMode }}
 	<!-- Google Tag Manager -->
 	<script ignore-csp>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

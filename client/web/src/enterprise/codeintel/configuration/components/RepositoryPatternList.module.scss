@@ -1,0 +1,44 @@
+.loading {
+    align-self: center;
+    justify-self: flex-start;
+    margin: 0 0 0 0.5rem;
+}
+
+.container {
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.input {
+    width: 90%;
+    margin-right: 1rem;
+}
+
+.input-actions {
+    width: 10%;
+    display: flex;
+    justify-content: flex-start;
+    align-self: stretch;
+}
+
+.input-action {
+    &:not(:last-of-type) {
+        margin-right: 1rem;
+    }
+
+    width: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.list {
+    max-height: 30rem;
+    overflow-y: auto;
+}

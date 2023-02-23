@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policies",
+    srcs = [
+        "config.go",
+        "iface.go",
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/policies/enterprise",
+        "//enterprise/internal/codeintel/policies/internal/background",
+        "//enterprise/internal/codeintel/policies/internal/store",
+        "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/shared/types",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "policies_test",
+    srcs = [
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":policies"],
+    deps = [
+        "//enterprise/internal/codeintel/policies/internal/store",
+        "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/shared/types",
+        "//internal/database",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

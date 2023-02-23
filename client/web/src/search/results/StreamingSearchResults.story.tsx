@@ -36,15 +36,12 @@ const defaultProps: StreamingSearchResultsProps = {
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
-    history,
-    location: history.location,
     authenticatedUser: {
         url: '/users/alice',
         displayName: 'Alice',
         username: 'alice',
         emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
-    isLightTheme: true,
 
     settingsCascade: {
         subjects: null,

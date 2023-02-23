@@ -292,6 +292,14 @@ func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: time.Now()}
 }
 
+func (r *RepositoryResolver) RawCreatedAt() string {
+	if r.innerRepo == nil {
+		return ""
+	}
+
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
+}
+
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }
@@ -328,7 +336,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository match")
+	return "Repository match"
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
@@ -412,7 +420,7 @@ func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolverstub
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) ([]resolverstubs.GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) (resolverstubs.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 

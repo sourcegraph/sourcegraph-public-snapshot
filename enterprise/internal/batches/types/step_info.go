@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -49,7 +49,7 @@ type StepInfo struct {
 
 // ParseLogLines looks at all given log lines and determines the derived *StepInfo
 // for each step it could find logs for.
-func ParseLogLines(entry workerutil.ExecutionLogEntry, lines []*batcheslib.LogEvent) map[int]*StepInfo {
+func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEvent) map[int]*StepInfo {
 	infoByStep := make(map[int]*StepInfo)
 
 	highestStep := 0

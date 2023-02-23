@@ -34,6 +34,7 @@ exports[`LoaderInput should render a loading spinner when loading prop is true 1
       aria-label="Loading"
       aria-live="polite"
       class="mdi-icon loadingSpinner spinner"
+      data-loading-spinner="true"
       role="img"
     />
   </div>

@@ -259,20 +259,6 @@ exports[`GlobalNavbar default 1`] = `
         </a>
       </li>
       <li
-        class="action d-sm-flex d-none"
-      >
-        <button
-          aria-expanded="false"
-          aria-label="Feedback"
-          class="btn btnSecondary btnOutline btnSm feedbackTrigger"
-          type="button"
-        >
-          <span>
-            Feedback
-          </span>
-        </button>
-      </li>
-      <li
         class="action"
       >
         <div>
@@ -282,13 +268,6 @@ exports[`GlobalNavbar default 1`] = `
           >
             Sign in
           </a>
-          <a
-            class="anchorLink btn btnSm signUp"
-            href="/sign-up"
-            tabindex="0"
-          >
-            Sign up
-          </a>
         </div>
       </li>
     </ul>
@@ -297,14 +276,11 @@ exports[`GlobalNavbar default 1`] = `
     class="w-100 px-3 py-2 border-bottom"
   >
     <searchnavbaritem
-      history="[object Object]"
-      location="[object Object]"
       platformcontext="[object Object]"
       routes=""
       selectedsearchcontextspec=""
       settingscascade="[object Object]"
       telemetryservice="[object Object]"
-      themepreference="light"
     />
   </div>
 </DocumentFragment>

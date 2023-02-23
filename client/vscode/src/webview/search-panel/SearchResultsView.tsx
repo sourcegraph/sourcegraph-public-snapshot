@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
@@ -40,7 +40,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     authenticatedUser,
     platformContext,
     settingsCascade,
-    theme,
     context,
     instanceURL,
 }) => {
@@ -348,14 +347,12 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     globbing={globbing}
-                    isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 
@@ -397,7 +394,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     )}
                     <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
-                            isLightTheme={theme === 'theme-light'}
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}
                             allExpanded={allExpanded}
@@ -413,6 +409,9 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // TODO "no results" video thumbnail assets
                             // In build, copy ui/assets/img folder to dist/
                             assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setUserQueryState}
+                            selectedSearchContextSpec={context.selectedSearchContextSpec}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

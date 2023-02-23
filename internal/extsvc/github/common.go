@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -157,6 +158,7 @@ type Label struct {
 
 type PullRequestRepo struct {
 	ID    string
+	Name  string
 	Owner struct {
 		Login string
 	}
@@ -1379,6 +1381,7 @@ fragment prCommit on PullRequestCommit {
 
 fragment repo on Repository {
   id
+  name
   owner {
     login
   }
@@ -1463,6 +1466,14 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 	}
 }
 
+func githubBaseURLDefault() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return ""
+	}
+	return "http://github-proxy"
+}
+
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
 
@@ -1470,15 +1481,19 @@ var (
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 
 	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
-	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", githubBaseURLDefault(), "base URL for GitHub.com API (used for github-proxy)")
 )
 
-func getGithubProxyURL() *url.URL {
-	url, err := url.Parse(githubProxyRawURL)
+func getGithubProxyURL() (*url.URL, bool) {
+	if githubProxyRawURL == "" {
+		return nil, false
+	}
+	parsedUrl, err := url.Parse(githubProxyRawURL)
 	if err != nil {
 		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+		return nil, false
 	}
-	return url
+	return parsedUrl, true
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
@@ -1573,14 +1588,25 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return getGithubProxyURL()
+		u, ok := getGithubProxyURL()
+		if ok {
+			return u
+		}
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
+	if hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
+		return true
+	}
+
+	if u, ok := getGithubProxyURL(); ok {
+		return apiURL.String() == u.String()
+	}
+
+	return false
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}
@@ -1890,6 +1916,18 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
+func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	d, _, err := GetExternalAccountData(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: d.Name,
+		Login:       d.Login,
+		URL:         d.URL,
+	}, nil
+}
+
 func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
 	serializedUser, err := json.Marshal(user)
 	if err != nil {
@@ -1919,8 +1957,9 @@ type UserEmail struct {
 }
 
 type Org struct {
-	ID    int    `json:"id,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID     int    `json:"id,omitempty"`
+	Login  string `json:"login,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }
 
 // OrgDetails describes the more detailed Org data you can only get from the

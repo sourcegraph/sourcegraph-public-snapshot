@@ -30,7 +30,10 @@ export interface WorkspacePreviewFilters {
 export const useWorkspaces = (
     batchSpecID: Scalars['ID'],
     filters?: WorkspacePreviewFilters
-): UseShowMorePaginationResult<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields> =>
+): UseShowMorePaginationResult<
+    BatchSpecWorkspacesPreviewResult,
+    PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+> =>
     useShowMorePagination<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,

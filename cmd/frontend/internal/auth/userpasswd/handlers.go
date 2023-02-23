@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -96,7 +96,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 	return false, "", nil
 }
 
-// doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
 //
@@ -127,7 +127,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Create the user.
 	//
 	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
+	// of handleSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
 	newUserData := database.NewUser{
 		Email:                 creds.Email,
@@ -190,7 +190,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
 
@@ -214,17 +214,17 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	// Write the session cookie
-	a := &actor.Actor{UID: usr.ID}
+	a := &sgactor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
 		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
 }
@@ -328,7 +328,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		}
 
 		// Write the session cookie
-		actor := actor.Actor{
+		actor := sgactor.Actor{
 			UID: user.ID,
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	inttests "github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -58,10 +57,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
 	}
 
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
-	client := gitserver.NewTestClient(http.DefaultClient, db, inttests.GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)

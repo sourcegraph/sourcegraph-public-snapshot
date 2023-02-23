@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, H2, Text } from '@sourcegraph/wildcard'
@@ -24,7 +24,7 @@ const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
     title: ALPINE_VERSIONS_INSIGHT.title,
-    allRepos: true,
+    repoQuery: 'repo:.*',
     groupSearchQuery: ALPINE_VERSIONS_INSIGHT.groupSearch,
 })
 

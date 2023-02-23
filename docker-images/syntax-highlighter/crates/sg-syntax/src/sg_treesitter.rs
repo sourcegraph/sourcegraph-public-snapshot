@@ -1,7 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::{Write as _}; // import without risk of name clashing
+use std::fmt::Write as _; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -30,6 +30,7 @@ use sg_macros::include_project_file_optional;
 const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("attribute",               SyntaxKind::UnspecifiedSyntaxKind),
     ("boolean",                 SyntaxKind::BooleanLiteral),
+    ("character",               SyntaxKind::CharacterLiteral),
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
@@ -101,7 +102,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet )
+        create_configurations!( go, sql, c_sharp, jsonnet, scala, xlsg )
     };
 }
 

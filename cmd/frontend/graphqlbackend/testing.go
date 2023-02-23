@@ -19,13 +19,13 @@ import (
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient(db))
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
 }
 
 func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, gitserverClient, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(db, gitserverClient, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}

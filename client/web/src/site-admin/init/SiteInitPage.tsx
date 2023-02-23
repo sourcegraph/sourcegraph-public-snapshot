@@ -1,9 +1,9 @@
 import React from 'react'
 
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -43,7 +43,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps {
+interface Props {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -63,12 +63,13 @@ interface Props extends ThemeProps {
  */
 export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
-    isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
 }) => {
+    const isLightTheme = useIsLightTheme()
+
     if (!needsSiteInit) {
-        return <Redirect to={PageRoutes.Search} />
+        return <Navigate to={PageRoutes.Search} replace={true} />
     }
 
     return (

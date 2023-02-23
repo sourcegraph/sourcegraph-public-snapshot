@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,6 +25,35 @@ func TestStatic(t *testing.T) {
 
 	m = Static("http://test-1", "http://test-2")
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
+}
+
+func TestStatic_empty(t *testing.T) {
+	m := Static()
+	expectEndpoints(t, m)
+
+	// Empty maps should fail on Get but not on Endpoints
+	_, err := m.Get("foo")
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("Get should return EmptyError")
+	}
+
+	_, err = m.GetN("foo", 5)
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("GetN should return EmptyError")
+	}
+
+	_, err = m.GetMany("foo")
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("GetMany should return EmptyError")
+	}
+
+	eps, err := m.Endpoints()
+	if err != nil {
+		t.Fatal("Endpoints should not return an error")
+	}
+	if len(eps) != 0 {
+		t.Fatal("Endpoints should be empty")
+	}
 }
 
 func TestGetN(t *testing.T) {
@@ -84,8 +115,8 @@ func expectEndpoints(t *testing.T, m *Map, endpoints ...string) {
 	}
 	if got, err := m.GetMany(keys...); err != nil {
 		t.Fatalf("GetMany failed: %v", err)
-	} else if !reflect.DeepEqual(got, vals) {
-		t.Fatalf("GetMany(%v) unexpected response:\ngot  %v\nwant %v", keys, got, vals)
+	} else if diff := cmp.Diff(vals, got, cmpopts.EquateEmpty()); diff != "" {
+		t.Fatalf("GetMany(%v) unexpected response (-want, +got):\n%s", keys, diff)
 	}
 }
 

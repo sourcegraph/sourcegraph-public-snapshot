@@ -1,76 +1,45 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { FC, useEffect, useState, useCallback } from 'react'
 
-import * as H from 'history'
-import { parse as parseJSONC } from 'jsonc-parser'
-import { Redirect } from 'react-router'
-import { Subject } from 'rxjs'
+import { mdiCog } from '@mdi/js'
+import { Navigate, useParams } from 'react-router-dom'
 
-import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2, Container, ErrorAlert } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, Icon, ButtonLink } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
-    Scalars,
     AddExternalServiceInput,
     ExternalServiceResult,
     ExternalServiceVariables,
-    ExternalServiceKind,
 } from '../../graphql-operations'
-import { LoaderButton } from '../LoaderButton'
+import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
 
-import {
-    useSyncExternalService,
-    queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
-    useUpdateExternalService,
-    FETCH_EXTERNAL_SERVICE,
-} from './backend'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { defaultExternalServices, codeHostExternalServices } from './externalServices'
-import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
+import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    externalServiceID: Scalars['ID']
-    isLightTheme: boolean
-    history: H.History
-    afterUpdateRoute: string
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
-    queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
-    /** For testing only. */
     autoFocusForm?: boolean
-}
-
-function isValidURL(url: string): boolean {
-    try {
-        new URL(url)
-        return true
-    } catch {
-        return false
-    }
 }
 
 const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
-export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    externalServiceID,
-    history,
-    isLightTheme,
+export const ExternalServiceEditPage: FC<Props> = ({
     telemetryService,
-    afterUpdateRoute,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     autoFocusForm,
 }) => {
+    const { externalServiceID } = useParams()
+
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
@@ -80,7 +49,7 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
     const { error: fetchError, loading: fetchLoading } = useQuery<ExternalServiceResult, ExternalServiceVariables>(
         FETCH_EXTERNAL_SERVICE,
         {
-            variables: { id: externalServiceID },
+            variables: { id: externalServiceID! },
             notifyOnNetworkStatusChange: false,
             fetchPolicy: 'no-cache',
             onCompleted: result => {
@@ -91,9 +60,6 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
             },
         }
     )
-
-    const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
-        useSyncExternalService()
 
     const [updated, setUpdated] = useState(false)
     const [updateExternalService, { error: updateExternalServiceError, loading: updateExternalServiceLoading }] =
@@ -133,42 +99,13 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
         [externalService, setExternalService]
     )
 
-    const syncJobUpdates = useMemo(() => new Subject<void>(), [])
-    const triggerSync = useCallback(
-        () =>
-            externalService &&
-            syncExternalService({ variables: { id: externalService.id } }).then(() => {
-                syncJobUpdates.next()
-            }),
-        [externalService, syncExternalService, syncJobUpdates]
-    )
-
-    let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
-    if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
-        const parsedConfig: unknown = parseJSONC(externalService.config)
-        const url =
-            typeof parsedConfig === 'object' &&
-            parsedConfig !== null &&
-            hasProperty('url')(parsedConfig) &&
-            typeof parsedConfig.url === 'string' &&
-            isValidURL(parsedConfig.url)
-                ? new URL(parsedConfig.url)
-                : undefined
-        // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
-        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
-            externalServiceCategory = codeHostExternalServices.ghe
-        }
-        // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
-        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
-            externalServiceCategory = codeHostExternalServices.gitlab
-        }
-    }
+    const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
     const combinedError = fetchError || updateExternalServiceError
     const combinedLoading = fetchLoading || updateExternalServiceLoading
 
     if (updated && !combinedLoading && externalService?.warning === null) {
-        return <Redirect to={afterUpdateRoute} />
+        return <Navigate to={`/site-admin/external-services/${externalService.id}`} replace={true} />
     }
 
     return (
@@ -178,19 +115,49 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
             ) : (
                 <PageTitle title="Code host" />
             )}
-            <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
 
             {externalService && (
                 <Container className="mb-3">
-                    {externalServiceCategory && (
-                        <div className="mb-3">
-                            <ExternalServiceCard {...externalServiceCategory} />
-                        </div>
-                    )}
+                    <PageHeader
+                        path={[
+                            { icon: mdiCog },
+                            { to: '/site-admin/external-services', text: 'Code hosts' },
+                            {
+                                text: (
+                                    <>
+                                        {externalService.displayName}
+                                        {externalServiceCategory && (
+                                            <Icon
+                                                inline={true}
+                                                as={externalServiceCategory.icon}
+                                                aria-label="Code host logo"
+                                                className="ml-2"
+                                            />
+                                        )}
+                                    </>
+                                ),
+                            },
+                        ]}
+                        byline={
+                            <CreatedByAndUpdatedByInfoByline
+                                createdAt={externalService.createdAt}
+                                updatedAt={externalService.updatedAt}
+                                noAuthor={true}
+                            />
+                        }
+                        className="mb-3"
+                        headingElement="h2"
+                        actions={
+                            <ButtonLink to={`/site-admin/external-services/${externalServiceID}`} variant="secondary">
+                                Cancel
+                            </ButtonLink>
+                        }
+                    />
                     {externalServiceCategory && (
                         <ExternalServiceForm
                             input={{ ...externalService }}
+                            externalServiceID={externalServiceID}
                             editorActions={externalServiceCategory.editorActions}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             error={updateExternalServiceError}
@@ -199,29 +166,13 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
                             loading={combinedLoading}
                             onSubmit={onSubmit}
                             onChange={onChange}
-                            history={history}
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                         />
                     )}
-                    <LoaderButton
-                        label="Trigger manual sync"
-                        alwaysShowLabel={true}
-                        variant="secondary"
-                        onClick={triggerSync}
-                        loading={syncExternalServiceLoading}
-                        disabled={syncExternalServiceLoading}
-                    />
-                    {syncExternalServiceError && <ErrorAlert error={syncExternalServiceError} />}
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />
-                    <ExternalServiceSyncJobsList
-                        queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                        externalServiceID={externalService.id}
-                        updates={syncJobUpdates}
-                    />
                 </Container>
             )}
         </div>

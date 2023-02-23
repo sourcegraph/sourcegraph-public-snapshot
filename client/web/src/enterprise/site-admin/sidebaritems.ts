@@ -27,6 +27,13 @@ const configurationGroup: SiteAdminSideBarGroup = {
 
 const maintenanceGroup: SiteAdminSideBarGroup = {
     ...ossMaintenanceGroup,
+    items: [
+        ...ossMaintenanceGroup.items,
+        {
+            label: 'Code Insights jobs',
+            to: '/site-admin/code-insights-jobs',
+        },
+    ],
 }
 
 const executorsGroup: SiteAdminSideBarGroup = {
@@ -67,6 +74,10 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes/webhook-logs',
             condition: props => props.batchChangesWebhookLogsEnabled,
         },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/outbound-webhooks',
+        },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
@@ -97,13 +108,8 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-graph/uploads',
-            label: 'Uploads',
-        },
-        {
             to: '/site-admin/code-graph/indexes',
-            label: 'Auto-indexing',
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+            label: 'Precise indexes',
         },
         {
             to: '/site-admin/code-graph/configuration',

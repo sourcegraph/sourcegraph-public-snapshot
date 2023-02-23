@@ -29,6 +29,7 @@ func NewBulkOperationWorker(
 
 	options := workerutil.WorkerOptions{
 		Name:              "batches_bulk_processor",
+		Description:       "executes the bulk operations in the background",
 		NumHandlers:       5,
 		HeartbeatInterval: 15 * time.Second,
 		Interval:          5 * time.Second,
@@ -54,7 +55,7 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc[*btypes.Chang
 		}
 		defer func() { err = tx.Done(err) }()
 
-		p := processor.New(tx, b.sourcer)
+		p := processor.New(logger, tx, b.sourcer)
 
 		return p.Process(ctx, job)
 	}

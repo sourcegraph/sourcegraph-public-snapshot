@@ -17,7 +17,7 @@ type OrgMemberStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) OrgMemberStore
 	AutocompleteMembersSearch(ctx context.Context, OrgID int32, query string) ([]*types.OrgMemberAutocompleteSearchItem, error)
-	Transact(context.Context) (OrgMemberStore, error)
+	WithTransact(context.Context, func(OrgMemberStore) error) error
 	Create(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMembership, error)
 	GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error)
@@ -40,9 +40,10 @@ func (s *orgMemberStore) With(other basestore.ShareableStore) OrgMemberStore {
 	return &orgMemberStore{Store: s.Store.With(other)}
 }
 
-func (m *orgMemberStore) Transact(ctx context.Context) (OrgMemberStore, error) {
-	txBase, err := m.Store.Transact(ctx)
-	return &orgMemberStore{Store: txBase}, err
+func (m *orgMemberStore) WithTransact(ctx context.Context, f func(OrgMemberStore) error) error {
+	return m.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&orgMemberStore{Store: tx})
+	})
 }
 
 func (m *orgMemberStore) Create(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {

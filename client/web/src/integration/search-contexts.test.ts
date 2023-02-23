@@ -13,7 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -45,6 +45,7 @@ describe('Search contexts', () => {
             user: {
                 experimentalFeatures: {
                     showSearchContext: true,
+                    searchQueryInput: 'v1',
                 },
             },
         }),
@@ -98,7 +99,6 @@ describe('Search contexts', () => {
                     user: {
                         experimentalFeatures: {
                             showSearchContext: true,
-                            ...enableEditor(editorName).experimentalFeatures,
                         },
                     },
                 }),
@@ -192,7 +192,7 @@ describe('Search contexts', () => {
 
         // Enter repositories
         const repositoriesConfig =
-            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
         {
             const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
             await editor.replace(repositoriesConfig, 'paste')
@@ -373,8 +373,7 @@ describe('Search contexts', () => {
         })
 
         // Enter repositories
-        const repositoriesConfig =
-            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+        const repositoriesConfig = '[{ "repository": "github.com/example/example", "revisions": ["main"] }]'
         const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
         await editor.replace(repositoriesConfig, 'paste')
 

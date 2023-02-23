@@ -1,9 +1,14 @@
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
+import chalk from 'chalk'
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
+
+import { EditFunc } from './github'
+import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
@@ -56,10 +61,13 @@ async function readLineNoCache(prompt: string): Promise<string> {
     return userInput
 }
 
-export function getWeekNumber(date: Date): number {
-    const firstJan = new Date(date.getFullYear(), 0, 1)
-    const day = 86400000
-    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
+export async function verifyWithInput(prompt: string): Promise<void> {
+    await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
+        if (val !== 'yes') {
+            console.log(chalk.red('Aborting!'))
+            process.exit(0)
+        }
+    })
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -125,7 +133,6 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     }
 }
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
 export async function ensureSrcCliUpToDate(): Promise<void> {
     const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
         method: 'GET',
@@ -192,4 +199,92 @@ export async function getContainerRegistryCredential(registryHostname: string): 
         hostname: registryHostname,
     }
     return credential
+}
+
+export type ContentFunc = (previousVersion?: string, nextVersion?: string) => string
+
+const upgradeContentGenerators: { [s: string]: ContentFunc } = {
+    docker_compose: () => '',
+    kubernetes: () => '',
+    server: () => '',
+    pure_docker: (previousVersion?: string, nextVersion?: string) => {
+        const compare = `compare/v${previousVersion}...v${nextVersion}`
+        return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
+\nFor non-standard replica builds: 
+- [\`Customer Replica 1: ➔ v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/${compare})`
+    },
+}
+export const getUpgradeGuide = (mode: string): ContentFunc => upgradeContentGenerators[mode]
+
+export const getAllUpgradeGuides = (previous: string, next: string): string[] =>
+    Object.keys(upgradeContentGenerators).map(
+        key => `Guide for: ${key}\n\n${upgradeContentGenerators[key](previous, next)}`
+    )
+
+export const updateUpgradeGuides = (previous: string, next: string): EditFunc => {
+    let updateDirectory = '/doc/admin/updates'
+    const notPatchRelease = next.endsWith('.0')
+
+    return (directory: string): void => {
+        updateDirectory = directory + updateDirectory
+        for (const file of readdirSync(updateDirectory)) {
+            if (file === 'index.md') {
+                continue
+            }
+            const mode = file.replace('.md', '')
+            const updateFunc = getUpgradeGuide(mode)
+            if (updateFunc === undefined) {
+                console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+            }
+            const guide = getUpgradeGuide(mode)(previous, next)
+
+            const fullPath = path.join(updateDirectory, file)
+            console.log(`Updating upgrade guide: ${fullPath}`)
+            let updateContents = readFileSync(fullPath).toString()
+            const releaseHeader = `## v${previous} ➔ v${next}`
+            const notesHeader = '\n\n#### Notes:'
+
+            if (notPatchRelease) {
+                let content = `${update.releaseTemplate}\n\n${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader
+                updateContents = updateContents.replace(update.releaseTemplate, content)
+            } else {
+                const prevReleaseHeaderPattern = `##\\s+v\\d\\.\\d(?:\\.\\d)? ➔ v${previous}\\s*`
+                const matches = updateContents.match(new RegExp(prevReleaseHeaderPattern))
+                if (!matches || matches.length === 0) {
+                    console.log(`Unable to find header using pattern: ${prevReleaseHeaderPattern}. Skipping.`)
+                    continue
+                }
+                const prevReleaseHeader = matches[0]
+                let content = `${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader + `\n\n${prevReleaseHeader}`
+                updateContents = updateContents.replace(prevReleaseHeader, content)
+            }
+            writeFileSync(fullPath, updateContents)
+        }
+    }
+}
+
+export async function retryInput(
+    prompt: string,
+    delegate: (val: string) => boolean,
+    errorMessage?: string
+): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt).then(value => value)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
+        }
+    }
 }

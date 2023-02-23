@@ -26,7 +26,9 @@ import {
     ExternalServiceSyncJobsResult,
     CancelExternalServiceSyncVariables,
     CancelExternalServiceSyncResult,
+    ListExternalServiceFields,
 } from '../../graphql-operations'
+import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {
@@ -37,11 +39,12 @@ export const externalServiceFragment = gql`
         warning
         lastSyncError
         repoCount
-        webhookURL
         lastSyncAt
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
+        hasConnectionCheck
     }
 `
 
@@ -101,16 +104,6 @@ export function updateExternalService(
         )
         .toPromise()
 }
-
-export const FETCH_EXTERNAL_SERVICE = gql`
-    query ExternalService($id: ID!) {
-        node(id: $id) {
-            __typename
-            ...ExternalServiceFields
-        }
-    }
-    ${externalServiceFragment}
-`
 
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(
@@ -220,6 +213,17 @@ const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         }
     }
 `
+
+export const FETCH_EXTERNAL_SERVICE = gql`
+    query ExternalService($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...ListExternalServiceFields
+        }
+    }
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
+`
+
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String) {
         externalServices(first: $first, after: $after) {
@@ -248,18 +252,21 @@ export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
     }
 `
 
-export function queryExternalServices(
-    variables: ExternalServicesVariables
-): Observable<ExternalServicesResult['externalServices']> {
-    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
-}
+export const useExternalServicesConnection = (
+    vars: ExternalServicesVariables
+): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
+    useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
+        query: EXTERNAL_SERVICES,
+        variables: { after: vars.after, first: vars.first ?? 10 },
+        getConnection: result => {
+            const { externalServices } = dataOrThrowErrors(result)
+            return externalServices
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 15000,
+        },
+    })
 
 export const SYNC_EXTERNAL_SERVICE = gql`
     mutation SyncExternalService($id: ID!) {

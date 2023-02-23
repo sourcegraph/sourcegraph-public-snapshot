@@ -3,7 +3,6 @@ import React, { useEffect } from 'react'
 import { mdiAccount, mdiSourceRepository, mdiCommentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
-import * as H from 'history'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, H2, Text, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
@@ -15,6 +14,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { useChartFilters } from '../useChartFilters'
+import { getByteUnitLabel, getByteUnitValue } from '../utils'
 
 import { DevTimeSaved } from './DevTimeSaved'
 import { OVERVIEW_STATISTICS } from './queries'
@@ -22,11 +22,9 @@ import { Sidebar } from './Sidebar'
 
 import styles from './index.module.scss'
 
-interface IProps {
-    history: H.History
-}
+interface Props {}
 
-export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history }) => {
+export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
     const { dateRange } = useChartFilters({ name: 'Overview' })
     const { data, error, loading } = useQuery<OverviewStatisticsResult, OverviewStatisticsVariables>(
         OVERVIEW_STATISTICS,
@@ -62,7 +60,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                             {productSubscription.license && licenseExpiresAt ? (
                                 <>
                                     <AnchorLink
-                                        to="https://about.sourcegraph.com/pricing"
+                                        to="/help/admin/updates"
                                         target="_blank"
                                         rel="noopener"
                                         className="ml-1"
@@ -131,8 +129,10 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                                             value: data.repositories.totalCount || 0,
                                         },
                                         {
-                                            label: 'Bytes stored',
-                                            value: Number(data.repositoryStats.gitDirBytes),
+                                            label: `${getByteUnitLabel(
+                                                Number(data.repositoryStats.gitDirBytes)
+                                            )} stored`,
+                                            value: getByteUnitValue(Number(data.repositoryStats.gitDirBytes)),
                                         },
                                         {
                                             label: 'Lines of code',

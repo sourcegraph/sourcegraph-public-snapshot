@@ -3,7 +3,7 @@ import { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } fr
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'

@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { ApolloError, gql, useQuery } from '@apollo/client'
+import { ApolloError, gql, useApolloClient } from '@apollo/client'
 import { Duration } from 'date-fns'
+import { noop } from 'lodash'
 
 import { HTTPStatusError } from '@sourcegraph/http-client'
+import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
 import { Series } from '@sourcegraph/wildcard'
 
 import {
@@ -37,13 +39,20 @@ export interface SeriesWithStroke extends SearchSeriesPreviewInput {
 interface Props {
     skip: boolean
     step: Duration
-    repositories: string[]
+    repoScope: RepositoryScopeInput
     series: SeriesWithStroke[]
 }
 
 interface Result<R> {
     state: State<R>
-    refetch: () => {}
+    refetch: () => unknown
+}
+
+interface QueryResult {
+    loading: boolean
+    data?: GetInsightPreviewResult
+    error?: ApolloError
+    refetch: () => unknown
 }
 
 /**
@@ -54,13 +63,39 @@ interface Result<R> {
  * instead, it's calculated on the fly in query time on the backend.
  */
 export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[]> {
-    const { skip, repositories, step, series } = props
+    const { skip, repoScope, step, series } = props
     const [unit, value] = getStepInterval(step)
 
-    const { data, loading, error, refetch } = useQuery<GetInsightPreviewResult, GetInsightPreviewVariables>(
-        GET_INSIGHT_PREVIEW_GQL,
-        {
-            skip,
+    const client = useApolloClient()
+    const [{ data, loading, error, refetch }, setResult] = useState<QueryResult>({
+        data: undefined,
+        loading: true,
+        error: undefined,
+        refetch: noop,
+    })
+
+    useEffect(() => {
+        // Reset internal query result state if we run query again
+        setResult({
+            loading: !skip,
+            data: undefined,
+            error: undefined,
+            refetch: noop,
+        })
+
+        if (skip) {
+            return
+        }
+
+        // We have to work with apollo client directly since use query hook doesn't
+        // cancel request automatically, there is a long conversation about it here
+        // https://github.com/apollographql/apollo-client/issues/8858
+        //
+        // In the future we could write our own link to work with useQuery but cancel
+        // all request from previously calls, for now since watchQuery supports unsubscribe
+        // we use it instead of generic solution.
+        const query = client.watchQuery<GetInsightPreviewResult, GetInsightPreviewVariables>({
+            query: GET_INSIGHT_PREVIEW_GQL,
             variables: {
                 input: {
                     series: series.map(srs => ({
@@ -69,24 +104,32 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
                         generatedFromCaptureGroups: srs.generatedFromCaptureGroups,
                         groupBy: srs.groupBy,
                     })),
-                    repositoryScope: { repositories },
+                    repositoryScope: repoScope,
                     timeScope: { stepInterval: { unit, value: +value } },
                 },
             },
-        }
-    )
+        })
+
+        const refetch = (): Promise<unknown> => query.refetch()
+        const subscription = query.subscribe(
+            event => setResult({ ...event, refetch }),
+            error => setResult({ loading: false, data: undefined, error, refetch })
+        )
+
+        return () => subscription.unsubscribe()
+    }, [client, repoScope, series, skip, unit, value])
 
     const parsedSeries = useMemo(() => {
         if (data) {
             return createPreviewSeriesContent({
                 response: data,
                 originalSeries: series,
-                repositories,
+                repositories: repoScope.repositories,
             })
         }
 
         return null
-    }, [data, repositories, series])
+    }, [data, repoScope, series])
 
     if (loading) {
         return { state: { status: LivePreviewStatus.Loading }, refetch }

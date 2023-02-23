@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -39,6 +40,18 @@ type ConfStore interface {
 	// responsible for ensuring this or that the response never makes it to a user.
 	SiteGetLatest(ctx context.Context) (*SiteConfig, error)
 
+	// ListSiteConfigs will list the configs of type "site".
+	//
+	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
+	// responsible for ensuring this or that the response never makes it to a user.
+	ListSiteConfigs(context.Context, *PaginationArgs) ([]*SiteConfig, error)
+
+	// GetSiteConfig will return the total count of all configs of type "site".
+	//
+	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
+	// responsible for ensuring this or that the response never makes it to a user.
+	GetSiteConfigCount(context.Context) (int, error)
+
 	Transact(ctx context.Context) (ConfStore, error)
 	Done(error) error
 	basestore.ShareableStore
@@ -50,13 +63,15 @@ var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 
 type confStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 // SiteConfig contains the contents of a site config along with associated metadata.
 type SiteConfig struct {
-	ID           int32  // the unique ID of this config
-	AuthorUserID int32  // the user id of the author that updated this config
-	Contents     string // the raw JSON content (with comments and trailing commas allowed)
+	ID               int32  // the unique ID of this config
+	AuthorUserID     int32  // the user id of the author that updated this config
+	Contents         string // the raw JSON content (with comments and trailing commas allowed)
+	RedactedContents string // the raw JSON content but with sensitive fields redacted
 
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
@@ -66,6 +81,7 @@ var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
 	sqlf.Sprintf("critical_and_site_config.author_user_id"),
 	sqlf.Sprintf("critical_and_site_config.contents"),
+	sqlf.Sprintf("critical_and_site_config.redacted_contents"),
 	sqlf.Sprintf("critical_and_site_config.created_at"),
 	sqlf.Sprintf("critical_and_site_config.updated_at"),
 }
@@ -79,7 +95,10 @@ func (s *confStore) transact(ctx context.Context) (*confStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &confStore{Store: txBase}, nil
+	return &confStore{
+		Store:  txBase,
+		logger: s.logger,
+	}, nil
 }
 
 func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
@@ -117,6 +136,50 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	return tx.getLatest(ctx)
 }
 
+const listSiteConfigsFmtStr = `
+SELECT
+	id,
+	author_user_id,
+	contents,
+    redacted_contents,
+	created_at,
+	updated_at
+FROM critical_and_site_config
+WHERE (%s)
+`
+
+func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
+	where := []*sqlf.Query{sqlf.Sprintf(`type = 'site'`)}
+
+	// This will fetch all site configs.
+	if paginationArgs == nil {
+		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+		rows, err := s.Query(ctx, query)
+		return scanSiteConfigs(rows, err)
+	}
+
+	args := paginationArgs.SQL()
+
+	if args.Where != nil {
+		where = append(where, args.Where)
+	}
+
+	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+	query = args.AppendOrderToQuery(query)
+	query = args.AppendLimitToQuery(query)
+
+	rows, err := s.Query(ctx, query)
+	return scanSiteConfigs(rows, err)
+}
+
+func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
+	q := sqlf.Sprintf(`SELECT count(*) from critical_and_site_config WHERE type = 'site'`)
+
+	var count int
+	err := s.QueryRow(ctx, q).Scan(&count)
+	return count, err
+}
+
 func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents string) (newLastID *int32, _ error) {
 	latest, err := s.getLatest(ctx)
 	if err != nil {
@@ -135,8 +198,8 @@ func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents
 }
 
 const createSiteConfigFmtStr = `
-INSERT INTO critical_and_site_config (type, author_user_id, contents)
-VALUES ('site', %s, %s)
+INSERT INTO critical_and_site_config (type, author_user_id, contents, redacted_contents)
+VALUES ('site', %s, %s, %s)
 RETURNING %s -- siteConfigColumns
 `
 
@@ -165,10 +228,24 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
+	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents})
+	var redactedContents string
+	if err != nil {
+		// Do not fail here. Instead continue writing to DB with an empty value for
+		// "redacted_contents".
+		s.logger.Warn(
+			"failed to redact secrets during site config creation (secrets are safely stored but diff generation in site config history will not work)",
+			log.Error(err),
+		)
+	} else {
+		redactedContents = redactedConf.Site
+	}
+
 	q := sqlf.Sprintf(
 		createSiteConfigFmtStr,
 		dbutil.NullInt32Column(authorUserID),
 		contents,
+		redactedContents,
 		sqlf.Join(siteConfigColumns, ","),
 	)
 
@@ -206,8 +283,11 @@ func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
 		&s.ID,
 		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
+		&dbutil.NullString{S: &s.RedactedContents},
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
 	return &s, err
 }
+
+var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfigRow)

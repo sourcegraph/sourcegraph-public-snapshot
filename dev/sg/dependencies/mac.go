@@ -103,12 +103,6 @@ var Mac = []category{
 					).Wait()
 				},
 			},
-			{
-				Name:        "gpg",
-				Description: "Required for yarn installation.",
-				Check:       checkAction(check.InPath("gpg")),
-				Fix:         cmdFix("brew install gpg"),
-			},
 		},
 	},
 	{
@@ -139,7 +133,7 @@ var Mac = []category{
 		// src-cli is installed differently on Ubuntu and Mac
 		&dependency{
 			Name:  "src",
-			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.2.0"))),
 			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
 		},
 	),

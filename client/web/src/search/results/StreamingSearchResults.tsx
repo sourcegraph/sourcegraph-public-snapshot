@@ -1,12 +1,11 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
-import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -19,7 +18,6 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -28,7 +26,6 @@ import { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
-import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
@@ -53,13 +50,10 @@ export interface StreamingSearchResultsProps
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
-        ThemeProps,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -67,17 +61,17 @@ export interface StreamingSearchResultsProps
 export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => {
     const {
         streamSearch,
-        location,
         authenticatedUser,
         telemetryService,
-        codeInsightsEnabled,
         isSourcegraphDotCom,
         extensionsController,
         searchAggregationEnabled,
         codeMonitoringEnabled,
     } = props
 
-    const history = useHistory()
+    const location = useLocation()
+    const navigate = useNavigate()
+
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
@@ -267,35 +261,64 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     }, [location.search])
 
     const handleSidebarSearchSubmit = useCallback(
-        (updates: QueryUpdate[]) =>
+        /**
+         * The `updatedSearchQuery` is required in case we synchronously update the search
+         * query in the event handlers and want to submit a new search. Without this argument,
+         * the `handleSidebarSearchSubmit` function uses the outdated location reference
+         * because the component was not re-rendered yet.
+         *
+         * Example use-case: search-aggregation result bar click where we first update the URL
+         * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+         */
+        (updates: QueryUpdate[], updatedSearchQuery?: string) =>
             submitQuerySearch(
                 {
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    history,
+                    historyOrNavigate: navigate,
+                    location: {
+                        ...location,
+                        search: updatedSearchQuery || location.search,
+                    },
                     source: 'filter',
                 },
                 updates
             ),
-        [submitQuerySearch, props.selectedSearchContextSpec, history]
+        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
     )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+
+            const { selectedSearchContextSpec } = props
             submitSearch({
-                ...props,
+                historyOrNavigate: navigate,
+                location,
+                selectedSearchContextSpec,
                 caseSensitive,
                 patternType,
                 query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
                 source: 'excludedResults',
             })
         },
-        [submittedURLQuery, telemetryService, patternType, caseSensitive, props]
+        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
 
-    const handleSearchAggregationBarClick = (query: string): void => {
+    /**
+     * The `updatedSearchQuery` is required in case we synchronously update the search
+     * query in the event handlers and want to submit a new search. Without this argument,
+     * the `handleSidebarSearchSubmit` function uses the outdated location reference
+     * because the component was not re-rendered yet.
+     *
+     * Example use-case: search-aggregation result bar click where we first update the URL
+     * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+     */
+    const handleSearchAggregationBarClick = (query: string, updatedSearchQuery: string): void => {
+        const { selectedSearchContextSpec } = props
         submitSearch({
-            ...props,
+            historyOrNavigate: navigate,
+            location: { ...location, search: updatedSearchQuery },
+            selectedSearchContextSpec,
             caseSensitive,
             patternType,
             query,
@@ -309,17 +332,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // when search doesn't have any matches
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    const onDisableSmartSearch = useCallback(
-        () =>
-            submitSearch({
-                ...props,
-                caseSensitive,
-                patternType: SearchPatternType.standard,
-                query: submittedURLQuery,
-                source: 'smartSearchDisabled',
-            }),
-        [caseSensitive, props, submittedURLQuery]
-    )
+    const onDisableSmartSearch = useCallback(() => {
+        const { selectedSearchContextSpec } = props
+        submitSearch({
+            historyOrNavigate: navigate,
+            location,
+            selectedSearchContextSpec,
+            caseSensitive,
+            patternType: SearchPatternType.standard,
+            query: submittedURLQuery,
+            source: 'smartSearchDisabled',
+        })
+    }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>
@@ -377,7 +401,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
-                        enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                         enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
                         className={styles.infobar}
@@ -418,6 +441,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         {showSavedSearchModal && (
                             <SavedSearchModal
                                 {...props}
+                                navigate={navigate}
                                 patternType={patternType}
                                 query={submittedURLQuery}
                                 authenticatedUser={authenticatedUser}
@@ -443,6 +467,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setQueryState}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     </div>
                 </>

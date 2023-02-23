@@ -3,14 +3,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
-import { createAggregateError, repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-    isErrorGraphQLResult,
-    useQuery,
-} from '@sourcegraph/http-client'
+import { resetAllMemoizationCaches } from '@sourcegraph/common'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -37,9 +31,6 @@ import {
     RandomizeUserPasswordResult,
     ReloadSiteResult,
     ReloadSiteVariables,
-    RepositoriesResult,
-    RepositoriesVariables,
-    RepositoryOrderBy,
     Scalars,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
@@ -49,7 +40,6 @@ import {
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
     SiteAdminSettingsCascadeFields,
-    SiteMonitoringStatisticsResult,
     SiteResult,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
@@ -143,6 +133,7 @@ const siteAdminRepositoryFieldsFragment = gql`
     ${externalRepositoryFieldsFragment}
 
     fragment SiteAdminRepositoryFields on Repository {
+        __typename
         id
         name
         createdAt
@@ -157,82 +148,54 @@ const siteAdminRepositoryFieldsFragment = gql`
         }
     }
 `
-
-/**
- * Fetches all repositories.
- *
- * @returns Observable that emits the list of repositories
- */
-function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<RepositoriesResult['repositories']> {
-    return requestGraphQL<RepositoriesResult, RepositoriesVariables>(
-        gql`
-            query Repositories(
-                $first: Int
-                $query: String
-                $indexed: Boolean
-                $notIndexed: Boolean
-                $failedFetch: Boolean
-                $cloneStatus: CloneStatus
-                $orderBy: RepositoryOrderBy
-                $descending: Boolean
-                $externalService: ID
-            ) {
-                repositories(
-                    first: $first
-                    query: $query
-                    indexed: $indexed
-                    notIndexed: $notIndexed
-                    failedFetch: $failedFetch
-                    cloneStatus: $cloneStatus
-                    orderBy: $orderBy
-                    descending: $descending
-                    externalService: $externalService
-                ) {
-                    nodes {
-                        ...SiteAdminRepositoryFields
-                    }
-                    totalCount(precise: true)
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
+export const REPOSITORIES_QUERY = gql`
+    query Repositories(
+        $first: Int
+        $last: Int
+        $after: String
+        $before: String
+        $query: String
+        $indexed: Boolean
+        $notIndexed: Boolean
+        $failedFetch: Boolean
+        $corrupted: Boolean
+        $cloneStatus: CloneStatus
+        $orderBy: RepositoryOrderBy
+        $descending: Boolean
+        $externalService: ID
+    ) {
+        repositories(
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+            query: $query
+            indexed: $indexed
+            notIndexed: $notIndexed
+            failedFetch: $failedFetch
+            corrupted: $corrupted
+            cloneStatus: $cloneStatus
+            orderBy: $orderBy
+            descending: $descending
+            externalService: $externalService
+        ) {
+            nodes {
+                ...SiteAdminRepositoryFields
             }
-
-            ${siteAdminRepositoryFieldsFragment}
-        `,
-        {
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            failedFetch: args.failedFetch ?? false,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            cloneStatus: args.cloneStatus ?? null,
-            orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
-            descending: args.descending ?? false,
-            externalService: args.externalService ?? null,
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
         }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repositories)
-    )
-}
+    }
+
+    ${siteAdminRepositoryFieldsFragment}
+`
 
 export const REPO_PAGE_POLL_INTERVAL = 5000
-
-export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
-    args: Partial<RepositoriesVariables>
-): Observable<RepositoriesResult['repositories']> {
-    return fetchAllRepositories(args).pipe(
-        // Poll every 5000ms if repositories are being cloned or the list is empty.
-        repeatUntil(
-            result =>
-                result.nodes &&
-                result.nodes.length > 0 &&
-                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: REPO_PAGE_POLL_INTERVAL }
-        )
-    )
-}
 
 export const SLOW_REQUESTS = gql`
     query SlowRequests($after: String) {
@@ -289,8 +252,44 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
+export const BACKGROUND_JOBS = gql`
+    query BackgroundJobs($recentRunCount: Int) {
+        backgroundJobs(recentRunCount: $recentRunCount) {
+            nodes {
+                name
 
-export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+                routines {
+                    name
+                    type
+                    description
+                    intervalMs
+                    instances {
+                        hostName
+                        lastStartedAt
+                        lastStoppedAt
+                    }
+                    recentRuns {
+                        at
+                        hostName
+                        durationMs
+                        errorMessage
+                    }
+                    stats {
+                        since
+                        runCount
+                        errorCount
+                        minDurationMs
+                        avgDurationMs
+                        maxDurationMs
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
+export const BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -565,8 +564,8 @@ export function randomizeUserPassword(
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
     return mutateGraphQL<CreateUserResult>(
         gql`
-            mutation CreateUser($username: String!, $email: String) {
-                createUser(username: $username, email: $email) {
+            mutation SiteAdminCreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email, verifiedEmail: false) {
                     resetPasswordURL
                 }
             }
@@ -619,52 +618,6 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
     return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
-    )
-}
-
-/**
- * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
- *
- * @param days number of days of data to fetch
- */
-export function fetchMonitoringStats(
-    days: number
-): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
-    // more details in /internal/srcprometheus.ErrPrometheusUnavailable
-    const errorPrometheusUnavailable = 'prometheus API is unavailable'
-    return queryGraphQL<SiteMonitoringStatisticsResult>(
-        gql`
-            query SiteMonitoringStatistics($days: Int!) {
-                site {
-                    monitoringStatistics(days: $days) {
-                        alerts {
-                            serviceName
-                            name
-                            timestamp
-                            average
-                            owner
-                        }
-                    }
-                }
-            }
-        `,
-        { days }
-    ).pipe(
-        map(result => {
-            if (isErrorGraphQLResult(result)) {
-                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
-                    return false
-                }
-                throw createAggregateError(result.errors)
-            }
-            return result.data
-        }),
-        map(data => {
-            if (data) {
-                return data.site.monitoringStatistics
-            }
-            return data
-        })
     )
 }
 
@@ -755,6 +708,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            corrupted
             indexed
         }
     }
@@ -882,7 +836,7 @@ export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number;
     return { loading, totalErrors, totalNoEvents }
 }
 
-export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhooksListResult, WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -901,7 +855,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseShowMorePaginationResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
@@ -934,4 +888,53 @@ export const UPDATE_WEBHOOK_QUERY = gql`
             id
         }
     }
+`
+
+export const EXTERNAL_SERVICE_KINDS = gql`
+    query ExternalServiceKinds {
+        externalServices {
+            nodes {
+                kind
+            }
+        }
+    }
+`
+
+const siteAdminPackageFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
+    fragment SiteAdminPackageFields on PackageRepoReference {
+        id
+        name
+        scheme
+        repository {
+            id
+            name
+            url
+            mirrorInfo {
+                ...MirrorRepositoryInfoFields
+            }
+            externalRepository {
+                ...ExternalRepositoryFields
+            }
+        }
+    }
+`
+
+export const PACKAGES_QUERY = gql`
+    query Packages($scheme: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+            nodes {
+                ...SiteAdminPackageFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+
+    ${siteAdminPackageFieldsFragment}
 `

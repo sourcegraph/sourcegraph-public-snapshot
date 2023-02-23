@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,7 +14,7 @@ import { AccessTokenNode, AccessTokenNodeProps } from '../settings/tokens/Access
 
 import { queryAccessTokens } from './backend'
 
-interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'>, TelemetryProps {
+interface Props extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -23,8 +22,6 @@ interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'>, T
  * Displays a list of all access tokens on the site.
  */
 export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     authenticatedUser,
     telemetryService,
 }) => {
@@ -84,8 +81,6 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     }}
                     updates={accessTokenUpdates}
                     hideSearch={true}
-                    history={history}
-                    location={location}
                 />
             </Container>
         </div>

@@ -251,13 +251,13 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 		db := dbtest.NewRawDB(logger, t)
 		migrationsTableName := "testing"
 
-		store := connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTableName))
-		if err := store.EnsureSchemaTable(ctx); err != nil {
+		storeShim := connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTableName))
+		if err := storeShim.EnsureSchemaTable(ctx); err != nil {
 			t.Fatalf("failed to prepare store: %s", err)
 		}
 
 		migrationRunner := runner.NewRunnerWithSchemas(logger, map[string]runner.StoreFactory{
-			schemaName: func(ctx context.Context) (runner.Store, error) { return store, nil },
+			schemaName: func(ctx context.Context) (runner.Store, error) { return storeShim, nil },
 		}, []*schemas.Schema{
 			{
 				Name:                schemaName,
@@ -291,11 +291,11 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 			fmt.Sprintf("internal/database/schema%s.json", fileSuffix),
 		)
 
-		schemas, err := store.Describe(ctx)
+		schemaDescriptions, err := storeShim.Describe(ctx)
 		if err != nil {
 			t.Fatalf("failed to describe database: %s", err)
 		}
-		schema := canonicalize(schemas["public"])
+		schema := canonicalize(schemaDescriptions["public"])
 
 		if diff := cmp.Diff(expectedSchema, schema); diff != "" {
 			t.Fatalf("unexpected schema (-want +got):\n%s", diff)

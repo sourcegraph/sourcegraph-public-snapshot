@@ -1,14 +1,11 @@
 import React, { useEffect } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -26,10 +23,8 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }>, ThemeProps {
+interface ManageCodeMonitorPageProps {
     authenticatedUser: AuthenticatedUser
-    location: H.Location
-    history: H.History
 
     fetchCodeMonitor?: typeof _fetchCodeMonitor
     updateCodeMonitor?: typeof _updateCodeMonitor
@@ -42,18 +37,16 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<ManageCodeMonitorPageProps>
 > = ({
     authenticatedUser,
-    history,
-    location,
-    match,
     fetchCodeMonitor = _fetchCodeMonitor,
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
-    isLightTheme,
     isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
     useEffect(() => eventLogger.logPageView('ManageCodeMonitorPage'), [])
+
+    const { id } = useParams()
 
     const [codeMonitorState, setCodeMonitorState] = React.useState<CodeMonitorFields>({
         id: '',
@@ -66,7 +59,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     const codeMonitorOrError = useObservable(
         React.useMemo(
             () =>
-                fetchCodeMonitor(match.params.id).pipe(
+                fetchCodeMonitor(id!).pipe(
                     tap(monitor => {
                         if (monitor.node !== null && monitor.node.__typename === 'Monitor') {
                             setCodeMonitorState(monitor.node)
@@ -75,7 +68,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.id, fetchCodeMonitor]
+            [id, fetchCodeMonitor]
         )
     )
 
@@ -84,7 +77,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
             eventLogger.log('ManageCodeMonitorFormSubmitted')
             return updateCodeMonitor(
                 {
-                    id: match.params.id,
+                    id: id!,
                     update: {
                         namespace: authenticatedUser.id,
                         description: codeMonitor.description,
@@ -95,7 +88,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
             )
         },
-        [authenticatedUser.id, match.params.id, updateCodeMonitor]
+        [authenticatedUser.id, id, updateCodeMonitor]
     )
 
     const deleteMonitorRequest = React.useCallback(
@@ -133,15 +126,12 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
             {codeMonitorOrError && !isErrorLike(codeMonitorOrError) && codeMonitorOrError !== 'loading' && (
                 <>
                     <CodeMonitorForm
-                        history={history}
-                        location={location}
                         authenticatedUser={authenticatedUser}
                         deleteCodeMonitor={deleteMonitorRequest}
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
                         showDeleteButton={true}
-                        isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                     />
                 </>

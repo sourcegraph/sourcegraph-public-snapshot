@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/hexops/valast"
 	"github.com/keegancsmith/sqlf"
 
@@ -287,9 +287,10 @@ func TestGetAll(t *testing.T) {
 	groupByRepo := "repo"
 	ctx := context.Background()
 
+	store := NewInsightStore(insightsDB)
+
 	// First test the method on an empty database.
 	t.Run("test empty database", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -348,8 +349,7 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("test all results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("all results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -476,7 +476,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test first result", func(t *testing.T) {
+	t.Run("first result", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1})
 		if err != nil {
@@ -535,8 +535,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test second result", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("second result", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1, After: "b"})
 		if err != nil {
 			t.Fatal(err)
@@ -594,8 +593,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test last 2 results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("last 2 results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{After: "b"})
 		if err != nil {
 			t.Fatal(err)
@@ -674,6 +672,206 @@ func TestGetAll(t *testing.T) {
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("find by title results", func(*testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "view 3"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("find by series label results", func(*testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "label5-1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("exclude insight ids from results", func(t *testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{ExcludeIDs: []string{"b", "e"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("returns expected number of samples", func(t *testing.T) {
+		// Set the series_num_samples value
+		numSamples := int32(50)
+		view, err := store.UpdateView(ctx, types.InsightView{
+			UniqueID:         "d",
+			PresentationType: types.Line, // setting for null constraint
+			SeriesNumSamples: &numSamples,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(&numSamples, view.SeriesNumSamples); diff != "" {
+			t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+		}
+
+		series, err := store.GetAll(ctx, InsightQueryArgs{UniqueIDs: []string{"d"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// we're only testing the number of samples in this test cases
+		for _, s := range series {
+			if diff := cmp.Diff(&numSamples, s.SeriesNumSamples); diff != "" {
+				t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+			}
 		}
 	})
 }
@@ -1018,7 +1216,6 @@ func TestCreateSeries(t *testing.T) {
 		}
 	})
 	t.Run("test create and get capture groups series", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		sampleIntervalUnit := "MONTH"
 		repoCriteria := "repo:a"
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
@@ -1052,7 +1249,7 @@ func TestCreateSeries(t *testing.T) {
 		}
 		got[0].ID = 1 // normalizing this for test determinism
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -1153,7 +1350,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) == 0 {
 			t.Errorf("unexpected count for user 1 insight views")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 
 	t.Run("user 2 cannot see the view", func(t *testing.T) {
@@ -1183,7 +1380,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) == 0 {
 			t.Errorf("unexpected count for org 5 insight views")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("no users or orgs provided should only return global", func(t *testing.T) {
 		uniqueID := "globalonly"
@@ -1227,7 +1424,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) != 1 {
 			t.Errorf("unexpected count for global only insights")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -1253,7 +1450,7 @@ func TestUpdateView(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterCreateView", types.InsightView{
+		autogold.Expect(types.InsightView{
 			ID: 1, Title: "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
@@ -1274,14 +1471,14 @@ func TestUpdateView(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterUpdateView", types.InsightView{
+		autogold.Expect(types.InsightView{
 			ID: 1, Title: "new title", UniqueID: "1234567",
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: valast.Addr("include repos").(*string),
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
 				SearchContexts:   []string{"@dev/mycontext"},
 			},
-			PresentationType: types.PresentationType("LINE"),
+			PresentationType: "LINE",
 		}).Equal(t, got)
 	})
 }
@@ -1343,8 +1540,8 @@ func TestUpdateViewSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("LabelAfterUpdateViewSeries", "new label").Equal(t, got[0].Label)
-		autogold.Want("ColorAfterUpdateViewSeries", "orange").Equal(t, got[0].LineColor)
+		autogold.Expect("new label").Equal(t, got[0].Label)
+		autogold.Expect("orange").Equal(t, got[0].LineColor)
 	})
 }
 
@@ -1979,16 +2176,16 @@ func TestFindMatchingSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrue", true).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(true).Equal(t, gotFound)
 	})
 	t.Run("find no matching series when none exist", func(t *testing.T) {
 		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 2", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundFalse", false).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(false).Equal(t, gotFound)
 	})
 	t.Run("match capture group series", func(t *testing.T) {
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
@@ -2013,8 +2210,8 @@ func TestFindMatchingSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrueCaptureGroups", true).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(true).Equal(t, gotFound)
 	})
 }
 
@@ -2052,7 +2249,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeUpdateSeries", []types.InsightSeries{{
+		autogold.Expect([]types.InsightSeries{{
 			ID:                   1,
 			SeriesID:             "series id 1",
 			Query:                "query 1",
@@ -2082,7 +2279,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterUpdateSeries", []types.InsightSeries{{
+		autogold.Expect([]types.InsightSeries{{
 			ID:                   1,
 			SeriesID:             "series id 1",
 			Query:                "updated query!",
@@ -2141,21 +2338,21 @@ func TestGetReferenceCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 1)
+		autogold.Expect(referenceCount).Equal(t, 1)
 	})
 	t.Run("finds 3 references", func(t *testing.T) {
 		referenceCount, err := store.GetReferenceCount(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 3)
+		autogold.Expect(referenceCount).Equal(t, 3)
 	})
 	t.Run("finds no references", func(t *testing.T) {
 		referenceCount, err := store.GetReferenceCount(ctx, 3)
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 0)
+		autogold.Expect(referenceCount).Equal(t, 0)
 	})
 }
 
@@ -2197,7 +2394,7 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("get_soft_deleted_series", []string{"soft_deleted"}).Equal(t, got)
+	autogold.Expect([]string{"soft_deleted"}).Equal(t, got)
 }
 
 func TestGetUnfrozenInsightCount(t *testing.T) {
@@ -2211,8 +2408,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("returns count for unfrozen insights not attached to dashboards", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2225,8 +2422,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 1)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 1)
 	})
 	t.Run("returns correct counts for unfrozen insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2268,8 +2465,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
-		autogold.Want("TotalCount", totalCount).Equal(t, 4)
+		autogold.Expect(globalCount).Equal(t, 2)
+		autogold.Expect(totalCount).Equal(t, 4)
 	})
 }
 
@@ -2288,8 +2485,8 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("does not unfreeze anything if there are no global insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2331,8 +2528,8 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("unfreezes 2 global insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2358,8 +2555,8 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
-		autogold.Want("TotalCount", totalCount).Equal(t, 2)
+		autogold.Expect(globalCount).Equal(t, 2)
+		autogold.Expect(totalCount).Equal(t, 2)
 	})
 }
 
@@ -2417,13 +2614,13 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 		seriesID string
 		want     autogold.Value
 	}{
-		{"series-id-1", autogold.Want("update 0", int32(1))},
-		{"series-id-2", autogold.Want("increment 1", int32(2))},
-		{"series-id-3", autogold.Want("increment 2", int32(3))},
+		{"series-id-1", autogold.Expect(int32(1))},
+		{"series-id-2", autogold.Expect(int32(2))},
+		{"series-id-3", autogold.Expect(int32(3))},
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.seriesID, func(t *testing.T) {
 			series, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: tc.seriesID})
 			if err != nil {
 				t.Fatal(err)

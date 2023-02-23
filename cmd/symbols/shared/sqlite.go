@@ -15,7 +15,7 @@ import (
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -23,7 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-var config = types.LoadSqliteConfig(baseConfig, CtagsConfig, RepositoryFetcherConfig)
+func LoadConfig() {
+	RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
+	CtagsConfig = types.LoadCtagsConfig(baseConfig)
+	config = types.LoadSqliteConfig(baseConfig, CtagsConfig, RepositoryFetcherConfig)
+}
+
+var config types.SqliteConfig
 
 func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	logger := observationCtx.Logger.Scoped("sqlite.setup", "SQLite setup")
@@ -37,9 +43,9 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	sqlite.Init()
 
 	parserFactory := func() (ctags.Parser, error) {
-		return parser.SpawnCtags(logger, config.Ctags)
+		return symbolparser.SpawnCtags(logger, config.Ctags)
 	}
-	parserPool, err := parser.NewParserPool(parserFactory, config.NumCtagsProcesses)
+	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses)
 	if err != nil {
 		logger.Fatal("failed to create parser pool", log.Error(err))
 	}
@@ -49,7 +55,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 		diskcache.WithobservationCtx(observationCtx),
 	)
 
-	parser := parser.NewParser(observationCtx, parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses)
+	parser := symbolparser.NewParser(observationCtx, parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses)
 	databaseWriter := writer.NewDatabaseWriter(observationCtx, config.CacheDir, gitserverClient, parser, semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing)))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	searchFunc := api.MakeSqliteSearchFunc(observationCtx, cachedDatabaseWriter, db)

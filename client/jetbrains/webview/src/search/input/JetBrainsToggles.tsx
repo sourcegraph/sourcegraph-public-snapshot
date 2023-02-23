@@ -6,8 +6,8 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
+import { QueryInputToggle } from '@sourcegraph/branded/src/search-ui/input/toggles/QueryInputToggle'
 import { isErrorLike } from '@sourcegraph/common'
-import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
 import {
     CaseSensitivityProps,
     SearchContextProps,

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -50,6 +51,7 @@ type Server struct {
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
+	DatabaseBackedPermissionSyncerEnabled func(ctx context.Context) bool
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -64,6 +66,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
 	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
+	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("external-service-namespaces", s.handleExternalServiceNamespaces))
 	return mux
 }
 
@@ -163,15 +166,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
-	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
-	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
-	var genericSourcer repos.Sourcer
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
-
 	externalServiceID := req.ExternalServiceID
 
 	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
@@ -184,6 +178,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
@@ -377,7 +372,14 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 	s.respond(w, http.StatusOK, nil)
 }
 
+// TODO(naman): remove this while removing old perms syncer
 func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
+	if s.DatabaseBackedPermissionSyncerEnabled != nil && s.DatabaseBackedPermissionSyncerEnabled(r.Context()) {
+		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
+		s.respond(w, http.StatusOK, nil)
+		return
+	}
+
 	if s.PermsSyncer == nil {
 		s.respond(w, http.StatusForbidden, nil)
 		return
@@ -397,4 +399,85 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	s.respond(w, http.StatusOK, nil)
+}
+
+func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	var req protocol.ExternalServiceNamespacesArgs
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	externalSvc := &types.ExternalService{
+		Kind:   req.Kind,
+		Config: extsvc.NewUnencryptedConfig(req.Config),
+	}
+
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
+
+	genericSourcer := s.NewGenericSourcer(logger)
+	genericSrc, err := genericSourcer(ctx, externalSvc)
+	if err != nil {
+		logger.Error("server.query-external-service-namespaces", log.Error(err))
+		return
+	}
+
+	var result *protocol.ExternalServiceNamespacesResult
+	if err = genericSrc.CheckConnection(ctx); err != nil {
+		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
+		s.respond(w, http.StatusUnauthorized, result)
+		return
+	}
+
+	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
+
+	if !ok {
+		result = &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource}
+		s.respond(w, http.StatusNotImplemented, result)
+		return
+	}
+
+	results := make(chan repos.SourceNamespaceResult)
+
+	go func() {
+		discoverableSrc.ListNamespaces(ctx, results)
+		close(results)
+	}()
+
+	var sourceErrs error
+	namespaces := make([]*types.ExternalServiceNamespace, 0)
+
+	for res := range results {
+		if res.Err != nil {
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
+			continue
+		}
+		namespaces = append(namespaces, res.Namespace)
+	}
+
+	if sourceErrs != nil {
+		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
+	} else {
+		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}
+	}
+	s.respond(w, http.StatusOK, result)
+}
+
+var mockNewGenericSourcer func() repos.Sourcer
+
+func (s *Server) NewGenericSourcer(logger log.Logger) repos.Sourcer {
+	if mockNewGenericSourcer != nil {
+		return mockNewGenericSourcer()
+	}
+
+	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
+	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
+	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+	return repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 }

@@ -23,11 +23,15 @@ import { useExperimentalFeatures } from '../../stores'
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
+    startLine = null,
+    endLine = null,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
+    startLine,
+    endLine,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
@@ -42,17 +46,19 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
+    startLine?: number | null
+    endLine?: number | null
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
+        applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
     // to be processed with tree sitter (and is used when explicitly
     // requested via JSON_SCIP).
     const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
-
     return requestGraphQL<BlobResult, BlobVariables>(
         gql`
             query Blob(
@@ -62,6 +68,8 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
+                $startLine: Int
+                $endLine: Int
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
@@ -74,13 +82,14 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
 
             fragment BlobFileFields on File2 {
                 __typename
-                content
-                richHTML
-                highlight(disableTimeout: $disableTimeout, format: $format) {
+                content(startLine: $startLine, endLine: $endLine)
+                richHTML(startLine: $startLine, endLine: $endLine)
+                highlight(disableTimeout: $disableTimeout, format: $format, startLine: $startLine, endLine: $endLine) {
                     aborted
                     html @include(if: $html)
                     lsif
                 }
+                totalLines
                 ... on GitBlob {
                     lfs {
                         byteSize
@@ -92,7 +101,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
@@ -111,7 +120,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
  * Note: This format should match the format used when the blob is 'normally' fetched. E.g. in `BlobPage.tsx`.
  */
 export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const enableLazyHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )

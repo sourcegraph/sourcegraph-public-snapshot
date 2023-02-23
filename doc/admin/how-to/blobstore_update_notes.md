@@ -8,7 +8,9 @@ Sourcegraph is committed to only distributing open-source software that is permi
 
 As a result, Sourcegraph v4.2.1+ and v4.3+ no longer use or distribute _any_ minio or AGPL-licensed software.
 
-If your Sourcegraph instance is already configured to use [external object storage](../external_services/object_storage.md), or you use `DISABLE_MINIO=true` in `sourcegraph/server` deployments, then this change should not affect you (there would already be no Minio software running as part of Sourcegraph.)
+If your Sourcegraph instance is already configured to use [external object storage](../external_services/object_storage.md), or you use `DISABLE_MINIO=true` in `sourcegraph/server` deployments, then this change should not affect you (there would already be no Minio software running as part of Sourcegraph). It is also safe to remove any minio specific env variables from your deployment.
+
+**If you are on running a proxy with the `NO_PROXY` env variable, you'll need to make sure that minio is removed from this list, and blobstore is added.**
 
 If you have any questions or concerns, please reach out to us via support@sourcegraph.com and we'd be happy to help.
 

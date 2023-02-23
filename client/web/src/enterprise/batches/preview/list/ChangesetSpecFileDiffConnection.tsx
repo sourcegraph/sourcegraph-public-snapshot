@@ -1,7 +1,5 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
-
 import { FileDiffNode, FileDiffNodeProps } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { Scalars, FileDiffFields } from '../../../../graphql-operations'
@@ -11,13 +9,11 @@ import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './b
 export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
     React.PropsWithChildren<{
         spec: Scalars['ID']
-        history: H.History
-        location: H.Location
 
         /** Used for testing. **/
         queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
     }>
-> = ({ spec, history, location, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
+> = ({ spec, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -36,7 +32,6 @@ export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                location,
                 persistLines: true,
                 lineNumbers: true,
             }}
@@ -44,8 +39,6 @@ export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
             withCenteredSummary={true}
-            history={history}
-            location={location}
             useURLQuery={false}
             cursorPaging={true}
         />

@@ -70,10 +70,17 @@ func FlattenOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 			flattened = append(flattened, occurrence)
 			continue
 		}
-		if top.SyntaxKind != occurrence.SyntaxKind {
-			_ = 0 // TODO - warn?
+		if top.Symbol != occurrence.Symbol {
+			flattened = append(flattened, occurrence)
+			continue
 		}
 
+		if top.SyntaxKind == scip.SyntaxKind_UnspecifiedSyntaxKind {
+			// Take first valid syntax kind
+			top.SyntaxKind = occurrence.SyntaxKind
+		}
+
+		// Combine all other fields
 		top.SymbolRoles |= occurrence.SymbolRoles
 		top.OverrideDocumentation = append(top.OverrideDocumentation, occurrence.OverrideDocumentation...)
 		top.Diagnostics = append(top.Diagnostics, occurrence.Diagnostics...)

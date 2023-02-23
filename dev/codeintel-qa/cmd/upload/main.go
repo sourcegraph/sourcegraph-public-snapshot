@@ -54,13 +54,13 @@ func mainErr(ctx context.Context) error {
 		return err
 	}
 
-	commitsByRepo, err := internal.CommitsByRepo(indexDir)
+	extensionAndCommitsByRepo, err := internal.ExtensionAndCommitsByRepo(indexDir)
 	if err != nil {
 		return err
 	}
 
-	repoNames := make([]string, 0, len(commitsByRepo))
-	for name := range commitsByRepo {
+	repoNames := make([]string, 0, len(extensionAndCommitsByRepo))
+	for name := range extensionAndCommitsByRepo {
 		repoNames = append(repoNames, name)
 	}
 	sort.Strings(repoNames)
@@ -68,7 +68,7 @@ func mainErr(ctx context.Context) error {
 	limiter := internal.NewLimiter(numConcurrentUploads)
 	defer limiter.Close()
 
-	uploads, err := uploadAll(ctx, commitsByRepo, limiter)
+	uploads, err := uploadAll(ctx, extensionAndCommitsByRepo, limiter)
 	if err != nil {
 		return err
 	}

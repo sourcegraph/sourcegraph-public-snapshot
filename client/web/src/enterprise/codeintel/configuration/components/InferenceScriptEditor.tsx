@@ -1,15 +1,13 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { useHistory } from 'react-router'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ThemePreference, useTheme } from '../../../../theme'
 import { INFERENCE_SCRIPT, useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
 
@@ -19,7 +17,7 @@ export interface InferenceScriptEditorProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<InferenceScriptEditorProps>> = ({
+export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps> = ({
     authenticatedUser,
     telemetryService,
 }) => {
@@ -39,8 +37,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    const history = useHistory()
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps>
@@ -107,7 +104,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
-                    history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}

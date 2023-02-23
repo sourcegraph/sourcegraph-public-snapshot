@@ -23,10 +23,11 @@
 
 .menu {
     .text {
-        @media (--lg-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             display: none;
         }
     }
+    width: 100%;
     flex-shrink: 0;
     padding-right: 0;
 }

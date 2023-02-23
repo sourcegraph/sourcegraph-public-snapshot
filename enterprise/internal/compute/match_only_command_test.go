@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/grafana/regexp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -52,8 +52,8 @@ func Test_matchOnly(t *testing.T) {
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := matchOnly(data, r)
-		w := want{Input: input, Result: serialize(result)}
+		matchContext := matchOnly(data, r)
+		w := want{Input: input, Result: serialize(matchContext)}
 		v, _ := json.MarshalIndent(w, "", "  ")
 		return string(v)
 	}
@@ -73,7 +73,7 @@ func Test_matchOnly(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("match_only", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c.input, c.serializer)))
+			autogold.ExpectFile(t, autogold.Raw(test(c.input, c.serializer)))
 		})
 	}
 }

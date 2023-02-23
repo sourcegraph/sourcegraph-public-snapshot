@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "emojis.go",
+        "env.go",
+        "fs.go",
+        "graphql.go",
+        "indexes.go",
+        "limiter.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal",
+    visibility = ["//dev/codeintel-qa:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/gqltestutil",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

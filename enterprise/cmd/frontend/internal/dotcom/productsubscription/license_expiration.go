@@ -46,15 +46,13 @@ type slackClient interface {
 
 // checkLicensesIfNeeded checks whether a day has passed since the last license check, and if so, initiates one.
 func checkLicensesIfNeeded(logger log.Logger, db database.DB, client slackClient) {
-	c := redispool.Store.Get()
-	defer func() { _ = c.Close() }()
-
+	store := redispool.Store
 	today := time.Now().UTC().Format("2006-01-02")
 
-	lastCheckDate, err := redis.String(c.Do("GETSET", lastLicenseExpirationCheckKey, today))
+	lastCheckDate, err := store.GetSet(lastLicenseExpirationCheckKey, today).String()
 	if err == redis.ErrNil {
 		// If the redis key hasn't been set yet, do so and leave lastCheckDate as nil
-		_, setErr := c.Do("SET", lastLicenseExpirationCheckKey, today)
+		setErr := store.Set(lastLicenseExpirationCheckKey, today)
 		if setErr != nil {
 			logger.Error("error SET last license expiration check date", log.Error(err))
 			return

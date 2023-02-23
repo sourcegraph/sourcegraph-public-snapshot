@@ -10,17 +10,19 @@ const defaultSettings: SettingsExperimentalFeatures = {
      * Whether we show the multiline editor at /search/console
      */
     showMultilineSearchConsole: false,
-    showSearchContext: true,
-    showSearchNotebook: true,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
     editor: 'codemirror6',
-    codeInsightsRepoUI: 'single-search-query',
+    codeInsightsRepoUI: 'search-query-or-strict-list',
     applySearchQuerySuggestionOnEnter: false,
+    setupWizard: false,
+    isInitialized: true,
 }
 
-export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))
+export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({
+    isInitialized: false,
+}))
 
 export function setExperimentalFeaturesFromSettings(settingsCascade: SettingsCascadeOrError): void {
     const experimentalFeatures: SettingsExperimentalFeatures =

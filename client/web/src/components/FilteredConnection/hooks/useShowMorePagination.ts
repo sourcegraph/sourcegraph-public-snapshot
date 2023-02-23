@@ -10,7 +10,8 @@ import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
 
-export interface UseShowMorePaginationResult<TData> {
+export interface UseShowMorePaginationResult<TResult, TData> {
+    data?: TResult
     connection?: Connection<TData>
     error?: ApolloError
     fetchMore: () => void
@@ -68,12 +69,12 @@ const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const useShowMorePagination = <TResult, TVariables, TData>({
+export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,
     options,
-}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TData> => {
+}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TResult, TData> => {
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -108,7 +109,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
              */
             after: (options?.useURL && searchParameters.get('after')) || after,
         }),
-        // We only need these controls for the inital request. We do not care about dependency updates.
+        // We only need these controls for the initial request. We do not care about dependency updates.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
@@ -117,7 +118,14 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
+    const {
+        data: currentData,
+        previousData,
+        error,
+        loading,
+        fetchMore,
+        refetch,
+    } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
@@ -136,6 +144,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         return getConnectionFromGraphQLResult(result)
     }
 
+    const data = currentData ?? previousData
     const connection = data ? getConnection({ data, error }) : undefined
 
     useShowMorePaginationUrl({
@@ -195,12 +204,13 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         })
     }, [connection?.nodes.length, refetch, variables])
 
-    // We use `refetchAll` to poll for all of the nodes currently loaded in the
+    // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
     // would only poll for the first page of results.
     const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
 
     return {
+        data,
         connection,
         loading,
         error,

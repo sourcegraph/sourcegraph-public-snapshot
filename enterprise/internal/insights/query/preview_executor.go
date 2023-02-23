@@ -15,7 +15,6 @@ type GeneratedTimeSeries struct {
 
 type timeCounts map[time.Time]int
 type previewExecutor struct {
-	db        database.DB
 	repoStore database.RepoStore
 	filter    compression.DataFrameFilter
 	clock     func() time.Time

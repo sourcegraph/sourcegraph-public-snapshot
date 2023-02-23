@@ -8,12 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -68,7 +68,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantBatchChange := apitest.BatchChange{
@@ -137,88 +137,6 @@ func TestBatchChangeResolver(t *testing.T) {
 		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
-	}
-}
-
-func TestBatchChangeResolver_CurrentSpec(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	userID := bt.CreateTestUser(t, db, false).ID
-
-	now := timeutil.Now()
-	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-
-	s, err := newSchema(db, &Resolver{store: bstore})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
-	if err != nil {
-		t.Fatal(err)
-	}
-	batchSpec.UserID = userID
-	batchSpec.NamespaceUserID = userID
-
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create a draft batch change, which has never had a batch spec applied to it
-	batchChange := &btypes.BatchChange{
-		Name:            "draft-not-applied",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-	}
-
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
-	}
-
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
-
-	input := map[string]any{"batchChange": batchChangeAPIID}
-	{
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, input, &response, queryBatchChangeCurrentSpec)
-
-		assert.Equal(t, batchChangeAPIID, response.Node.ID)
-		assert.Nil(t, response.Node.CurrentSpec)
-	}
-
-	// Now create a batch change with a spec applied
-	batchChange = &btypes.BatchChange{
-		Name:            batchSpec.Spec.Name,
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   now,
-		BatchSpecID:     batchSpec.ID,
-	}
-
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
-	}
-
-	batchChangeAPIID = string(marshalBatchChangeID(batchChange.ID))
-	batchSpecAPIID := string(marshalBatchSpecRandID(batchSpec.RandID))
-
-	input = map[string]any{"batchChange": batchChangeAPIID}
-	{
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, input, &response, queryBatchChangeCurrentSpec)
-
-		assert.Equal(t, batchChangeAPIID, response.Node.ID)
-		assert.NotNil(t, response.Node.CurrentSpec)
-		assert.Equal(t, batchSpecAPIID, response.Node.CurrentSpec.ID)
 	}
 }
 
@@ -302,7 +220,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Schema, batchChangeID int64, wantBatchSpecs ...*btypes.BatchSpec) {
 	t.Helper()
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChangeID))
 
 	input := map[string]any{
 		"batchChange":                 batchChangeAPIID,
@@ -372,19 +290,6 @@ query($namespace: ID!, $name: String!){
       ... on Org  { ...o }
     }
     url
-  }
-}
-`
-
-const queryBatchChangeCurrentSpec = `
-query($batchChange: ID!){
-  node(id: $batchChange) {
-    ... on BatchChange {
-      id
-      currentSpec {
-        id
-      }
-    }
   }
 }
 `

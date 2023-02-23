@@ -6,13 +6,12 @@ import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
-import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
@@ -32,7 +31,6 @@ import styles from './NotebookSymbolBlock.module.scss'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
-        ThemeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     isSourcegraphDotCom: boolean
@@ -57,7 +55,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
             isSelected,
             showMenu,
             isReadOnly,
-            isLightTheme,
             onRunBlock,
             onBlockInputChange,
             ...props
@@ -181,7 +178,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                         <NotebookSymbolBlockInput
                             id={id}
                             queryInput={symbolQueryInput}
-                            isLightTheme={isLightTheme}
                             onEditorCreated={setEditor}
                             setQueryInput={debouncedSetSymbolQueryInput}
                             onSymbolSelected={onSymbolSelected}

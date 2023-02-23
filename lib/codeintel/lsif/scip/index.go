@@ -32,30 +32,28 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*
 		resultChunks[resultChunk.Index] = resultChunk.ResultChunk
 	}
 
-	definitionMatcher := func(
-		targetPath string,
-		targetRangeID precise.ID,
-		definitionResultID precise.ID,
-	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, groupedBundleData.Meta.NumResultChunks)]
+	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+		if resultID == "" {
+			return nil
+		}
+
+		resultChunk, ok := resultChunks[precise.HashKey(resultID, groupedBundleData.Meta.NumResultChunks)]
 		if !ok {
-			return false
+			return nil
 		}
 
-		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[definitionResultID] {
-			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == targetRangeID {
-				return true
-			}
+		for _, pair := range resultChunk.DocumentIDRangeIDs[resultID] {
+			rangeIDs = append(rangeIDs, pair.RangeID)
 		}
 
-		return false
+		return rangeIDs
 	}
 
 	var documents []*scip.Document
 	for document := range groupedBundleData.Documents {
 		documents = append(documents, ConvertLSIFDocument(
 			uploadID,
-			definitionMatcher,
+			targetRangeFetcher,
 			indexerName,
 			document.Path,
 			document.Document,
@@ -65,7 +63,7 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*
 	metadata := &scip.Metadata{
 		Version:              0,
 		ToolInfo:             &scip.ToolInfo{Name: indexerName},
-		ProjectRoot:          root,
+		ProjectRoot:          groupedBundleData.ProjectRoot,
 		TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 	}
 

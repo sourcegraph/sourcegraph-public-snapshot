@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -502,7 +502,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s, gsClient, logger)
 			db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-			h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+			h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -559,7 +559,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 				// We can induce an error with a broken database connection.
 				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+				h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, db, gitLabURL, event)
 				require.Error(t, err)
@@ -576,7 +576,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 				// We can induce an error with a broken database connection.
 				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+				h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, db, gitLabURL, event)
 				require.Error(t, err)
@@ -682,7 +682,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(database.NewDBWith(logger, basestore.NewWithHandle(&noNestingTx{s.Handle()})), &observation.TestContext, nil, s.Clock())
+			store := bstore.NewWithClock(database.NewDBWith(logger, basestore.NewWithHandle(&noNestingTx{s.Handle()})), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store, gsClient, logger)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -858,7 +858,7 @@ func (ntx *noNestingTx) Transact(context.Context) (basestore.TransactableHandle,
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
 // Any changes made to the stores will be rolled back after the test is
 // complete.
-func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *store.Store {
+func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
 	logger := logtest.Scoped(t)
 	c := &bt.TestClock{Time: timeutil.Now()}
 	tx := dbtest.NewTx(t, sqlDB)
@@ -869,7 +869,7 @@ func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *store.Store {
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(db, &observation.TestContext, nil, c.Now)
+	return bstore.NewWithClock(db, &observation.TestContext, nil, c.Now)
 }
 
 // assertBodyIncludes checks for a specific substring within the given response
@@ -888,10 +888,10 @@ func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
 // assertChangesetEventForChangeset checks that one (and only one) changeset
 // event has been created on the given changeset, and that it is of the given
 // kind.
-func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *store.Store, changeset *btypes.Changeset, want btypes.ChangesetEventKind) {
-	ces, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
+func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *bstore.Store, changeset *btypes.Changeset, want btypes.ChangesetEventKind) {
+	ces, _, err := tx.ListChangesetEvents(ctx, bstore.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{changeset.ID},
-		LimitOpts:    store.LimitOpts{Limit: 100},
+		LimitOpts:    bstore.LimitOpts{Limit: 100},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -977,7 +977,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoSto
 }
 
 // createGitLabChangeset creates a mock GitLab changeset.
-func createGitLabChangeset(t *testing.T, ctx context.Context, store *store.Store, repo *types.Repo) *btypes.Changeset {
+func createGitLabChangeset(t *testing.T, ctx context.Context, store *bstore.Store, repo *types.Repo) *btypes.Changeset {
 	c := &btypes.Changeset{
 		RepoID:              repo.ID,
 		ExternalID:          "1",

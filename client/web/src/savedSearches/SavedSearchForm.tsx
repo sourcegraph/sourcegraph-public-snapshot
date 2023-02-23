@@ -3,9 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Container,
     PageHeader,
@@ -38,7 +37,7 @@ export interface SavedQueryFields {
     slackWebhookURL: string | null
 }
 
-export interface SavedSearchFormProps extends NamespaceProps, ThemeProps {
+export interface SavedSearchFormProps extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
@@ -95,7 +94,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -130,10 +128,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     <Label className={classNames('w-100 form-group', styles.label)}>
                         <div className="mb-2">Query</div>
 
-                        <LazyMonacoQueryInput
+                        <LazyQueryInput
                             className={classNames('form-control', styles.queryInput)}
-                            editorComponent={editorComponent}
-                            isLightTheme={props.isLightTheme}
                             patternType={SearchPatternType.standard}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             caseSensitive={false}

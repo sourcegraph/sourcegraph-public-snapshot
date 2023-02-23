@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 )
@@ -23,26 +22,26 @@ type GitService interface {
 }
 
 type gitService struct {
-	db      database.DB
 	checker authz.SubRepoPermissionChecker
+	client  gitserver.Client
 }
 
-func NewDefaultGitService(checker authz.SubRepoPermissionChecker, db database.DB) GitService {
+func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 	if checker == nil {
 		checker = authz.DefaultSubRepoPermsChecker
 	}
 
 	return &gitService{
-		db:      db,
 		checker: checker,
+		client:  gitserver.NewClient(),
 	}
 }
 
 func (s *gitService) ListFiles(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return gitserver.NewClient(s.db).ListFiles(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), pattern)
+	return s.client.ListFiles(ctx, s.checker, repo, api.CommitID(commit), pattern)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because all paths were already checked via a previous call to s.ListFiles
-	return gitserver.NewClient(s.db).ArchiveReader(ctx, nil, repo, opts)
+	return s.client.ArchiveReader(ctx, nil, repo, opts)
 }

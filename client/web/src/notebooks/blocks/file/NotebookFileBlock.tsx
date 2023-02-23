@@ -6,11 +6,10 @@ import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
-import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
@@ -29,7 +28,7 @@ import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
 import styles from './NotebookFileBlock.module.scss'
 
-interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps, ThemeProps {
+interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps {
     isSourcegraphDotCom: boolean
     globbing: boolean
 }

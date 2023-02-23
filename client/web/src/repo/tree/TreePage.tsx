@@ -2,8 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Redirect } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
@@ -16,7 +15,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -41,7 +39,6 @@ import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
-import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 
 import { TreePageContent } from './TreePageContent'
 
@@ -51,7 +48,6 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
-        ThemeProps,
         TelemetryProps,
         CodeIntelligenceProps,
         BatchChangesProps,
@@ -63,11 +59,8 @@ interface Props
     filePath: string
     commitID: string
     revision: string
-    location: H.Location
-    history: H.History
     globbing: boolean
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
-    match: RepositoryFileTreePageProps['match']
     isSourcegraphDotCom: boolean
     className?: string
 }
@@ -83,7 +76,6 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    location,
     repo,
     repoName,
     commitID,
@@ -94,7 +86,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     codeIntelligenceEnabled,
     batchChangesEnabled,
     useActionItemsBar,
-    match,
     isSourcegraphDotCom,
     className,
     ...props
@@ -195,7 +186,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const RootHeaderSection = (): React.ReactElement => (
         <>
-            <div className="d-flex flex-wrap flex-lg-nowrap justify-content-between px-0">
+            <div className="d-flex flex-wrap justify-content-between px-0">
                 <div className={styles.header}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
@@ -283,6 +274,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                     aria-label="Repository settings"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiCog} />
+                                    <span className={styles.text}>Settings</span>
                                 </Button>
                             </Tooltip>
                         )}
@@ -304,7 +296,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
+                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )
@@ -328,7 +320,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
-                            location={location}
                             {...props}
                         />
                     </div>

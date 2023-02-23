@@ -17,6 +17,8 @@ auth.enableUsernameChanges: false
 
 For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice. (Customers in a managed instance environment will need to leave `builtin` enabled for Sourcegraph employee access. Consult with your Customer Engineer for more info.)
 
+> NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+
 ## Authorization in Sourcegraph
 
 If you use GitHub, GitLab, or Bitbucket Server / Bitbucket Data Center, you can sync access permissions directly from the code host:

@@ -6,7 +6,6 @@ import { search, searchKeymap } from '@codemirror/search'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
-import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
@@ -16,18 +15,19 @@ import {
     defaultEditorTheme,
     jsonHighlighting,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends RouteComponentProps, ThemeProps {}
+interface Props {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ isLightTheme }) => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+    const isLightTheme = useIsLightTheme()
     const latestPing = useObservable(
         useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )

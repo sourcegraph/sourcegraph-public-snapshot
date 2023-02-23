@@ -1,16 +1,15 @@
 import * as React from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import * as jsonc from 'jsonc-parser'
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,
@@ -211,8 +210,8 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends TelemetryProps {
+    isLightTheme: boolean
 }
 
 interface State {
@@ -227,10 +226,14 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
+export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => (
+    <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} />
+)
+
 /**
  * A page displaying the site configuration.
  */
-export class SiteAdminConfigurationPage extends React.Component<Props, State> {
+class SiteAdminConfigurationContent extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,
@@ -412,7 +415,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
                                 actions={quickConfigureActions}
-                                history={this.props.history}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

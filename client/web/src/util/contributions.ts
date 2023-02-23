@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { RouteComponentProps } from 'react-router'
-
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
     readonly condition?: (context: C) => boolean
@@ -21,15 +19,13 @@ export interface ComponentDescriptor<C extends object = {}> extends Conditional<
 }
 
 /**
- * Configuration for a route.
+ * Configuration for a react-router 6 route.
  *
  * @template C Context information that is passed to `render` and `condition`
  */
-export interface RouteDescriptor<C extends object = {}, P extends object = any> extends Conditional<C> {
-    /** Path of this route (appended to the current match) */
+export interface RouteV6Descriptor<C extends object = {}> extends Conditional<C> {
     readonly path: string
-    readonly exact?: boolean
-    readonly render: (props: C & RouteComponentProps<P>) => React.ReactNode
+    readonly render: (props: C) => React.ReactNode
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {

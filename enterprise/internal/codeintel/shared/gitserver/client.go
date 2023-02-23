@@ -34,7 +34,7 @@ func New(observationCtx *observation.Context, db database.DB) *Client {
 	operations := newOperations(observationCtx)
 
 	return &Client{
-		gitserverClient: gitserver.NewClient(db),
+		gitserverClient: gitserver.NewClient(),
 		dbStore:         newWithDB(db),
 		operations:      operations,
 	}

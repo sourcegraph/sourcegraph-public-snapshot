@@ -21,9 +21,6 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
             ... on SearchInsightDataSeriesDefinition {
                 seriesId
                 query
-                repositoryScope {
-                    repositories
-                }
                 timeScope {
                     ... on InsightIntervalTimeScope {
                         unit
@@ -41,27 +38,40 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
 export const INSIGHT_VIEW_FRAGMENT = gql`
     fragment InsightViewNode on InsightView {
         id
-        defaultSeriesDisplayOptions {
-            limit
-            sortOptions {
-                mode
-                direction
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+            ... on InsightRepositoryScope {
+                repositories
             }
         }
-        appliedSeriesDisplayOptions {
+        defaultSeriesDisplayOptions {
             limit
+            numSamples
             sortOptions {
                 mode
                 direction
             }
         }
         isFrozen
-        appliedFilters {
+        defaultFilters {
             includeRepoRegex
             excludeRepoRegex
             searchContexts
         }
         dashboardReferenceCount
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         dashboards {
             nodes {
                 id
