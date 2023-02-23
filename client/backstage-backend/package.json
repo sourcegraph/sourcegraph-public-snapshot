@@ -19,7 +19,8 @@
     "dist": "ts-node --transpile-only ./scripts/esbuild.ts && pnpm types && cp package.dist.json dist/package.json",
     "types": "tsc -d -p tsconfig.json",
     "format": "prettier -w true .",
-    "test": "jest"
+    "test": "jest --testPathIgnorePatterns src/tests/integration/",
+    "e2e": "jest --testPathPattern src/tests/integration/"
   },
   "devDependencies": {
     "@backstage/cli": "^0.22.1",
