@@ -49,7 +49,7 @@ func (r *changesetsStatsResolver) Total() int32 {
 }
 func (r *changesetsStatsResolver) IsCompleted() bool {
 	mergedAndClosedChangesets := r.stats.Closed + r.stats.Merged
-	// We don't count archived or deleted changesets when computing the percentage.
+	// We don't count archived or deleted changesets when computing `isCompleted`.
 	noOfIncludedChangesets := r.stats.Total - r.stats.Archived - r.stats.Deleted
 
 	return r.stats.Total != 0 && (mergedAndClosedChangesets == noOfIncludedChangesets)
@@ -59,11 +59,13 @@ func (r *changesetsStatsResolver) PercentComplete() int32 {
 		return 0
 	}
 
-	mergedAndClosed := r.stats.Merged + r.stats.Closed
-	// We don't count archived or deleted changesets when computing the percentage.
-	noOfIncludedChangesets := r.stats.Total - r.stats.Archived - r.stats.Deleted
-
-	return (mergedAndClosed / noOfIncludedChangesets) * 100
+	// We convert to float32 because the division of two integers will always return an integer, and the result
+	// is the largest integer value that is less than or equal to the actual quotient. In the case of percentages,
+	// it will always be between 0 and 1.
+	mergedAndClosed := float32(r.stats.Merged + r.stats.Closed)
+	// We don't count archived or deleted changesets when computing `percentComplete`.
+	noOfIncludedChangesets := float32(r.stats.Total - r.stats.Archived - r.stats.Deleted)
+	return int32((mergedAndClosed / noOfIncludedChangesets) * 100)
 }
 
 type repoChangesetsStatsResolver struct {
