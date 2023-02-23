@@ -131,9 +131,9 @@ func TestClient_CreatePullRequestCommentThread(t *testing.T) {
 	}
 	input := PullRequestCommentInput{
 		Comments: []PullRequestCommentForInput{{
-			ParentCommitID: 0,
-			Content:        "new comment",
-			CommentType:    1,
+			ParentCommentID: 0,
+			Content:         "new comment",
+			CommentType:     1,
 		}},
 	}
 

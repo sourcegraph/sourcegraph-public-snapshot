@@ -254,9 +254,9 @@ func (s AzureDevOpsSource) CreateComment(ctx context.Context, cs *Changeset, com
 	_, err = s.client.CreatePullRequestCommentThread(ctx, args, azuredevops.PullRequestCommentInput{
 		Comments: []azuredevops.PullRequestCommentForInput{
 			{
-				ParentCommitID: 0,
-				Content:        comment,
-				CommentType:    1,
+				ParentCommentID: 0,
+				Content:         comment,
+				CommentType:     1,
 			},
 		},
 	})

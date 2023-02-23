@@ -191,9 +191,9 @@ type PullRequestCommentResponse struct {
 }
 
 type PullRequestCommentForInput struct {
-	ParentCommitID int    `json:"parentCommitId"`
-	Content        string `json:"content"`
-	CommentType    int    `json:"commentType"`
+	ParentCommentID int    `json:"parentCommentId"`
+	Content         string `json:"content"`
+	CommentType     int    `json:"commentType"`
 }
 type PullRequestCommentForResponse struct {
 	ID            int64     `json:"id"`
