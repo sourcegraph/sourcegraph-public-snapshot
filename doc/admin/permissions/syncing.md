@@ -161,8 +161,9 @@ So the answer to the question of how long the *lag-time* is, in the worst case 1
 
 To calculate how long a full sync takes, it is important to take into consideration many factors - how quickly we fill the sync job queue, how is internal rate limiter and external rate limiter configured, etc. But in general, we need to make the following amount of requests to fully sync all the user-centric permissions (and we double poll, so double the number for repo-centric sync jobs):
 
-```latex
-request_count = ((users * avg_repository_access) / per_page_items) + ((repositories * avg_users_access) / per_page_items)
+```
+request_count = ((users * avg_repository_access) / per_page_items) + 
+                ((repositories * avg_users_access) / per_page_items)
 ```
 
 **Example:**
