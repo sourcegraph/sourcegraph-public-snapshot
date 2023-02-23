@@ -18,8 +18,9 @@ import (
 
 func TestAccessRequestsQuery_All(t *testing.T) {
 	mockAccessRequests := []*types.AccessRequest{
-		{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: time.Now(), AdditionalInfo: "af1"},
-		{ID: 2, Email: "a2@example.com", Name: "a2", CreatedAt: time.Now()},
+		{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: time.Now(), AdditionalInfo: "af1", Status: types.AccessRequestStatusPending},
+		{ID: 2, Email: "a2@example.com", Name: "a2", CreatedAt: time.Now(), Status: types.AccessRequestStatusApproved},
+		{ID: 3, Email: "a3@example.com", Name: "a3", CreatedAt: time.Now(), Status: types.AccessRequestStatusRejected},
 	}
 	newMockAccessRequestStore := func(t *testing.T, list []*types.AccessRequest) database.AccessRequestStore {
 		mockStore := database.NewMockAccessRequestStore()
@@ -42,7 +43,7 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 		rootResolver := newSchemaResolver(db, gitserver.NewClient())
 
 		// test
-		_, err := rootResolver.AccessRequests(ctx, &database.AccessRequestsFilterOptions{})
+		_, err := rootResolver.AccessRequests(ctx, nil)
 		require.Error(t, err)
 		require.Equal(t, err, auth.ErrMustBeSiteAdmin)
 	})
@@ -61,7 +62,7 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 		rootResolver := newSchemaResolver(db, gitserver.NewClient())
 
 		// test - admin user should be able to see all access requests
-		accessRequestsResolver, err := rootResolver.AccessRequests(ctx, &database.AccessRequestsFilterOptions{})
+		accessRequestsResolver, err := rootResolver.AccessRequests(ctx, nil)
 		require.NoError(t, err)
 
 		// test - count should be correct
@@ -70,11 +71,11 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 		require.Equal(t, int32(2), count)
 
 		// test - nodes should be correct
-		accessRequestResolvers, err := accessRequestsResolver.Nodes(ctx, nil)
+		accessRequestResolvers, err := accessRequestsResolver.Nodes(ctx)
 		require.NoError(t, err)
 		var accessRequests = make([]*types.AccessRequest, len(mockAccessRequests))
 		for index, accessRequestResolver := range accessRequestResolvers {
-			id, err := UnmarshalAccessRequestID(accessRequestResolver.ID())
+			id, err := unmarshalAccessRequestID(accessRequestResolver.ID())
 			require.NoError(t, err)
 			accessRequests[index] = &types.AccessRequest{
 				ID:        id,
@@ -126,7 +127,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			ID     graphql.ID
 			Status types.AccessRequestStatus
 		}{
-			ID:     MarshalAccessRequestID(1),
+			ID:     marshalAccessRequestID(1),
 			Status: types.AccessRequestStatusApproved,
 		}
 		_, err := rootResolver.SetAccessRequestStatus(ctx, &graphqlArgs)
@@ -163,7 +164,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			ID     graphql.ID
 			Status types.AccessRequestStatus
 		}{
-			ID:     MarshalAccessRequestID(existingAccessRequest.ID),
+			ID:     marshalAccessRequestID(existingAccessRequest.ID),
 			Status: types.AccessRequestStatusApproved,
 		}
 		_, err := rootResolver.SetAccessRequestStatus(ctx, &graphqlArgs)
@@ -199,7 +200,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			ID     graphql.ID
 			Status types.AccessRequestStatus
 		}{
-			ID:     MarshalAccessRequestID(123),
+			ID:     marshalAccessRequestID(123),
 			Status: types.AccessRequestStatusApproved,
 		}
 		_, err := rootResolver.SetAccessRequestStatus(ctx, &graphqlArgs)

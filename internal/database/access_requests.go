@@ -58,72 +58,16 @@ func IsAccessRequestWithEmailExists(err error) bool {
 	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
 }
 
-type AccessRequestsFilterOptions struct {
+type AccessRequestsFilterArgs struct {
 	Status *types.AccessRequestStatus
 }
 
-func (o *AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
+func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o != nil && o.Status != nil {
 		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
 	}
 	return conds
-}
-
-type AccessRequestsListOptions struct {
-	OrderBy    *string
-	Descending *bool
-	Limit      *int32
-	Offset     *int32
-}
-
-func (o *AccessRequestsListOptions) sqlOrderBy() (*sqlf.Query, error) {
-	orderDirection := "ASC"
-	if o != nil && o.Descending != nil && *o.Descending {
-		orderDirection = "DESC"
-	}
-	orderBy := sqlf.Sprintf("id " + orderDirection)
-	if o != nil && o.OrderBy != nil {
-		newOrderColumn, err := toAccessRequestsField(*o.OrderBy)
-		orderBy = sqlf.Sprintf(newOrderColumn + " " + orderDirection)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return orderBy, nil
-}
-
-func (o *AccessRequestsListOptions) sqlLimit() *sqlf.Query {
-	limit := int32(100)
-	if o != nil && o.Limit != nil {
-		limit = *o.Limit
-	}
-
-	offset := int32(0)
-	if o != nil && o.Offset != nil {
-		offset = *o.Offset
-	}
-
-	return sqlf.Sprintf(`%s OFFSET %s`, limit, offset)
-}
-
-type AccessRequestsFilterAndListOptions struct {
-	*AccessRequestsListOptions
-	*AccessRequestsFilterOptions
-}
-
-func toAccessRequestsField(orderBy string) (string, error) {
-	switch orderBy {
-	case "NAME":
-		return "name", nil
-	case "EMAIL":
-		return "email", nil
-	case "CREATED_AT":
-		return "created_at", nil
-	default:
-		return "", errors.New("invalid orderBy")
-	}
 }
 
 // AccessRequestStore provides access to the `access_requests` table.
@@ -135,8 +79,8 @@ type AccessRequestStore interface {
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
-	Count(context.Context, *AccessRequestsFilterOptions) (int, error)
-	List(context.Context, *AccessRequestsFilterAndListOptions) (_ []*types.AccessRequest, err error)
+	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
+	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
 	Transact(ctx context.Context) (AccessRequestStore, error)
 	Done(error) error
 }
@@ -159,14 +103,18 @@ const (
 	accessRequestListQuery = `
 		SELECT %s
 		FROM access_requests
-		WHERE (%s)
-		ORDER BY %s
-		LIMIT %s`
+		WHERE (%s)`
 	accessRequestUpdateQuery = `
 		UPDATE access_requests
 		SET status = %s
 		WHERE id = %s
 		RETURNING %s`
+)
+
+type AccessRequestListColumn string
+
+const (
+	AccessRequestListID AccessRequestListColumn = "id"
 )
 
 var (
@@ -275,22 +223,25 @@ func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.Ac
 	return updated, nil
 }
 
-func (s *accessRequestStore) Count(ctx context.Context, opt *AccessRequestsFilterOptions) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
+func (s *accessRequestStore) Count(ctx context.Context, opt *AccessRequestsFilterArgs) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(opt.SQL(), ") AND ("))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
-func (s *accessRequestStore) List(ctx context.Context, opt *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
-	orderBy, err := opt.sqlOrderBy()
-	if err != nil {
-		return nil, err
+func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
+	where := fArgs.SQL()
+	p := pArgs.SQL()
+
+	if p.Where != nil {
+		where = append(where, p.Where)
 	}
 
-	query := sqlf.Sprintf(accessRequestListQuery,
-		sqlf.Join(accessRequestColumns, ","),
-		sqlf.Join(opt.sqlConditions(), ") AND ("), orderBy, opt.sqlLimit())
+	q := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(accessRequestColumns, ","), sqlf.Join(where, ") AND ("))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
 
-	nodes, err := scanAccessRequests(s.Query(ctx, query))
+	fmt.Println(q.Query(sqlf.PostgresBindVar), q.Args())
+	nodes, err := scanAccessRequests(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}

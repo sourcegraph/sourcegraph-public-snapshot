@@ -1860,6 +1860,8 @@ type TeamMember struct {
 	UpdatedAt time.Time
 }
 
+type AccessRequestStatus string
+
 type AccessRequest struct {
 	ID             int32
 	Name           string
@@ -1869,8 +1871,6 @@ type AccessRequest struct {
 	AdditionalInfo string
 	Status         AccessRequestStatus
 }
-
-type AccessRequestStatus string
 
 const (
 	AccessRequestStatusPending  AccessRequestStatus = "PENDING"

@@ -2,49 +2,60 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// accessRequestsConnectionResolver resolves a list of access requests.
-type accessRequestsResolver struct {
-	db            database.DB
-	filterOptions *database.AccessRequestsFilterOptions
-}
-
-func (r *schemaResolver) AccessRequests(ctx context.Context, args *database.AccessRequestsFilterOptions) (*accessRequestsResolver, error) {
+func (r *schemaResolver) AccessRequests(ctx context.Context, args *struct {
+	database.AccessRequestsFilterArgs
+	graphqlutil.ConnectionResolverArgs
+}) (*graphqlutil.ConnectionResolver[*accessRequestResolver], error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	return &accessRequestsResolver{r.db, args}, nil
+	connectionStore := &accessRequestConnectionStore{
+		db:   r.db,
+		args: &args.AccessRequestsFilterArgs,
+	}
+
+	reverse := false
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		Reverse:   &reverse,
+		OrderBy:   database.OrderBy{{Field: string(database.AccessRequestListID)}},
+		Ascending: false,
+	}
+	return graphqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
-func (s *accessRequestsResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := s.db.AccessRequests().Count(ctx, s.filterOptions)
+type accessRequestConnectionStore struct {
+	db   database.DB
+	args *database.AccessRequestsFilterArgs
+}
+
+func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	count, err := s.db.AccessRequests().Count(ctx, s.args)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return int32(count), nil
+	totalCount := int32(count)
+
+	return &totalCount, nil
 }
 
-func (s *accessRequestsResolver) Nodes(ctx context.Context, args *database.AccessRequestsListOptions) ([]*accessRequestResolver, error) {
-	listOptions := args
-	if listOptions == nil {
-		listOptions = &database.AccessRequestsListOptions{}
-	}
-	accessRequests, err := s.db.AccessRequests().List(ctx, &database.AccessRequestsFilterAndListOptions{
-		AccessRequestsFilterOptions: s.filterOptions,
-		AccessRequestsListOptions:   listOptions,
-	})
+func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
+	accessRequests, err := s.db.AccessRequests().List(ctx, s.args, args)
 	if err != nil {
 		return nil, err
 	}
@@ -57,27 +68,45 @@ func (s *accessRequestsResolver) Nodes(ctx context.Context, args *database.Acces
 	return resolvers, nil
 }
 
+func (s *accessRequestConnectionStore) MarshalCursor(node *accessRequestResolver, _ database.OrderBy) (*string, error) {
+	if node == nil {
+		return nil, errors.New(`node is nil`)
+	}
+
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *accessRequestConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := unmarshalAccessRequestID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+
+	id := strconv.Itoa(int(nodeID))
+
+	return &id, nil
+}
+
 // accessRequestResolver resolves an access request.
 type accessRequestResolver struct {
 	accessRequest *types.AccessRequest
 }
 
-func (s *accessRequestResolver) ID() graphql.ID { return MarshalAccessRequestID(s.accessRequest.ID) }
+func (s *accessRequestResolver) ID() graphql.ID { return marshalAccessRequestID(s.accessRequest.ID) }
 
-func (s *accessRequestResolver) Name(ctx context.Context) string { return s.accessRequest.Name }
+func (s *accessRequestResolver) Name() string { return s.accessRequest.Name }
 
-func (s *accessRequestResolver) Email(ctx context.Context) string { return s.accessRequest.Email }
+func (s *accessRequestResolver) Email() string { return s.accessRequest.Email }
 
-func (s *accessRequestResolver) CreatedAt(ctx context.Context) gqlutil.DateTime {
+func (s *accessRequestResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: s.accessRequest.CreatedAt}
 }
 
-func (s *accessRequestResolver) AdditionalInfo(ctx context.Context) *string {
-	return &s.accessRequest.AdditionalInfo
-}
-func (s *accessRequestResolver) Status(ctx context.Context) string {
-	return string(s.accessRequest.Status)
-}
+func (s *accessRequestResolver) AdditionalInfo() *string { return &s.accessRequest.AdditionalInfo }
+
+func (s *accessRequestResolver) Status() string { return string(s.accessRequest.Status) }
 
 func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struct {
 	ID     graphql.ID
@@ -88,7 +117,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	id, err := UnmarshalAccessRequestID(args.ID)
+	id, err := unmarshalAccessRequestID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +140,9 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	return nil, nil
 }
 
-func MarshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }
+func marshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }
 
-func UnmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
+func unmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
 	err = relay.UnmarshalSpec(id, &userID)
 	return
 }

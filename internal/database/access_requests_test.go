@@ -158,7 +158,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		count, err := store.Count(ctx, &AccessRequestsFilterOptions{})
+		count, err := store.Count(ctx, &AccessRequestsFilterArgs{})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 3)
 	})
@@ -168,17 +168,17 @@ func TestAccessRequests_Count(t *testing.T) {
 		store.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
 
 		pending := types.AccessRequestStatusPending
-		count, err := store.Count(ctx, &AccessRequestsFilterOptions{Status: &pending})
+		count, err := store.Count(ctx, &AccessRequestsFilterArgs{Status: &pending})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 
 		rejected := types.AccessRequestStatusRejected
-		count, err = store.Count(ctx, &AccessRequestsFilterOptions{Status: &rejected})
+		count, err = store.Count(ctx, &AccessRequestsFilterArgs{Status: &rejected})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 
 		approved := types.AccessRequestStatusApproved
-		count, err = store.Count(ctx, &AccessRequestsFilterOptions{Status: &approved})
+		count, err = store.Count(ctx, &AccessRequestsFilterArgs{Status: &approved})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 	})
@@ -198,7 +198,7 @@ func TestAccessRequests_List(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{})
+		accessRequests, err := store.List(ctx, nil, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -212,10 +212,7 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("order", func(t *testing.T) {
-		orderBy := "NAME"
-		descending := true
-		listOptions := AccessRequestsListOptions{OrderBy: &orderBy, Descending: &descending}
-		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
+		accessRequests, err := store.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: false})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -229,9 +226,8 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("limit & offset", func(t *testing.T) {
-		limit := int32(1)
-		listOptions := AccessRequestsListOptions{Limit: &limit}
-		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
+		one := 1
+		accessRequests, err := store.List(ctx, nil, &PaginationArgs{First: &one})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
@@ -243,10 +239,9 @@ func TestAccessRequests_List(t *testing.T) {
 
 		assert.Equal(t, names, []string{"a1"})
 
-		offset := int32(1)
-		limit = int32(2)
-		listOptions = AccessRequestsListOptions{Limit: &limit, Offset: &offset}
-		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
+		after := string(accessRequests[0].ID)
+		two := int(2)
+		accessRequests, err = store.List(ctx, nil, &PaginationArgs{First: &two, After: &after})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 2)
 
@@ -265,22 +260,19 @@ func TestAccessRequests_List(t *testing.T) {
 
 		// list all pending
 		pending := types.AccessRequestStatusPending
-		filterOptions := &AccessRequestsFilterOptions{Status: &pending}
-		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		accessRequests, err := store.List(ctx, &AccessRequestsFilterArgs{Status: &pending}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all rejected
 		rejected := types.AccessRequestStatusRejected
-		filterOptions = &AccessRequestsFilterOptions{Status: &rejected}
-		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		accessRequests, err = store.List(ctx, &AccessRequestsFilterArgs{Status: &rejected}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all approved
 		approved := types.AccessRequestStatusApproved
-		filterOptions = &AccessRequestsFilterOptions{Status: &approved}
-		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		accessRequests, err = store.List(ctx, &AccessRequestsFilterArgs{Status: &approved}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 	})

@@ -273,9 +273,9 @@ mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
 func TestIsAccessRequestsEnabled(t *testing.T) {
 	falseVal, trueVal := false, true
 	tests := []struct {
-		name    string
-		sc      *Unified
-		want    bool
+		name string
+		sc   *Unified
+		want bool
 	}{
 		{
 			name: "not set should return default true",
@@ -323,7 +323,6 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 		})
 	}
 }
-
 
 func setenv(t *testing.T, keyval string) func() {
 	t.Helper()

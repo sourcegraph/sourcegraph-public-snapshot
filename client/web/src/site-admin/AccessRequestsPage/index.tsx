@@ -3,9 +3,10 @@ import React, { Fragment, useEffect, useCallback, useState } from 'react'
 import { mdiAccount } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
-import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Card, Text, Button, Grid, Alert } from '@sourcegraph/wildcard'
+import { useLazyQuery, useMutation } from '@sourcegraph/http-client'
+import { Card, Text, Button, Grid, Alert, PageSwitcher } from '@sourcegraph/wildcard'
 
+import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
     PendingAccessRequestsListResult,
     PendingAccessRequestsListVariables,
@@ -18,10 +19,8 @@ import {
     AccessRequestCreateUserResult,
     AccessRequestCreateUserVariables,
 } from '../../graphql-operations'
-import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
-import { DropdownPagination } from '../components/DropdownPagination'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
 
 import {
@@ -76,30 +75,33 @@ function useGenerateUsername(): (name: string) => Promise<string> {
     )
 }
 
-const LIMIT_FILTER_OPTIONS = [25, 50, 100]
-const DEFAULT_FILTERS = {
-    offset: '0',
-    limit: LIMIT_FILTER_OPTIONS[0].toString(),
-}
-
+const FIRST_COUNT = 25
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
-    const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const [error, setError] = useState<Error | null>(null)
 
-    const offset = Number(filters.offset)
-    const limit = Number(filters.limit)
-
     const {
-        data,
-        refetch,
+        connection,
         error: queryError,
-    } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(PENDING_ACCESS_REQUESTS_LIST, {
+        loading,
+        refetch,
+        ...paginationArgs
+    } = usePageSwitcherPagination<
+        PendingAccessRequestsListResult,
+        PendingAccessRequestsListVariables,
+        PendingAccessRequestsListResult['accessRequests']['nodes'][0]
+    >({
+        query: PENDING_ACCESS_REQUESTS_LIST,
         variables: {
-            limit,
-            offset,
+            first: FIRST_COUNT,
+        },
+        getConnection: result => result.data?.accessRequests,
+        options: {
+            fetchPolicy: 'cache-first',
+            pageSize: FIRST_COUNT,
+            useURL: true,
         },
     })
 
@@ -204,14 +206,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         resetPasswordURL={lastApprovedUser.resetPasswordURL}
                     />
                 )}
-                <div className="d-flex justify-content-end mb-3">
-                    <DropdownPagination
-                        limit={limit}
-                        offset={offset}
-                        total={data?.accessRequests?.totalCount ?? 0}
-                        onLimitChange={limit => setFilters({ limit: limit.toString() })}
-                        onOffsetChange={offset => setFilters({ offset: offset.toString() })}
-                        options={LIMIT_FILTER_OPTIONS}
+                <div className="d-flex justify-content-end">
+                    <PageSwitcher
+                        totalCount={connection?.totalCount ?? null}
+                        totalLabel={connection?.totalCount === 1 ? 'account request' : 'account requests'}
+                        {...paginationArgs}
                     />
                 </div>
                 <Grid columnCount={5}>
@@ -221,7 +220,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                             {value}
                         </Text>
                     ))}
-                    {data?.accessRequests?.nodes.map(({ id, email, name, createdAt, additionalInfo }) => (
+                    {connection?.nodes.map(({ id, email, name, createdAt, additionalInfo }) => (
                         <Fragment key={email}>
                             <Text className="mb-0 d-flex align-items-center">{email}</Text>
                             <Text className="mb-0 d-flex align-items-center">{name}</Text>

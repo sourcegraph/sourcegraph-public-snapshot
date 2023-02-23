@@ -9364,15 +9364,6 @@ extend type Mutation {
 }
 
 """
-Access requests order by enum
-"""
-enum AccessRequestOrderBy {
-    EMAIL
-    NAME
-    CREATED_AT
-}
-
-"""
 A list of access requests
 """
 type AccessRequestConnection {
@@ -9380,28 +9371,15 @@ type AccessRequestConnection {
     Total count of access requests
     """
     totalCount: Int!
-
     """
     A list of access requests
     """
-    nodes(
-        """
-        Returns the "limit" number access_requests from the list.
-        """
-        limit: Int
-        """
-        Skips initial "offset" number of access_requests.
-        """
-        offset: Int
-        """
-        Returns access_requests ordered by a given column.
-        """
-        orderBy: AccessRequestOrderBy
-        """
-        Returns ordered access_requests in descending order provided by orderBy field.
-        """
-        descending: Boolean
-    ): [AccessRequest!]!
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
 }
 
 """
@@ -9461,7 +9439,16 @@ extend type Query {
     """
     List access requests.
     """
-    accessRequests(status: AccessRequestStatus): AccessRequestConnection!
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
 }
 
 extend type Mutation {
