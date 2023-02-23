@@ -8,6 +8,7 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -40,7 +41,6 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { UserAvatar } from '../../user/UserAvatar'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 

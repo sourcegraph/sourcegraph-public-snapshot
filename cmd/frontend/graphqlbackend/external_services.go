@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,9 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
@@ -443,4 +446,48 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	}
 
 	return &EmptyResponse{}, nil
+}
+
+type externalServiceNamespacesArgs struct {
+	Kind  string
+	Token string
+	Url   string
+}
+
+func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceNamespaceConnectionResolver{
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}, nil
+}
+
+type externalServiceNamespaceConnectionResolver struct {
+	args              *externalServiceNamespacesArgs
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceNamespace
+	totalCount int32
+	err        error
+}
+
+// NewSourceConfiguration returns a configuration string for defining a Source for discovery.
+// Only external service kinds that implement source discovery functions are returned.
+func NewSourceConfiguration(kind, url, token string) (string, error) {
+	switch kind {
+	case extsvc.KindGitHub:
+		cnxn := schema.GitHubConnection{
+			Url:   url,
+			Token: token,
+		}
+
+		marshalled, err := json.Marshal(cnxn)
+		return string(marshalled), err
+	default:
+		return "", errors.New(repos.UnimplementedDiscoverySource)
+	}
 }
