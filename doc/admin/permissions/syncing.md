@@ -148,7 +148,7 @@ On average, every user has read access to `300` repositories and on average a re
 
 User `alice` is removed from repository `horsegraph/not-so-global` at 15:02. How long does it take for this change to take effect on Sourcegraph side?
 
-Let's say rate limiting is not slowing down permission syncing and default settings for permission syncing are used (scheduler runs every 15 seconds and it schedules 10 users with oldest permissions). That means, we schedule 40 users per minute to be synced. To sync all the users takes $5000 / 40 = 125$ minutes.
+Let's say rate limiting is not slowing down permission syncing and default settings for permission syncing are used (scheduler runs every 15 seconds and it schedules 10 users with oldest permissions). That means, we schedule 40 users per minute to be synced. To sync all the users takes `5000 / 40 = 125` minutes.
 
 - Worst case scenario:
   User `alice` has synced the permissions at 15:01, just one minute before the change is made. This means, `alice` will be scheduled the permissions sync in about 124 minutes again.
@@ -161,7 +161,9 @@ So the answer to the question of how long the *lag-time* is, in the worst case 1
 
 To calculate how long a full sync takes, it is important to take into consideration many factors - how quickly we fill the sync job queue, how is internal rate limiter and external rate limiter configured, etc. But in general, we need to make the following amount of requests to fully sync all the user-centric permissions (and we double poll, so double the number for repo-centric sync jobs):
 
-$$request_count = (users * avg_repository_access) \over per_page_items + (repositories * avg_users_access) \over \per_page_items $$
+```latex
+request_count = ((users * avg_repository_access) / per_page_items) + ((repositories * avg_users_access) / per_page_items)
+```
 
 **Example:**
 
@@ -169,7 +171,7 @@ There are `10 000` users, `40 000` repositories and the github.com API is pagina
 On average, every user has read access to `300` repositories and on average a repository is accessible by `75` users.
 
 We need to make `3M` requests. To cover both user-centric and repo-centric case, it means `6M` requests.
-Github.com has an API rate limit of `5000` requests per hour. In that case, complete permission sync of all users takes $3M requests / 5000  = 600 hours$. 
+Github.com has an API rate limit of `5000` requests per hour. In that case, complete permission sync of all users takes `3M requests / 5000  = 600` hours, which is `25` days approximately. 
 
 `25` days to complete a full cycle of permission sync is not great, it can potentially mean `25` days of lag time mentioned above. 
 Even if we let permission sync consume all the rate limit and we stagger our requests perfectly, which is rarely the case. 
@@ -179,7 +181,7 @@ Depending on the code host, the rate limit might be much higher, but then we mig
 
 > IMPORTANT: Depending on the customer scale, the amount of users, repositories and the distribution of permissions accross them, the time it takes to fully sync will vary.
 
-> IMPORTANT: Hence why we recommend configuring webhooks for permission syncing on GitHub which makes lag time much smaller.
+> IMPORTANT: We recommend **configuring webhooks for permissions on GitHub** which makes lag time much smaller.
 
 ## Configuration
 There are variety of options in the site configuration to tune how the permissions sync requests are scheduled. 
