@@ -64,7 +64,7 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int) 
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := 0; i < nResults; i++ {
-		similarity := cosineSimilarity(
+		similarity := CosineSimilarity(
 			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
 			query,
 		)
@@ -72,7 +72,7 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int) 
 	}
 
 	for i := nResults; i < nRows; i++ {
-		similarity := cosineSimilarity(
+		similarity := CosineSimilarity(
 			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
 			query,
 		)
@@ -95,20 +95,8 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int) 
 	return results
 }
 
-func (index *EmbeddingIndex[T]) MeanSimilarity(query []float32) float32 {
-	nRows := len(index.RowMetadata)
-	similaritySum := float32(0.0)
-	for i := 0; i < nRows; i++ {
-		similaritySum += cosineSimilarity(
-			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
-			query,
-		)
-	}
-	return similaritySum / float32(nRows)
-}
-
 // TODO: Can potentially inline this for any performance benefits?
-func cosineSimilarity(row []float32, query []float32) float32 {
+func CosineSimilarity(row []float32, query []float32) float32 {
 	similarity := float32(0.0)
 	for i := 0; i < len(row); i++ {
 		similarity += (row[i] * query[i])

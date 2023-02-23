@@ -37,19 +37,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 
 	embeddingsClient := embed.NewEmbeddingsClient()
 
-	messagesWithAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
 
-	messagesWithoutAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithoutAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
 
 	contextDetectionIndex := embeddings.ContextDetectionEmbeddingIndex{
-		MessagesWithAdditionalContextIndex:    messagesWithAdditionalContextIndex,
-		MessagesWithoutAdditionalContextIndex: messagesWithoutAdditionalContextIndex,
+		MessagesWithAdditionalContextMeanEmbedding:    messagesWithAdditionalContextMeanEmbedding,
+		MessagesWithoutAdditionalContextMeanEmbedding: messagesWithoutAdditionalContextMeanEmbedding,
 	}
 
 	indexJsonBytes, err := json.Marshal(contextDetectionIndex)
@@ -62,24 +62,29 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 	return err
 }
 
-func getContextDetectionMessagesEmbeddingIndex(messages []string, client embed.EmbeddingsClient) (embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata], error) {
-	metadata := make([]embeddings.ContextDetectionEmbeddingRowMetadata, len(messages))
-	for idx, message := range messages {
-		metadata[idx] = embeddings.ContextDetectionEmbeddingRowMetadata{Message: message}
-	}
-
+func getContextDetectionMessagesMeanEmbedding(messages []string, client embed.EmbeddingsClient) ([]float32, error) {
 	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(messages, MAX_EMBEDDINGS_RETRIES)
 	if err != nil {
-		return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{}, err
+		return nil, err
 	}
 
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{}, err
+		return nil, err
 	}
-	return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{
-		Embeddings:      messagesEmbeddings,
-		RowMetadata:     metadata,
-		ColumnDimension: dimensions,
-	}, nil
+	return getMeanEmbedding(len(messages), dimensions, messagesEmbeddings), nil
+}
+
+func getMeanEmbedding(nRows int, dimensions int, embeddings []float32) []float32 {
+	meanEmbedding := make([]float32, dimensions)
+	for i := 0; i < nRows; i++ {
+		row := embeddings[i*dimensions : (i+1)*dimensions]
+		for columnIdx, columnValue := range row {
+			meanEmbedding[columnIdx] += columnValue
+		}
+	}
+	for idx := range meanEmbedding {
+		meanEmbedding[idx] = meanEmbedding[idx] / float32(nRows)
+	}
+	return meanEmbedding
 }

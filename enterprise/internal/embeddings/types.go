@@ -21,13 +21,9 @@ type RepoEmbeddingIndex struct {
 	TextIndex *EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"textIndex"`
 }
 
-type ContextDetectionEmbeddingRowMetadata struct {
-	Message string `json:"message"`
-}
-
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextIndex    EmbeddingIndex[ContextDetectionEmbeddingRowMetadata] `json:"messagesWithAdditionalContextIndex"`
-	MessagesWithoutAdditionalContextIndex EmbeddingIndex[ContextDetectionEmbeddingRowMetadata] `json:"messagesWithoutAdditionalContextIndex"`
+	MessagesWithAdditionalContextMeanEmbedding    []float32 `json:"messagesWithAdditionalContextMeanEmbedding"`
+	MessagesWithoutAdditionalContextMeanEmbedding []float32 `json:"messagesWithoutAdditionalContextMeanEmbedding"`
 }
 
 type EmbeddingSearchResults struct {

@@ -32,18 +32,19 @@ func isContextRequiredForQuery(
 	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 	query string,
 ) (bool, error) {
-	if len(query) < MIN_QUERY_WITH_CONTEXT_LENGTH {
+	queryTrimmed := strings.TrimSpace(query)
+	if len(queryTrimmed) < MIN_QUERY_WITH_CONTEXT_LENGTH {
 		return false, nil
 	}
 
-	queryLower := strings.ToLower(query)
+	queryLower := strings.ToLower(queryTrimmed)
 	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
 		if submatches := regexp.FindStringSubmatch(queryLower); len(submatches) > 0 {
 			return false, nil
 		}
 	}
 
-	isSimilarToNoContextMessages, err := isQuerySimilarToNoContextMessages(ctx, getQueryEmbedding, getContextDetectionEmbeddingIndex, query)
+	isSimilarToNoContextMessages, err := isQuerySimilarToNoContextMessages(ctx, getQueryEmbedding, getContextDetectionEmbeddingIndex, queryTrimmed)
 	if err != nil {
 		return false, err
 	}
@@ -67,8 +68,8 @@ func isQuerySimilarToNoContextMessages(
 		return false, err
 	}
 
-	messagesWithContextSimilarity := contextDetectionEmbeddingIndex.MessagesWithAdditionalContextIndex.MeanSimilarity(queryEmbedding)
-	messagesWithoutContextSimilarity := contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextIndex.MeanSimilarity(queryEmbedding)
+	messagesWithContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
+	messagesWithoutContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
 
 	// We have to be really sure that the query is similar to no context messages, so we include the `MIN_NO_CONTEXT_SIMILARITY_DIFF` threshold.
 	isSimilarToNoContextMessages := (messagesWithoutContextSimilarity - messagesWithContextSimilarity) >= MIN_NO_CONTEXT_SIMILARITY_DIFF
