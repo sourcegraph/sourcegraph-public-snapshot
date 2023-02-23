@@ -1,8 +1,6 @@
 package scim
 
 import (
-	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/elimity-com/scim"
@@ -41,70 +39,10 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	// Perform changes on the user resource
 	var changed bool
 	for _, op := range operations {
-		// Target is the root node.
+		// Handle multiple operations in one value
 		if op.Path == nil {
-			for k, v := range op.Value.(map[string]interface{}) {
-				if v == nil {
-					continue
-				}
-
-				path, _ := filter.ParseAttrPath([]byte(k))
-				if subAttrName := path.SubAttributeName(); subAttrName != "" {
-					if old, ok := userRes.Attributes[path.AttributeName]; ok {
-						m := old.(map[string]interface{})
-						if sub, ok := m[subAttrName]; ok {
-							if sub == v {
-								continue
-							}
-						}
-						changed = true
-						m[subAttrName] = v
-						userRes.Attributes[path.AttributeName] = m
-						continue
-					}
-					changed = true
-					userRes.Attributes[path.AttributeName] = map[string]interface{}{
-						subAttrName: v,
-					}
-					continue
-				}
-				old, ok := userRes.Attributes[k]
-				if !ok {
-					changed = true
-					userRes.Attributes[k] = v
-					continue
-				}
-				switch v := v.(type) {
-				case []interface{}:
-					changed = true
-					userRes.Attributes[k] = append(old.([]interface{}), v...)
-				case map[string]interface{}:
-					m := old.(map[string]interface{})
-					var changed_ bool
-					for attr, value := range v {
-						if value == nil {
-							continue
-						}
-
-						if v, ok := m[attr]; ok {
-							if v == nil || v == value {
-								continue
-							}
-						}
-						changed = true
-						changed_ = true
-						m[attr] = value
-					}
-					if changed_ {
-						userRes.Attributes[k] = m
-					}
-				default:
-					if old == v {
-						continue
-					}
-					changed = true
-					userRes.Attributes[k] = v // replace
-				}
+			for rawPath, value := range op.Value.(map[string]interface{}) {
+				changed = changed || applyChangeToResource(userRes, rawPath, value)
 			}
 			continue
 		}
@@ -115,77 +53,46 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			valueExpr   = op.Path.ValueExpression
 		)
 
-		// Attribute does not exist yet.
+		// Attribute does not exist yet → add it
 		old, ok := userRes.Attributes[attrName]
 		if !ok {
 			switch {
 			case subAttrName != "":
-				changed = true
 				userRes.Attributes[attrName] = map[string]interface{}{
 					subAttrName: op.Value,
 				}
-			case valueExpr != nil:
-				// Do nothing since there is nothing to match the filter?
-			default:
 				changed = true
+			case valueExpr != nil:
+				// TODO: Implement value expression handling
+			default:
 				userRes.Attributes[attrName] = op.Value
+				changed = true
 			}
 			continue
 		}
 
+		// Attribute exists
 		switch op.Op {
-		case "add":
+		case "add", "replace":
 			switch v := op.Value.(type) {
 			case []interface{}:
 				changed = true
-				userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+				if op.Op == "add" {
+					userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+				} else { // replace
+					userRes.Attributes[attrName] = v
+				}
 			default:
 				if subAttrName != "" {
-					m := old.(map[string]interface{})
-					if value, ok := old.(map[string]interface{})[subAttrName]; ok {
-						if v == value {
-							continue
-						}
-					}
-					changed = true
-					m[subAttrName] = v
-					userRes.Attributes[attrName] = m
-					continue
-				}
-				switch v := v.(type) {
-				case map[string]interface{}:
-					m := old.(map[string]interface{})
-					var changed_ bool
-					for attr, value := range v {
-						if value == nil {
-							continue
-						}
-
-						if v, ok := m[attr]; ok {
-							if v == nil || v == value {
-								continue
-							}
-						}
-						changed = true
-						changed_ = true
-						m[attr] = value
-					}
-					if changed_ {
-						userRes.Attributes[attrName] = m
-					}
-				default:
-					if old == v {
-						continue
-					}
-					changed = true
-					userRes.Attributes[attrName] = v // replace
+					changed = changed || applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+				} else {
+					changed = changed || applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
 				}
 			}
 		}
 	}
 	if !changed {
-		// StatusNoContent
-		return scim.Resource{}, nil
+		return scim.Resource{}, nil // StatusNoContent
 	}
 
 	// Update user
@@ -214,14 +121,85 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	return userRes, nil
 }
 
-func checkBodyNotEmpty(r *http.Request) error {
-	// Check whether the request body is empty.
-	data, err := ioutil.ReadAll(r.Body) // TODO: Deprecated feature use
-	if err != nil {
-		return err
+// applyChangeToResource applies a change to a resource (for example, sets its userName).
+func applyChangeToResource(res scim.Resource, rawPath string, value interface{}) (changed bool) {
+	// Ignore nil values
+	if value == nil {
+		return false
 	}
-	if len(data) == 0 {
-		return fmt.Errorf("passed body is empty")
+
+	// Convert rawPath to path
+	path, _ := filter.ParseAttrPath([]byte(rawPath))
+
+	// Handle sub-attributes
+	if subAttrName := path.SubAttributeName(); subAttrName != "" {
+		// Update existing attribute if it exists
+		if old, ok := res.Attributes[path.AttributeName]; ok {
+			m := old.(map[string]interface{})
+			if sub, ok := m[subAttrName]; ok {
+				if sub == value {
+					return
+				}
+			}
+			m[subAttrName] = value
+			res.Attributes[path.AttributeName] = m
+			return true
+		}
+		// It doesn't exist → add new attribute
+		res.Attributes[path.AttributeName] = map[string]interface{}{subAttrName: value}
+		return true
 	}
-	return nil
+
+	// Add new root attribute if it doesn't exist
+	_, ok := res.Attributes[rawPath]
+	if !ok {
+		res.Attributes[rawPath] = value
+		return true
+	}
+
+	// Update existing sub-attribute or root attribute
+	return applyAttributeChange(res.Attributes, rawPath, value, "replace")
+}
+
+// applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
+func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, value interface{}, op string) (changed bool) {
+	if op == "remove" {
+		delete(attributes, attrName)
+	}
+
+	// add only works for arrays and maps, otherwise it's the same as replace
+	if op == "add" {
+		switch value := value.(type) {
+		case []interface{}:
+			attributes[attrName] = append(attributes[attrName].([]interface{}), value...)
+			return true
+		case map[string]interface{}:
+			return applyMapChanges(attributes[attrName].(map[string]interface{}), value)
+		}
+	}
+
+	// replace
+	if attributes[attrName] == value {
+		return false
+	}
+	attributes[attrName] = value
+	return true
+}
+
+// applyMapChanges applies changes to an existing attribute which is a map (for example, name).
+func applyMapChanges(m map[string]interface{}, items map[string]interface{}) (changed bool) {
+	for attr, value := range items {
+		if value == nil {
+			continue
+		}
+
+		if v, ok := m[attr]; ok {
+			if v == nil || v == value {
+				continue
+			}
+		}
+		m[attr] = value
+		changed = true
+	}
+	return changed
 }

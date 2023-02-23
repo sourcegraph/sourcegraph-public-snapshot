@@ -45,6 +45,9 @@ func getMockDB() *database.MockDB {
 		}
 		return nil, database.NewUserNotFoundErr()
 	})
+	userStore.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.UserStore, error) {
+		return userStore, nil
+	})
 
 	// Create DB
 	db := database.NewMockDB()

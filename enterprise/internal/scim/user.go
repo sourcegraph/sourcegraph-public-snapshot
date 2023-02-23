@@ -234,3 +234,15 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 	}
 	return normalizedUsername, nil
 }
+
+func checkBodyNotEmpty(r *http.Request) error {
+	// Check whether the request body is empty.
+	data, err := ioutil.ReadAll(r.Body) // TODO: Deprecated feature use
+	if err != nil {
+		return err
+	}
+	if len(data) == 0 {
+		return fmt.Errorf("passed body is empty")
+	}
+	return nil
+}
