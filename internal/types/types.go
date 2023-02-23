@@ -622,6 +622,13 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {

@@ -1,6 +1,6 @@
 /** Component exports */
+export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
-export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -100,6 +100,7 @@ export {
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { ButtonGroupProps } from './Button'
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { ButtonProps } from './Button'

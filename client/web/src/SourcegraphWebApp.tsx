@@ -5,12 +5,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { Router } from 'react-router'
-import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
+import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
+import { startWith, switchMap } from 'rxjs/operators'
 
-import { isMacPlatform, logger } from '@sourcegraph/common'
+import { isTruthy, isMacPlatform, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -30,13 +29,13 @@ import {
     getDefaultSearchContextSpec,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
     SettingsCascadeOrError,
+    SettingsProvider,
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
@@ -68,28 +67,18 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps, LegacyLayoutRouteComponentProps } from './routes'
-import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
+import { parseSearchURL, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import {
-    setQueryStateFromSettings,
-    setExperimentalFeaturesFromSettings,
-    getExperimentalFeatures,
-    useNavbarQueryState,
-    observeStore,
-    useExperimentalFeatures,
-} from './stores'
-import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
-import { useThemeProps } from './theme'
+import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globalHistory } from './util/globalHistory'
-import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
@@ -125,8 +114,6 @@ const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
-const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
-
 setLinkComponent(RouterLink)
 
 export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
@@ -142,7 +129,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
     const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
 
-    const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | null>(null)
+    const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | undefined>()
 
     // NOTE(2022-09-08) Inform the inlined code from
     // sourcegraph/code-intel-extensions about the change of search context.
@@ -221,19 +208,12 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     useEffect(() => {
         selectedSearchContextSpecRef.current = selectedSearchContextSpec
     }, [selectedSearchContextSpec])
-    const getSelectedSearchContextSpec = useCallback(
-        (): string | undefined =>
-            getExperimentalFeatures().showSearchContext ? selectedSearchContextSpecRef.current ?? undefined : undefined,
-        []
-    )
 
     // TODO: Move all of this initialization outside React so we don't need to
     // handle the optional states everywhere
     useEffect(() => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
-
-        document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
             .then(graphqlClient => {
@@ -296,56 +276,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             setSelectedSearchContextSpecToDefault()
         }
 
-        setWorkspaceSearchContext(selectedSearchContextSpec)
-
-        // Update search query state whenever the URL changes
-        subscriptions.add(
-            combineLatest([
-                observeStore(useExperimentalFeatures).pipe(
-                    map(([features]) => features.searchQueryInput === 'experimental'),
-                    // This ensures that the query stays unmodified until we know
-                    // whether the feature flag is set or not.
-                    startWith(true),
-                    distinctUntilChanged()
-                ),
-                getQueryStateFromLocation({
-                    location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
-                    isSearchContextAvailable: (searchContext: string) =>
-                        props.searchContextsEnabled
-                            ? isSearchContextSpecAvailable({ spec: searchContext, platformContext })
-                                  .pipe(first())
-                                  .toPromise()
-                            : Promise.resolve(false),
-                }),
-            ]).subscribe(([enableExperimentalQueryInput, parsedSearchURLAndContext]) => {
-                if (parsedSearchURLAndContext.query) {
-                    // Only override filters and update query from URL if there
-                    // is a search query.
-                    if (!parsedSearchURLAndContext.searchContextSpec) {
-                        // If no search context is present we have to fall back
-                        // to the global search context to match the server
-                        // behavior.
-                        setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
-                    } else if (
-                        parsedSearchURLAndContext.searchContextSpec.spec !== selectedSearchContextSpecRef.current
-                    ) {
-                        setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
-                    }
-
-                    const processedQuery =
-                        !enableExperimentalQueryInput &&
-                        parsedSearchURLAndContext.searchContextSpec &&
-                        props.searchContextsEnabled
-                            ? omitFilter(
-                                  parsedSearchURLAndContext.query,
-                                  parsedSearchURLAndContext.searchContextSpec.filter
-                              )
-                            : parsedSearchURLAndContext.query
-
-                    setQueryStateFromURL(parsedSearchURLAndContext, processedQuery)
-                }
-            })
-        )
+        setWorkspaceSearchContext(selectedSearchContextSpec ?? null)
 
         userRepositoriesUpdates.next()
 
@@ -357,16 +288,14 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     }, [])
 
     const breadcrumbProps = useBreadcrumbs()
-    const themeProps = useThemeProps()
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
         isSourcegraphDotCom: window.context.sourcegraphDotComMode,
-        selectedSearchContextSpec: getSelectedSearchContextSpec(),
+        selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
@@ -421,6 +350,55 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return null
     }
 
+    const router = createBrowserRouter([
+        {
+            element: (
+                <Layout
+                    authenticatedUser={resolvedAuthenticatedUser}
+                    viewerSubject={viewerSubject}
+                    settingsCascade={settingsCascade}
+                    batchChangesEnabled={props.batchChangesEnabled}
+                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
+                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                    // Search query
+                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
+                    // Extensions
+                    platformContext={platformContext}
+                    extensionsController={null}
+                    telemetryService={eventLogger}
+                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    searchContextsEnabled={props.searchContextsEnabled}
+                    selectedSearchContextSpec={selectedSearchContextSpec}
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchSearchContexts={fetchSearchContexts}
+                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                    fetchSearchContext={fetchSearchContext}
+                    createSearchContext={createSearchContext}
+                    updateSearchContext={updateSearchContext}
+                    deleteSearchContext={deleteSearchContext}
+                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                    globbing={globbing}
+                    streamSearch={aggregateStreamingSearch}
+                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
+                    notebooksEnabled={props.notebooksEnabled}
+                    codeMonitoringEnabled={props.codeMonitoringEnabled}
+                    searchAggregationEnabled={props.searchAggregationEnabled}
+                />
+            ),
+            children: props.routes
+                .map(
+                    ({ condition = () => true, render, path, handle }) =>
+                        condition(context) && {
+                            path: path.slice(1), // remove leading slash
+                            element: render(context),
+                            handle,
+                        }
+                )
+                .filter(isTruthy),
+        },
+    ])
+
     return (
         <ComponentsComposer
             components={[
@@ -428,6 +406,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-disable react/no-children-prop, react/jsx-key */
                 <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
                 <FeatureFlagsProvider />,
@@ -438,61 +417,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
-            <Router history={globalHistory}>
-                <CompatRouter>
-                    <Routes>
-                        <Route
-                            path="*"
-                            element={
-                                <Layout
-                                    authenticatedUser={resolvedAuthenticatedUser}
-                                    viewerSubject={viewerSubject}
-                                    settingsCascade={settingsCascade}
-                                    batchChangesEnabled={props.batchChangesEnabled}
-                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
-                                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                    // Search query
-                                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
-                                    // Extensions
-                                    platformContext={platformContext}
-                                    extensionsController={null}
-                                    telemetryService={eventLogger}
-                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    searchContextsEnabled={props.searchContextsEnabled}
-                                    selectedSearchContextSpec={getSelectedSearchContextSpec()}
-                                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                    fetchSearchContexts={fetchSearchContexts}
-                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                    fetchSearchContext={fetchSearchContext}
-                                    createSearchContext={createSearchContext}
-                                    updateSearchContext={updateSearchContext}
-                                    deleteSearchContext={deleteSearchContext}
-                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                    globbing={globbing}
-                                    streamSearch={aggregateStreamingSearch}
-                                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
-                                    notebooksEnabled={props.notebooksEnabled}
-                                    codeMonitoringEnabled={props.codeMonitoringEnabled}
-                                    searchAggregationEnabled={props.searchAggregationEnabled}
-                                    themeProps={themeProps}
-                                />
-                            }
-                        >
-                            {props.routes.map(
-                                ({ condition = () => true, ...route }) =>
-                                    condition(context) && (
-                                        <Route
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            path={route.path.slice(1)} // remove leading slash
-                                            element={route.render(context)}
-                                        />
-                                    )
-                            )}
-                        </Route>
-                    </Routes>
-                </CompatRouter>
-            </Router>
+            <RouterProvider router={router} />
             <UserSessionStores />
         </ComponentsComposer>
     )

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiAlertCircle, mdiPencil, mdiClose, mdiSync, mdiCloseCircleOutline } from '@mdi/js'
 import { noop } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import {

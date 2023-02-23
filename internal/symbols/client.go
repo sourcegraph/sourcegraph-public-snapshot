@@ -324,8 +324,7 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 		return nil, err
 	}
 
-	response := protoResponse.ToInternal()
-	return &response, nil
+	return protoResponse.ToInternal(), nil
 }
 
 func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {

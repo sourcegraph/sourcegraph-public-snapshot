@@ -23,6 +23,7 @@ import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { languageSupport } from './languageSupport'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -69,6 +70,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
         return [
             showTooltip.computeN([field], state => {
                 const { hover, focus, pin } = state.field(field)
+                const isLanguageSupported = state.facet(languageSupport)
 
                 // Only show one tooltip for the occurrence at a time
                 const uniqueTooltips = [pin, focus, hover]
@@ -79,6 +81,9 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                         return acc
                     }, [] as NonNullable<CodeIntelTooltipState>[])
                     .map(({ tooltip }) => tooltip)
+                    .filter(tooltip =>
+                        tooltip instanceof CodeIntelTooltip ? (isLanguageSupported ? tooltip : null) : tooltip
+                    )
 
                 return uniqueTooltips
             }),

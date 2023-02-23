@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -161,7 +161,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		sort.Slice(want, func(x, y int) bool {
 			return want[x].Key().Less(want[y].Key())
 		})
-		autogold.Want("owner matches are as expected", want).Equal(t, matches)
+		autogold.Expect(want).Equal(t, matches)
 	})
 	t.Run("deduplicates owner matches", func(t *testing.T) {
 		// See result/owner.go:55 for comment.

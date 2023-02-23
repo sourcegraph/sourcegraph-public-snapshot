@@ -133,7 +133,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		return nil, messages
 	}
 
-	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.KindAzureDevOps)
+	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeAzureDevOps)
 
 	sessionHandler := oauth.SessionIssuer(
 		logger,

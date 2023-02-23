@@ -8,7 +8,6 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'r
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../../schema/settings.schema.json'
@@ -23,10 +22,11 @@ interface JSONSchema {
     $id: string
 }
 
-export interface Props extends ThemeProps {
+export interface Props {
     id?: string
     className?: string
     value: string | undefined
+    isLightTheme: boolean
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     height?: number
