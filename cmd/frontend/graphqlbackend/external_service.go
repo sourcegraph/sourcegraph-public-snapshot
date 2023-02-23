@@ -521,7 +521,7 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 
 		for _, repo := range res.Repos {
 			node := &types.ExternalServiceRepository{
-				//ID: repo.ID,
+				ID:         repo.ID,
 				Name:       repo.Name,
 				ExternalID: repo.ExternalRepo.ID,
 			}
@@ -567,7 +567,7 @@ type externalServiceRepositoryResolver struct {
 }
 
 func (r *externalServiceRepositoryResolver) ID() graphql.ID {
-	return relay.MarshalID("ExternalServiceSourceRepo", r.repo)
+	return relay.MarshalID("ExternalServiceRepository", r.repo)
 }
 
 func (r *externalServiceRepositoryResolver) Name() string {

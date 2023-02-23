@@ -502,7 +502,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
 
 	if !ok {
-		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
+		result = &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource}
 		s.respond(w, http.StatusNotImplemented, result)
 		return
 	}
@@ -510,7 +510,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	results := make(chan repos.SourceResult)
 
 	go func() {
-		discoverableSrc.ListRepositories(ctx, req.Query, int(req.First), req.ExcludeRepos, results)
+		discoverableSrc.SearchRepositories(ctx, req.Query, int(req.First), req.ExcludeRepos, results)
 		close(results)
 	}()
 

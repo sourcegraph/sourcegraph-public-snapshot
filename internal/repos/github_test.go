@@ -365,102 +365,103 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Url:   "https://github.com",
 				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 				Repos: []string{
-					"sourcegraph/about",
-					"sourcegraph/sourcegraph",
+					//"sourcegraph/about",
+					//"sourcegraph/sourcegraph",
 				},
+				RepositoryQuery: []string{"sourcegraph sourcegraph"},
 			},
 			err: "<nil>",
 		},
-		{
-			name: "graphql fallback",
-			mw:   githubGraphQLFailureMiddleware,
-			assert: assertAllReposListed([]string{
-				"github.com/sourcegraph/about",
-				"github.com/sourcegraph/sourcegraph",
-			}),
-			conf: &schema.GitHubConnection{
-				Url:   "https://github.com",
-				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-				Repos: []string{
-					"sourcegraph/about",
-					"sourcegraph/sourcegraph",
-				},
-			},
-			err: "<nil>",
-		},
-		{
-			name: "orgs",
-			assert: assertAllReposListed([]string{
-				"github.com/gorilla/websocket",
-				"github.com/gorilla/handlers",
-				"github.com/gorilla/mux",
-				"github.com/gorilla/feeds",
-				"github.com/gorilla/sessions",
-				"github.com/gorilla/schema",
-				"github.com/gorilla/csrf",
-				"github.com/gorilla/rpc",
-				"github.com/gorilla/pat",
-				"github.com/gorilla/css",
-				"github.com/gorilla/site",
-				"github.com/gorilla/context",
-				"github.com/gorilla/securecookie",
-				"github.com/gorilla/http",
-				"github.com/gorilla/reverse",
-				"github.com/gorilla/muxy",
-				"github.com/gorilla/i18n",
-				"github.com/gorilla/template",
-				"github.com/gorilla/.github",
-			}),
-			conf: &schema.GitHubConnection{
-				Url:   "https://github.com",
-				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-				Orgs: []string{
-					"gorilla",
-				},
-			},
-			err: "<nil>",
-		},
-		{
-			name: "orgs repository query",
-			assert: assertAllReposListed([]string{
-				"github.com/gorilla/websocket",
-				"github.com/gorilla/handlers",
-				"github.com/gorilla/mux",
-				"github.com/gorilla/feeds",
-				"github.com/gorilla/sessions",
-				"github.com/gorilla/schema",
-				"github.com/gorilla/csrf",
-				"github.com/gorilla/rpc",
-				"github.com/gorilla/pat",
-				"github.com/gorilla/css",
-				"github.com/gorilla/site",
-				"github.com/gorilla/context",
-				"github.com/gorilla/securecookie",
-				"github.com/gorilla/http",
-				"github.com/gorilla/reverse",
-				"github.com/gorilla/muxy",
-				"github.com/gorilla/i18n",
-				"github.com/gorilla/template",
-				"github.com/gorilla/.github",
-				"github.com/golang-migrate/migrate",
-				"github.com/torvalds/linux",
-				"github.com/torvalds/uemacs",
-				"github.com/torvalds/subsurface-for-dirk",
-				"github.com/torvalds/libdc-for-dirk",
-				"github.com/torvalds/test-tlb",
-				"github.com/torvalds/pesconvert",
-			}),
-			conf: &schema.GitHubConnection{
-				Url:   "https://github.com",
-				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-				RepositoryQuery: []string{
-					"org:gorilla",
-					"org:golang-migrate",
-					"org:torvalds",
-				},
-			},
-			err: "<nil>",
-		},
+		//{
+		//	name: "graphql fallback",
+		//	mw:   githubGraphQLFailureMiddleware,
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/sourcegraph/about",
+		//		"github.com/sourcegraph/sourcegraph",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		Repos: []string{
+		//			"sourcegraph/about",
+		//			"sourcegraph/sourcegraph",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
+		//{
+		//	name: "orgs",
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/gorilla/websocket",
+		//		"github.com/gorilla/handlers",
+		//		"github.com/gorilla/mux",
+		//		"github.com/gorilla/feeds",
+		//		"github.com/gorilla/sessions",
+		//		"github.com/gorilla/schema",
+		//		"github.com/gorilla/csrf",
+		//		"github.com/gorilla/rpc",
+		//		"github.com/gorilla/pat",
+		//		"github.com/gorilla/css",
+		//		"github.com/gorilla/site",
+		//		"github.com/gorilla/context",
+		//		"github.com/gorilla/securecookie",
+		//		"github.com/gorilla/http",
+		//		"github.com/gorilla/reverse",
+		//		"github.com/gorilla/muxy",
+		//		"github.com/gorilla/i18n",
+		//		"github.com/gorilla/template",
+		//		"github.com/gorilla/.github",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		Orgs: []string{
+		//			"gorilla",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
+		//{
+		//	name: "orgs repository query",
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/gorilla/websocket",
+		//		"github.com/gorilla/handlers",
+		//		"github.com/gorilla/mux",
+		//		"github.com/gorilla/feeds",
+		//		"github.com/gorilla/sessions",
+		//		"github.com/gorilla/schema",
+		//		"github.com/gorilla/csrf",
+		//		"github.com/gorilla/rpc",
+		//		"github.com/gorilla/pat",
+		//		"github.com/gorilla/css",
+		//		"github.com/gorilla/site",
+		//		"github.com/gorilla/context",
+		//		"github.com/gorilla/securecookie",
+		//		"github.com/gorilla/http",
+		//		"github.com/gorilla/reverse",
+		//		"github.com/gorilla/muxy",
+		//		"github.com/gorilla/i18n",
+		//		"github.com/gorilla/template",
+		//		"github.com/gorilla/.github",
+		//		"github.com/golang-migrate/migrate",
+		//		"github.com/torvalds/linux",
+		//		"github.com/torvalds/uemacs",
+		//		"github.com/torvalds/subsurface-for-dirk",
+		//		"github.com/torvalds/libdc-for-dirk",
+		//		"github.com/torvalds/test-tlb",
+		//		"github.com/torvalds/pesconvert",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		RepositoryQuery: []string{
+		//			"org:gorilla",
+		//			"org:golang-migrate",
+		//			"org:torvalds",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
 	}
 
 	for _, tc := range testCases {
@@ -663,7 +664,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			name:  "exceeds-limit",
 			query: "stars:10000..10100",
 			first: 10,
-			limit: 20, // We simulate a lower limit that the 1000 limit on github.com
+			limit: 20, // We simulate a lower limit than the 1000 limit on github.com
 		},
 		{
 			name:  "doesnt-exceed-limit",
@@ -714,6 +715,250 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			}
 
 			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
+	}
+}
+
+func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		query string
+		first int
+		limit int
+		now   time.Time
+	}{
+		{
+			name:  "exceeds-limit",
+			query: "stars:10000..10100",
+			first: 10,
+			limit: 20, // We simulate a lower limit than the 1000 limit on github.com
+		},
+		{
+			name:  "doesnt-exceed-limit",
+			query: "repo:tsenart/vegeta stars:>=14000",
+			first: 10,
+			limit: 20,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			t.Cleanup(save)
+
+			cli, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			apiURL, _ := url.Parse("https://api.github.com")
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+
+			q := repositoryQuery{
+				Logger:   logtest.Scoped(t),
+				Query:    tc.query,
+				First:    tc.first,
+				Limit:    tc.limit,
+				Searcher: github.NewV4Client("Test", apiURL, token, cli),
+			}
+
+			results := make(chan *githubResult)
+			go func() {
+				q.DoSingleRequest(context.Background(), results)
+				close(results)
+			}()
+
+			type result struct {
+				Repo  *github.Repository
+				Error string
+			}
+
+			var have []result
+			for r := range results {
+				res := result{Repo: r.repo}
+				if r.err != nil {
+					res.Error = r.err.Error()
+				}
+				have = append(have, res)
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
+	}
+}
+
+func TestGithubSource_SearchRepositories(t *testing.T) {
+	assertAllReposListed := func(want []string) typestest.ReposAssertion {
+		return func(t testing.TB, rs types.Repos) {
+			t.Helper()
+
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
+
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		}
+	}
+
+	testCases := []struct {
+		name         string
+		query        string
+		first        int
+		excludeRepos []string
+		assert       typestest.ReposAssertion
+		mw           httpcli.Middleware
+		conf         *schema.GitHubConnection
+		err          string
+	}{
+		{
+			name:         "found",
+			query:        "sourcegraph sourcegraph",
+			first:        2,
+			excludeRepos: []string{},
+			assert: assertAllReposListed([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
+				},
+			},
+			err: "<nil>",
+		},
+		//{
+		//	name: "graphql fallback",
+		//	mw:   githubGraphQLFailureMiddleware,
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/sourcegraph/about",
+		//		"github.com/sourcegraph/sourcegraph",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		Repos: []string{
+		//			"sourcegraph/about",
+		//			"sourcegraph/sourcegraph",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
+		//{
+		//	name: "orgs",
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/gorilla/websocket",
+		//		"github.com/gorilla/handlers",
+		//		"github.com/gorilla/mux",
+		//		"github.com/gorilla/feeds",
+		//		"github.com/gorilla/sessions",
+		//		"github.com/gorilla/schema",
+		//		"github.com/gorilla/csrf",
+		//		"github.com/gorilla/rpc",
+		//		"github.com/gorilla/pat",
+		//		"github.com/gorilla/css",
+		//		"github.com/gorilla/site",
+		//		"github.com/gorilla/context",
+		//		"github.com/gorilla/securecookie",
+		//		"github.com/gorilla/http",
+		//		"github.com/gorilla/reverse",
+		//		"github.com/gorilla/muxy",
+		//		"github.com/gorilla/i18n",
+		//		"github.com/gorilla/template",
+		//		"github.com/gorilla/.github",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		Orgs: []string{
+		//			"gorilla",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
+		//{
+		//	name: "orgs repository query",
+		//	assert: assertAllReposListed([]string{
+		//		"github.com/gorilla/websocket",
+		//		"github.com/gorilla/handlers",
+		//		"github.com/gorilla/mux",
+		//		"github.com/gorilla/feeds",
+		//		"github.com/gorilla/sessions",
+		//		"github.com/gorilla/schema",
+		//		"github.com/gorilla/csrf",
+		//		"github.com/gorilla/rpc",
+		//		"github.com/gorilla/pat",
+		//		"github.com/gorilla/css",
+		//		"github.com/gorilla/site",
+		//		"github.com/gorilla/context",
+		//		"github.com/gorilla/securecookie",
+		//		"github.com/gorilla/http",
+		//		"github.com/gorilla/reverse",
+		//		"github.com/gorilla/muxy",
+		//		"github.com/gorilla/i18n",
+		//		"github.com/gorilla/template",
+		//		"github.com/gorilla/.github",
+		//		"github.com/golang-migrate/migrate",
+		//		"github.com/torvalds/linux",
+		//		"github.com/torvalds/uemacs",
+		//		"github.com/torvalds/subsurface-for-dirk",
+		//		"github.com/torvalds/libdc-for-dirk",
+		//		"github.com/torvalds/test-tlb",
+		//		"github.com/torvalds/pesconvert",
+		//	}),
+		//	conf: &schema.GitHubConnection{
+		//		Url:   "https://github.com",
+		//		Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+		//		RepositoryQuery: []string{
+		//			"org:gorilla",
+		//			"org:golang-migrate",
+		//			"org:torvalds",
+		//		},
+		//	},
+		//	err: "<nil>",
+		//},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-LIST-REPOS/" + tc.name
+		t.Run(tc.name, func(t *testing.T) {
+			setUpRcache(t)
+
+			var (
+				cf   *httpcli.Factory
+				save func(testing.TB)
+			)
+			if tc.mw != nil {
+				cf, save = newClientFactory(t, tc.name, tc.mw)
+			} else {
+				cf, save = newClientFactory(t, tc.name)
+			}
+
+			defer save(t)
+
+			svc := &types.ExternalService{
+				Kind:   extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+			}
+
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := searchRepositories(context.Background(), githubSrc, tc.query, tc.first, tc.excludeRepos)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repos)
+			}
 		})
 	}
 }

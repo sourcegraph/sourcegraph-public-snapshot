@@ -107,7 +107,7 @@ func (s *FakeDiscoverableSource) ListNamespaces(ctx context.Context, results cha
 	}
 }
 
-func (s *FakeDiscoverableSource) ListRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+func (s *FakeDiscoverableSource) SearchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
 	if s.lockChan != nil {
 		s.lockChan <- struct{}{}
 		<-s.lockChan

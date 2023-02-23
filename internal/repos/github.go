@@ -295,8 +295,8 @@ func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult)
 	}
 }
 
-// ListRepositories returns the Github repositories matching the repositoryQuery and excluded repositories criteria.
-func (s *GitHubSource) ListRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+// SearchRepositories returns the Github repositories matching the repositoryQuery and excluded repositories criteria.
+func (s *GitHubSource) SearchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
 	// default to fetching affiliated repositories
 	if query == "" {
 		s.fetchReposAffiliated(ctx, first, excludedRepos, results)

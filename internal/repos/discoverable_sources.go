@@ -16,9 +16,9 @@ type DiscoverableSource interface {
 	// and are defined by external service kind (e.g. Github organizations, Bitbucket projects, etc.)
 	ListNamespaces(context.Context, chan SourceNamespaceResult)
 
-	// ListRepositories returns the repositories available on the source which match a given search query
+	// SearchRepositories returns the repositories available on the source which match a given search query
 	// and excluded repositories criteria.
-	ListRepositories(context.Context, string, int, []string, chan SourceResult)
+	SearchRepositories(context.Context, string, int, []string, chan SourceResult)
 }
 
 // A SourceNamespaceResult is sent by a Source over a channel for each namespace it

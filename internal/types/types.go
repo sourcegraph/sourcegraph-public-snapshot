@@ -631,7 +631,7 @@ type ExternalServiceNamespace struct {
 
 // ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
 type ExternalServiceRepository struct {
-	ID         string       `json:"id"`
+	ID         api.RepoID   `json:"id"`
 	Name       api.RepoName `json:"name"`
 	ExternalID string       `json:"external_id"`
 }
