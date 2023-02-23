@@ -287,9 +287,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
-                navigate: navigateRef.current,
                 initialSelection: position.line !== undefined ? position : null,
-                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                navigateToLineOnAnyClick: navigateToLineOnAnyClick ? navigateRef.current : null,
                 enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),

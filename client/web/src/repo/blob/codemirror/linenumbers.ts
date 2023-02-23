@@ -359,8 +359,7 @@ function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension 
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
-    navigate: NavigateFunction
-    navigateToLineOnAnyClick: boolean
+    navigateToLineOnAnyClick: NavigateFunction | null
     enableSelectionDrivenCodeNavigation?: boolean
 }
 
@@ -384,13 +383,13 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mouseup(view, block, event) {
-                    if (!config.navigateToLineOnAnyClick) {
+                    if (config.navigateToLineOnAnyClick === null) {
                         return false
                     }
 
                     const mouseEvent = event as MouseEvent
                     if (mouseEvent.button !== MOUSE_MAIN_BUTTON) {
-                        return true
+                        return false
                     }
 
                     const blobInfo = view.state.facet(blobPropsFacet).blobInfo
@@ -399,14 +398,14 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                         ...blobInfo,
                         position: { line, character: 0 },
                     })
-                    config.navigate(href)
+                    config.navigateToLineOnAnyClick(href)
 
                     return true
                 },
 
                 mousedown(view, block, event) {
-                    if (config.navigateToLineOnAnyClick) {
-                        return true
+                    if (config.navigateToLineOnAnyClick !== null) {
+                        return false
                     }
 
                     const mouseEvent = event as MouseEvent
