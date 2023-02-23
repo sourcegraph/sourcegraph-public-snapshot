@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/rjeczalik/notify"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -105,92 +104,92 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 		targets = append(targets, cmd.Target)
 	}
 	ibazel := newIBazel(repoRoot, targets...)
-	if err := ibazel.Start(ctx, repoRoot); err != nil {
-		return err
-	}
 
-	wg := sync.WaitGroup{}
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error {
+		return ibazel.Start(ctx, repoRoot)
+	})
+
 	for _, bc := range cmds {
-		wg.Add(1)
-		if err := bc.Start(ctx, repoRoot, parentEnv); err != nil {
-			return err
-		}
+		p.Go(func(ctx context.Context) error {
+			return bc.Start(ctx, repoRoot, parentEnv)
+		})
 	}
 
-	wg.Wait()
-
-	ibazel.Stop()
-	return nil
+	return p.Wait()
 }
 
 func (bc *BazelCommand) BinLocation() (string, error) {
 	return binLocation(bc.Target)
 }
 
-func (bc *BazelCommand) watch() (<-chan struct{}, error) {
+func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
+	// Grab the location of the binary in bazel-out.
 	binLocation, err := bc.BinLocation()
-	println(binLocation)
 	if err != nil {
 		return nil, err
 	}
 
+	// Set up the watcher.
 	restart := make(chan struct{})
 	events := make(chan notify.EventInfo, 1)
-
-	if err := notify.Watch(filepath.Dir(binLocation), events, notify.All); err != nil {
+	if err := notify.Watch(binLocation, events, notify.All); err != nil {
 		return nil, err
 	}
 
+	// Start watching for a freshly compiled version of the binary.
 	go func() {
 		defer close(events)
 		defer notify.Stop(events)
 
-		for e := range events {
-			println(e.Path(), e.Event().String())
-			println(binLocation)
-			if e.Event() != notify.Remove {
-				if e.Path() == binLocation {
-					println("before restart")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e := <-events:
+				if e.Event() != notify.Remove {
 					restart <- struct{}{}
-					println("after restart")
 				}
 			}
+
 		}
 	}()
+
 	return restart, nil
 }
 
 func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
+
+	// Run the binary for the first time.
 	cancel, err := bc.start(ctx, dir, parentEnv)
 	if err != nil {
 		return err
 	}
-	go func() {
-		restart, err := bc.watch()
-		if err != nil {
-			panic(err)
-		}
-		for {
-			select {
-			case <-ctx.Done():
-				println("context done")
-				return
-			case <-restart:
-				println("restart")
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", bc.Name))
-				cancel()
-				cancel, err = bc.start(ctx, dir, parentEnv)
-				if err != nil {
-					panic(err)
-				}
+
+	// Restart when the binary change.
+	wantRestart, err := bc.watch(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Wait forever until we're asked to stop or that restarting returns an error.
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-wantRestart:
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", bc.Name))
+			cancel()
+			cancel, err = bc.start(ctx, dir, parentEnv)
+			if err != nil {
+				return err
 			}
 		}
-	}()
-	return nil
+	}
 }
 
 func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[string]string) (func(), error) {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
 	binLocation, err := bc.BinLocation()
 	if err != nil {
 		return nil, nil

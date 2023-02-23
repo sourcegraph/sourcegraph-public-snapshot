@@ -114,6 +114,9 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	wg.Wait()
 
 	select {
+	case <-ctx.Done():
+		printCmdError(std.Out.Output, "other", ctx.Err())
+		return ctx.Err()
 	case failure := <-failures:
 		printCmdError(std.Out.Output, failure.cmdName, failure.err)
 		return failure
