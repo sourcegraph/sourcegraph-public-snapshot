@@ -423,6 +423,9 @@ func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolve
 	if err != nil {
 		return nil
 	}
+	if settings == nil {
+		return nil
+	}
 	return &UserLatestSettings{
 		ID:       settings.ID(),
 		Contents: settings.Contents(),
