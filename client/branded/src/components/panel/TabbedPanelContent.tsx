@@ -10,7 +10,6 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     useObservable,
@@ -29,7 +28,7 @@ import { EmptyPanelView } from './views/EmptyPanelView'
 
 import styles from './TabbedPanelContent.module.scss'
 
-interface TabbedPanelContentProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps, ThemeProps {
+interface TabbedPanelContentProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }

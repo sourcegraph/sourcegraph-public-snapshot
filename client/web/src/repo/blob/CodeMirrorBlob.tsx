@@ -21,7 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -61,7 +61,6 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         CodeMirrorBlobProps {
     className: string
     wrapCode: boolean
@@ -178,7 +177,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
-        isLightTheme,
         ariaLabel,
         role,
         extensionsController,
@@ -226,6 +224,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [props, navigate, location]
     )
 
+    const isLightTheme = useIsLightTheme()
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 

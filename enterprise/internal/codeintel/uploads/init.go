@@ -78,7 +78,7 @@ func NewService(
 var (
 	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
 	rankingMapReduceBatchSize    = env.MustGetInt("CODEINTEL_UPLOADS_MAP_REDUCE_RANKING_BATCH_SIZE", 10000, "How many references, definitions, and path counts to map and reduce at once.")
-	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
+	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "Backdoor value used to restart the ranking export procedure.")
 	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
 	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")

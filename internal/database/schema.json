@@ -117,10 +117,6 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_zoekt_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);\n\n  RETURN NULL;\nEND;\n$function$\n"
     },
     {
-      "Name": "func_lsif_dependency_repos_backfill",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_dependency_repos_backfill()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO package_repo_versions (package_id, version)\n        VALUES (NEW.id, NEW.version);\n\n        RETURN NULL;\n    END;\n$function$\n"
-    },
-    {
       "Name": "func_lsif_uploads_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE lsif_uploads_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE upload_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -482,6 +478,24 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_ranking_references_processed_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeowners_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -7724,19 +7738,6 @@
           "Comment": ""
         },
         {
-          "Name": "processed",
-          "Index": 5,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "symbol_names",
           "Index": 3,
           "TypeName": "text[]",
@@ -7786,6 +7787,199 @@
         }
       ],
       "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_ranking_references_processed",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "codeintel_ranking_reference_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "graph_key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_references_processed_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_ranking_references_processed_graph_key_codeintel_rank",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_ranking_references_processed_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_processed_pkey ON codeintel_ranking_references_processed USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "fk_codeintel_ranking_reference",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_ranking_references",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeowners",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "contents",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "contents_proto",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeowners_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeowners_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_pkey ON codeowners USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeowners_repo_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_repo_id_key ON codeowners USING btree (repo_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeowners_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -12816,19 +13010,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "version",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "'👁️temporary_sentinel_value👁️'::text",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -12843,16 +13024,6 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "lsif_dependency_repos_unique_triplet",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX lsif_dependency_repos_unique_triplet ON lsif_dependency_repos USING btree (scheme, name, version)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (scheme, name, version)"
-        },
-        {
           "Name": "lsif_dependency_repos_name_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -12864,12 +13035,7 @@
         }
       ],
       "Constraints": null,
-      "Triggers": [
-        {
-          "Name": "lsif_dependency_repos_backfill",
-          "Definition": "CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN (new.version \u003c\u003e '👁️temporary_sentinel_value👁️'::text) EXECUTE FUNCTION func_lsif_dependency_repos_backfill()"
-        }
-      ]
+      "Triggers": []
     },
     {
       "Name": "lsif_dependency_syncing_jobs",

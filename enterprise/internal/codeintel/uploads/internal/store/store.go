@@ -5,7 +5,6 @@ import (
 	"time"
 
 	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -97,7 +96,19 @@ type Store interface {
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
+	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]shared.ExportedUpload, error)
+
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+		metadataRecordsDeleted int,
+		inputRecordsDeleted int,
+		err error,
+	)
+
+	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+		numStaleDefinitionRecordsDeleted int,
+		numStaleReferenceRecordsDeleted int,
+		err error,
+	)
 
 	ProcessStaleExportedUploads(
 		ctx context.Context,
@@ -110,10 +121,9 @@ type Store interface {
 	ReindexUploadByID(ctx context.Context, id int) error
 
 	// Ranking
-	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, defintions []shared.RankingDefintions) (err error)
+	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
-	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error)
+	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 

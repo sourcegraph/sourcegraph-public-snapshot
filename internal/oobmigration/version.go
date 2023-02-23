@@ -2,6 +2,7 @@ package oobmigration
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -145,6 +146,17 @@ func CompareVersions(a, b Version) VersionOrder {
 	}
 
 	return VersionOrderEqual
+}
+
+// SortVersions sorts the given version slice in ascending order.
+func SortVersions(vs []Version) {
+	sort.Slice(vs, func(i, j int) bool {
+		if vs[i].Major == vs[j].Major {
+			return vs[i].Minor < vs[j].Minor
+		}
+
+		return vs[i].Major < vs[j].Major
+	})
 }
 
 // pointIntersectsInterval returns true if point falls within the interval [lower, upper].

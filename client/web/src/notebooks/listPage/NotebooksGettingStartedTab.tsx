@@ -6,12 +6,11 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
-import { useTheme, ThemePreference } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -70,7 +69,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
         return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
     }, [])
 
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <>
@@ -126,20 +125,18 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
             </Container>
 
             {isSourcegraphDotCom && (
-                <CloudCtaBanner variant="filled">
+                <CallToActionBanner variant="filled">
                     To create Notebooks across your team's private repositories,{' '}
                     <Link
-                        to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        to="https://about.sourcegraph.com"
                         onClick={() =>
-                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NotebooksGettingStarted' })
+                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
                         }
                     >
-                        try Sourcegraph Cloud
+                        get Sourcegraph Enterprise
                     </Link>
                     .
-                </CloudCtaBanner>
+                </CallToActionBanner>
             )}
 
             <H3>Example notebooks</H3>

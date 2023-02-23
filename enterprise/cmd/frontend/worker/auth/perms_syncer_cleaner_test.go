@@ -71,7 +71,7 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	cleanedJobsNumber, err = cleanJobs(ctx, db)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), cleanedJobsNumber)
-	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionSyncJobStateErrored)
+	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionsSyncJobStateErrored)
 
 	// Now let's make the history even shorter.
 	historySize = 0
@@ -79,8 +79,8 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	cleanedJobsNumber, err = cleanJobs(ctx, db)
 	require.NoError(t, err)
 	require.Equal(t, int64(8), cleanedJobsNumber)
-	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionSyncJobStateFailed)
-	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionSyncJobStateCompleted)
+	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionsSyncJobStateFailed)
+	assertThereAreNoJobsWithState(t, ctx, store, database.PermissionsSyncJobStateCompleted)
 
 	// This way we should only have "queued" and "processing" jobs, let's check the
 	// number, we should have 8 now.
@@ -95,12 +95,12 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	require.Equal(t, int64(0), cleanedJobsNumber)
 }
 
-var states = []database.PermissionSyncJobState{
-	database.PermissionSyncJobStateQueued,
-	database.PermissionSyncJobStateProcessing,
-	database.PermissionSyncJobStateErrored,
-	database.PermissionSyncJobStateFailed,
-	database.PermissionSyncJobStateCompleted,
+var states = []database.PermissionsSyncJobState{
+	database.PermissionsSyncJobStateQueued,
+	database.PermissionsSyncJobStateProcessing,
+	database.PermissionsSyncJobStateErrored,
+	database.PermissionsSyncJobStateFailed,
+	database.PermissionsSyncJobStateCompleted,
 }
 
 func addSyncJobs(t *testing.T, ctx context.Context, db database.DB, repoOrUser string, id int) {
@@ -117,20 +117,20 @@ func addSyncJobs(t *testing.T, ctx context.Context, db database.DB, repoOrUser s
 // Time is mapped to status, from oldest to newest: errored->failed->completed.
 //
 // Queued and processing jobs doesn't have a `finished_at` value, hence NULL.
-func getFinishedAt(state database.PermissionSyncJobState) string {
+func getFinishedAt(state database.PermissionsSyncJobState) string {
 	switch state {
-	case database.PermissionSyncJobStateErrored:
+	case database.PermissionsSyncJobStateErrored:
 		return "NOW() - INTERVAL '5 HOURS'"
-	case database.PermissionSyncJobStateFailed:
+	case database.PermissionsSyncJobStateFailed:
 		return "NOW() - INTERVAL '2 HOURS'"
-	case database.PermissionSyncJobStateCompleted:
+	case database.PermissionsSyncJobStateCompleted:
 		return "NOW() - INTERVAL '1 HOUR'"
 	default:
 		return "NULL"
 	}
 }
 
-func assertThereAreNoJobsWithState(t *testing.T, ctx context.Context, store database.PermissionSyncJobStore, state database.PermissionSyncJobState) {
+func assertThereAreNoJobsWithState(t *testing.T, ctx context.Context, store database.PermissionSyncJobStore, state database.PermissionsSyncJobState) {
 	t.Helper()
 	allSyncJobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
