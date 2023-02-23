@@ -198,7 +198,7 @@ func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.Team
 	for _, newMember := range members {
 		exists := false
 		for _, existingMember := range teams.members {
-			if *existingMember == *newMember {
+			if existingMember.UserID == newMember.UserID && existingMember.TeamID == newMember.TeamID {
 				exists = true
 				// on conflict do nothing.
 				break

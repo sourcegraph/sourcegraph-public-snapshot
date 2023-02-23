@@ -46,7 +46,7 @@ func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 	return a.User(ctx, users)
 }
 
-func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) (_ []*types.User, err error) {
+func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
 	if len(opts.UserIDs) == 0 {
 		return nil, errors.New("not implemented")
 	}

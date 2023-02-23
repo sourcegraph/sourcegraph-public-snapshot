@@ -9408,9 +9408,14 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
 
-    If lenient is true, members that are not matched to a user are skipped.
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    addTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
+    addTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9423,9 +9428,14 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
 
-    If lenient is true, members that are not matched to a user are skipped.
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    setTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
+    setTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9437,15 +9447,20 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
 
-    If lenient is true, members that are not matched to a user are skipped.
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
+    removeTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 }
 
 """
 Options to specify a user for team membership. Multiple options can be provided,
 with the following precedence order: (Other mismatches will be discarded)
-- ID
+- UserID
 - Username
 - Email
 - External Account fields
@@ -9458,7 +9473,7 @@ input TeamMemberInput {
     """
     Explicitly define a user by ID.
     """
-    id: ID
+    userID: ID
     """
     Explicitly define a user by username in Sourcegraph.
     """

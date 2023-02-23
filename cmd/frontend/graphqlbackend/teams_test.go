@@ -1175,8 +1175,8 @@ func TestMembersAdd(t *testing.T) {
 		Context: ctx,
 		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
 			addTeamMembers(teamName: "team", members: [
-				{ id: $existingAndAddedId },
-				{ id: $addedId }
+				{ userID: $existingAndAddedId },
+				{ userID: $addedId }
 			]) {
 				members {
 					nodes {
@@ -1234,7 +1234,7 @@ func TestMembersRemove(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation RemoveTeamMembers($r1: ID!, $r2: ID!, $r3: ID!) {
-			removeTeamMembers(teamName: "team", members: [{ id: $r1 }, { id: $r2 }, { id: $r3 }]) {
+			removeTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }]) {
 				members {
 					nodes {
 						... on User {
@@ -1293,7 +1293,7 @@ func TestMembersSet(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation SetTeamMembers($r1: ID!, $r2: ID!, $r3: ID!, $r4: ID!) {
-			setTeamMembers(teamName: "team", members: [{ id: $r1 }, { id: $r2 }, { id: $r3 }, { id: $r4 }]) {
+			setTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }, { userID: $r4 }]) {
 				members {
 					nodes {
 						... on User {

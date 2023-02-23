@@ -466,14 +466,14 @@ func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (
 }
 
 type TeamMembersArgs struct {
-	Team     *graphql.ID
-	TeamName *string
-	Members  []TeamMemberInput
-	Lenient  bool
+	Team                 *graphql.ID
+	TeamName             *string
+	Members              []TeamMemberInput
+	SkipUnmatchedMembers bool
 }
 
 type TeamMemberInput struct {
-	ID                         *graphql.ID
+	UserID                     *graphql.ID
 	Username                   *string
 	Email                      *string
 	ExternalAccountServiceID   *string
@@ -485,8 +485,8 @@ type TeamMemberInput struct {
 func (t TeamMemberInput) String() string {
 	conds := []string{}
 
-	if t.ID != nil {
-		conds = append(conds, fmt.Sprintf("ID=%s", string(*t.ID)))
+	if t.UserID != nil {
+		conds = append(conds, fmt.Sprintf("ID=%s", string(*t.UserID)))
 	}
 	if t.Username != nil {
 		conds = append(conds, fmt.Sprintf("Username=%s", *t.Username))
@@ -525,36 +525,24 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
 
-	var team *types.Team
-	if args.Team != nil {
-		var id int32
-		err := relay.UnmarshalSpec(*args.Team, id)
-		if err != nil {
-			return nil, err
-		}
-		team, err = r.db.Teams().GetTeamByID(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-	} else if args.TeamName != nil {
-		var err error
-		team, err = r.db.Teams().GetTeamByName(ctx, *args.TeamName)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("must specify team name or team id")
-	}
-
 	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.Lenient {
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
 		var err error
 		for _, member := range notFound {
-			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
+		return nil, err
+	}
+	usersMap := make(map[int32]*types.User, len(users))
+	for _, user := range users {
+		usersMap[user.ID] = user
+	}
+
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
 		return nil, err
 	}
 
@@ -591,10 +579,10 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.Lenient {
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
 		var err error
 		for _, member := range notFound {
-			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
 		return nil, err
 	}
@@ -675,10 +663,10 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.Lenient {
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
 		var err error
 		for _, member := range notFound {
-			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
 		return nil, err
 	}
@@ -747,12 +735,12 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemberInput) (users []*types.User, noMatch []TeamMemberInput, err error) {
 	// First, look at IDs.
 	ids := []int32{}
-	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		// If ID is specified for the member, we try to find the user by ID.
-		if m.ID == nil {
+		if m.UserID == nil {
 			return false, nil
 		}
-		id, err := UnmarshalUserID(*m.ID)
+		id, err := UnmarshalUserID(*m.UserID)
 		if err != nil {
 			return false, err
 		}
@@ -771,7 +759,7 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 
 	// Now, look at all that have username set.
 	usernames := []string{}
-	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.Username == nil {
 			return false, nil
 		}
@@ -790,7 +778,7 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 	}
 
 	// Next up: Email.
-	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.Email == nil {
 			return false, nil
 		}
@@ -806,7 +794,7 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 	}
 
 	// Next up: ExternalAccount.
-	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.ExternalAccountServiceID == nil || m.ExternalAccountServiceType == nil {
 			return false, nil
 		}
@@ -851,9 +839,9 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 	return users, members, err
 }
 
-// filterMembers calls pred on each member, and returns a new slice of members
+// extractMembers calls pred on each member, and returns a new slice of members
 // for which the predicate was falsey.
-func filterMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool, err error)) ([]TeamMemberInput, error) {
+func extractMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool, err error)) ([]TeamMemberInput, error) {
 	remaining := []TeamMemberInput{}
 	for _, member := range members {
 		ok, err := pred(member)
