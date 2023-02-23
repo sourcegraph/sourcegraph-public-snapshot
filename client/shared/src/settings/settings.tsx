@@ -245,10 +245,10 @@ export interface SettingsCascadeProps<S extends Settings = Settings> {
 }
 
 interface SettingsContextData<S extends Settings = Settings> {
-    settingsCascade: SettingsCascadeOrError<S> | null
+    settingsCascade: SettingsCascadeOrError<S>
 }
 const SettingsContext = createContext<SettingsContextData>({
-    settingsCascade: null,
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
 })
 
 interface SettingsProviderProps {
@@ -268,8 +268,11 @@ export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProvider
  */
 export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
-    if (!settingsCascade) {
-        throw new Error('useSettingsCascade must be used within a SettingsProvider')
+    if (settingsCascade === EMPTY_SETTINGS_CASCADE && process.env.JEST_WORKER_ID === undefined) {
+        // eslint-disable-next-line no-console
+        console.error(
+            'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
+        )
     }
     return settingsCascade
 }
