@@ -21,7 +21,7 @@ import (
 // createRepos is a helper to set up repos we use in this test to satisfy foreign key constraints.
 // repo IDs are generated automatically, so we just specify the number we want.
 func createRepos(t *testing.T, ctx context.Context, store database.RepoStore, numOfRepos int) {
-  t.Helper()
+	t.Helper()
 	for i := 0; i < numOfRepos; i++ {
 		if err := store.Create(ctx, &types.Repo{
 			Name: api.RepoName(fmt.Sprintf("%d", i)),
