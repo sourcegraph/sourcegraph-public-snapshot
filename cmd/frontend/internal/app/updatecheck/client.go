@@ -747,7 +747,7 @@ func check(logger log.Logger, db database.DB) {
 // switched on/off at runtime.
 func isUpdateCheckCurrentlyEnabled() bool {
 	// Disabled when running in App mode.
-	// TODO: re-enable in App mode when authenticated.
+	// TODO(app): re-enable in App mode when a Sourcegraph.com account is connected.
 	return !deploy.IsDeployTypeSingleProgram(deploy.Type())
 }
 
