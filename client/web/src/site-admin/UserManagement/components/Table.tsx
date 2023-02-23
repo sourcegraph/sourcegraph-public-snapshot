@@ -26,9 +26,8 @@ import {
     Select,
 } from '@sourcegraph/wildcard'
 
-import { DropdownPagination, DropdownPaginationProps } from '../../components/DropdownPagination'
-
 import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'
+import { DropdownPagination, DropdownPaginationProps } from './DropdownPagination'
 
 import styles from './Table.module.scss'
 
