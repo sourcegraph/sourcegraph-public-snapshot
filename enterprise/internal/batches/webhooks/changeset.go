@@ -16,25 +16,25 @@ import (
 
 // changeset represents a changeset in a webhook payload.
 type changeset struct {
-	ID                  graphql.ID   `json:"id"`
-	ExternalID          string       `json:"external_id"`
-	BatchChangeIDs      []graphql.ID `json:"batch_change_ids"`
-	OwningBatchChangeID *graphql.ID  `json:"owning_batch_change_id"`
-	RepositoryID        graphql.ID   `json:"repository_id"`
-	CreatedAt           time.Time    `json:"created_at"`
-	UpdatedAt           time.Time    `json:"updated_at"`
-	Title               *string      `json:"title"`
-	Body                *string      `json:"body"`
-	AuthorName          *string      `json:"author_name"`
-	State               string       `json:"state"`
-	Labels              []string     `json:"labels"`
-	ExternalURL         *string      `json:"external_url"`
-	ForkName            *string      `json:"fork_name"`
-	ForkNamespace       *string      `json:"fork_namespace"`
-	ReviewState         *string      `json:"review_state"`
-	CheckState          *string      `json:"check_state"`
-	Error               *string      `json:"error"`
-	SyncerError         *string      `json:"syncer_error"`
+	ID                 graphql.ID   `json:"id"`
+	ExternalID         string       `json:"external_id"`
+	BatchChangeIDs     []graphql.ID `json:"batch_change_ids"`
+	OwnedByBatchChange *graphql.ID  `json:"owning_batch_change_id"`
+	RepositoryID       graphql.ID   `json:"repository_id"`
+	CreatedAt          time.Time    `json:"created_at"`
+	UpdatedAt          time.Time    `json:"updated_at"`
+	Title              *string      `json:"title"`
+	Body               *string      `json:"body"`
+	AuthorName         *string      `json:"author_name"`
+	State              string       `json:"state"`
+	Labels             []string     `json:"labels"`
+	ExternalURL        *string      `json:"external_url"`
+	ForkName           *string      `json:"fork_name"`
+	ForkNamespace      *string      `json:"fork_namespace"`
+	ReviewState        *string      `json:"review_state"`
+	CheckState         *string      `json:"check_state"`
+	Error              *string      `json:"error"`
+	SyncerError        *string      `json:"syncer_error"`
 }
 
 const gqlChangesetQuery = `query Changeset($id: ID!) {
@@ -69,6 +69,8 @@ const gqlChangesetQuery = `query Changeset($id: ID!) {
 			checkState
 			error
 			syncerError
+			forkName
+			ownedByBatchChange
 		}
 	}
 }`
@@ -100,11 +102,13 @@ type gqlChangesetResponse struct {
 			ExternalURL *struct {
 				URL string `json:"url"`
 			} `json:"externalURL"`
-			ForkNamespace *string `json:"forkNamespace"`
-			ReviewState   *string `json:"reviewState"`
-			CheckState    *string `json:"checkState"`
-			Error         *string `json:"error"`
-			SyncerError   *string `json:"syncerError"`
+			ForkNamespace      *string     `json:"forkNamespace"`
+			ReviewState        *string     `json:"reviewState"`
+			CheckState         *string     `json:"checkState"`
+			Error              *string     `json:"error"`
+			SyncerError        *string     `json:"syncerError"`
+			ForkName           *string     `json:"forkName"`
+			OwnedByBatchChange *graphql.ID `json:"ownedByBatchChange"`
 		}
 	}
 	Errors []gqlerrors.FormattedError
@@ -174,24 +178,24 @@ func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
 	}
 
 	return json.Marshal(changeset{
-		ID:             node.ID,
-		ExternalID:     node.ExternalID,
-		BatchChangeIDs: batchChangeIDs,
-		// OwningBatchChangeID: ,
-		RepositoryID: node.Repository.ID,
-		CreatedAt:    node.CreatedAt,
-		UpdatedAt:    node.UpdatedAt,
-		Title:        node.Title,
-		Body:         node.Body,
-		AuthorName:   authorName,
-		State:        node.State,
-		Labels:       labels,
-		ExternalURL:  externalURL,
-		// ForkName: ,
-		ForkNamespace: node.ForkNamespace,
-		ReviewState:   node.ReviewState,
-		CheckState:    node.CheckState,
-		Error:         node.Error,
-		SyncerError:   node.SyncerError,
+		ID:                 node.ID,
+		ExternalID:         node.ExternalID,
+		BatchChangeIDs:     batchChangeIDs,
+		RepositoryID:       node.Repository.ID,
+		CreatedAt:          node.CreatedAt,
+		UpdatedAt:          node.UpdatedAt,
+		Title:              node.Title,
+		Body:               node.Body,
+		AuthorName:         authorName,
+		State:              node.State,
+		Labels:             labels,
+		ExternalURL:        externalURL,
+		ForkName:           node.ForkName,
+		OwnedByBatchChange: node.OwnedByBatchChange,
+		ForkNamespace:      node.ForkNamespace,
+		ReviewState:        node.ReviewState,
+		CheckState:         node.CheckState,
+		Error:              node.Error,
+		SyncerError:        node.SyncerError,
 	})
 }

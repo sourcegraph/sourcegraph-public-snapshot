@@ -14,6 +14,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -1000,7 +1001,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return nil, err
 	}
 
-	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, batchChange)
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
 	if !closeChangesets {
 		return batchChange, nil
 	}
@@ -1032,7 +1033,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, batchChange)
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, bgql.MarshalBatchChangeID(batchChange.ID))
 	return s.store.DeleteBatchChange(ctx, id)
 }
 
