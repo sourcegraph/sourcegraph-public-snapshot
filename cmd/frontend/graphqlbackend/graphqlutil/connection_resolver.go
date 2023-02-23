@@ -68,7 +68,7 @@ type ConnectionResolverOptions struct {
 	// If set to true, the resolver won't throw an error when `first` or `last` isn't provided
 	// in `ConnectionResolverArgs`. Be careful when setting this to true, as this could cause
 	// performance issues when fetching large data.
-	SkipArgsValidation bool
+	AllowNoLimit bool
 }
 
 // MaxPageSizeOrDefault returns the configured max page limit for the connection.
@@ -123,7 +123,7 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 		paginationArgs.First = &limit
 	} else if r.args.Last != nil {
 		paginationArgs.Last = &limit
-	} else if !r.options.SkipArgsValidation {
+	} else if !r.options.AllowNoLimit {
 		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
 	}
 

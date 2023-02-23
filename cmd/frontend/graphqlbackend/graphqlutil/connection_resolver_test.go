@@ -218,13 +218,13 @@ func TestConnectionNodes(t *testing.T) {
 		{
 			name:           "no args supplied (skipArgValidation is false)",
 			connectionArgs: &ConnectionResolverArgs{},
-			options:        &ConnectionResolverOptions{SkipArgsValidation: false},
+			options:        &ConnectionResolverOptions{AllowNoLimit: false},
 			wantError:      true,
 		},
 		{
 			name:           "no args supplied (skipArgValidation is true)",
 			connectionArgs: &ConnectionResolverArgs{},
-			options:        &ConnectionResolverOptions{SkipArgsValidation: true},
+			options:        &ConnectionResolverOptions{AllowNoLimit: true},
 			wantError:      false,
 			wantNodes:      2,
 		},
