@@ -3,11 +3,11 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Tooltip } from '@sourcegraph/wildcard'
 
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
-import { UserAvatar } from '../../user/UserAvatar'
 
 interface Props {
     author: SignatureFields

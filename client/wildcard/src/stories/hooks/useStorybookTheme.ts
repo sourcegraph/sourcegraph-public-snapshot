@@ -13,7 +13,7 @@ const useDarkMode = isChromatic() ? useChromaticDarkMode : useRegularDarkMode
  *
  * @returns isLightTheme: boolean that is true if the light theme is enabled
  */
-export const useTheme = (): boolean => {
+export const useStorybookTheme = (): boolean => {
     const isDarkMode = useDarkMode()
     const [isLightTheme, setIsLightTheme] = useState(!isDarkMode)
 

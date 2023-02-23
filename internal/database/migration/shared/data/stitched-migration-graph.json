@@ -8093,7 +8093,7 @@
 			{
 				"ID": 1671543381,
 				"Name": "add_default_roles",
-				"UpQuery": "-- system roles that come with every sourcegraph instance\nINSERT INTO\n    roles\nVALUES\n    (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, TRUE),\n    (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, TRUE)\nON CONFLICT (id) DO NOTHING;\n\nSELECT pg_catalog.setval('roles_id_seq', 3, true);",
+				"UpQuery": "-- system roles that come with every sourcegraph instance\nINSERT INTO\n    roles (id, name, created_at, deleted_at, readonly)\nVALUES\n    (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, TRUE),\n    (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, TRUE)\nON CONFLICT (id) DO NOTHING;\n\nSELECT pg_catalog.setval('roles_id_seq', 3, true);",
 				"DownQuery": "DELETE FROM roles WHERE id IN (1, 2);",
 				"Privileged": false,
 				"NonIdempotent": false,
@@ -8486,6 +8486,19 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1676996650,
+				"Name": "package_repos_separate_versions_table_patch1",
+				"UpQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version SET DEFAULT '👁️temporary_sentinel_value👁️';",
+				"DownQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version DROP DEFAULT;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675962678
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1675864432,
 				"Name": "add code_host_states to permission_sync_jobs table",
 				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS code_host_states JSON[];",
@@ -8721,7 +8734,7 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1675296942,
-					1675962678,
+					1676996650,
 					1675864432
 				],
 				"PreCreation": false

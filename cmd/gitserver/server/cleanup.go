@@ -173,7 +173,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitServerAddresses) {
+func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitserverAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -1401,10 +1401,10 @@ func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 // git-gc operations are running at the same time.
 func gitSetAutoGC(dir GitDir) error {
 	switch gitGCMode {
-	case gitGCModeGitAutoGC:
+	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
 		return gitConfigUnset(dir, "gc.auto")
 
-	case gitGCModeJanitorAutoGC, gitGCModeMaintenance:
+	case gitGCModeMaintenance:
 		return gitConfigSet(dir, "gc.auto", "0")
 
 	default:

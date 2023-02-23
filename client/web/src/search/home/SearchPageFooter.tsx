@@ -3,7 +3,6 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
@@ -55,9 +54,16 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
     },
 ]
 
-export const SearchPageFooter: React.FunctionComponent<
-    React.PropsWithChildren<ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }>
-> = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
+interface SearchPageFooterProps extends TelemetryProps {
+    isLightTheme: boolean
+    isSourcegraphDotCom: boolean
+}
+
+export const SearchPageFooter: React.FC<SearchPageFooterProps> = ({
+    isLightTheme,
+    telemetryService,
+    isSourcegraphDotCom,
+}) => {
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }

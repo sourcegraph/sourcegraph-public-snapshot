@@ -152,7 +152,7 @@ function toTextDocument(textDocument: TextDocumentIdentifier): sourcegraph.TextD
     }
 }
 
-function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
+export function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
     const document: Pick<TextDocument, 'uri' | 'languageId'> = toTextDocument(textDocument)
     for (const language of languages) {
         if (match(language.selector, document)) {

@@ -28,7 +28,7 @@ import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
@@ -93,7 +93,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     globbing,
     onEditorCreated,
     interpretComments,
-    isLightTheme,
     className,
     preventNewLine = true,
     placeholder,
@@ -296,7 +295,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     return (
         <>
             <CodeMirrorQueryInput
-                isLightTheme={isLightTheme}
                 onEditorCreated={editorCreated}
                 patternType={patternType}
                 interpretComments={interpretComments}
@@ -313,7 +311,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
 
 const EMPTY: any[] = []
 
-interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
+interface CodeMirrorQueryInputProps extends SearchPatternTypeProps {
     value: string
     onEditorCreated?: (editor: EditorView) => void
     // Whether comments are parsed and highlighted
@@ -327,12 +325,14 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * theming, syntax highlighting and token info.
  */
 export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
-    ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = EMPTY }) => {
+    ({ onEditorCreated, patternType, interpretComments, value, className, extensions = EMPTY }) => {
         // This is using state instead of a ref because `useRef` doesn't cause a
         // re-render when the ref is attached, but we need that so that
         // `useCodeMirror` is called again and the editor is actually created.
         // See https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
+        const isLightTheme = useIsLightTheme()
+
         const externalExtensions = useMemo(() => new Compartment(), [])
         const themeExtension = useMemo(() => new Compartment(), [])
 
