@@ -1,4 +1,4 @@
-package mutablelimiter
+package limiter
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestMutableLimiter(t *testing.T) {
 		return ctx
 	}
 
-	l := New(2)
+	l := NewMutable(2)
 
 	// Should not block
 	ctx1, cancel1, err := l.Acquire(context.Background())
