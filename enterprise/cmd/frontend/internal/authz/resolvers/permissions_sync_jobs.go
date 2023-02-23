@@ -14,20 +14,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-func NewPermissionSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionSyncJobResolver], error) {
-	store := &permissionSyncJobConnectionStore{
+func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
+	store := &permissionsSyncJobConnectionStore{
 		db:   db,
 		args: args,
 	}
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
 }
 
-type permissionSyncJobConnectionStore struct {
+type permissionsSyncJobConnectionStore struct {
 	db   database.DB
-	args graphqlbackend.ListPermissionSyncJobsArgs
+	args graphqlbackend.ListPermissionsSyncJobsArgs
 }
 
-func (s *permissionSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
 	count, err := s.db.PermissionSyncJobs().Count(ctx)
 	if err != nil {
 		return nil, err
@@ -36,19 +36,19 @@ func (s *permissionSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*i
 	return &total, nil
 }
 
-func (s *permissionSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionSyncJobResolver, error) {
+func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
 	jobs, err := s.db.PermissionSyncJobs().List(ctx, database.ListPermissionSyncJobOpts{PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.PermissionSyncJobResolver, 0, len(jobs))
+	resolvers := make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(jobs))
 	for _, job := range jobs {
 		syncSubject, err := s.resolveSubject(ctx, job)
 		if err != nil {
 			return nil, err
 		}
-		resolvers = append(resolvers, &permissionSyncJobResolver{
+		resolvers = append(resolvers, &permissionsSyncJobResolver{
 			db:          s.db,
 			job:         job,
 			syncSubject: syncSubject,
@@ -57,7 +57,7 @@ func (s *permissionSyncJobConnectionStore) ComputeNodes(ctx context.Context, arg
 	return resolvers, nil
 }
 
-func (s *permissionSyncJobConnectionStore) resolveSubject(ctx context.Context, job *database.PermissionSyncJob) (graphqlbackend.PermissionSyncJobSubject, error) {
+func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, job *database.PermissionSyncJob) (graphqlbackend.PermissionsSyncJobSubject, error) {
 	var repoResolver *graphqlbackend.RepositoryResolver
 	var userResolver *graphqlbackend.UserResolver
 
@@ -81,8 +81,8 @@ func (s *permissionSyncJobConnectionStore) resolveSubject(ctx context.Context, j
 	}, nil
 }
 
-func (s *permissionSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionSyncJobResolver, _ database.OrderBy) (*string, error) {
-	id, err := unmarshalPermissionSyncJobID(node.ID())
+func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionsSyncJobResolver, _ database.OrderBy) (*string, error) {
+	id, err := unmarshalPermissionsSyncJobID(node.ID())
 	if err != nil {
 		return nil, err
 	}
@@ -90,38 +90,38 @@ func (s *permissionSyncJobConnectionStore) MarshalCursor(node graphqlbackend.Per
 	return &cursor, nil
 }
 
-func (s *permissionSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
 	return &cursor, nil
 }
 
-type permissionSyncJobResolver struct {
+type permissionsSyncJobResolver struct {
 	db          database.DB
 	job         *database.PermissionSyncJob
-	syncSubject graphqlbackend.PermissionSyncJobSubject
+	syncSubject graphqlbackend.PermissionsSyncJobSubject
 }
 
-func (p *permissionSyncJobResolver) ID() graphql.ID {
-	return marshalPermissionSyncJobID(p.job.ID)
+func (p *permissionsSyncJobResolver) ID() graphql.ID {
+	return marshalPermissionsSyncJobID(p.job.ID)
 }
 
-func (p *permissionSyncJobResolver) State() string {
+func (p *permissionsSyncJobResolver) State() string {
 	return p.job.State.ToGraphQL()
 }
 
-func (p *permissionSyncJobResolver) FailureMessage() *string {
+func (p *permissionsSyncJobResolver) FailureMessage() *string {
 	return p.job.FailureMessage
 }
 
-func (p *permissionSyncJobResolver) Reason() graphqlbackend.PermissionSyncJobReasonResolver {
+func (p *permissionsSyncJobResolver) Reason() graphqlbackend.PermissionsSyncJobReasonResolver {
 	reason := p.job.Reason
 	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), message: string(reason)}
 }
 
-func (p *permissionSyncJobResolver) CancellationReason() *string {
+func (p *permissionsSyncJobResolver) CancellationReason() *string {
 	return p.job.CancellationReason
 }
 
-func (p *permissionSyncJobResolver) TriggeredByUser(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (p *permissionsSyncJobResolver) TriggeredByUser(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	userID := p.job.TriggeredByUserID
 	if userID == 0 {
 		return nil, nil
@@ -129,23 +129,23 @@ func (p *permissionSyncJobResolver) TriggeredByUser(ctx context.Context) (*graph
 	return graphqlbackend.UserByIDInt32(ctx, p.db, userID)
 }
 
-func (p *permissionSyncJobResolver) QueuedAt() gqlutil.DateTime {
+func (p *permissionsSyncJobResolver) QueuedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: p.job.QueuedAt}
 }
 
-func (p *permissionSyncJobResolver) StartedAt() *gqlutil.DateTime {
+func (p *permissionsSyncJobResolver) StartedAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(p.job.StartedAt)
 }
 
-func (p *permissionSyncJobResolver) FinishedAt() *gqlutil.DateTime {
+func (p *permissionsSyncJobResolver) FinishedAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(p.job.FinishedAt)
 }
 
-func (p *permissionSyncJobResolver) ProcessAfter() *gqlutil.DateTime {
+func (p *permissionsSyncJobResolver) ProcessAfter() *gqlutil.DateTime {
 	return gqlutil.FromTime(p.job.ProcessAfter)
 }
 
-func (p *permissionSyncJobResolver) RanForMs() *int32 {
+func (p *permissionsSyncJobResolver) RanForMs() *int32 {
 	var ranFor int32
 	if !p.job.FinishedAt.IsZero() {
 		// Job runtime in ms shouldn't take more than a 32-bit int value.
@@ -154,55 +154,55 @@ func (p *permissionSyncJobResolver) RanForMs() *int32 {
 	return &ranFor
 }
 
-func (p *permissionSyncJobResolver) NumResets() *int32 {
+func (p *permissionsSyncJobResolver) NumResets() *int32 {
 	return intToInt32Ptr(p.job.NumResets)
 }
 
-func (p *permissionSyncJobResolver) NumFailures() *int32 {
+func (p *permissionsSyncJobResolver) NumFailures() *int32 {
 	return intToInt32Ptr(p.job.NumFailures)
 }
 
-func (p *permissionSyncJobResolver) LastHeartbeatAt() *gqlutil.DateTime {
+func (p *permissionsSyncJobResolver) LastHeartbeatAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(p.job.LastHeartbeatAt)
 }
 
-func (p *permissionSyncJobResolver) WorkerHostname() string {
+func (p *permissionsSyncJobResolver) WorkerHostname() string {
 	return p.job.WorkerHostname
 }
 
-func (p *permissionSyncJobResolver) Cancel() bool {
+func (p *permissionsSyncJobResolver) Cancel() bool {
 	return p.job.Cancel
 }
 
-func (p *permissionSyncJobResolver) Subject() graphqlbackend.PermissionSyncJobSubject {
+func (p *permissionsSyncJobResolver) Subject() graphqlbackend.PermissionsSyncJobSubject {
 	return p.syncSubject
 }
 
-func (p *permissionSyncJobResolver) Priority() string {
+func (p *permissionsSyncJobResolver) Priority() string {
 	return p.job.Priority.ToString()
 }
 
-func (p *permissionSyncJobResolver) NoPerms() bool {
+func (p *permissionsSyncJobResolver) NoPerms() bool {
 	return p.job.NoPerms
 }
 
-func (p *permissionSyncJobResolver) InvalidateCaches() bool {
+func (p *permissionsSyncJobResolver) InvalidateCaches() bool {
 	return p.job.InvalidateCaches
 }
 
-func (p *permissionSyncJobResolver) PermissionsAdded() int32 {
+func (p *permissionsSyncJobResolver) PermissionsAdded() int32 {
 	return int32(p.job.PermissionsAdded)
 }
 
-func (p *permissionSyncJobResolver) PermissionsRemoved() int32 {
+func (p *permissionsSyncJobResolver) PermissionsRemoved() int32 {
 	return int32(p.job.PermissionsRemoved)
 }
 
-func (p *permissionSyncJobResolver) PermissionsFound() int32 {
+func (p *permissionsSyncJobResolver) PermissionsFound() int32 {
 	return int32(p.job.PermissionsFound)
 }
 
-func (p *permissionSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostStateResolver {
+func (p *permissionsSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostStateResolver {
 	resolvers := make([]graphqlbackend.CodeHostStateResolver, 0, len(p.job.CodeHostStates))
 	for _, state := range p.job.CodeHostStates {
 		resolvers = append(resolvers, codeHostStateResolver{state: state})
@@ -231,7 +231,7 @@ func (c codeHostStateResolver) Message() string {
 }
 
 type permissionSyncJobReasonResolver struct {
-	group   database.PermissionSyncJobReasonGroup
+	group   database.PermissionsSyncJobReasonGroup
 	message string
 }
 
@@ -255,11 +255,11 @@ func (s subject) ToUser() (*graphqlbackend.UserResolver, bool) {
 	return s.user, s.user != nil
 }
 
-func marshalPermissionSyncJobID(id int) graphql.ID {
-	return relay.MarshalID("PermissionSyncJob", id)
+func marshalPermissionsSyncJobID(id int) graphql.ID {
+	return relay.MarshalID("PermissionsSyncJob", id)
 }
 
-func unmarshalPermissionSyncJobID(id graphql.ID) (jobID int, err error) {
+func unmarshalPermissionsSyncJobID(id graphql.ID) (jobID int, err error) {
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
 }

@@ -42,6 +42,7 @@ export interface LegacyLayoutRouteComponentProps
         CodeIntelligenceProps,
         BatchChangesProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     isMacPlatform: boolean
 }
 

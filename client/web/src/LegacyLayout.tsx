@@ -110,6 +110,7 @@ export interface LegacyLayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     children?: never
 }
 /**

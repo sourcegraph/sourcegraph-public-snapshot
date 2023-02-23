@@ -287,6 +287,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
         isSourcegraphDotCom: window.context.sourcegraphDotComMode,
+        isSourcegraphApp: window.context.sourcegraphAppMode,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         getUserSearchContextNamespaces,
@@ -359,6 +360,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     extensionsController={null}
                     telemetryService={eventLogger}
                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    isSourcegraphApp={window.context.sourcegraphAppMode}
                     searchContextsEnabled={props.searchContextsEnabled}
                     selectedSearchContextSpec={selectedSearchContextSpec}
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}

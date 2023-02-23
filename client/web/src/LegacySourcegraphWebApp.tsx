@@ -310,6 +310,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                             extensionsController={this.extensionsController}
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                            isSourcegraphApp={window.context.sourcegraphAppMode}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             selectedSearchContextSpec={this.state.selectedSearchContextSpec}
                             setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
