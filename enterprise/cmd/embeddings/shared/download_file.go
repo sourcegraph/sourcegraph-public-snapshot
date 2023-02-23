@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 	"encoding/json"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
@@ -14,13 +13,8 @@ func downloadJSONFile[T any](ctx context.Context, uploadStore uploadstore.Store,
 		return nil, err
 	}
 
-	bytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
 	var jsonFile T
-	err = json.Unmarshal(bytes, &jsonFile)
+	err = json.NewDecoder(file).Decode(&jsonFile)
 	if err != nil {
 		return nil, err
 	}
