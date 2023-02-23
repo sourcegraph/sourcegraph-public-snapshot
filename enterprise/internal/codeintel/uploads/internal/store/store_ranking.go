@@ -18,124 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
-	numStaleDefinitionRecordsDeleted int,
-	numStaleReferenceRecordsDeleted int,
-	err error,
-) {
-	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&numStaleDefinitionRecordsDeleted,
-			&numStaleReferenceRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
-}
-
-const vacuumStaleDefinitionsAndReferencesQuery = `
-WITH
-locked_definitions AS (
-	SELECT id
-	FROM codeintel_ranking_definitions
-	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
-),
-locked_references AS (
-	SELECT id
-	FROM codeintel_ranking_references
-	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
-),
-deleted_definitions AS (
-	DELETE FROM codeintel_ranking_definitions
-	WHERE id IN (SELECT id FROM locked_definitions)
-	RETURNING 1
-),
-deleted_references AS (
-	DELETE FROM codeintel_ranking_references
-	WHERE id IN (SELECT id FROM locked_references)
-	RETURNING 1
-)
-SELECT
-	(SELECT COUNT(*) FROM locked_definitions),
-	(SELECT COUNT(*) FROM deleted_references)
-`
-
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-	metadataRecordsDeleted int,
-	inputRecordsDeleted int,
-	err error,
-) {
-	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&metadataRecordsDeleted,
-			&inputRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return metadataRecordsDeleted, inputRecordsDeleted, nil
-}
-
-const vacuumStaleGraphsQuery = `
-WITH
-locked_references_processed AS (
-	SELECT id
-	FROM codeintel_ranking_references_processed
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
-locked_path_counts_inputs AS (
-	SELECT id
-	FROM codeintel_ranking_path_counts_inputs
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
-deleted_references_processed AS (
-	DELETE FROM codeintel_ranking_references_processed
-	WHERE id IN (SELECT id FROM locked_references_processed)
-	RETURNING 1
-),
-deleted_path_counts_inputs AS (
-	DELETE FROM codeintel_ranking_path_counts_inputs
-	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
-	RETURNING 1
-)
-SELECT
-	(SELECT COUNT(*) FROM deleted_references_processed),
-	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
-`
-
 func (s *store) InsertDefinitionsAndReferencesForDocument(
 	ctx context.Context,
 	upload ExportedUpload,
@@ -512,4 +394,122 @@ inserted AS (
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
+`
+
+func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+	numStaleDefinitionRecordsDeleted int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numStaleDefinitionRecordsDeleted,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleDefinitionsAndReferencesQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_references)
+`
+
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+	metadataRecordsDeleted int,
+	inputRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&metadataRecordsDeleted,
+			&inputRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return metadataRecordsDeleted, inputRecordsDeleted, nil
+}
+
+const vacuumStaleGraphsQuery = `
+WITH
+locked_references_processed AS (
+	SELECT id
+	FROM codeintel_ranking_references_processed
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_path_counts_inputs AS (
+	SELECT id
+	FROM codeintel_ranking_path_counts_inputs
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_references_processed AS (
+	DELETE FROM codeintel_ranking_references_processed
+	WHERE id IN (SELECT id FROM locked_references_processed)
+	RETURNING 1
+),
+deleted_path_counts_inputs AS (
+	DELETE FROM codeintel_ranking_path_counts_inputs
+	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM deleted_references_processed),
+	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
 `
