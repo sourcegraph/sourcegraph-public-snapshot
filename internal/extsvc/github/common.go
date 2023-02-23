@@ -1957,8 +1957,9 @@ type UserEmail struct {
 }
 
 type Org struct {
-	ID    int    `json:"id,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID     int    `json:"id,omitempty"`
+	Login  string `json:"login,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }
 
 // OrgDetails describes the more detailed Org data you can only get from the

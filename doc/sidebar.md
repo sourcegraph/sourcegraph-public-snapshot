@@ -11,6 +11,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 -->
 
 - [Home](index.md)
+- [Getting started](getting-started/index.md)
 - [Tutorials](tutorials/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
@@ -54,6 +55,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
+  - [Repository Permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
   - [FAQ](admin/faq.md)

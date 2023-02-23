@@ -11,7 +11,7 @@ FROM ${BASE_IMAGE} AS prom_upstream
 FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS monitoring_builder
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator

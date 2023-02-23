@@ -110,11 +110,10 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
             },
         })
 
-        const subscription = query.subscribe(event =>
-            setResult({
-                ...event,
-                refetch: () => query.refetch(),
-            })
+        const refetch = (): Promise<unknown> => query.refetch()
+        const subscription = query.subscribe(
+            event => setResult({ ...event, refetch }),
+            error => setResult({ loading: false, data: undefined, error, refetch })
         )
 
         return () => subscription.unsubscribe()

@@ -4,7 +4,7 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPu
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { head, last } from 'lodash'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { BehaviorSubject, from, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'

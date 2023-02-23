@@ -134,15 +134,15 @@ To upgrade your Sourcegraph instance from a version older than 4.5.0 to 4.5.0 or
 
 1. Upgrade to 4.5.0 using the Kubernetes deployment method from the old [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
    1. This is required as an intermediate step before the Kustomize deployment method can be used
-2. Verify that the 4.5.0 upgrade completed successfully using [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
-3. Migrate to the new Kustomize deployment method following the [Migration Docs for Kustomize](kustomize/migrate.md)
+1. Verify that the 4.5.0 upgrade completed successfully using [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
+1. Migrate to the new Kustomize deployment method following the [Migration Docs for Kustomize](kustomize/migrate.md)
 
 ### MVU without Kustomize
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes:
 
 1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's definitions and re-applying the configuration.
-  - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+   - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
       - repo-updater
       - searcher
@@ -150,12 +150,12 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
       - sourcegraph-frontend-internal
       - symbols
       - worker
-  - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+   - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
       - gitserver
       - indexed-search
 1. **If upgrading from 3.26 or before to 3.27 or later**, the `pgsql` and `codeintel-db` databases must be upgraded from Postgres 11 to Postgres 12. If this step is not performed, then the following upgrade procedure will fail fast (and leave all existing data untouched).
-  - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
-  - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
+   - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
+   - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
       1. It's assumed that your fork of `deploy-sourcegraph` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
       2. Run `kubectl apply -l deploy=sourcegraph -f base/pgsql` to launch a new Postgres 12 container and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress. **NOTE**: The Postgres migration requires enough capacity in its attached volume to accommodate an additional copy of the data currently on disk. Resize the volume now if necessary—the container will fail to start if there is not enough free disk space.
       3. Wait until the database container is accepting connections. Once ready, run the command `kubectl exec pgsql -- psql -U sg -c 'REINDEX database sg;'` issue a reindex command to Postgres to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
@@ -164,12 +164,12 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
           - Run `kubectl exec codeintel-db -- psql -U sg -c 'REINDEX database sg;'` to issue a reindex command to Postgres.
       5. Leave these versions of the databases running while the subsequent migration steps are performed. If `codeinsights-db` is a container new to your instance, now is a good time to start it as well.
 1. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
-2. Follow the instructions on [how to run the migrator job in Kubernetes](../../how-to/manual_database_migrations.md#kubernetes) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
+1. Follow the instructions on [how to run the migrator job in Kubernetes](../../how-to/manual_database_migrations.md#kubernetes) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
   1. Edit the file `configure/migrator/migrator.Job.yaml` and set the value of the `args` key to `["upgrade", "--from=<old version>", "--to=<new version>"]`. It is recommended to also add the `--dry-run` flag on a trial invocation to detect if there are any issues with database connection, schema drift, or mismatched versions that need to be addressed. If your instance has in-use code intelligence data it's recommended to also temporarily increase the CPU and memory resources allocated to this job. A symptom of underprovisioning this job will result in an `OOMKilled`-status container.
-  2. Run `kubectl delete -f configure/migrator/migrator.Job.yaml` to ensure no previous job invocations will conflict with our current invocation.
-  3. Start the migrator job via `kubectl apply -f configure/migrator/migrator.Job.yaml`.
-  4. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete. Run `kubectl logs job.batch/migrator -f` stream the migrator's stdout logs for progress.
-3. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
+  1. Run `kubectl delete -f configure/migrator/migrator.Job.yaml` to ensure no previous job invocations will conflict with our current invocation.
+  1. Start the migrator job via `kubectl apply -f configure/migrator/migrator.Job.yaml`.
+  1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete. Run `kubectl logs job.batch/migrator -f` stream the migrator's stdout logs for progress.
+1. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
   - Ensure that the replica counts adjusted in the previous steps are turned back up.
   - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
   - Monitor the status of the deployment via `kubectl get pods -o wide --watch`.

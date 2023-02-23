@@ -112,28 +112,29 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
+	AzureDevOps    *AzureDevOpsAuthProvider
+	Bitbucketcloud *BitbucketCloudAuthProvider
 	Builtin        *BuiltinAuthProvider
-	Saml           *SAMLAuthProvider
-	Openidconnect  *OpenIDConnectAuthProvider
-	HttpHeader     *HTTPHeaderAuthProvider
+	Gerrit         *GerritAuthProvider
 	Github         *GitHubAuthProvider
 	Gitlab         *GitLabAuthProvider
-	Bitbucketcloud *BitbucketCloudAuthProvider
-	Gerrit         *GerritAuthProvider
+	HttpHeader     *HTTPHeaderAuthProvider
+	Openidconnect  *OpenIDConnectAuthProvider
+	Saml           *SAMLAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
+	if v.AzureDevOps != nil {
+		return json.Marshal(v.AzureDevOps)
+	}
+	if v.Bitbucketcloud != nil {
+		return json.Marshal(v.Bitbucketcloud)
+	}
 	if v.Builtin != nil {
 		return json.Marshal(v.Builtin)
 	}
-	if v.Saml != nil {
-		return json.Marshal(v.Saml)
-	}
-	if v.Openidconnect != nil {
-		return json.Marshal(v.Openidconnect)
-	}
-	if v.HttpHeader != nil {
-		return json.Marshal(v.HttpHeader)
+	if v.Gerrit != nil {
+		return json.Marshal(v.Gerrit)
 	}
 	if v.Github != nil {
 		return json.Marshal(v.Github)
@@ -141,11 +142,14 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	if v.Gitlab != nil {
 		return json.Marshal(v.Gitlab)
 	}
-	if v.Bitbucketcloud != nil {
-		return json.Marshal(v.Bitbucketcloud)
+	if v.HttpHeader != nil {
+		return json.Marshal(v.HttpHeader)
 	}
-	if v.Gerrit != nil {
-		return json.Marshal(v.Gerrit)
+	if v.Openidconnect != nil {
+		return json.Marshal(v.Openidconnect)
+	}
+	if v.Saml != nil {
+		return json.Marshal(v.Saml)
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
@@ -157,6 +161,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "azureDevOps":
+		return json.Unmarshal(data, &v.AzureDevOps)
 	case "bitbucketcloud":
 		return json.Unmarshal(data, &v.Bitbucketcloud)
 	case "builtin":
@@ -174,7 +180,21 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"azureDevOps", "bitbucketcloud", "builtin", "gerrit", "github", "gitlab", "http-header", "openidconnect", "saml"})
+}
+
+// AzureDevOpsAuthProvider description: Azure auth provider for dev.azure.com
+type AzureDevOpsAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts Azure DevOps authentication. If false, users signing in via Azure DevOps must have an existing Sourcegraph account, which will be linked to their Azure DevOps identity after sign-in.
+	AllowSignup *bool `json:"allowSignup,omitempty"`
+	// ApiScope description: The OAuth API scope that should be used
+	ApiScope string `json:"apiScope,omitempty"`
+	// ClientID description: The app ID of the Azure OAuth app.
+	ClientID string `json:"clientID"`
+	// ClientSecret description: The client Secret of the Azure OAuth app.
+	ClientSecret string `json:"clientSecret"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Type         string `json:"type"`
 }
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
@@ -2151,16 +2171,12 @@ type SettingsExperimentalFeatures struct {
 	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
-	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
-	SearchStreaming *bool `json:"searchStreaming,omitempty"`
 	// SetupWizard description: Experimental setup wizard
 	SetupWizard *bool `json:"setupWizard,omitempty"`
 	// ShowCodeMonitoringLogs description: Shows code monitoring logs tab.
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowSearchContext description: Enables the search context dropdown.
-	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
 	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
@@ -2226,11 +2242,9 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "searchStats")
-	delete(m, "searchStreaming")
 	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
-	delete(m, "showSearchContext")
 	delete(m, "symbolKindTags")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
@@ -2315,8 +2329,6 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
-	// AuthzSyncJobsRecordsLimit description: EXPERIMENTAL: Number of sync job records to retain. Set to a negative value to disable sync jobs records entirely.
-	AuthzSyncJobsRecordsLimit int `json:"authz.syncJobsRecordsLimit,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2555,7 +2567,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
-	delete(m, "authz.syncJobsRecordsLimit")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")

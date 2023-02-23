@@ -5,6 +5,7 @@ import (
 	"time"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -43,6 +44,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
+	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
@@ -97,6 +99,18 @@ type Store interface {
 
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+		metadataRecordsDeleted int,
+		inputRecordsDeleted int,
+		err error,
+	)
+
+	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+		numStaleDefinitionRecordsDeleted int,
+		numStaleReferenceRecordsDeleted int,
+		err error,
+	)
+
 	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
@@ -106,6 +120,13 @@ type Store interface {
 
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
+
+	// Ranking
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
+	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
+	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
+	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 
 // store manages the database operations for uploads.

@@ -22,6 +22,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     }
 
     const jsContext: SourcegraphContext = {
+        currentUser: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -51,6 +52,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
+        sourcegraphAppMode: false,
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},

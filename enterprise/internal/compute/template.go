@@ -308,7 +308,6 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.CommitID),
 			Owner:   m.ResolvedOwner.Identifier(),
-			Path:    m.Path,
 			Content: content,
 		}
 	}

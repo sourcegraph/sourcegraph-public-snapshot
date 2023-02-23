@@ -117,21 +117,8 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 		case *result.RepoMatch:
 			// Repo filtering is taken care of by our usual repo filtering logic
 			filtered = append(filtered, m)
-		case *result.OwnerMatch:
-			// We don't want to return owner information that contains sub-repo data if the actor cannot see it.
-			content := authz.RepoContent{
-				Repo: mm.Repo.Name,
-				Path: mm.Path,
-			}
-			perms, err := authz.ActorPermissions(ctx, checker, a, content)
-			if err != nil {
-				errs = errors.Append(errs, err)
-				continue
-			}
-
-			if perms.Include(authz.Read) {
-				filtered = append(filtered, m)
-			}
+			// Owner matches are found after the sub-repo permissions filtering, hence why we don't have
+			// an OwnerMatch case here.
 		}
 	}
 

@@ -210,6 +210,7 @@ func TestChangesetResolver(t *testing.T) {
 		ExternalServiceType:   "github",
 		ExternalID:            "98765",
 		ExternalForkNamespace: "user",
+		ExternalForkName:      "my-fork",
 		PublicationState:      btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:       btypes.ReconcilerStateQueued,
 	})
@@ -241,8 +242,91 @@ func TestChangesetResolver(t *testing.T) {
 	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
+
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
 	addChangeset(t, ctx, bstore, syncedGitHubChangeset, batchChange.ID)
+
+	spec2 := &btypes.BatchSpec{
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
+		t.Fatal(err)
+	}
+
+	// This batch change is associated with two changesets (one imported and the other isn't).
+	batchChange2 := &btypes.BatchChange{
+		Name:            "my-unique-name-2",
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		BatchSpecID:     spec2.ID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+	}
+	if err := bstore.CreateBatchChange(ctx, batchChange2); err != nil {
+		t.Fatal(err)
+	}
+
+	marshalledBatchChangeID := string(bgql.MarshalBatchChangeID(batchChange2.ID))
+
+	unimportedChangest := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "12345678",
+		ExternalBranch:      "unimported",
+		ExternalState:       btypes.ChangesetExternalStateOpen,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		OwnedByBatchChange:  batchChange2.ID,
+		Metadata: &github.PullRequest{
+			ID:          "12345678",
+			Title:       "Imported Changeset Title",
+			Body:        "Imported Changeset Body",
+			Number:      12345678,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345678",
+			HeadRefName: "unimported",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
+			BaseRefName: "main",
+		},
+	})
+
+	importedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "1234567",
+		ExternalBranch:      "imported-pr",
+		ExternalState:       btypes.ChangesetExternalStateOpen,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
+			ID:          "1234567",
+			Title:       "Imported GitHub PR Title",
+			Body:        "Imported GitHub PR Body",
+			Number:      1234567,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/sourcegraph/pull/1234567",
+			HeadRefName: "imported-pr",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
+			BaseRefName: "master",
+			Labels: struct{ Nodes []github.Label }{
+				Nodes: []github.Label{
+					{ID: "label-no-description", Name: "no-description", Color: "121212"},
+				},
+			},
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+	})
+
+	addChangeset(t, ctx, bstore, unimportedChangest, batchChange2.ID)
+	addChangeset(t, ctx, bstore, importedChangeset, batchChange2.ID)
 
 	//gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
 	//	if string(a) != baseRev && string(b) != headRev {
@@ -372,6 +456,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:      "ExternalChangeset",
 				ExternalID:    "98765",
 				ForkNamespace: "user",
+				ForkName:      "my-fork",
 				Repository:    apitest.Repository{Name: string(repo.Name)},
 				Labels:        []apitest.Label{},
 				State:         string(btypes.ChangesetStateProcessing),
@@ -387,6 +472,67 @@ func TestChangesetResolver(t *testing.T) {
 				Labels:             []apitest.Label{},
 				State:              string(btypes.ChangesetStateScheduled),
 				ScheduleEstimateAt: schedulerWindow.Format(time.RFC3339),
+			},
+		},
+		{
+			name:      "unimported changeset",
+			changeset: unimportedChangest,
+			want: apitest.Changeset{
+				Typename:           "ExternalChangeset",
+				Title:              "Imported Changeset Title",
+				Body:               "Imported Changeset Body",
+				ExternalID:         "12345678",
+				CheckState:         "PENDING",
+				ReviewState:        "CHANGES_REQUESTED",
+				NextSyncAt:         marshalDateTime(t, now.Add(8*time.Hour)),
+				ScheduleEstimateAt: "",
+				Repository:         apitest.Repository{Name: string(repo.Name)},
+				OwnedByBatchChange: &marshalledBatchChangeID,
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345678",
+					ServiceKind: "GITHUB",
+					ServiceType: "github",
+				},
+				State: string(btypes.ChangesetStateOpen),
+				Events: apitest.ChangesetEventConnection{
+					TotalCount: 0,
+				},
+				Labels: []apitest.Label{},
+				Diff: apitest.Comparison{
+					Typename:  "RepositoryComparison",
+					FileDiffs: testDiffGraphQL,
+				},
+			},
+		},
+		{
+			name:      "imported changeset",
+			changeset: importedChangeset,
+			want: apitest.Changeset{
+				Typename:           "ExternalChangeset",
+				Title:              "Imported GitHub PR Title",
+				Body:               "Imported GitHub PR Body",
+				ExternalID:         "1234567",
+				CheckState:         "PENDING",
+				ReviewState:        "CHANGES_REQUESTED",
+				NextSyncAt:         marshalDateTime(t, now.Add(8*time.Hour)),
+				ScheduleEstimateAt: "",
+				Repository:         apitest.Repository{Name: string(repo.Name)},
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/sourcegraph/pull/1234567",
+					ServiceKind: "GITHUB",
+					ServiceType: "github",
+				},
+				State: string(btypes.ChangesetStateOpen),
+				Events: apitest.ChangesetEventConnection{
+					TotalCount: 0,
+				},
+				Labels: []apitest.Label{
+					{Text: "no-description", Color: "121212", Description: nil},
+				},
+				Diff: apitest.Comparison{
+					Typename:  "RepositoryComparison",
+					FileDiffs: testDiffGraphQL,
+				},
 			},
 		},
 	}
@@ -432,6 +578,7 @@ query($changeset: ID!) {
 
       externalID
       forkNamespace
+	  forkName
       state
       reviewState
       checkState
@@ -446,6 +593,8 @@ query($changeset: ID!) {
       labels { text, color, description }
 
       currentSpec { id }
+
+	  ownedByBatchChange
 
       diff {
         __typename

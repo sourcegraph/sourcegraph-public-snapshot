@@ -1,8 +1,0 @@
-.link-with-icon {
-    padding: var(--nav-link-padding-y) var(--nav-link-padding-x);
-
-    &:global(.active):not(:global(.focus)):not(:focus) {
-        // To override default active btn shadow
-        box-shadow: none !important;
-    }
-}

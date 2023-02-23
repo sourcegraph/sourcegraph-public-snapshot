@@ -436,9 +436,8 @@ func frontendTests(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	buildGoTests(func(description, testSuffix string) {
-		pipeline.AddStep(
-			fmt.Sprintf(":go: Test (%s)", description),
+	buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
+		opts := []bk.StepOpt{
 			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
 			// Because we run tests concurrently, the following must hold to avoid connection issues:
 			//
@@ -451,6 +450,12 @@ func addGoTests(pipeline *bk.Pipeline) {
 				Annotations: &bk.AnnotationOpts{},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
+		}
+		opts = append(opts, additionalOpts...)
+
+		pipeline.AddStep(
+			fmt.Sprintf(":go: Test (%s)", description),
+			opts...,
 		)
 	})
 }
@@ -458,7 +463,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Adds the Go backcompat test step.
 func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		buildGoTests(func(description, testSuffix string) {
+		buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
@@ -474,23 +479,41 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 // be run as part of complete coverage. The description will be the specific test path
 // broken out to be run independently (or "all"), and the testSuffix will be the string
 // to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
-func buildGoTests(f func(description, testSuffix string)) {
+func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.StepOpt)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-	slowGoTestPackages := []string{
+
+	// These are the slow packages that we do not want to run twice (once with gRPC, once without).
+	slowGoTestPackagesNonGRPC := []string{
+		"github.com/sourcegraph/sourcegraph/internal/database",            // 253s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/database", // 94s
+	}
+
+	// These are the slow packages that we _do_ want to run twice (once with gRPC, once without).
+	slowGoTestPackagesGRPC := []string{
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
-	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
+	allSlowPackages := append(slowGoTestPackagesGRPC, slowGoTestPackagesGRPC...)
+	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
 
-	for _, slowPkg := range slowGoTestPackages {
+	// Run all tests that aren't slow both with and without gRPC enabled
+	f("all", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
+	f("all (gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")), enableGRPCEnvOpt)
+
+	// Run most slow packages both with and without gRPC
+	for _, slowPkg := range slowGoTestPackagesGRPC {
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")+" (gRPC)", "only "+slowPkg, enableGRPCEnvOpt)
+	}
+
+	// These packages won't benefit from duplicating the tests with gRPC enabled, so only run them once.
+	for _, slowPkg := range slowGoTestPackagesNonGRPC {
 		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
 	}
 }
@@ -507,13 +530,21 @@ func addGoBuild(pipeline *bk.Pipeline) {
 // Runtime: ~11m
 func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":chains: Backend integration tests",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("IMAGE",
-				images.DevRegistryImage("server", candidateImageTag)),
-			bk.Cmd("dev/ci/integration/backend/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+		for _, enableGRPC := range []bool{true, false} {
+			description := ":chains: Backend integration tests"
+			if enableGRPC {
+				description += " (gRPC)"
+			}
+			pipeline.AddStep(
+				description,
+				// Run tests against the candidate server image
+				bk.DependsOn(candidateImageStepKey("server")),
+				bk.Env("IMAGE",
+					images.DevRegistryImage("server", candidateImageTag)),
+				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
+				bk.Cmd("dev/ci/integration/backend/run.sh"),
+				bk.ArtifactPaths("./*.log"))
+		}
 	}
 }
 

@@ -355,6 +355,11 @@ type ExternalChangeset implements Node & Changeset {
     ): BatchChangeConnection!
 
     """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
+
+    """
     The events belonging to this changeset.
     """
     events(first: Int = 50, after: String): ChangesetEventConnection!
@@ -418,6 +423,10 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.

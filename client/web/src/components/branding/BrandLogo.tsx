@@ -2,11 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
 import styles from './BrandLogo.module.scss'
 
-interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
+interface Props extends Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     /**
      * The site configuration `branding` property. If not set, the global value from
      * `window.context.branding` is used.
@@ -20,6 +18,8 @@ interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageEle
 
     /** Whether to show the full logo (with text) or only the symbol icon. */
     variant: 'logo' | 'symbol'
+
+    isLightTheme: boolean
 }
 
 /**
@@ -42,7 +42,8 @@ export const BrandLogo: React.FunctionComponent<React.PropsWithChildren<Props>> 
 
     const sourcegraphLogoUrl =
         variant === 'symbol'
-            ? `${assetsRoot}/img/sourcegraph-mark.svg?v2` // Add query parameter for cache busting.
+            ? // When changed, update cmd/frontend/internal/app/ui/handlers.go for proper preloading
+              `${assetsRoot}/img/sourcegraph-mark.svg?v2` // Add query parameter for cache busting.
             : `${assetsRoot}/img/sourcegraph-logo-${themeProperty}.svg`
 
     const customBrandingLogoUrl = branding?.[themeProperty]?.[variant]

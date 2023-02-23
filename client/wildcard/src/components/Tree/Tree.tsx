@@ -11,10 +11,12 @@ import styles from './Tree.module.scss'
 
 export type TreeNode = INode
 
-interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onLoadData' | 'nodeRenderer'> {
+interface Props<N extends TreeNode>
+    extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onExpand' | 'onLoadData' | 'nodeRenderer'> {
     data: N[]
 
     onSelect?: (args: { element: N; isSelected: boolean }) => void
+    onExpand?: (args: { element: N; isExpanded: boolean }) => void
     onLoadData?: (args: { element: N }) => Promise<void>
 
     renderNode?: (args: {
@@ -32,7 +34,7 @@ interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSe
     loadedIds?: Set<number>
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onLoadData, renderNode, loadedIds, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -41,6 +43,14 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             onSelect?.(args)
         },
         [onSelect]
+    )
+    const _onExpand = useCallback(
+        // TreeView expects nodes to be INode but ours are extending this type,
+        // hence the any cast.
+        (args: { element: any; isExpanded: boolean }): void => {
+            onExpand?.(args)
+        },
+        [onExpand]
     )
 
     const _onLoadData = useCallback(
@@ -126,6 +136,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}
+            onExpand={onExpand ? _onExpand : undefined}
             onLoadData={_onLoadData}
             nodeRenderer={_renderNode}
         />
@@ -137,4 +148,43 @@ function getMarginLeft(level: number, isBranch: boolean): string {
         return `${0.75 * level - 0.75}rem`
     }
     return `${0.75 * level}rem`
+}
+
+interface FlattenableTreeNode {
+    name: string
+    // TODO: My TS wizardry is not strong enough to make this work with a
+    // generic type. 😅
+    children?: any[]
+}
+type ReturnNode<T extends FlattenableTreeNode> = Omit<T, 'children'> & TreeNode
+// This implementation is taken from `react-accessible-treeview` and modified to pass through all
+// properties of the node instead of just the `name`.
+export function flattenTree<N extends FlattenableTreeNode>(tree: N): ReturnNode<N>[] {
+    let count = 0
+    const flattenedTree: ReturnNode<N>[] = []
+
+    const flattenTreeHelper = function (tree: N, parent: number | null): void {
+        const { children, ...rest } = tree
+        const node: ReturnNode<N> = {
+            ...rest,
+            id: count,
+            name: tree.name,
+            children: [],
+            parent,
+        }
+        flattenedTree[count] = node
+        count += 1
+        if (tree.children === null || tree.children === undefined || tree.children.length === 0) {
+            return
+        }
+        for (const child of tree.children) {
+            flattenTreeHelper(child, node.id)
+        }
+        node.children = flattenedTree
+            .filter((item: ReturnNode<N>) => item.parent === node.id)
+            .map((item: ReturnNode<N>) => item.id)
+    }
+
+    flattenTreeHelper(tree, null)
+    return flattenedTree
 }
