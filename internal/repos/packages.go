@@ -93,14 +93,12 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	}()
 
 	const batchLimit = 100
-	var lastName reposource.PackageName
-	lastName = ""
+	var lastID int
 	for {
-		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:          s.scheme,
-			After:           lastName,
-			Limit:           batchLimit,
-			ExcludeVersions: true,
+		depRepos, _, err := s.depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme: s.scheme,
+			After:  lastID,
+			Limit:  batchLimit,
 		})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -110,10 +108,10 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			break
 		}
 
-		lastName = depRepos[len(depRepos)-1].Name
+		lastID = depRepos[len(depRepos)-1].ID
 
 		// at most batchLimit because of the limit above
-		depReposToHandle := make([]dependencies.Repo, 0, len(depRepos))
+		depReposToHandle := make([]dependencies.PackageRepoReference, 0, len(depRepos))
 		for _, depRepo := range depRepos {
 			if _, ok := handledPackages[depRepo.Name]; !ok {
 				// don't need to add to handledPackages here, as the results from
@@ -186,7 +184,7 @@ func getPackage(s packagesSource, name reposource.PackageName) (reposource.Packa
 	switch d := s.(type) {
 	// Downloading package descriptions is disabled due to performance issues, causing sync times to take >12hr.
 	// Don't re-enable the case below without fixing https://github.com/sourcegraph/sourcegraph/issues/39653.
-	//case packagesDownloadSource:
+	// case packagesDownloadSource:
 	//	return d.GetPackage(ctx, name)
 	default:
 		return d.ParsePackageFromName(name)

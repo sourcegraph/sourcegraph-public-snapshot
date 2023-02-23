@@ -146,6 +146,8 @@ const toSelectorHover = (token: MetaSelector): string => {
             return 'Select and display distinct repository paths from search results.'
         case MetaSelectorKind.File:
             return 'Select and display distinct file paths from search results.'
+        case MetaSelectorKind.FileOwners:
+            return 'Select and display distinct code owners from search results.'
         case MetaSelectorKind.Content:
             return 'Select and display only results matching content inside files.'
         case MetaSelectorKind.Commit:
@@ -178,6 +180,8 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
         case 'has.key':
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
+        case 'has.owner':
+            return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
     }
     return ''
 }

@@ -8,18 +8,18 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
-// structs that need to perform SQL queries with LIMIT and OFFSET.
+// LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is
+// typically embedded in other options structs that need to perform SQL queries
+// with LIMIT and OFFSET.
 type LimitOffset struct {
 	Limit  int // SQL LIMIT count
 	Offset int // SQL OFFSET count
 }
 
-// SQL returns the SQL query fragment ("LIMIT %d OFFSET %d") for use in SQL queries.
+// SQL returns the SQL query fragment ("LIMIT %d OFFSET %d") for use in SQL
+// queries.
 func (o *LimitOffset) SQL() *sqlf.Query {
 	if o == nil {
 		return &sqlf.Query{}
@@ -130,12 +130,12 @@ type PaginationArgs struct {
 	After  *string
 	Before *string
 
-	// TODDO(naman): explain default
+	// TODO(naman): explain default
 	OrderBy   OrderBy
 	Ascending bool
 }
 
-func (p *PaginationArgs) SQL() (*QueryArgs, error) {
+func (p *PaginationArgs) SQL() *QueryArgs {
 	queryArgs := &QueryArgs{}
 
 	var conditions []*sqlf.Query
@@ -177,10 +177,10 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 		queryArgs.Order = orderBy.SQL(!p.Ascending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)
 	} else {
-		return nil, errors.New("First or Last must be set")
+		queryArgs.Order = orderBy.SQL(p.Ascending)
 	}
 
-	return queryArgs, nil
+	return queryArgs
 }
 
 func copyPtr[T any](n *T) *T {
@@ -192,12 +192,13 @@ func copyPtr[T any](n *T) *T {
 	return &c
 }
 
-// Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
+// Clone (aka deepcopy) returns a new PaginationArgs object with the same values
+// as "p".
 func (p *PaginationArgs) Clone() *PaginationArgs {
 	return &PaginationArgs{
-		First:  copyPtr[int](p.First),
-		Last:   copyPtr[int](p.Last),
-		After:  copyPtr[string](p.After),
-		Before: copyPtr[string](p.Before),
+		First:  copyPtr(p.First),
+		Last:   copyPtr(p.Last),
+		After:  copyPtr(p.After),
+		Before: copyPtr(p.Before),
 	}
 }

@@ -77,9 +77,11 @@ type UserStore interface {
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
+	ListForSCIM(context.Context, *UsersListOptions) (_ []*types.UserForSCIM, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
+	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -99,7 +101,7 @@ type userStore struct {
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(logger log.Logger, db dbutil.DB) UserStore {
+func Users(logger log.Logger) UserStore {
 	return &userStore{
 		logger: logger,
 		Store:  &basestore.Store{},
@@ -119,6 +121,10 @@ func (u *userStore) With(other basestore.ShareableStore) UserStore {
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
+	return u.transact(ctx)
+}
+
+func (u *userStore) transact(ctx context.Context) (*userStore, error) {
 	txBase, err := u.Store.Transact(ctx)
 	return &userStore{logger: u.logger, Store: txBase}, err
 }
@@ -142,35 +148,35 @@ func NewUserNotFoundError(userID int32) error {
 	return userNotFoundErr{args: []any{"userID", userID}}
 }
 
-// errCannotCreateUser is the error that is returned when
+// ErrCannotCreateUser is the error that is returned when
 // a user cannot be added to the DB due to a constraint.
-type errCannotCreateUser struct {
+type ErrCannotCreateUser struct {
 	code string
 }
 
 const (
-	errorCodeUsernameExists = "err_username_exists"
-	errorCodeEmailExists    = "err_email_exists"
+	ErrorCodeUsernameExists = "err_username_exists"
+	ErrorCodeEmailExists    = "err_email_exists"
 )
 
-func (err errCannotCreateUser) Error() string {
+func (err ErrCannotCreateUser) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-func (err errCannotCreateUser) Code() string {
+func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
 // IsUsernameExists reports whether err is an error indicating that the intended username exists.
 func IsUsernameExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeUsernameExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeUsernameExists
 }
 
 // IsEmailExists reports whether err is an error indicating that the intended email exists.
 func IsEmailExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeEmailExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeEmailExists
 }
 
 // NewUser describes a new to-be-created user.
@@ -202,6 +208,12 @@ type NewUser struct {
 
 	// TosAccepted is whether the user is created with the terms of service accepted already.
 	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
+}
+
+type NewUserForSCIM struct {
+	NewUser
+	AdditionalVerifiedEmails []string
+	SCIMExternalID           string
 }
 
 // Create creates a new user in the database.
@@ -289,7 +301,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, err
 	}
 	if alreadyInitialized && info.FailIfNotInitialUser {
-		return nil, errCannotCreateUser{"site_already_initialized"}
+		return nil, ErrCannotCreateUser{"site_already_initialized"}
 	}
 
 	// Run BeforeCreateUser hook.
@@ -309,21 +321,21 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		if errors.As(err, &e) {
 			switch e.ConstraintName {
 			case "users_username":
-				return nil, errCannotCreateUser{errorCodeUsernameExists}
+				return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
-				return nil, errCannotCreateUser{e.ConstraintName}
+				return nil, ErrCannotCreateUser{e.ConstraintName}
 			}
 		}
 		return nil, err
 	}
 	if info.FailIfNotInitialUser && !siteAdmin {
 		// Refuse to make the user the initial site admin if there are other existing users.
-		return nil, errCannotCreateUser{"initial_site_admin_must_be_first_user"}
+		return nil, ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}
 	}
 
 	// Reserve username in shared users+orgs namespace.
 	if err := u.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) VALUES(%s, %s)", info.Username, id)); err != nil {
-		return nil, errCannotCreateUser{errorCodeUsernameExists}
+		return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 	}
 
 	if info.Email != "" {
@@ -334,7 +346,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 			return nil, err
 		}
 		if exists {
-			return nil, errCannotCreateUser{errorCodeEmailExists}
+			return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 		}
 
 		// The first email address added should be their primary
@@ -346,7 +358,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		if err != nil {
 			var e *pgconn.PgError
 			if errors.As(err, &e) && e.ConstraintName == "user_emails_unique_verified_email" {
-				return nil, errCannotCreateUser{errorCodeEmailExists}
+				return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 			}
 			return nil, err
 		}
@@ -364,6 +376,26 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		InvalidatedSessionsAt: invalidatedSessionsAt,
 		Searchable:            searchable,
 	}
+
+	{
+		// Assign roles to the created user. We do this in here to ensure role assign occurs in the same transaction as user creation occurs.
+		// This ensures we don't have "zombie" users (users with no role assigned to them).
+		// All users on a Sourcegraph instance must have the `USER` role, however depending on the value of user.SiteAdmin,
+		// we assign them the `SITE_ADMINISTRATOR` role.
+		roles := []types.SystemRole{types.UserSystemRole}
+		if user.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
+		}
+
+		db := NewDBWith(u.logger, u)
+		if err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roles,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	{
 		// Run hooks.
 		//
@@ -490,7 +522,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.ConstraintName == "users_username" {
-			return errCannotCreateUser{errorCodeUsernameExists}
+			return ErrCannotCreateUser{ErrorCodeUsernameExists}
 		}
 		return err
 	}
@@ -540,13 +572,13 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND (subject_user_id IN (%s) OR creator_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -675,7 +707,86 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	db.SecurityEventLogs().LogEventList(ctx, events)
 }
 
-// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
+// RecoverList recovers a list of users by their IDs.
+func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
+	tx, err := u.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+	idsCond := sqlf.Join(userIDs, ",")
+
+	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
+		return nil, err
+	}
+
+	const updateAccessTokensQuery = `
+	UPDATE access_tokens as a
+	SET deleted_at = null
+	FROM users as u
+	WHERE a.creator_user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND (a.creator_user_id IN (%s) OR a.subject_user_id IN (%s))
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateAccessTokensQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+
+	const updateUserExtAccQuery = `
+	UPDATE user_external_accounts AS a
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE a.user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND a.user_id IN (%s)
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateUserExtAccQuery, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateOrgInvQuery = `
+	UPDATE org_invitations AS o
+	SET deleted_at = NULL
+	FROM users  AS u
+	WHERE o.recipient_user_id = u.id
+	AND o.deleted_at >= u.deleted_at
+	AND o.deleted_at <= u.deleted_at + interval '10 second'
+	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateOrgInvQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateRegistryExtQuery = `
+	UPDATE registry_extensions AS r
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE r.publisher_user_id = u.id
+	AND r.deleted_at >= u.deleted_at
+	AND r.deleted_at <= u.deleted_at + interval '10 second'
+	AND r.publisher_user_id IN (%s)
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateRegistryExtQuery, idsCond)); err != nil {
+		return nil, err
+	}
+
+	updateIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	if err != nil {
+		return nil, err
+	}
+
+	return updateIds, nil
+}
+
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
+// to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
@@ -683,8 +794,29 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 		}
 	}
 
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
+	db := NewDBWith(u.logger, u)
+	return db.WithTransact(ctx, func(tx DB) error {
+		userStore := tx.Users()
+		err := userStore.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+		if err != nil {
+			return err
+		}
+
+		userRoleStore := tx.UserRoles()
+		if isSiteAdmin {
+			err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+				UserID: id,
+				Role:   types.SiteAdministratorSystemRole,
+			})
+			return err
+		}
+
+		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+			UserID: id,
+			Role:   types.SiteAdministratorSystemRole,
+		})
+		return err
+	})
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified
@@ -843,6 +975,23 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 	return u.getBySQL(ctx, q)
 }
 
+// ListForSCIM lists users along with their email addresses and SCIM ExternalID.
+func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	conditions := u.listSQL(*opt)
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
+	return u.getBySQLForSCIM(ctx, q)
+}
+
 // ListDates lists all user's created and deleted dates, used by usage stats.
 func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
 	rows, err := u.Query(ctx, sqlf.Sprintf(listDatesQuery))
@@ -879,10 +1028,7 @@ func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *
 		where = append(where, cond)
 	}
 
-	p, err := paginationArgs.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := paginationArgs.SQL()
 
 	if p.Where != nil {
 		where = append(where, p.Where)
@@ -1056,6 +1202,45 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	return users, nil
 }
 
+const userForSCIMQueryFmtStr = `
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+  FROM users u %s`
+
+// getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
+func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
+	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
+	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
+	scanUsersForSCIM := basestore.NewSliceScanner(scanUserForSCIM)
+	return scanUsersForSCIM(u.Query(ctx, q))
+}
+
+// scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
+func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
+	var u types.UserForSCIM
+	var displayName, avatarURL, scimExternalID sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
+	if err != nil {
+		return nil, err
+	}
+	u.DisplayName = displayName.String
+	u.AvatarURL = avatarURL.String
+	u.SCIMExternalID = scimExternalID.String
+	return &u, nil
+}
+
 func (u *userStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
 	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
@@ -1164,8 +1349,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff don't have a password and they
-// don't have any valid login connections.
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
@@ -1186,15 +1370,7 @@ WHERE id=%s
   AND passwd IS NULL
   AND passwd_reset_code IS NULL
   AND passwd_reset_time IS NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM user_external_accounts
-    WHERE
-          user_id = %s
-      AND deleted_at IS NULL
-      AND expired_at IS NULL
-    )
-`, passwd, id, id))
+`, passwd, id))
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}

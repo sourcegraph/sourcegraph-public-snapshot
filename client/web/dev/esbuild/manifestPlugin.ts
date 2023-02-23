@@ -3,9 +3,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
-
-import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
+import { WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
 
 export const assetPathPrefix = '/.assets'
 
@@ -16,8 +14,7 @@ export const getManifest = (): WebpackManifest => ({
 })
 
 const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
-    const manifestPath = path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json')
-    await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
+    await fs.promises.writeFile(WEBPACK_MANIFEST_PATH, JSON.stringify(manifest, null, 2))
 }
 
 /**

@@ -1,10 +1,8 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
-
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,
@@ -25,8 +23,7 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
     input: AddExternalServiceInput
     externalServiceID?: string
     error?: ErrorLike
@@ -46,8 +43,6 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
  * Form for submitting a new or updated external service.
  */
 export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    isLightTheme,
     telemetryService,
     jsonSchema,
     editorActions,
@@ -65,6 +60,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     allowEditExternalServicesWithFile,
     autoFocus = true,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {
             onChange({ ...input, displayName: event.currentTarget.value })
@@ -123,7 +119,6 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     readOnly={disabled}
                     isLightTheme={isLightTheme}
                     onChange={onConfigChange}
-                    history={history}
                     actions={editorActions}
                     className="test-external-service-editor"
                     telemetryService={telemetryService}

@@ -268,11 +268,11 @@ func TestGitCommitAncestors(t *testing.T) {
 			ExpectedErrors: []*errors.QueryError{
 				{
 					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
-					Path:    []any{string("repository"), string("commit"), string("ancestors"), string("nodes")},
+					Path:    []any{"repository", "commit", "ancestors", "nodes"},
 				},
 				{
 					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
-					Path:    []any{string("repository"), string("commit"), string("ancestors"), string("pageInfo")},
+					Path:    []any{"repository", "commit", "ancestors", "pageInfo"},
 				},
 			},
 			ExpectedResult: `

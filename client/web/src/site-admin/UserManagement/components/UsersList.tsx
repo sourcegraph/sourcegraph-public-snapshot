@@ -11,6 +11,7 @@ import {
     mdiClose,
     mdiLock,
     mdiLockOpen,
+    mdiAccountReactivate,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
@@ -169,6 +170,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleDeleteUsersForever,
         handleForceSignOutUsers,
         handleRevokeSiteAdmin,
+        handleRecoverUsers,
         handlePromoteToSiteAdmin,
         handleUnlockUser,
         handleResetUserPassword,
@@ -313,6 +315,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 labelColor: 'danger',
                                 onClick: handleDeleteUsersForever,
                                 bulk: true,
+                            },
+                            {
+                                key: 'recover',
+                                label: 'Recover',
+                                icon: mdiAccountReactivate,
+                                onClick: handleRecoverUsers,
+                                bulk: true,
+                                condition: users => users.some(user => user.deletedAt),
                             },
                         ]}
                         columns={[
@@ -526,6 +536,7 @@ export interface UseUserListActionReturnType {
     handleDeleteUsersForever: ActionHandler
     handlePromoteToSiteAdmin: ActionHandler
     handleRevokeSiteAdmin: ActionHandler
+    handleRecoverUsers: ActionHandler
     handleUnlockUser: ActionHandler
     notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleDismissNotification: () => void

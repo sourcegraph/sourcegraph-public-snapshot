@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -17,7 +16,7 @@ import (
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	uploadsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -35,14 +34,14 @@ func NewService(
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
-	locker := locker.NewWith(db, "codeintel")
+	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		if rankingBucketCredentialsFile == "" {
 			return nil
 		}
 
@@ -69,22 +68,16 @@ func NewService(
 		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
-		locker,
+		ciLocker,
 	)
 	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
 
 	return svc
 }
 
-type serviceDependencies struct {
-	db             database.DB
-	codeIntelDB    codeintelshared.CodeIntelDB
-	gsc            GitserverClient
-	observationCtx *observation.Context
-}
-
 var (
 	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
+	rankingMapReduceBatchSize    = env.MustGetInt("CODEINTEL_UPLOADS_MAP_REDUCE_RANKING_BATCH_SIZE", 10000, "How many references, definitions, and path counts to map and reduce at once.")
 	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
 	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
 	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
@@ -105,7 +98,7 @@ func NewUploadProcessorJob(
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
 ) goroutine.BackgroundRoutine {
-	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
+	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
 
 	dbworker.InitPrometheusMetric(observationCtx, uploadsProcessorStore, "codeintel", "upload", nil)
 
@@ -166,7 +159,7 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 
 func NewResetters(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
 	metrics := background.NewResetterMetrics(observationCtx)
-	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
+	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
 
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, ConfigJanitorInst.Interval, metrics),
@@ -213,6 +206,22 @@ func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) 
 			uploadSvc,
 			ConfigExportInst.NumRankingRoutines,
 			ConfigExportInst.RankingInterval,
+			ConfigExportInst.RankingBatchSize,
+			ConfigExportInst.RankingJobsEnabled,
+		),
+		background.NewRankingGraphMapper(
+			observationCtx,
+			uploadSvc,
+			ConfigExportInst.NumRankingRoutines,
+			ConfigExportInst.RankingInterval,
+			ConfigExportInst.RankingJobsEnabled,
+		),
+		background.NewRankingGraphReducer(
+			observationCtx,
+			uploadSvc,
+			ConfigExportInst.NumRankingRoutines,
+			ConfigExportInst.RankingInterval,
+			ConfigExportInst.RankingJobsEnabled,
 		),
 	}
 }

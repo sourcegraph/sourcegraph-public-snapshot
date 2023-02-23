@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -18,9 +17,7 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps extends ThemeProps {
-    location: H.Location
-    history: H.History
+interface CreateCodeMonitorPageProps {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
@@ -30,14 +27,9 @@ interface CreateCodeMonitorPageProps extends ThemeProps {
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({
-    authenticatedUser,
-    history,
-    location,
-    createCodeMonitor = _createCodeMonitor,
-    isLightTheme,
-    isSourcegraphDotCom,
-}) => {
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+    const location = useLocation()
+
     const triggerQuery = useMemo(
         () => new URLSearchParams(location.search).get('trigger-query') ?? undefined,
         [location.search]
@@ -98,14 +90,11 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <CodeMonitorForm
-                history={history}
-                location={location}
                 authenticatedUser={authenticatedUser}
                 onSubmit={createMonitorRequest}
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
-                isLightTheme={isLightTheme}
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>

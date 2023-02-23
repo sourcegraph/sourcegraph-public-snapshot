@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link, Button, H2 } from '@sourcegraph/wildcard'
@@ -17,8 +16,6 @@ import styles from './BatchChangeNode.module.scss'
 export interface BatchChangeNodeProps {
     node: RepoBatchChange
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     /** For testing purposes. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing purposes. */

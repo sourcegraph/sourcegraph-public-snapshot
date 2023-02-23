@@ -299,6 +299,39 @@ func (s *GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
+// ListNamespaces returns all Github organizations accessible to the given source defined
+// via the external service configuration.
+func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
+	var (
+		err  error
+		cost int
+	)
+	orgs := make([]*github.Org, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		if err = ctx.Err(); err != nil {
+			results <- SourceNamespaceResult{Err: err}
+			return
+		}
+		var pageOrgs []*github.Org
+		pageOrgs, hasNextPage, cost, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		if err != nil {
+			results <- SourceNamespaceResult{Source: s, Err: err}
+			continue
+		}
+		orgs = append(orgs, pageOrgs...)
+		if hasNextPage && cost > 0 {
+			// 0-duration sleep unless nearing rate limit exhaustion, or
+			// shorter if context has been canceled (next iteration of loop
+			// will then return `ctx.Err()`).
+			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
+		}
+	}
+	for _, org := range orgs {
+		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
+	}
+}
+
 // GetRepo returns the GitHub repository with the given name and owner
 // ("org/repo-name")
 func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
@@ -348,8 +381,8 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 // if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitHubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
-		return url
+		assembledURL := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
+		return assembledURL
 	}
 
 	return repo.URL

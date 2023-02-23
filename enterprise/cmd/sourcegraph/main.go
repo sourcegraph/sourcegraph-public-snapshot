@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 
+	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
 	executor_singlebinary "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/singlebinary"
@@ -21,11 +23,13 @@ var services = []service.Service{
 	gitserver_shared.Service,
 	repoupdater_shared.Service,
 	searcher_shared.Service,
+	blobstore_shared.Service,
 	symbols_shared.Service,
 	worker_shared.Service,
 	githubproxy_shared.Service,
 	precise_code_intel_worker_shared.Service,
 	executor_singlebinary.Service,
+	servegit.Service,
 }
 
 func main() {

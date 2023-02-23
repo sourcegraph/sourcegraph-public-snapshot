@@ -60,7 +60,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		// the user to skip erroring here if they are explicitly skipping this
 		// version check.
 		inferredVersion, ok, err := func() (string, bool, error) {
-			v, patch, ok, err := getServiceVersion(ctx, r)
+			v, patch, ok, err := GetServiceVersion(ctx, r)
 			if err != nil || !ok {
 				return "", false, err
 			}
@@ -83,7 +83,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
 				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 			}
-		} else if version == "" {
+		} else if version == "" && file == "" {
 			return errors.New("-skip-version-check was supplied without -version or -file")
 		}
 
@@ -215,7 +215,7 @@ func fetchExpectedSchema(
 		))
 	}
 
-	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")
+	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
 func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {

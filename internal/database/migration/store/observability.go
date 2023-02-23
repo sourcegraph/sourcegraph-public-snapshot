@@ -26,7 +26,7 @@ var (
 
 func NewOperations(observationCtx *observation.Context) *Operations {
 	once.Do(func() {
-		metrics := metrics.NewREDMetrics(
+		redMetrics := metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"migrations",
 			metrics.WithLabels("op"),
@@ -37,7 +37,7 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("migrations.%s", name),
 				MetricLabelValues: []string{name},
-				Metrics:           metrics,
+				Metrics:           redMetrics,
 			})
 		}
 

@@ -4,6 +4,4 @@ export const releaseTemplate = `${divider}
 
 ## Unreleased
 
-<!-- Add changes changes to this section before release. -->
-
-_Upgrade notes for the next version will appear here._`
+<!-- Add changes changes to this section before release. -->`

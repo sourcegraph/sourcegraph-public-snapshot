@@ -40,9 +40,9 @@ func Init(
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	// Uncomment this when the licensing for this feature should be enforced.
-	// See https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
-	// database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+
+	// Enforce site admin creation rules.
+	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
@@ -83,6 +83,17 @@ func Init(
 			} else if stats.GitDirBytes >= codeScaleLimit*0.9 {
 				licenseInfo.CodeScaleCloseToLimit = true
 			}
+		}
+
+		// returning this only makes sense on dotcom
+		if envvar.SourcegraphDotComMode() {
+			for _, plan := range licensing.AllPlans {
+				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, fmt.Sprintf("plan:%s", plan))
+			}
+			for _, feature := range licensing.AllFeatures {
+				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
+			}
+			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
 		}
 
 		return licenseInfo

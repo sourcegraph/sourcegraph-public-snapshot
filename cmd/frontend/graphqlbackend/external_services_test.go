@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -222,9 +224,8 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 	})
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 
 	db.UsersFunc.SetDefaultReturn(users)
@@ -283,9 +284,8 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 
 	db.UsersFunc.SetDefaultReturn(users)
@@ -347,9 +347,8 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -409,9 +408,8 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -480,9 +478,8 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -1070,6 +1067,149 @@ func TestCancelExternalServiceSync(t *testing.T) {
 					Path:          []any{"cancelExternalServiceSync"},
 					Message:       auth.ErrMustBeSiteAdmin.Error(),
 					ResolverError: auth.ErrMustBeSiteAdmin,
+				},
+			},
+			Context: ctx,
+		})
+	})
+}
+
+func TestExternalServiceNamespaces(t *testing.T) {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	externalID := "AAAAAAAAAAAAA="
+	organizationName := "org"
+
+	namespace := types.ExternalServiceNamespace{
+		ID: 1, Name: organizationName, ExternalID: externalID,
+	}
+
+	query := func(kind string) string {
+		return fmt.Sprintf(
+			`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
+							nodes{
+								id
+								name
+								externalID
+							} } } `,
+			kind, "https://remote.com", "abc")
+	}
+
+	t.Run("as an admin with access to the external service", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		id := relay.MarshalID("ExternalServiceNamespace", namespace)
+
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
+				Namespaces: []*types.ExternalServiceNamespace{&namespace},
+				Error:      "",
+			}
+			return &res, nil
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  query(extsvc.KindGitHub),
+			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
+				"nodes": [
+					{
+						"id": "%s",
+						"name": "%s",
+						"externalID": "%s"
+					}
+			]}}`, id, organizationName, externalID),
+			Context: ctx,
+		})
+	})
+	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
+				Namespaces: []*types.ExternalServiceNamespace{&namespace},
+				Error:      "",
+			}
+			return &res, nil
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query(extsvc.KindGitHub),
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:          []any{"externalServiceNamespaces"},
+					Message:       auth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: auth.ErrMustBeSiteAdmin,
+				},
+			},
+			Context: ctx,
+		})
+	})
+	t.Run("repoupdater returns an error", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
+				Namespaces: []*types.ExternalServiceNamespace{&namespace},
+				Error:      "",
+			}
+			return &res, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials")
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query(extsvc.KindGitHub),
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceNamespaces", "nodes"},
+					Message: "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials",
+				},
+			},
+			Context: ctx,
+		})
+	})
+	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
+				Namespaces: []*types.ExternalServiceNamespace{&namespace},
+				Error:      "",
+			}
+			return &res, nil
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query(extsvc.KindBitbucketServer),
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceNamespaces", "nodes"},
+					Message: "External Service type does not support discovery of repositories and namespaces.",
 				},
 			},
 			Context: ctx,

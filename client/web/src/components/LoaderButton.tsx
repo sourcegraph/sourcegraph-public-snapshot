@@ -4,13 +4,15 @@ import classNames from 'classnames'
 
 import { LoadingSpinner, Button, ButtonProps } from '@sourcegraph/wildcard'
 
-interface Props extends ButtonProps {
+export interface LoaderButtonProps extends ButtonProps {
     loading: boolean
     label: string
     alwaysShowLabel: boolean
+    icon?: JSX.Element
 }
 
-export const LoaderButton: React.FunctionComponent<React.PropsWithChildren<Partial<Props>>> = ({
+export const LoaderButton: React.FunctionComponent<React.PropsWithChildren<Partial<LoaderButtonProps>>> = ({
+    icon,
     loading,
     label,
     alwaysShowLabel,
@@ -21,6 +23,10 @@ export const LoaderButton: React.FunctionComponent<React.PropsWithChildren<Parti
             <>
                 <LoadingSpinner />
                 {alwaysShowLabel && <span className="ml-1">{label}</span>}
+            </>
+        ) : icon ? (
+            <>
+                {icon}&nbsp;{label}
             </>
         ) : (
             label

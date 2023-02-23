@@ -1,10 +1,11 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Container,
     PageHeader,
@@ -32,7 +33,6 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { UserAvatar } from '../../../user/UserAvatar'
 import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
 
@@ -126,7 +126,7 @@ const UserNode: React.FunctionComponent<UserNodeProps> = ({
     )
 }
 
-interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {}
+interface Props extends OrgAreaRouteContext {}
 
 /**
  * The organizations members page
@@ -135,13 +135,12 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     org,
     authenticatedUser,
     onOrganizationUpdate,
-    location,
 }) => {
     React.useEffect(() => {
         eventLogger.logViewEvent('OrgMembers')
     }, [])
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const [onlyMemberRemovalAttempted, setOnlyMemberRemovalAttempted] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState<string>('')
     const debouncedSearchQuery = useDebounce<string>(searchQuery, 300)
@@ -191,12 +190,12 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     const onDidUpdate = React.useCallback(
         (didRemoveSelf: boolean) => {
             if (didRemoveSelf) {
-                history.push('/user/settings')
+                navigate('/user/settings')
             } else {
                 refetch()
             }
         },
-        [refetch, history]
+        [refetch, navigate]
     )
 
     const totalCount = connection?.totalCount || 0

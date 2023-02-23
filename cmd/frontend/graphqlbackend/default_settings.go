@@ -52,12 +52,11 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/vhdl":       true,
 }
 
-func defaultSettings(db database.DB) map[string]any {
+func defaultSettings() map[string]any {
 	extensionIDs := []string{}
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
 	}
-	extensionIDs = ExtensionRegistry(db).FilterRemoteExtensions(extensionIDs)
 	extensions := map[string]bool{}
 	for _, id := range extensionIDs {
 		extensions[id] = true
@@ -83,7 +82,7 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	contents, err := json.Marshal(defaultSettings(r.db))
+	contents, err := json.Marshal(defaultSettings())
 	if err != nil {
 		return nil, err
 	}

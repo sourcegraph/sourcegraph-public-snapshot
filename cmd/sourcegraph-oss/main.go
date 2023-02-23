@@ -2,6 +2,7 @@
 package main
 
 import (
+	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
@@ -11,6 +12,7 @@ import (
 	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 )
 
 // services is a list of services to run in the OSS build.
@@ -19,9 +21,11 @@ var services = []service.Service{
 	gitserver_shared.Service,
 	repoupdater_shared.Service,
 	searcher_shared.Service,
+	blobstore_shared.Service,
 	symbols_shared.Service,
 	worker_shared.Service,
 	githubproxy_shared.Service,
+	servegit.Service,
 }
 
 func main() {

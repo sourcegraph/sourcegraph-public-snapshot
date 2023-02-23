@@ -25,7 +25,7 @@ export enum FilterType {
     repo = 'repo',
     repohascommitafter = 'repohascommitafter',
     repohasfile = 'repohasfile',
-    // eslint-disable-next-line unicorn/prevent-abbreviations
+
     rev = 'rev',
     select = 'select',
     timeout = 'timeout',
@@ -33,7 +33,6 @@ export enum FilterType {
     visibility = 'visibility',
 }
 
-/* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     f = 'file',
     path = 'file',
@@ -135,6 +134,7 @@ export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter =>
  */
 export interface Completion {
     label: string
+    description?: string
     insertText?: string
     asSnippet?: boolean
 }
@@ -236,11 +236,25 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
+        discreteValues: () => [...predicateCompletion('file')],
         placeholder: 'regex',
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
+        discreteValues: () => [
+            {
+                label: 'yes',
+                description: 'Include repository forks',
+            },
+            {
+                label: 'only',
+                description: 'Only search in repository forks',
+            },
+            {
+                label: 'no',
+                description: 'Do not search in repository forks (default)',
+            },
+        ],
         description: 'Include results from forked repositories.',
         singular: true,
     },
@@ -301,7 +315,32 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to diffs, commits, file paths, symbols and other entities.',
-        discreteValues: () => ['diff', 'commit', 'symbol', 'repo', 'path', 'file'].map(value => ({ label: value })),
+        discreteValues: () => [
+            {
+                label: 'diff',
+                description: 'Search for file changes',
+            },
+            {
+                label: 'commit',
+                description: 'Search in commit messages',
+            },
+            {
+                label: 'symbol',
+                description: 'Search for symbol names',
+            },
+            {
+                label: 'repo',
+                description: 'Search for repositories',
+            },
+            {
+                label: 'path',
+                description: 'Search for file/directory names',
+            },
+            {
+                label: 'file',
+                description: 'Search for file content',
+            },
+        ],
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),
@@ -410,6 +449,12 @@ export const validateFilter = (
     }
     if (typeAndDefinition.type === FilterType.repo) {
         // Repo filter is made exempt from checking discrete valid values, since a valid `contain` predicate
+        // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
+        // account for finite discrete values and exemption of checks.
+        return { valid: true }
+    }
+    if (typeAndDefinition.type === FilterType.file) {
+        // File filter is made exempt from checking discrete valid values, since a valid `contain` predicate
         // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
         // account for finite discrete values and exemption of checks.
         return { valid: true }

@@ -1,0 +1,18 @@
+.docker-command-spec {
+    display: flex;
+    flex-direction: row;
+    overflow: auto;
+}
+
+.header {
+    width: 5rem;
+    flex-shrink: 0;
+}
+
+.collapse-button {
+    padding: 0.5rem;
+
+    &:hover {
+        background-color: var(--subtle-bg);
+    }
+}

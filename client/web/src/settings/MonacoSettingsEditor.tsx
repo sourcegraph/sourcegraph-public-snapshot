@@ -8,7 +8,6 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'r
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../../schema/settings.schema.json'
@@ -23,10 +22,11 @@ interface JSONSchema {
     $id: string
 }
 
-export interface Props extends ThemeProps {
+export interface Props {
     id?: string
     className?: string
     value: string | undefined
+    isLightTheme: boolean
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     height?: number
@@ -361,4 +361,23 @@ function getPositionAt(text: string, offset: number): monaco.IPosition {
         position += line.length + 1
     }
     throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
+}
+
+declare global {
+    interface Window {
+        MonacoEnvironment?: monaco.Environment | undefined
+    }
+}
+
+// When using esbuild, we need to manually configure the MonacoEnvironment for the Monaco editor.
+// This is not needed when using Webpack because the monaco-editor-webpack-plugin does this for us.
+if (process.env.DEV_WEB_BUILDER === 'esbuild' && !window.MonacoEnvironment) {
+    window.MonacoEnvironment = {
+        getWorkerUrl(_moduleId: string, label: string): string {
+            if (label === 'json') {
+                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
+            }
+            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
+        },
+    }
 }

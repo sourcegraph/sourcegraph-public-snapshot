@@ -490,13 +490,10 @@ describe('Repository component', () => {
                 }
                 await link.click()
 
-                await driver.page.waitForSelector('.test-blob .selected .line')
-                const selectedLineNumber = await driver.page.evaluate(() => {
-                    const element = document.querySelector<HTMLElement>('.test-blob .selected .line')
-                    return element?.dataset.line && parseInt(element.dataset.line, 10)
-                })
-
-                expect(selectedLineNumber).toEqual(line)
+                const selectedLine = await driver.page.waitForSelector(
+                    `[data-testid="repo-blob"] .cm-line:nth-child(${line}).selected-line`
+                )
+                expect(selectedLine).not.toBeNull()
             })
         }
     })

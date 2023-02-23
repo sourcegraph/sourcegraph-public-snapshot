@@ -36,7 +36,7 @@ type GitserverReposStatistic struct {
 
 type RepoStatisticsStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (RepoStatisticsStore, error)
+	WithTransact(context.Context, func(RepoStatisticsStore) error) error
 	With(basestore.ShareableStore) RepoStatisticsStore
 
 	GetRepoStatistics(ctx context.Context) (RepoStatistics, error)
@@ -60,9 +60,10 @@ func (s *repoStatisticsStore) With(other basestore.ShareableStore) RepoStatistic
 	return &repoStatisticsStore{Store: s.Store.With(other)}
 }
 
-func (s *repoStatisticsStore) Transact(ctx context.Context) (RepoStatisticsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &repoStatisticsStore{Store: txBase}, err
+func (s *repoStatisticsStore) WithTransact(ctx context.Context, f func(RepoStatisticsStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&repoStatisticsStore{Store: tx})
+	})
 }
 
 func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (RepoStatistics, error) {

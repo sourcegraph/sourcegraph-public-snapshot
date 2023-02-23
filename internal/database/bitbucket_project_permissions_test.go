@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
@@ -162,7 +162,7 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	job, err := ScanBitbucketProjectPermissionJob(rows)
 	require.NoError(t, err)
 	require.NotNil(t, job)
-	entry := workerutil.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
+	entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
 	require.Equal(t, &types.BitbucketProjectPermissionJob{
 		ID:                1,
 		State:             "queued",

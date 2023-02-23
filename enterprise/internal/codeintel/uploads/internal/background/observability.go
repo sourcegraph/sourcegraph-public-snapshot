@@ -12,28 +12,28 @@ import (
 
 type workerOperations struct {
 	uploadProcessor *observation.Operation
-	uploadSizeGuage prometheus.Gauge
+	uploadSizeGauge prometheus.Gauge
 }
 
 func newWorkerOperations(observationCtx *observation.Context) *workerOperations {
-	honeyobservationCtx := *observationCtx
-	honeyobservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyobservationCtx.Operation(observation.Op{
+	honeyObservationCtx := *observationCtx
+	honeyObservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyObservationCtx.Operation(observation.Op{
 		Name: "codeintel.uploadHandler",
 		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 			return observation.EmitForTraces | observation.EmitForHoney
 		},
 	})
 
-	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+	uploadSizeGauge := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "src_codeintel_upload_processor_upload_size",
 		Help: "The combined size of uploads being processed at this instant by this worker.",
 	})
-	observationCtx.Registerer.MustRegister(uploadSizeGuage)
+	observationCtx.Registerer.MustRegister(uploadSizeGauge)
 
 	return &workerOperations{
 		uploadProcessor: uploadProcessor,
-		uploadSizeGuage: uploadSizeGuage,
+		uploadSizeGauge: uploadSizeGauge,
 	}
 }
 
@@ -100,5 +100,37 @@ func newOperations(observationCtx *observation.Context) *operations {
 		numReconcileDeletesFromFrontend:    numReconcileDeletesFromFrontend,
 		numReconcileScansFromCodeIntelDB:   numReconcileScansFromCodeIntelDB,
 		numReconcileDeletesFromCodeIntelDB: numReconcileDeletesFromCodeIntelDB,
+	}
+}
+
+type rankingOperations struct {
+	numPathCountsInputsRowsProcessed prometheus.Counter
+	numPathRanksInserted             prometheus.Counter
+}
+
+func newRankingOperations(observationCtx *observation.Context) *rankingOperations {
+	counter := func(name, help string) prometheus.Counter {
+		counter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		})
+
+		observationCtx.Registerer.MustRegister(counter)
+		return counter
+	}
+
+	numPathCountInputsRowsProcessed := counter(
+		"src_codeintel_ranking_path_count_inputs_rows_processed_total",
+		"The number of input row records merged into document scores for a single repo.",
+	)
+
+	numPathRanksInserted := counter(
+		"src_codeintel_ranking_path_ranks_inserted_total",
+		"The number of path ranks inserted and merged in for a single repo.",
+	)
+
+	return &rankingOperations{
+		numPathCountsInputsRowsProcessed: numPathCountInputsRowsProcessed,
+		numPathRanksInserted:             numPathRanksInserted,
 	}
 }

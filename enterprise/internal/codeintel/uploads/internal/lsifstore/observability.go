@@ -14,19 +14,13 @@ type operations struct {
 	getUploadDocumentsForPath   *observation.Operation
 	scanDocuments               *observation.Operation
 	insertMetadata              *observation.Operation
-	writeMeta                   *observation.Operation
-	writeDocuments              *observation.Operation
-	writeResultChunks           *observation.Operation
-	writeDefinitions            *observation.Operation
-	writeReferences             *observation.Operation
-	writeImplementations        *observation.Operation
 	deleteUnreferencedDocuments *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_uploads_lsifstore",
@@ -39,7 +33,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.lsifstore.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -50,12 +44,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getUploadDocumentsForPath:   op("GetUploadDocumentsForPath"),
 		scanDocuments:               op("ScanDocuments"),
 		insertMetadata:              op("InsertMetadata"),
-		writeMeta:                   op("WriteMeta"),
-		writeDocuments:              op("WriteDocuments"),
-		writeResultChunks:           op("WriteResultChunks"),
-		writeDefinitions:            op("WriteDefinitions"),
-		writeReferences:             op("WriteReferences"),
-		writeImplementations:        op("WriteImplementations"),
 		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
 	}
 }

@@ -1,4 +1,3 @@
-import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 
@@ -11,12 +10,9 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
-const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
-    history,
-    location: createLocation('/search'),
     authenticatedUser: {
         id: 'userID',
         displayName: 'Chuck Cheese',
@@ -40,8 +36,7 @@ const renderSearchResultsInfoBar = (
     renderWithBrandedContext(
         <MockedTestProvider>
             <SearchResultsInfoBar {...COMMON_PROPS} {...props} />
-        </MockedTestProvider>,
-        { history }
+        </MockedTestProvider>
     )
 
 describe('SearchResultsInfoBar', () => {

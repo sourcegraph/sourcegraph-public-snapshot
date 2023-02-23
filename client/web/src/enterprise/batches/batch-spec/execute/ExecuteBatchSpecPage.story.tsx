@@ -1,6 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes } from 'date-fns'
-import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -119,13 +118,15 @@ const EXECUTING_BATCH_SPEC_WITH_END_TIME = {
 }
 
 export const Executing: Story = () => (
-    <WebStory>
+    <WebStory
+        path="/users/:username/batch-changes/:batchChangeName/executions/:batchSpecID/*"
+        initialEntries={['/users/my-username/batch-changes/my-batch-change/executions/spec1234']}
+    >
         {props => (
             <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC_WITH_END_TIME }))}>
                 <ExecuteBatchSpecPage
                     {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery()}
                 />
@@ -153,7 +154,12 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
 }
 
 export const ExecuteWithAWorkspaceSelected: Story = () => (
-    <WebStory>
+    <WebStory
+        path="/users/:username/batch-changes/:batchChangeName/executions/:batchSpecID/*"
+        initialEntries={[
+            '/users/my-username/batch-changes/my-batch-change/executions/spec1234/execution/workspaces/workspace1234',
+        ]}
+    >
         {props => (
             <MockedTestProvider
                 link={
@@ -170,25 +176,12 @@ export const ExecuteWithAWorkspaceSelected: Story = () => (
                     ])
                 }
             >
-                <MemoryRouter
-                    initialEntries={[
-                        '/users/my-username/batch-changes/my-batch-change/executions/spec1234/execution/workspaces/workspace1234',
-                    ]}
-                >
-                    <ExecuteBatchSpecPage
-                        {...props}
-                        batchSpecID="spec1234"
-                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                        authenticatedUser={mockAuthenticatedUser}
-                        match={{
-                            isExact: false,
-                            params: { batchChangeName: 'my-batch-change', batchSpecID: 'spec1234' },
-                            path: '/users/my-username/batch-changes/:batchChangeName/executions/:batchSpecID',
-                            url: '/users/my-username/batch-changes/my-batch-change/executions/spec1234',
-                        }}
-                        queryWorkspacesList={buildWorkspacesQuery()}
-                    />
-                </MemoryRouter>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    namespace={{ __typename: 'User', url: '', id: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    queryWorkspacesList={buildWorkspacesQuery()}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -199,13 +192,12 @@ ExecuteWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC)
 
 export const Completed: Story = () => (
-    <WebStory>
+    <WebStory initialEntries={['/my-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_MOCKS)}>
                 <ExecuteBatchSpecPage
                     {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.COMPLETED })}
                 />
@@ -217,13 +209,12 @@ export const Completed: Story = () => (
 const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC)
 
 export const CompletedWithErrors: Story = () => (
-    <WebStory>
+    <WebStory initialEntries={['/my-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_WITH_ERRORS_MOCKS)}>
                 <ExecuteBatchSpecPage
                     {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.FAILED })}
                 />
@@ -237,13 +228,12 @@ CompletedWithErrors.storyName = 'completed with errors'
 const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
 
 export const LocallyExecutedSpec: Story = () => (
-    <WebStory>
+    <WebStory initialEntries={['/my-local-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
                 <ExecuteBatchSpecPage
                     {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
+                    namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>

@@ -35,7 +35,6 @@ body.theme-dark .markdown-body ul li:before {
 <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
 </div>
 
-
 ## [Setup](setup/index.md)
 
 <p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
@@ -101,7 +100,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
-- [Code host connections on local dev environment](background-information/code-host.md)
 - [Testing](#testing)
   - [Testing principles and guidelines](background-information/testing_principles.md)
   - [Continuous integration](background-information/ci/index.md)
@@ -109,6 +107,11 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing Go code](background-information/languages/testing_go_code.md)
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
+- [The `gitserver` API](background-information/gitserver-api.md)
+
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -137,6 +140,10 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
+
+### Components
+
+- [`gitserver` API](components/gitserver.md)
 
 ### Other
 

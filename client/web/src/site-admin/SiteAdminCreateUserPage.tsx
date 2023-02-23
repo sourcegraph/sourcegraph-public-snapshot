@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
@@ -35,7 +34,7 @@ interface State {
 /**
  * A page with a form to create a user account.
  */
-export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps<{}>, State> {
+export class SiteAdminCreateUserPage extends React.Component<{}, State> {
     public state: State = {
         loading: false,
         username: '',

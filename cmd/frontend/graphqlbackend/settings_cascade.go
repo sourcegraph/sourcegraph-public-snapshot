@@ -138,13 +138,12 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 }
 
 var settingsFieldMergeDepths = map[string]int{
-	"SearchScopes":           1,
-	"SearchSavedQueries":     1,
-	"SearchRepositoryGroups": 1,
-	"Motd":                   1,
-	"Notices":                1,
-	"Extensions":             1,
-	"ExperimentalFeatures":   1,
+	"SearchScopes":         1,
+	"SearchSavedQueries":   1,
+	"Motd":                 1,
+	"Notices":              1,
+	"Extensions":           1,
+	"ExperimentalFeatures": 1,
 }
 
 func mergeSettingsLeft(left, right *schema.Settings) *schema.Settings {

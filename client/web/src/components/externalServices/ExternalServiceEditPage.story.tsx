@@ -6,12 +6,18 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
-import { WebStory } from '../WebStory'
+import { WebStory, WebStoryChildrenProps } from '../WebStory'
 
 import { FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container">
+        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+            {story}
+        </WebStory>
+    </div>
+)
 
 const config: Meta = {
     title: 'web/External services/ExternalServiceEditPage',
@@ -61,86 +67,54 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ViewConfig: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock(externalService)}>
-                <ExternalServiceEditPage
-                    {...webProps}
-                    routingPrefix="/site-admin"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ViewConfig: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock(externalService)}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ViewConfig.storyName = 'View external service config'
 
-export const ConfigWithInvalidUrl: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
-                <ExternalServiceEditPage
-                    {...webProps}
-                    routingPrefix="/site-admin"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
 
-export const ConfigWithWarning: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServiceEditPage
-                    {...webProps}
-                    routingPrefix="/site-admin"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
 
-export const EditingDisabled: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServiceEditPage
-                    {...webProps}
-                    routingPrefix="/site-admin"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={true}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
+        <ExternalServiceEditPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            autoFocusForm={false}
+            externalServicesFromFile={true}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 EditingDisabled.storyName = 'External service config EXTSVC_CONFIG_FIlE set'

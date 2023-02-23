@@ -96,7 +96,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	defer func() { err = tx.Done(err) }()
 
 	// load backfill and series
-	backfill, err := tx.loadBackfill(ctx, job.backfillId)
+	backfill, err := tx.LoadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
@@ -171,11 +171,11 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 
 func parseQuery(series types.InsightSeries) (query.Plan, error) {
 	if series.GeneratedFromCaptureGroups {
-		query, err := compute.Parse(series.Query)
+		seriesQuery, err := compute.Parse(series.Query)
 		if err != nil {
 			return nil, errors.Wrap(err, "compute.Parse")
 		}
-		searchQuery, err := query.ToSearchQuery()
+		searchQuery, err := seriesQuery.ToSearchQuery()
 		if err != nil {
 			return nil, errors.Wrap(err, "ToSearchQuery")
 		}

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -55,9 +56,9 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		}
 	}
 
-	job := NewAlertJob(inputs, jobTree)
-	job = NewLogJob(inputs, job)
-	return job, nil
+	alertJob := NewAlertJob(inputs, jobTree)
+	logJob := NewLogJob(inputs, alertJob)
+	return logJob, nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -86,7 +87,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol, inputs.Features))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
@@ -103,20 +104,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Global Text Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
+				searchJob, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -126,20 +127,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Global Symbol Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -184,10 +185,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
-	{ // Apply selectors
-		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
+	{ // Apply code ownership post-search filter
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b, inputs.Features); ok {
+			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -195,6 +195,17 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
 			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply selectors
+		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			basicJob = NewSelectJob(sp, basicJob)
+			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
+			if inputs.Features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
+				basicJob = codeownershipjob.NewSelectOwners(basicJob)
+			}
 		}
 	}
 
@@ -495,7 +506,23 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Features) int {
+	// Temporary fix:
+	// If doing ownership search, we post-filter results so we may need more than
+	// b.Count() results from the search backends to end up with enough results
+	// sent down the stream.
+	//
+	// This is actually a more general problem with other post-filters, too but
+	// keeps the scope of this change minimal.
+	// The proper fix will likely be to establish proper result streaming and cancel
+	// the stream once enough results have been consumed. We will revisit this
+	// post-Starship March 2023 as part of search performance improvements for
+	// ownership search.
+	if _, _, ok := isOwnershipSearch(b, features); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
+
 	if count := b.Count(); count != nil {
 		return *count
 	}
@@ -507,6 +534,13 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
+}
+
+func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+		return includeOwners, excludeOwners, true
+	}
+	return nil, nil, false
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
@@ -526,11 +560,11 @@ func timeoutDuration(b query.Basic) time.Duration {
 }
 
 func mapSlice(values []string, f func(string) string) []string {
-	result := make([]string, len(values))
+	res := make([]string, len(values))
 	for i, v := range values {
-		result[i] = f(v)
+		res[i] = f(v)
 	}
-	return result
+	return res
 }
 
 func count(b query.Basic, p search.Protocol) int {

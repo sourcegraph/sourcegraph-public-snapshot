@@ -143,12 +143,6 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *reso
 }
 
 func (r *UploadResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	for _, indexer := range types.AllIndexers {
-		if indexer.Name == r.upload.Indexer {
-			return types.NewCodeIntelIndexerResolverFrom(indexer)
-		}
-	}
-
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
 }
 
@@ -173,8 +167,8 @@ func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUp
 	}
 
 	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
-	for _, log := range logs {
-		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(log))
+	for _, uploadLog := range logs {
+		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(uploadLog))
 	}
 
 	return &resolvers, nil

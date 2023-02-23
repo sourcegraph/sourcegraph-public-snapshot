@@ -115,6 +115,15 @@ func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err 
 	return s.store.GetDirtyRepositories(ctx)
 }
 
+func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetIndexers(ctx, opts)
+}
+
 func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
@@ -364,4 +373,12 @@ func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs
 	defer endObservation(1, observation.Args{})
 
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
+}
+
+func (s *Service) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error {
+	return s.store.ReindexUploads(ctx, opts)
+}
+
+func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
+	return s.store.ReindexUploadByID(ctx, id)
 }

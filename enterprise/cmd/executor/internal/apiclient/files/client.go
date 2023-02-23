@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,6 +21,9 @@ type Client struct {
 	logger     log.Logger
 	operations *operations
 }
+
+// Compile time validation.
+var _ workspace.FilesStore = &Client{}
 
 // New creates a new Client based on the provided Options.
 func New(observationCtx *observation.Context, options apiclient.BaseClientOptions) (*Client, error) {

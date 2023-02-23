@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -116,7 +118,22 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+		opts.States = append(opts.States, opts.State)
+	}
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	}
+
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
@@ -173,7 +190,7 @@ WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFS
 func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -186,8 +203,11 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 	if opts.Term != "" {
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -223,7 +243,7 @@ WHERE u.repository_id = repo.id AND %s
 func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -236,8 +256,11 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 	if opts.Term != "" {
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -297,21 +320,29 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 }
 
 // makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
-func makeStateCondition(state string) *sqlf.Query {
-	states := make([]string, 0, 2)
-	if state == "errored" || state == "failed" {
-		// Treat errored and failed states as equivalent
-		states = append(states, "errored", "failed")
-	} else {
-		states = append(states, state)
-	}
-
-	queries := make([]*sqlf.Query, 0, len(states))
+func makeStateCondition(states []string) *sqlf.Query {
+	stateMap := make(map[string]struct{}, 2)
 	for _, state := range states {
-		queries = append(queries, sqlf.Sprintf("u.state = %s", state))
+		// Treat errored and failed states as equivalent
+		if state == "errored" || state == "failed" {
+			stateMap["errored"] = struct{}{}
+			stateMap["failed"] = struct{}{}
+		} else {
+			stateMap[state] = struct{}{}
+		}
 	}
 
-	return sqlf.Sprintf("(%s)", sqlf.Join(queries, " OR "))
+	orderedStates := make([]string, 0, len(stateMap))
+	for state := range stateMap {
+		orderedStates = append(orderedStates, state)
+	}
+	sort.Strings(orderedStates)
+
+	if len(orderedStates) == 1 {
+		return sqlf.Sprintf("u.state = %s", orderedStates[0])
+	}
+
+	return sqlf.Sprintf("u.state = ANY(%s)", pq.Array(orderedStates))
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.

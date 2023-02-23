@@ -1,5 +1,4 @@
 import { fireEvent, getByRole, screen } from '@testing-library/react'
-import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -11,12 +10,9 @@ import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
 
 const PROPS: CodeMonitorFormProps = {
-    history: createMemoryHistory(),
-    location: createLocation('/code-monitoring/new'),
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
-    isLightTheme: true,
     isSourcegraphDotCom: false,
 }
 

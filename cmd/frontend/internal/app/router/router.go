@@ -33,8 +33,6 @@ const (
 	ResetPasswordCode  = "reset-password.code"
 	CheckUsernameTaken = "check-username-taken"
 
-	RegistryExtensionBundle = "registry.extension.bundle"
-
 	UsageStatsDownload = "usage-stats.download"
 
 	OneClickExportArchive = "one-click-export.archive"
@@ -86,8 +84,6 @@ func newRouter() *mux.Router {
 	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
 
 	base.Path("/-/check-username-taken/{username}").Methods("GET").Name(CheckUsernameTaken)
-
-	base.Path("/-/static/extension/{RegistryExtensionReleaseFilename}").Methods("GET").Name(RegistryExtensionBundle)
 
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 
