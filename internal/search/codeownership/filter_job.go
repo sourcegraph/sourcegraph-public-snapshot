@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -138,6 +139,7 @@ matchesLoop:
 // returns true if there is at least one owner, and false otherwise.
 func containsOwner(owners []codeowners.Ownership, owner string) bool {
 	if owner == "" {
+		fmt.Println("OWNERSHIPS", owners)
 		return len(owners) > 0
 	}
 	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))

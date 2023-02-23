@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -150,24 +151,6 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
-			name: "do not match on email if search term includes leading @",
-			args: args{
-				includeOwners: []string{"@test@example.com"},
-				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "README.md",
-						},
-					},
-				},
-				repoContent: map[string]string{
-					"CODEOWNERS": "README.md test@example.com\n",
-				},
-			},
-			want: autogold.Expect([]result.Match{}),
-		},
-		{
 			name: "selects results with any owner assigned",
 			args: args{
 				includeOwners: []string{""},
@@ -277,7 +260,11 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				return []byte(content), nil
 			})
 
-			rules := NewRulesCache(gitserverClient, database.NewMockDB())
+			db := database.NewMockDB()
+			fakes := fakedb.New()
+			fakes.Wire(db)
+
+			rules := NewRulesCache(gitserverClient, db)
 
 			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 

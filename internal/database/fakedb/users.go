@@ -44,3 +44,18 @@ func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 	}
 	return a.User(ctx, users)
 }
+
+func (users *Users) GetByUsername(ctx context.Context, username string) (*types.User, error) {
+	for _, u := range users.list {
+		if u.Username == username {
+			return &u, nil
+		}
+	}
+	return nil, nil
+}
+
+// GetByVerifiedEmail returns nothing as at this point,
+// the fake implementation does not support emails.
+func (users *Users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
+	return nil, nil
+}
