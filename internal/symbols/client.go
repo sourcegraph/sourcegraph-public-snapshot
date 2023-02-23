@@ -520,7 +520,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
+	conn, err := defaults.DialContext(ctx, u.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}
