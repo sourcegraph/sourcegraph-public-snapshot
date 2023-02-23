@@ -1,12 +1,14 @@
 package scim
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/scim2/filter-parser/v2"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -96,12 +98,22 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}
 
 	// Update user
+	err = updateUser(r.Context(), tx, user, userRes)
+	if err != nil {
+		return scim.Resource{}, err
+	}
+
+	return userRes, nil
+}
+
+// updateUser updates a user in the database.
+func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
 	usernameUpdate := ""
-	requestedUsername := extractUsername(userRes.Attributes)
-	if requestedUsername != user.Username {
-		usernameUpdate, err = getUniqueUsername(r.Context(), tx, requestedUsername)
+	requestedUsername := extractUsername(newUser.Attributes)
+	if requestedUsername != oldUser.Username {
+		usernameUpdate, err = getUniqueUsername(ctx, tx, requestedUsername)
 		if err != nil {
-			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
+			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
 		}
 	}
 	var displayNameUpdate *string
@@ -111,14 +123,14 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		DisplayName: displayNameUpdate,
 		AvatarURL:   avatarURLUpdate,
 	}
-	err = h.db.Users().Update(r.Context(), user.ID, userUpdate)
-
+	err = tx.Update(ctx, oldUser.ID, userUpdate)
 	if err != nil {
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
+
 	// TODO: Save verified emails and additional fields here
 
-	return userRes, nil
+	return
 }
 
 // applyChangeToResource applies a change to a resource (for example, sets its userName).
