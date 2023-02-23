@@ -45,6 +45,7 @@ import { UserNavItem } from './UserNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
@@ -271,7 +272,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <ButtonLink
                             variant="secondary"
                             outline={true}
-                            to={'https://about.sourcegraph.com'}
+                            to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() =>
                                 eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
