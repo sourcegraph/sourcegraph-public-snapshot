@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,6 +55,34 @@ type searchIndexerGRPCServer struct {
 	v1.UnimplementedIndexedSearchConfigurationServiceServer
 }
 
+func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *v1.SearchConfigurationRequest) (*v1.SearchConfigurationResponse, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (s *searchIndexerGRPCServer) List(ctx context.Context, request *v1.ListRequest) (*v1.ListResponse, error) {
+	return nil, errors.New("unimplemented")
+
+}
+
+func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *v1.RepositoryRankRequest) (*v1.RepositoryRankResponse, error) {
+	ranks, err := s.server.Ranking.GetRepoRank(ctx, api.RepoName(request.Repository))
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+
+		return nil, err
+	}
+
+	return &v1.RepositoryRankResponse{
+		Rank: ranks,
+	}, nil
+}
+
+func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *v1.DocumentRanksRequest) (*v1.DocumentRanksResponse, error) {
+	return nil, errors.New("unimplemented")
+}
+
 func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1.UpdateIndexStatusRequest) (*v1.UpdateIndexStatusResponse, error) {
 	var request indexStatusUpdateArgs
 	request.FromProto(req)
@@ -64,6 +94,8 @@ func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1
 
 	return &v1.UpdateIndexStatusResponse{}, nil
 }
+
+var _ v1.IndexedSearchConfigurationServiceServer = &searchIndexerGRPCServer{}
 
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).

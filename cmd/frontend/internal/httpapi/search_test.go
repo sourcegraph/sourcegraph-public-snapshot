@@ -99,6 +99,10 @@ func TestServeConfiguration(t *testing.T) {
 	}
 }
 
+func TestRepoRank(t *testing.T) {
+
+}
+
 func TestReposIndex(t *testing.T) {
 	allRepos := []types.MinimalRepo{
 		{ID: 1, Name: "github.com/popular/foo"},
