@@ -221,7 +221,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
-                    case 'unknownOwner':
                     case 'person':
                     case 'team':
                         return (

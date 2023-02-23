@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { UserAvatar, UserAvatarData } from '@sourcegraph/shared/src/components/UserAvatar'
-import { OwnerMatch } from '@sourcegraph/shared/src/search/stream'
+import { getOwnerMatchUrl, OwnerMatch } from '@sourcegraph/shared/src/search/stream'
 import { Link } from '@sourcegraph/wildcard'
 
 import { ResultContainer } from './ResultContainer'
@@ -29,33 +29,37 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
     const displayName = useMemo(() => {
         let displayName = ''
         if (result.type === 'person') {
-            displayName = result.displayName || result.username || result.handle || result.email || 'Unknown person'
+            displayName =
+                result.user?.displayName || result.user?.username || result.handle || result.email || 'Unknown person'
         } else if (result.type === 'team') {
             displayName = result.displayName || result.name || result.handle || result.email || 'Unknown team'
-        } else {
-            displayName = result.handle || result.email || 'Unknown owner'
         }
         return displayName
     }, [result])
 
     const avatarUser = useMemo(() => {
         const avatarUser: UserAvatarData = { username: displayName, avatarURL: null, displayName }
-        if (result.type === 'person') {
-            if (result.username) {
-                avatarUser.username = result.username
-            }
-            if (result.avatarURL) {
-                avatarUser.avatarURL = result.avatarURL
-            }
+        if (result.type === 'person' && result.user) {
+            avatarUser.username = result.user.username
+            avatarUser.avatarURL = result.user.avatarURL || null
         }
         return avatarUser
     }, [result, displayName])
 
+    const url = useMemo(() => {
+        const url = getOwnerMatchUrl(result)
+        if (result.type === 'person' && !result.user) {
+            // This is not a real URL, remove it.
+            return ''
+        }
+        return url
+    }, [result])
+
     const title = (
         <div className="d-flex align-items-center">
             <UserAvatar user={avatarUser} className={styles.avatar} size={16} />
-            {result.type === 'person' && result.username ? (
-                <Link to={`/users/${result.username}`} className="text-muted">
+            {url ? (
+                <Link to={url} className="text-muted">
                     {displayName}
                 </Link>
             ) : (
@@ -78,7 +82,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
                 <div className={resultStyles.matchType}>
                     <small>Owner match</small>
                 </div>
-                {result.type === 'unknownOwner' && (
+                {result.type === 'person' && !result.user && (
                     <>
                         <div className={resultStyles.dividerVertical} />
                         <small className="d-block font-italic">
