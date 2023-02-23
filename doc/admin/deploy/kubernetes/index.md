@@ -63,12 +63,11 @@ The `buildConfig.yaml` file is used to configure components included in your `ku
   $ mv instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
 ```
 
-
 ### **Step 4**: Set namespace
 
-By default, the provided `kustomization.yaml` template deploys Sourcegraph into the `sourcegraph` namespace. 
+By default, the provided `kustomization.yaml` template deploys Sourcegraph into the `ns-sourcegraph` namespace. 
 
-If you intend to deploy Sourcegraph into a different namespace, replace `sourcegraph` with the name of the existing namespace in your cluster, or set it to `default` to deploy into the default namespace.
+If you intend to deploy Sourcegraph into a different namespace, replace `ns-sourcegraph` with the name of the existing namespace in your cluster, or set it to `default` to deploy into the default namespace.
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
@@ -83,28 +82,29 @@ A storage class must be created and configured before deploying Sourcegraph. SSD
 
 We recommend using a preconfigured storage class component for your cloud provider if you can create cluster-wide resources:
 
-  ```yaml
-  # instances/my-sourcegraph/kustomization.yaml
-  # Select a component that corresponds to your cluster provider.
+```yaml
+# instances/my-sourcegraph/kustomization.yaml
   components:
+    # Select a component that corresponds to your cluster provider
     - ../../components/storage-class/aws/aws-ebs
     - ../../components/storage-class/aws/ebs-csi
     - ../../components/storage-class/azure
     - ../../components/storage-class/gke
-  ```
+```
 
-See our [configurations guide](configure.md) for a list of available storage class components and configuration options.
+See our [configurations guide](configure.md) for the full list of available storage class components.
 
 #### Option 2: Use an existing storage class
 
-If you cannot create a storage class or want to use an existing one with SSDs:
+If you cannot create a new storage class and/or want to use an existing one with SSDs:
 
 1\. Include the `storage-class/name-update` component under the components list
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
     components:
-      # This updates storageClassName to the STORAGECLASS_NAME value set in buildConfig.yaml
+      # This updates storageClassName to 
+      # the STORAGECLASS_NAME value from buildConfig.yaml
       - ../../components/storage-class/name-update
   ```
 
@@ -114,7 +114,6 @@ For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of
 
   ```yaml
   # instances/my-sourcegraph/buildConfig.yaml
-    # ...
     kind: SourcegraphBuildConfig
     metadata:
       name: sourcegraph-kustomize-config

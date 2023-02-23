@@ -36,18 +36,13 @@ This guide will demonstrate how to customize your Sourcegraph deployment using K
 
 ## Overview
 
-To ensure optimal performance and functionality of your Sourcegraph deployment, it is recommended to use components pre-configured by us in your overlay. These components include settings that have been specifically designed and tested for Sourcegraph and do not require any additional configuration changes.
+To ensure optimal performance and functionality of your Sourcegraph deployment, please only include components listed in the [kustomization.template.yaml file](kustomize/index.md#kustomization-yaml) for your instance overlay. These components include settings that have been specifically designed and tested for Sourcegraph and do not require any additional configuration changes.
 
-Before combining components in your [kustomization file](kustomize/index.md#kustomization-yaml), be sure to understand how each component and its dependencies work. Carefully review all component configurations and resources to ensure full compatibility and proper interaction between components. Note that some components depend on others, so disable/remove components cautiously.
+The order of components listed in the [kustomization.template.yaml file](kustomize/index.md#kustomization-yaml) is important and should be maintained. The components are listed in a specific order to ensure proper dependency management and compatibility between components. Reordering components can introduce conflicts or prevent components from interacting as expected. Only modify the component order if explicitly instructed to do so by the documentation. Otherwise, leave the component order as-is to avoid issues.
 
 Following these guidelines will help you create a seamless deployment and avoid conflicts.
 
 > NOTE: All commands in this guide should be run from the root of the reference repository.
-
-## Components
-
-The order of components in the [kustomization.template.yaml file](kustomize/index.md#kustomization-yaml) is important and should be maintained. The components are listed in a specific order to ensure proper dependency management and compatibility between components. Reordering components can introduce conflicts or prevent components from interacting as expected. Only modify the component order if explicitly instructed to do so by the documentation. Otherwise, leave the component order as-is to avoid issues.
-
 
 ## Base cluster
 
@@ -82,12 +77,16 @@ resources:
   - ../../base/sourcegraph # Deploy Sourcegraph main stack
   - ../../base/monitoring # Deploy Sourcegraph monitoring stack
 components:
+  # Add resources for cadvisor
   # NOTE: cadvisor includes RBAC resources and must be run with privileges
-  - ../../components/monitoring/cadvisor # Add resources for cadvisor
-  - ../../components/privileged # Run Sourcegraph main stack with privilege and root
+  - ../../components/monitoring/cadvisor
+  # Run Sourcegraph main stack with privilege and root
   # NOTE: This adds RBAC resources to the monitoring stack
+  - ../../components/privileged 
+  # Run monitoring services with privilege and root
   # It also allows Prometheus to talk to the Kubernetes API for service discovery
-  - ../../components/monitoring/privileged # Run monitoring services with privilege and root
+  - ../../components/monitoring/privileged
+  # Enable service discovery by adding RBACs
   # IMPORTANT: Include as the last component
   - ../../components/enable/service-discovery
 ```
@@ -142,15 +141,57 @@ resources:
   - ../../base/sourcegraph # Deploy Sourcegraph main stack
   - ../../base/monitoring # Deploy Sourcegraph monitoring stack
 components:
+  # Add resources for cadvisor
   # NOTE: cadvisor includes RBAC resources and must be run with privileges
-  - ../../components/monitoring/cadvisor # Add resources for cadvisor
-  - ../../components/privileged # Run Sourcegraph main stack with privilege and root
+  - ../../components/monitoring/cadvisor
+  # Run Sourcegraph main stack with privilege and root
   # NOTE: This adds RBAC resources to the monitoring stack
+  - ../../components/privileged 
+  # Run monitoring services with privilege and root
   # It also allows Prometheus to talk to the Kubernetes API for service discovery
-  - ../../components/monitoring/privileged # Run monitoring services with privilege and root
+  - ../../components/monitoring/privileged
+  # Enable service discovery by adding RBACs
   # IMPORTANT: Include as the last component
   - ../../components/enable/service-discovery
 ```
+
+### Prometheus targets
+
+Skip this configuration if you are running Prometheus with RBAC permissions.
+
+Because Sourcegraph is running without RBAC permissions in Kubernetes, it cannot auto-discover metrics endpoints to scrape metrics. As a result, Prometheus (the metrics scraper) requires a static target list (list of endpoints to scrape) provided in a ConfigMap. 
+
+The default target list ConfigMap only contains endpoints for the `default` and `ns-sourcegraph` namespaces, where Sourcegraph may be installed. If you have installed Sourcegraph in a different namespace, the provided target list will be missing those endpoints.
+
+To accommodate this, you must update the namespace within the target list. This ensures Prometheus has the correct list of endpoints to scrape metrics from.
+
+**Step 1**: Create a subdirectory called `patches` within the directory of your overlay:
+
+```bash
+$ mkdir -p instances/$INSTANCE_NAME/patches
+```
+
+**Step 2**: Set the `SG_NAMESPACE` value to your namespace in your terminal:
+
+```bash
+export SG_NAMESPACE=your_namespace
+```
+
+**Step 3**: Replace the value of `$SG_NAMESPACE` in the `prometheus.ConfigMap.yaml` file with your Sourcegraph namespace value set in the previous step using [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html), and the save the output of the substitution as a new file in the `patches` directory created in step 1:
+
+```bash
+envsubst < base/monitoring/prometheus/prometheus.ConfigMap.yaml > instances/$INSTANCE_NAME/patches/prometheus.ConfigMap.yaml
+```
+
+**Step 4**: Add the new patch file to your overlay under `patches`:
+   
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  patches:
+    - patch: patches/prometheus.ConfigMap.yaml
+```
+
+Following these steps will allow Prometheus to successfully scrape metrics from a Sourcegraph installation in namespaces other than `default` and `ns-sourcegraph` without RBAC Kubernetes permissions, by using a pre-defined static target list of endpoints.
 
 ---
 
@@ -235,17 +276,22 @@ Please refer to [OpenTelemetry](../../observability/opentelemetry.md) for detail
 
 ## Namespace
 
-Follow the steps below to add namespace to all your Sourcegraph resources:
+Recommended namespace: `ns-sourcegraph`
 
-1. Open the `kustomization.yaml` file located in your overlay directory
-2. Include the namespace field in the file, and set it to an exisiting namespace in your cluster. For example:
+Some resources and components (e.g. [Prometheus](#prometheus-targets)) are pre-configured to work with the `default` and `ns-sourcegraph` namespaces only and require additional configurations when running in a different namespace. Please refer to the [Prometheus](#prometheus-targets) section for more details.
+
+### Set namespace
+
+To set a namespace for all your Sourcegraph resources, update the `namespace` field to an exisiting namespace in your cluster:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
 namespace: ns-sourcegraph
 ```
 
-> NOTE: This step assumes that the namespace already exists in your cluster. If it does not, you will need to create one before applying the overlay.
+This will set namespace to the `namespace` value (`ns-sourcegraph` in this example) for all your Sourcegraph resources.
+
+> NOTE: This step assumes that the namespace already exists in your cluster. If the namespace does not exist, you will need to create one before applying the overlay.
 
 ### Create a namespace
 
@@ -253,9 +299,12 @@ To create a new namespace, include the [utils/namespace](https://sourcegraph.com
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
+namespace: ns-sourcegraph
 components:
   - ../../components/resources/namespace
 ```
+
+This component will create a new namespace using the  `namespace` value (`ns-sourcegraph` in this example).
 
 ---
 
@@ -498,7 +547,7 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
     - name: sourcegraph-kustomize-env
       behavior: merge
       literals:
-        - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
+        - STORAGECLASS_NAME=sourcegraph # [ACTION] Set storage class name here
   ```
 
   The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
@@ -522,7 +571,7 @@ Example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
   ```yaml
   # instances/$INSTANCE_NAME/buildConfig.yaml
   data:
-    STORAGECLASS_NAME: sourcegraph # -- [ACTION] Set storage class name here
+    STORAGECLASS_NAME: sourcegraph # [ACTION] Set storage class name here
   ```
 
   The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
@@ -544,7 +593,7 @@ Update the following variables in your [buildConfig.yaml](kustomize/index.md#bui
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
 data:
-  # -- [ACTION] Set values below
+  # [ACTION] Set values below
   STORAGECLASS_NAME: STORAGECLASS_NAME
   STORAGECLASS_PROVISIONER: STORAGECLASS_PROVISIONER
   STORAGECLASS_PARAM_TYPE: STORAGECLASS_PARAM_TYPE
@@ -641,7 +690,7 @@ Example:
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
 data:
-  # -- [ACTION] Set values below
+  # [ACTION] Set values below
   TLS_HOST: sourcegraph.company.com
   TLS_INGRESS_CLASS_NAME: example-ingress-class-name
   TLS_CLUSTER_ISSUER: letsencrypt
@@ -706,7 +755,7 @@ To configure the hostname for your Sourcegraph ingress, follow these steps:
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
 data:
-  # -- [ACTION] Set values below
+  # [ACTION] Set values below
   HOST_DOMAIN: sourcegraph.company.com
 ```
 
@@ -859,7 +908,7 @@ components:
 
 ## Service mesh
 
-There are a few [known issues](../troubleshoot.md#service-mesh) when running Sourcegraph with service mesh. We recommend including the `network/envoy` component in your components list to bypass the issue where Envoy, the proxy used by Istio, breaks Sourcegraph search function by dropping proxied trailers for requests made over HTTP/1.1 protocol.
+There are a few [known issues](troubleshoot.md#service-mesh) when running Sourcegraph with service mesh. We recommend including the `network/envoy` component in your components list to bypass the issue where Envoy, the proxy used by Istio, breaks Sourcegraph search function by dropping proxied trailers for [HTTP/1](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-http1protocoloptions) requests.
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -871,7 +920,9 @@ components:
 
 ## Environment variables
 
-To update the environment variables for the **sourcegraph-frontend** service, add the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
+### Frontend
+
+To update the environment variables for the **sourcegraph-frontend** service, add the new environment variables to the end of the *FRONTEND ENV VARS* section at the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -889,6 +940,71 @@ These values will be automatically merged with the environment variables current
 
 > WARNING: You must restart frontend for the updated values to be activiated
 
+### Gitserver
+
+You can update environment variables for **gitserver** with `patches`:
+
+For example, to add new environment variables `SRC_ENABLE_GC_AUTO` and `SRC_ENABLE_SG_MAINTENANCE`:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+patches:
+  - target:
+      name: gitserver
+      kind: StatefulSet
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: SRC_ENABLE_GC_AUTO
+          value: "true"
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: SRC_ENABLE_SG_MAINTENANCE
+          value: "false"
+```
+
+### Searcher
+
+You can update environment variables for **searcher** with `patches`.
+
+For example, to update the value for `SEARCHER_CACHE_SIZE_MB`:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+patches:
+  - target:
+      name: searcher
+      kind: StatefulSet|Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0
+        value:
+          name: SEARCHER_CACHE_SIZE_MB
+          value: "50000"
+```
+
+### Symbols
+
+You can update environment variables for **searcher** with `patches`. 
+
+For example, to update the value for `SYMBOLS_CACHE_SIZE_MB`:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+patches:
+  - target:
+      name: symbols
+      kind: StatefulSet|Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0
+        value:
+          name: SYMBOLS_CACHE_SIZE_MB
+          value: "50000"
+```
+
 ---
 
 ## External services
@@ -899,7 +1015,7 @@ You can use an external or managed version of PostgreSQL and Redis with your Sou
 
 For optimal performance and resilience, it is recommended to use an external database when deploying Sourcegraph. For more information on database requirements, please refer to the [Postgres guide](../../postgres.md).
 
-To connect Sourcegraph to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the frontend ConfigMap by adding the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
+To connect Sourcegraph to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the frontend ConfigMap by adding the new environment variables to the end of the *FRONTEND ENV VARS* section at the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -949,7 +1065,7 @@ components:
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
 data:
-  # -- [ACTION] Set values below
+  # [ACTION] Set values below
   REDIS_CACHE_ENDPOINT: REDIS_CACHE_DSN
   REDIS_STORE_ENDPOINT: REDIS_STORE_DSN
 ```
@@ -984,7 +1100,7 @@ To mount the files through Kustomize:
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
-    # Enable SSH to clon repositories as non-root user
+    # Enable SSH to clon repositories as non-root user (default)
     - ../../components/enable/ssh/non-root
     # Enable SSH to clon repositories as root user
     - ../../components/enable/ssh/root
@@ -1024,13 +1140,33 @@ Once you have a license key, add it to your [site configuration](https://docs.so
 ## Filtering cAdvisor metrics
 
 cAdvisor can pick up metrics for services unrelated to the Sourcegraph deployment running on the same nodes
-([Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers)). To work around this:
+([Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers)) **when running with privileges**. To work around this:
 
-1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the `base/prometheus/prometheus.ConfigMap.yaml` file to the new [patches subdirectory](kustomize/index.md#patches-directory)
-2. In the copied file, include the lines highlighted [here](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L262-264).
-3. Replace [ns-sourcegraph](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L263) with your namespace
-4. Include the following in your overlay:
+1\. Create a subdirectory called 'patches' within the directory of your overlay
+
+```bash
+$ mkdir instances/$INSTANCE_NAME/patches
+```
+
+2\. Create a copy of the `prometheus.ConfigMap.yaml` file in the new [patches subdirectory](kustomize/index.md#patches-directory)
+
+```bash
+mv base/monitoring/prometheus/rbacs/prometheus.ConfigMap.yaml instances/$INSTANCE_NAME/patches/prometheus.ConfigMap.yaml
+```
+
+3\. In the copied ConfigMap file, add the following under `metric_relabel_configs` for the `kubernetes-pods` job:
+
+```yaml
+- job_name: 'kubernetes-pods'
+  metric_relabel_configs:
+    - source_labels: [container_label_io_kubernetes_pod_namespace]
+      regex: ^$|ns-sourcegraph # ACTION: replace ns-sourcegraph with your namespace
+      action: keep
+```
+
+Replace `ns-sourcegraph` with your namespace, e.g. `regex: ^$|your_namespace`.
+
+4\. Add the patches to your overlay:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1038,7 +1174,7 @@ patches:
   - patch: patches/prometheus.ConfigMap.yaml
 ```
 
-This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
+This will cause Prometheus to drop all metrics *from cAdvisor* that are not services running in the specified namespace.
 
 ---
 
@@ -1057,8 +1193,7 @@ components:
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
 data:
-  # -- [ACTION] Set values below
-  PRIVATE_REGISTRY: your.private.registry.com
+  PRIVATE_REGISTRY: your.private.registry.com # -- Replace 'your.private.registry.com'
 ```
 
 ---

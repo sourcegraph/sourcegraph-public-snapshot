@@ -45,9 +45,9 @@ A cloud instance hosted and maintained by Sourcegraph
 
 **For Enterprises looking for a self-hosted solution on Cloud.** 
 
-<span class="badge badge-note">RECOMMENDED</span> An option to run Sourcegraph on your own infrastructure using pre-configured machine images.
+An option to run Sourcegraph on your own infrastructure using pre-configured machine images.
 
-Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes! Currently available in the following hosts:
+Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes. Currently available in the following hosts:
 
 <div class="getting-started">
   <a class="btn btn-secondary text-center" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
@@ -55,9 +55,7 @@ Customized machine images allow you to spin up a preconfigured and customized So
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-### [Install-script](single-node/script.md)
-
-**For Enterprises looking for a generic self-hosted solution.** 
+#### [Install-script](single-node/script.md)
 
 The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. You can also use it to set up Linux VMs for your own machine images.
 
