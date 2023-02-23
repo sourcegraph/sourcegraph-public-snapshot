@@ -41,7 +41,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     })
 
     return (
-        <div className="site-admin-webhooks-page">
+        <div>
             <Container>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
