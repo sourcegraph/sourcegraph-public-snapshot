@@ -13,15 +13,26 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
-		// Create 'sg run' help text after flag (and config) initialization
-		runCommand.Description = constructRunCmdLongHelp()
-	})
+	postInitHooks = append(postInitHooks,
+		func(cmd *cli.Context) {
+			// Create 'sg run' help text after flag (and config) initialization
+			runCommand.Description = constructRunCmdLongHelp()
+		},
+		func(cmd *cli.Context) {
+			ctx, cancel := context.WithCancel(cmd.Context)
+			interrupt.Register(func() {
+				cancel()
+			})
+			cmd.Context = ctx
+		},
+	)
+
 }
 
 var runCommand = &cli.Command{

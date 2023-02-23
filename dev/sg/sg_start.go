@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
@@ -25,10 +27,21 @@ import (
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
-		// Create 'sg start' help text after flag (and config) initialization
-		startCommand.Description = constructStartCmdLongHelp()
-	})
+	postInitHooks = append(postInitHooks,
+		func(cmd *cli.Context) {
+			// Create 'sg start' help text after flag (and config) initialization
+			startCommand.Description = constructStartCmdLongHelp()
+		},
+		func(cmd *cli.Context) {
+			ctx, cancel := context.WithCancel(cmd.Context)
+			interrupt.Register(func() {
+				cancel()
+				// TODO wait for stuff properly.
+				time.Sleep(1 * time.Second)
+			})
+			cmd.Context = ctx
+		},
+	)
 }
 
 const devPrivateDefaultBranch = "master"
