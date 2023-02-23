@@ -34,7 +34,7 @@ export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
                 }
                 viewerCanAdminister
                 childTeams {
-                    totalCount(countDeeplyNestedTeams: false)
+                    totalCount
                 }
                 members {
                     totalCount

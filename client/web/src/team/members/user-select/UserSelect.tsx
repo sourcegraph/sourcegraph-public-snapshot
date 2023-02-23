@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     MultiCombobox,
     MultiComboboxInput,
@@ -10,7 +11,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Scalars, UserSelectSearchFields } from '../../../graphql-operations'
-import { UserAvatar } from '../../../user/UserAvatar'
 
 import { useUserSelectSearch } from './backend'
 

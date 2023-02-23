@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 

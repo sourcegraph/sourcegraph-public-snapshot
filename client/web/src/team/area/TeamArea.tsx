@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Route, Routes, useLocation, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
