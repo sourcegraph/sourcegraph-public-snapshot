@@ -15,6 +15,11 @@ var (
 		Help:    "The number of file matches we aggregated before flushing",
 		Buckets: prometheus.ExponentialBuckets(1, 2, 20),
 	}, []string{"reason"})
+	metricFinalOverflowSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_zoekt_final_overflow_size",
+		Help:    "The number of overflow results we collected before flushing",
+		Buckets: prometheus.ExponentialBuckets(1, 2, 20),
+	}, []string{"reason"})
 )
 
 // collectSender is a sender that will aggregate results. Once sending is
@@ -67,10 +72,12 @@ func (c *collectSender) SendOverflow(r *zoekt.SearchResult) {
 	c.sizeBytes += r.SizeBytes()
 }
 
-// Done returns the aggregated result. Before returning them the files are
-// ranked and truncated according to the input SearchOptions.
+// Done returns the aggregated result. Before returning, the files are
+// ranked and truncated according to the input SearchOptions. If an
+// endpoint sent any more results its initial ranked result, then these
+// are returned as 'overflow' results.
 //
-// If no results are aggregated, ok is false and the result is nil.
+// If no results are aggregated, ok is false and both result values are nil.
 func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, ok bool) {
 	if c.aggregate == nil {
 		return nil, nil, false
@@ -91,13 +98,14 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 	return agg, overflow, true
 }
 
-type FlushCollectSender struct {
-	mu                 sync.Mutex
-	collectSender      *collectSender
-	sender             zoekt.Sender
-	remainingEndpoints map[string]bool
-	maxSizeBytes       int
-	timerCancel        chan struct{}
+type flushCollectSender struct {
+	mu            sync.Mutex
+	collectSender *collectSender
+	sender        zoekt.Sender
+	// Map of endpoints to boolean, indicating whether we've received their first set of search results
+	firstEvent   map[string]bool
+	maxSizeBytes int
+	timerCancel  chan struct{}
 }
 
 // newFlushCollectSender creates a sender which will collect and rank results
@@ -106,17 +114,20 @@ type FlushCollectSender struct {
 //
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
-func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *FlushCollectSender {
-	remainingEndpoints := map[string]bool{}
+func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *flushCollectSender {
+	firstEvent := map[string]bool{}
 	for _, endpoint := range endpoints {
-		remainingEndpoints[endpoint] = true
+		firstEvent[endpoint] = true
 	}
 
 	collectSender := newCollectSender(opts)
 	timerCancel := make(chan struct{})
 
-	flushSender := &FlushCollectSender{collectSender: collectSender, sender: sender,
-		remainingEndpoints: remainingEndpoints, maxSizeBytes: maxSizeBytes, timerCancel: timerCancel}
+	flushSender := &flushCollectSender{collectSender: collectSender,
+		sender:       sender,
+		firstEvent:   firstEvent,
+		maxSizeBytes: maxSizeBytes,
+		timerCancel:  timerCancel}
 
 	// As an escape hatch, stop collecting after twice the FlushWallTime. This protects against
 	// cases where an endpoint stops being responsive so we never receive its results.
@@ -136,20 +147,21 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 
 // Send consumes a search event. We transition through 3 states
 // 1. collectSender != nil: collect results via collectSender
-// 2. we've received one result from every endpoint (or the 'done' signal)
+// 2. len(firstEvent) == 0: we've received one result from every endpoint (or the 'done' signal)
 // 3. collectSender == nil: directly use sender
-func (f *FlushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
+func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.collectSender != nil {
-		firstEvent := f.remainingEndpoints[endpoint]
+		firstEvent := f.firstEvent[endpoint]
 		if firstEvent {
 			f.collectSender.Send(event)
-			delete(f.remainingEndpoints, endpoint)
+			delete(f.firstEvent, endpoint)
 		} else {
 			f.collectSender.SendOverflow(event)
 		}
 
-		if len(f.remainingEndpoints) == 0 {
+		if len(f.firstEvent) == 0 {
 			f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 		}
 
@@ -161,35 +173,35 @@ func (f *FlushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 	} else {
 		f.sender.Send(event)
 	}
-	f.mu.Unlock()
 }
 
 // SendDone is called to signal that an endpoint is finished streaming results. Some endpoints
 // may not return any results, so we must use SendDone to signal their completion.
-func (f *FlushCollectSender) SendDone(endpoint string) {
+func (f *flushCollectSender) SendDone(endpoint string) {
 	f.mu.Lock()
-	if f.collectSender != nil {
-		delete(f.remainingEndpoints, endpoint)
-		if len(f.remainingEndpoints) == 0 {
-			f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
-		}
+	delete(f.firstEvent, endpoint)
+	if len(f.firstEvent) == 0 {
+		f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 	}
 	f.mu.Unlock()
 }
 
 // stopCollectingAndFlush will send what we have collected and all future
 // sends will go via sender directly.
-func (f *FlushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
+func (f *flushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
 	if f.collectSender == nil {
 		return
 	}
 
 	if agg, overflow, ok := f.collectSender.Done(); ok {
 		metricFinalAggregateSize.WithLabelValues(reason.String()).Observe(float64(len(agg.Files)))
+		metricFinalOverflowSize.WithLabelValues(reason.String()).Observe(float64(len(overflow)))
+
 		agg.FlushReason = reason
 		f.sender.Send(agg)
 
 		for _, result := range overflow {
+			result.FlushReason = reason
 			f.sender.Send(result)
 		}
 	}
@@ -201,7 +213,7 @@ func (f *FlushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
 	close(f.timerCancel)
 }
 
-func (f *FlushCollectSender) Flush() {
+func (f *flushCollectSender) Flush() {
 	f.mu.Lock()
 	f.stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
 	f.mu.Unlock()
