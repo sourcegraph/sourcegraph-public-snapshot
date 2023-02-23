@@ -52,7 +52,7 @@ const batchChangeDefaults: BatchChangeFields = {
         archived: 18,
         unpublished: 4,
         isCompleted: false,
-        percentComplete: 30
+        percentComplete: 30,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {

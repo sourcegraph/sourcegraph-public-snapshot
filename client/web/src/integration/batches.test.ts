@@ -363,7 +363,7 @@ function mockCommonGraphQLResponses(
                     unpublished: 3,
                     draft: 2,
                     isCompleted: false,
-                    percentComplete: 27
+                    percentComplete: 27,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,
