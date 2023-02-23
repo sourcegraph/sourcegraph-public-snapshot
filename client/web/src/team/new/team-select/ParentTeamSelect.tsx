@@ -119,13 +119,11 @@ export const ParentTeamSelectContent: React.FunctionComponent<ParentTeamSelectCo
                 status={loading ? 'loading' : error ? 'error' : 'initial'}
             />
 
-            <ComboboxPopover>
-                <ComboboxList className={styles.comboboxList}>
-                    {suggestions.map((item, index) => (
-                        <TeamOption key={item.id} item={item} index={index} />
-                    ))}
-                </ComboboxList>
-            </ComboboxPopover>
+            <ComboboxList className={styles.comboboxList}>
+                {suggestions.map((item, index) => (
+                    <TeamOption key={item.id} item={item} index={index} />
+                ))}
+            </ComboboxList>
         </Combobox>
     )
 }
