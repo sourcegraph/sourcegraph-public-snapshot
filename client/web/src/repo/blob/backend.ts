@@ -6,15 +6,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
-    BlobFileFields,
-    BlobResult,
-    BlobStencilFields,
-    BlobVariables,
-    HighlightResponseFormat,
-    StencilResult,
-    StencilVariables,
-} from '../../graphql-operations'
+import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
 /**

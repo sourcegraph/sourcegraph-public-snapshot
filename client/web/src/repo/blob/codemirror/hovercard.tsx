@@ -14,7 +14,6 @@ import { CodeMirrorContainer } from './react-interop'
 import { zeroToOneBasedPosition } from './utils'
 
 import { blobPropsFacet } from './index'
-import { pinHoverTooltip } from './token-selection/code-intel-tooltips'
 
 type UIRange = UIRangeSpec['range']
 
