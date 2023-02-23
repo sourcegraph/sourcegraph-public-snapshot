@@ -153,6 +153,8 @@ Note that most inputs have default locations of `${HOME}/Downloads` - again, the
 
 `create_sourcegraph_app_dmg.sh` uses a background image for the dmg that is in the `App DMG assets` directory. The background image, and the other icon/logo images in that directory have been prepared by the Design Team and if they have new designs, then that directory needs to be updated. Note that the shape of the dmg and the layout of the icons in it is dictated by the background, so if those dimensions change, the "set the bounds" and "set position" AppleScript commands in the shell script will need to be updated.
 
+Sometimes creating the dmg doesn't work correctly and you'll see "Read-only file system" messages in the console. Not sure why the initial dmg gets mounted read-only sometimes; just keep trying until it works.
+
 `create_sourcegraph_app_dmg.sh` has a dependency on `fileicon` - install it using `brew install fileicon` is probably the easiest way to fulfill it.
 
 `notarize_sourcegraph_app_dmg.sh` sends the notarization request and then loops, waiting for it. If the script gets interrupted, it can be restarted wth the request UUID as the second parameter. The request UUID will be output to `stdout`; take not of it and/or save it somewhere so you can restart the waiting loop if necessary.
