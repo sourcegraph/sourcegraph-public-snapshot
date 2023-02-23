@@ -82,6 +82,7 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 			OrderBy: database.OrderBy{
 				{Field: "permissions.id"},
 			},
+			AllowNoLimit: true,
 		},
 	)
 }
