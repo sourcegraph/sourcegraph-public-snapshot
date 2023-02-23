@@ -359,6 +359,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
 - **Version added:** 4.1
 
+### Data export clicks
+
+**Type:** FE capture
+
+**Intended purpose:** To track usage of data exporting functionality from the webapp.
+
+**Functional implementation:** Telemetry events are fired when a user clicks export on a Code Insight card or the standalone Insight page.
+
+**Other considerations:** Exports requested from the CLI are not recorded.
+
+- Aggregation: weekly
+- Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
+- **Version added:** 4.1
+
 ## Search results aggregations metrics
 
 ### Information icon hovers
