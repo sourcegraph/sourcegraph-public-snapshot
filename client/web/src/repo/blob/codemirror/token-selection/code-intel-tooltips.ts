@@ -7,9 +7,9 @@ import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
-import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
 import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
@@ -31,6 +31,7 @@ type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null }
 export const setFocusedOccurrence = StateEffect.define<Occurrence | null>()
 export const setFocusedOccurrenceTooltip = StateEffect.define<Tooltip | null>()
 const setPinnedCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
+export const pinHoverTooltip = StateEffect.define<void>()
 const setHoveredCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 
 /**
@@ -61,6 +62,10 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
 
             if (effect.is(setPinnedCodeIntelTooltipState)) {
                 return { ...value, pin: effect.value }
+            }
+
+            if (effect.is(pinHoverTooltip)) {
+                return { ...value, pin: value.hover }
             }
         }
 
@@ -214,6 +219,34 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
     }
     return false
 }
+
+function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
+
+const HOVER_DEBOUNCE_TIME = 25 // ms
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
+ */
+const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -395,6 +428,12 @@ const hoverManager = ViewPlugin.fromClass(
 function isOffsetInHoverRange(offset: number, range: { from: number; to: number }): boolean {
     return range.from <= offset && offset <= range.to
 }
+
+/**
+ * This field is used by the blob component to sync the position from the URL to
+ * the editor.
+ */
+export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
 
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
     if (!pin || !pin.line || !pin.character) {

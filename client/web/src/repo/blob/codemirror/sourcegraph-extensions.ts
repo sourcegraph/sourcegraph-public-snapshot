@@ -9,7 +9,7 @@
 import { Extension } from '@codemirror/state'
 import { PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
-import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, EMPTY, from, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators'
 
 import { LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
