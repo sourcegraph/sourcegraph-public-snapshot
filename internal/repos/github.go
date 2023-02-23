@@ -856,8 +856,6 @@ func (q *repositoryQuery) DoWithRefinedWindow(ctx context.Context, results chan 
 	}
 
 	canExit := func(q *repositoryQuery, res github.SearchReposResults) bool {
-		return !q.Next()
-
 		if res.EndCursor != "" {
 			q.Cursor = res.EndCursor
 			return false
