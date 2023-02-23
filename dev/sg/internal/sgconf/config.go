@@ -31,6 +31,11 @@ func parseConfig(data []byte) (*Config, error) {
 		return nil, err
 	}
 
+	for name, cmd := range conf.BazelCommands {
+		cmd.Name = name
+		conf.BazelCommands[name] = cmd
+	}
+
 	for name, cmd := range conf.Commands {
 		cmd.Name = name
 		conf.Commands[name] = cmd
@@ -105,11 +110,12 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 }
 
 type Config struct {
-	Env               map[string]string      `yaml:"env"`
-	Commands          map[string]run.Command `yaml:"commands"`
-	Commandsets       map[string]*Commandset `yaml:"commandsets"`
-	DefaultCommandset string                 `yaml:"defaultCommandset"`
-	Tests             map[string]run.Command `yaml:"tests"`
+	Env               map[string]string           `yaml:"env"`
+	Commands          map[string]run.Command      `yaml:"commands"`
+	BazelCommands     map[string]run.BazelCommand `yaml:"bazelCommands"`
+	Commandsets       map[string]*Commandset      `yaml:"commandsets"`
+	DefaultCommandset string                      `yaml:"defaultCommandset"`
+	Tests             map[string]run.Command      `yaml:"tests"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver

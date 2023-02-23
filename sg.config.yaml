@@ -127,6 +127,16 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+
+bazelCommands:
+  oss-frontend:
+    target: //cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      # frontend processes need this to be so that the paths to the assets are rendered correctly
+      WEBPACK_DEV_SERVER: 1
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image

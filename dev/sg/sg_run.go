@@ -74,12 +74,16 @@ func runExec(ctx *cli.Context) error {
 
 	var cmds []run.Command
 	for _, arg := range args {
-		cmd, ok := config.Commands[arg]
-		if !ok {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
-			return flag.ErrHelp
+		if bazelCmd, okB := config.BazelCommands[arg]; okB {
+			return run.BazelCommands(ctx.Context, config.Env, verbose, bazelCmd)
+		} else {
+			cmd, okC := config.Commands[arg]
+			if !okC && !okB {
+				std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
+				return flag.ErrHelp
+			}
+			cmds = append(cmds, cmd)
 		}
-		cmds = append(cmds, cmd)
 	}
 
 	if ctx.Bool("describe") {
