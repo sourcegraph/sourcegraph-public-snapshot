@@ -1,3 +1,4 @@
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
@@ -24,6 +25,36 @@ export interface AuthProvider {
     serviceID: string
 }
 
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `CurrentAuthState` query.
+ *
+ * This type is derived from the generated `AuthenticatedUser` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export interface SourcegraphContextCurrentUser
+    extends Pick<
+        AuthenticatedUser,
+        | '__typename'
+        | 'id'
+        | 'databaseID'
+        | 'username'
+        | 'avatarURL'
+        | 'displayName'
+        | 'siteAdmin'
+        | 'tags'
+        | 'url'
+        | 'settingsURL'
+        | 'viewerCanAdminister'
+        | 'tosAccepted'
+        | 'searchable'
+        | 'organizations'
+        | 'session'
+        | 'emails'
+        | 'latestSettings'
+    > {}
+
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     userAgentIsBot: boolean
@@ -32,6 +63,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
+    readonly currentUser: SourcegraphContextCurrentUser | null
 
     readonly sentryDSN: string | null
 
