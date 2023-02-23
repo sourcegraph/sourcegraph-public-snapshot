@@ -282,3 +282,16 @@ type ExternalServiceNamespacesResult struct {
 	Namespaces []*types.ExternalServiceNamespace
 	Error      string
 }
+
+type ExternalServiceRepositoriesArgs struct {
+	Kind         string
+	Query        string
+	Config       string
+	First        int32
+	ExcludeRepos []string
+}
+
+type ExternalServiceRepositoriesResult struct {
+	Repos []*types.Repo
+	Error string
+}

@@ -298,6 +298,29 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 	return result, err
 }
 
+// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
+var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
+
+// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+	if MockExternalServiceRepositories != nil {
+		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	resp, err := c.httpPost(ctx, "external-service-repositories", args)
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
+}
+
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
