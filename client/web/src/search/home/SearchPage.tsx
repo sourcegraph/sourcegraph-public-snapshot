@@ -8,6 +8,8 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -17,8 +19,8 @@ import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
 import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboarding/AddCodeHostWidget'
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
@@ -47,7 +49,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const { width } = useWindowSize()
     const isLightTheme = useIsLightTheme()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
+    const [experimentalQueryInput] = useExperimentalQueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -55,10 +57,20 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     })
 
     useEffect(() => {
-        if (experimentalQueryInput && props.selectedSearchContextSpec) {
-            setQueryState(state =>
-                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
-            )
+        // TODO (#48103): Remove/simplify when new search input is released
+        // Because the current and the new search input handle the context: selector differently
+        // we need properly "translate" the queries when switching between the both versions
+        if (props.selectedSearchContextSpec) {
+            setQueryState(state => {
+                if (experimentalQueryInput) {
+                    return { query: appendContextFilter(state.query, props.selectedSearchContextSpec) }
+                }
+                const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
+                if (contextFilter) {
+                    return { query: omitFilter(state.query, contextFilter) }
+                }
+                return state
+            })
         }
     }, [experimentalQueryInput, props.selectedSearchContextSpec])
 

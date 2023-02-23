@@ -1,5 +1,5 @@
-load("@npm//:sass/package_json.bzl", sass_bin = "bin")
-load("@npm//:postcss-cli/package_json.bzl", postcss_bin = "bin")
+load("@npm//client/build-config:sass/package_json.bzl", sass_bin = "bin")
+load("@npm//client/build-config:postcss-cli/package_json.bzl", postcss_bin = "bin")
 
 # A filename for the intermediate file between sass + postcss
 def _sass_out(n):
