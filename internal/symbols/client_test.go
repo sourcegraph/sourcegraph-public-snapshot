@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -208,9 +207,7 @@ type mockSymbolsServer struct {
 }
 
 func (m *mockSymbolsServer) NewHandler(l log.Logger) (handler http.Handler, cleanup func()) {
-	grpcServer := grpc.NewServer(
-		defaults.ServerOptions(l)...,
-	)
+	grpcServer := defaults.NewServer(l)
 
 	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, m)
 
