@@ -23,6 +23,12 @@ go_test(
     name = "accessrequest_test",
     srcs = ["handlers_test.go"],
     embed = [":accessrequest"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",

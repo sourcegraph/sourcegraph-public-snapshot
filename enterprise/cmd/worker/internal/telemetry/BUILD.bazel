@@ -32,6 +32,12 @@ go_test(
         "telemetry_job_test.go",
     ],
     embed = [":telemetry"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/conf/deploy",

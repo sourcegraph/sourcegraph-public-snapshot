@@ -89,6 +89,12 @@ go_test(
     name = "cli_test",
     srcs = ["config_test.go"],
     embed = [":cli"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

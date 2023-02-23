@@ -47,6 +47,12 @@ go_test(
         "session_test.go",
     ],
     embed = [":githuboauth"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

@@ -21,6 +21,12 @@ go_test(
     name = "insights_test",
     srcs = ["insights_test.go"],
     embed = [":insights"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

@@ -387,8 +387,14 @@ go_test(
         "webhook_logs_test.go",
     ],
     # graphqlbackend_test.go opens itself during its test, so we need to make it available.
-    data = ["graphqlbackend_test.go"],  # keep
+    data = ["graphqlbackend_test.go"],
     embed = [":graphqlbackend"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/backend",

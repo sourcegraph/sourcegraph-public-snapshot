@@ -29,6 +29,12 @@ go_test(
         "validate_test.go",
     ],
     embed = [":notebooks"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/database",

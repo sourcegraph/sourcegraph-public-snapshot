@@ -76,6 +76,12 @@ go_test(
         "usage_stats_test.go",
     ],
     embed = [":usagestats"],
+    tags = [
+        # Test requires locally running redis & postgres so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",

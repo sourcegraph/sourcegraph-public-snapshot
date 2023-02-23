@@ -35,6 +35,12 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":store"],
+    tags = [
+        # Test requires locally running redis & postgres so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",

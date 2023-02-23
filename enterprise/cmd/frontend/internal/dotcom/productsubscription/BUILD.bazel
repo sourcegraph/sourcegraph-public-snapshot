@@ -48,6 +48,12 @@ go_test(
         "subscriptions_graphql_test.go",
     ],
     embed = [":productsubscription"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/license",
         "//enterprise/internal/licensing",
