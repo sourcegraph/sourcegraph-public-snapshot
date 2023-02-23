@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -25,6 +26,7 @@ func Init(
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
-	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
+	embeddingsClient := embeddings.NewClient()
+	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
 	return nil
 }

@@ -75,6 +75,9 @@ func NewRepoEmbeddingJobWorkerStore(observationCtx *observation.Context, dbHandl
 type RepoEmbeddingJobsStore interface {
 	basestore.ShareableStore
 
+	Transact(ctx context.Context) (RepoEmbeddingJobsStore, error)
+	Done(err error) error
+
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 }
@@ -87,6 +90,14 @@ type repoEmbeddingJobsStore struct {
 
 func NewRepoEmbeddingJobsStore(other basestore.ShareableStore) RepoEmbeddingJobsStore {
 	return &repoEmbeddingJobsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *repoEmbeddingJobsStore) Transact(ctx context.Context) (RepoEmbeddingJobsStore, error) {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &repoEmbeddingJobsStore{Store: tx}, nil
 }
 
 const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
