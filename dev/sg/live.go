@@ -80,12 +80,14 @@ func printDeployedVersion(e environment, commits int) error {
 
 	buildDate := elems[1]
 
-	// split the release tag from the commit Sha
+	// attempt to split the release tag from the commit Sha if there
+	var buildSha string
 	versionTag := strings.Split(elems[2], "-")
 	if len(versionTag) != 2 {
-		return errors.Errorf("unknown format of /__version tag: %q", elems[2])
+		buildSha = elems[2]
+	} else {
+		buildSha = versionTag[1]
 	}
-	buildSha := versionTag[1]
 
 	pending = std.Out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
 	_, err = run.GitCmd("fetch", "-q")
