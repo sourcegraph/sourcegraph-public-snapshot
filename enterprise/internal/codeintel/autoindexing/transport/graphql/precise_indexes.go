@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -21,6 +22,38 @@ import (
 )
 
 const DefaultPageSize = 50
+
+func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
+	var repositoryID int
+	if args.Repo != nil {
+		v, err := UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return nil, err
+		}
+
+		repositoryID = int(v)
+	}
+
+	indexers, err := r.uploadSvc.GetIndexers(ctx, uploadsshared.GetIndexersOptions{
+		RepositoryID: repositoryID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	keyMap := map[string]struct{}{}
+	for _, indexer := range indexers {
+		keyMap[types.NewCodeIntelIndexerResolver(indexer).Key()] = struct{}{}
+	}
+
+	var keys []string
+	for key := range keyMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys, nil
+}
 
 func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -110,6 +143,11 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		term = *args.Query
 	}
 
+	var indexerNames []string
+	if args.IndexerKey != nil {
+		indexerNames = types.NamesForKey(*args.IndexerKey)
+	}
+
 	var uploads []types.Upload
 	totalUploadCount := 0
 	if !skipUploads {
@@ -119,6 +157,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			Term:         term,
 			DependencyOf: dependencyOf,
 			DependentOf:  dependentOf,
+			IndexerNames: indexerNames,
 			Limit:        pageSize,
 			Offset:       uploadOffset,
 		}); err != nil {
@@ -133,6 +172,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			Term:          term,
+			IndexerNames:  indexerNames,
 			WithoutUpload: true,
 			Limit:         pageSize,
 			Offset:        indexOffset,

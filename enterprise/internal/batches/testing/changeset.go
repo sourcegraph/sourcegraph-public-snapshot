@@ -19,6 +19,7 @@ type TestChangesetOpts struct {
 	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
+
 	BatchChanges []btypes.BatchChangeAssoc
 
 	ExternalServiceType   string
@@ -424,5 +425,15 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
+	}
+}
+
+func DeleteChangeset(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+	t.Helper()
+
+	c.SetDeleted()
+
+	if err := s.UpdateChangeset(ctx, c); err != nil {
+		t.Fatalf("failed to delete changeset: %s", err)
 	}
 }

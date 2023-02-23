@@ -4,10 +4,8 @@ import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { Router } from 'react-router'
-import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
-import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { first, startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
+import { combineLatest, from, Subscription, fromEvent, Subject, Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -36,16 +34,19 @@ import {
     getDefaultSearchContextSpec,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    EMPTY_SETTINGS_CASCADE,
+    SettingsCascadeProps,
+    SettingsProvider,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from './auth'
+import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
@@ -68,27 +69,18 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
+import { parseSearchURL, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import {
-    setQueryStateFromSettings,
-    setExperimentalFeaturesFromSettings,
-    getExperimentalFeatures,
-    useNavbarQueryState,
-    observeStore,
-    useExperimentalFeatures,
-} from './stores'
-import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
+import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globalHistory } from './util/globalHistory'
-import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
@@ -125,11 +117,10 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
 
     /**
      * The currently authenticated user:
-     * - `undefined` until `CurrentAuthState` query completion.
      * - `AuthenticatedUser` if the viewer is authenticated.
      * - `null` if the viewer is anonymous.
      */
-    authenticatedUser?: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
@@ -160,8 +151,6 @@ const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
-const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
-
 setLinkComponent(RouterLink)
 
 /**
@@ -186,6 +175,7 @@ export class LegacySourcegraphWebApp extends React.Component<
         }
 
         this.state = {
+            authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
@@ -216,20 +206,17 @@ export class LegacySourcegraphWebApp extends React.Component<
             combineLatest([
                 from(this.platformContext.settings),
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
-                authenticatedUser.pipe(startWith(undefined)),
-            ]).subscribe(
-                ([settingsCascade, authenticatedUser]) => {
-                    setExperimentalFeaturesFromSettings(settingsCascade)
-                    setQueryStateFromSettings(settingsCascade)
-                    this.setState({
-                        settingsCascade,
-                        authenticatedUser,
-                        globbing: globbingEnabledFromSettings(settingsCascade),
-                        viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                    })
-                },
-                () => this.setState({ authenticatedUser: null })
-            )
+                authenticatedUserSubject,
+            ]).subscribe(([settingsCascade, authenticatedUser]) => {
+                setExperimentalFeaturesFromSettings(settingsCascade)
+                setQueryStateFromSettings(settingsCascade)
+                this.setState({
+                    settingsCascade,
+                    authenticatedUser,
+                    globbing: globbingEnabledFromSettings(settingsCascade),
+                    viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
+                })
+            })
         )
 
         /**
@@ -238,19 +225,15 @@ export class LegacySourcegraphWebApp extends React.Component<
          * Don't subscribe to this event when there wasn't an authenticated user,
          * as it could lead to an infinite loop of 401 -> reload -> 401
          */
-        this.subscriptions.add(
-            authenticatedUser
-                .pipe(
-                    switchMap(authenticatedUser =>
-                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
-                    )
-                )
-                .subscribe(event => {
+        if (window.context.isAuthenticatedUser) {
+            this.subscriptions.add(
+                fromEvent<ErrorEvent>(window, 'error').subscribe(event => {
                     if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
                         location.reload()
                     }
                 })
-        )
+            )
+        }
 
         if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
@@ -267,58 +250,6 @@ export class LegacySourcegraphWebApp extends React.Component<
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             logger.error('Error sending search context to extensions!', error)
         })
-
-        // Update search query state whenever the URL changes
-        this.subscriptions.add(
-            combineLatest([
-                observeStore(useExperimentalFeatures).pipe(
-                    map(([features]) => features.searchQueryInput === 'experimental'),
-                    // This ensures that the query stays unmodified until we know
-                    // whether the feature flag is set or not.
-                    startWith(true),
-                    distinctUntilChanged()
-                ),
-                getQueryStateFromLocation({
-                    location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
-                    isSearchContextAvailable: (searchContext: string) =>
-                        this.props.searchContextsEnabled
-                            ? isSearchContextSpecAvailable({
-                                  spec: searchContext,
-                                  platformContext: this.platformContext,
-                              })
-                                  .pipe(first())
-                                  .toPromise()
-                            : Promise.resolve(false),
-                }),
-            ]).subscribe(([enableExperimentalSearchInput, parsedSearchURLAndContext]) => {
-                if (parsedSearchURLAndContext.query) {
-                    // Only override filters and update query from URL if there
-                    // is a search query.
-                    if (!parsedSearchURLAndContext.searchContextSpec) {
-                        // If no search context is present we have to fall back
-                        // to the global search context to match the server
-                        // behavior.
-                        this.setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
-                    } else if (
-                        parsedSearchURLAndContext.searchContextSpec.spec !== this.state.selectedSearchContextSpec
-                    ) {
-                        this.setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
-                    }
-
-                    const processedQuery =
-                        !enableExperimentalSearchInput &&
-                        parsedSearchURLAndContext.searchContextSpec &&
-                        this.props.searchContextsEnabled
-                            ? omitFilter(
-                                  parsedSearchURLAndContext.query,
-                                  parsedSearchURLAndContext.searchContextSpec.filter
-                              )
-                            : parsedSearchURLAndContext.query
-
-                    setQueryStateFromURL(parsedSearchURLAndContext, processedQuery)
-                }
-            })
-        )
 
         this.userRepositoriesUpdates.next()
     }
@@ -355,9 +286,48 @@ export class LegacySourcegraphWebApp extends React.Component<
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
-        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
+        if (graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
+
+        const router = createBrowserRouter(
+            createRoutesFromElements(
+                <Route
+                    path="*"
+                    element={
+                        <LegacyLayout
+                            {...this.props}
+                            authenticatedUser={authenticatedUser}
+                            viewerSubject={this.state.viewerSubject}
+                            settingsCascade={this.state.settingsCascade}
+                            batchChangesEnabled={this.props.batchChangesEnabled}
+                            batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
+                            batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                            // Search query
+                            fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                            // Extensions
+                            platformContext={this.platformContext}
+                            extensionsController={this.extensionsController}
+                            telemetryService={eventLogger}
+                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                            searchContextsEnabled={this.props.searchContextsEnabled}
+                            selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                            fetchSearchContexts={fetchSearchContexts}
+                            fetchSearchContextBySpec={fetchSearchContextBySpec}
+                            fetchSearchContext={fetchSearchContext}
+                            createSearchContext={createSearchContext}
+                            updateSearchContext={updateSearchContext}
+                            deleteSearchContext={deleteSearchContext}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                            globbing={this.state.globbing}
+                            streamSearch={aggregateStreamingSearch}
+                        />
+                    }
+                />
+            )
+        )
 
         return (
             <ComponentsComposer
@@ -366,6 +336,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                     /* eslint-disable react/no-children-prop, react/jsx-key */
                     <ApolloProvider client={graphqlClient} children={undefined} />,
                     <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                    <SettingsProvider settingsCascade={this.state.settingsCascade} />,
                     <ErrorBoundary location={null} />,
                     <TraceSpanProvider name={SharedSpanName.AppMount} />,
                     <FeatureFlagsProvider />,
@@ -376,48 +347,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >
-                <Router history={globalHistory}>
-                    <CompatRouter>
-                        <Routes>
-                            <Route
-                                path="*"
-                                element={
-                                    <LegacyLayout
-                                        {...this.props}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        batchChangesEnabled={this.props.batchChangesEnabled}
-                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                            this.state.settingsCascade
-                                        )}
-                                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                        // Search query
-                                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                                        // Extensions
-                                        platformContext={this.platformContext}
-                                        extensionsController={this.extensionsController}
-                                        telemetryService={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        searchContextsEnabled={this.props.searchContextsEnabled}
-                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                        fetchSearchContexts={fetchSearchContexts}
-                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                        fetchSearchContext={fetchSearchContext}
-                                        createSearchContext={createSearchContext}
-                                        updateSearchContext={updateSearchContext}
-                                        deleteSearchContext={deleteSearchContext}
-                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                        globbing={this.state.globbing}
-                                        streamSearch={aggregateStreamingSearch}
-                                    />
-                                }
-                            />
-                        </Routes>
-                    </CompatRouter>
-                </Router>
+                <RouterProvider router={router} />
                 {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
                     <Notifications
                         key={2}
@@ -429,9 +359,6 @@ export class LegacySourcegraphWebApp extends React.Component<
             </ComponentsComposer>
         )
     }
-
-    private getSelectedSearchContextSpec = (): string | undefined =>
-        getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
         this.setState({ selectedSearchContextSpec: spec })

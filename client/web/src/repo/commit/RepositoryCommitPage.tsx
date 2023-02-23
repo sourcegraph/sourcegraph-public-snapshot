@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -9,7 +9,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
@@ -44,7 +43,7 @@ const COMMIT_QUERY = gql`
     ${gitCommitFragment}
 `
 
-interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, ThemeProps, SettingsCascadeProps {
+interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }

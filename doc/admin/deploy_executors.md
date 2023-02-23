@@ -108,6 +108,19 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
   </a>
 </div>
 
+<div class="grid">
+  <a class="btn-app btn" href="/admin/deploy_executors_kubernetes">
+    <h3>Kubernetes</h3>
+    <p>Run executors on kubernetes</p>
+    <p>Requires privileged access to a container runtime.</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy_executors_docker">
+    <h3>Docker Compose</h3>
+    <p>Run executors on any linux amd64 machine with docker-compose</p>
+    <p>Requires privileged access to a container runtime.</p>
+  </a>
+</div>
+
 ## Confirm executors are working
 
 If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.

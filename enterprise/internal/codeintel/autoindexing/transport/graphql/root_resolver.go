@@ -283,7 +283,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
 			root:    indexJob.Root,
-			indexer: types.NewIndexerResolver(indexJob.Indexer),
+			indexer: types.NewCodeIntelIndexerResolver(indexJob.Indexer),
 			steps: sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
 				DockerSteps:      steps,
 				LocalSteps:       indexJob.LocalSteps,

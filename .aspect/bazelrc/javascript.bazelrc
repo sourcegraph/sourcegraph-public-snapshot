@@ -1,13 +1,5 @@
-# Aspect recommended Bazel flags for JavaScript projects for all Bazel versions
-# Aspect's JavaScript rules: https://github.com/aspect-build/rules_js
-# Docs for Bazel flags: https://bazel.build/docs/user-manual & https://bazel.build/reference/command-line-reference
+# Aspect recommended Bazel flags when using Aspect's JavaScript rules: https://github.com/aspect-build/rules_js
 # Docs for Node.js flags: https://nodejs.org/en/docs/guides/debugging-getting-started/#command-line-options
-
-####################################################################################################
-# Debugging
-# --
-# Use --config=debug with `bazel test` or `bazel run` to use these settings
-####################################################################################################
 
 # Support for debugging Node.js tests. Use bazel run with `--config=debug` to turn on the NodeJS
 # inspector agent. The node process will break before user code starts and wait for the debugger to
@@ -16,12 +8,6 @@
 # details.
 # Docs: https://nodejs.org/en/docs/guides/debugging-getting-started/#command-line-options
 run:debug -- --node_options=--inspect-brk
-
-####################################################################################################
-# Correctness
-# --
-# Flags that affect correctness
-####################################################################################################
 
 # Enable runfiles on all platforms. Runfiles are on by default on Linux and MacOS but off on
 # Windows.

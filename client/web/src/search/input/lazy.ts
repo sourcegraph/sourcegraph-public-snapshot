@@ -11,6 +11,10 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import type { SuggestionsSourceConfig } from './suggestions'
 
+// TODO (#48103): Remove/simplify when new search input is released
+/**
+ * Helper hook to load depedencies for the new search input on demand.
+ */
 export function useLazyCreateSuggestions(enabled: boolean, parameters: SuggestionsSourceConfig): Source | undefined {
     const suggestionsModule = useObservable(
         useMemo(() => (enabled ? from(import('./suggestions')) : of(undefined)), [enabled])
@@ -22,6 +26,10 @@ export function useLazyCreateSuggestions(enabled: boolean, parameters: Suggestio
     )
 }
 
+// TODO (#48103): Remove/simplify when new search input is released
+/**
+ * Helper hook to load depedencies for the new search input on demand.
+ */
 export function useLazyHistoryExtension(
     enabled: boolean,
     recentSearchesRef: RefObject<RecentSearch[] | undefined>,

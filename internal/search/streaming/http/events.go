@@ -175,7 +175,7 @@ type EventPersonMatch struct {
 	Email  string `json:"email"`
 
 	// User will not be set if no user was matched.
-	User UserMetadata `json:"user,omitempty"`
+	User *UserMetadata `json:"user,omitempty"`
 }
 
 type UserMetadata struct {
@@ -195,7 +195,7 @@ type EventTeamMatch struct {
 
 	// The following are a subset of types.Team fields.
 	Name        string `json:"name"`
-	DisplayName string `json:"DisplayName"`
+	DisplayName string `json:"displayName"`
 }
 
 func (e *EventTeamMatch) eventMatch() {}

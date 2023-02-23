@@ -106,6 +106,10 @@ func (k Key) Less(other Key) bool {
 		return k.Path < other.Path
 	}
 
+	if k.OwnerMetadata != other.OwnerMetadata {
+		return k.OwnerMetadata < other.OwnerMetadata
+	}
+
 	return k.TypeRank < other.TypeRank
 }
 

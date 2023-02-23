@@ -32,6 +32,7 @@ type operations struct {
 	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -60,6 +61,11 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
+
+	// Ranking
+	exportRankingGraph *observation.Operation
+	mapRankingGraph    *observation.Operation
+	reduceRankingGraph *observation.Operation
 
 	numUploadsRead         prometheus.Counter
 	numBytesUploaded       prometheus.Counter
@@ -145,6 +151,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -173,6 +180,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
+
+		// Ranking
+		exportRankingGraph: op("ExportRankingGraph"),
+		mapRankingGraph:    op("MapRankingGraph"),
+		reduceRankingGraph: op("ReduceRankingGraph"),
 
 		numUploadsRead:         numUploadsRead,
 		numBytesUploaded:       numBytesUploaded,

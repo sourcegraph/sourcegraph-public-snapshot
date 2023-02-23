@@ -15,7 +15,7 @@ import (
 
 const oneReleaseCycle = 35 * 24 * time.Hour
 
-var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
+var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+-)?\w+`)
 
 func NewExecutorResolver(executor types.Executor) *ExecutorResolver {
 	return &ExecutorResolver{executor: executor}
