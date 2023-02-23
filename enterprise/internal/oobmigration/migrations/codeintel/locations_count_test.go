@@ -12,12 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestLocationsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	rawDB := lastDBWithLSIF(logger, t)
 	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250, 1)

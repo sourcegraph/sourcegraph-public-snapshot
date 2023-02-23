@@ -10,7 +10,6 @@ import (
 	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func init() {
@@ -21,7 +20,7 @@ func init() {
 
 func TestSCIPMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	rawDB := lastDBWithLSIF(logger, t)
 	db := database.NewDB(logger, rawDB)
 	codeIntelDB := stores.NewCodeIntelDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())

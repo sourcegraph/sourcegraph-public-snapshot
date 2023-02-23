@@ -13,12 +13,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDocumentColumnSplitMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	rawDB := lastDBWithLSIF(logger, t)
 	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewDocumentColumnSplitMigrator(store, 250, 1)
