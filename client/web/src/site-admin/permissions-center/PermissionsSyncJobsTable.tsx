@@ -3,18 +3,20 @@ import React, { useEffect } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, H5, PageSwitcher } from '@sourcegraph/wildcard'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
+
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { PermissionsSyncJob, PermissionSyncJobsResult, PermissionSyncJobsVariables } from '../../graphql-operations'
 import {
     ConnectionContainer,
     ConnectionError,
     ConnectionList,
     ConnectionLoading,
 } from '../../components/FilteredConnection/ui'
+import { PermissionsSyncJob, PermissionSyncJobsResult, PermissionSyncJobsVariables } from '../../graphql-operations'
+
+import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
+import { ChangesetCloseNode } from './PermissionsSyncJobsTableItem'
 
 import styles from './PermissionsSyncJobsTable.module.scss'
-import { ChangesetCloseNode } from './PermissionsSyncJobsTableItem'
 
 interface Props extends TelemetryProps {}
 

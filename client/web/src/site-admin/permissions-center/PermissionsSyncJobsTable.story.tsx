@@ -1,14 +1,17 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { WebStory } from '../../components/WebStory'
+import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { PermissionSyncJobReasonGroup, PermissionSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { WebStory } from '../../components/WebStory'
 import { PermissionsSyncJob } from '../../graphql-operations'
+
 import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'
-import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 
 const decorator: DecoratorFn = Story => <Story />
 
@@ -120,8 +123,10 @@ export const FiveSyncJobsFound: Story = () => (
 
 FiveSyncJobsFound.storyName = 'Five sync jobs'
 
-type subject = { __typename: 'Repository'; name: string } | { __typename: 'User'; username: string }
-type reason = { __typename?: 'PermissionSyncJobReason'; group: PermissionSyncJobReasonGroup; message: string }
+interface repo { __typename: 'Repository'; name: string }
+interface user { __typename: 'User'; username: string }
+type subject = repo | user
+interface reason { __typename?: 'PermissionSyncJobReason'; group: PermissionSyncJobReasonGroup; message: string }
 
 function createSyncJobMock(
     id: string,
