@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Experimental GraphQL query, `permissionsSyncJobs` is removed and substituted with new non-experimental `permissionSyncJobs` query (mind the singular form of permission) which provides full information about permission sync jobs stored in the database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Experimental GraphQL query, `permissionsSyncJobs` is substituted with new non-experimental query which provides full information about permissions sync jobs stored in the database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Renders `readme.txt` files in the repository page. [#47944](https://github.com/sourcegraph/sourcegraph/pull/47944)
 
 ### Fixed
@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
 - The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
-- Storing permission sync jobs statuses in Redis has been removed as now all permission sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ## 4.5.0
 
