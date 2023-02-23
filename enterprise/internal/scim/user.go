@@ -2,6 +2,8 @@ package scim
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -133,6 +135,33 @@ func createCoreSchema() schema.Schema {
 	}
 }
 
+// updateUser updates a user in the database.
+func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
+	usernameUpdate := ""
+	requestedUsername := extractUsername(newUser.Attributes)
+	if requestedUsername != oldUser.Username {
+		usernameUpdate, err = getUniqueUsername(ctx, tx, requestedUsername)
+		if err != nil {
+			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
+		}
+	}
+	var displayNameUpdate *string
+	var avatarURLUpdate *string
+	userUpdate := database.UserUpdate{
+		Username:    usernameUpdate,
+		DisplayName: displayNameUpdate,
+		AvatarURL:   avatarURLUpdate,
+	}
+	err = tx.Update(ctx, oldUser.ID, userUpdate)
+	if err != nil {
+		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+	}
+
+	// TODO: Save verified emails and additional fields here
+
+	return
+}
+
 // createSchemaExtensions creates a SCIM schema extension for users.
 func createSchemaExtensions() []scim.SchemaExtension {
 	extensionUserSchema := schema.Schema{
@@ -153,43 +182,6 @@ func createSchemaExtensions() []scim.SchemaExtension {
 		{Schema: extensionUserSchema},
 	}
 	return schemaExtensions
-}
-
-// TODO: Temporary function to log attributes
-func resourceAttributesToLoggableString(attributes scim.ResourceAttributes) string {
-	// Convert attributes to string
-	var attributesString string
-
-	for key, value := range attributes {
-		if value == nil {
-			continue
-		}
-		if valueString, ok := value.(string); ok {
-			attributesString += key + ": " + valueString + ", "
-		}
-
-		if valueString, ok := value.([]string); ok {
-			attributesString += key + ": "
-			for _, value := range valueString {
-				attributesString += value + ", "
-			}
-		}
-
-		if valueString, ok := value.(map[string]string); ok {
-			attributesString += key + ": "
-			for key, value := range valueString {
-				attributesString += key + ": " + value + ", "
-			}
-		}
-
-		if valueString, ok := value.(map[string]interface{}); ok {
-			attributesString += key + ": "
-			for key, value := range valueString {
-				attributesString += key + ": " + value.(string) + ", "
-			}
-		}
-	}
-	return attributesString
 }
 
 // getOptionalExternalID extracts the external identifier of the given attributes.

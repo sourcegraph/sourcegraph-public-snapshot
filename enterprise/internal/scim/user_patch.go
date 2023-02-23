@@ -1,15 +1,10 @@
 package scim
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/elimity-com/scim"
-	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Patch update one or more attributes of a SCIM resource using a sequence of
@@ -104,33 +99,6 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}
 
 	return userRes, nil
-}
-
-// updateUser updates a user in the database.
-func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
-	usernameUpdate := ""
-	requestedUsername := extractUsername(newUser.Attributes)
-	if requestedUsername != oldUser.Username {
-		usernameUpdate, err = getUniqueUsername(ctx, tx, requestedUsername)
-		if err != nil {
-			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
-		}
-	}
-	var displayNameUpdate *string
-	var avatarURLUpdate *string
-	userUpdate := database.UserUpdate{
-		Username:    usernameUpdate,
-		DisplayName: displayNameUpdate,
-		AvatarURL:   avatarURLUpdate,
-	}
-	err = tx.Update(ctx, oldUser.ID, userUpdate)
-	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
-	}
-
-	// TODO: Save verified emails and additional fields here
-
-	return
 }
 
 // applyChangeToResource applies a change to a resource (for example, sets its userName).
