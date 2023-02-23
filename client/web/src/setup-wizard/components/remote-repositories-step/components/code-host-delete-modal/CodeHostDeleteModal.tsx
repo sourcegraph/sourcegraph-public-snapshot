@@ -40,7 +40,7 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
 
         // We have to remove it from the cache after we remove it on the backend
         // and navigate user away from the edit UI (in case if this modal is used from
-        // edit UI) othewise clearing the cache will trigger query in edit UI for code host
+        // edit UI) otherwise clearing the cache will trigger query in edit UI for code host
         // which doesn't exist anymore
         removeDeletedHostFromCache(apolloClient.cache, codeHost.id)
         onDismiss()
@@ -90,7 +90,7 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
     )
 }
 
-function removeDeletedHostFromCache(cache: ApolloCache, codeHostId: string): void {
+function removeDeletedHostFromCache(cache: ApolloCache<any>, codeHostId: string): void {
     const deletedCodeHostId = cache.identify({
         __typename: 'ExternalService',
         id: codeHostId,
