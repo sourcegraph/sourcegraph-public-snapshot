@@ -8093,7 +8093,7 @@
 			{
 				"ID": 1671543381,
 				"Name": "add_default_roles",
-				"UpQuery": "-- system roles that come with every sourcegraph instance\nINSERT INTO\n    roles\nVALUES\n    (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, TRUE),\n    (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, TRUE)\nON CONFLICT (id) DO NOTHING;\n\nSELECT pg_catalog.setval('roles_id_seq', 3, true);",
+				"UpQuery": "-- system roles that come with every sourcegraph instance\nINSERT INTO\n    roles (id, name, created_at, deleted_at, readonly)\nVALUES\n    (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, TRUE),\n    (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, TRUE)\nON CONFLICT (id) DO NOTHING;\n\nSELECT pg_catalog.setval('roles_id_seq', 3, true);",
 				"DownQuery": "DELETE FROM roles WHERE id IN (1, 2);",
 				"Privileged": false,
 				"NonIdempotent": false,

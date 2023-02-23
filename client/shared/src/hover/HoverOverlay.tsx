@@ -10,7 +10,6 @@ import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { ThemeProps } from '../theme'
 
 import { CopyLinkIcon } from './CopyLinkIcon'
 import { toNativeEvent } from './helpers'
@@ -59,7 +58,6 @@ export interface HoverOverlayProps
         ActionItemComponentProps,
         HoverOverlayClassProps,
         TelemetryProps,
-        ThemeProps,
         Pick<HoverOverlayAlertsProps, 'onAlertDismissed'>,
         PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */

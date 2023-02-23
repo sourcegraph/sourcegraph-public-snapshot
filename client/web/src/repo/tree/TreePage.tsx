@@ -15,7 +15,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -49,7 +48,6 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
-        ThemeProps,
         TelemetryProps,
         CodeIntelligenceProps,
         BatchChangesProps,

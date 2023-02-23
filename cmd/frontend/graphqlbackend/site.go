@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	migratorshared "github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -323,9 +324,13 @@ func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.M
 }
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
-	_, version, _, err := r.init(ctx)
-	if err != nil {
-		return nil, err
+	updateStatus := updatecheck.Last()
+	if updateStatus == nil || !updateStatus.HasUpdate() {
+		return nil, errors.New("no latest update version available (reload in a few seconds)")
+	}
+	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
+	if !ok {
+		return nil, errors.Errorf("invalid latest update version %q", updateStatus.UpdateVersion)
 	}
 
 	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)

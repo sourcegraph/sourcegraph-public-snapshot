@@ -4,11 +4,10 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { Page } from '../../components/Page'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -57,20 +56,18 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 </Link>
                             </span>
                             {isSourcegraphDotCom && (
-                                <CloudCtaBanner variant="filled" className="mb-0">
-                                    To search across your team's private repos,{' '}
+                                <CallToActionBanner variant="filled" className="mb-0">
+                                    To search across your team's private repositories,{' '}
                                     <Link
-                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        to="https://about.sourcegraph.com"
                                         onClick={() =>
-                                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
+                                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
                                         }
                                     >
-                                        try Sourcegraph Cloud
+                                        get Sourcegraph Enterprise
                                     </Link>
                                     .
-                                </CloudCtaBanner>
+                                </CallToActionBanner>
                             )}
                         </>
                     }

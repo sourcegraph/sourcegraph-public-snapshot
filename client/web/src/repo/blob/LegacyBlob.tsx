@@ -130,7 +130,6 @@ const domFunctions = {
  */
 export const LegacyBlob: FC<BlobProps> = props => {
     const {
-        isLightTheme,
         extensionsController,
         blobInfo,
         platformContext,
@@ -668,7 +667,6 @@ export const LegacyBlob: FC<BlobProps> = props => {
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
-                    isLightTheme={isLightTheme}
                 />
             </div>
         </>
