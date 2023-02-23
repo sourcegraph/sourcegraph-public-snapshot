@@ -1525,14 +1525,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
-			ReconcilerState:  btypes.ReconcilerStateQueued,
-			PublicationState: btypes.ChangesetPublicationStatePublished,
-			ExternalState:    btypes.ChangesetExternalStateOpen,
-			Repo:             repo.ID,
-			FailureMessage:   nil,
-			NumResets:        0,
-			NumFailures:      0,
-			SyncErrorMessage: nil,
+			ReconcilerState:        btypes.ReconcilerStateQueued,
+			PublicationState:       btypes.ChangesetPublicationStatePublished,
+			ExternalState:          btypes.ChangesetExternalStateOpen,
+			Repo:                   repo.ID,
+			FailureMessage:         nil,
+			NumResets:              0,
+			NumFailures:            0,
+			SyncErrorMessage:       nil,
+			PreviousFailureMessage: strPtr("horse was here"),
 		})
 	})
 
@@ -2666,3 +2667,5 @@ func TestCleanDetachedChangesets(t *testing.T) {
 		})
 	}
 }
+
+func strPtr(s string) *string { return &s }
