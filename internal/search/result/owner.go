@@ -14,7 +14,6 @@ type OwnerMatch struct {
 	InputRev *string           `json:"-"`
 	Repo     types.MinimalRepo `json:"-"`
 	CommitID api.CommitID      `json:"-"`
-	Path     string
 
 	LimitHit int
 }
@@ -52,7 +51,6 @@ func (om *OwnerMatch) Key() Key {
 		TypeRank: rankOwnerMatch,
 		Repo:     om.Repo.Name,
 		Commit:   om.CommitID,
-		Path:     om.Path, // TODO: we should decide whether to omit this. If we leave it in then we will get duplicate owners if we match different paths.
 	}
 	if om.ResolvedOwner != nil {
 		k.OwnerMetadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()

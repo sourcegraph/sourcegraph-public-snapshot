@@ -5,8 +5,7 @@ import * as React from 'react'
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, from, Subscription, fromEvent, Subject, Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -47,7 +46,7 @@ import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/tempo
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from './auth'
+import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
@@ -118,11 +117,10 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
 
     /**
      * The currently authenticated user:
-     * - `undefined` until `CurrentAuthState` query completion.
      * - `AuthenticatedUser` if the viewer is authenticated.
      * - `null` if the viewer is anonymous.
      */
-    authenticatedUser?: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
@@ -177,6 +175,7 @@ export class LegacySourcegraphWebApp extends React.Component<
         }
 
         this.state = {
+            authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
@@ -207,20 +206,17 @@ export class LegacySourcegraphWebApp extends React.Component<
             combineLatest([
                 from(this.platformContext.settings),
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
-                authenticatedUser.pipe(startWith(undefined)),
-            ]).subscribe(
-                ([settingsCascade, authenticatedUser]) => {
-                    setExperimentalFeaturesFromSettings(settingsCascade)
-                    setQueryStateFromSettings(settingsCascade)
-                    this.setState({
-                        settingsCascade,
-                        authenticatedUser,
-                        globbing: globbingEnabledFromSettings(settingsCascade),
-                        viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                    })
-                },
-                () => this.setState({ authenticatedUser: null })
-            )
+                authenticatedUserSubject,
+            ]).subscribe(([settingsCascade, authenticatedUser]) => {
+                setExperimentalFeaturesFromSettings(settingsCascade)
+                setQueryStateFromSettings(settingsCascade)
+                this.setState({
+                    settingsCascade,
+                    authenticatedUser,
+                    globbing: globbingEnabledFromSettings(settingsCascade),
+                    viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
+                })
+            })
         )
 
         /**
@@ -229,19 +225,15 @@ export class LegacySourcegraphWebApp extends React.Component<
          * Don't subscribe to this event when there wasn't an authenticated user,
          * as it could lead to an infinite loop of 401 -> reload -> 401
          */
-        this.subscriptions.add(
-            authenticatedUser
-                .pipe(
-                    switchMap(authenticatedUser =>
-                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
-                    )
-                )
-                .subscribe(event => {
+        if (window.context.isAuthenticatedUser) {
+            this.subscriptions.add(
+                fromEvent<ErrorEvent>(window, 'error').subscribe(event => {
                     if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
                         location.reload()
                     }
                 })
-        )
+            )
+        }
 
         if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
@@ -294,7 +286,7 @@ export class LegacySourcegraphWebApp extends React.Component<
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
-        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
+        if (graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
 
