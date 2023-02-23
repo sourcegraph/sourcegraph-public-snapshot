@@ -621,10 +621,11 @@ func (c *Changeset) URL() (s string, err error) {
 		}
 
 		// The URL returned by the API is for the PR API endpoint, so we need to reconstruct it.
+		prPath := fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID))
 		returnURL := url.URL{
 			Scheme: u.Scheme,
 			Host:   u.Host,
-			Path:   fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)),
+			Path:   prPath,
 		}
 
 		return returnURL.String(), nil
