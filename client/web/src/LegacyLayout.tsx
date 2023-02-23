@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
@@ -15,6 +15,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
@@ -55,7 +56,6 @@ import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useExperimentalFeatures } from './stores'
-import { useTheme, useThemeProps } from './theme'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -156,16 +156,11 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
         location.pathname === PageRoutes.PasswordReset ||
         location.pathname === PageRoutes.Welcome
 
-    const themeProps = useThemeProps()
-    const themeState = useTheme()
-    const themeStateRef = useRef(themeState)
-    themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const breadcrumbProps = useBreadcrumbs()
 
-    useScrollToLocationHash(location)
-
+    const { theme } = useTheme()
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
@@ -176,6 +171,16 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch,
     })
+
+    useLayoutEffect(() => {
+        const isLightTheme = theme === Theme.Light
+
+        document.documentElement.classList.add('theme')
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [theme])
+
+    useScrollToLocationHash(location)
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -193,7 +198,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
@@ -252,7 +256,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
-                    {...themeProps}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -303,7 +306,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                 >
                     <TabbedPanelContent
                         {...props}
-                        {...themeProps}
                         repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                     />
@@ -321,7 +323,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
-                    themeState={themeStateRef}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}

@@ -5,7 +5,6 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
@@ -82,7 +81,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps, ThemeProps {
+interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 

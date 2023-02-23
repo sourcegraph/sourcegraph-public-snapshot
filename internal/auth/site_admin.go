@@ -39,10 +39,10 @@ func CheckUserIsSiteAdmin(ctx context.Context, db database.DB, userID int32) err
 	}
 	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+			return ErrNotAuthenticated
+		}
 		return err
-	}
-	if user == nil {
-		return ErrNotAuthenticated
 	}
 	if !user.SiteAdmin {
 		return ErrMustBeSiteAdmin

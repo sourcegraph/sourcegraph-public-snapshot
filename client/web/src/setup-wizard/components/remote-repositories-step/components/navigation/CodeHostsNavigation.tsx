@@ -1,6 +1,6 @@
 import { FC, ReactElement } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -8,24 +8,9 @@ import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@source
 
 import { GetCodeHostsResult } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
+import { GET_CODE_HOSTS } from '../../queries'
 
 import styles from './CodeHostsNavigation.module.scss'
-
-const GET_CODE_HOSTS = gql`
-    query GetCodeHosts {
-        externalServices {
-            nodes {
-                __typename
-                id
-                kind
-                repoCount
-                displayName
-                lastSyncAt
-                nextSyncAt
-            }
-        }
-    }
-`
 
 interface CodeHostsNavigationProps {
     activeConnectionId: string | undefined

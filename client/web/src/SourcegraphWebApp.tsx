@@ -34,6 +34,7 @@ import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
     SettingsCascadeOrError,
+    SettingsProvider,
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
@@ -71,7 +72,6 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
-import { useThemeProps } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -216,8 +216,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
 
-        document.documentElement.classList.add('theme')
-
         getWebGraphQLClient()
             .then(graphqlClient => {
                 setGraphqlClient(graphqlClient)
@@ -282,11 +280,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     }, [])
 
     const breadcrumbProps = useBreadcrumbs()
-    const themeProps = useThemeProps()
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
@@ -380,15 +376,15 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     notebooksEnabled={props.notebooksEnabled}
                     codeMonitoringEnabled={props.codeMonitoringEnabled}
                     searchAggregationEnabled={props.searchAggregationEnabled}
-                    themeProps={themeProps}
                 />
             ),
             children: props.routes
                 .map(
-                    ({ condition = () => true, render, path }) =>
+                    ({ condition = () => true, render, path, handle }) =>
                         condition(context) && {
                             path: path.slice(1), // remove leading slash
                             element: render(context),
+                            handle,
                         }
                 )
                 .filter(isTruthy),
@@ -402,6 +398,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-disable react/no-children-prop, react/jsx-key */
                 <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
                 <FeatureFlagsProvider />,

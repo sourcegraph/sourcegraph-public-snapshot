@@ -20,11 +20,13 @@ export {
     setSearchMode,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
+
 export {
     useExperimentalFeatures,
     getExperimentalFeatures,
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
+
 export { useNotepadState, useNotepad } from './notepad'
 
 /**

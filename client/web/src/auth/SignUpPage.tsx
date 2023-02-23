@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -21,7 +21,7 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
-export interface SignUpPageProps extends ThemeProps, TelemetryProps {
+export interface SignUpPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -38,13 +38,14 @@ export interface SignUpPageProps extends ThemeProps, TelemetryProps {
 export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpPageProps>> = ({
     authenticatedUser,
     context,
-    isLightTheme,
     telemetryService,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
     const invitedBy = query.get('invitedBy')
     const returnTo = getReturnTo(location)
+
+    const isLightTheme = useIsLightTheme()
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)

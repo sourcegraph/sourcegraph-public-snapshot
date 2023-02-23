@@ -8,6 +8,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
@@ -31,7 +32,6 @@ import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    isLightTheme: boolean
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
@@ -47,7 +47,6 @@ const NotFoundPage: FC = () => (
 
 export const ExternalServicePage: FC<Props> = props => {
     const {
-        isLightTheme,
         telemetryService,
         afterDeleteRoute,
         externalServicesFromFile,
@@ -55,6 +54,7 @@ export const ExternalServicePage: FC<Props> = props => {
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
 
+    const isLightTheme = useIsLightTheme()
     const { externalServiceID } = useParams()
     const navigate = useNavigate()
 

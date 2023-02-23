@@ -4,26 +4,26 @@
 # ignores.
 
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS p4cli
+FROM sourcegraph/alpine-3.14:200740_2023-02-22_a1b4fb9100c1@sha256:a5b6731db64e742e1e11d31df443d60f756d892bc90d4581c5ddbfe4259d1302 AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS p4-fusion
+FROM sourcegraph/alpine-3.14:200740_2023-02-22_a1b4fb9100c1@sha256:a5b6731db64e742e1e11d31df443d60f756d892bc90d4581c5ddbfe4259d1302 AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS coursier
+FROM sourcegraph/alpine-3.14:200740_2023-02-22_a1b4fb9100c1@sha256:a5b6731db64e742e1e11d31df443d60f756d892bc90d4581c5ddbfe4259d1302 AS coursier
 
 RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
     gzip -d coursier.gz && \
     mv coursier /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa
+FROM sourcegraph/alpine-3.14:200740_2023-02-22_a1b4fb9100c1@sha256:a5b6731db64e742e1e11d31df443d60f756d892bc90d4581c5ddbfe4259d1302
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

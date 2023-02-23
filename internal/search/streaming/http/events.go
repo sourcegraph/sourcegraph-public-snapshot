@@ -195,7 +195,7 @@ type EventTeamMatch struct {
 
 	// The following are a subset of types.Team fields.
 	Name        string `json:"name"`
-	DisplayName string `json:"DisplayName"`
+	DisplayName string `json:"displayName"`
 }
 
 func (e *EventTeamMatch) eventMatch() {}

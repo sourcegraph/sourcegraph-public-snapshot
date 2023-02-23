@@ -41,7 +41,6 @@ export interface SiteAdminAreaRouteContext
         TelemetryProps {
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
-    isLightTheme: boolean
     isSourcegraphDotCom: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
@@ -55,7 +54,6 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
-    isLightTheme: boolean
     isSourcegraphDotCom: boolean
 }
 
@@ -72,7 +70,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         authenticatedUser: props.authenticatedUser,
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
-        isLightTheme: props.isLightTheme,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,

@@ -4,7 +4,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Routes, Route, useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -32,7 +31,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 
 export interface OrgSettingsAreaRoute extends RouteV6Descriptor<OrgSettingsAreaRouteContext> {}
 
-export interface OrgSettingsAreaProps extends OrgAreaRouteContext, ThemeProps {
+export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
     authenticatedUser: AuthenticatedUser
     sideBarItems: OrgSettingsSidebarItems
     routes: readonly OrgSettingsAreaRoute[]
