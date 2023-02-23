@@ -73,32 +73,30 @@ const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: Permission
     <Badge variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>{state}</Badge>
 )
 
-const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
-    return (
+const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
+    <div>
         <div>
-            <div>
-                {job.subject.__typename === 'Repository' ? (
-                    <>
-                        <Icon aria-hidden={true} svgPath={mdiCloudQuestion} /> {job.subject.name}
-                        {/*    TODO(sashaostrikov) use code host related icons after GQL API is updated*/}
-                    </>
-                ) : (
-                    <>
-                        <Icon aria-hidden={true} svgPath={mdiAccount} /> {job.subject.username}
-                    </>
-                )}
-            </div>
-            {JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job) != '' && (
-                <Text className="mb-0 text-muted">
-                    <small>
-                        {JOB_STATE_METADATA_MAPPING[job.state].temporalWording}{' '}
-                        <Timestamp date={JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job)} />
-                    </small>
-                </Text>
+            {job.subject.__typename === 'Repository' ? (
+                <>
+                    <Icon aria-hidden={true} svgPath={mdiCloudQuestion} /> {job.subject.name}
+                    {/*    TODO(sashaostrikov) use code host related icons after GQL API is updated*/}
+                </>
+            ) : (
+                <>
+                    <Icon aria-hidden={true} svgPath={mdiAccount} /> {job.subject.username}
+                </>
             )}
         </div>
-    )
-}
+        {JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job) !== '' && (
+            <Text className="mb-0 text-muted">
+                <small>
+                    {JOB_STATE_METADATA_MAPPING[job.state].temporalWording}{' '}
+                    <Timestamp date={JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job)} />
+                </small>
+            </Text>
+        )}
+    </div>
+)
 
 const PermissionsSyncJobReason: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
     <div>
