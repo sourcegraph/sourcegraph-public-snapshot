@@ -1503,14 +1503,10 @@ SELECT
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
-
-	-- Archived merged changesets are included as part of the stats for changesets merged.
-	COUNT(*) FILTER (WHERE changesets.computed_state = 'MERGED') AS merged,
-
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
-
-	COUNT(*) FILTER (WHERE %s AND changesets.computed_state <> 'MERGED') AS archived
+	COUNT(*) FILTER (WHERE %s) AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
