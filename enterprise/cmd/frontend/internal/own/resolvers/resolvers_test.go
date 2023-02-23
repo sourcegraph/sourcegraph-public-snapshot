@@ -150,7 +150,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 									"reasons": [
 										{
 											"title": "CodeOwners",
-											"description": "Dummy code owners file entry."
+											"description": "Owner is associated with a rule in code owners file."
 										}
 									]
 								}
