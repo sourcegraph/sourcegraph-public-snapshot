@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiFolderOpenOutline, mdiFolderOutline, mdiWrench } from '@mdi/js'
+import { mdiClose, mdiFolderOpenOutline, mdiFolderOutline, mdiWrench } from '@mdi/js'
 import classNames from 'classnames'
 import { Location, useLocation, useNavigate } from 'react-router-dom'
 
@@ -20,6 +20,7 @@ import {
     RadioButton,
     Select,
     Text,
+    Tooltip,
     Tree,
 } from '@sourcegraph/wildcard'
 
@@ -28,24 +29,19 @@ import { DataSummary, DataSummaryItem } from '../components/DataSummary'
 import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
 
 import { buildTreeData, descendentNames } from '../components/tree/tree'
-import { IndexStateBadge } from '../components/IndexStateBadge'
+import { IndexStateBadge, IndexStateBadgeIcon } from '../components/IndexStateBadge'
 import { ConfigurationStateBadge, IndexerDescription } from '../components/ConfigurationStateBadge'
 import { byKey, getIndexerKey, groupBy, sanitizePath, getIndexRoot } from '../components/tree/util'
 
 import styles from './RepoDashboardPage.module.scss'
+import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
 
 export interface RepoDashboardPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo: { id: string; name: string }
     now?: () => Date
-    // queryCommitGraph?: typeof defaultQueryCommitGraph
+    // TODO: Query commit graph?
 }
-
-const completedStates = new Set<PreciseIndexState>([PreciseIndexState.COMPLETED])
-const failureStates = new Set<PreciseIndexState>([
-    PreciseIndexState.INDEXING_ERRORED,
-    PreciseIndexState.PROCESSING_ERRORED,
-])
 
 type ShowFilter = 'all' | 'indexes' | 'suggestions'
 type IndexFilter = 'all' | 'success' | 'error'
@@ -140,8 +136,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             (filterState.language === 'all' || filterState.language === getIndexerKey(index)) &&
             // Valid indexState filter
             (filterState.indexState === 'all' ||
-                (filterState.indexState === 'error' && failureStates.has(index.state)) ||
-                (filterState.indexState === 'success' && completedStates.has(index.state))),
+                (filterState.indexState === 'error' && INDEX_FAILURE_STATES.has(index.state)) ||
+                (filterState.indexState === 'success' && INDEX_COMPLETED_STATES.has(index.state))),
         [filterState]
     )
 
@@ -179,8 +175,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             return []
         }
 
-        const numCompletedIndexes = indexes.filter(index => completedStates.has(index.state)).length
-        const numFailedIndexes = indexes.filter(index => failureStates.has(index.state)).length
+        const numCompletedIndexes = indexes.filter(index => INDEX_COMPLETED_STATES.has(index.state)).length
+        const numFailedIndexes = indexes.filter(index => INDEX_FAILURE_STATES.has(index.state)).length
         const numUnconfiguredProjects = suggestedIndexers.length
 
         return [
@@ -290,7 +286,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                             {'indexState' in filterState && (
                                 <Select
                                     id="index-filter"
-                                    label="Indexes:"
+                                    label="Indexing:"
                                     value={filterState.indexState}
                                     onChange={event => handleFilterChange(event.target.value, 'indexState')}
                                     className="d-flex align-items-center mb-0 ml-3"
@@ -298,9 +294,9 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                                     labelClassName="mb-0 mr-2"
                                     isCustomStyle={true}
                                 >
-                                    <option value="all">Latest</option>
-                                    <option value="success">Latest successful</option>
-                                    <option value="error">Latest failures</option>
+                                    <option value="all">Most recent attempt</option>
+                                    <option value="success">Most recent success</option>
+                                    <option value="error">Most recent failure</option>
                                 </Select>
                             )}
                         </div>
@@ -334,8 +330,9 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                                     indexesByIndexerNameForRoot={groupBy(filteredIndexesForRoot, getIndexerKey)}
                                     availableIndexersForRoot={filteredSuggestedIndexersForRoot}
                                     numDescendentErrors={
-                                        filteredIndexesForDescendents.filter(index => failureStates.has(index.state))
-                                            .length
+                                        filteredIndexesForDescendents.filter(index =>
+                                            INDEX_FAILURE_STATES.has(index.state)
+                                        ).length
                                     }
                                     numDescendentConfigurable={
                                         filterState.show === 'all' || filterState.show === 'suggestions'

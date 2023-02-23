@@ -8,16 +8,7 @@ import { Badge, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcar
 import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 
 import { getIndexerKey } from './tree/util'
-
-import styles from './IndexStateBadge.module.scss'
-
-const terminalStates = new Set<string>([
-    PreciseIndexState.COMPLETED,
-    PreciseIndexState.DELETED,
-    PreciseIndexState.DELETING,
-    PreciseIndexState.INDEXING_ERRORED,
-    PreciseIndexState.PROCESSING_ERRORED,
-])
+import { INDEX_TERMINAL_STATES } from '../constants'
 
 export interface IndexStateBadgeProps {
     indexes: PreciseIndexFields[]
@@ -26,11 +17,11 @@ export interface IndexStateBadgeProps {
 
 export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes, className }) => {
     const mostRecentNonTerminalIndex = indexes
-        .filter(index => !terminalStates.has(index.state))
+        .filter(index => !INDEX_TERMINAL_STATES.has(index.state))
         // sort by descending uploaded at
         .sort((a, b) => new Date(a.uploadedAt ?? '').getDate() - new Date(b.uploadedAt ?? '').getDate())[0]
 
-    const mostRecentTerminalIndex = indexes.find(index => terminalStates.has(index.state))
+    const mostRecentTerminalIndex = indexes.find(index => INDEX_TERMINAL_STATES.has(index.state))
 
     // Prefer linking out to the most recent non-terminal index, if one exists.
     const preferredIndex = mostRecentTerminalIndex || mostRecentNonTerminalIndex
@@ -41,8 +32,10 @@ export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ index
 
     return (
         <Badge as={Link} to={`../indexes/${preferredIndex.id}`} variant="outlineSecondary" className={className}>
-            {mostRecentTerminalIndex && <IndexStateBadgeIcon index={mostRecentTerminalIndex} className="mr-1" />}
-            {mostRecentNonTerminalIndex && <IndexStateBadgeIcon index={mostRecentNonTerminalIndex} className="mr-1" />}
+            {mostRecentTerminalIndex && <IndexStateBadgeIcon state={mostRecentTerminalIndex.state} className="mr-1" />}
+            {mostRecentNonTerminalIndex && (
+                <IndexStateBadgeIcon state={mostRecentNonTerminalIndex.state} className="mr-1" />
+            )}
             {getIndexerKey(preferredIndex)}
         </Badge>
     )
@@ -51,51 +44,41 @@ export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ index
 const preciseIndexStateTooltips: Partial<Record<PreciseIndexState, string>> = {
     [PreciseIndexState.COMPLETED]: 'Indexing completed successfully',
 
-    [PreciseIndexState.INDEXING]: 'Indexing completed successfully',
-    [PreciseIndexState.PROCESSING]: 'Indexing completed successfully',
-    [PreciseIndexState.UPLOADING_INDEX]: 'Indexing completed successfully',
+    [PreciseIndexState.INDEXING]: 'Currently indexing',
+    [PreciseIndexState.PROCESSING]: 'Processing index',
+    [PreciseIndexState.UPLOADING_INDEX]: 'Uploading index',
 
-    [PreciseIndexState.QUEUED_FOR_INDEXING]: 'Indexing completed successfully',
-    [PreciseIndexState.QUEUED_FOR_PROCESSING]: 'Indexing completed successfully',
+    [PreciseIndexState.QUEUED_FOR_INDEXING]: 'Queued for indexing',
+    [PreciseIndexState.QUEUED_FOR_PROCESSING]: 'Queued for processing',
 
-    [PreciseIndexState.INDEXING_ERRORED]: 'Indexing completed successfully',
-    [PreciseIndexState.PROCESSING_ERRORED]: 'Indexing completed successfully',
+    [PreciseIndexState.INDEXING_ERRORED]: 'Indexing failed',
+    [PreciseIndexState.PROCESSING_ERRORED]: 'Processing failed',
 }
 
 interface IndexStateBadgeIconProps {
-    index: PreciseIndexFields
+    state: PreciseIndexState
     className?: string
 }
 
-const IndexStateBadgeIcon: FunctionComponent<IndexStateBadgeIconProps> = ({ index, className }) => {
-    const { state } = index
+const IndexStateBadgeIcon: FunctionComponent<IndexStateBadgeIconProps> = ({ state, className }) => {
     const label = preciseIndexStateTooltips[state]
+    const ariaProps = label ? { 'aria-label': label } : ({ 'aria-hidden': true } as const)
 
     return (
         <Tooltip content={label}>
-            <IndexStateIcon index={index} label={label} className={className} />
+            {state === PreciseIndexState.COMPLETED ? (
+                <Icon {...ariaProps} svgPath={mdiCheck} className={classNames('text-success', className)} />
+            ) : state === PreciseIndexState.INDEXING ||
+              state === PreciseIndexState.PROCESSING ||
+              state === PreciseIndexState.UPLOADING_INDEX ? (
+                <LoadingSpinner {...ariaProps} className={className} />
+            ) : state === PreciseIndexState.QUEUED_FOR_INDEXING || state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
+                <Icon {...ariaProps} svgPath={mdiTimerSand} className={className} />
+            ) : state === PreciseIndexState.INDEXING_ERRORED || state === PreciseIndexState.PROCESSING_ERRORED ? (
+                <Icon {...ariaProps} svgPath={mdiClose} className={classNames('text-danger', className)} />
+            ) : (
+                <Icon {...ariaProps} svgPath={mdiClose} className={classNames('text-muted', className)} />
+            )}
         </Tooltip>
     )
 }
-
-interface IndexStateIconProps {
-    index: PreciseIndexFields
-    label: string
-    className?: string
-}
-
-const IndexStateIcon: FunctionComponent<IndexStateIconProps> = ({ index, label, className }) =>
-    index.state === PreciseIndexState.COMPLETED ? (
-        <Icon aria-label={label} svgPath={mdiCheck} className={classNames('text-success', className)} />
-    ) : index.state === PreciseIndexState.INDEXING ||
-      index.state === PreciseIndexState.PROCESSING ||
-      index.state === PreciseIndexState.UPLOADING_INDEX ? (
-        <LoadingSpinner aria-label={label} className={className} />
-    ) : index.state === PreciseIndexState.QUEUED_FOR_INDEXING ||
-      index.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
-        <Icon aria-label={label} svgPath={mdiTimerSand} className={className} />
-    ) : index.state === PreciseIndexState.INDEXING_ERRORED || index.state === PreciseIndexState.PROCESSING_ERRORED ? (
-        <Icon aria-label={label} svgPath={mdiClose} className={classNames('text-danger', className)} />
-    ) : (
-        <Icon aria-label={label} svgPath={mdiClose} className={classNames('text-muted', className)} />
-    )

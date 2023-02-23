@@ -2,21 +2,6 @@
     max-width: 6rem;
 }
 
-// Override tab styles
-[data-reach-tabs].tabs {
-    background: inherit;
-}
-
-.tab-list-wrapper {
-    // Horrible, tabs component is bad
-    border-bottom: none !important;
-}
-[data-reach-tab-list].tab-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    width: 100%;
-}
-
 .summary-container {
     display: flex;
     flex-direction: column;
@@ -34,7 +19,7 @@
 }
 
 .select {
-    width: 10rem;
+    width: 11rem;
 }
 
 .tree-node {
