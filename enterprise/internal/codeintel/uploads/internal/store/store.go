@@ -123,7 +123,7 @@ type Store interface {
 
 	// Ranking
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, defintions []shared.RankingDefintions) (err error)
+	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)

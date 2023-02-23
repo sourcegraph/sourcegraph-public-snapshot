@@ -85,7 +85,7 @@ type operations struct {
 	vacuumStaleDefinitionsAndReferences       *observation.Operation
 	vacuumStaleGraphs                         *observation.Operation
 	insertDefinitionsAndReferencesForDocument *observation.Operation
-	insertDefintionsForRanking                *observation.Operation
+	insertDefinitionsForRanking               *observation.Operation
 	insertReferencesForRanking                *observation.Operation
 	insertPathCountInputs                     *observation.Operation
 	insertPathRanks                           *observation.Operation
@@ -190,7 +190,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		vacuumStaleDefinitionsAndReferences:       op("VacuumStaleDefinitionsAndReferences"),
 		vacuumStaleGraphs:                         op("VacuumStaleGraphs"),
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
-		insertDefintionsForRanking:                op("InsertDefintionsForRanking"),
+		insertDefinitionsForRanking:               op("InsertDefinitionsForRanking"),
 		insertReferencesForRanking:                op("InsertReferencesForRanking"),
 		insertPathCountInputs:                     op("InsertPathCountInputs"),
 		insertPathRanks:                           op("InsertPathRanks"),

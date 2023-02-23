@@ -189,13 +189,13 @@ WHERE sid.upload_id = %s
 ORDER BY sid.document_path
 `
 
-func (s *store) InsertDefintionsForRanking(
+func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
 	rankingBatchNumber int,
-	defintions []shared.RankingDefintions,
+	definitions []shared.RankingDefinitions,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertDefintionsForRanking.With(
+	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,
 		&err,
 		observation.Args{},
@@ -209,15 +209,15 @@ func (s *store) InsertDefintionsForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefintions, 0, rankingBatchNumber)
-		for _, def := range defintions {
+		batchDefinitions := make([]shared.RankingDefinitions, 0, rankingBatchNumber)
+		for _, def := range definitions {
 			batchDefinitions = append(batchDefinitions, def)
 
 			if len(batchDefinitions) == rankingBatchNumber {
 				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
 					return err
 				}
-				batchDefinitions = make([]shared.RankingDefintions, 0, rankingBatchNumber)
+				batchDefinitions = make([]shared.RankingDefinitions, 0, rankingBatchNumber)
 			}
 		}
 
@@ -254,7 +254,7 @@ func insertDefinitions(
 	ctx context.Context,
 	inserter *batch.Inserter,
 	rankingGraphKey string,
-	definitions []shared.RankingDefintions,
+	definitions []shared.RankingDefinitions,
 ) error {
 	for _, def := range definitions {
 		if err := inserter.Insert(

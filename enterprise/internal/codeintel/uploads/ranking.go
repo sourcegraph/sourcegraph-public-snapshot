@@ -86,14 +86,14 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	document *scip.Document,
 ) error {
 	seenDefinitions := map[string]struct{}{}
-	definitions := []shared.RankingDefintions{}
+	definitions := []shared.RankingDefinitions{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
 			continue
 		}
 
 		if scip.SymbolRole_Definition.Matches(occ) {
-			definitions = append(definitions, shared.RankingDefintions{
+			definitions = append(definitions, shared.RankingDefinitions{
 				UploadID:     upload.ID,
 				SymbolName:   occ.Symbol,
 				Repository:   upload.Repo,
@@ -118,7 +118,7 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	}
 
 	if len(definitions) > 0 {
-		if err := s.store.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
+		if err := s.store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
 	}
