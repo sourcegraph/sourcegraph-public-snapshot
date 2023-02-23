@@ -453,7 +453,7 @@ deleted_references AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_definitions),
 	(SELECT COUNT(*) FROM deleted_references)
 `
 
