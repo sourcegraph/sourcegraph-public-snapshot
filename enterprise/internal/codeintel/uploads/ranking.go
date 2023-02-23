@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/group"
@@ -37,7 +36,7 @@ func (s *Service) ExportRankingGraph(
 
 	g := group.New().WithContext(ctx)
 
-	sharedUploads := make(chan store.ExportedUpload, len(uploads))
+	sharedUploads := make(chan shared.ExportedUpload, len(uploads))
 	for _, upload := range uploads {
 		sharedUploads <- upload
 	}
@@ -46,7 +45,7 @@ func (s *Service) ExportRankingGraph(
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.store.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -80,7 +79,7 @@ func (s *Service) ExportRankingGraph(
 
 func (s *Service) setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
-	upload store.ExportedUpload,
+	upload shared.ExportedUpload,
 	rankingBatchNumber int,
 	rankingGraphKey, path string,
 	document *scip.Document,

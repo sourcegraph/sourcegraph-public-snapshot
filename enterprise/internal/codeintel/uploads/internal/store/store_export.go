@@ -6,23 +6,17 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-type ExportedUpload struct {
-	ID           int
-	Repo         string
-	Root         string
-	ObjectPrefix string
-}
-
-var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u ExportedUpload, _ error) {
+var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.ExportedUpload, _ error) {
 	err := s.Scan(&u.ID, &u.Repo, &u.Root, &u.ObjectPrefix)
 	return u, err
 })
 
-func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) (_ []ExportedUpload, err error) {
+func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) (_ []shared.ExportedUpload, err error) {
 	return scanUploads(s.db.Query(ctx, sqlf.Sprintf(
 		getUploadsForRankingQuery,
 		graphKey,
