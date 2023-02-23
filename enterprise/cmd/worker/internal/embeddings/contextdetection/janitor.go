@@ -40,7 +40,7 @@ func (j *contextDetectionEmbeddingJanitorJob) Routines(_ context.Context, observ
 func newContextDetectionEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*contextdetectionbg.ContextDetectionEmbeddingJob]) *dbworker.Resetter[*contextdetectionbg.ContextDetectionEmbeddingJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "context_detection_embedding_job_worker_resetter",
-		Interval: time.Hour * 2, // Check for orphaned jobs every 2 hours (embedding jobs can take a while)
+		Interval: time.Minute, // Check for orphaned jobs every minute
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "context_detection_embedding_job_worker"),
 	})
 }

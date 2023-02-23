@@ -40,7 +40,7 @@ func (j *repoEmbeddingJanitorJob) Routines(_ context.Context, observationCtx *ob
 func newRepoEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob]) *dbworker.Resetter[*repoembeddingsbg.RepoEmbeddingJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "repo_embedding_job_worker_resetter",
-		Interval: time.Hour * 2, // Check for orphaned jobs every 2 hours (embedding jobs can take a while)
+		Interval: time.Minute, // Check for orphaned jobs every minute
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "repo_embedding_job_worker"),
 	})
 }
