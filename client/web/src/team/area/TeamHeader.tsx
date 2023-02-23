@@ -51,7 +51,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
                                 <li className="nav-item">
-                                    <NavLink to={url} className="nav-link" activeClassName="active" exact={true}>
+                                    <NavLink to={url} className="nav-link" end={true}>
                                         <span>
                                             <span className="text-content" data-tab-content="Profile">
                                                 Profile
@@ -60,12 +60,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     </NavLink>
                                 </li>
                                 <li className="nav-item">
-                                    <NavLink
-                                        to={`${url}/members`}
-                                        className="nav-link"
-                                        activeClassName="active"
-                                        exact={true}
-                                    >
+                                    <NavLink to={`${url}/members`} className="nav-link" end={true}>
                                         <span>
                                             <span className="text-content" data-tab-content="Members">
                                                 <span>
@@ -76,12 +71,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     </NavLink>
                                 </li>
                                 <li className="nav-item">
-                                    <NavLink
-                                        to={`${url}/child-teams`}
-                                        className="nav-link"
-                                        activeClassName="active"
-                                        exact={true}
-                                    >
+                                    <NavLink to={`${url}/child-teams`} className="nav-link" end={true}>
                                         <span>
                                             <span className="text-content" data-tab-content="Child teams">
                                                 <span>
