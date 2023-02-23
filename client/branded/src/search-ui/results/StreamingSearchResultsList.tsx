@@ -23,6 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
 import { FilePathSearchResult } from '../components/FilePathSearchResult'
+import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
 import { smartSearchClickedEvent } from '../util/events'
@@ -218,6 +219,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 onSelect={() => logSearchResultClicked(index, 'repo')}
                                 containerClassName={resultClassName}
                                 as="li"
+                            />
+                        )
+                    case 'person':
+                    case 'team':
+                        return (
+                            <OwnerSearchResult
+                                index={index}
+                                result={result}
+                                as="li"
+                                onSelect={() => logSearchResultClicked(index, 'person')}
+                                containerClassName={resultClassName}
                             />
                         )
                 }
