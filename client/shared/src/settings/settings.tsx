@@ -5,7 +5,7 @@ import { cloneDeep, isFunction } from 'lodash'
 import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
 
 import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
-import { Settings as GeneratedSettingsType } from '../schema/settings.schema'
+import { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -280,4 +280,29 @@ export const useSettingsCascade = (): SettingsCascadeOrError => {
 export const useSettings = (): Settings | null => {
     const settingsCascade = useSettingsCascade()
     return isSettingsValid(settingsCascade) ? settingsCascade.final : null
+}
+
+const defaultFeatures: SettingsExperimentalFeatures = {
+    codeMonitoring: true,
+    /**
+     * Whether we show the multiline editor at /search/console
+     */
+    showMultilineSearchConsole: false,
+    codeMonitoringWebHooks: true,
+    showCodeMonitoringLogs: true,
+    codeInsightsCompute: false,
+    editor: 'codemirror6',
+    codeInsightsRepoUI: 'search-query-or-strict-list',
+    applySearchQuerySuggestionOnEnter: false,
+    setupWizard: false,
+    isInitialized: true,
+}
+
+/**
+ * A React hooks that can be used to query specific feature flags. Prioritize this over the generic
+ * useSettings() hook if all you need is a feature flag.
+ */
+export function useExperimentalFeatures<T>(selector: (features: SettingsExperimentalFeatures) => T): T {
+    const settings = useSettings()
+    return selector({ ...defaultFeatures, ...settings?.experimentalFeatures })
 }

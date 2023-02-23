@@ -22,7 +22,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
@@ -50,7 +50,7 @@ import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
-import { useExperimentalFeatures, useNotepad } from '../../stores'
+import { useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -123,10 +123,12 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
-    const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
-    const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
-        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    const { enableCodeMirror, experimentalCodeNavigation, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(
+        features => ({
+            enableCodeMirror: features.enableCodeMirrorFileView ?? true,
+            experimentalCodeNavigation: features.codeNavigation,
+            enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+        })
     )
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 

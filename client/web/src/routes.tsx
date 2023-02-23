@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
@@ -11,7 +12,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LegacyLayoutProps } from './LegacyLayout'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
-import { getExperimentalFeatures } from './stores'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -84,15 +84,7 @@ export const routes: readonly LayoutRouteProps[] = (
         },
         {
             path: PageRoutes.SearchConsole,
-            render: props => {
-                const { showMultilineSearchConsole } = getExperimentalFeatures()
-
-                return showMultilineSearchConsole ? (
-                    <SearchConsolePage {...props} />
-                ) : (
-                    <Navigate replace={true} to={PageRoutes.Search} />
-                )
-            },
+            render: props => <SearchConsolePageOrRedirect {...props} />,
         },
         {
             path: PageRoutes.SignIn,
@@ -178,3 +170,13 @@ export const routes: readonly LayoutRouteProps[] = (
         },
     ] as readonly (LayoutRouteProps | undefined)[]
 ).filter(Boolean) as readonly LayoutRouteProps[]
+
+function SearchConsolePageOrRedirect(props: LegacyLayoutRouteComponentProps): JSX.Element {
+    const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)
+
+    return showMultilineSearchConsole ? (
+        <SearchConsolePage {...props} />
+    ) : (
+        <Navigate replace={true} to={PageRoutes.Search} />
+    )
+}

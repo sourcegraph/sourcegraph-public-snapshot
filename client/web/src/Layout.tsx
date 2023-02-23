@@ -12,7 +12,11 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
+import {
+    SettingsCascadeProps,
+    SettingsSubjectCommonFields,
+    useExperimentalFeatures,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -40,8 +44,6 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { useExperimentalFeatures } from './stores'
-import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -103,11 +105,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
 
-    const { setupWizard } = useExperimentalFeatures()
+    const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
+        setupWizard: features.setupWizard,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings
+        fuzzyFinder: features.fuzzyFinder ?? true,
+    }))
     const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    // enable fuzzy finder by default unless it's explicitly disabled in settings
-    const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
 
