@@ -66,6 +66,8 @@ func (codeIntelligence) NewRankingStoreGroup(containerName string) monitoring.Gr
 	})
 }
 
+// src_codeintel_uploads_ranking_num_definitions_inserted_total
+// src_codeintel_uploads_ranking_num_references_inserted_total
 // src_codeintel_ranking_reference_records_processed_total
 // src_codeintel_ranking_inputs_inserted_total
 // src_codeintel_ranking_path_count_inputs_rows_processed_total
@@ -79,6 +81,22 @@ func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 		Title:  "Codeintel: Ranking",
 		Hidden: false,
 		Rows: []monitoring.Row{
+			{
+				Standard.Count("definition rows inserted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_ranking_num_definitions_inserted",
+					MetricDescriptionRoot: "definition rows processed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of definition rows inserted into Postgres.
+				`).Observable(),
+
+				Standard.Count("reference rows inserted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_ranking_num_references_inserted",
+					MetricDescriptionRoot: "reference rows processed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of reference rows inserted into Postgres.
+				`).Observable(),
+			},
+
 			{
 				Standard.Count("reference rows processed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_ranking_reference_records_processed",

@@ -70,6 +70,8 @@ type operations struct {
 	numUploadsRead                   prometheus.Counter
 	numBytesUploaded                 prometheus.Counter
 	numStaleRecordsDeleted           prometheus.Counter
+	numDefinitionsInserted           prometheus.Counter
+	numReferencesInserted            prometheus.Counter
 	numStaleDefinitionRecordsDeleted prometheus.Counter
 	numStaleReferenceRecordsDeleted  prometheus.Counter
 	numMetadataRecordsDeleted        prometheus.Counter
@@ -131,6 +133,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 	numStaleRecordsDeleted := counter(
 		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
 		"The number of stale upload records removed from GCS.",
+	)
+	numDefinitionsInserted := counter(
+		"src_codeintel_uploads_ranking_num_definitions_inserted_total",
+		"The number of definition records inserted into Postgres.",
+	)
+	numReferencesInserted := counter(
+		"src_codeintel_uploads_ranking_num_references_inserted_total",
+		"The number of reference records inserted into Postgres.",
 	)
 	numStaleDefinitionRecordsDeleted := counter(
 		"src_codeintel_uploads_num_stale_definition_records_deleted_total",
@@ -209,6 +219,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		numUploadsRead:                   numUploadsRead,
 		numBytesUploaded:                 numBytesUploaded,
 		numStaleRecordsDeleted:           numStaleRecordsDeleted,
+		numDefinitionsInserted:           numDefinitionsInserted,
+		numReferencesInserted:            numReferencesInserted,
 		numStaleDefinitionRecordsDeleted: numStaleDefinitionRecordsDeleted,
 		numStaleReferenceRecordsDeleted:  numStaleReferenceRecordsDeleted,
 		numMetadataRecordsDeleted:        numMetadataRecordsDeleted,

@@ -121,6 +121,8 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 		if err := s.store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
+
+		s.operations.numDefinitionsInserted.Add(float64(len(definitions)))
 	}
 
 	if len(references) > 0 {
@@ -130,6 +132,8 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 		}); err != nil {
 			return err
 		}
+
+		s.operations.numReferencesInserted.Add(float64(len(references)))
 	}
 
 	return nil
