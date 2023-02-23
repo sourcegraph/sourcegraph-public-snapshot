@@ -39,10 +39,9 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache --verbose \
-    # [NOTE: git-version-min-requirement]
-    # We require git 2.39.1+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2023-01-17-git-security-vulnerabilities-announced-2/
-    'git>=2.39.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     git-lfs \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \
