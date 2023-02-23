@@ -51,8 +51,8 @@ message SearchConfigurationResponse {
 // Fingerprint is an opaque identifier that the server sends to clients to allow
 // efficient calculation of what has changed since the last request.
 message Fingerprint {
-  // generatedAt is the time at which the fingerprint was generated.
-  google.protobuf.Timestamp generatedAt = 1;
+  // generated_at is the time at which the fingerprint was generated.
+  google.protobuf.Timestamp generated_at = 1;
 
   // identifier is an opaque identifier that represents the state of the
   // configuration at the time it was generated.

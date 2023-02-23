@@ -251,6 +251,7 @@ require (
 	github.com/sourcegraph/conc v0.1.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
+	github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch v0.0.0-20230221230401-9a42fddfcbfe
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.80.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
@@ -273,6 +274,7 @@ replace (
 	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
 	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+
 )
 
 require (
@@ -528,3 +530,5 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
+
+replace github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch => ./protos/frontend/indexedsearch
