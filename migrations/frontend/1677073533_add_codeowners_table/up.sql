@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS codeowners (
-	id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     contents text not null,
     contents_proto bytea not null,
     repo_id int unique not null,
