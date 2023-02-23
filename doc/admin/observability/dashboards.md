@@ -24092,7 +24092,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_store_errors_total{job=~"^${s
 
 #### codeintel-ranking: codeintel_uploads_ranking_num_definitions_inserted_total
 
-<p class="subtitle">Definition rows processed definition rows inserted every 5m</p>
+<p class="subtitle">Definition rows inserted every 5m</p>
 
 The number of definition rows inserted into Postgres.
 
@@ -24113,7 +24113,7 @@ Query: `sum(increase(src_codeintel_uploads_ranking_num_definitions_inserted_tota
 
 #### codeintel-ranking: codeintel_uploads_ranking_num_references_inserted_total
 
-<p class="subtitle">Reference rows processed reference rows inserted every 5m</p>
+<p class="subtitle">Reference rows inserted every 5m</p>
 
 The number of reference rows inserted into Postgres.
 
@@ -24134,7 +24134,7 @@ Query: `sum(increase(src_codeintel_uploads_ranking_num_references_inserted_total
 
 #### codeintel-ranking: codeintel_uploads_num_stale_definition_records_deleted_total
 
-<p class="subtitle">Definition records removed stale definition records removed every 5m</p>
+<p class="subtitle">Definition records removed every 5m</p>
 
 The number of stale definition records removed from Postgres.
 
@@ -24155,7 +24155,7 @@ Query: `sum(increase(src_codeintel_uploads_num_stale_definition_records_deleted_
 
 #### codeintel-ranking: codeintel_uploads_num_stale_reference_records_deleted_total
 
-<p class="subtitle">Reference records removed stale reference records removed every 5m</p>
+<p class="subtitle">Reference records removed every 5m</p>
 
 The number of stale reference records removed from Postgres.
 
@@ -24176,7 +24176,7 @@ Query: `sum(increase(src_codeintel_uploads_num_stale_reference_records_deleted_t
 
 #### codeintel-ranking: codeintel_ranking_reference_records_processed_total
 
-<p class="subtitle">Reference rows processed reference rows processed every 5m</p>
+<p class="subtitle">Reference rows processed every 5m</p>
 
 The number of reference rows processed.
 
@@ -24197,7 +24197,7 @@ Query: `sum(increase(src_codeintel_ranking_reference_records_processed_total{job
 
 #### codeintel-ranking: codeintel_ranking_inputs_inserted_total
 
-<p class="subtitle">Input rows inserted input rows inserted every 5m</p>
+<p class="subtitle">Input rows inserted every 5m</p>
 
 The number of input rows inserted.
 
@@ -24218,7 +24218,7 @@ Query: `sum(increase(src_codeintel_ranking_inputs_inserted_total{job=~"^${source
 
 #### codeintel-ranking: codeintel_ranking_path_count_inputs_rows_processed_total
 
-<p class="subtitle">Input rows processed input rows processed every 5m</p>
+<p class="subtitle">Input rows processed every 5m</p>
 
 The number of input rows processed.
 
@@ -24239,7 +24239,7 @@ Query: `sum(increase(src_codeintel_ranking_path_count_inputs_rows_processed_tota
 
 #### codeintel-ranking: codeintel_ranking_path_ranks_inserted_total
 
-<p class="subtitle">Path ranks updated path ranks updated every 5m</p>
+<p class="subtitle">Path ranks updated every 5m</p>
 
 The number of path ranks inserted.
 
@@ -24260,7 +24260,7 @@ Query: `sum(increase(src_codeintel_ranking_path_ranks_inserted_total{job=~"^${so
 
 #### codeintel-ranking: codeintel_uploads_num_metadata_records_deleted_total
 
-<p class="subtitle">Metadata records removed stale metadata records removed every 5m</p>
+<p class="subtitle">Metadata records removed every 5m</p>
 
 The number of stale metadata records removed from Postgres.
 
@@ -24281,7 +24281,7 @@ Query: `sum(increase(src_codeintel_uploads_num_metadata_records_deleted_total{jo
 
 #### codeintel-ranking: codeintel_uploads_num_input_records_deleted_total
 
-<p class="subtitle">Input records removed stale input records removed every 5m</p>
+<p class="subtitle">Input records removed every 5m</p>
 
 The number of stale input records removed from Postgres.
 

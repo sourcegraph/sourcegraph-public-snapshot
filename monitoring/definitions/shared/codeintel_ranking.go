@@ -82,76 +82,76 @@ func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 		Hidden: false,
 		Rows: []monitoring.Row{
 			{
-				Standard.Count("definition rows inserted")(ObservableConstructorOptions{
+				Standard.Count("inserted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_ranking_num_definitions_inserted",
-					MetricDescriptionRoot: "definition rows processed",
+					MetricDescriptionRoot: "definition rows",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of definition rows inserted into Postgres.
 				`).Observable(),
 
-				Standard.Count("reference rows inserted")(ObservableConstructorOptions{
+				Standard.Count("inserted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_ranking_num_references_inserted",
-					MetricDescriptionRoot: "reference rows processed",
+					MetricDescriptionRoot: "reference rows",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of reference rows inserted into Postgres.
 				`).Observable(),
 
-				Standard.Count("stale definition records removed")(ObservableConstructorOptions{
+				Standard.Count("removed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_num_stale_definition_records_deleted",
-					MetricDescriptionRoot: "definition records removed",
+					MetricDescriptionRoot: "definition records",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale definition records removed from Postgres.
 				`).Observable(),
 
-				Standard.Count("stale reference records removed")(ObservableConstructorOptions{
+				Standard.Count("removed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_num_stale_reference_records_deleted",
-					MetricDescriptionRoot: "reference records removed",
+					MetricDescriptionRoot: "reference records",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale reference records removed from Postgres.
 				`).Observable(),
 			},
 
 			{
-				Standard.Count("reference rows processed")(ObservableConstructorOptions{
+				Standard.Count("processed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_ranking_reference_records_processed",
-					MetricDescriptionRoot: "reference rows processed",
+					MetricDescriptionRoot: "reference rows",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of reference rows processed.
 				`).Observable(),
 
-				Standard.Count("input rows inserted")(ObservableConstructorOptions{
+				Standard.Count("inserted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_ranking_inputs_inserted",
-					MetricDescriptionRoot: "input rows inserted",
+					MetricDescriptionRoot: "input rows",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of input rows inserted.
 				`).Observable(),
 
-				Standard.Count("input rows processed")(ObservableConstructorOptions{
+				Standard.Count("processed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_ranking_path_count_inputs_rows_processed",
-					MetricDescriptionRoot: "input rows processed",
+					MetricDescriptionRoot: "input rows",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of input rows processed.
 				`).Observable(),
 
-				Standard.Count("path ranks updated")(ObservableConstructorOptions{
+				Standard.Count("updated")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_ranking_path_ranks_inserted",
-					MetricDescriptionRoot: "path ranks updated",
+					MetricDescriptionRoot: "path ranks",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of path ranks inserted.
 				`).Observable(),
 			},
 
 			{
-				Standard.Count("stale metadata records removed")(ObservableConstructorOptions{
+				Standard.Count("removed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_num_metadata_records_deleted",
-					MetricDescriptionRoot: "metadata records removed",
+					MetricDescriptionRoot: "metadata records",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale metadata records removed from Postgres.
 				`).Observable(),
 
-				Standard.Count("stale input records removed")(ObservableConstructorOptions{
+				Standard.Count("removed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_num_input_records_deleted",
-					MetricDescriptionRoot: "input records removed",
+					MetricDescriptionRoot: "input records",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale input records removed from Postgres.
 				`).Observable(),
