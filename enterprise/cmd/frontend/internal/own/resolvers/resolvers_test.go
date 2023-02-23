@@ -29,27 +29,37 @@ func userCtx(userID int32) context.Context {
 	return actor.WithActor(ctx, a)
 }
 
-// fakeOwnService returns given owners file and resolves owners to UnknownOwner.
-type fakeOwnService struct {
+// fakeOwnershipGraph returns ownership according to given owners file and resolves
+// each owners to Person with just email or handle as in the File rules.
+type fakeOwnershipGraph struct {
+	backend.OwnService
 	File *codeownerspb.File
 }
 
-func (s fakeOwnService) OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error) {
-	return s.File, nil
+func (s fakeOwnershipGraph) Ownership(context.Context, api.RepoName, api.CommitID) (codeowners.Graph, error) {
+	return s, nil
 }
 
-// ResolverOwnersWithType here behaves in line with production
-// OwnService implementation in case handle/email cannot be associated
-// with anything - defaults to a Person with a nil person entity.
-func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
-	var resolved []codeowners.ResolvedOwner
-	for _, o := range owners {
-		resolved = append(resolved, &codeowners.Person{
-			Handle: o.Handle,
-			Email:  o.Email,
-		})
+func (s fakeOwnershipGraph) FindOwners(_ context.Context, filePath string) ([]codeowners.Ownership, error) {
+	var ownerships []codeowners.Ownership
+	for _, r := range s.File.GetRule() {
+		glob, err := codeownerspb.Compile(r.GetPattern())
+		if err != nil {
+			return nil, err
+		}
+		if glob.Match(filePath) {
+			for _, o := range r.GetOwner() {
+				ownerships = append(ownerships, codeowners.Ownership{
+					Owner: &codeowners.Person{
+						Handle: o.Handle,
+						Email:  o.Email,
+					},
+					Rule: r,
+				})
+			}
+		}
 	}
-	return resolved, nil
+	return ownerships, nil
 }
 
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
@@ -70,7 +80,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
-	own := fakeOwnService{
+	own := fakeOwnershipGraph{
 		File: &codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{

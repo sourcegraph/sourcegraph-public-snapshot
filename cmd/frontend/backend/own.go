@@ -158,7 +158,7 @@ func (g ownershipGraph) FindOwners(ctx context.Context, filePath string) ([]code
 	return ownership, nil
 }
 
-func (s *ownService) Ownership(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (OwnershipGraph, error) {
+func (s *ownService) Ownership(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (codeowners.Graph, error) {
 	file, err := s.OwnersFile(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
