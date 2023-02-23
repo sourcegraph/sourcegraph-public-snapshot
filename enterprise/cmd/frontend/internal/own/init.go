@@ -22,7 +22,6 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	enterpriseServices.OwnResolver = resolvers.New()
-	enterpriseServices.CodeownersResolver = resolvers.NewCodeowners()
 
 	return nil
 }

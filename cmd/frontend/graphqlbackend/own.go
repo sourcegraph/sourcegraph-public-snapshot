@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type ListOwnershipArgs struct {
@@ -21,6 +21,14 @@ type OwnResolver interface {
 	TeamOwnerField(team *TeamResolver) string
 
 	NodeResolvers() map[string]NodeByIDFunc
+
+	// Codeowners queries
+	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
+
+	// Codeowners mutations
+	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
+	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
+	DeleteCodeownersFile(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 }
 
 type OwnershipConnectionResolver interface {
@@ -57,14 +65,6 @@ type CodeownersFileEntryResolver interface {
 	RuleLineMatch(context.Context) (int32, error)
 }
 
-type CodeownersResolver interface {
-	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
-	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
-	DeleteCodeownersFile(context.Context, *DeleteCodeownersFileArgs) error
-
-	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) ([]CodeownersIngestedFileConnectionResolver, error)
-}
-
 type CodeownersFileArgs struct {
 	FileContents string
 	RepoID       int32
@@ -83,12 +83,12 @@ type CodeownersIngestedFilesArgs struct {
 type CodeownersIngestedFileResolver interface {
 	Contents() string
 	RepoID() int32
-	CreatedAt() time.Time
-	UpdatedAt() time.Time
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 }
 
 type CodeownersIngestedFileConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
+	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

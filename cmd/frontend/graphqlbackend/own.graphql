@@ -123,13 +123,13 @@ type CodeownersIngestedFile {
 
 extend type Mutation {
     # todo make it input
-    addCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
-    updateCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
-    deleteCodeownersFile(repoID: Int!): EmptyResponse!
+    addCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
+    updateCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
+    deleteCodeownersFile(repoID: Int!): EmptyResponse
 }
 
 extend type Query {
-    codeownersIngestedFiles(first: Int, after: Int, repoID: Int): [CodeownersIngestedFileConnection!]
+    codeownersIngestedFiles(first: Int, after: Int, repoID: Int): CodeownersIngestedFileConnection!
 }
 
 type CodeownersIngestedFileConnection {
