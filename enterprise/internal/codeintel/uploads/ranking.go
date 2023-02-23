@@ -196,23 +196,23 @@ func (s *Service) VacuumRankingGraphOld(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (err error) {
+func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (
+	numReferenceRecordsProcessed int,
+	numInputsInserted int,
+	err error,
+) {
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if !rankingJobEnabled {
-		return nil
+		return 0, 0, nil
 	}
 
-	if err := s.store.InsertPathCountInputs(
+	return s.store.InsertPathCountInputs(
 		ctx,
 		getCurrentGraphKey(time.Now()),
 		rankingMapReduceBatchSize,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
 
 func (s *Service) ReduceRankingGraph(

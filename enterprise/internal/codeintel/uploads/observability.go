@@ -133,19 +133,19 @@ func newOperations(observationCtx *observation.Context) *operations {
 		"The number of stale upload records removed from GCS.",
 	)
 	numStaleDefinitionRecordsDeleted := counter(
-		"src_codeintel_uploads_num_stale_definition_records_deleted",
+		"src_codeintel_uploads_num_stale_definition_records_deleted_total",
 		"The number of stale definition records removed from Postgres.",
 	)
 	numStaleReferenceRecordsDeleted := counter(
-		"src_codeintel_uploads_num_stale_reference_records_deleted",
+		"src_codeintel_uploads_num_stale_reference_records_deleted_total",
 		"The number of stale reference records removed from Postgres.",
 	)
 	numMetadataRecordsDeleted := counter(
-		"src_codeintel_uploads_num_metadata_records_deleted",
+		"src_codeintel_uploads_num_metadata_records_deleted_total",
 		"The number of stale metadata records removed from Postgres.",
 	)
 	numInputRecordsDeleted := counter(
-		"src_codeintel_uploads_num_input_records_deleted",
+		"src_codeintel_uploads_num_input_records_deleted_total",
 		"The number of stale input records removed from Postgres.",
 	)
 	numBytesDeleted := counter(

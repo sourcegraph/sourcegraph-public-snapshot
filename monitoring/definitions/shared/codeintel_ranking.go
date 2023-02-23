@@ -66,6 +66,82 @@ func (codeIntelligence) NewRankingStoreGroup(containerName string) monitoring.Gr
 	})
 }
 
+// src_codeintel_ranking_reference_records_processed_total
+// src_codeintel_ranking_inputs_inserted_total
+// src_codeintel_ranking_path_count_inputs_rows_processed_total
+// src_codeintel_ranking_path_ranks_inserted_total
+// src_codeintel_uploads_num_stale_definition_records_deleted_total
+// src_codeintel_uploads_num_stale_reference_records_deleted_total
+// src_codeintel_uploads_num_metadata_records_deleted_total
+// src_codeintel_uploads_num_input_records_deleted_total
+func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  "Codeintel: Ranking",
+		Hidden: false,
+		Rows: []monitoring.Row{
+			{
+				Standard.Count("reference rows processed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_ranking_reference_records_processed",
+					MetricDescriptionRoot: "reference rows processed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of reference rows processed.
+				`).Observable(),
+
+				Standard.Count("input rows inserted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_ranking_inputs_inserted",
+					MetricDescriptionRoot: "input rows inserted",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of input rows inserted.
+				`).Observable(),
+
+				Standard.Count("input rows processed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_ranking_path_count_inputs_rows_processed",
+					MetricDescriptionRoot: "input rows processed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of input rows processed.
+				`).Observable(),
+
+				Standard.Count("path ranks updated")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_ranking_path_ranks_inserted",
+					MetricDescriptionRoot: "path ranks updated",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of path ranks inserted.
+				`).Observable(),
+			},
+
+			{
+				Standard.Count("stale definition records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_stale_definition_records_deleted",
+					MetricDescriptionRoot: "definition records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale definition records removed from Postgres.
+				`).Observable(),
+
+				Standard.Count("stale reference records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_stale_reference_records_deleted",
+					MetricDescriptionRoot: "reference records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale reference records removed from Postgres.
+				`).Observable(),
+
+				Standard.Count("stale metadata records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_metadata_records_deleted",
+					MetricDescriptionRoot: "metadata records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale metadata records removed from Postgres.
+				`).Observable(),
+
+				Standard.Count("stale input records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_input_records_deleted",
+					MetricDescriptionRoot: "input records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale input records removed from Postgres.
+				`).Observable(),
+			},
+		},
+	}
+}
+
 // src_codeintel_uploads_ranking_uploads_read_total
 // src_codeintel_uploads_ranking_bytes_uploaded_total
 // src_codeintel_uploads_ranking_stale_uploads_removed_total

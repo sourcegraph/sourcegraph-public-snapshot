@@ -332,13 +332,17 @@ func (s *store) InsertPathCountInputs(
 	ctx context.Context,
 	derivativeGraphKey string,
 	batchSize int,
-) (err error) {
+) (
+	numReferenceRecordsProcessed int,
+	numInputsInserted int,
+	err error,
+) {
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	parentGraphKey := strings.Split(derivativeGraphKey, "-")[0]
 
-	if err = s.db.Exec(ctx, sqlf.Sprintf(
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
 		parentGraphKey,
 		derivativeGraphKey,
@@ -346,11 +350,22 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		parentGraphKey,
 		derivativeGraphKey,
-	)); err != nil {
-		return err
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numReferenceRecordsProcessed,
+			&numInputsInserted,
+		); err != nil {
+			return 0, 0, err
+		}
 	}
 
-	return nil
+	return numReferenceRecordsProcessed, numInputsInserted, nil
 }
 
 const insertPathCountInputsQuery = `
@@ -392,15 +407,21 @@ referenced_definitions AS (
 	WHERE
 		rd.graph_key = %s AND
 		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
+),
+ins AS (
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	SELECT
+		rd.repository,
+		rd.document_path,
+		COUNT(*),
+		%s
+	FROM referenced_definitions rd
+	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	RETURNING 1
 )
-INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
 SELECT
-	rd.repository,
-	rd.document_path,
-	COUNT(*),
-	%s
-FROM referenced_definitions rd
-GROUP BY rd.repository, rd.document_path, rd.graph_key
+	(SELECT COUNT(*) FROM locked_refs),
+	(SELECT COUNT(*) FROM ins)
 `
 
 func (s *store) InsertPathRanks(
