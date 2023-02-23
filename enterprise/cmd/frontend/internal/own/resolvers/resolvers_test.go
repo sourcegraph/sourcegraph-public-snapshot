@@ -3,9 +3,7 @@ package resolvers_test
 import (
 	"context"
 	"io/fs"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -26,10 +24,9 @@ import (
 
 // userCtx returns a context where give user ID identifies logged in user.
 func userCtx(userID int32) context.Context {
-	a := &actor.Actor{
-		UID: userID,
-	}
-	return actor.WithActor(context.Background(), a)
+	ctx := context.Background()
+	a := actor.FromUser(userID)
+	return actor.WithActor(ctx, a)
 }
 
 // fakeOwnService returns given owners file and resolves owners to UnknownOwner.
@@ -63,25 +60,8 @@ type fakeGitserver struct {
 // Stat is a fake implementation that returns a FileInfo
 // indicating a regular file for every path it is given.
 func (g fakeGitserver) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	return fileInfo{path: path}, nil
+	return graphqlbackend.CreateFileInfo(path, false), nil
 }
-
-// fileInfo fakes fs.FileInfo for given path, and pretends to be a regular file.
-type fileInfo struct {
-	path string
-}
-
-func (f fileInfo) Name() string { return f.path }
-func (f fileInfo) Size() int64  { return 0 }
-func (f fileInfo) IsDir() bool  { return false }
-func (f fileInfo) Mode() os.FileMode {
-	if f.IsDir() {
-		return os.ModeDir
-	}
-	return 0
-}
-func (f fileInfo) ModTime() time.Time { return time.Now() }
-func (f fileInfo) Sys() any           { return any(nil) }
 
 // TestBlobOwnershipPanelQueryPersonUnresolved mimics the blob ownership panel graphQL
 // query, where the owner is unresolved. In that case if we have a handle, we only return

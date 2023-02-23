@@ -142,7 +142,7 @@ func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
 }
 
 func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, error) {
-	return "Dummy code owners file entry.", nil
+	return "Owner is associated with a rule in code owners file.", nil
 }
 
 func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphqlbackend.FileResolver, error) {
