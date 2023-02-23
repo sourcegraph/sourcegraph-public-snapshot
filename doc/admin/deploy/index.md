@@ -55,9 +55,12 @@ Customized machine images allow you to spin up a preconfigured and customized So
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-#### [Install-script](single-node/script.md)
+### [Install-script](single-node/script.md)
 
-The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. It allows you to set up Sourcegraph instances in Linux VMs
+Sourcegraph provides an install script that can deploy Sourcegraph instances to Linux-based virtual machines. This method is recommended for:
+
+- On-premises deployments (your own infrastructure)
+- Deployments to unsupported cloud providers (non-officially supported)
 
 >NOTE: Deploying with machine images requires technical expertise and the ability to maintain and manage your own infrastructure.
 
@@ -81,10 +84,11 @@ We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to th
 
 **For setting up non-production environments on local machines.**
 
-  - [Sourcegraph App](../../app/index.md) - A standalone application on local machine
-  - [Docker Compose](docker-compose/index.md) - A deployment option using Docker Compose
-  - [Docker Single Container](docker-single-container/index.md) - A deployment option using a single Docker container
-  - [Minikube](single-node/minikube.md) - A deployment option using Minikube with Docker container
+  - <span class="badge badge-experimental">Experimental</span> [Sourcegraph App](../../app/index.md) - A standalone Desktop application
+  - [Docker Compose](docker-compose/index.md) - Install Sourcegraph on Docker Compose
+  - [Docker Single Container](docker-single-container/index.md) - Install Sourcegraph using a single Docker container
+  - [Minikube](single-node/minikube.md) - Install Sourcegraph using Minikube
+  - [k3s](single-node/k3s.md) - Install Sourcegraph in a k3s cluster
 
 ### ARM / ARM64 support
 
