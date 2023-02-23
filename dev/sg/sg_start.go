@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -276,7 +277,17 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		cmds = append(cmds, cmd)
 	}
 
-	if len(cmds) == 0 {
+	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
+	for _, name := range set.BazelCommands {
+		bcmd, ok := conf.BazelCommands[name]
+		println(bcmd.Name)
+		if !ok {
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		bcmds = append(bcmds, bcmd)
+	}
+	if len(cmds) == 0 && len(bcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
@@ -291,7 +302,15 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, verbose, cmds...)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error {
+		return run.Commands(ctx, env, verbose, cmds...)
+	})
+	p.Go(func(ctx context.Context) error {
+		return run.BazelCommands(ctx, env, verbose, bcmds...)
+	})
+
+	return p.Wait()
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

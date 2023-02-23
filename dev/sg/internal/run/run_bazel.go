@@ -111,6 +111,7 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 	})
 
 	for _, bc := range cmds {
+		bc := bc
 		p.Go(func(ctx context.Context) error {
 			return bc.Start(ctx, repoRoot, parentEnv)
 		})
@@ -192,7 +193,7 @@ func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[str
 func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[string]string) (func(), error) {
 	binLocation, err := bc.BinLocation()
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	sc := &startedCmd{

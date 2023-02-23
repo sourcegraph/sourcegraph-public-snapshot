@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	println("wrfspwffp")
+	println("RICKY")
 	osscmd.DeprecatedSingleServiceMainOSS(shared.Service)
 }
