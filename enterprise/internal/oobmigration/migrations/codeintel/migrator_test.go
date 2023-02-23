@@ -16,7 +16,8 @@ import (
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{

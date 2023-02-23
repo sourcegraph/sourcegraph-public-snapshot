@@ -17,7 +17,8 @@ import (
 
 func TestLocationsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250, 1)
 	serializer := newSerializer()
