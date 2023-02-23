@@ -133,6 +133,8 @@ func newBridgeTracers(logger log.Logger, provider *oteltracesdk.TracerProvider, 
 	otBridgeTracer := otelbridge.NewBridgeTracer()
 	otBridgeTracer.SetTextMapPropagator(compositePropagator)
 	otelTracerProvider := otelbridge.NewTracerProvider(otBridgeTracer, provider)
+	otBridgeTracer.SetOpenTelemetryTracer(
+		otelTracerProvider.Tracer("sourcegraph/internal/tracer.opentracing-bridge"))
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
