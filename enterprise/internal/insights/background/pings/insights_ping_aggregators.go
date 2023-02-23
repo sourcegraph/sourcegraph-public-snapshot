@@ -165,9 +165,8 @@ func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.Insi
 
 	results := []types.InsightsBackfillTimePing{}
 	for rows.Next() {
-		backfillTimePing := types.InsightsBackfillTimePing{}
+		backfillTimePing := types.InsightsBackfillTimePing{AllRepos: false}
 		if err := rows.Scan(
-			&backfillTimePing.AllRepos,
 			&backfillTimePing.Count,
 			&backfillTimePing.P99Seconds,
 			&backfillTimePing.P90Seconds,
@@ -287,13 +286,20 @@ SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
 `
 
 const backfillTimeQuery = `
+WITH recent_backfills as (
+	SELECT
+		isb.series_id,
+		SUM(runtime_duration)/1000000000 duration_seconds
+	FROM insight_series_backfill isb
+	  JOIN repo_iterator ri on isb.repo_iterator_id = ri.id
+	WHERE isb.state = 'completed'
+		AND ri.completed_at > date_trunc('week', %s)
+	GROUP BY isb.series_id
+)
 SELECT
-	COALESCE(CARDINALITY(repositories),0) = 0 AS allRepos,
 	COUNT(*),
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p99_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p90_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p50_seconds
-FROM insight_series
-WHERE backfill_completed_at > ($1::timestamp - interval '7 days')
-GROUP BY allRepos;
+	ROUND(COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY duration_seconds), '0'))::INT AS p99_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p90_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p50_seconds
+FROM recent_backfills;
 `
