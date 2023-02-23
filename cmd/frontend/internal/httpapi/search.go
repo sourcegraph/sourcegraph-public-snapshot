@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -80,7 +81,23 @@ func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *v
 }
 
 func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *v1.DocumentRanksRequest) (*v1.DocumentRanksResponse, error) {
-	return nil, errors.New("unimplemented")
+	ranks, err := s.server.Ranking.GetDocumentRanks(ctx, api.RepoName(request.Repository))
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+
+		return nil, err
+	}
+
+	protoRanks := make(map[string]*v1.DocumentRanksResponse_DocumentRank, len(ranks))
+	for name, rank := range ranks {
+		protoRanks[name] = &v1.DocumentRanksResponse_DocumentRank{
+			Ranks: rank,
+		}
+	}
+
+	return &v1.DocumentRanksResponse{Ranks: protoRanks}, nil
 }
 
 func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1.UpdateIndexStatusRequest) (*v1.UpdateIndexStatusResponse, error) {
@@ -273,13 +290,26 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		repoIDs[i] = int32(indexedIDs[i])
 	}
 
-	b := searchbackend.GetIndexOptions(
+	indexOptions := searchbackend.GetIndexOptions(
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
 		repoIDs...,
 	)
-	_, _ = w.Write(b)
+
+	jsonOptions := make([][]byte, 0, len(indexOptions))
+
+	for _, opt := range indexOptions {
+		marshalled, err := json.Marshal(opt)
+		if err != nil {
+			_, _ = w.Write([]byte(err.Error()))
+		}
+
+		jsonOptions = append(jsonOptions, marshalled)
+	}
+
+	_, _ = w.Write(bytes.Join(jsonOptions, []byte("\n")))
+
 	return nil
 }
 

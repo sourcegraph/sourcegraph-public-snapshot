@@ -532,3 +532,4 @@ replace (
 )
 
 replace github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch => ./protos/frontend/indexedsearch
+//replace github.com/sourcegraph/zoekt => ../zoekt
