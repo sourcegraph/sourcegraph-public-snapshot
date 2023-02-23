@@ -996,14 +996,30 @@ Indexes:
  upload_id    | integer |           | not null | 
  symbol_names | text[]  |           | not null | 
  graph_key    | text    |           | not null | 
- processed    | boolean |           | not null | false
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
+Referenced by:
+    TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
 
 ```
 
 References for a given upload proceduced by background job consuming SCIP indexes.
+
+# Table "public.codeintel_ranking_references_processed"
+```
+             Column             |  Type   | Collation | Nullable |                              Default                               
+--------------------------------+---------+-----------+----------+--------------------------------------------------------------------
+ id                             | integer |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
+ graph_key                      | text    |           | not null | 
+ codeintel_ranking_reference_id | integer |           | not null | 
+Indexes:
+    "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
+Foreign-key constraints:
+    "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
+
+```
 
 # Table "public.codeowners"
 ```
