@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
 import { Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -12,19 +12,19 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
 interface Props
     extends AbsoluteRepoFile,
         ModeSpec,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ThemeProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
@@ -35,7 +35,7 @@ interface Props
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership'
 
 /**
  * A React hook that registers panel views for the blob.
@@ -46,7 +46,6 @@ function useBlobPanelViews({
     filePath,
     repoID,
     settingsCascade,
-    isLightTheme,
     platformContext,
     useCodeIntel,
     telemetryService,
@@ -66,6 +65,8 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
+    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
+
     useBuiltinTabbedPanelViews(
         useMemo(() => {
             const panelDefinitions: Panel[] = [
@@ -81,7 +82,6 @@ function useBlobPanelViews({
                               <ReferencesPanel
                                   settingsCascade={settingsCascade}
                                   platformContext={platformContext}
-                                  isLightTheme={isLightTheme}
                                   extensionsController={extensionsController}
                                   telemetryService={telemetryService}
                                   key="references"
@@ -107,6 +107,20 @@ function useBlobPanelViews({
                         </PanelContent>
                     ),
                 },
+                enableOwnershipPanel
+                    ? {
+                          id: 'ownership',
+                          title: 'Ownership',
+                          element: (
+                              <FileOwnershipPanel
+                                  key="ownership"
+                                  repoID={repoID}
+                                  revision={revision}
+                                  filePath={filePath}
+                              />
+                          ),
+                      }
+                    : null,
             ].filter(isDefined)
 
             return panelDefinitions
@@ -114,7 +128,6 @@ function useBlobPanelViews({
             position,
             settingsCascade,
             platformContext,
-            isLightTheme,
             extensionsController,
             telemetryService,
             fetchHighlightedFileLineRanges,
@@ -124,6 +137,7 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
+            enableOwnershipPanel,
         ])
     )
 

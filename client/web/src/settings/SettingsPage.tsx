@@ -3,15 +3,15 @@ import * as React from 'react'
 import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props extends SettingsAreaPageProps, ThemeProps, TelemetryProps {
+interface Props extends SettingsAreaPageProps, TelemetryProps {
     /** Optional description to render above the editor. */
     description?: JSX.Element
+    isLightTheme: boolean
 }
 
 interface State {

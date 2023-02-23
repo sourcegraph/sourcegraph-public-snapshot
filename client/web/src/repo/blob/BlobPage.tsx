@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo, FC } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
-    useCurrentSpan,
-    TraceSpanProvider,
     createActiveSpan,
     reactManualTracer,
+    TraceSpanProvider,
+    useCurrentSpan,
 } from '@sourcegraph/observability-client'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -24,19 +24,18 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,
     ButtonLink,
+    ErrorMessage,
     Icon,
     LoadingSpinner,
     Text,
     useEventObservable,
     useObservable,
-    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -44,13 +43,14 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
-import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -64,6 +64,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
+import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
@@ -87,7 +88,6 @@ interface BlobPageProps
         PlatformContextProps,
         TelemetryProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
@@ -115,19 +115,20 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
-    const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
+    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
     const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
@@ -432,6 +433,16 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                     />
                 )}
             </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={20}
+                    id="toggle-ownership-panel"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
+                </RepoHeaderContributionPortal>
+            )}
         </>
     )
 
@@ -574,7 +585,6 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                         extensionsController={props.extensionsController}
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
-                        isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
                         role="region"
                         ariaLabel="File blob"

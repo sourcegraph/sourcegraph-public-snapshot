@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'

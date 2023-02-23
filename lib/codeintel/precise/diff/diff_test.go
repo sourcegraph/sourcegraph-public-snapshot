@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -88,7 +88,7 @@ func TestDiffOnEditedDumps(t *testing.T) {
 		precise.GroupedBundleDataChansToMaps(bundle2),
 	)
 
-	autogold.Equal(t, autogold.Raw(computedDiff))
+	autogold.ExpectFile(t, autogold.Raw(computedDiff))
 }
 
 // createTmpRepo returns a temp directory with the testdata copied over from the

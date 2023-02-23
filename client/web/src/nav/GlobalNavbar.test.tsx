@@ -8,8 +8,6 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { ThemePreference } from '../theme'
-
 import { GlobalNavbar } from './GlobalNavbar'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
@@ -19,9 +17,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController,
     isSourcegraphDotCom: false,
-    onThemePreferenceChange: () => undefined,
-    isLightTheme: true,
-    themePreference: ThemePreference.Light,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,

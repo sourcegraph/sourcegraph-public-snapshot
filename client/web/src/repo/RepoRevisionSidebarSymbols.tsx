@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, Suspense, useCallback } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -8,6 +8,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -20,6 +21,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
     Scalars,
     SymbolNodeFields,
@@ -31,6 +33,11 @@ import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
+
+const RepoRevisionSidebarSymbolTree = lazyComponent(
+    () => import('./RepoRevisionSidebarSymbolTree'),
+    'RepoRevisionSidebarSymbolTree'
+)
 
 interface SymbolNodeProps {
     node: SymbolWithChildren
@@ -45,8 +52,8 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
     isActive,
     nestedRender,
 }) => {
-    const isActiveFunc = (): boolean => isActive
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
+
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode}>
             {node.__typename === 'SymbolPlaceholder' ? (
@@ -57,10 +64,10 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
             ) : (
                 <NavLink
                     to={node.url}
-                    isActive={isActiveFunc}
-                    className={classNames('test-symbol-link', styles.link)}
-                    activeClassName={styles.linkActive}
                     onClick={onHandleClick}
+                    className={({ isActive }) =>
+                        classNames('test-symbol-link', styles.link, isActive && styles.linkActive)
+                    }
                 >
                     <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">
@@ -137,6 +144,12 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
+    const [enableAccessibleSymbolTree] = useFeatureFlag('accessible-symbol-tree')
+
+    // URL is the most unique part we have about a symbol node. We use it
+    // instead of the index to avoid pointing to the wrong symbol when the data
+    // changes.
+    const [selectedSymbolUrl, setSelectedSymbolUrl] = useState<null | string>(null)
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         SymbolsResult,
@@ -185,15 +198,18 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     )
 
     const currentLocation = parseBrowserRepoURL(H.createPath(location))
-    const isSymbolActive = (symbolUrl: string): boolean => {
-        const symbolLocation = parseBrowserRepoURL(symbolUrl)
-        return (
-            currentLocation.repoName === symbolLocation.repoName &&
-            currentLocation.revision === symbolLocation.revision &&
-            currentLocation.filePath === symbolLocation.filePath &&
-            isEqual(currentLocation.position, symbolLocation.position)
-        )
-    }
+    const isSymbolActive = useCallback(
+        (symbolUrl: string): boolean => {
+            const symbolLocation = parseBrowserRepoURL(symbolUrl)
+            return (
+                currentLocation.repoName === symbolLocation.repoName &&
+                currentLocation.revision === symbolLocation.revision &&
+                currentLocation.filePath === symbolLocation.filePath &&
+                isEqual(currentLocation.position, symbolLocation.position)
+            )
+        },
+        [currentLocation]
+    )
 
     const hierarchicalSymbols = useMemo<SymbolWithChildren[]>(
         () =>
@@ -222,19 +238,35 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                     <ErrorMessage error={error.message} />
                 </Alert>
             )}
-            {connection && (
-                <HierarchicalSymbols
-                    symbols={hierarchicalSymbols}
-                    render={args => (
-                        <SymbolNode
-                            node={args.symbol}
-                            onHandleClick={onHandleSymbolClick}
-                            isActive={args.symbol.__typename === 'Symbol' && isSymbolActive(args.symbol.url)}
-                            nestedRender={args.nestedRender}
-                        />
-                    )}
-                />
-            )}
+            {connection &&
+                (enableAccessibleSymbolTree ? (
+                    !loading ? (
+                        <Suspense fallback={<ConnectionLoading compact={true} />}>
+                            <RepoRevisionSidebarSymbolTree
+                                // We throw away the component state whenever the underlying query
+                                // data changes to avoid complicated bookkeeping in the tree
+                                // component.
+                                key={activePath + ':' + query}
+                                selectedSymbolUrl={selectedSymbolUrl}
+                                setSelectedSymbolUrl={setSelectedSymbolUrl}
+                                symbols={hierarchicalSymbols}
+                                onClick={onHandleSymbolClick}
+                            />
+                        </Suspense>
+                    ) : null
+                ) : (
+                    <HierarchicalSymbols
+                        symbols={hierarchicalSymbols}
+                        render={args => (
+                            <SymbolNode
+                                node={args.symbol}
+                                onHandleClick={onHandleSymbolClick}
+                                isActive={args.symbol.__typename === 'Symbol' && isSymbolActive(args.symbol.url)}
+                                nestedRender={args.nestedRender}
+                            />
+                        )}
+                    />
+                ))}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
                 <SummaryContainer compact={true} className={styles.summaryContainer}>
@@ -272,12 +304,12 @@ const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = p
 // return "bar" as a result, and "bar" will say that "Foo" is its parent).
 // The placeholder symbols exist to show the hierarchy of the results, but these placeholders
 // are not interactive (cannot be clicked to navigate) and don't have any other information.
-interface SymbolPlaceholder {
+export interface SymbolPlaceholder {
     __typename: 'SymbolPlaceholder'
     name: string
 }
 
-type SymbolWithChildren = (SymbolNodeFields | SymbolPlaceholder) & { children: SymbolWithChildren[] }
+export type SymbolWithChildren = (SymbolNodeFields | SymbolPlaceholder) & { children: SymbolWithChildren[] }
 
 const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] => {
     const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))

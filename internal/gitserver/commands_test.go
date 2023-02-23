@@ -3231,18 +3231,18 @@ func TestStreamBlameFile(t *testing.T) {
 func TestBlameHunkReader(t *testing.T) {
 	t.Run("OK matching hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		hunks := []*Hunk{}
 		for {
-			hunk, done, err := reader.Read()
-			if err != nil {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
-			if done {
-				break
-			}
-			hunks = append(hunks, hunk...)
+			hunks = append(hunks, hunk)
 		}
 
 		sortFn := func(x []*Hunk) func(i, j int) bool {
@@ -3270,15 +3270,15 @@ func TestBlameHunkReader(t *testing.T) {
 
 	t.Run("OK parsing hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		for {
-			_, done, err := reader.Read()
-			if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
-			}
-			if done {
+			_, err := reader.Read()
+			if errors.Is(err, io.EOF) {
 				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 		}
 	})

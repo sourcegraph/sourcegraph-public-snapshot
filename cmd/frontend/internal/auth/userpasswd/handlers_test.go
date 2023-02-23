@@ -10,7 +10,6 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -425,19 +424,6 @@ func TestHandleSignUp(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: false, CreatedAt: time.Now()}, nil
 		})
 
-		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, basrtuo database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
-			if len(basrtuo.Roles) != 1 {
-				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with one role, got %d", len(basrtuo.Roles))
-			}
-
-			if basrtuo.Roles[0] != types.UserSystemRole {
-				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with %s role, got %s", types.UserSystemRole, basrtuo.Roles[0])
-			}
-
-			return []*types.UserRole{}, nil
-		})
-
 		authz := database.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
@@ -449,7 +435,6 @@ func TestHandleSignUp(t *testing.T) {
 			return f(db)
 		})
 		db.UsersFunc.SetDefaultReturn(users)
-		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
 
@@ -477,7 +462,6 @@ func TestHandleSignUp(t *testing.T) {
 
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkAssignSystemRolesToUserFunc)
 	})
 }
 
@@ -516,21 +500,6 @@ func TestHandleSiteInit(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: true, CreatedAt: time.Now()}, nil
 		})
 
-		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, opts database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
-			if len(opts.Roles) != 2 {
-				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with two system roles, got %d", len(opts.Roles))
-			}
-
-			want := []types.SystemRole{types.UserSystemRole, types.SiteAdministratorSystemRole}
-			have := opts.Roles
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
-			}
-
-			return []*types.UserRole{}, nil
-		})
-
 		authz := database.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
@@ -542,7 +511,6 @@ func TestHandleSiteInit(t *testing.T) {
 			return f(db)
 		})
 		db.UsersFunc.SetDefaultReturn(users)
-		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
 
@@ -570,7 +538,6 @@ func TestHandleSiteInit(t *testing.T) {
 
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkAssignSystemRolesToUserFunc)
 		mockrequire.CalledOnce(t, eventLogs.BulkInsertFunc)
 	})
 }

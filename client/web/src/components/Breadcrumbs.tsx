@@ -3,7 +3,7 @@ import React, { FC, useState, useEffect, useMemo, useCallback } from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'

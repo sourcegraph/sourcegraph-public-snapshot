@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

@@ -59,15 +59,15 @@ type UserRoleStore interface {
 	basestore.ShareableStore
 
 	// Assign is used to assign a role to a user.
-	Assign(ctx context.Context, opts AssignUserRoleOpts) (*types.UserRole, error)
+	Assign(ctx context.Context, opts AssignUserRoleOpts) error
 	// AssignSystemRole assigns a system role to a user.
-	AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error)
+	AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) error
 	// BulkAssignToUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
-	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error)
+	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) error
 	// BulkAssignToUser assigns multiple system roles to a single user. This is useful
 	// when we want to assign a user more than one system role.
-	BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error)
+	BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) error
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -112,13 +112,13 @@ ON CONFLICT DO NOTHING
 RETURNING %s;
 `
 
-func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) (*types.UserRole, error) {
+func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) error {
 	if opts.UserID == 0 {
-		return nil, errors.New("missing user id")
+		return errors.New("missing user id")
 	}
 
 	if opts.RoleID == 0 {
-		return nil, errors.New("missing role id")
+		return errors.New("missing role id")
 	}
 
 	q := sqlf.Sprintf(
@@ -128,20 +128,25 @@ func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) (*t
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	rm, err := scanUserRole(r.QueryRow(ctx, q))
+	_, err := scanUserRole(r.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning user role")
+		// If there are no rows returned, it means that the user has already being assigned the role.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return errors.Wrap(err, "scanning user role")
 	}
-	return rm, nil
+	return nil
 }
 
-func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error) {
+func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) error {
 	if opts.UserID == 0 {
-		return nil, errors.New("user id is required")
+		return errors.New("user id is required")
 	}
 
 	if opts.Role == "" {
-		return nil, errors.New("role is required")
+		return errors.New("role is required")
 	}
 
 	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
@@ -153,20 +158,25 @@ func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemR
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	ur, err := scanUserRole(r.QueryRow(ctx, q))
+	_, err := scanUserRole(r.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning user role")
+		// If there are no rows returned, it means that the user has already being assigned the role.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return errors.Wrap(err, "scanning user role")
 	}
-	return ur, nil
+	return nil
 }
 
-func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error) {
+func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) error {
 	if opts.UserID == 0 {
-		return nil, errors.New("missing user id")
+		return errors.New("missing user id")
 	}
 
 	if len(opts.RoleIDs) == 0 {
-		return nil, errors.New("missing role ids")
+		return errors.New("missing role ids")
 	}
 
 	var urs []*sqlf.Query
@@ -183,16 +193,25 @@ func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToU
 	)
 
 	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
-	return scanUserRoles(r.Query(ctx, q))
+	_, err := scanUserRoles(r.Query(ctx, q))
+	if err != nil {
+		// If there are no rows returned, it means that the user has already being assigned the role.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
-func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
+func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) error {
 	if opts.UserID == 0 {
-		return nil, errors.New("user id is required")
+		return errors.New("user id is required")
 	}
 
 	if len(opts.Roles) == 0 {
-		return nil, errors.New("roles are required")
+		return errors.New("roles are required")
 	}
 
 	var urs []*sqlf.Query
@@ -209,7 +228,16 @@ func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts Bu
 	)
 
 	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
-	return scanUserRoles(r.Query(ctx, q))
+	_, err := scanUserRoles(r.Query(ctx, q))
+	if err != nil {
+		// If there are no rows returned, it means that the user has already being assigned the role.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 type UserRoleNotFoundErr struct {

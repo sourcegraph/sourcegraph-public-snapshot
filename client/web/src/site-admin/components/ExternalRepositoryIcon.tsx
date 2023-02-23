@@ -1,4 +1,5 @@
 import { mdiCloudQuestion } from '@mdi/js'
+import classNames from 'classnames'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -8,12 +9,13 @@ import { ExternalRepositoryFields } from '../../graphql-operations'
 export const ExternalRepositoryIcon: React.FunctionComponent<
     React.PropsWithChildren<{
         externalRepo: ExternalRepositoryFields
+        className?: string
     }>
-> = ({ externalRepo }) => {
+> = ({ externalRepo, className }) => {
     const IconComponent = externalRepoIcon(externalRepo)
     return IconComponent ? (
-        <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
+        <Icon as={IconComponent} aria-label="Code host logo" className={classNames('mr-2', className)} />
     ) : (
-        <Icon svgPath={mdiCloudQuestion} aria-label="Unknown code host" className="mr-2" />
+        <Icon svgPath={mdiCloudQuestion} aria-label="Unknown code host" className={classNames('mr-2', className)} />
     )
 }
