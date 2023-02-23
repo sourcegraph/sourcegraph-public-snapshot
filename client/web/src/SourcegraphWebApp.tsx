@@ -6,31 +6,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { startWith, switchMap } from 'rxjs/operators'
 
-import { isTruthy, isMacPlatform, logger } from '@sourcegraph/common'
+import { isTruthy, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
-    getUserSearchContextNamespaces,
     SearchContextProps,
-    fetchSearchContexts,
-    fetchSearchContext,
-    fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
     getDefaultSearchContextSpec,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
@@ -40,12 +31,11 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
-import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
+import { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
 import { useBreadcrumbs } from './components/Breadcrumbs'
@@ -55,7 +45,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout } from './Layout'
-import { LegacyLayoutRouteComponentProps, LegacyRoute, LegacyRouteContext } from './LegacyRouteContext'
+import { LegacyRoute, LegacyRouteContextProvider, LegacyRouteContextProviderProps } from './LegacyRouteContext'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -126,7 +116,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     const [settingsCascade, setSettingsCascade] = useState<SettingsCascadeOrError<Settings>>(EMPTY_SETTINGS_CASCADE)
     const [viewerSubject, setViewerSubject] = useState<SettingsSubjectCommonFields>(() => siteSubjectNoAdmin())
-    const [globbing, setGlobbing] = useState(false)
 
     const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
     const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
@@ -200,12 +189,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         ]
     )
 
-    const _fetchHighlightedFileLineRanges = useCallback(
-        (parameters: FetchFileParameters, force?: boolean | undefined): Observable<string[][]> =>
-            fetchHighlightedFileLineRanges({ ...parameters, platformContext }, force),
-        [platformContext]
-    )
-
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
     useEffect(() => {
         selectedSearchContextSpecRef.current = selectedSearchContextSpec
@@ -241,7 +224,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
-                    setGlobbing(globbingEnabledFromSettings(settingsCascade))
                     setViewerSubject(viewerSubjectFromSettings(settingsCascade, authenticatedUser))
                 },
                 () => setResolvedAuthenticatedUser(null)
@@ -298,34 +280,19 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         ...props,
         ...themeProps,
         ...breadcrumbProps,
-        isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
-        isSourcegraphDotCom: window.context.sourcegraphDotComMode,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
-        getUserSearchContextNamespaces,
-        fetchSearchContexts,
-        fetchSearchContextBySpec,
-        fetchSearchContext,
-        createSearchContext,
-        updateSearchContext,
-        deleteSearchContext,
-        isSearchContextSpecAvailable,
-        globbing,
-        streamSearch: aggregateStreamingSearch,
         codeIntelligenceEnabled: !!props.codeInsightsEnabled,
         notebooksEnabled: props.notebooksEnabled,
         codeMonitoringEnabled: props.codeMonitoringEnabled,
         searchAggregationEnabled: props.searchAggregationEnabled,
-        batchChangesExecutionEnabled: isBatchChangesExecutionEnabled(settingsCascade),
         platformContext,
         authenticatedUser: resolvedAuthenticatedUser,
         viewerSubject,
-        fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
         settingsCascade,
         extensionsController: null,
-        batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
-    } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
+    }
 
     if (window.pageError && window.pageError.statusCode !== 404) {
         const statusCode = window.pageError.statusCode
@@ -378,7 +345,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,
                 <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
-                <LegacyRouteContext.Provider value={context} />,
+                <LegacyRouteContextProvider context={context} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
