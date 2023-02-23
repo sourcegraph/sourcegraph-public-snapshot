@@ -375,9 +375,6 @@ func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevop
 	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
 	forkNamespace := fork.Namespace()
-
-	// Now we make a copy of the target repo, but with its sources and metadata updated to
-	// point to the fork
 	forkRepo, err := copyAzureDevOpsRepoAsFork(targetRepo, fork, forkNamespace, fork.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating target repo sources")
