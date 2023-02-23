@@ -695,7 +695,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 
 			results := make(chan *githubResult)
 			go func() {
-				q.Do(context.Background(), results)
+				q.DoWithRefinedWindow(context.Background(), results)
 				close(results)
 			}()
 

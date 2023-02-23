@@ -107,10 +107,27 @@ func (s *FakeDiscoverableSource) ListNamespaces(ctx context.Context, results cha
 	}
 }
 
+func (s *FakeDiscoverableSource) ListRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+	if s.lockChan != nil {
+		s.lockChan <- struct{}{}
+		<-s.lockChan
+	}
+
+	if s.err != nil {
+		results <- SourceResult{Source: s, Err: s.err}
+		return
+	}
+
+	for _, r := range s.repos {
+		results <- SourceResult{Source: s, Repo: r}
+	}
+}
+
 // FakeDiscoverableSource is a fake implementation of DiscoverableSource to be used in tests.
 type FakeDiscoverableSource struct {
 	*FakeSource
-	namespaces []*types.ExternalServiceNamespace
+	namespaces   []*types.ExternalServiceNamespace
+	repositories []*types.Repo
 }
 
 // NewFakeDiscoverableSource returns an instance of FakeDiscoverableSource with the given namespaces.
