@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -19,7 +20,7 @@ import (
 type PackagesSource struct {
 	svc                  *types.ExternalService
 	configDeps           []string
-	allowList, blockList []PackageMatcher
+	allowList, blockList []packagerepos.PackageMatcher
 	scheme               string
 	depsSvc              *dependencies.Service
 	src                  packagesSource
@@ -65,7 +66,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			return
 		}
 
-		if !IsPackageAllowed(dep.PackageSyntax(), s.allowList, s.blockList) {
+		if !packagerepos.IsPackageAllowed(dep.PackageSyntax(), s.allowList, s.blockList) {
 			continue
 		}
 
@@ -129,7 +130,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 					return nil
 				}
 
-				if !IsPackageAllowed(pkg.PackageSyntax(), s.allowList, s.blockList) {
+				if !packagerepos.IsPackageAllowed(pkg.PackageSyntax(), s.allowList, s.blockList) {
 					return nil
 				}
 
@@ -148,7 +149,7 @@ func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.R
 		return nil, err
 	}
 
-	if !IsPackageAllowed(parsedPkg.PackageSyntax(), s.allowList, s.blockList) {
+	if !packagerepos.IsPackageAllowed(parsedPkg.PackageSyntax(), s.allowList, s.blockList) {
 		return nil, &repoupdater.ErrNotFound{
 			Repo:       api.RepoName(repoName),
 			IsNotFound: true,

@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -262,13 +262,13 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 	}
 
 	var (
-		matcher     repos.PackageMatcher
+		matcher     packagerepos.PackageMatcher
 		nameToMatch string
 	)
 	if args.Matcher.NameMatcher != nil {
-		matcher, err = repos.NewPackageNameGlob(args.Matcher.NameMatcher.PackageGlob)
+		matcher, err = packagerepos.NewPackageNameGlob(args.Matcher.NameMatcher.PackageGlob)
 	} else {
-		matcher, err = repos.NewVersionGlob(args.Matcher.VersionMatcher.PackageName, args.Matcher.VersionMatcher.VersionGlob)
+		matcher, err = packagerepos.NewVersionGlob(args.Matcher.VersionMatcher.PackageName, args.Matcher.VersionMatcher.VersionGlob)
 		nameToMatch = args.Matcher.VersionMatcher.PackageName
 	}
 	if err != nil {

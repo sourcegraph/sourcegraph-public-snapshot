@@ -1,4 +1,4 @@
-package repos
+package packagerepos
 
 import (
 	"github.com/gobwas/glob"
@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewAllowBlockLists(rawConfig []any) (allowlist, blocklist []PackageMatcher, err error) {
+func NewFilterLists(rawConfig []any) (allowlist, blocklist []PackageMatcher, err error) {
 	for _, block := range rawConfig {
 		block := block.(map[string]interface{})
 		if packageGlob, ok := block["packageGlob"]; ok {

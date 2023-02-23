@@ -24,6 +24,7 @@ type Store interface {
 	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
 	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
+	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageFilter, error)
 }
 
 // store manages the database tables for package dependencies.
@@ -401,4 +402,51 @@ func (s *store) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int
 const deleteDependencyRepoVersionsByID = `
 DELETE FROM package_repo_versions
 WHERE id = ANY(%s)
+`
+
+type ListPackageRepoRefFiltersOpts struct {
+	IDs                 []int
+	ExternalServiceKind string
+	After               int
+	Limit               int
+}
+
+func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+	conds := make([]*sqlf.Query, 0, 3)
+
+	if len(opts.IDs) != 0 {
+		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(opts.IDs)))
+	}
+
+	if opts.ExternalServiceKind != "" {
+		conds = append(conds, sqlf.Sprintf("external_service_kind = %s", opts.ExternalServiceKind))
+	}
+
+	if opts.After != 0 {
+		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+	}
+
+	limit := sqlf.Sprintf("")
+	if opts.Limit != 0 {
+		limit = sqlf.Sprintf("LIMIT %s", opts.Limit)
+	}
+
+	filters, err := basestore.NewSliceScanner(scanPackageFilter)(
+		s.db.Query(ctx, sqlf.Sprintf(
+			listDependencyReposQuery,
+			sqlf.Join(conds, "AND"),
+			limit,
+		)),
+	)
+
+	return filters, err
+}
+
+const listPackageRepoRefFiltersQuery = `
+SELECT id, behaviour, external_service_kind, matcher
+FROM package_repo_filters
+-- filter
+%s
+-- limit
+%s
 `

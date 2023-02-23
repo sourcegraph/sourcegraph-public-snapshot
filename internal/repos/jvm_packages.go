@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,7 +31,7 @@ func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*Pac
 		configDeps = c.Maven.Dependencies
 	}
 
-	allowList, blockList, err := NewAllowBlockLists(c.Maven.Blocklist)
+	allowList, blockList, err := packagerepos.NewFilterLists(c.Maven.Blocklist)
 	if err != nil {
 		return nil, err
 	}

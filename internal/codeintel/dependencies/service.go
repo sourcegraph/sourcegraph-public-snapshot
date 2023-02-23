@@ -87,3 +87,16 @@ func (s *Service) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...i
 
 	return s.store.DeletePackageRepoRefVersionsByID(ctx, ids...)
 }
+
+type ListPackageRepoRefFiltersOpts struct {
+	IDs                 []int
+	ExternalServiceKind string
+	After               int
+	Limit               int
+}
+
+func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+	return s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts(opts))
+}
+
+// func (s *Service) InsertPackageRepoFilters
