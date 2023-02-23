@@ -143,8 +143,11 @@ func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, err
 
 func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
-
-	fullURL, err := urlx.Parse(s.cli.GetURL().String() + p.Name)
+	org, err := p.GetOrganization()
+	if err != nil {
+		return nil, err
+	}
+	fullURL, err := urlx.Parse(fmt.Sprintf("%s%s/%s/%s", s.cli.GetURL().String(), org, p.Project.Name, p.Name))
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,8 @@
 [
   {
    "ID": 0,
-   "Name": "dev.azure.com/sgtestazure2",
-   "URI": "dev.azure.com/sgtestazure2",
+   "Name": "dev.azure.com/sgtestazure/sgtestazure/sgtestazure2",
+   "URI": "dev.azure.com/sgtestazure/sgtestazure/sgtestazure2",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -42,8 +42,8 @@
   },
   {
    "ID": 0,
-   "Name": "dev.azure.com/sgtestazure",
-   "URI": "dev.azure.com/sgtestazure",
+   "Name": "dev.azure.com/sgtestazure/sgtestazure/sgtestazure",
+   "URI": "dev.azure.com/sgtestazure/sgtestazure/sgtestazure",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -83,8 +83,8 @@
   },
   {
    "ID": 0,
-   "Name": "dev.azure.com/sg test with spaces 2",
-   "URI": "dev.azure.com/sg test with spaces 2",
+   "Name": "dev.azure.com/sgtestazure/sg test with spaces/sg test with spaces 2",
+   "URI": "dev.azure.com/sgtestazure/sg test with spaces/sg test with spaces 2",
    "Description": "",
    "Fork": false,
    "Archived": false,
