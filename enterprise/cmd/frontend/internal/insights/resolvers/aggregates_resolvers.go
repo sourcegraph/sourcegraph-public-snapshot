@@ -115,7 +115,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
 	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
-	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue)
+	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue, aggregationMode)
 	if err != nil {
 		r.getLogger().Debug("unable to build aggregation query", log.Error(err))
 		return &searchAggregationResultResolver{
@@ -367,6 +367,7 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 		types.REPO_AGGREGATION_MODE:          canAggregateByRepo,
 		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
 		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
+		types.OWNER_AGGREGATION_MODE:         canAggregateByOwner,
 		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
@@ -428,6 +429,27 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, *notAvailableR
 		}
 	}
 	return false, &notAvailableReason{reason: authNotCommitDiffMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+}
+
+func canAggregateByOwner(searchQuery, patternType string) (bool, *notAvailableReason, error) {
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+	if err != nil {
+		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+	}
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// can only aggregate over type:diff and select/type:commit searches.
+	// users can make searches like `type:commit fix select:repo` but assume a faulty search like that is on them.
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
+			if parameter.Value == "diff" || parameter.Value == "commit" {
+				return false, &notAvailableReason{reason: "not available for diff and commit search", reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+			}
+		}
+		if parameter.Field == query.FieldSelect && parameter.Value == "file.owners" {
+			return false, &notAvailableReason{reason: "not available for owners search", reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+		}
+	}
+	return true, nil, nil
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvailableReason, error) {
@@ -585,6 +607,8 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 		modifierFunc = querybuilder.AddFileFilter
 	case types.AUTHOR_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddAuthorFilter
+	case types.OWNER_AGGREGATION_MODE:
+		modifierFunc = querybuilder.HasOwner
 	case types.CAPTURE_GROUP_AGGREGATION_MODE:
 		searchType, err := client.SearchTypeFromString(patternType)
 		if err != nil {

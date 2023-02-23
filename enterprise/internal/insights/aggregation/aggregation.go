@@ -85,6 +85,23 @@ func countAuthor(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
+func countOwner(r result.Match) (map[MatchKey]int, error) {
+	var owner string
+	switch match := r.(type) {
+	case *result.OwnerMatch:
+		owner = match.ResolvedOwner.Identifier()
+	default:
+	}
+	if owner != "" {
+		return map[MatchKey]int{{
+			RepoID: int32(r.RepoName().ID),
+			Repo:   string(r.RepoName().Name),
+			Group:  owner,
+		}: r.ResultCount()}, nil
+	}
+	return nil, nil
+}
+
 func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 	pattern, err := getCasedPattern(querystring)
 	if err != nil {
@@ -153,6 +170,7 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 		types.REPO_AGGREGATION_MODE:   countRepo,
 		types.PATH_AGGREGATION_MODE:   countPath,
 		types.AUTHOR_AGGREGATION_MODE: countAuthor,
+		types.OWNER_AGGREGATION_MODE:  countOwner,
 	}
 
 	if mode == types.CAPTURE_GROUP_AGGREGATION_MODE {

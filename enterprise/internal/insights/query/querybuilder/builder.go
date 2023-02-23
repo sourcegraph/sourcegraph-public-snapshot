@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,7 +42,7 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
-func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string, aggregationMode types.SearchAggregationMode) (BasicQuery, error) {
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
@@ -77,7 +78,11 @@ func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (
 		modified = append(modified, basic.MapParameters(p))
 	}
 
-	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+	q := BasicQuery(searchquery.StringHuman(modified.ToQ()))
+	if aggregationMode == types.OWNER_AGGREGATION_MODE {
+		q += " select:file.owners"
+	}
+	return q, nil
 }
 
 // CodeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.
@@ -512,4 +517,12 @@ func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery, count
 		return "", errors.Wrap(err, "error parsing repository filters")
 	}
 	return BasicQuery(searchquery.StringHuman(repositoryPlan.ToQ()) + " " + modifiedQuery.String()), nil
+}
+
+func HasOwner(query BasicQuery, owner string) (BasicQuery, error) {
+	// Hack: Map back unowned to a search query that actually returns unowned files.
+	if owner == "unowned" {
+		return BasicQuery(fmt.Sprintf("%s -file:has.owner()", query)), nil
+	}
+	return BasicQuery(fmt.Sprintf("%s file:has.owner(%s)", query, owner)), nil
 }

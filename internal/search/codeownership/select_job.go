@@ -6,6 +6,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -104,6 +105,20 @@ matchesLoop:
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
+		}
+		if len(resolvedOwners) == 0 {
+			ownerMatch := &result.OwnerMatch{
+				ResolvedOwner: &codeowners.Person{
+					Handle: "unowned",
+				},
+				InputRev: mm.InputRev,
+				Repo:     mm.Repo,
+				CommitID: mm.CommitID,
+				Path:     mm.Path,
+			}
+			ownerMatches = append(ownerMatches, ownerMatch)
+			continue matchesLoop
+
 		}
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{

@@ -109,6 +109,21 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                 </Tooltip>
             </div>
 
+            <div onMouseEnter={() => handleModeEnter(SearchAggregationMode.OWNER)} onMouseLeave={handleMouseLeave}>
+                <Tooltip content={availabilityGroups[SearchAggregationMode.OWNER]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.OWNER}
+                        disabled={!isModeAvailable(SearchAggregationMode.OWNER)}
+                        data-testid="owner-aggregation-mode"
+                        onClick={() => onModeChange(SearchAggregationMode.OWNER)}
+                    >
+                        Owner
+                    </Button>
+                </Tooltip>
+            </div>
+
             <div
                 onMouseEnter={() => handleModeEnter(SearchAggregationMode.CAPTURE_GROUP)}
                 onMouseLeave={handleMouseLeave}
