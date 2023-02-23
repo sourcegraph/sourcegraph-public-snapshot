@@ -6,6 +6,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     createRectangle,
     createLinkClickHandler,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
