@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { LegacyLayoutRouteComponentProps } from '../routes'
+import { LegacyLayoutRouteComponentProps } from '../LegacyRouteContext'
 
 import { parseSearchURLQuery } from '.'
 
