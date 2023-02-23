@@ -191,21 +191,21 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
+	{ // Apply subrepo permissions checks
+		checker := authz.DefaultSubRepoPermsChecker
+		if authz.SubRepoEnabled(checker) {
+			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
 			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
 			if inputs.Features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
-				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob)
+				basicJob = codeownershipjob.NewSelectOwners(basicJob)
 			}
-		}
-	}
-
-	{ // Apply subrepo permissions checks
-		checker := authz.DefaultSubRepoPermsChecker
-		if authz.SubRepoEnabled(checker) {
-			basicJob = NewFilterJob(basicJob)
 		}
 	}
 
