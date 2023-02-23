@@ -80,6 +80,12 @@ go_test(
         "webhooks_test.go",
     ],
     embed = [":backend"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/envvar",
         "//internal/actor",

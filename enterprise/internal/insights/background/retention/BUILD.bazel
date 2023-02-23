@@ -32,6 +32,12 @@ go_test(
     name = "retention_test",
     srcs = ["worker_test.go"],
     embed = [":retention"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/store",

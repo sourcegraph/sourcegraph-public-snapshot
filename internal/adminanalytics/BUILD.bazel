@@ -34,6 +34,12 @@ go_test(
     name = "adminanalytics_test",
     srcs = ["users_test.go"],
     embed = [":adminanalytics"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

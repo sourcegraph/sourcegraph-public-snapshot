@@ -36,6 +36,12 @@ go_test(
     name = "codemonitors_test",
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/actor",

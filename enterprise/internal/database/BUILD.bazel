@@ -83,6 +83,12 @@ go_test(
         "sub_repo_perms_store_test.go",
     ],
     embed = [":database"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/licensing",

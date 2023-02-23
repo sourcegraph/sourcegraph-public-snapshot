@@ -10,8 +10,7 @@ go_library(
         "store_commits.go",
         "store_dependency_index.go",
         "store_dumps.go",
-        # TODO JH: I don't know what this isn't getting picked up by Gazelle
-        "store_index.go",  # keep
+        "store_index.go",
         "store_packages.go",
         "store_reconcile.go",
         "store_references.go",
@@ -55,8 +54,7 @@ go_test(
         "store_commits_test.go",
         "store_dependency_index_test.go",
         "store_dumps_test.go",
-        # TODO JH: I don't know what this isn't getting picked up by Gazelle
-        "store_index_test.go",  # keep
+        "store_index_test.go",
         "store_packages_test.go",
         "store_reconcile_test.go",
         "store_references_test.go",
@@ -64,6 +62,12 @@ go_test(
         "store_uploads_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/codeintel/shared/types",

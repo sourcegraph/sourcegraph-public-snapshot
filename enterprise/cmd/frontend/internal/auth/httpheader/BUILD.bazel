@@ -31,6 +31,12 @@ go_test(
         "middleware_test.go",
     ],
     embed = [":httpheader"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

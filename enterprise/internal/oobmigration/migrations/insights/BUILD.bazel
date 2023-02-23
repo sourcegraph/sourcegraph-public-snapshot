@@ -33,6 +33,12 @@ go_test(
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),
     embed = [":insights"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

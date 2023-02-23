@@ -51,6 +51,12 @@ go_test(
         "repos_test.go",
     ],
     embed = [":repos"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",

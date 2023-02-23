@@ -45,6 +45,12 @@ go_test(
         "reconciler_worker_test.go",
     ],
     embed = [":workers"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/service",
         "//enterprise/internal/batches/store",

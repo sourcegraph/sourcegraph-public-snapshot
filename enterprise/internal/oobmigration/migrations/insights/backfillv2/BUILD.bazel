@@ -22,6 +22,12 @@ go_test(
     name = "backfillv2_test",
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/timeseries",

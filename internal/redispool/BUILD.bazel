@@ -32,6 +32,12 @@ go_test(
         "redispool_test.go",
     ],
     embed = [":redispool"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

@@ -59,6 +59,12 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":background"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/database",

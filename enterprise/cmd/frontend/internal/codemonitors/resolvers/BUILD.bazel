@@ -31,6 +31,12 @@ go_test(
         "resolvers_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires locally running DB so don't test on //...
+        "manual",
+        # Test requires localhost
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/batches/resolvers/apitest",
