@@ -55,6 +55,8 @@ func TestEmbedRepo(t *testing.T) {
 		),
 		// Should be excluded
 		"empty.rb": mockFile(""),
+		// Should be excluded (binary file),
+		"binary.bin": {0xFF, 0xF, 0xF, 0xF, 0xFF, 0xF, 0xF, 0xA},
 	}
 	readFile := func(fileName string) ([]byte, error) {
 		content, ok := mockFiles[fileName]
@@ -110,7 +112,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
-		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c"}
+		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
 		index, err := EmbedRepo(ctx, repoName, revision, files, client, splitOptions, readFile)
 		if err != nil {
 			t.Fatal(err)

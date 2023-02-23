@@ -2,13 +2,13 @@ package embed
 
 import (
 	"context"
-	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
@@ -111,7 +111,7 @@ func embedFiles(
 		if err != nil {
 			return nil, errors.Wrap(err, "error while reading a file")
 		}
-		if !utf8.Valid(contentBytes) {
+		if binary.IsBinary(contentBytes) {
 			continue
 		}
 		content := string(contentBytes)
