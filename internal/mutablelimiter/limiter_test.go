@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestLimiter(t *testing.T) {
+func TestMutableLimiter(t *testing.T) {
 	// cancels created by helpers
 	var cancels []context.CancelFunc
 	defer func() {
