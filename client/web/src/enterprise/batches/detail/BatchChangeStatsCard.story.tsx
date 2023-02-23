@@ -20,7 +20,7 @@ const calculateIsCompleted = <T extends MockStatsArgs>(stats: T): boolean => {
     if (stats.total === 0) {
         return false
     }
-    return (stats.closed + stats.merged) === (stats.total - stats.deleted - stats.archived)
+    return stats.closed + stats.merged === stats.total - stats.deleted - stats.archived
 }
 
 const calculatePercentComplete = <T extends MockStatsArgs>(stats: T): number => {
@@ -89,7 +89,7 @@ Draft.argTypes = {
     total: {
         control: { type: 'number' },
         defaultValue: 0,
-    }
+    },
 }
 
 export const Open: Story<MockStatsArgs> = args => (
@@ -151,7 +151,7 @@ Open.argTypes = {
     total: {
         control: { type: 'number' },
         defaultValue: 118,
-    }
+    },
 }
 
 export const OpenAndComplete: Story<MockStatsArgs> = args => (
@@ -213,7 +213,7 @@ OpenAndComplete.argTypes = {
     total: {
         control: { type: 'number' },
         defaultValue: 118,
-    }
+    },
 }
 
 OpenAndComplete.storyName = 'open and complete'
@@ -236,7 +236,6 @@ export const Closed: Story<MockStatsArgs> = args => (
                         unpublished: args.unpublished,
                         isCompleted: calculateIsCompleted(args),
                         percentComplete: calculatePercentComplete(args),
-
                     },
                     diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
                     state: BatchChangeState.CLOSED,
@@ -278,5 +277,5 @@ Closed.argTypes = {
     total: {
         control: { type: 'number' },
         defaultValue: 118,
-    }
+    },
 }
