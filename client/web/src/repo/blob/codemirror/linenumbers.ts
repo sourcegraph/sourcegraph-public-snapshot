@@ -22,7 +22,6 @@ import {
     ViewUpdate,
 } from '@codemirror/view'
 import classNames from 'classnames'
-import { NavigateFunction } from 'react-router-dom'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
