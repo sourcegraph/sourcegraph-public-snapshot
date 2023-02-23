@@ -16,9 +16,6 @@ func (c *client) GetProject(ctx context.Context, org, project string) (Project, 
 	}
 
 	var p Project
-	if _, err = c.do(ctx, req, "", &p); err != nil {
-		return Project{}, err
-	}
-
-	return p, nil
+	_, err = c.do(ctx, req, "", &p)
+	return p, err
 }

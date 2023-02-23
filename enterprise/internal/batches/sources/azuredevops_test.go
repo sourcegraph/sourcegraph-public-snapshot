@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -69,24 +69,18 @@ func TestAzureDevOpsSource_GitserverPushConfig(t *testing.T) {
 }
 
 func TestAzureDevOpsSource_WithAuthenticator(t *testing.T) {
-	t.Run("supported types", func(t *testing.T) {
-		for _, au := range []auth.Authenticator{
-			&auth.BasicAuth{},
-		} {
-			t.Run(fmt.Sprintf("%T", au), func(t *testing.T) {
-				newClient := NewStrictMockAzureDevOpsClient()
+	t.Run("supports BasicAuth", func(t *testing.T) {
+		newClient := NewStrictMockAzureDevOpsClient()
+		au := &auth.BasicAuth{}
+		s, client := mockAzureDevOpsSource()
+		client.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (azuredevops.Client, error) {
+			assert.Same(t, au, a)
+			return newClient, nil
+		})
 
-				s, client := mockAzureDevOpsSource()
-				client.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (azuredevops.Client, error) {
-					assert.Same(t, au, a)
-					return newClient, nil
-				})
-
-				newSource, err := s.WithAuthenticator(au)
-				assert.Nil(t, err)
-				assert.Same(t, newClient, newSource.(*AzureDevOpsSource).client)
-			})
-		}
+		newSource, err := s.WithAuthenticator(au)
+		assert.Nil(t, err)
+		assert.Same(t, newClient, newSource.(*AzureDevOpsSource).client)
 	})
 }
 
@@ -814,7 +808,7 @@ func mockAzureDevOpsPullRequest(repo *azuredevops.Repository) *azuredevops.PullR
 }
 
 func annotateChangesetWithPullRequest(cs *Changeset, pr *azuredevops.PullRequest) {
-	cs.Metadata = &azuredevops2.AnnotatedPullRequest{
+	cs.Metadata = &adobatches.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    []*azuredevops.PullRequestBuildStatus{},
 	}
@@ -850,5 +844,3 @@ func mockAzureDevOpsURL() *url.URL {
 
 	return u
 }
-
-var _ error = &notFoundError{}

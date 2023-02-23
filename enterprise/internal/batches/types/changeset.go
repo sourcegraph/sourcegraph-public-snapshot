@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -431,7 +432,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 			c.ExternalForkNamespace = ""
 			c.ExternalForkName = ""
 		}
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.Itoa(pr.ID)
 		c.ExternalServiceType = extsvc.TypeAzureDevOps
@@ -474,7 +475,7 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Title, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -495,7 +496,7 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Author.Username, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -524,7 +525,7 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		// Bitbucket Cloud does not provide the e-mail of the author under any
 		// circumstances.
 		return "", nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -544,7 +545,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedAt.Time
 	case *bbcs.AnnotatedPullRequest:
 		return m.CreatedOn
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.CreationDate
 	default:
 		return time.Time{}
@@ -562,7 +563,7 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Rendered.Description.Raw, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -609,7 +610,7 @@ func (c *Changeset) URL() (s string, err error) {
 		// pull request ID, but since the link _should_ be there, we'll error
 		// instead.
 		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		org, err := m.Repository.GetOrganization()
 		if err != nil {
 			return "", err
@@ -620,7 +621,13 @@ func (c *Changeset) URL() (s string, err error) {
 		}
 
 		// The URL returned by the API is for the PR API endpoint, so we need to reconstruct it.
-		return fmt.Sprintf("https://%s/%s/%s/_git/%s/pullrequest/%s", u.Host, org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)), nil
+		returnURL := url.URL{
+			Scheme: u.Scheme,
+			Host:   u.Host,
+			Path:   fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)),
+		}
+
+		return returnURL.String(), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -811,7 +818,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return m.DiffRefs.HeadSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Source.Commit.Hash, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -830,7 +837,7 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.SourceBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Source.Branch.Name, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.SourceRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -850,7 +857,7 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.DiffRefs.BaseSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Destination.Commit.Hash, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -869,7 +876,7 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.TargetBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Destination.Branch.Name, nil
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		return m.TargetRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")

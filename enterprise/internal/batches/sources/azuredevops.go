@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -24,9 +24,7 @@ type AzureDevOpsSource struct {
 	client azuredevops.Client
 }
 
-var (
-	_ ForkableChangesetSource = AzureDevOpsSource{}
-)
+var _ ForkableChangesetSource = AzureDevOpsSource{}
 
 func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
@@ -98,7 +96,7 @@ func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) err
 		return errors.Wrap(err, "getting pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &pr, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &pr, cs), "setting Azure DevOps changeset metadata")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
@@ -122,7 +120,7 @@ func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (
 	}
 
 	if err := s.setChangesetMetadata(ctx, repo, &pr, cs); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "setting Azure DevOps changeset metadata")
 	}
 
 	return true, nil
@@ -149,7 +147,7 @@ func (s AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changes
 	}
 
 	if err := s.setChangesetMetadata(ctx, repo, &pr, cs); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "setting Azure DevOps changeset metadata")
 	}
 
 	return true, nil
@@ -170,7 +168,7 @@ func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) 
 		return errors.Wrap(err, "updating pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
 // CloseChangeset will close the Changeset on the source, where "close"
@@ -188,7 +186,7 @@ func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) er
 		return errors.Wrap(err, "declining pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
 // UpdateChangeset can update Changesets.
@@ -222,7 +220,7 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 		return errors.Wrap(err, "updating pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
@@ -242,7 +240,7 @@ func (s AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) e
 		return errors.Wrap(err, "updating pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -294,7 +292,7 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 	}
 
-	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
 // GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
@@ -326,11 +324,14 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 	}
 
 	// Figure out if we already have a fork of the repo in the given namespace.
-	if fork, err := s.client.GetRepo(ctx, azuredevops.OrgProjectRepoArgs{
+	fork, err := s.client.GetRepo(ctx, azuredevops.OrgProjectRepoArgs{
 		Org:          org,
 		Project:      namespace,
 		RepoNameOrID: name,
-	}); err == nil {
+	})
+
+	// If we already have the forked repo, there is no need to create it, we can return early.
+	if err == nil {
 		return s.checkAndCopy(targetRepo, &fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
@@ -346,7 +347,7 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 		}
 	}
 
-	fork, err := s.client.ForkRepository(ctx, org, azuredevops.ForkRepositoryInput{
+	fork, err = s.client.ForkRepository(ctx, org, azuredevops.ForkRepositoryInput{
 		Name: name,
 		Project: azuredevops.ForkRepositoryInputProject{
 			ID: pFork.ID,
@@ -358,7 +359,6 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 			},
 		},
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
@@ -366,6 +366,7 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 	return s.checkAndCopy(targetRepo, &fork)
 }
 
+// checkAndCopy creatse a types.Repo representation of the forked repository useing the original repo (targetRepo).
 func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
 	if !fork.IsFork {
 		return nil, errors.New("repo is not a fork")
@@ -385,7 +386,7 @@ func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevop
 	return forkRepo, nil
 }
 
-func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*azuredevops2.AnnotatedPullRequest, error) {
+func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*adobatches.AnnotatedPullRequest, error) {
 	org, err := repo.GetOrganization()
 	if err != nil {
 		return nil, err
@@ -406,7 +407,7 @@ func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azured
 		statuses = append(statuses, &localStatus)
 	}
 
-	return &azuredevops2.AnnotatedPullRequest{
+	return &adobatches.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    statuses,
 	}, nil
@@ -471,36 +472,36 @@ func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Reposito
 }
 
 func copyAzureDevOpsRepoAsFork(repo *types.Repo, fork *azuredevops.Repository, forkNamespace, forkName string) (*types.Repo, error) {
-	forkRepo := *repo
-
 	if repo.Sources == nil || len(repo.Sources) == 0 {
 		return nil, errors.New("repo has no sources")
 	}
 
+	forkRepo := *repo
 	forkSources := map[string]*types.SourceInfo{}
 
 	for urn, src := range repo.Sources {
-		if src != nil || src.CloneURL != "" {
-			forkURL, err := url.Parse(src.CloneURL)
-			if err != nil {
-				return nil, err
-			}
+		if src == nil || src.CloneURL == "" {
+			continue
+		}
+		forkURL, err := url.Parse(src.CloneURL)
+		if err != nil {
+			return nil, err
+		}
 
-			// Will look like: /org/project/_git/repo, project is our namespace.
-			forkURLPathSplit := strings.SplitN(forkURL.Path, "/", 5)
-			if len(forkURLPathSplit) < 5 {
-				return nil, errors.Errorf("repo has malformed clone url: %s", src.CloneURL)
-			}
-			forkURLPathSplit[2] = forkNamespace
-			forkURLPathSplit[4] = forkName
+		// Will look like: /org/project/_git/repo, project is our namespace.
+		forkURLPathSplit := strings.SplitN(forkURL.Path, "/", 5)
+		if len(forkURLPathSplit) < 5 {
+			return nil, errors.Errorf("repo has malformed clone url: %s", src.CloneURL)
+		}
+		forkURLPathSplit[2] = forkNamespace
+		forkURLPathSplit[4] = forkName
 
-			forkPath := strings.Join(forkURLPathSplit, "/")
-			forkURL.Path = forkPath
+		forkPath := strings.Join(forkURLPathSplit, "/")
+		forkURL.Path = forkPath
 
-			forkSources[urn] = &types.SourceInfo{
-				ID:       src.ID,
-				CloneURL: forkURL.String(),
-			}
+		forkSources[urn] = &types.SourceInfo{
+			ID:       src.ID,
+			CloneURL: forkURL.String(),
 		}
 	}
 

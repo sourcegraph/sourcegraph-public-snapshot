@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/keegancsmith/sqlf"
@@ -1449,7 +1449,7 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m.PullRequest = &bitbucketcloud.PullRequest{}
 		t.Metadata = m
 	case extsvc.TypeAzureDevOps:
-		m := new(azuredevops2.AnnotatedPullRequest)
+		m := new(adobatches.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &azuredevops.PullRequest{}
 		t.Metadata = m

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -275,13 +275,13 @@ func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.
 	return combineCheckStates(states)
 }
 
-func parseAzureDevOpsdBuildState(s azuredevops2.PullRequestStatusState) btypes.ChangesetCheckState {
+func parseAzureDevOpsdBuildState(s adobatches.PullRequestStatusState) btypes.ChangesetCheckState {
 	switch s {
-	case azuredevops2.PullRequestBuildStatusStateError, azuredevops2.PullRequestBuildStatusStateFailed:
+	case adobatches.PullRequestBuildStatusStateError, adobatches.PullRequestBuildStatusStateFailed:
 		return btypes.ChangesetCheckStateFailed
-	case azuredevops2.PullRequestBuildStatusStatePending:
+	case adobatches.PullRequestBuildStatusStatePending:
 		return btypes.ChangesetCheckStatePending
-	case azuredevops2.PullRequestBuildStatusStateSucceeded:
+	case adobatches.PullRequestBuildStatusStateSucceeded:
 		return btypes.ChangesetCheckStatePassed
 	default:
 		return btypes.ChangesetCheckStateUnknown
@@ -554,18 +554,18 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		}
 	case *azuredevops.AnnotatedPullRequest:
 		switch m.Status {
-		case azuredevops2.PullRequestStatusAbandoned:
+		case adobatches.PullRequestStatusAbandoned:
 			s = btypes.ChangesetExternalStateClosed
-		case azuredevops2.PullRequestStatusCompleted:
+		case adobatches.PullRequestStatusCompleted:
 			s = btypes.ChangesetExternalStateMerged
-		case azuredevops2.PullRequestStatusActive:
+		case adobatches.PullRequestStatusActive:
 			if m.IsDraft {
 				s = btypes.ChangesetExternalStateDraft
 			} else {
 				s = btypes.ChangesetExternalStateOpen
 			}
 		default:
-			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.Status)
+			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
 		}
 	default:
 		return "", errors.New("unknown changeset type")

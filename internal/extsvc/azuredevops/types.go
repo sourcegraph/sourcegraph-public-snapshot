@@ -87,7 +87,13 @@ type ForkRef struct {
 }
 
 type Reviewer struct {
-	// 10 - approved, 5 - approved with suggestions, 0 - no vote, -5 - waiting for author, -10 - rejected
+	// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+	//
+	//   10: approved
+	//   5 : approved with suggestions
+	//   0 : no vote
+	//  -5 : waiting for author
+	//  -10: rejected
 	Vote        int    `json:"vote"`
 	ID          string `json:"id"`
 	HasDeclined bool   `json:"hasDeclined"`

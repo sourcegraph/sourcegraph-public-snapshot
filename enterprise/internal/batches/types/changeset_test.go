@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -178,7 +178,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			},
 		},
 		"azuredevops with fork": {
-			meta: &azuredevops2.AnnotatedPullRequest{
+			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					ID:            12345,
 					SourceRefName: "refs/heads/branch",
@@ -204,7 +204,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			},
 		},
 		"azuredevops without fork": {
-			meta: &azuredevops2.AnnotatedPullRequest{
+			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					ID:            12345,
 					SourceRefName: "refs/heads/branch",
@@ -240,7 +240,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 func TestChangeset_Title(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]any{
-		"azuredevops": &azuredevops2.AnnotatedPullRequest{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
 			PullRequest: &azuredevops.PullRequest{Title: want},
 		},
 		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
@@ -279,7 +279,7 @@ func TestChangeset_Title(t *testing.T) {
 func TestChangeset_ExternalCreatedAt(t *testing.T) {
 	want := time.Unix(10, 0)
 	for name, meta := range map[string]any{
-		"azuredevops": &azuredevops2.AnnotatedPullRequest{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
 			PullRequest: &azuredevops.PullRequest{CreationDate: want},
 		},
 		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
@@ -315,7 +315,7 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 func TestChangeset_Body(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]any{
-		"azuredevops": &azuredevops2.AnnotatedPullRequest{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
 			PullRequest: &azuredevops.PullRequest{
 				Description: want,
 			},
@@ -364,7 +364,7 @@ func TestChangeset_URL(t *testing.T) {
 		want string
 	}{
 		"azuredevops": {
-			pr: &azuredevops2.AnnotatedPullRequest{
+			pr: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					ID: 12,
 					Repository: azuredevops.Repository{
@@ -442,7 +442,7 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 		want string
 	}{
 		"azuredevops": {
-			meta: &azuredevops2.AnnotatedPullRequest{},
+			meta: &adobatches.AnnotatedPullRequest{},
 			want: "",
 		},
 		"bitbucketcloud": {
@@ -496,7 +496,7 @@ func TestChangeset_HeadRef(t *testing.T) {
 		want string
 	}{
 		"azuredevops": {
-			meta: &azuredevops2.AnnotatedPullRequest{
+			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					SourceRefName: "refs/heads/foo",
 				},
@@ -556,7 +556,7 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 		want string
 	}{
 		"azuredevops": {
-			meta: &azuredevops2.AnnotatedPullRequest{
+			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{},
 			},
 			want: "",
@@ -612,7 +612,7 @@ func TestChangeset_BaseRef(t *testing.T) {
 		want string
 	}{
 		"azuredevops": {
-			meta: &azuredevops2.AnnotatedPullRequest{
+			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{TargetRefName: "refs/heads/foo"},
 			},
 			want: "refs/heads/foo",
@@ -670,7 +670,7 @@ func TestChangeset_Labels(t *testing.T) {
 		want []ChangesetLabel
 	}{
 		"azuredevops": {
-			meta: &azuredevops2.AnnotatedPullRequest{},
+			meta: &adobatches.AnnotatedPullRequest{},
 			want: []ChangesetLabel{},
 		},
 		"bitbucketcloud": {
