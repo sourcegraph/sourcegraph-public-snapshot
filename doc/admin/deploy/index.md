@@ -57,7 +57,7 @@ Customized machine images allow you to spin up a preconfigured and customized So
 
 #### [Install-script](single-node/script.md)
 
-The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. You can also use it to set up Linux VMs for your own machine images.
+The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. It allows you to set up Sourcegraph instances in Linux VMs
 
 >NOTE: Deploying with machine images requires technical expertise and the ability to maintain and manage your own infrastructure.
 

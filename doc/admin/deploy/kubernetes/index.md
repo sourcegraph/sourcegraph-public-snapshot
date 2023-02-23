@@ -129,7 +129,7 @@ Skip this step to use the default storage class without SSD support for non-prod
 
 ### **Step 6**: Build manifests with Kustomize
 
-Generate a new set of manifests using the configuration applied to the `my-sourcegraph` subdirectory without applying to the cluster.
+Generate a new set of manifests locally using the configuration applied to the `my-sourcegraph` subdirectory without applying to the cluster.
 
   ```bash
   $ kubectl kustomize instances/my-sourcegraph -o cluster.yaml
