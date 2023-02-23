@@ -72,13 +72,20 @@ func printDeployedVersion(e environment, commits int) error {
 		))
 		return nil
 	}
+	// format: id_date_releasetag-sha
 	elems := strings.Split(bodyStr, "_")
 	if len(elems) != 3 {
 		return errors.Errorf("unknown format of /__version response: %q", body)
 	}
 
 	buildDate := elems[1]
-	buildSha := elems[2]
+
+	// split the release tag from the commit Sha
+	versionTag := strings.Split(elems[2], "-")
+	if len(versionTag) != 2 {
+		return errors.Errorf("unknown format of /__version tag: %q", elems[2])
+	}
+	buildSha := versionTag[1]
 
 	pending = std.Out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
 	_, err = run.GitCmd("fetch", "-q")
