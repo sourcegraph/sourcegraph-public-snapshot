@@ -62,14 +62,14 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			UserID:       int(user1.ID),
 			RepositoryID: 0,
 			Reason:       database.ReasonUserNoPermissions,
-			Priority:     database.MediumPriorityPermissionSync,
+			Priority:     database.MediumPriorityPermissionsSync,
 			NoPerms:      true,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo1.ID),
 			Reason:       database.ReasonRepoNoPermissions,
-			Priority:     database.MediumPriorityPermissionSync,
+			Priority:     database.MediumPriorityPermissionsSync,
 			NoPerms:      true,
 		},
 	}
@@ -101,27 +101,27 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			UserID:       int(user1.ID),
 			RepositoryID: 0,
 			Reason:       database.ReasonUserNoPermissions,
-			Priority:     database.MediumPriorityPermissionSync,
+			Priority:     database.MediumPriorityPermissionsSync,
 			NoPerms:      true,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo1.ID),
 			Reason:       database.ReasonRepoNoPermissions,
-			Priority:     database.MediumPriorityPermissionSync,
+			Priority:     database.MediumPriorityPermissionsSync,
 			NoPerms:      true,
 		},
 		{
 			UserID:       int(user2.ID),
 			RepositoryID: 0,
 			Reason:       database.ReasonUserOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo2.ID),
 			Reason:       database.ReasonRepoOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 	}
 	runJobsTest(t, ctx, logger, db, store, wantJobs)
@@ -136,36 +136,36 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			UserID:       int(user2.ID),
 			RepositoryID: 0,
 			Reason:       database.ReasonUserOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo2.ID),
 			Reason:       database.ReasonRepoOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 		{
 			UserID:       int(user1.ID),
 			RepositoryID: 0,
 			Reason:       database.ReasonUserOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo1.ID),
 			Reason:       database.ReasonRepoOutdatedPermissions,
-			Priority:     database.LowPriorityPermissionSync,
+			Priority:     database.LowPriorityPermissionsSync,
 		},
 	}
 	runJobsTest(t, ctx, logger, db, store, wantJobs)
 }
 
 type testJob struct {
-	Reason       database.PermissionSyncJobReason
+	Reason       database.PermissionsSyncJobReason
 	ProcessAfter time.Time
 	RepositoryID int
 	UserID       int
-	Priority     database.PermissionSyncJobPriority
+	Priority     database.PermissionsSyncJobPriority
 	NoPerms      bool
 }
 
@@ -174,7 +174,7 @@ func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db databa
 	require.NoError(t, err)
 	require.Equal(t, len(wantJobs), count)
 
-	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionSyncJobStateQueued})
+	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
 	require.NoError(t, err)
 	require.Len(t, jobs, len(wantJobs))
 

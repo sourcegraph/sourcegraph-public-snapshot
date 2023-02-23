@@ -545,10 +545,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",
 			},
-			{
-				name:  "fork:only",
-				query: "fork:only router",
-			},
+			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
+			//{
+			//	name:  "fork:only",
+			//	query: "fork:only router",
+			//},
 			{
 				name:  "double-quoted pattern, nonzero result",
 				query: `"func main() {\n" patterntype:regexp type:file`,

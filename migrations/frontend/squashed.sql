@@ -293,17 +293,6 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION func_lsif_dependency_repos_backfill() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        INSERT INTO package_repo_versions (package_id, version)
-        VALUES (NEW.id, NEW.version);
-
-        RETURN NULL;
-    END;
-$$;
-
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1751,8 +1740,7 @@ CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_names text[] NOT NULL,
-    graph_key text NOT NULL,
-    processed boolean DEFAULT false NOT NULL
+    graph_key text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -1765,6 +1753,41 @@ CREATE SEQUENCE codeintel_ranking_references_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_references.id;
+
+CREATE TABLE codeintel_ranking_references_processed (
+    id integer NOT NULL,
+    graph_key text NOT NULL,
+    codeintel_ranking_reference_id integer NOT NULL
+);
+
+CREATE SEQUENCE codeintel_ranking_references_processed_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_references_processed_id_seq OWNED BY codeintel_ranking_references_processed.id;
+
+CREATE TABLE codeowners (
+    id integer NOT NULL,
+    contents text NOT NULL,
+    contents_proto bytea NOT NULL,
+    repo_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE codeowners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -2543,7 +2566,6 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    version text DEFAULT '👁️temporary_sentinel_value👁️'::text NOT NULL,
     scheme text NOT NULL
 );
 
@@ -4209,6 +4231,10 @@ ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAUL
 
 ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_references_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_processed_id_seq'::regclass);
+
+ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
+
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
@@ -4451,6 +4477,15 @@ ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_ranking_references_processed
+    ADD CONSTRAINT codeintel_ranking_references_processed_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
+
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
 
@@ -4540,9 +4575,6 @@ ALTER TABLE ONLY lsif_dependency_indexing_jobs
 
 ALTER TABLE ONLY lsif_dependency_repos
     ADD CONSTRAINT lsif_dependency_repos_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY lsif_dependency_repos
-    ADD CONSTRAINT lsif_dependency_repos_unique_triplet UNIQUE (scheme, name, version);
 
 ALTER TABLE ONLY lsif_dirty_repositories
     ADD CONSTRAINT lsif_dirty_repositories_pkey PRIMARY KEY (repository_id);
@@ -4882,6 +4914,8 @@ CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_r
 
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository);
 
+CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
+
 CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
@@ -5204,8 +5238,6 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE 
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
 
-CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN ((new.version <> '👁️temporary_sentinel_value👁️'::text)) EXECUTE FUNCTION func_lsif_dependency_repos_backfill();
-
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
@@ -5414,6 +5446,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
 
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
@@ -5482,6 +5517,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY codeintel_ranking_references_processed
+    ADD CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

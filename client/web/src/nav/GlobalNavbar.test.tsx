@@ -17,6 +17,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController,
     isSourcegraphDotCom: false,
+    isSourcegraphApp: false,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,

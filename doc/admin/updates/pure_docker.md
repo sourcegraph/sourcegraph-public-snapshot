@@ -12,6 +12,15 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
+## v4.4.2 ➔ v4.5.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.2...v4.5.0)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.2...v4.5.0)
+
+#### Notes:
+
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
 ## v4.4.1 ➔ v4.4.2

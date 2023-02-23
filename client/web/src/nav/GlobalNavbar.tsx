@@ -16,6 +16,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -58,6 +59,7 @@ export interface GlobalNavbarProps
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps[]
 
@@ -124,6 +126,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     branding,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
@@ -264,6 +267,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                         </>
+                    )}
+                    {isSourcegraphApp && (
+                        <ButtonLink
+                            variant="secondary"
+                            outline={true}
+                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            size="sm"
+                            onClick={() =>
+                                eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
+                            }
+                        >
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>

@@ -18,16 +18,19 @@ import {
     useField,
     useFieldAPI,
     useForm,
+    ErrorAlert,
+    FORM_ERROR,
 } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
+import { AddExternalServiceInput } from '../../../../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import styles from './CodeHostConnection.module.scss'
 
 export interface CodeHostConnectFormFields {
     displayName: string
-    configuration: string
+    config: string
 }
 
 export interface CodeHostJSONFormState {
@@ -39,7 +42,7 @@ interface CodeHostJSONFormProps {
     externalServiceOptions: AddExternalServiceOptions
     initialValues?: CodeHostConnectFormFields
     children: (state: CodeHostJSONFormState) => ReactNode
-    onSubmit: (values: CodeHostConnectFormFields) => Promise<void>
+    onSubmit: (values: AddExternalServiceInput) => Promise<void>
 }
 
 export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
@@ -49,13 +52,13 @@ export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
         `${externalServiceOptions.kind}-connect-form`,
         {
             displayName: externalServiceOptions.defaultDisplayName,
-            configuration: externalServiceOptions.defaultConfig,
+            config: externalServiceOptions.defaultConfig,
         }
     )
 
     const form = useForm<CodeHostConnectFormFields>({
         initialValues: initialValues ?? localValues,
-        onSubmit,
+        onSubmit: values => onSubmit({ ...values, kind: externalServiceOptions.kind }),
         onChange: event => setLocalValues(event.values),
     })
 
@@ -67,7 +70,7 @@ export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
 
     const configuration = useField({
         formApi: form.formAPI,
-        name: 'configuration',
+        name: 'config',
     })
 
     return (
@@ -78,6 +81,12 @@ export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
                 configurationField={configuration}
                 externalServiceOptions={externalServiceOptions}
             />
+
+            <>
+                {form.formAPI.submitErrors && (
+                    <ErrorAlert className="w-100" error={form.formAPI.submitErrors[FORM_ERROR]} />
+                )}
+            </>
 
             <div className={styles.footer}>{children(form.formAPI)}</div>
         </form>

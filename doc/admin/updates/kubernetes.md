@@ -7,22 +7,26 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#standard-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#standard-upgrades)
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
 <!-- Add changes changes to this section before release. -->
+
+## v4.4.2 ➔ v4.5.0
+
+#### Notes:
 
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
