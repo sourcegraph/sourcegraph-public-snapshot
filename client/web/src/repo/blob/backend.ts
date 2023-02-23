@@ -120,7 +120,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
  * Note: This format should match the format used when the blob is 'normally' fetched. E.g. in `BlobPage.tsx`.
  */
 export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const enableLazyHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
