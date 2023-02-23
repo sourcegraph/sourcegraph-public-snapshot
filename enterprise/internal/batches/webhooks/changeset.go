@@ -1,16 +1,13 @@
 package webhooks
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graphql-go/graphql/gqlerrors"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -116,35 +113,12 @@ type gqlChangesetResponse struct {
 
 func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
 	q := queryInfo{}
-	q.Query = gqlChangesetQuery
-	q.Variables = map[string]any{"id": id}
-
-	reqBody, err := json.Marshal(q)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal request body")
-	}
-
-	url, err := gqlURL("Changeset")
-	if err != nil {
-		return nil, errors.Wrap(err, "construct frontend URL")
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, errors.Wrap(err, "construct request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
+	q.query = gqlChangesetQuery
+	q.variables = map[string]any{"id": id}
 
 	var res gqlChangesetResponse
-
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return nil, errors.Wrap(err, "decode response")
+	if err := makeRequest(ctx, q, "Changeset", &res); err != nil {
+		return nil, err
 	}
 
 	if len(res.Errors) > 0 {

@@ -7,8 +7,8 @@ import (
 )
 
 type queryInfo struct {
-	Query     string
-	Variables map[string]any
+	query     string
+	variables map[string]any
 }
 
 func gqlURL(queryName string) (string, error) {
