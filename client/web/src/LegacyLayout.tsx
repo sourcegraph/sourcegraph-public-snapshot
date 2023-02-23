@@ -36,6 +36,7 @@ import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
+import { LegacyLayoutRouteComponentProps } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { NotebookProps } from './notebooks'
@@ -48,7 +49,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LegacyLayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
@@ -158,8 +159,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
-    const breadcrumbProps = useBreadcrumbs()
-
     const { theme } = useTheme()
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
@@ -195,12 +194,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
     if (location.pathname !== '/' && location.pathname.endsWith('/')) {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
-
-    const context = {
-        ...props,
-        ...breadcrumbProps,
-        isMacPlatform: isMacPlatform(),
-    } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     if (isSetupWizardPage) {
         return (
@@ -281,16 +274,13 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                 >
                     <AppRouterContainer>
                         <Routes>
-                            {props.routes.map(
-                                ({ condition = () => true, ...route }) =>
-                                    condition(context) && (
-                                        <Route
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            path={route.path}
-                                            element={route.render(context)}
-                                        />
-                                    )
-                            )}
+                            {props.routes.map(({ ...route }) => (
+                                <Route
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    path={route.path}
+                                    element={route.element}
+                                />
+                            ))}
                         </Routes>
                     </AppRouterContainer>
                 </Suspense>

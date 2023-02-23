@@ -1,7 +1,7 @@
 import 'focus-visible'
 
 import * as React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -37,7 +37,6 @@ import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
-import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
@@ -63,7 +62,6 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
-import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -262,12 +260,8 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const breadcrumbProps = useBreadcrumbs()
-
-    const context = {
+    const legacyContext = {
         ...props,
-        ...breadcrumbProps,
-        telemetryService: eventLogger,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         codeIntelligenceEnabled: !!props.codeInsightsEnabled,
@@ -280,6 +274,17 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         settingsCascade,
         extensionsController: null,
     }
+
+    const router = useMemo(
+        () =>
+            createBrowserRouter([
+                {
+                    element: <LegacyRoute render={props => <Layout {...props} />} />,
+                    children: props.routes.filter(isTruthy),
+                },
+            ]),
+        [props.routes]
+    )
 
     if (window.pageError && window.pageError.statusCode !== 404) {
         const statusCode = window.pageError.statusCode
@@ -310,13 +315,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return null
     }
 
-    const router = createBrowserRouter([
-        {
-            element: <LegacyRoute render={props => <Layout {...props} />} />,
-            children: props.routes.filter(isTruthy),
-        },
-    ])
-
     return (
         <ComponentsComposer
             components={[
@@ -332,7 +330,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,
                 <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
-                <LegacyRouteContextProvider context={context} />,
+                <LegacyRouteContextProvider context={legacyContext} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
