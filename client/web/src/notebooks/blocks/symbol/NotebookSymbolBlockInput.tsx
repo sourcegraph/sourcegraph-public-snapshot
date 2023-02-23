@@ -6,7 +6,6 @@ import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/branded'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
@@ -16,7 +15,7 @@ import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookSymbolBlockInput.module.scss'
 
-interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'onRunBlock'> {
+interface NotebookSymbolBlockInputProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
     onEditorCreated: (editor: EditorView) => void

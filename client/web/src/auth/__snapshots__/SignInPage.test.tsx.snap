@@ -109,8 +109,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -219,8 +220,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -396,8 +398,9 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -535,8 +538,9 @@ exports[`SignInPage renders sign in page (server) with only builtin authProvider
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -645,8 +649,9 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -755,8 +760,9 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>
@@ -875,8 +881,9 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
             class="anchorLink"
             href="/sign-up"
           >
-            Sign up
+            Sign up.
           </a>
+           
         </p>
       </div>
     </div>

@@ -355,6 +355,11 @@ type ExternalChangeset implements Node & Changeset {
     ): BatchChangeConnection!
 
     """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
+
+    """
     The events belonging to this changeset.
     """
     events(first: Int = 50, after: String): ChangesetEventConnection!

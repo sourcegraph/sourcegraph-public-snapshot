@@ -88,7 +88,6 @@ class BlameDecorationWidget extends WidgetType {
                     onDeselect={this.deselectRow}
                     firstCommitDate={this.blameHunkMetadata.firstCommitDate}
                     externalURLs={this.blameHunkMetadata.externalURLs}
-                    isLightTheme={this.isLightTheme}
                     hideRecency={false}
                 />
             )

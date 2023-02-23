@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Node interface {
@@ -46,11 +47,11 @@ func NodeFromProto(p *proto.QueryNode) (Node, error) {
 		}
 		var kind OperatorKind
 		switch v.Operator.GetKind() {
-		case proto.OperatorKind_AND:
+		case proto.OperatorKind_OPERATOR_KIND_AND:
 			kind = And
-		case proto.OperatorKind_OR:
+		case proto.OperatorKind_OPERATOR_KIND_OR:
 			kind = Or
-		case proto.OperatorKind_NOT:
+		case proto.OperatorKind_OPERATOR_KIND_NOT:
 			kind = Not
 		default:
 			return nil, errors.Newf("unknown operator kind %s", v.Operator.GetKind().String())
@@ -239,13 +240,13 @@ const (
 func (o OperatorKind) ToProto() proto.OperatorKind {
 	switch o {
 	case And:
-		return proto.OperatorKind_AND
+		return proto.OperatorKind_OPERATOR_KIND_AND
 	case Or:
-		return proto.OperatorKind_OR
+		return proto.OperatorKind_OPERATOR_KIND_OR
 	case Not:
-		return proto.OperatorKind_NOT
+		return proto.OperatorKind_OPERATOR_KIND_NOT
 	default:
-		return proto.OperatorKind_UNSPECIFIED
+		return proto.OperatorKind_OPERATOR_KIND_UNSPECIFIED
 	}
 }
 

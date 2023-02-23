@@ -8,7 +8,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../auth'
@@ -22,8 +21,7 @@ const CreateNotebookPage = lazyComponent(() => import('./createPage/CreateNotebo
 const NotebooksListPage = lazyComponent(() => import('./listPage/NotebooksListPage'), 'NotebooksListPage')
 
 export interface GlobalNotebooksAreaProps
-    extends ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         PlatformContextProps,
         SettingsCascadeProps,
         NotebookProps,

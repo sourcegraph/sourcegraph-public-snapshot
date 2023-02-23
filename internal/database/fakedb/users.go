@@ -17,7 +17,7 @@ type Users struct {
 	list       []types.User
 }
 
-// NewUser creates new user in the fake user storage.
+// AddUser creates new user in the fake user storage.
 // This method is tailored for data setup in tests - it does not fail,
 // and conveniently returns ID of newly created user.
 func (fs Fakes) AddUser(u types.User) int32 {

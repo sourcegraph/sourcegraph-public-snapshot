@@ -11,7 +11,6 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
     Button,
@@ -50,7 +49,7 @@ import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
-export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     now?: () => Date
@@ -460,10 +459,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({
                 />
             </div>
         </span>
-        <Link
-            to={`./indexes/${node.id}`}
-            className="d-flex justify-content-end align-items-center align-self-stretch p-0"
-        >
+        <Link to={`./${node.id}`} className="d-flex justify-content-end align-items-center align-self-stretch p-0">
             <Icon svgPath={mdiChevronRight} inline={false} aria-label="View details" />
         </Link>
     </div>

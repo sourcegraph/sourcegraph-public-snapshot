@@ -42,7 +42,6 @@ const defaultProps: StreamingSearchResultsProps = {
         username: 'alice',
         emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
-    isLightTheme: true,
 
     settingsCascade: {
         subjects: null,

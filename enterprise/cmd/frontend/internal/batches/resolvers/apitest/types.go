@@ -125,10 +125,13 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename           string `json:"__typename"`
-	ID                 string
-	Repository         Repository
+	Typename   string `json:"__typename"`
+	ID         string
+	Repository Repository
+
 	BatchChanges       BatchChangeConnection
+	OwnedByBatchChange *string
+
 	CreatedAt          string
 	UpdatedAt          string
 	NextSyncAt         string
