@@ -1,17 +1,11 @@
 import React, { useEffect, useRef } from 'react'
 
-import { action } from '@storybook/addon-actions'
 import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
-import { Position } from '@sourcegraph/wildcard'
-
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
-
-const onThemePreferenceChange = action('onThemePreferenceChange')
 
 const config: Meta = {
     title: 'web/nav/UserNavItem',
@@ -70,13 +64,9 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
 }
 
 const commonProps = (props: Args): UserNavItemProps => ({
-    themePreference: ThemePreference.Light,
-    isLightTheme: true,
-    onThemePreferenceChange,
+    authenticatedUser,
     isSourcegraphDotCom: props.isSourcegraphDotCom,
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
-    authenticatedUser,
-    position: Position.bottomStart,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
 })
@@ -99,14 +89,7 @@ export const SiteAdmin: Story = args => {
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
                 <WebStory>
-                    {webProps => (
-                        <UserNavItem
-                            {...props}
-                            {...webProps}
-                            menuButtonRef={menuButtonRef}
-                            themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-                        />
-                    )}
+                    {webProps => <UserNavItem {...props} {...webProps} menuButtonRef={menuButtonRef} />}
                 </WebStory>
             )}
         </OpenByDefaultWrapper>

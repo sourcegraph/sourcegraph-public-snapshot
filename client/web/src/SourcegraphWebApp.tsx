@@ -6,8 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, from, Subscription, fromEvent, Subject } from 'rxjs'
 
 import { isTruthy, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -33,7 +32,7 @@ import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temp
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from './auth'
+import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
@@ -45,7 +44,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout } from './Layout'
-import { LegacyRoute, LegacyRouteContextProvider, LegacyRouteContextProviderProps } from './LegacyRouteContext'
+import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -64,7 +63,6 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
-import { useThemeProps } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -113,7 +111,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [userRepositoriesUpdates] = useState(() => new Subject<void>())
     const [platformContext] = useState(() => createPlatformContext())
 
-    const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(
+        authenticatedUserValue
+    )
     const [settingsCascade, setSettingsCascade] = useState<SettingsCascadeOrError<Settings>>(EMPTY_SETTINGS_CASCADE)
     const [viewerSubject, setViewerSubject] = useState<SettingsSubjectCommonFields>(() => siteSubjectNoAdmin())
 
@@ -200,8 +200,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
 
-        document.documentElement.classList.add('theme')
-
         getWebGraphQLClient()
             .then(graphqlClient => {
                 setGraphqlClient(graphqlClient)
@@ -214,19 +212,14 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             })
 
         subscriptions.add(
-            combineLatest([
-                from(platformContext.settings),
-                // Start with `undefined` while we don't know if the viewer is authenticated or not.
-                authenticatedUser.pipe(startWith(undefined)),
-            ]).subscribe(
+            combineLatest([from(platformContext.settings), authenticatedUserSubject]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
                     setViewerSubject(viewerSubjectFromSettings(settingsCascade, authenticatedUser))
-                },
-                () => setResolvedAuthenticatedUser(null)
+                }
             )
         )
 
@@ -236,19 +229,15 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
          * Don't subscribe to this event when there wasn't an authenticated user,
          * as it could lead to an infinite loop of 401 -> reload -> 401
          */
-        subscriptions.add(
-            authenticatedUser
-                .pipe(
-                    switchMap(authenticatedUser =>
-                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
-                    )
-                )
-                .subscribe(event => {
+        if (window.context.isAuthenticatedUser) {
+            subscriptions.add(
+                fromEvent<ErrorEvent>(window, 'error').subscribe(event => {
                     if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
                         location.reload()
                     }
                 })
-        )
+            )
+        }
 
         if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
@@ -274,11 +263,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     }, [])
 
     const breadcrumbProps = useBreadcrumbs()
-    const themeProps = useThemeProps()
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         telemetryService: eventLogger,
         selectedSearchContextSpec,
@@ -319,7 +306,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
     }
 
-    if (authenticatedUser === null || graphqlClient === null || temporarySettingsStorage === null) {
+    if (graphqlClient === null || temporarySettingsStorage === null) {
         return null
     }
 

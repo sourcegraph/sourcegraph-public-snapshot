@@ -8,18 +8,19 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Icon, Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
 import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboarding/AddCodeHostWidget'
-import { useExperimentalFeatures } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
@@ -28,8 +29,6 @@ import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
@@ -48,8 +47,9 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
     const { width } = useWindowSize()
+    const isLightTheme = useIsLightTheme()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
+    const [experimentalQueryInput] = useExperimentalQueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -57,10 +57,20 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     })
 
     useEffect(() => {
-        if (experimentalQueryInput && props.selectedSearchContextSpec) {
-            setQueryState(state =>
-                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
-            )
+        // TODO (#48103): Remove/simplify when new search input is released
+        // Because the current and the new search input handle the context: selector differently
+        // we need properly "translate" the queries when switching between the both versions
+        if (props.selectedSearchContextSpec) {
+            setQueryState(state => {
+                if (experimentalQueryInput) {
+                    return { query: appendContextFilter(state.query, props.selectedSearchContextSpec) }
+                }
+                const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
+                if (contextFilter) {
+                    return { query: omitFilter(state.query, contextFilter) }
+                }
+                return state
+            })
         }
     }, [experimentalQueryInput, props.selectedSearchContextSpec])
 
@@ -68,7 +78,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
-            <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
+            <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="d-sm-flex flex-row text-center">
                     <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
@@ -119,7 +129,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 )}
             </div>
 
-            <SearchPageFooter {...props} />
+            <SearchPageFooter {...props} isLightTheme={isLightTheme} />
         </div>
     )
 }

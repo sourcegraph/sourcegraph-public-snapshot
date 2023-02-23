@@ -15,19 +15,15 @@ import {
     isSearchContextSpecAvailable,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbSetters, BreadcrumbsProps } from './components/Breadcrumbs'
 import type { LegacyLayoutProps } from './LegacyLayout'
-import { ThemePreferenceProps } from './theme'
 
 export interface LegacyLayoutRouteComponentProps
     extends Omit<LegacyLayoutProps, 'match'>,
-        ThemeProps,
-        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         CodeIntelligenceProps,

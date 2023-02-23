@@ -39,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -54,6 +53,7 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = parallel.NewRun(500)
+	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -75,7 +75,7 @@ var _ Client = &clientImplementor{}
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		addrs:       NewGitserverAddressesFromConf,
+		conns:       conns.get,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -92,7 +92,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		addrs:       func() GitserverAddresses { return newTestGitserverAddresses(addrs) },
+		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -189,9 +189,8 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// addrs is a function that returns the current set of gitserver addresses.
-	// It is called each time a request is made. It must be safe for concurrent use.
-	addrs func() GitserverAddresses
+	// conns is a function that returns the current set of gitserver addresses and connections
+	conns func() *GitserverConns
 
 	// operations are used for internal observability
 	operations *operations
@@ -433,11 +432,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.addrs().Addresses
+	return c.conns().Addresses
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.addrs().AddrForRepo(c.userAgent, repo)
+	return c.conns().AddrForRepo(c.userAgent, repo)
+}
+
+func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
+	return c.conns().ConnForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -529,6 +532,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
+		conn, err := c.execer.ConnForRepo(repoName)
+		if err != nil {
+			return nil, err
+		}
+		client := proto.NewGitserverServiceClient(conn)
+
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
@@ -536,17 +545,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
-		addr := c.execer.AddrForRepo(repoName)
 
-		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
-		if err != nil {
-			return nil, err
-		}
+		ctx, cancel := context.WithCancel(ctx)
 
-		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
-			conn.Close()
+			cancel()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
@@ -559,7 +563,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return msg.GetData(), nil
 		})
 
-		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+		return &readCloseWrapper{r: r, closeFn: cancel}, err
 
 	} else {
 		req := &protocol.ExecRequest{
@@ -596,7 +600,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 
 type readCloseWrapper struct {
 	r       io.Reader
-	closeFn func() error
+	closeFn func()
 }
 
 func (r *readCloseWrapper) Read(p []byte) (int, error) {
@@ -628,7 +632,8 @@ func (r *readCloseWrapper) Read(p []byte) (int, error) {
 }
 
 func (r *readCloseWrapper) Close() error {
-	return r.closeFn()
+	r.closeFn()
+	return nil
 }
 
 type CommandStatusError struct {
@@ -667,14 +672,11 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	addrForRepo := c.AddrForRepo(repoName)
-
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := grpc.DialContext(ctx, addrForRepo, defaults.DialOptions()...)
+		conn, err := c.ConnForRepo(repoName)
 		if err != nil {
 			return false, err
 		}
-		defer conn.Close()
 
 		client := proto.NewGitserverServiceClient(conn)
 		cs, err := client.Search(ctx, args.ToProto())
@@ -699,6 +701,8 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 			}
 		}
 	}
+
+	addrForRepo := c.AddrForRepo(repoName)
 
 	protocol.RegisterGob()
 	var buf bytes.Buffer

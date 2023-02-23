@@ -19,6 +19,7 @@ type TestChangesetOpts struct {
 	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
+
 	BatchChanges []btypes.BatchChangeAssoc
 
 	ExternalServiceType   string

@@ -72,7 +72,6 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
 export interface WebviewPageProps {
     extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>
     platformContext: VSCodePlatformContext
-    theme: 'theme-dark' | 'theme-light'
     authenticatedUser: AuthenticatedUser | null
     settingsCascade: SettingsCascadeOrError
     instanceURL: string
