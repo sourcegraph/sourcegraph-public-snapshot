@@ -25,7 +25,9 @@ Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
 ### **Step 1**: Set up a release branch
 
-Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository. Refer to the [reference repository's docs](../repositories.md) for instructions on creating a local fork.
+Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
+
+See the [docs on reference repository](../repositories.md) for detailed instructions on creating a local fork.
 
 ```bash
   $ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
@@ -35,29 +37,27 @@ Create a release branch from the default branch in your local fork of the [deplo
 
 ### **Step 2**: Set up a directory for your instance
 
-Create an instance directory called `instances/my-sourcegraph` from the [instances/template](kustomize/index.md#template) directory:
+Create a copy of the [instances/template](kustomize/index.md#template) directory and rename it to `instances/my-sourcegraph`:
 
 ```bash
   $ cp -R instances/template instances/my-sourcegraph
 ```
 
+In Kustomize, this directory is referred to as an [overlay](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay).
+
 ### **Step 3**: Set up the configuration files
 
-#### kustomization.yaml
+1\. Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`.
 
 The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
-
-1\. Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`:
 
 ```bash
   $ mv instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
 ```
 
-#### buildConfig.yaml
+2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`.
 
 The `buildConfig.yaml` file is used to configure components included in your `kustomization` file when required.
-
-2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`:
 
 ```bash
   $ mv instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml

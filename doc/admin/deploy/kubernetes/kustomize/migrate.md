@@ -1,6 +1,6 @@
 # Migration Docs for Kustomize
 
-The old method of deploying Sourcegraph with custom scripts has been deprecated. Instead, the new setup uses Kustomize, a Kubernetes-native tool, for configurations. This guide explains how to migrate from the old setup to the new one.
+The old method of deploying Sourcegraph with custom scripts has been deprecated. Instead, the new setup uses Kustomize, a Kubernetes-native tool, for configurations. This guide explains how to migrate from the old setup ([deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)) to the new one ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)).
 
 >NOTE: Both the old custom scripts and Kustomize only create manifests for deployment and don’t change any existing resources in an active cluster.
 
@@ -26,6 +26,8 @@ Here are the benefits of the new base cluster with the new Kustomize setup compa
  * Designed to work seamlessly with Sourcegraph’s design and functionality
  * Prevents merge conflicts during upgrades
 
+---
+
 ### Migration process
 
 The migration process for transitioning from the Kustomize setup in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) involves the steps shown below. 
@@ -34,11 +36,13 @@ The goal of this migration process is to create a new overlay that will generate
 
 #### Step 1: Upgrade current instance
 
-Upgrade your current instance to the latest version of Sourcegraph (must be 4.5.0 or above) using the old deployment method in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph).
+Upgrade your current instance to the latest version of Sourcegraph (must be 4.5.0 or above) following the [standard upgrade process](update.md#standard-upgrades) for [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph).
 
 ##### From Privileged to Non-privileged
 
-If your Sourcegraph instance is currently running in privileged mode, and would like to migrate from `Privileged` (old-default) to `Non-privileged` (new-default), please proceed with the upgrade process using the [migrate-to-nonprivileged](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) overlay from the [deploy-sourcegraph repository](https://github.com/sourcegraph/deploy-sourcegraph) when doing the upgrade.
+Sourcegraph's deployment mode changed from privileged (containers run as root) to non-privileged (containers run as non-root) as the default in the new Kustomize setup. If your instance is currently running in privileged mode and you want to upgrade to `non-privileged` mode, use the [migrate-to-nonprivileged overlay](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) from the Sourcegraph [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository when performing your upgrade.
+   
+Follow the [standard upgrade process](update.md#standard-upgrades), but applying the [migrate-to-nonprivileged overlay](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) will convert your deployment to run in non-privileged mode
 
 #### Step 2: Set up a release branch
 

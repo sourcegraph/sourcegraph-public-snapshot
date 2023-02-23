@@ -456,6 +456,9 @@ syntect-server                  ClusterIP   10.72.14.49    <none>        9238/TC
 worker                          ClusterIP   10.72.7.72     <none>        3189/TCP,6060/TCP            25h
 ```
 
+## Migrate to Kustomize
+
+See the [migration docs for Kustomize](kustomize/migrate.md) for more information.
 
 ## Upgrade
 
