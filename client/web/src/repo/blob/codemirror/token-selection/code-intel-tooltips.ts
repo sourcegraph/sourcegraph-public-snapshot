@@ -31,7 +31,6 @@ type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null }
 export const setFocusedOccurrence = StateEffect.define<Occurrence | null>()
 export const setFocusedOccurrenceTooltip = StateEffect.define<Tooltip | null>()
 const setPinnedCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
-export const pinHoverTooltip = StateEffect.define<void>()
 const setHoveredCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 
 /**
@@ -61,11 +60,14 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
             }
 
             if (effect.is(setPinnedCodeIntelTooltipState)) {
-                return { ...value, pin: effect.value }
-            }
+                // If the pinned occurrence is the same as the hovered or focused one, use pin the existing one
+                for (const trigger of ['hover', 'focus'] as const) {
+                    if (effect.value?.occurrence === value[trigger]?.occurrence) {
+                        return { ...value, pin: value[trigger], [trigger]: null }
+                    }
+                }
 
-            if (effect.is(pinHoverTooltip)) {
-                return { ...value, pin: value.hover }
+                return { ...value, pin: effect.value }
             }
         }
 

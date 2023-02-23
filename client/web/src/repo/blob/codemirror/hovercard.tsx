@@ -142,12 +142,6 @@ export class HovercardView implements TooltipView {
                                 this.nextPinned.next(false)
                             },
                             onCopyLinkButtonClick: async () => {
-                                if (!pinned) {
-                                    // This needs to happen before updating the URL so that we avoid re-creating the hovercard
-                                    this.view.dispatch({
-                                        effects: pinHoverTooltip.of(),
-                                    })
-                                }
                                 const { line, character } = hoveredToken
                                 const position = { line, character }
 
