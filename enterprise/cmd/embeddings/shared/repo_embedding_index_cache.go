@@ -23,7 +23,7 @@ type repoEmbeddingIndexCacheEntry struct {
 	finishedAt time.Time
 }
 
-func getCachedRepoEmbeddingIndexFn(
+func getCachedRepoEmbeddingIndex(
 	repoStore database.RepoStore,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,

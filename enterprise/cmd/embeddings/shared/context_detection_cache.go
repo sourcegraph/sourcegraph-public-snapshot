@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-func getCachedContextDetectionEmbeddingIndexFn(uploadStore uploadstore.Store) getContextDetectionEmbeddingIndexFn {
+func getCachedContextDetectionEmbeddingIndex(uploadStore uploadstore.Store) getContextDetectionEmbeddingIndexFn {
 	mu := sync.Mutex{}
 	var contextDetectionEmbeddingIndex *embeddings.ContextDetectionEmbeddingIndex = nil
 	return func(ctx context.Context) (_ *embeddings.ContextDetectionEmbeddingIndex, err error) {

@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestGetCachedRepoEmbeddingIndexFn(t *testing.T) {
+func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	mockRepoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
 	mockRepoStore := database.NewMockRepoStore()
 
@@ -24,7 +24,7 @@ func TestGetCachedRepoEmbeddingIndexFn(t *testing.T) {
 	})
 
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndexFn(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
 		hasDownloadedRepoEmbeddingIndex = true
 		return &embeddings.RepoEmbeddingIndex{}, nil
 	})

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -67,12 +68,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "creating sub-repo client")
 	}
 
-	readFile, err := readCachedFileFn(gitserverClient)
-	if err != nil {
-		return err
+	readFile := func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
+		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
 	}
 
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndexFn(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
 		return downloadJSONFile[embeddings.RepoEmbeddingIndex](ctx, uploadStore, string(repoEmbeddingIndexName))
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndexFn(uploadStore)
+	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
 	handler := NewHandler(ctx, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
