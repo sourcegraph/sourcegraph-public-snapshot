@@ -81,7 +81,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		eventWriter.Error(err)
 		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }

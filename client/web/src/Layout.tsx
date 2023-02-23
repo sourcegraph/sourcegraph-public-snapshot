@@ -73,6 +73,7 @@ export interface LegacyLayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
