@@ -24132,6 +24132,48 @@ Query: `sum(increase(src_codeintel_uploads_ranking_num_references_inserted_total
 
 <br />
 
+#### codeintel-ranking: codeintel_uploads_num_stale_definition_records_deleted_total
+
+<p class="subtitle">Definition records removed stale definition records removed every 5m</p>
+
+The number of stale definition records removed from Postgres.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_num_stale_definition_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_uploads_num_stale_reference_records_deleted_total
+
+<p class="subtitle">Reference records removed stale reference records removed every 5m</p>
+
+The number of stale reference records removed from Postgres.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100203` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_num_stale_reference_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### codeintel-ranking: codeintel_ranking_reference_records_processed_total
 
 <p class="subtitle">Reference rows processed reference rows processed every 5m</p>
@@ -24216,48 +24258,6 @@ Query: `sum(increase(src_codeintel_ranking_path_ranks_inserted_total{job=~"^${so
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_num_stale_definition_records_deleted_total
-
-<p class="subtitle">Definition records removed stale definition records removed every 5m</p>
-
-The number of stale definition records removed from Postgres.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100220` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_num_stale_definition_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_uploads_num_stale_reference_records_deleted_total
-
-<p class="subtitle">Reference records removed stale reference records removed every 5m</p>
-
-The number of stale reference records removed from Postgres.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100221` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_num_stale_reference_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
 #### codeintel-ranking: codeintel_uploads_num_metadata_records_deleted_total
 
 <p class="subtitle">Metadata records removed stale metadata records removed every 5m</p>
@@ -24266,7 +24266,7 @@ The number of stale metadata records removed from Postgres.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100222` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100220` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -24287,7 +24287,7 @@ The number of stale input records removed from Postgres.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100223` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100221` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 

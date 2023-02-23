@@ -95,6 +95,20 @@ func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of reference rows inserted into Postgres.
 				`).Observable(),
+
+				Standard.Count("stale definition records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_stale_definition_records_deleted",
+					MetricDescriptionRoot: "definition records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale definition records removed from Postgres.
+				`).Observable(),
+
+				Standard.Count("stale reference records removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_uploads_num_stale_reference_records_deleted",
+					MetricDescriptionRoot: "reference records removed",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale reference records removed from Postgres.
+				`).Observable(),
 			},
 
 			{
@@ -128,20 +142,6 @@ func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 			},
 
 			{
-				Standard.Count("stale definition records removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_uploads_num_stale_definition_records_deleted",
-					MetricDescriptionRoot: "definition records removed",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale definition records removed from Postgres.
-				`).Observable(),
-
-				Standard.Count("stale reference records removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_uploads_num_stale_reference_records_deleted",
-					MetricDescriptionRoot: "reference records removed",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale reference records removed from Postgres.
-				`).Observable(),
-
 				Standard.Count("stale metadata records removed")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_uploads_num_metadata_records_deleted",
 					MetricDescriptionRoot: "metadata records removed",
