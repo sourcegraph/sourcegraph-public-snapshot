@@ -8,13 +8,13 @@ Secrets can be found in https://docs.google.com/document/d/1YDqrpxJhdfudlRsYTQMG
 
 The first step is to create the app bundle structure and put in place some starting files
 
-An app package is just a cspecific directory structure
+An app bundle is just a specific directory structure
 
 Decide where you want to build the app
 
-Let's default to `${HOME}/Downloads`
+Let's default to `${HOME}/Downloads`, but you can choose any location you'd like.
 
-And we'll copy in `Info.plist`, `icons.icns`, `external-services-config.json` and `sourcegraph_wrapper.sh`
+Throughout this document, we will refer to `${PATH_TO_APP}`, so copy/paste into Terminal should work ok as long as you define that environment variable here.
 
 ```
 PATH_TO_APP=${HOME}/Downloads
