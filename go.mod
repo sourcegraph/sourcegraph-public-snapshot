@@ -102,7 +102,6 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.9.3
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
-	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opentracing-contrib/go-stdlib v1.0.0
 	github.com/opentracing/opentracing-go v1.2.0

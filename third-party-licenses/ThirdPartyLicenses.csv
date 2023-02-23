@@ -665,7 +665,6 @@ Go,github.com/muesli/termenv,v0.12.0,MIT,github.com/muesli/termenv,Approved
 Go,github.com/munnerz/goautoneg,v0.0.0-20191010083416-a7dc8b61c822,New BSD,github.com/munnerz/goautoneg,Approved
 Go,github.com/mwitkow/go-conntrack,v0.0.0-20190716064945-2f068394615f,Apache 2.0,github.com/mwitkow/go-conntrack,Approved
 Go,github.com/mxk/go-flowrate,v0.0.0-20140419014527-cca7078d478f,New BSD,github.com/mxk/go-flowrate,Approved
-Go,github.com/neelance/parallel,v0.0.0-20160708114440-4de9ce63d14c,Simplified BSD,github.com/neelance/parallel,Approved
 Go,github.com/oklog/ulid,v1.3.1,Apache 2.0,github.com/oklog/ulid,Approved
 Go,github.com/olekukonko/tablewriter,v0.0.5,MIT,github.com/olekukonko/tablewriter,Approved
 Go,github.com/opencontainers/go-digest,v1.0.0,Apache 2.0,github.com/opencontainers/go-digest,Approved
