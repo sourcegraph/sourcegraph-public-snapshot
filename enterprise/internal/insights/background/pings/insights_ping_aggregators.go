@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
 	insightTypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -157,7 +159,8 @@ func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (type
 }
 
 func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.InsightsBackfillTimePing, error) {
-	rows, err := e.insightsDb.QueryContext(ctx, backfillTimeQuery, time.Now())
+	q := sqlf.Sprintf(backfillTimeQuery, time.Now())
+	rows, err := e.insightsDb.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return []types.InsightsBackfillTimePing{}, err
 	}
@@ -293,7 +296,7 @@ WITH recent_backfills as (
 	FROM insight_series_backfill isb
 	  JOIN repo_iterator ri on isb.repo_iterator_id = ri.id
 	WHERE isb.state = 'completed'
-		AND ri.completed_at > date_trunc('week', %s)
+		AND ri.completed_at > date_trunc('week', %s::date)
 	GROUP BY isb.series_id
 )
 SELECT
