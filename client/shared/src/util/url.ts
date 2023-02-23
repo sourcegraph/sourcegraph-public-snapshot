@@ -25,7 +25,7 @@ export interface RepoSpec {
      *
      * Example: `sourcegraph/sourcegraph`
      */
-    repoName: stringimport { AuthenticatedUser } from '../auth'
+    repoName: string
 }
 
 export interface RawRepoSpec {
