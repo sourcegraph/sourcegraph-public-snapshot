@@ -35466,9 +35466,6 @@ type MockPermissionStore struct {
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *PermissionStoreDeleteFunc
-	// FetchAllFunc is an instance of a mock function object controlling the
-	// behavior of the method FetchAll.
-	FetchAllFunc *PermissionStoreFetchAllFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *PermissionStoreGetByIDFunc
@@ -35510,11 +35507,6 @@ func NewMockPermissionStore() *MockPermissionStore {
 		},
 		DeleteFunc: &PermissionStoreDeleteFunc{
 			defaultHook: func(context.Context, DeletePermissionOpts) (r0 error) {
-				return
-			},
-		},
-		FetchAllFunc: &PermissionStoreFetchAllFunc{
-			defaultHook: func(context.Context) (r0 []*types.Permission, r1 error) {
 				return
 			},
 		},
@@ -35570,11 +35562,6 @@ func NewStrictMockPermissionStore() *MockPermissionStore {
 				panic("unexpected invocation of MockPermissionStore.Delete")
 			},
 		},
-		FetchAllFunc: &PermissionStoreFetchAllFunc{
-			defaultHook: func(context.Context) ([]*types.Permission, error) {
-				panic("unexpected invocation of MockPermissionStore.FetchAll")
-			},
-		},
 		GetByIDFunc: &PermissionStoreGetByIDFunc{
 			defaultHook: func(context.Context, GetPermissionOpts) (*types.Permission, error) {
 				panic("unexpected invocation of MockPermissionStore.GetByID")
@@ -35617,9 +35604,6 @@ func NewMockPermissionStoreFrom(i PermissionStore) *MockPermissionStore {
 		},
 		DeleteFunc: &PermissionStoreDeleteFunc{
 			defaultHook: i.Delete,
-		},
-		FetchAllFunc: &PermissionStoreFetchAllFunc{
-			defaultHook: i.FetchAll,
 		},
 		GetByIDFunc: &PermissionStoreGetByIDFunc{
 			defaultHook: i.GetByID,
@@ -36168,111 +36152,6 @@ func (c PermissionStoreDeleteFuncCall) Args() []interface{} {
 // invocation.
 func (c PermissionStoreDeleteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// PermissionStoreFetchAllFunc describes the behavior when the FetchAll
-// method of the parent MockPermissionStore instance is invoked.
-type PermissionStoreFetchAllFunc struct {
-	defaultHook func(context.Context) ([]*types.Permission, error)
-	hooks       []func(context.Context) ([]*types.Permission, error)
-	history     []PermissionStoreFetchAllFuncCall
-	mutex       sync.Mutex
-}
-
-// FetchAll delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockPermissionStore) FetchAll(v0 context.Context) ([]*types.Permission, error) {
-	r0, r1 := m.FetchAllFunc.nextHook()(v0)
-	m.FetchAllFunc.appendCall(PermissionStoreFetchAllFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the FetchAll method of
-// the parent MockPermissionStore instance is invoked and the hook queue is
-// empty.
-func (f *PermissionStoreFetchAllFunc) SetDefaultHook(hook func(context.Context) ([]*types.Permission, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// FetchAll method of the parent MockPermissionStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *PermissionStoreFetchAllFunc) PushHook(hook func(context.Context) ([]*types.Permission, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermissionStoreFetchAllFunc) SetDefaultReturn(r0 []*types.Permission, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]*types.Permission, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermissionStoreFetchAllFunc) PushReturn(r0 []*types.Permission, r1 error) {
-	f.PushHook(func(context.Context) ([]*types.Permission, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermissionStoreFetchAllFunc) nextHook() func(context.Context) ([]*types.Permission, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermissionStoreFetchAllFunc) appendCall(r0 PermissionStoreFetchAllFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PermissionStoreFetchAllFuncCall objects
-// describing the invocations of this function.
-func (f *PermissionStoreFetchAllFunc) History() []PermissionStoreFetchAllFuncCall {
-	f.mutex.Lock()
-	history := make([]PermissionStoreFetchAllFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermissionStoreFetchAllFuncCall is an object that describes an invocation
-// of method FetchAll on an instance of MockPermissionStore.
-type PermissionStoreFetchAllFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*types.Permission
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermissionStoreFetchAllFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermissionStoreFetchAllFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermissionStoreGetByIDFunc describes the behavior when the GetByID method

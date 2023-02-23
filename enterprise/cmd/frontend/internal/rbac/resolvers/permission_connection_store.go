@@ -47,6 +47,9 @@ func (pcs *permisionConnectionStore) ComputeTotal(ctx context.Context) (*int32, 
 }
 
 func (pcs *permisionConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]gql.PermissionResolver, error) {
+	if args == nil {
+		args = &database.PaginationArgs{}
+	}
 	permissions, err := pcs.db.Permissions().List(ctx, database.PermissionListOpts{
 		PaginationArgs: args,
 		RoleID:         pcs.roleID,
