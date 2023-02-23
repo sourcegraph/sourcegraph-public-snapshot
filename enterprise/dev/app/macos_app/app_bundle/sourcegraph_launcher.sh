@@ -6,27 +6,27 @@ unset ZPID RPID SPID UPID
 cleanup() {
     # kill any background/child processes
     [ ${SPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" >>"${sgdir}/sourcegraph.log"
+        echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" | tee -a "${sgdir}/sourcegraph.log"
         kill "${SPID}"
     }
     # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
     [ ${RPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING syntect_server process ${RPID}" >>"${sgdir}/sourcegraph.log"
+        echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
         kill "${RPID}"
     }
     [ ${ZPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING zoekt process ${ZPID}" >>"${sgdir}/sourcegraph.log"
+        echo "$(date) CONTROL KILLING zoekt process ${ZPID}" | tee -a "${sgdir}/sourcegraph.log"
         kill "${ZPID}"
     }
     # [ ${UPID:-0} -gt 0 ] && {
-    #     echo "$(date) CONTROL KILLING repo-updater process ${UPID}" >>"${sgdir}/sourcegraph.log"
+    #     echo "$(date) CONTROL KILLING repo-updater process ${UPID}" | tee -a "${sgdir}/sourcegraph.log"
     #     kill "${UPID}"
     # }
-    
+
     # kill any ctags processes that were started
     cpids=$(pgrep -f "${CTAGS_COMMAND}" | tr '\n' ' ')
     [ -n "${cpids}" ] && {
-        echo "$(date) CONTROL KILLING ctags processes ${cpids}" >>"${sgdir}/sourcegraph.log"
+        echo "$(date) CONTROL KILLING ctags processes ${cpids}" | tee -a "${sgdir}/sourcegraph.log"
         kill ${cpids}
     }
 
@@ -37,13 +37,13 @@ cleanup() {
     # TODO: do we really need to do this? The app startup process runs a shutdown/stop
     # on the embedded database before trying to start it. Is it ok to leave it running?
     [ -x "${pgdir}/bin/bin/pg_ctl" ] && {
-        echo "$(date) CONTROL KILLING embedded postgres instance" >>"${sgdir}/sourcegraph.log"
-        echo "\"${pgdir}/bin/bin/pg_ctl\" stop -w -D \"${pgdir}/data\" -m immediate" >>"${sgdir}/sourcegraph.log"
-        "${pgdir}/bin/bin/pg_ctl" stop -w -D "${pgdir}/data" -m immediate 2>>"${sgdir}/sourcegraph.log" 1>&2
+        echo "$(date) CONTROL KILLING embedded postgres instance" | tee -a "${sgdir}/sourcegraph.log"
+        echo "\"${pgdir}/bin/bin/pg_ctl\" stop -w -D \"${pgdir}/data\" -m immediate" | tee -a "${sgdir}/sourcegraph.log"
+        "${pgdir}/bin/bin/pg_ctl" stop -w -D "${pgdir}/data" -m immediate 1>&2  | tee -a "${sgdir}/sourcegraph.log"
     }
 
     # drop a line in the log file to show we were here
-    echo "$(date) CONTROL END" >>"${sgdir}/sourcegraph.log"
+    echo "$(date) CONTROL END" | tee -a "${sgdir}/sourcegraph.log"
 }
 trap cleanup EXIT
 
@@ -138,8 +138,8 @@ EOF
 
 # launch app
 # send it to background so that I can also open the webpage
-echo "$(date) CONTROL START" >"${sgdir}/sourcegraph.log"
-"${DIR}"/sourcegraph >>"${sgdir}/sourcegraph.log" 2>&1 &
+echo "$(date) CONTROL START" | tee "${sgdir}/sourcegraph.log"
+"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log" &
 SPID=$!
 
 # give it a bit of time to start up
@@ -158,7 +158,7 @@ then
         # wait a bit before checking
         sleep 1
         now=$(date +%s)
-        echo "$(date) CONTROL CHECK RUNNING" >>"${sgdir}/sourcegraph.log"
+        echo "$(date) CONTROL CHECK RUNNING" | tee -a "${sgdir}/sourcegraph.log"
         x=$(curl -s -L -o /dev/null -w "%{http_code}" http://localhost:3080 2>>"${sgdir}/sourcegraph.log")
         [ "${x:-0}" -eq 200 ] && {
             count=$((count + 1))
