@@ -9,7 +9,6 @@ import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
 import { SourcegraphContext } from '../jscontext'
-import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
@@ -50,7 +49,6 @@ export const WebStory: FC<WebStoryProps> = ({
     const breadcrumbSetters = useBreadcrumbs()
 
     usePrependStyles('web-styles', webStyles)
-    setExperimentalFeaturesForTesting()
 
     const routes = [
         {
