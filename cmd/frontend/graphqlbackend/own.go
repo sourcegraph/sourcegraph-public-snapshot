@@ -57,7 +57,7 @@ type CodeownersFileEntryResolver interface {
 	RuleLineMatch(context.Context) (int32, error)
 }
 
-type IngestedCodeownersResolver interface {
+type CodeownersResolver interface {
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFile(context.Context, *DeleteCodeownersFileArgs) error

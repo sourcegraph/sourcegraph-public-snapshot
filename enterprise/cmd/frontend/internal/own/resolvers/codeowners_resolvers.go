@@ -10,12 +10,17 @@ import (
 )
 
 var (
+	_ graphqlbackend.CodeownersResolver = &codeownersResolver{}
+
 	_ graphqlbackend.CodeownersIngestedFileResolver           = &codeownersIngestedFileResolver{}
-	_ graphqlbackend.IngestedCodeownersResolver               = &codeownersResolver{}
 	_ graphqlbackend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
 )
 
 type codeownersResolver struct{}
+
+func NewCodeowners() graphqlbackend.CodeownersResolver {
+	return &codeownersResolver{}
+}
 
 func (c *codeownersResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
 	return &codeownersIngestedFileResolver{}, nil
