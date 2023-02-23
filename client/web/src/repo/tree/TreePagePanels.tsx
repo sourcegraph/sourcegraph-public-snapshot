@@ -7,6 +7,7 @@ import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
     CardHeader,
+    H2,
     Icon,
     Link,
     LinkOrSpan,
@@ -18,7 +19,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BlobFileFields } from '../../graphql-operations'
-import { dirname } from '../../util/path'
+import { basename, dirname } from '../../util/path'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -70,7 +71,14 @@ const RenderedReadmeFile: React.FC<RenderedReadmeFileProps> = ({ blob, entryUrl 
     const { bottom } = useElementObscuredArea(renderedFileRef)
     return (
         <>
-            <RenderedFile ref={renderedFileRef} dangerousInnerHTML={blob.richHTML} className={styles.readme} />
+            {blob.richHTML ? (
+                <RenderedFile ref={renderedFileRef} dangerousInnerHTML={blob.richHTML} className={styles.readme} />
+            ) : (
+                <div ref={renderedFileRef} className={styles.readme}>
+                    <H2 className={styles.readmePreHeader}>{basename(entryUrl)}</H2>
+                    <pre className={styles.readmePre}>{blob.content}</pre>
+                </div>
+            )}
             {bottom > 0 && (
                 <>
                     <div className={styles.readmeFader} />

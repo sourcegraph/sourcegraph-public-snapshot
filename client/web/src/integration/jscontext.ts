@@ -1,3 +1,5 @@
+import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+
 import { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
@@ -13,6 +15,7 @@ export const builtinAuthProvider = {
 }
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({
+    currentUser: currentUserMock,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,

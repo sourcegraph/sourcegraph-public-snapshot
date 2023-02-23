@@ -12,7 +12,6 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
     Badge,
@@ -58,7 +57,7 @@ const DEBOUNCED_WAIT = 250
 
 const MS_IN_HOURS = 60 * 60 * 1000
 
-export interface CodeIntelConfigurationPolicyPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
     repo?: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
