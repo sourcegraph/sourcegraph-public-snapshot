@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- The environment variable `TELEMETRY_HTTP_PROXY` can be set  on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests.
+- The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests.
 
 ### Changed
 
