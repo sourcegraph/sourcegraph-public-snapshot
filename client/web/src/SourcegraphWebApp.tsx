@@ -71,7 +71,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -230,7 +230,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         subscriptions.add(
             combineLatest([from(platformContext.settings), authenticatedUserSubject]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
-                    setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)

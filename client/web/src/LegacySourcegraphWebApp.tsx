@@ -74,7 +74,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -208,7 +208,6 @@ export class LegacySourcegraphWebApp extends React.Component<
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
                 authenticatedUserSubject,
             ]).subscribe(([settingsCascade, authenticatedUser]) => {
-                setExperimentalFeaturesFromSettings(settingsCascade)
                 setQueryStateFromSettings(settingsCascade)
                 this.setState({
                     settingsCascade,
