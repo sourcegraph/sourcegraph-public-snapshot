@@ -15,11 +15,11 @@ import (
 func (x *File) FindOwners(path string) []*Owner {
 	var owners []*Owner
 	for _, rule := range x.GetRule() {
-		glob, err := compile(rule.GetPattern())
+		glob, err := Compile(rule.GetPattern())
 		if err != nil {
 			continue
 		}
-		if glob.match(path) {
+		if glob.Match(path) {
 			owners = rule.GetOwner()
 		}
 	}
@@ -81,10 +81,10 @@ func (p asteriskPattern) Match(part string) bool {
 	return p.compiled.FindString(part) != ""
 }
 
-// compile translates a text representation of a glob pattern
+// Compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
-func compile(pattern string) (globPattern, error) {
-	var glob globPattern
+func Compile(pattern string) (GlobPattern, error) {
+	var glob GlobPattern
 	// No leading `/` is equivalent to prefixing with `/**/`.
 	// The pattern matches arbitrarily down the directory tree.
 	if !strings.HasPrefix(pattern, separator) {
@@ -130,7 +130,7 @@ func compile(pattern string) (globPattern, error) {
 // globPattern implements a pattern for matching file paths,
 // which can use directory/file names, * and ** wildcards,
 // and may or may not be anchored to the root directory.
-type globPattern []patternPart
+type GlobPattern []patternPart
 
 // match iterates over `filePath` separated by `/`. It uses a bit vector
 // to track which prefixes of glob pattern match the file path prefix so far.
@@ -158,7 +158,7 @@ type globPattern []patternPart
 //
 // The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
-func (glob globPattern) match(filePath string) bool {
+func (glob GlobPattern) Match(filePath string) bool {
 	currentState := big.NewInt(0)
 	glob.markEmptyMatches(currentState)
 	filePathParts := strings.Split(strings.Trim(filePath, separator), separator)
@@ -175,7 +175,7 @@ func (glob globPattern) match(filePath string) bool {
 // matches for an empty input (`/`). This is most often just bit 0, but in case
 // there are subpath wildcard **, it is expanded to all indices past the
 // wildcards, since they match empty path.
-func (glob globPattern) markEmptyMatches(state *big.Int) {
+func (glob GlobPattern) markEmptyMatches(state *big.Int) {
 	state.SetBit(state, 0, 1)
 	for i, globPart := range glob {
 		if _, ok := globPart.(anySubPath); !ok {
@@ -186,7 +186,7 @@ func (glob globPattern) markEmptyMatches(state *big.Int) {
 }
 
 // matchesWhole returns true if given state indicates whole glob being matched.
-func (glob globPattern) matchesWhole(state *big.Int) bool {
+func (glob GlobPattern) matchesWhole(state *big.Int) bool {
 	return state.Bit(len(glob)) == 1
 }
 
@@ -194,7 +194,7 @@ func (glob globPattern) matchesWhole(state *big.Int) bool {
 // The `current` bit vector is the matching state for up until, but excluding
 // given `part` of the file path. The result - next set of states - is written
 // to bit vector `next`, which is assumed to be zero when passed in.
-func (glob globPattern) consume(part string, current, next *big.Int) {
+func (glob GlobPattern) consume(part string, current, next *big.Int) {
 	// Since `**` or `anySubPath` can match any number of times, we hold
 	// an invariant: If a bit vector has 1 at the state preceding `**`,
 	// then that bit vector also has 1 at the state following `**`.

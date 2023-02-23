@@ -94,20 +94,19 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		graph, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
+		ownerships, err := graph.FindOwners(ctx, mm.File.Path)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		for _, o := range resolvedOwners {
+		for _, o := range ownerships {
 			ownerMatch := &result.OwnerMatch{
-				ResolvedOwner: o,
+				ResolvedOwner: o.Owner,
 				InputRev:      mm.InputRev,
 				Repo:          mm.Repo,
 				CommitID:      mm.CommitID,

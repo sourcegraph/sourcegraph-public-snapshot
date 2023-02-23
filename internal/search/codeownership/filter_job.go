@@ -7,7 +7,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -106,19 +106,23 @@ matchesLoop:
 			continue
 		}
 
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		graph, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
+		ownerships, err := graph.FindOwners(ctx, mm.File.Path)
+		if err != nil {
+			errs = errors.Append(errs, err)
+			continue matchesLoop
+		}
 		for _, owner := range includeOwners {
-			if !containsOwner(owners, owner) {
+			if !containsOwner(ownerships, owner) {
 				continue matchesLoop
 			}
 		}
 		for _, notOwner := range excludeOwners {
-			if containsOwner(owners, notOwner) {
+			if containsOwner(ownerships, notOwner) {
 				continue matchesLoop
 			}
 		}
@@ -132,19 +136,13 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners []*codeownerspb.Owner, owner string) bool {
+func containsOwner(owners []codeowners.Ownership, owner string) bool {
 	if owner == "" {
 		return len(owners) > 0
 	}
-	isHandle := strings.HasPrefix(owner, "@")
 	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))
 	for _, o := range owners {
-		if strings.ToLower(o.Handle) == owner {
-			return true
-		}
-		// Prefixing the search term with `@` indicates intent to match a handle,
-		// so we do not match email in that case.
-		if !isHandle && (strings.ToLower(o.Email) == owner) {
+		if strings.ToLower(o.Owner.Identifier()) == owner {
 			return true
 		}
 	}
