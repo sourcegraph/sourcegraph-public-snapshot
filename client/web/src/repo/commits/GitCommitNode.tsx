@@ -27,6 +27,9 @@ export interface GitCommitNodeProps {
     /** Display in a single line (more compactly). */
     compact?: boolean
 
+    /** Display in a single line, with less spacing between elements. */
+    extraCompact?: boolean
+
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
 
@@ -68,6 +71,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     afterElement,
     className,
     compact,
+    extraCompact,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -97,9 +101,14 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         }, 1500)
     }, [])
 
+    if (extraCompact) {
+        // Implied by extraCompact
+        compact = true
+    }
+
     const messageElement = (
         <div
-            className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
+            className={classNames(!extraCompact && 'flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
             <span className={classNames('mr-2', styles.messageSubject)}>
@@ -243,7 +252,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     return (
         <WrapperElement
             key={node.id}
-            className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
+            className={classNames(
+                styles.gitCommitNode,
+                compact && styles.gitCommitNodeCompact,
+                extraCompact && styles.gitCommitNodeExtraCompact,
+                className
+            )}
         >
             <>
                 {!compact ? (

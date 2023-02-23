@@ -72,6 +72,7 @@ import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
+import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -442,6 +443,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 >
                     {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
                 </RepoHeaderContributionPortal>
+            )}
+            {enableOwnershipPanel && repoID && (
+                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
             )}
         </>
     )

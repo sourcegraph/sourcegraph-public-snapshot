@@ -4,27 +4,26 @@ import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { Alert } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
+import { FETCH_OWNERS } from './grapqlQueries'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<
-    React.PropsWithChildren<{
-        repoID: string
-        revision?: string
-        filePath: string
-    }>
-> = props => {
+export const FileOwnershipPanel: React.FunctionComponent<{
+    repoID: string
+    revision?: string
+    filePath: string
+}> = ({ repoID, revision, filePath }) => {
     const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
-            repo: props.repoID,
-            revision: props.revision ?? '',
-            currentPath: props.filePath,
+            repo: repoID,
+            revision: revision ?? '',
+            currentPath: filePath,
         },
     })
     if (loading) {
@@ -77,42 +76,3 @@ export const FileOwnershipPanel: React.FunctionComponent<
         </div>
     )
 }
-
-export const FETCH_OWNERS = gql`
-    fragment OwnerFields on Person {
-        email
-        avatarURL
-        displayName
-        user {
-            username
-            displayName
-            url
-        }
-    }
-
-    fragment CodeownersFileEntryFields on CodeownersFileEntry {
-        title
-        description
-    }
-
-    query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
-        node(id: $repo) {
-            ... on Repository {
-                commit(rev: $revision) {
-                    blob(path: $currentPath) {
-                        ownership {
-                            nodes {
-                                owner {
-                                    ...OwnerFields
-                                }
-                                reasons {
-                                    ...CodeownersFileEntryFields
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-`
