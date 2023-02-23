@@ -135,8 +135,6 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	return nil
 }
 
-// TODO - update grafana dashboards
-
 func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, rankingGraphKey)
 	if err != nil {
@@ -238,8 +236,6 @@ func (s *Service) ReduceRankingGraph(
 
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }
-
-// TODO - test
 
 // getCurrentGraphKey returns a derivative key from the configured parent used for exports
 // as well as the current "bucket" of time containing the current instant. Each bucket of

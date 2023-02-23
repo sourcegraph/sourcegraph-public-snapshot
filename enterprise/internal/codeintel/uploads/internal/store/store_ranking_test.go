@@ -21,6 +21,14 @@ const (
 	mockRankingBatchNumber = 10
 )
 
+func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
+	// TODO
+}
+
+func TestVacuumStaleGraphs(t *testing.T) {
+	// TODO
+}
+
 func TestInsertReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -143,7 +151,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs
-	if err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -216,7 +224,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs
-	if err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// TODO - test
 func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
 	numStaleDefinitionRecordsDeleted int,
 	numStaleReferenceRecordsDeleted int,
@@ -80,7 +79,6 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_references)
 `
 
-// TODO - test
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
 	metadataRecordsDeleted int,
 	inputRecordsDeleted int,
