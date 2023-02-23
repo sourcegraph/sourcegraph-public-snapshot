@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
@@ -1706,6 +1707,6 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	return availableBulkOperations, nil
 }
 
-func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, bc *btypes.BatchChange) {
-	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, bc)
+func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {
+	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }
