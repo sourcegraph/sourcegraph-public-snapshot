@@ -146,7 +146,7 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
     const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
-            <PageHeader path={[{ text: 'Upgrade readiness' }]} headingElement="h2" className="mb-3 mt-3" />
+            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
@@ -183,7 +183,7 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
                         {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
                             <>
                                 <span>
-                                    ❌ There are pending out-of-band migrations that are deprecated in the current
+                                    ❌ There are pending out-of-band migrations that need to complete in the latest
                                     version, please go to{' '}
                                     <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check
                                     details.
@@ -196,7 +196,7 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
                             </>
                         ) : (
                             <Text>
-                                ✅ There are no pending out-of-band migrations that are deprecated in the current
+                                ✅ There are no pending out-of-band migrations that need to complete in the latest
                                 version.
                             </Text>
                         )}
