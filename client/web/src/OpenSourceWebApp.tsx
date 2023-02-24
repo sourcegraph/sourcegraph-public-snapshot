@@ -21,7 +21,7 @@ import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 
 // Entry point for the app without enterprise functionality.
 // For more info see: https://docs.sourcegraph.com/admin/subscriptions#paid-subscriptions-for-sourcegraph-enterprise
-export const LegacyOpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <LegacySourcegraphWebApp
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}

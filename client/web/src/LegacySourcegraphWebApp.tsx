@@ -57,6 +57,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
+import { LegacyRouteContextProvider } from './LegacyRouteContext'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -290,30 +291,36 @@ export class LegacySourcegraphWebApp extends React.Component<
             return null
         }
 
+        const legacyContext = {
+            ...this.props,
+            selectedSearchContextSpec: this.state.selectedSearchContextSpec,
+            setSelectedSearchContextSpec: this.setSelectedSearchContextSpec,
+            codeIntelligenceEnabled: !!this.props.codeInsightsEnabled,
+            notebooksEnabled: this.props.notebooksEnabled,
+            codeMonitoringEnabled: this.props.codeMonitoringEnabled,
+            searchAggregationEnabled: this.props.searchAggregationEnabled,
+            platformContext: this.platformContext,
+            authenticatedUser,
+            viewerSubject: this.state.viewerSubject,
+            settingsCascade: this.state.settingsCascade,
+            extensionsController: this.extensionsController,
+        }
+
         const router = createBrowserRouter(
             createRoutesFromElements(
                 <Route
                     path="*"
                     element={
                         <LegacyLayout
+                            {...legacyContext}
                             {...this.props}
-                            authenticatedUser={authenticatedUser}
-                            viewerSubject={this.state.viewerSubject}
-                            settingsCascade={this.state.settingsCascade}
-                            batchChangesEnabled={this.props.batchChangesEnabled}
                             batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                            // Search query
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                            // Extensions
-                            platformContext={this.platformContext}
-                            extensionsController={this.extensionsController}
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSourcegraphApp={window.context.sourcegraphAppMode}
                             searchContextsEnabled={this.props.searchContextsEnabled}
-                            selectedSearchContextSpec={this.state.selectedSearchContextSpec}
-                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
                             fetchSearchContextBySpec={fetchSearchContextBySpec}
@@ -345,6 +352,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
+                    <LegacyRouteContextProvider context={legacyContext} />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >

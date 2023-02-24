@@ -26,8 +26,11 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
-export const LegacyEnterpriseWebApp: React.FC = () => {
+export const EnterpriseWebApp: React.FC = () => {
     if (window.context.experimentalFeatures.enableStorm) {
+        // eslint-disable-next-line no-console
+        console.log('Storm 🌪️ is enabled for this page load.')
+
         return (
             <SourcegraphWebApp
                 siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
