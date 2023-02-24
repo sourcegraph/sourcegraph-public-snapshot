@@ -99,7 +99,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 }
 
-func TestCodeowners_GetList(t *testing.T) {
+func TestCodeowners_GetListCount(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
@@ -188,6 +188,14 @@ func TestCodeowners_GetList(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("count", func(t *testing.T) {
+		got, err := store.CountCodeownersFiles(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int32(2), got)
 	})
 }
 
