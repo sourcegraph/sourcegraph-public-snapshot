@@ -17,7 +17,7 @@ This guide will take you through how to install Sourcegraph with Docker Compose 
 
 ## Prerequisites
 
-  - Install [Docker Compose](https://docs.docker.com/compose/) on the server 
+  - Install [Docker Compose](https://docs.docker.com/compose/) on the server
     - Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
     - Docker Swarm mode is **not** supported
   - Check the [resource estimator](../resource_estimator.md) for resource requirements
@@ -40,18 +40,18 @@ A step by step guide to install Sourcegraph with Docker Compose.
  3. [Clone the release branch](#step-3-clone-the-release-branch)
  4. [Build and start the Sourcegraph containers](#step-4-start-sourcegraph)
 
->NOTE: This guide is not limited to GitHub users. You can create a copy of the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/) in any code host. 
+>NOTE: This guide is not limited to GitHub users. You can create a copy of the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/) in any code host.
 
 ### Step 1: Fork the deployment repository
 
-[`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose---it contains everything you need to install and configure a Sourcegraph Docker Compose instance. 
+[`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose---it contains everything you need to install and configure a Sourcegraph Docker Compose instance.
 
 <span class="badge badge-note">RECOMMENDED</span> We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
 
-> NOTE: When forking the repository, make sure the box labeled, "Copy the master branch only", is unchecked. Checking this box will prevent the repository tags from being copied and will result in an error in a later step. 
+> NOTE: When forking the repository, make sure the box labeled, "Copy the master branch only", is unchecked. Checking this box will prevent the repository tags from being copied and will result in an error in a later step.
 
 
-> WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
+> WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service.
 
 
 #### Create a public or private copy of the deployment repository
@@ -65,7 +65,7 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
 
 1\. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
 
-2\. Bare clone the deployment repository. 
+2\. Bare clone the deployment repository.
 
 ```bash
   git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
@@ -78,7 +78,7 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
   git push --mirror https://github.com/<you/private-repository>.git
 ```
 
-4\. Remove your local bare clone. 
+4\. Remove your local bare clone.
 
 ```bash
   cd ..
@@ -101,10 +101,10 @@ https://<PERSONAL-ACCESS-TOKEN>@github.com/<USERNAME>/<REPO>.git
 
 Continue with the following steps *after* you have created a public or private copy of the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/):
 
-1\. Clone the publicly forked (or privately cloned) repository to your local machine. 
+1\. Clone the publicly forked (or privately cloned) repository to your local machine.
 
 ```bash
-  git clone https://github.com/<you/private-repository>.git 
+  git clone https://github.com/<you/private-repository>.git
 ```
 
 2\. Add the deployment repository maintained by Sourcegraph as the remote `upstream`.
@@ -118,11 +118,11 @@ Continue with the following steps *after* you have created a public or private c
 3\. Create a new branch called `release` off the latest version of Sourcegraph
 
   - This branch will be used to [upgrade Sourcegraph](upgrade.md) and install your Sourcegraph instance.
-  - It also allows us to track all of the customizations made to your Sourcegraph instance. 
+  - It also allows us to track all of the customizations made to your Sourcegraph instance.
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v4.4.0"
+  export SOURCEGRAPH_VERSION="v4.4.2"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
@@ -151,10 +151,10 @@ For detailed instructions on how to configure the instance using an override fil
 
 ### Step 3: Clone the release branch
 
-Now that you have customized your instance and published the changes to your code host, you will need to clone the newly configured `release` branch onto the production server: 
+Now that you have customized your instance and published the changes to your code host, you will need to clone the newly configured `release` branch onto the production server:
 
 ```bash
-  git clone --branch release https://github.com/<you/private-repository>.git 
+  git clone --branch release https://github.com/<you/private-repository>.git
 ```
 
 > NOTE: The `docker-compose.yaml` file currently depends on configuration files that live in the repository, so you must have the entire repository cloned onto your server.
@@ -179,7 +179,7 @@ To check if the server is ready, the `sourcegraph-frontend-0` service must be di
   docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
-Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or IP address on port `80`.  
+Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or IP address on port `80`.
 
 ---
 

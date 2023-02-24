@@ -41,7 +41,7 @@ func TestSavedSearches(t *testing.T) {
 		Namespace:              MarshalUserID(key),
 	}
 
-	resolver, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
+	resolver, err := newSchemaResolver(db, gitserver.NewClient()).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestSavedSearchesForSameUser(t *testing.T) {
 		Namespace:              MarshalUserID(key),
 	}
 
-	resolver, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
+	resolver, err := newSchemaResolver(db, gitserver.NewClient()).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestSavedSearchesForDifferentUser(t *testing.T) {
 		Namespace:              MarshalUserID(key),
 	}
 
-	_, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(userID)), args)
+	_, err := newSchemaResolver(db, gitserver.NewClient()).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(userID)), args)
 	if err == nil {
 		t.Error("got nil, want error to be returned for accessing saved searches of different user by non site admin.")
 	}
@@ -170,7 +170,7 @@ func TestSavedSearchesForDifferentOrg(t *testing.T) {
 		Namespace:              MarshalOrgID(key),
 	}
 
-	if _, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args); err != auth.ErrNotAnOrgMember {
+	if _, err := newSchemaResolver(db, gitserver.NewClient()).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args); err != auth.ErrNotAnOrgMember {
 		t.Errorf("got %v+, want %v+", err, auth.ErrNotAnOrgMember)
 	}
 }
@@ -206,7 +206,7 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 		UID: userID,
 	})
 
-	savedSearch, err := newSchemaResolver(db, gitserver.NewClient(db)).savedSearchByID(ctx, ssID)
+	savedSearch, err := newSchemaResolver(db, gitserver.NewClient()).savedSearchByID(ctx, ssID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 		UID: adminID,
 	})
 
-	_, err := newSchemaResolver(db, gitserver.NewClient(db)).savedSearchByID(ctx, ssID)
+	_, err := newSchemaResolver(db, gitserver.NewClient()).savedSearchByID(ctx, ssID)
 	t.Log(err)
 	if err == nil {
 		t.Fatal("expected an error")
@@ -289,7 +289,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db, gitserver.NewClient()).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -317,7 +317,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	_, err = newSchemaResolver(db, gitserver.NewClient(db)).CreateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db, gitserver.NewClient()).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -360,7 +360,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	userID := MarshalUserID(key)
-	savedSearches, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateSavedSearch(ctx, &struct {
+	savedSearches, err := newSchemaResolver(db, gitserver.NewClient()).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -394,7 +394,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure update saved search errors when patternType is not provided in the query.
-	_, err = newSchemaResolver(db, gitserver.NewClient(db)).UpdateSavedSearch(ctx, &struct {
+	_, err = newSchemaResolver(db, gitserver.NewClient()).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -487,7 +487,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 			db.SavedSearchesFunc.SetDefaultReturn(savedSearches)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateSavedSearch(ctx, &struct {
+			_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateSavedSearch(ctx, &struct {
 				ID          graphql.ID
 				Description string
 				Query       string
@@ -537,7 +537,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
 	firstSavedSearchGraphqlID := graphql.ID("U2F2ZWRTZWFyY2g6NTI=")
-	_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteSavedSearch(ctx, &struct {
+	_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteSavedSearch(ctx, &struct {
 		ID graphql.ID
 	}{ID: firstSavedSearchGraphqlID})
 	if err != nil {

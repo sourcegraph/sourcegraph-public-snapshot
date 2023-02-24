@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom-v5-compat'
 import { useStickyBox } from 'react-sticky-box'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -31,7 +31,7 @@ import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
-import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
+import { NotebookFields, NotebookInput } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
 import { useTheme, ThemePreference } from '../../theme'
@@ -53,8 +53,7 @@ import { NotebookTitle } from './NotebookTitle'
 import styles from './NotebookPage.module.scss'
 
 interface NotebookPageProps
-    extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
-        SearchStreamingProps,
+    extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
@@ -92,11 +91,11 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     authenticatedUser,
     settingsCascade,
     platformContext,
-    match,
 }) => {
+    const { id: notebookId } = useParams()
+
     useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
 
-    const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
     const outlineContainerElement = useRef<HTMLDivElement | null>(null)
@@ -111,7 +110,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     const notebookOrError = useObservable(
         useMemo(
             () =>
-                fetchNotebook(notebookId).pipe(
+                fetchNotebook(notebookId!).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
@@ -124,7 +123,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
             (update: Observable<NotebookInput>) =>
                 update.pipe(
                     switchMap(notebook =>
-                        updateNotebook({ id: notebookId, notebook }).pipe(delay(300), startWith(LOADING))
+                        updateNotebook({ id: notebookId!, notebook }).pipe(delay(300), startWith(LOADING))
                     ),
                     catchError(error => [asError(error)])
                 ),
@@ -231,7 +230,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     <NotebookPageHeaderActions
                                         isSourcegraphDotCom={isSourcegraphDotCom}
                                         authenticatedUser={authenticatedUser}
-                                        notebookId={notebookId}
+                                        notebookId={notebookId!}
                                         viewerCanManage={notebookOrError.viewerCanManage}
                                         isPublic={notebookOrError.public}
                                         namespace={notebookOrError.namespace}

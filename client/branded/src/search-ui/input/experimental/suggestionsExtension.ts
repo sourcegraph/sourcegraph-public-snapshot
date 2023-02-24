@@ -10,10 +10,12 @@ import {
     StateField,
     Transaction,
 } from '@codemirror/state'
-import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { History } from 'history'
+import { Command as CodeMirrorCommand, EditorView, KeyBinding, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { createRoot, Root } from 'react-dom/client'
 
+import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
+
+import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
 // Temporary solution to make some editor settings available to other extensions
@@ -32,7 +34,10 @@ export function getEditorConfig(state: EditorState): EditorConfig {
 /**
  * A source for completion/suggestion results
  */
-export type Source = (state: EditorState, position: number) => SuggestionResult
+export interface Source {
+    query: (state: EditorState, position: number, mode?: string) => SuggestionResult
+    mode?: string
+}
 
 export interface SuggestionResult {
     /**
@@ -49,42 +54,76 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export type CustomRenderer = (option: Option) => React.ReactElement
+export type CustomRenderer<T> = ((value: T) => React.ReactElement) | string
 
-export interface Command {
+export interface Option {
+    /**
+     * The label the input is matched against and shown in the UI.
+     */
+    label: string
+    /**
+     * What to do when this option is applied (via Enter)
+     */
+    action: Action
+    /**
+     * Options can have perform an alternative action when applied via
+     * Shift+Enter.
+     */
+    alternativeAction?: Action
+    /**
+     * A short description of the option, shown next to the label.
+     */
+    description?: string
+    /**
+     * The SVG path of the icon to use for this option.
+     */
+    icon?: string
+    /**
+     * If present the provided component will be used to render the label of the
+     * option.
+     */
+    render?: CustomRenderer<Option>
+    /**
+     * If present this component is rendered as footer.
+     */
+    info?: CustomRenderer<Option>
+    /**
+     * A set of character indexes. If provided the characters of at these
+     * positions in the label will be highlighted as matches.
+     */
+    matches?: Set<number>
+}
+
+export interface CommandAction {
     type: 'command'
-    value: string
-    apply: (view: EditorView) => void
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
-    note?: string
+    apply: (option: Option, view: EditorView) => void
+    name?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
-export interface Target {
-    type: 'target'
-    value: string
+export interface GoToAction {
+    type: 'goto'
     url: string
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
+    name?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
-export interface Completion {
+export interface CompletionAction {
     type: 'completion'
     from: number
+    name?: string
     to?: number
-    value: string
     insertValue?: string
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
-export type Option = Command | Target | Completion
+export type Action = CommandAction | GoToAction | CompletionAction
 
 export interface Group {
     title: string
@@ -96,7 +135,7 @@ class SuggestionView {
     private root: Root
 
     private onSelect = (option: Option): void => {
-        applyOption(this.view, option)
+        applyAction(this.view, option.action, option)
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
@@ -261,7 +300,7 @@ class RegisteredSource {
     public timestamp: number
 
     constructor(
-        public readonly source: Source,
+        public readonly sources: readonly Source[],
         public readonly state: RegisteredSourceState,
         public readonly result: Result,
         private readonly next?: () => Promise<SuggestionResult>
@@ -276,27 +315,32 @@ class RegisteredSource {
     }
 
     public update(transaction: Transaction): RegisteredSource {
-        // TODO: We probalby don't want to trigger fetches on every doc changed
-        if (isUserInput(transaction) || transaction.docChanged) {
-            return this.query(transaction.state)
-        }
+        // Aliasing this makes it easier to create new instances based on all
+        // changes and effects of the transaction.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, unicorn/no-this-assignment
+        let source: RegisteredSource = this
 
-        if (transaction.selection) {
-            if (this.result.valid(transaction.state, transaction.newSelection.main.head)) {
-                return this
+        // TODO: We probably don't want to trigger fetches on every doc changed
+        if (isUserInput(transaction) || transaction.docChanged || modeChanged(transaction)) {
+            source = source.query(transaction.state)
+        } else if (transaction.selection) {
+            if (!transaction.selection.main.empty) {
+                // Hide suggestions when the user selects a range in the input
+                source = new RegisteredSource(source.sources, RegisteredSourceState.Inactive, source.result)
+            } else if (!this.result.valid(transaction.state, transaction.newSelection.main.head)) {
+                source = this.query(transaction.state)
             }
-            return this.query(transaction.state)
         }
 
         for (const effect of transaction.effects) {
             if (
                 effect.is(updateResultEffect) &&
-                effect.value.source.source === this.source &&
-                this.state === RegisteredSourceState.Pending
+                effect.value.source.sources === source.sources &&
+                source.state === RegisteredSourceState.Pending
             ) {
                 const { result } = effect.value
-                return new RegisteredSource(
-                    this.source,
+                source = new RegisteredSource(
+                    source.sources,
                     result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete,
                     new Result(result.result, result.valid),
                     result.next
@@ -304,17 +348,21 @@ class RegisteredSource {
             }
 
             if (effect.is(startCompletion)) {
-                return this.query(transaction.state)
+                source = source.query(transaction.state)
             }
         }
 
-        return this
+        return source
     }
 
     private query(state: EditorState): RegisteredSource {
-        const result = this.source(state, state.selection.main.head)
+        const selectedMode = getSelectedMode(state)
+        const activeSources = this.sources.filter(source => source.mode === selectedMode?.name)
+        const result = combineResults(
+            activeSources.map(source => source.query(state, state.selection.main.head, selectedMode?.name))
+        )
         const nextState = result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete
-        return new RegisteredSource(this.source, nextState, new Result(result.result, result.valid), result.next)
+        return new RegisteredSource(this.sources, nextState, new Result(result.result, result.valid), result.next)
     }
 
     public run(): Promise<SuggestionResult> | null {
@@ -324,6 +372,47 @@ class RegisteredSource {
     public get inactive(): boolean {
         return this.state === RegisteredSourceState.Inactive
     }
+}
+
+/**
+ * Takes multiple suggestion results and combines the groups of each of them.
+ * The order of items within a group is determined by the order of results.
+ */
+export function combineResults(results: (SuggestionResult | null)[]): SuggestionResult {
+    const options: Record<Group['title'], Group['options'][]> = {}
+    let hasValid = false
+    let hasNext = false
+
+    for (const result of results) {
+        if (!result) {
+            continue
+        }
+        for (const group of result.result) {
+            if (!options[group.title]) {
+                options[group.title] = []
+            }
+            options[group.title].push(group.options)
+        }
+        if (result.next) {
+            hasNext = true
+        }
+        if (result.valid) {
+            hasValid = true
+        }
+    }
+
+    const staticResult: SuggestionResult = {
+        result: Object.entries(options).map(([title, options]) => ({ title, options: options.flat() })),
+    }
+
+    if (hasValid) {
+        staticResult.valid = (...args) => results.every(result => result?.valid?.(...args) ?? false)
+    }
+    if (hasNext) {
+        staticResult.next = () => Promise.all(results.map(result => result?.next?.() ?? result)).then(combineResults)
+    }
+
+    return staticResult
 }
 
 /**
@@ -341,11 +430,11 @@ class SuggestionsState {
         // eslint-disable-next-line @typescript-eslint/no-this-alias,unicorn/no-this-assignment
         let state: SuggestionsState = this
 
-        const source = transaction.state.facet(suggestionSource)
+        const sources = transaction.state.facet(suggestionSources)
         let registeredSource =
-            source === state.source.source
+            sources === state.source.sources
                 ? state.source
-                : new RegisteredSource(source, RegisteredSourceState.Inactive, emptyResult)
+                : new RegisteredSource(sources, RegisteredSourceState.Inactive, emptyResult)
         registeredSource = registeredSource.update(transaction)
         if (registeredSource !== state.source) {
             state = new SuggestionsState(
@@ -353,7 +442,7 @@ class SuggestionsState {
                 !registeredSource.inactive,
                 state.source.state === RegisteredSourceState.Inactive ||
                 state.source.state === RegisteredSourceState.Complete
-                    ? 0
+                    ? -1
                     : state.selectedOption
             )
         }
@@ -389,7 +478,7 @@ function isUserInput(transaction: Transaction): boolean {
 
 interface Config {
     id: string
-    history?: History
+    historyOrNavigate?: HistoryOrNavigate
 }
 
 const suggestionsConfig = Facet.define<Config, Config>({
@@ -404,11 +493,7 @@ const hideCompletion = StateEffect.define<void>()
 const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
-        return new SuggestionsState(
-            new RegisteredSource(() => ({ result: [] }), RegisteredSourceState.Inactive, emptyResult),
-            false,
-            -1
-        )
+        return new SuggestionsState(new RegisteredSource([], RegisteredSourceState.Inactive, emptyResult), false, -1)
     },
 
     update(state, transaction) {
@@ -447,47 +532,94 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     }
 }
 
-function applyOption(view: EditorView, option: Option): void {
-    switch (option.type) {
+function applyAction(view: EditorView, action: Action, option: Option): void {
+    switch (action.type) {
         case 'completion':
             {
-                const text = option.insertValue ?? option.value
-                view.dispatch({
-                    ...view.state.changeByRange(range => {
-                        if (range === view.state.selection.main) {
-                            return {
-                                changes: {
-                                    from: option.from,
-                                    to: option.to ?? view.state.selection.main.head,
-                                    insert: text,
-                                },
-                                range: EditorSelection.cursor(option.from + text.length),
-                            }
+                const text = action.insertValue ?? option.label
+                const changeSet = view.state.changeByRange(range => {
+                    if (range === view.state.selection.main) {
+                        return {
+                            changes: {
+                                from: action.from,
+                                to: action.to ?? view.state.selection.main.head,
+                                insert: text,
+                            },
+                            range: EditorSelection.cursor(action.from + text.length),
                         }
-                        return { range }
-                    }),
+                    }
+                    return { range }
+                })
+                view.dispatch({
+                    ...changeSet,
+                    effects: changeSet.effects.concat(setModeEffect.of(null)),
                 })
             }
             break
         case 'command':
-            option.apply(view)
+            action.apply(option, view)
             break
-        case 'target':
+        case 'goto':
             {
-                const history = view.state.facet(suggestionsConfig).history
-
-                if (history) {
-                    history.push(option.url)
+                const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
+                if (historyOrNavigate) {
+                    compatNavigate(historyOrNavigate, action.url)
                 }
             }
             break
     }
 }
 
-export const suggestionSource = Facet.define<Source, Source>({
-    combine(sources) {
-        return sources[0] || (() => {})
+const defaultKeyboardBindings: KeyBinding[] = [
+    {
+        key: 'ArrowDown',
+        run: moveSelection('forward'),
     },
+    {
+        key: 'ArrowUp',
+        run: moveSelection('backward'),
+    },
+    {
+        key: 'Mod-Space',
+        run(view) {
+            view.dispatch({ effects: startCompletion.of() })
+            return true
+        },
+    },
+    {
+        key: 'Enter',
+        run(view) {
+            const state = view.state.field(suggestionsStateField)
+            const option = state.result.at(state.selectedOption)
+            if (!state.open || !option) {
+                return false
+            }
+            applyAction(view, option.action, option)
+            return true
+        },
+        shift(view) {
+            const state = view.state.field(suggestionsStateField)
+            const option = state.result.at(state.selectedOption)
+            if (!state.open || !option || !option.alternativeAction) {
+                return false
+            }
+            applyAction(view, option.alternativeAction, option)
+            return true
+        },
+    },
+    {
+        key: 'Escape',
+        run(view) {
+            if (view.state.field(suggestionsStateField).open) {
+                view.dispatch({ effects: hideCompletion.of() })
+                return true
+            }
+            return false
+        },
+    },
+]
+
+export const suggestionSources = Facet.define<Source>({
     enables: [
         completionPlugin,
         suggestionsStateField,
@@ -500,64 +632,18 @@ export const suggestionSource = Facet.define<Source, Source>({
                 update.view.dispatch({ effects: startCompletion.of() })
             }
         }),
-        Prec.highest(
-            keymap.of([
-                {
-                    key: 'ArrowDown',
-                    run: moveSelection('forward'),
-                },
-                {
-                    key: 'ArrowUp',
-                    run: moveSelection('backward'),
-                },
-                {
-                    key: 'Mod-Space',
-                    run(view) {
-                        view.dispatch({ effects: startCompletion.of() })
-                        return true
-                    },
-                },
-                {
-                    key: 'Enter',
-                    run(view) {
-                        const state = view.state.field(suggestionsStateField)
-                        const option = state.result.at(state.selectedOption)
-                        if (!state.open || !option) {
-                            return false
-                        }
-                        applyOption(view, option)
-                        return true
-                    },
-                },
-                {
-                    key: 'Tab',
-                    run(view) {
-                        const state = view.state.field(suggestionsStateField)
-                        const option = state.result.at(state.selectedOption)
-                        if (!state.open || !option) {
-                            return false
-                        }
-                        applyOption(view, option)
-                        return true
-                    },
-                },
-                {
-                    key: 'Escape',
-                    run(view) {
-                        if (view.state.field(suggestionsStateField).open) {
-                            view.dispatch({ effects: hideCompletion.of() })
-                            return true
-                        }
-                        return false
-                    },
-                },
-            ])
-        ),
+        Prec.highest(keymap.of(defaultKeyboardBindings)),
     ],
 })
 
-export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [
-    suggestionsConfig.of({ history, id }),
-    suggestionSource.of(source),
+interface ExternalConfig extends Config {
+    parent: HTMLDivElement
+    source: Source
+}
+
+export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
+    modesFacet.of([]), // makes sure the facet is defined
+    suggestionsConfig.of({ historyOrNavigate, id }),
+    suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]

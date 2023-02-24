@@ -221,7 +221,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -230,7 +230,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *oss_gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -244,7 +244,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -253,7 +253,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -323,7 +323,6 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
-      HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
     watch:
       - lib
@@ -425,18 +424,26 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
-    description: Build web application for integration tests
+    description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
+
+  web-integration-build-prod:
+    description: Build production web application for integration tests
+    cmd: pnpm --filter @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
+      NODE_ENV: production
 
   docsite:
     description: Docsite instance serving the docs
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
     install_func: 'installDocsite'
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -817,6 +824,55 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
+  sourcegraph:
+    description: Single program (Go static binary) distribution
+    cmd: |
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
+
+      # TODO: This should be fixed
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+
+      .bin/sourcegraph
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+    checkBinary: .bin/sourcegraph
+    env:
+      USE_EMBEDDED_POSTGRESQL: false
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      WEBPACK_DEV_SERVER: 1
+    watch:
+      - cmd
+      - enterprise
+      - internal
+      - lib
+      - schema
+
+  sourcegraph-oss:
+    description: Single program (Go static binary) distribution, OSS variant
+    cmd: |
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
+      .bin/sourcegraph-oss
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
+    checkBinary: .bin/sourcegraph-oss
+    env:
+      USE_EMBEDDED_POSTGRESQL: false
+      WEBPACK_DEV_SERVER: 1
+    watch:
+      - cmd
+      - internal
+      - schema
+
 defaultCommandset: enterprise
 commandsets:
   oss:
@@ -1071,6 +1127,20 @@ commandsets:
       - otel-collector
       - jaeger
 
+  app:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - postgres
+      - git
+    commands:
+      - sourcegraph
+      - docsite
+      - web
+      # TODO: App's dependency on syntax-highlighter will be removed.
+      - syntax-highlighter
+      - caddy
+
 tests:
   # These can be run with `sg test [name]`
   backend:
@@ -1106,7 +1176,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |
@@ -1142,7 +1212,7 @@ tests:
   web-integration:
     preamble: |
       A web application should be built for these tests to work, most
-      commonly with: `sg run web-integration-build`
+      commonly with: `sg run web-integration-build` or `sg run web-integration-build-prod` for production build.
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
 

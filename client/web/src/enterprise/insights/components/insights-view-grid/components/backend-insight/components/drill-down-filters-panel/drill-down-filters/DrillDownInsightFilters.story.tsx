@@ -87,7 +87,8 @@ const ORIGINAL_FILTERS: InsightFilters = {
     excludeRepoRegexp: '',
     context: '',
     seriesDisplayOptions: {
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             direction: SeriesSortDirection.DESC,
             mode: SeriesSortMode.RESULT_COUNT,
@@ -100,7 +101,8 @@ const FILTERS: InsightFilters = {
     excludeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
     context: '',
     seriesDisplayOptions: {
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             direction: SeriesSortDirection.DESC,
             mode: SeriesSortMode.RESULT_COUNT,
@@ -113,6 +115,7 @@ export const DrillDownFiltersShowcase: Story = () => (
         <DrillDownInsightFilters
             initialValues={FILTERS}
             originalValues={ORIGINAL_FILTERS}
+            isNumSamplesFilterAvailable={true}
             visualMode={FilterSectionVisualMode.CollapseSections}
             onFiltersChange={console.log}
             onFilterSave={console.log}
@@ -129,6 +132,7 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
             <DrillDownInsightFilters
                 initialValues={FILTERS}
                 originalValues={ORIGINAL_FILTERS}
+                isNumSamplesFilterAvailable={true}
                 visualMode={mode}
                 onVisualModeChange={setMode}
                 onFiltersChange={console.log}

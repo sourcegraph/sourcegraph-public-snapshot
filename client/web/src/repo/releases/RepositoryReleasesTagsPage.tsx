@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 
-import * as H from 'history'
 import { Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -13,8 +12,6 @@ import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend }
 
 interface Props {
     repo: RepositoryFields | undefined
-    history: H.History
-    location: H.Location
     queryGitReferences?: (args: {
         repo: Scalars['ID']
         first?: number
@@ -27,8 +24,6 @@ interface Props {
 /** A page that shows all of a repository's tags. */
 export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
-    history,
-    location,
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
@@ -65,8 +60,6 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
                 }
                 defaultFirst={20}
                 autoFocus={true}
-                history={history}
-                location={location}
             />
         </div>
     )

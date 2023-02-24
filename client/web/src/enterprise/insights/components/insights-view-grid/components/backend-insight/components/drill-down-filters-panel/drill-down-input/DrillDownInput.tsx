@@ -2,7 +2,7 @@ import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from '
 
 import classNames from 'classnames'
 
-import { Button, Input, InputProps, Label } from '@sourcegraph/wildcard'
+import { Button, Input, Label, InputProps } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 

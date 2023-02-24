@@ -32,7 +32,7 @@ func ExampleIterator() {
 }
 
 func TestIterator_Err(t *testing.T) {
-	assert := assert.New(t)
+	assertion := assert.New(t)
 
 	sendErr := false
 	it := iterator.New(func() ([]int, error) {
@@ -46,33 +46,33 @@ func TestIterator_Err(t *testing.T) {
 	})
 
 	got, err := iterator.Collect(it)
-	assert.Equal([]int{1, 2, 3, 1, 2, 3}, got)
-	assert.ErrorContains(err, "boom")
+	assertion.Equal([]int{1, 2, 3, 1, 2, 3}, got)
+	assertion.ErrorContains(err, "boom")
 
 	// Double check it is safe to call Next and Err again.
-	assert.Falsef(it.Next(), "expected collected Next to return false")
-	assert.Errorf(it.Err(), "expected collected Err to be non-nil")
+	assertion.Falsef(it.Next(), "expected collected Next to return false")
+	assertion.Errorf(it.Err(), "expected collected Err to be non-nil")
 
 	// Ensure we panic on calling Current.
-	assert.Panics(func() { it.Current() })
+	assertion.Panics(func() { it.Current() })
 }
 
 func TestIterator_Current(t *testing.T) {
-	assert := assert.New(t)
+	assertion := assert.New(t)
 
 	it := iterator.From([]int{1})
-	assert.PanicsWithValue(
+	assertion.PanicsWithValue(
 		"*iterator.Iterator[int].Current() called before first call to Next()",
 		func() { it.Current() },
 		"Current before Next should panic",
 	)
 
-	assert.True(it.Next())
-	assert.Equal(1, it.Current())
-	assert.Equal(1, it.Current(), "Current should be idempotent")
+	assertion.True(it.Next())
+	assertion.Equal(1, it.Current())
+	assertion.Equal(1, it.Current(), "Current should be idempotent")
 
-	assert.False(it.Next())
-	assert.PanicsWithValue(
+	assertion.False(it.Next())
+	assertion.PanicsWithValue(
 		"*iterator.Iterator[int].Current() called after Next() returned false",
 		func() { it.Current() },
 		"Current after Next is false should panic",

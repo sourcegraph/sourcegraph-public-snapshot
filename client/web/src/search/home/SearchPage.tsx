@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
+import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -21,7 +21,6 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -37,8 +36,6 @@ export interface SearchPageProps
         SearchContextInputProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     autoFocus?: boolean
 
@@ -50,15 +47,22 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
-    const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
-    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
         query: '',
     })
+
+    useEffect(() => {
+        if (experimentalQueryInput && props.selectedSearchContextSpec) {
+            setQueryState(state =>
+                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
+            )
+        }
+    }, [experimentalQueryInput, props.selectedSearchContextSpec])
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -68,7 +72,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="d-sm-flex flex-row text-center">
                     <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Search millions of open source repositories
+                        Search millions of public repositories
                     </div>
                     <div className="mt-3">
                         <Link
@@ -103,19 +107,14 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
                 )}
             </div>
-            <div
-                className={classNames(styles.panelsContainer, {
-                    [styles.panelsContainerWithCollaborators]: showCollaborators,
-                })}
-            >
+            <div className={classNames(styles.panelsContainer)}>
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
-                    <QueryExamplesHomepage
+                    <QueryExamples
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         telemetryService={props.telemetryService}
                         queryState={queryState}
                         setQueryState={setQueryState}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        authenticatedUser={props.authenticatedUser}
                     />
                 )}
             </div>

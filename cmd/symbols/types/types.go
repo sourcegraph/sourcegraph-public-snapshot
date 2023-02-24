@@ -24,15 +24,33 @@ type SqliteConfig struct {
 	MaxConcurrentlyIndexing int
 }
 
+func aliasEnvVar(oldName, newName string) {
+	if os.Getenv(newName) != "" {
+		return // prefer using the new name
+	}
+	oldValue := os.Getenv(oldName)
+	if oldValue == "" {
+		return // old name was not set
+	}
+	// New name not in use, but old name is, so update the env.
+	_ = os.Setenv(newName, oldValue)
+}
+
 func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
+	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
+	// in searcher when running as a single binary. The old name is treated as an alias to prevent
+	// customer environments from breaking if they still use it, because we have no way of migrating
+	// environment variables today.
+	aliasEnvVar("CACHE_DIR", "SYMBOLS_CACHE_DIR")
+
 	return SqliteConfig{
 		Ctags:                   ctags,
 		RepositoryFetcher:       repositoryFetcher,
-		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
+		CacheDir:                baseConfig.Get("SYMBOLS_CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
 		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
-		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository"),
+		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h0m0s", "maximum time to spend processing a repository"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
 	}
 }
@@ -78,8 +96,14 @@ type RepositoryFetcherConfig struct {
 }
 
 func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherConfig {
+	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
+	// in searcher when running as a single binary. The old name is treated as an alias to prevent
+	// customer environments from breaking if they still use it, because we have no way of migrating
+	// environment variables today.
+	aliasEnvVar("MAX_TOTAL_PATHS_LENGTH", "SYMBOLS_MAX_TOTAL_PATHS_LENGTH")
+
 	return RepositoryFetcherConfig{
-		MaxTotalPathsLength: baseConfig.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		MaxTotalPathsLength: baseConfig.GetInt("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
 		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
 	}
 }

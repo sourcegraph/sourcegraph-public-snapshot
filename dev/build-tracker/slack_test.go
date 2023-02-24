@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
@@ -13,14 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest *bool = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
 
 func newJob(name string, exit int) *Job {
-	return &Job{buildkite.Job{
-		Name:       &name,
-		ExitStatus: &exit,
-	}}
+	return &Job{
+		Job: buildkite.Job{
+			Name:       &name,
+			ExitStatus: &exit,
+		},
+		fixed: true,
+	}
 
 }
 
@@ -167,6 +171,63 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, teammate.Name, "Ryan Slade")
 	})
+	t.Run("retrieving teammate for build populates cache", func(t *testing.T) {
+		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+
+		num := 160000
+		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
+		pipelineID := "sourcegraph"
+		build := &Build{
+			Build: buildkite.Build{
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Number: &num,
+				Commit: &commit,
+				Author: &buildkite.Author{
+					Name:  "William Bezuidenhout",
+					Email: "william.bezuidenhout@sourcegraph.com",
+				},
+			},
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: map[string]Job{},
+		}
+
+		teammate, err := client.getTeammateForBuild(build)
+		require.NoError(t, err)
+		require.NotNil(t, teammate)
+
+		if _, ok := client.commitTeammateCache[build.commit()]; !ok {
+			t.Fatalf("teammate should exist in cache after first resolve")
+		}
+	})
+}
+
+func TestCacheClean(t *testing.T) {
+	// Populate the cache with items
+	logger := logtest.NoOp(t)
+	client := NewNotificationClient(logger, "testing", "testing", DefaultChannel)
+
+	// Add some old items
+	for i := 0; i < 3; i++ {
+		item := newCacheItem(&team.Teammate{})
+		// subtract 1 year
+		item.Timestamp = time.Now().AddDate(-1, 0, 0)
+		client.commitTeammateCache[fmt.Sprintf("%d", i)] = item
+	}
+	// Add some recent builds
+	client.commitTeammateCache["4"] = newCacheItem(&team.Teammate{})
+	client.commitTeammateCache["5"] = newCacheItem(&team.Teammate{})
+	client.commitTeammateCache["6"] = newCacheItem(&team.Teammate{})
+
+	// Clean up! 3 items should be left
+	// we can put any hours, since our 3 builds are years old
+	client.cacheCleanup(5)
+
+	require.Equal(t, 3, len(client.commitTeammateCache))
 }
 
 func TestSlackNotification(t *testing.T) {
@@ -354,27 +415,49 @@ func TestServerNotify(t *testing.T) {
 }
 
 func TestGenerateHeader(t *testing.T) {
+	intp := func(v int) *int {
+		return &v
+	}
 	for _, tc := range []struct {
 		build *Build
 		want  autogold.Value // use 'go test -update' to update
 	}{
 		{
 			build: &Build{
+				Build: buildkite.Build{
+					Number: intp(100),
+				},
 				ConsecutiveFailure: 0,
 			},
-			want: autogold.Want("first failure", ":red_circle: Build 0 failed"),
+			want: autogold.Want("first failure", ":red_circle: Build 100 failed"),
 		},
 		{
 			build: &Build{
+				Build: buildkite.Build{
+					Number: intp(100),
+				},
 				ConsecutiveFailure: 1,
 			},
-			want: autogold.Want("second failure", ":red_circle: Build 0 failed"),
+			want: autogold.Want("second failure", ":red_circle: Build 100 failed"),
 		},
 		{
 			build: &Build{
+				Build: buildkite.Build{
+					Number: intp(100),
+				},
 				ConsecutiveFailure: 4,
 			},
-			want: autogold.Want("fifth failure", ":red_circle: Build 0 failed (:bangbang: 4th failure)"),
+			want: autogold.Want("fifth failure", ":red_circle: Build 100 failed (:bangbang: 4th failure)"),
+		},
+		{
+			build: &Build{
+				Build: buildkite.Build{
+					Number: intp(100),
+				},
+				ConsecutiveFailure: 4,
+				Notification:       &SlackNotification{},
+			},
+			want: autogold.Want("fifth failure", ":green_circle: Build 100 fixed"),
 		},
 	} {
 		t.Run(tc.want.Name(), func(t *testing.T) {

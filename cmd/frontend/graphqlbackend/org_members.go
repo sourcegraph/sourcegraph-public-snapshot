@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -35,7 +35,7 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 	Organization graphql.ID
 	Query        string
 }) ([]*OrgMemberAutocompleteSearchItemResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -62,7 +62,7 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*OrgMembersSummaryResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}

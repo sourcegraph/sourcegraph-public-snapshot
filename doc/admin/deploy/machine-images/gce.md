@@ -45,7 +45,7 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 2. Navigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
 3. **Upload** the `tar.gz` file to a bucket (create one if needed)
 4. Copy the **URL**
-   
+
 #### Step 2: Create a new custom image
 
 <img class="screenshot" src="./assets/gcp-custom-image.png"/>
@@ -123,7 +123,7 @@ SSH into the VM as user `sourcegraph` and run the following command:
 
 ```bash
 # Please update the version number according to the upgrade notes
-helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.4.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 # Note: /home/sourcegraph/deploy/install/override.yaml is the override file for your instance size
 ```
 

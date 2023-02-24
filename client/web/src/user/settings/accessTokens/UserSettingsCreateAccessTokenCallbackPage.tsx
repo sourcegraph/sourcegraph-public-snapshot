@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { NEVER } from 'rxjs'
 import { catchError, startWith, tap } from 'rxjs/operators'
 
@@ -27,10 +27,7 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'match'>,
-        TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -81,14 +78,14 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
     telemetryService,
     onDidCreateAccessToken,
     user,
-    history,
-    match,
 }) => {
+    const navigate = useNavigate()
+    const location = useLocation()
     useMemo(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
     /** Get the requester from the url parameters if any */
-    const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
+    const requestFrom = new URLSearchParams(location.search).get('requestFrom')
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
     /** The contents of the note input field. */
@@ -105,9 +102,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
         }
         // Redirect users back to tokens page if none or invalid url params provided
         if (!requestFrom || (!requester && requester !== undefined)) {
-            history.push(`${match.url.replace(/\/new\/callback$/, '')}`)
+            navigate('../..', { relative: 'path' })
         }
-    }, [history, match.url, requestFrom, requester])
+    }, [navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -188,7 +185,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             </Button>
                         )}
                         <Button
-                            to={match.url.replace(/\/new\/callback$/, '')}
+                            to={location.pathname.replace(/\/new\/callback$/, '')}
                             disabled={creationOrError === 'loading'}
                             variant="secondary"
                             as={Link}

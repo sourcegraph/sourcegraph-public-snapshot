@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import {
@@ -25,8 +25,7 @@ import { parseSearchURLQuery } from '../../search'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
-    extends RouteComponentProps,
-        ThemeProps,
+    extends ThemeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
@@ -39,7 +38,9 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
 > = props => {
     const { authenticatedUser, createSearchContext, platformContext } = props
 
-    const query = parseSearchURLQuery(props.location.search)
+    const location = useLocation()
+
+    const query = parseSearchURLQuery(location.search)
 
     const onSubmit = useCallback(
         (
@@ -51,7 +52,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
     )
 
     if (!authenticatedUser) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     return (

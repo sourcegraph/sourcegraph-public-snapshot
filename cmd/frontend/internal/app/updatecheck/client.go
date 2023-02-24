@@ -106,7 +106,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphOperators: true})
+	return db.Users().Count(ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
@@ -319,11 +324,11 @@ func getAndMarshalMigratedExtensionsUsageJSON(ctx context.Context, db database.D
 func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
-	versions, err := versions.GetVersions()
+	v, err := versions.GetVersions()
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(versions)
+	return json.Marshal(v)
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
@@ -333,13 +338,13 @@ func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logge
 		dv  dependencyVersions
 	)
 	// get redis cache server version
-	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
+	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache)
 	if err != nil {
 		logFunc("unable to get Redis cache version", log.Error(err))
 	}
 
 	// get redis store server version
-	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
+	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store)
 	if err != nil {
 		logFunc("unable to get Redis store version", log.Error(err))
 	}
@@ -352,7 +357,14 @@ func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logge
 	return json.Marshal(dv)
 }
 
-func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
+func getRedisVersion(kv redispool.KeyValue) (string, error) {
+	pool, ok := kv.Pool()
+	if !ok {
+		return "disabled", nil
+	}
+	dialFunc := pool.Dial
+
+	// TODO(keegancsmith) should be using pool.Get and closing conn?
 	conn, err := dialFunc()
 	if err != nil {
 		return "", err

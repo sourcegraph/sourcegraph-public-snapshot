@@ -12,10 +12,11 @@ import {
     PopoverTail,
     Position,
     createRectangle,
+    FormChangeEvent,
+    SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
-import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationForm,
@@ -34,6 +35,7 @@ interface DrillDownFiltersPopoverProps {
     isOpen: boolean
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
+    isNumSamplesFilterAvailable: boolean
     anchor: RefObject<HTMLElement>
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters) => void
@@ -57,6 +59,7 @@ export const DrillDownFiltersPopover: FC<DrillDownFiltersPopoverProps> = props =
         anchor,
         initialFiltersValue,
         originalFiltersValue,
+        isNumSamplesFilterAvailable,
         onVisibilityChange,
         onFilterChange,
         onFilterSave,
@@ -116,6 +119,7 @@ export const DrillDownFiltersPopover: FC<DrillDownFiltersPopoverProps> = props =
                     <DrillDownInsightFilters
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
+                        isNumSamplesFilterAvailable={isNumSamplesFilterAvailable}
                         visualMode={FilterSectionVisualMode.CollapseSections}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}

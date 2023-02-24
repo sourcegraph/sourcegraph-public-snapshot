@@ -26,7 +26,7 @@ import {
     WidgetType,
 } from '@codemirror/view'
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -120,6 +120,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     editorOptions,
     ariaLabel = 'Search query',
     ariaLabelledby,
+    ariaInvalid,
+    ariaBusy,
+    tabIndex = 0,
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
     searchHistory,
@@ -136,6 +139,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
     const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
+    const navigate = useNavigate()
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
@@ -146,8 +150,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         [editorReference, onEditorCreated]
     )
 
-    const history = useHistory()
-
     const autocompletion = useMemo(
         () =>
             createDefaultSuggestions({
@@ -155,13 +157,13 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
-                history,
+                navigate,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
         [
             globbing,
             isSourcegraphDotCom,
-            history,
+            navigate,
             applySuggestionsOnEnter,
             fetchStreamSuggestions,
             selectedSearchContextSpec,
@@ -177,6 +179,18 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
 
         if (ariaLabelledby) {
             extensions.push(EditorView.contentAttributes.of({ 'aria-labelledby': ariaLabelledby }))
+        }
+
+        if (ariaInvalid) {
+            extensions.push(EditorView.contentAttributes.of({ 'aria-invalid': ariaInvalid }))
+        }
+
+        if (ariaBusy) {
+            extensions.push(EditorView.contentAttributes.of({ 'aria-busy': ariaBusy }))
+        }
+
+        if (tabIndex !== 0) {
+            extensions.push(EditorView.contentAttributes.of({ tabIndex: tabIndex.toString() }))
         }
 
         if (preventNewLine) {
@@ -220,6 +234,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     }, [
         ariaLabel,
         ariaLabelledby,
+        ariaInvalid,
+        ariaBusy,
+        tabIndex,
         autocompletion,
         placeholder,
         preventNewLine,

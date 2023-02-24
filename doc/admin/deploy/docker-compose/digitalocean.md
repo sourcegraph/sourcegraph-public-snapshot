@@ -60,7 +60,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.0'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.2'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_DATA_ROOT='/mnt/docker-data'
@@ -121,7 +121,7 @@ docker-compose up -d --remove-orphans
 ```
 
 > NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
-> 
+>
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
@@ -130,11 +130,11 @@ docker-compose up -d --remove-orphans
 ## Deploy
 
 1. Click **Create Droplet** to create your droplet with Sourcegraph installed
-   - Please ensure the configurations align with the instructions above before creating the instance 
+   - Please ensure the configurations align with the instructions above before creating the instance
 
 2. Navigate to the droplet's IP address to complete initializing Sourcegraph
 
->NOTE: It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+>NOTE: It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible.
 
 You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
 

@@ -24,7 +24,15 @@
 
 <!-- Add changes changes to this section before release. -->
 
-_Upgrade notes for the next version will appear here._
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+
+## v4.4.1 ➔ v4.4.2
+
+#### Notes:
+
+## v4.3 ➔ v4.4.1
+
+_No notes._
 
 ## v4.3 ➔ v4.4
 
@@ -34,9 +42,7 @@ _Upgrade notes for the next version will appear here._
 
 ## v4.2 ➔ v4.3.1
 
-<!-- Add changes changes to this section before release. -->
-
-_Upgrade notes for the next version will appear here._
+_No notes._
 
 ## v4.1 ➔ v4.2.1
 

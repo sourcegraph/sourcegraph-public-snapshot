@@ -1,4 +1,4 @@
-import { concat, fromEvent, Observable, of } from 'rxjs'
+import { concat, defer, fromEvent, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 /**
@@ -25,7 +25,9 @@ export const observeSystemIsLightTheme = (
     const mediaList = window_.matchMedia('(prefers-color-scheme: dark)')
     return {
         observable: concat(
-            of(!mediaList.matches),
+            // We want every subscriber to get the _current_ match value, hence
+            // we defer evaluation of until subscription.
+            defer(() => of(!mediaList.matches)),
             fromEvent<MediaQueryListEvent>(mediaList, 'change').pipe(map(event => !event.matches))
         ),
         initialValue: !mediaList.matches,

@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	kms "cloud.google.com/go/kms/apiv1"
+	"cloud.google.com/go/kms/apiv1/kmspb" //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 	"google.golang.org/api/option"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1" //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"

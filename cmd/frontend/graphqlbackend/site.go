@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -132,11 +133,11 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
-	conf, err := r.db.Conf().SiteGetLatest(ctx)
+	config, err := r.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return conf.ID, nil
+	return config.ID, nil
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
@@ -155,6 +156,22 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 		return nil, err
 	}
 	return conf.ValidateSite(string(contents))
+}
+
+func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view the history.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
+
+	return graphqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
+		&connectionStore,
+		args,
+		nil,
+	)
 }
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {

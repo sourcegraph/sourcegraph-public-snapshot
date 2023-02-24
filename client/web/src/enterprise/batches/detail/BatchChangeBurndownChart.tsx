@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
-import * as H from 'history'
 import {
     Area,
     ComposedChart,
@@ -25,7 +24,6 @@ import styles from './BatchChangeBurndownChart.module.scss'
 
 interface Props {
     batchChangeID: Scalars['ID']
-    history: H.History
     width?: string | number
 }
 

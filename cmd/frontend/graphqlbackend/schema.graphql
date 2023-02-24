@@ -185,9 +185,15 @@ type Mutation {
         """
         username: String!
         """
-        The new user's optional email address. If given, it is marked as verified.
+        The new user's optional email address. If given, it must be verified by the user.
         """
         email: String
+        """
+        Whether or not to mark the provided email address as verified. If unset or set to
+        true, then the email address is immediately marked as verified - otherwise, the
+        email may be marked as unverified if SMTP and password resets are enabled.
+        """
+        verifiedEmail: Boolean
     ): CreateUserResult!
     """
     Randomize a user's password so that they need to reset it before they can sign in again.
@@ -248,12 +254,15 @@ type Mutation {
     """
     deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
     """
+    Bulk "recoverUser" action.
+    """
+    recoverUsers(userIDs: [ID!]!): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
-    Creates a password for the current user. It is only permitted if the user does not have a password and
-    they don't have any login connections.
+    Creates a password for the current user. It is only permitted if the user does not have a password.
     """
     createPassword(newPassword: String!): EmptyResponse
     """
@@ -295,6 +304,12 @@ type Mutation {
     Only site admins or the user who is associated with the external account may perform this mutation.
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
+    """
+    Adds an external account to the authenticated user's account. The service type and service ID
+    must correspond to a valid auth provider on the site. The account details must be a stringified
+    JSON object that contains valid credentials for the provided service type.
+    """
+    addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
     """
     Sends an invitation to join Sourcegraph to the given email address.
 
@@ -1123,7 +1138,6 @@ type CheckMirrorRepositoryConnectionResult {
     """
     error: String
 }
-
 """
 The result for Mutation.createUser.
 """
@@ -1135,6 +1149,9 @@ type CreateUserResult {
     """
     The reset password URL that the new user must visit to sign into their account. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance and an email was provided, an email
+    containing this URL will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
 }
@@ -1287,6 +1304,10 @@ type Query {
         """
         first: Int
         """
+        Returns the last n repositories from the list.
+        """
+        last: Int
+        """
         Return repositories whose names match the query.
         """
         query: String
@@ -1294,6 +1315,10 @@ type Query {
         An opaque cursor that is used for pagination.
         """
         after: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        before: String
         """
         Return repositories whose names are in the list.
         """
@@ -1338,7 +1363,32 @@ type Query {
         Sort direction.
         """
         descending: Boolean = false
-    ): RepositoryConnection!
+    ): NewRepositoryConnection!
+
+    """
+    Query package repo references.
+    """
+    packageRepoReferences(
+        """
+        The exact scheme value to filter by.
+        TODO: should this be an enum?
+        """
+        scheme: String
+        """
+        If supplied, only package repo references that match the given
+        terms by their name will be returned.
+        TODO: fuzzy vs exact?
+        """
+        name: String
+        """
+        Returns the first n external services from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoReferenceConnection!
 
     """
     Looks up a Phabricator repository by name.
@@ -2761,6 +2811,7 @@ A specific kind of external service.
 """
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    AZUREDEVOPS
     BITBUCKETCLOUD
     BITBUCKETSERVER
     GERRIT
@@ -3077,9 +3128,30 @@ type ExternalServiceSyncJob implements Node {
     """
     reposUnmodified: Int!
 }
-
 """
 A list of repositories.
+
+The old `RepositoryConnection` is deprecated and is replaced by
+this new connection which support proper cursor based pagination.
+The new connection does not include `precise` argument for totalCount.
+"""
+type NewRepositoryConnection {
+    """
+    A list of repositories.
+    """
+    nodes: [Repository!]!
+    """
+    The total count of repositories in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Deprecated! A list of repositories.
 """
 type RepositoryConnection {
     """
@@ -3169,6 +3241,7 @@ type Repository implements Node & GenericSearchResultInterface {
     Phabricator, etc.).
     """
     externalRepository: ExternalRepository!
+
     """
     Whether the repository is a fork.
     """
@@ -3370,6 +3443,80 @@ type KeyValuePair {
     The nullable value. A null value indicates this key-value pair should be treated as a tag.
     """
     value: String
+}
+
+"""
+List of package repo references.
+"""
+type PackageRepoReferenceConnection {
+    """
+    A list of package repo references.
+    """
+    nodes: [PackageRepoReference!]!
+
+    """
+    The total number of package repo references in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A reference to a package repo, such as a maven artifact, rust crate etc.
+"""
+type PackageRepoReference {
+    """
+    A unique ID for the package repo reference.
+    """
+    id: ID!
+
+    """
+    The ecosystem/package-manager/indexer scheme under which this package repo
+    reference is uniquely identified e.g. npm/python/rust-analyzer
+    """
+    scheme: String!
+
+    """
+    The name of the package, in a format relevant to the specific ecosystem e.g.
+    maven artifact coordinates (com.sample:text), npm scoped packages (@monkeys/banana).
+    """
+    name: String!
+
+    """
+    The versions of this package known to the sourcegraph instance.
+    """
+    versions: [PackageRepoReferenceVersion!]!
+
+    """
+    The synthetic repository (aka the package repo) created to store the contents of the
+    synced versions of the package repo reference. This type is subject to change once
+    package repos and other non-git code hosts become first-class.
+    """
+    repository: Repository
+}
+
+"""
+A version of a package repo reference.
+"""
+type PackageRepoReferenceVersion {
+    """
+    A unique ID for the package repo reference version.
+    """
+    id: ID!
+
+    """
+    The package repo reference that this ID is for.
+    """
+    packageRepoReferenceID: ID!
+
+    """
+    The version string. Not guaranteed to be semver or any other format.
+    """
+    version: String!
 }
 
 """
@@ -4107,7 +4254,16 @@ type CodeIntelGitBlob {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -4131,6 +4287,28 @@ type CodeIntelRepository {
     The URL to this repository.
     """
     url: String!
+    """
+    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
+    """
+    externalRepository: CodeIntelExternalRepository
+}
+
+"""
+A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+"""
+type CodeIntelExternalRepository {
+    """
+    The type of external service where this repository resides.
+    Example: "github", "gitlab", etc.
+    """
+    serviceType: String!
+    """
+    The particular instance of the external service where this repository resides. Its value is
+    opaque but typically consists of the canonical base URL to the service.
+    Example: For GitHub.com, this is "https://github.com/".
+    """
+    serviceID: String!
 }
 
 """
@@ -4931,7 +5109,16 @@ type CodeIntelGitTree {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -5027,6 +5214,18 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
+        """
+        Includes all parent directories and their entries. For example, if the path is
+        `/client/web/something`, it will return the following entries in this order:
+
+          - `/*`
+          - `/client/*`
+          - `/client/web/*`
+          - `/client/web/something/*`
+
+        This is useful for rendering a collapsed tree view for the entry.
+        """
+        ancestors: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.
@@ -5103,11 +5302,24 @@ interface File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5117,7 +5329,16 @@ interface File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -5148,6 +5369,16 @@ interface File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return blob highlight ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5170,11 +5401,24 @@ type VirtualFile implements File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5184,7 +5428,16 @@ type VirtualFile implements File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     Not implemented.
     """
@@ -5215,6 +5468,16 @@ type VirtualFile implements File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5263,11 +5526,24 @@ type GitBlob implements TreeEntry & File2 {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5277,7 +5553,16 @@ type GitBlob implements TreeEntry & File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The Git commit containing this blob.
     """
@@ -5320,6 +5605,16 @@ type GitBlob implements TreeEntry & File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -5934,6 +6229,30 @@ type ExternalAccount implements Node {
     Only site admins may query this field.
     """
     accountData: JSONValue
+    """
+    Public provider-specific data about the external account.
+    Only users that are linked to the external account and site admins
+    may query this field.
+    """
+    publicAccountData: PublicExternalAccountData
+}
+
+"""
+Public provider-specific data about the external account.
+"""
+type PublicExternalAccountData {
+    """
+    The text name the user is using on the external account, if any.
+    """
+    displayName: String
+    """
+    The login or username the user is using on the external account, if any.
+    """
+    login: String
+    """
+    Link to the user profile page for the external account.
+    """
+    url: String
 }
 
 """
@@ -6549,6 +6868,92 @@ type SiteConfiguration {
     on the configuration (that can't be expressed in the JSON Schema).
     """
     validationMessages: [String!]!
+    """
+    EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
+    configuration.
+    Only site admins may perform this query.
+    """
+    history(
+        """
+        The number of nodes to return starting from the beginning (oldest).
+        Note: Use either first or last (see below) in the query. Setting both will
+        return an error.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): SiteConfigurationChangeConnection
+}
+
+"""
+A list of site config diffs.
+"""
+type SiteConfigurationChangeConnection implements Connection {
+    """
+    A list of diffs in the site config
+    """
+    nodes: [SiteConfigurationChange!]!
+    """
+    The total number of diffs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A diff representing the change in the site config compared to the previous version.
+"""
+type SiteConfigurationChange implements Node {
+    """
+    The ID of the site config in the history.
+    """
+    id: ID!
+    """
+    The user who made this change. If empty, it indicates that either the
+    author's information is not available or the change in the site config was applied
+    via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
+    """
+    author: User
+
+    """
+    A flag to indicate if the diff of changes to the previous site configuration
+    was reproduced or not. Sometimes it may not be possible to generate a diff
+    (for example the redacted contents are not available) in which case the
+    value of the flag will be false.
+    """
+    reproducedDiff: Boolean!
+
+    """
+    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
+    """
+    diff: String
+    """
+    The timestamp when this change in the site config was applied.
+    """
+    createdAt: DateTime!
+    """
+    The timestamp when this change in the site config was modified. Usually
+    this should be the same as createdAt as entries in the site config history are
+    considered immutable.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -8664,4 +9069,296 @@ type ConnectionPageInfo {
     When paginating backward, are there more items?
     """
     hasPreviousPage: Boolean!
+}
+
+"""
+A team is a grouping of users/persons into a common handle. Teams are commonly used to define
+codeowners.
+"""
+type Team implements Node {
+    """
+    The unique ID of the team.
+    """
+    id: ID!
+
+    """
+    The name of the team. Needs to be globally unique across usernames, organization
+    names, and team names. Team names can use alphanumeric characters, - dash
+    and / forward slash.
+    """
+    name: String!
+
+    """
+    URL to link to the teams profile page.
+    """
+    url: String!
+
+    """
+    A human readable name substitute for the name. Null, if not defined.
+    """
+    displayName: String
+
+    """
+    A team can be made read-only from the CLI instructing the UI to show a warning
+    banner that this is managed externally, and management features will only be
+    available to site-admins. It can also still be manipulated from the CLI.
+    """
+    readonly: Boolean!
+
+    """
+    The teams direct members. That is members that are strictly part of this team,
+    but not members of child teams. Team membership is NOT inherited.
+    """
+    members(
+        """
+        Returns the first n team members from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamMemberConnection!
+
+    """
+    Parent team can be null, if this is a root team.
+    """
+    parentTeam: Team
+
+    """
+    The list of direct child teams.
+    """
+    childTeams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+
+    """
+    True, if the current user can modify this team.
+    """
+    viewerCanAdminister: Boolean!
+}
+
+"""
+A list of teams.
+"""
+type TeamConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount(
+        """
+        If true, the total count of teams, including deeply nested child teams will
+        be returned. Note that those teams will NOT be part of the nodes.
+        """
+        countDeeplyNestedTeams: Boolean = false
+    ): Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of teams in this connection.
+    """
+    nodes: [Team!]!
+}
+
+"""
+A list of team members.
+"""
+type TeamMemberConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount(
+        """
+        If true, the total count of members of this team, including deeply nested
+        child teams members will be returned. Note that child team members will NOT
+        be part of the nodes.
+        """
+        countDeeplyNestedTeamMembers: Boolean = false
+    ): Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of team members in this connection.
+    """
+    nodes: [TeamMember!]!
+}
+
+"""
+A team member is an entity that can be associated to a team.
+
+For now, this will be User, and will be expanded to User | Person later.
+"""
+interface TeamMember {
+    """
+    All the teams this TeamMember is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type User implements TeamMember {
+    """
+    All the teams this user is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type Query {
+    """
+    Get a single team by name. Returns null if not found.
+    """
+    team(name: String!): Team
+
+    """
+    Get the global list of all root teams. (Those without a parent team).
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search can be used to do a text-search over the team names.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type Mutation {
+    """
+    Creates a team. The name must be unique, display name can be used to set a custom
+    display value for the team inside Sourcegraph.
+
+    If readonly is true, the Sourcegraph UI will show a warning banner that this team
+    is managed externally, and it can only be modified by site-admins.
+    This is to prevent state drift from external systems that ingest team information into Sourcegraph.
+    Readonly can only be set by site-admins.
+
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent. Only members of the parent team or site-admis can create
+    a child team.
+    """
+    createTeam(
+        name: String!
+        displayName: String
+        readonly: Boolean = false
+        parentTeam: ID
+        parentTeamName: String
+    ): Team!
+
+    """
+    Update an existing team. ID or Name must be specified, but not both.
+
+    To unset the display name, pass an empty string. Null will make it ignore updates.
+
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent.
+    The user has to be a team-member of both the child and parent team for that, and
+    neither can be read-only. Site-admin can modify all teams without constraints.
+    """
+    updateTeam(id: ID, name: String, displayName: String, parentTeam: ID, parentTeamName: String): Team!
+
+    """
+    Delete team deletes a team. ID or Name must be specified, but not both.
+    Must be team-member to delete. If the team is marked as read-only, must be site-admin.
+    """
+    deleteTeam(id: ID, name: String): EmptyResponse
+
+    """
+    Add a list of team members to an existing team.
+    People that already are part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to add new team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+
+    """
+    This is a convenience method to forcefully overwrite the full set of members
+    of a team. This is handy to sync external state without diffing the current
+    members vs the desired set of members.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to modify team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+
+    """
+    This mutation removes team membership for the given team and set of members.
+    Members that weren't part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to remove team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
 }

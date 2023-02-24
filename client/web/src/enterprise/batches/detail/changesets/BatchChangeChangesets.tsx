@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
 
-import * as H from 'history'
 import { Subject } from 'rxjs'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -47,8 +46,6 @@ interface Props {
     batchChangeState: BatchChangeState
     isExecutionEnabled: boolean
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
 
     hideFilters?: boolean
     onlyArchived?: boolean
@@ -76,8 +73,6 @@ const BATCH_COUNT = 15
 const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
-    history,
-    location,
     hideFilters = false,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryExternalChangesetWithFileDiffs,
@@ -194,11 +189,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     return (
         <Container>
             {!hideFilters && !showSelectRow && (
-                <ChangesetFilterRow
-                    history={history}
-                    location={location}
-                    onFiltersChange={setChangesetFiltersAndDeselectAll}
-                />
+                <ChangesetFilterRow onFiltersChange={setChangesetFiltersAndDeselectAll} />
             )}
             {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
@@ -224,8 +215,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                                 key={node.id}
                                 node={node}
                                 viewerCanAdminister={viewerCanAdminister}
-                                history={history}
-                                location={location}
                                 expandByDefault={expandByDefault}
                                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                                 selectable={{ onSelect: toggleSingle, isSelected }}

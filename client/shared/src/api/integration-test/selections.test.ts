@@ -3,7 +3,7 @@ import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 
 import { isDefined, isTaggedUnionMember } from '@sourcegraph/common'
 
-import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {

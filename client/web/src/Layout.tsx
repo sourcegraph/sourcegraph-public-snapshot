@@ -1,11 +1,10 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { useLocation, Navigate, Outlet } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { isMacPlatform } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -15,6 +14,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
@@ -24,7 +24,6 @@ import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
@@ -36,35 +35,20 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput, NotebookProps } from './notebooks'
-import { OrgAreaRoute } from './org/area/OrgArea'
-import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
-import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
-import type { RepoContainerRoute } from './repo/RepoContainer'
-import { RepoHeaderActionButton } from './repo/RepoHeader'
-import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
-import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import type { NotebookProps } from './notebooks'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
-import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useTheme, useThemeProps } from './theme'
-import type { UserAreaRoute } from './user/area/UserArea'
-import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { SetupWizard } from './setup-wizard'
+import { useExperimentalFeatures } from './stores'
+import { ThemePreferenceProps, useTheme } from './theme'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
 
-export interface LayoutProps
-    extends RouteComponentProps<{}>,
-        SettingsCascadeProps<Settings>,
+export interface LegacyLayoutProps
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
@@ -75,24 +59,6 @@ export interface LayoutProps
         NotebookProps,
         CodeMonitoringProps,
         SearchAggregationProps {
-    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
-    siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
-    userAreaRoutes: readonly UserAreaRoute[]
-    userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
-    orgSettingsSideBarItems: OrgSettingsSidebarItems
-    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
-    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
-    orgAreaRoutes: readonly OrgAreaRoute[]
-    repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps<any>[]
-
     authenticatedUser: AuthenticatedUser | null
 
     /**
@@ -103,11 +69,11 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean
     isSourcegraphDotCom: boolean
-    children?: never
+
+    themeProps: ThemeProps & ThemePreferenceProps
 }
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
@@ -115,43 +81,50 @@ export interface LayoutProps
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
-export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
-    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
-    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+export const Layout: React.FC<LegacyLayoutProps> = props => {
+    const location = useLocation()
+
+    // TODO: Replace with useMatches once top-level <Router/> is V6
+    const routeMatch: any = '' /* props.routes.find(
+        route =>
+            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
+    )?.path*/
+
+    const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
+    const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
-    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+    const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
+    const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
+
+    const { setupWizard } = useExperimentalFeatures()
+    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
-    const userHistory = useUserHistory(props.history, isRepositoryRelatedPage)
+    const userHistory = useUserHistory(isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
-    const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
+    const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
+    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        props.location.pathname === PageRoutes.SignIn ||
-        props.location.pathname === PageRoutes.SignUp ||
-        props.location.pathname === PageRoutes.PasswordReset ||
-        props.location.pathname === PageRoutes.Welcome
+        location.pathname === PageRoutes.SignIn ||
+        location.pathname === PageRoutes.SignUp ||
+        location.pathname === PageRoutes.PasswordReset ||
+        location.pathname === PageRoutes.Welcome
 
-    const themeProps = useThemeProps()
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
     themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
-    const breadcrumbProps = useBreadcrumbs()
-
-    useScrollToLocationHash(props.location)
+    useScrollToLocationHash(location)
 
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
@@ -174,15 +147,12 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // }, [])
 
     // Remove trailing slash (which is never valid in any of our URLs).
-    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
-        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+        return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    const context: LayoutRouteComponentProps<any> = {
-        ...props,
-        ...themeProps,
-        ...breadcrumbProps,
-        isMacPlatform: isMacPlatform(),
+    if (isSetupWizardPage) {
+        return <SetupWizard />
     }
 
     return (
@@ -224,8 +194,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
+                    routes={[]}
                     {...props}
-                    {...themeProps}
+                    {...props.themeProps}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -240,8 +211,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary location={props.location}>
+            {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
+            <ErrorBoundary location={location}>
                 <Suspense
                     fallback={
                         <div className="flex flex-1">
@@ -249,51 +220,35 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         </div>
                     }
                 >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
+                    <AppRouterContainer>
+                        <Outlet />
+                    </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel
-                        className={styles.panel}
-                        position="bottom"
-                        defaultSize={350}
-                        storageKey="panel-size"
-                        ariaLabel="References panel"
-                        id="references-panel"
-                    >
-                        <TabbedPanelContent
-                            {...props}
-                            {...themeProps}
-                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                        />
-                    </Panel>
-                )}
+            {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
+                <Panel
+                    className={styles.panel}
+                    position="bottom"
+                    defaultSize={350}
+                    storageKey="panel-size"
+                    ariaLabel="References panel"
+                    id="references-panel"
+                >
+                    <TabbedPanelContent
+                        {...props}
+                        {...props.themeProps}
+                        repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
+                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                    />
+                </Panel>
+            )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
-                history={props.history}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+                <NotepadContainer userId={props.authenticatedUser?.id} />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder
@@ -303,7 +258,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
-                    location={props.location}
+                    location={location}
                     userHistory={userHistory}
                 />
             )}

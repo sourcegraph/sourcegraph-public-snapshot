@@ -21,27 +21,40 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
 
     fragment InsightViewNode on InsightView {
         id
-        defaultSeriesDisplayOptions {
-            limit
-            sortOptions {
-                mode
-                direction
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+            ... on InsightRepositoryScope {
+                repositories
             }
         }
-        appliedSeriesDisplayOptions {
+        defaultSeriesDisplayOptions {
             limit
+            numSamples
             sortOptions {
                 mode
                 direction
             }
         }
         isFrozen
-        appliedFilters {
+        defaultFilters {
             includeRepoRegex
             excludeRepoRegex
             searchContexts
         }
         dashboardReferenceCount
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         dashboards {
             nodes {
                 id
@@ -71,9 +84,6 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
             ... on SearchInsightDataSeriesDefinition {
                 seriesId
                 query
-                repositoryScope {
-                    repositories
-                }
                 timeScope {
                     ... on InsightIntervalTimeScope {
                         unit

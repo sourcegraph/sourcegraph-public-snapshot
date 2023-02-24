@@ -101,7 +101,7 @@ type UpdateExecutorSecretArgs struct {
 	Value string
 }
 
-func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateExecutorSecretArgs) (_ *executorSecretResolver, err error) {
+func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateExecutorSecretArgs) (*executorSecretResolver, error) {
 	scope, id, err := unmarshalExecutorSecretID(args.ID)
 	if err != nil {
 		return nil, err
@@ -118,31 +118,34 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 
 	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
-	tx, err := store.Transact(ctx)
+	var oldSecret *database.ExecutorSecret
+	err = store.WithTransact(ctx, func(tx database.ExecutorSecretStore) error {
+		secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
+		if err != nil {
+			return err
+		}
+
+		// 🚨 SECURITY: Check namespace access.
+		if err := checkNamespaceAccess(ctx, database.NewDBWith(r.logger, tx), secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
+			return err
+		}
+
+		if err := validateExecutorSecret(secret, args.Value); err != nil {
+			return err
+		}
+
+		if err := tx.Update(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
+			return err
+		}
+
+		oldSecret = secret
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
 
-	secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check namespace access.
-	if err := checkNamespaceAccess(ctx, r.db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
-		return nil, err
-	}
-
-	if err := validateExecutorSecret(secret, args.Value); err != nil {
-		return nil, err
-	}
-
-	if err := tx.Update(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
-		return nil, err
-	}
-
-	return &executorSecretResolver{db: r.db, secret: secret}, nil
+	return &executorSecretResolver{db: r.db, secret: oldSecret}, nil
 }
 
 type DeleteExecutorSecretArgs struct {
@@ -150,7 +153,7 @@ type DeleteExecutorSecretArgs struct {
 	Scope ExecutorSecretScope
 }
 
-func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteExecutorSecretArgs) (_ *EmptyResponse, err error) {
+func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteExecutorSecretArgs) (*EmptyResponse, error) {
 	scope, id, err := unmarshalExecutorSecretID(args.ID)
 	if err != nil {
 		return nil, err
@@ -167,23 +170,24 @@ func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteEx
 
 	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
-	tx, err := store.Transact(ctx)
+	err = store.WithTransact(ctx, func(tx database.ExecutorSecretStore) error {
+		secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
+		if err != nil {
+			return err
+		}
+
+		// 🚨 SECURITY: Check namespace access.
+		if err := checkNamespaceAccess(ctx, database.NewDBWith(r.logger, tx), secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
+			return err
+		}
+
+		if err := tx.Delete(ctx, args.Scope.ToDatabaseScope(), id); err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check namespace access.
-	if err := checkNamespaceAccess(ctx, r.db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
-		return nil, err
-	}
-
-	if err := tx.Delete(ctx, args.Scope.ToDatabaseScope(), id); err != nil {
 		return nil, err
 	}
 
@@ -254,9 +258,9 @@ func (r *UserResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecrets
 	}, nil
 }
 
-func (r *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
+func (o *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
 	// 🚨 SECURITY: Only allow access to list secrets if the user has access to the namespace.
-	if err := checkNamespaceAccess(ctx, r.db, 0, r.org.ID); err != nil {
+	if err := checkNamespaceAccess(ctx, o.db, 0, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -266,12 +270,12 @@ func (r *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsL
 	}
 
 	return &executorSecretConnectionResolver{
-		db:    r.db,
+		db:    o.db,
 		scope: args.Scope,
 		opts: database.ExecutorSecretsListOpts{
 			LimitOffset:     limit,
 			NamespaceUserID: 0,
-			NamespaceOrgID:  r.org.ID,
+			NamespaceOrgID:  o.org.ID,
 		},
 	}, nil
 }
@@ -308,8 +312,8 @@ func validateExecutorSecret(secret *database.ExecutorSecret, value string) error
 		if dac.CredsStore != "" {
 			return errors.New("cannot use credential stores in docker auth config set via secrets")
 		}
-		for key, auth := range dac.Auths {
-			if !bytes.Contains(auth.Auth, []byte(":")) {
+		for key, dacAuth := range dac.Auths {
+			if !bytes.Contains(dacAuth.Auth, []byte(":")) {
 				return errors.Newf("invalid credential in auths section for %q format has to be base64(username:password)", key)
 			}
 		}

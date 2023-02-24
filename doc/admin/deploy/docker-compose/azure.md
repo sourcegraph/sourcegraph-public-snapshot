@@ -65,7 +65,7 @@ Click `Create and attach a new disk` to create **two** disks:
 #### Advanced
 
 * Enable `user data`
-* In the **Custom data** and **User Data** text boxes, copy and paste the [startup script](#startup-script) from below 
+* In the **Custom data** and **User Data** text boxes, copy and paste the [startup script](#startup-script) from below
 
 ##### Startup script
 
@@ -77,7 +77,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.0'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.2'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_COMPOSE_VERSION='1.29.2'
@@ -141,7 +141,7 @@ docker-compose up -d --remove-orphans
 ```
 
 > NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
-> 
+>
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
@@ -150,7 +150,7 @@ docker-compose up -d --remove-orphans
 ## Deploy
 
 1. Click **Review + create** to create the instance
-  - Please review the configurations and make sure the validation has passed before creating the instance 
+  - Please review the configurations and make sure the validation has passed before creating the instance
 
 
 2. Navigate to the `public IP address` assigned to your instance to visit your newly created instance

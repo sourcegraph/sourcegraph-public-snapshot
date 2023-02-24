@@ -90,6 +90,20 @@ func TestSearch(t *testing.T) {
 	})
 
 	testSearchOther(t)
+
+	// Run the search tests with file-based ranking enabled
+	err = client.SetFeatureFlag("search-ranking", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("graphql with file ranking", func(t *testing.T) {
+		testSearchClient(t, client)
+	})
+
+	t.Run("stream with file ranking", func(t *testing.T) {
+		testSearchClient(t, streamClient)
+	})
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -1117,6 +1131,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains.file(go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
 				name:   `repo contains file but not content`,
 				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
 				counts: counts{Repo: 1},
@@ -1219,6 +1238,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `commit results with repo filter`,
 				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
 				counts: counts{Commit: 2},
+			},
+			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains(file:go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo contains content using deprecated syntax`,
+				query:  `repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,

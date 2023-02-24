@@ -60,7 +60,7 @@ func (o *Options) SetDefaults() {
 func Combine(path string, opt Options) error {
 	opt.SetDefaults()
 
-	log := opt.Logger
+	logger := opt.Logger
 
 	r, err := git.PlainOpen(path)
 	if err != nil {
@@ -81,7 +81,7 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
-	log.Println("Determining the tree hashes of subdirectories...")
+	logger.Println("Determining the tree hashes of subdirectories...")
 	remoteToTree := map[string]plumbing.Hash{}
 	if head != nil {
 		tree, err := head.Tree()
@@ -93,7 +93,7 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
-	log.Println("Collecting new commits...")
+	logger.Println("Collecting new commits...")
 	lastLog := time.Now()
 	remoteToCommits := map[string][]*object.Commit{}
 	for remote := range conf.Remotes {
@@ -112,7 +112,7 @@ func Combine(path string, opt Options) error {
 
 		for depth := 0; depth < opt.LimitRemote; depth++ {
 			if time.Since(lastLog) > time.Second {
-				log.Printf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth)
+				logger.Printf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth)
 				lastLog = time.Now()
 			}
 
@@ -202,7 +202,7 @@ func Combine(path string, opt Options) error {
 		return nil
 	}
 
-	log.Println("Applying new commits...")
+	logger.Println("Applying new commits...")
 	total := 0
 	for _, commits := range remoteToCommits {
 		total += len(commits)
@@ -234,7 +234,7 @@ func Combine(path string, opt Options) error {
 
 			if time.Since(lastLog) > time.Second {
 				progress := float64(height) / float64(total)
-				log.Printf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total)
+				logger.Printf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total)
 				lastLog = time.Now()
 			}
 		}

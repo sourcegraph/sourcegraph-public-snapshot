@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -15,24 +15,44 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/go-ctags"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+func defaultEndpoints() *endpoint.Map {
+	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		return conns.Symbols
+	})
+}
+
+func LoadConfig() {
+	DefaultClient = &Client{
+		Endpoints:           defaultEndpoints(),
+		HTTPClient:          defaultDoer,
+		HTTPLimiter:         parallel.NewRun(500),
+		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
+	}
+}
+
+// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
+// SYMBOLS_URL environment variable.
+var DefaultClient *Client
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -42,19 +62,10 @@ var defaultDoer = func() httpcli.Doer {
 	return d
 }()
 
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// SYMBOLS_URL environment variable.
-var DefaultClient = &Client{
-	URL:                 symbolsURL,
-	HTTPClient:          defaultDoer,
-	HTTPLimiter:         parallel.NewRun(500),
-	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
-}
-
 // Client is a symbols service client.
 type Client struct {
-	// URL to symbols service.
-	URL string
+	// Endpoints to symbols service.
+	Endpoints *endpoint.Map
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -67,51 +78,36 @@ type Client struct {
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 
-	endpointOnce sync.Once
-	endpoint     *endpoint.Map
-
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
-	c.endpointOnce.Do(func() {
-		if len(strings.Fields(c.URL)) == 0 {
-			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-		} else {
-			c.endpoint = endpoint.New(c.URL)
-		}
-	})
-	return c.endpoint.Get(string(repo))
+	if c.Endpoints == nil {
+		return "", errors.New("a symbols service has not been configured")
+	}
+	return c.Endpoints.Get(string(repo))
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
 	c.langMappingOnce.Do(func() {
-		var resp *http.Response
-		resp, err = c.httpPost(ctx, "list-languages", repo, nil)
+		var mappings map[string][]string
+
+		if c.isGRPCEnabled(ctx) {
+			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
+		} else {
+			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
+		}
+
 		if err != nil {
+			err = errors.Wrap(err, "fetching language mappings")
 			return
 		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			// best-effort inclusion of body in error message
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-			err = errors.Errorf(
-				"Symbol.ListLanguageMappings http status %d: %s",
-				resp.StatusCode,
-				string(body),
-			)
-			return
-		}
-
-		mapping := make(map[string][]string)
-		err = json.NewDecoder(resp.Body).Decode(&mapping)
 
 		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages))
 
 		for _, allowedLanguage := range ctags.SupportedLanguages {
-			for _, pattern := range mapping[allowedLanguage] {
+			for _, pattern := range mappings[allowedLanguage] {
 				var compiled glob.Glob
 				compiled, err = glob.Compile(pattern)
 				if err != nil {
@@ -129,6 +125,58 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 	return c.langMappingCache, nil
 }
 
+func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
+	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// an arbitrary symbols host. We should remove this requirement from this method.
+
+	conn, err := c.dialGRPC(ctx, repository)
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing symbols service")
+	}
+
+	defer conn.Close()
+
+	client := proto.NewSymbolsServiceClient(conn)
+	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	mappings := make(map[string][]string, len(resp.LanguageFileNameMap))
+	for language, fp := range resp.LanguageFileNameMap {
+		mappings[language] = fp.Patterns
+	}
+
+	return mappings, nil
+}
+
+func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
+	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// an arbitrary symbols host. We should remove this requirement from this method.
+
+	var resp *http.Response
+	resp, err := c.httpPost(ctx, "list-languages", repository, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		err = errors.Errorf(
+			"Symbol.ListLanguageMappings http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+		return nil, err
+	}
+
+	mapping := make(map[string][]string)
+	err = json.NewDecoder(resp.Body).Decode(&mapping)
+	return mapping, err
+}
+
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search") //nolint:staticcheck // OT is deprecated
@@ -142,30 +190,18 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	span.SetTag("Repo", string(args.Repo))
 	span.SetTag("CommitID", string(args.CommitID))
 
-	resp, err := c.httpPost(ctx, "search", args.Repo, args)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf(
-			"Symbol.Search http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-	}
-
 	var response search.SymbolsResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
+
+	if c.isGRPCEnabled(ctx) {
+		response, err = c.searchGRPC(ctx, args)
+	} else {
+		response, err = c.searchJSON(ctx, args)
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "executing symbols search request")
 	}
-	if response.Err != "" {
-		return nil, errors.New(response.Err)
-	}
+
 	symbols = response.Symbols
 
 	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
@@ -199,6 +235,57 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	return filtered, nil
 }
 
+func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
+	conn, err := c.dialGRPC(ctx, args.Repo)
+	if err != nil {
+		return search.SymbolsResponse{}, errors.Wrap(err, "dialing GRPC service")
+	}
+
+	defer conn.Close()
+
+	grpcClient := proto.NewSymbolsServiceClient(conn)
+
+	var protoArgs proto.SearchRequest
+	protoArgs.FromInternal(&args)
+
+	protoResponse, err := grpcClient.Search(ctx, &protoArgs)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+
+	response := protoResponse.ToInternal()
+	return response, nil
+}
+
+func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
+	resp, err := c.httpPost(ctx, "search", args.Repo, args)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return search.SymbolsResponse{}, errors.Errorf(
+			"Symbol.Search http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	var response search.SymbolsResponse
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+	if response.Err != "" {
+		return search.SymbolsResponse{}, errors.New(response.Err)
+	}
+
+	return response, nil
+}
+
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel") //nolint:staticcheck // OT is deprecated
 	defer func() {
@@ -211,6 +298,37 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 	span.SetTag("Repo", args.Repo)
 	span.SetTag("CommitID", args.Commit)
 
+	if c.isGRPCEnabled(ctx) {
+		return c.localCodeIntelGRPC(ctx, args)
+	}
+
+	return c.localCodeIntelJSON(ctx, args)
+}
+
+func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
+	conn, err := c.dialGRPC(ctx, api.RepoName(path.Repo))
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+	}
+
+	defer conn.Close()
+
+	grpcClient := proto.NewSymbolsServiceClient(conn)
+
+	var rcp proto.RepoCommitPath
+	rcp.FromInternal(&path)
+
+	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
+	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	response := protoResponse.ToInternal()
+	return &response, nil
+}
+
+func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
 	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
 	if err != nil {
 		return nil, err
@@ -247,25 +365,14 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 	span.SetTag("Repo", args.Repo)
 	span.SetTag("CommitID", args.Commit)
 
-	resp, err := c.httpPost(ctx, "symbolInfo", api.RepoName(args.Repo), args)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf(
-			"Squirrel.SymbolInfo http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
+	if c.isGRPCEnabled(ctx) {
+		result, err = c.symbolInfoGRPC(ctx, args)
+	} else {
+		result, err = c.symbolInfoJSON(ctx, args)
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return nil, errors.Wrap(err, "decoding response body")
+		return nil, errors.Wrap(err, "executing symbol info request")
 	}
 
 	// 🚨 SECURITY: We have a valid result, so we need to apply sub-repo permissions filtering.
@@ -295,6 +402,61 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 	return result, nil
 }
 
+func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
+	conn, err := c.dialGRPC(ctx, api.RepoName(args.Repo))
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+	}
+
+	defer conn.Close()
+
+	client := proto.NewSymbolsServiceClient(conn)
+
+	var rcp proto.RepoCommitPath
+	rcp.FromInternal(&args.RepoCommitPath)
+
+	var point proto.Point
+	point.FromInternal(&args.Point)
+
+	protoArgs := proto.SymbolInfoRequest{
+		RepoCommitPath: &rcp,
+		Point:          &point,
+	}
+
+	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	response := protoResponse.ToInternal()
+	return &response, nil
+}
+
+func (c *Client) symbolInfoJSON(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
+	resp, err := c.httpPost(ctx, "symbolInfo", api.RepoName(args.Repo), args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Squirrel.SymbolInfo http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding response body")
+	}
+
+	return result, nil
+}
+
 func (c *Client) httpPost(
 	ctx context.Context,
 	method string,
@@ -310,7 +472,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	url, err := c.url(repo)
+	repoUrl, err := c.url(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -320,10 +482,10 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	if !strings.HasSuffix(url, "/") {
-		url += "/"
+	if !strings.HasSuffix(repoUrl, "/") {
+		repoUrl += "/"
 	}
-	req, err := http.NewRequest("POST", url+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", repoUrl+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -344,4 +506,29 @@ func (c *Client) httpPost(
 	defer ht.Finish()
 
 	return c.HTTPClient.Do(req)
+}
+
+// dialGRPC establishes a GRPC connection with the symbols server instance that handles
+// the named repository.
+func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.ClientConn, error) {
+	rawURL, err := c.url(repository)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting symbols service URL")
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing symbols service URL")
+	}
+
+	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing symbols GRPC service")
+	}
+
+	return conn, nil
+}
+
+func (c *Client) isGRPCEnabled(ctx context.Context) bool {
+	return featureflag.FromContext(ctx).GetBoolOr("grpc", false)
 }

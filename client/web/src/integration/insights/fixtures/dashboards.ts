@@ -39,16 +39,8 @@ export const GET_DASHBOARD_INSIGHTS_EMPTY: GetDashboardInsightsResult = {
 export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
     defaultSeriesDisplayOptions: {
-        limit: 20,
-        sortOptions: {
-            mode: SeriesSortMode.RESULT_COUNT,
-            direction: SeriesSortDirection.DESC,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: 20,
+        limit: null,
+        numSamples: null,
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,
             direction: SeriesSortDirection.DESC,
@@ -57,7 +49,7 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
@@ -91,14 +83,14 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: [],
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
             query: 'machine_type \\"([\\w]+\\-[\\w]+[\\-[\\w]+]?)\\" lang:Terraform  patterntype:regexp',
-            repositoryScope: {
-                repositories: [],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.MONTH,
                 value: 1,
@@ -117,15 +109,7 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: {
-            mode: null,
-            direction: null,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: {
             mode: null,
             direction: null,
@@ -134,7 +118,7 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
@@ -179,19 +163,19 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: [
+            'github.com/sourcegraph/sourcegraph',
+            'github.com/sourcegraph/deploy-sourcegraph-managed',
+            'github.com/sourcegraph/infrastructure',
+            'github.com/sourcegraph/deploy-sourcegraph-cloud',
+        ],
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
             query: 'lang:go exec.Cmd OR exec.CommandContext',
-            repositoryScope: {
-                repositories: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/deploy-sourcegraph-managed',
-                    'github.com/sourcegraph/infrastructure',
-                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                ],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 2,
@@ -205,15 +189,6 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
         {
             seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
             query: 'lang:go content:"github.com/sourcegraph/run" AND (run.Cmd OR run.Bash)',
-            repositoryScope: {
-                repositories: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/deploy-sourcegraph-managed',
-                    'github.com/sourcegraph/infrastructure',
-                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                ],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 2,
@@ -232,15 +207,7 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQ3VMOXlZbXNndHI3NW05NEpUY3BWWVFNMFoi',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: {
-            mode: null,
-            direction: null,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: {
             mode: null,
             direction: null,
@@ -249,7 +216,7 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: null,
         excludeRepoRegex: null,
         searchContexts: [],
@@ -276,14 +243,14 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
         title: 'Lang Stats',
         otherThreshold: 0.03,
     },
+    repositoryDefinition: {
+        repositories: ['github.com/sourcegraph/about'],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CuLABWoJVNlP8KqoB49hdes8MK',
             query: '',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/about'],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.MONTH,
                 value: 0,
@@ -302,16 +269,12 @@ export const COMPUTE_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyRjdlUk1Tc1ZoUHRBd0FKNzJ2TEJEOWZEQUgi',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
@@ -340,14 +303,14 @@ export const COMPUTE_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2F7eRYTr4EyEblhHeoQE2lRXG2y',
             query: 'DEP case:yes',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: { unit: TimeIntervalStepUnit.WEEK, value: 2, __typename: 'InsightIntervalTimeScope' },
             isCalculated: true,
             generatedFromCaptureGroups: true,

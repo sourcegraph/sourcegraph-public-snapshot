@@ -1,7 +1,6 @@
 import { FetchResult, gql, useMutation } from '@apollo/client'
 
 import { SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables } from '../../../../graphql-operations'
-import { parseSeriesDisplayOptions } from '../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { INSIGHT_VIEW_FRAGMENT } from '../backend/gql-backend/gql/GetInsights'
 import { searchInsightCreationOptimisticUpdate } from '../backend/gql-backend/methods/create-insight/create-insight'
 import { BackendInsight, InsightDashboard, InsightFilters, isVirtualDashboard } from '../types'
@@ -24,8 +23,7 @@ export function getSaveInsightAsNewViewGqlInput(input: saveNewInsightViewVariabl
             insightViewId: insight.id,
             options: { title },
             viewControls: {
-                seriesDisplayOptions:
-                    insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+                seriesDisplayOptions: filters.seriesDisplayOptions,
                 filters: {
                     searchContexts: [filters.context],
                     excludeRepoRegex: filters.excludeRepoRegexp,

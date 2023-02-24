@@ -11,21 +11,21 @@ The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
 2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
    1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
-   2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
+   2. Do not use this in an `init()` function—we want to explicitly avoid tying logger instances as a compile-time dependency.
 3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+lang:go&patternType=literal), and [`(Logger).Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logger.Scoped+lang:go&patternType=literal) for [creating sub-loggers](#sub-loggers).
 4. [Testing utilities](#testing-usage)
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
 
-> NOTE: Sourcegraph's new logging standards are still a work in progress - please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
+> NOTE: Sourcegraph's new logging standards are still a work in progress—please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
 
 ## Core concepts
 
 1. `github.com/sourcegraph/log` intentionally does not export directly usable (global) log functions. Users should hold their own references to `Logger` instances, so that fields can be attached and log output can be more useful with additional context, and pass `Logger`s to components as required.
-   1. Do not call the package-level `log.Scoped` wherever you need to log - consider passing a `Logger` around explicitly, and [creating sub-scoped loggers using `(Logger).Scoped()`](#scoped-loggers).
+   1. Do not call the package-level `log.Scoped` wherever you need to log—consider passing a `Logger` around explicitly, and [creating sub-scoped loggers using `(Logger).Scoped()`](#scoped-loggers).
    2. [Do not add `Logger` to `context.Context`](https://dave.cheney.net/2017/01/26/context-is-for-cancelation).
    3. [Do not create package-level logger instances](https://dave.cheney.net/2017/01/23/the-package-level-logger-anti-pattern).
-2. `github.com/sourcegraph/log` should export everything that is required for logging - do not directly import a third-party logging package such as `zap`, `log15`, or the standard `log` library.
+2. `github.com/sourcegraph/log` should export everything that is required for logging—do not directly import a third-party logging package such as `zap`, `log15`, or the standard `log` library.
 
 ## Handling loggers
 
@@ -79,7 +79,7 @@ Once initialized, you can use `log.Scoped()` to create some top-level loggers to
 - [create sub-loggers](#sub-loggers)
 - [write log entries](#writing-log-messages)
 
-The first top-level scoped logger is typically `"server"`, since most logging is related to server initialization and service-level logging - the name of the service itself is already logged as part of the [`Resource` field](https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-resource) provided during initialization.
+The first top-level scoped logger is typically `"server"`, since most logging is related to server initialization and service-level logging—the name of the service itself is already logged as part of the [`Resource` field](https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-resource) provided during initialization.
 
 Background jobs, etc. can have additional top-level loggers created that better describe each components.
 
@@ -95,7 +95,7 @@ From a parent logger, you can create sub-loggers that have additional context at
 All the above mechanisms attach metadata to *all* log entries created by the sub-logger, and they do not modify the parent logger.
 Using sub-loggers allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
 
-> WARNING: All sub-logger constructors and functions on the `log.Logger` type (e.g. `(Logger).Soped(...)`, `(Logger).With(...)`, `(Logger).WithTrace(...)`) **do not** modify the underlying logger - you must hold and use the reference to the returned `log.Logger` instance.
+> WARNING: All sub-logger constructors and functions on the `log.Logger` type (e.g. `(Logger).Soped(...)`, `(Logger).With(...)`, `(Logger).WithTrace(...)`) **do not** modify the underlying logger—you must hold and use the reference to the returned `log.Logger` instance.
 
 #### Scoped loggers
 
@@ -142,7 +142,7 @@ func helperFunc(logger log.Logger) {
 
 #### Fields sub-loggers
 
-In a particular scope, some fields might be repeatedly emitted - most commonly, you might want to associate a set of log entries to an ID of some sort (user ID, iteration ID, etc). In these scenarios you should create a sub-logger with prepended fields by using `logger.With(...fields)`, and use it directly to maintain relevant context:
+In a particular scope, some fields might be repeatedly emitted—most commonly, you might want to associate a set of log entries to an ID of some sort (user ID, iteration ID, etc). In these scenarios you should create a sub-logger with prepended fields by using `logger.With(...fields)`, and use it directly to maintain relevant context:
 
 ```go
 func (w *Worker) DoBigThing(ctx context.Context, id int) {
@@ -225,7 +225,7 @@ If multiple log lines have similar components (such as a message prefix, or the 
 - instead of repeating a message prefix to e.g. indicate a component, [create a scoped sub-logger](#scoped-loggers) instead
 - instead of adding the same field to multiple log calls, [create a fields sub-logger](#fields-sub-loggers) instead
 
-> WARNING: Field constructors provided by the `sourcegraph/log` package, for example `log.Error(error)`, **do not** create log entries - they create fields (`type log.Field`) that are intended to be provided to `Logger` functions like `(Logger).Info` and so on.
+> WARNING: Field constructors provided by the `sourcegraph/log` package, for example `log.Error(error)`, **do not** create log entries—they create fields (`type log.Field`) that are intended to be provided to `Logger` functions like `(Logger).Info` and so on.
 
 ### Log levels
 

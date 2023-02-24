@@ -2,7 +2,6 @@ import { FC } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Alert, Button, ErrorAlert, Link, LoadingSpinner, renderError, Tooltip } from '@sourcegraph/wildcard'
@@ -21,7 +20,7 @@ import { RedirectionAlert } from './RedirectionAlert'
 
 import styles from './ExternalServiceEntry.module.scss'
 
-interface ExternalServiceEntryProps extends Pick<RouteComponentProps, 'history'> {
+interface ExternalServiceEntryProps {
     repo: SettingsAreaRepositoryFields
     service: SettingsAreaExternalServiceFields
     excludingDisabled: boolean
@@ -71,7 +70,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                         kind={service.kind}
                         title={service.displayName}
                         shortDescription="Update this code host configuration to manage repository mirroring."
-                        to={`/site-admin/external-services/${service.id}/edit`}
+                        to={`/site-admin/external-services/${service.id}`}
                         toIcon={null}
                         bordered={false}
                     />

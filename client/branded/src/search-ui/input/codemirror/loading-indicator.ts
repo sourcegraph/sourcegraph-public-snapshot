@@ -45,8 +45,10 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
                 }
 
                 public update(update: ViewUpdate): void {
+                    const isBusy = update.view.contentDOM.getAttribute('aria-busy') === 'true'
                     const status = completionStatus(update.state)
-                    if (status === 'pending') {
+
+                    if (status === 'pending' || isBusy) {
                         this.showIndicatorDebounced()
                     } else {
                         this.dom.style.visibility = 'hidden'

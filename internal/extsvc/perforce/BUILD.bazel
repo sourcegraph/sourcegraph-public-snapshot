@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "perforce",
+    srcs = [
+        "account.go",
+        "repos.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/perforce",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encryption",
+        "//internal/extsvc",
+    ],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protocol",
+    srcs = [
+        "gitolite_phabricator.go",
+        "gitserver.go",
+        "search.go",
+        "search_reduce.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "protocol_test",
+    srcs = [
+        "search_test.go",
+        "util_test.go",
+    ],
+    embed = [":protocol"],
+    deps = [
+        "//internal/api",
+        "@com_github_stretchr_testify//require",
+    ],
+)

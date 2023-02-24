@@ -83,6 +83,49 @@ The default run type.
   - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan sg
   - Upload build trace
 
+- Pipeline for `WolfiPackages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
+- Pipeline for `WolfiBaseImages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
+- Pipeline for `Protobuf` changes:
+  - **Metadata**: Pipeline metadata
+  - **Linters and static analysis**: Run sg lint
+  - Upload build trace
+
+### Bazel Exp Branch
+
+The run type for branches matching `bzl/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build bzl
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Metadata**: Pipeline metadata
+- Build ...
+- Tests
+- Upload build trace
+
+### Wolfi Exp Branch
+
+The run type for branches matching `wolfi/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build wolfi
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Metadata**: Pipeline metadata
+- Upload build trace
+
 ### Release branch nightly healthcheck build
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
@@ -116,6 +159,15 @@ Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
 - Stylelint (all)
+- Upload build trace
+
+### App snapshot release
+
+The run type for branches matching `app/release-snapshot` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- App release
 - Upload build trace
 
 ### Tagged release
@@ -262,41 +314,8 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build alpine-3.14
-- Build cadvisor
-- Build codeinsights-db
-- Build codeintel-db
-- Build frontend
-- Build github-proxy
-- Build gitserver
-- Build grafana
-- Build indexed-searcher
-- Build jaeger-agent
-- Build jaeger-all-in-one
-- Build blobstore
-- Build blobstore2
-- Build node-exporter
-- Build postgres-12-alpine
-- Build postgres_exporter
-- Build precise-code-intel-worker
-- Build prometheus
-- Build prometheus-gcp
-- Build redis-cache
-- Build redis-store
-- Build redis_exporter
-- Build repo-updater
-- Build search-indexer
-- Build searcher
-- Build symbols
-- Build syntax-highlighter
-- Build worker
-- Build migrator
-- Build executor
-- Build executor-vm
-- Build batcheshelper
-- Build opentelemetry-collector
-- Build server
-- Build sg
+- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build server, Build sg
+- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, server, sg
 - Upload build trace
 
 ### Build executor without testing

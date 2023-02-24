@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:4.4.0
+  sourcegraph/server:4.4.2
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
@@ -170,21 +170,21 @@ Usage instructions are provided via [the `caddy` service's inline comments insid
 **Important:**  [https.custom-cert.Caddyfile](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/caddy/builtins/https.custom-cert.Caddyfile) should not require any updates and should remain untouched. Updates should be made in the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file only and as described below.
 
 In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) within the caddy section:
-    
+
 1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
 
    ```
    - 'SRC_SITE_ADDRESS=sourcegraph.example.com'
    ```
-1. In Volumes section of the compose file comment out the following line 
+1. In Volumes section of the compose file comment out the following line
 
    ```
    - '../caddy/builtins/http.Caddyfile:/etc/caddy/Caddyfile'
    ```
-1. In Volumes section of the compose file uncomment the following line: 
+1. In Volumes section of the compose file uncomment the following line:
 
    ```
-   - '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile' 
+   - '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile'
    ```
 1. In Volumes section of the compose file uncomment and update the following line with your custom cert path:
 

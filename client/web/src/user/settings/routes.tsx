@@ -1,9 +1,10 @@
+import { Navigate } from 'react-router-dom-v5-compat'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import { showPasswordsPage, showAccountSecurityPage } from './cloud-ga'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
@@ -16,7 +17,6 @@ const UserSettingsSecurityPage = lazyComponent(
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
-        exact: true,
         render: props => {
             if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
                 return (
@@ -45,42 +45,34 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         },
     },
     {
-        path: '/profile',
-        exact: true,
+        path: 'profile',
         render: lazyComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
     },
     {
-        path: '/password',
-        exact: true,
-        render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
-        condition: showPasswordsPage,
+        path: 'password',
+        render: () => <Navigate to="../security" replace={true} />,
     },
     {
-        path: '/emails',
-        exact: true,
+        path: 'emails',
         render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
     {
-        path: '/tokens',
+        path: 'tokens/*',
         render: lazyComponent(() => import('./accessTokens/UserSettingsTokensArea'), 'UserSettingsTokensArea'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     // future GA Cloud routes
     {
-        path: '/security',
-        exact: true,
+        path: 'security',
         render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
-        condition: showAccountSecurityPage,
     },
     {
-        path: '/product-research',
-        exact: true,
+        path: 'product-research',
         render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
         condition: () => window.context.productResearchPageEnabled,
     },
     {
-        path: '/about-organizations',
-        exact: true,
+        path: 'about-organizations',
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
     },
 ]

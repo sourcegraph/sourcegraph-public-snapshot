@@ -175,7 +175,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
-		Description: repo.Name,
+		Description: repo.Description,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
 		Private:     !repo.Public,

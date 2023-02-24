@@ -48,7 +48,7 @@ Add the following to your `docker run` command:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:4.4.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:4.4.2</code></pre>
 
 ### Docker Compose
 
@@ -154,7 +154,7 @@ When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in 
 
 Add the following to your `docker run` command:
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:4.4.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:4.4.2</code></pre>
 
 ### Docker Compose
 
@@ -299,7 +299,7 @@ spec:
 
 ## Postgres Permissions and Database Migrations
 
-There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
+There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md).
 
 By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
 
@@ -322,7 +322,7 @@ This may not be acceptable in all environments. At minimum we expect that the `P
  * `USAGE`
 
 <!--
-When https://github.com/sourcegraph/deploy-sourcegraph/pull/4058 is merged, 
+When https://github.com/sourcegraph/deploy-sourcegraph/pull/4058 is merged,
 we will want to make sure these instructions are updated to reflect any additional
 actions necessary to accomodate the migrator.
 -->
@@ -333,7 +333,7 @@ actions necessary to accomodate the migrator.
 
 > NOTE: For AWS RDS, refer to the note from this [section](#postgres-permissions-and-database-migrations).
 
-Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`. 
+Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 
 Update these variables to match your deployment of the Sourcegraph _frontend_ database following [the guidance from the instructions section](#instructions). This database is called `pgsql` in the Docker Compose and Kubernetes deployments.
 
@@ -360,15 +360,15 @@ GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
 \c $PGDATABASE;
 
 # Install necessary extensions
-CREATE extension citext; 
-CREATE extension hstore; 
+CREATE extension citext;
+CREATE extension hstore;
 CREATE extension pg_stat_statements;
 CREATE extension pg_trgm;
-CREATE extension pgcrypto; 
+CREATE extension pgcrypto;
 CREATE extension intarray;
 ```
 
-After the database is configured, Sourcegraph will attempt to run migrations. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+After the database is configured, Sourcegraph will attempt to run migrations. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions.
 
 These failures must be interpreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code.
 
@@ -418,14 +418,14 @@ GRANT ALL PRIVILEGES ON DATABASE $CODEINTEL_PGDATABASE to $CODEINTEL_PGUSER;
 \c $CODEINTEL_PGDATABASE;
 
 # Install necessary extensions
-CREATE extension citext; 
-CREATE extension hstore; 
+CREATE extension citext;
+CREATE extension hstore;
 CREATE extension pg_stat_statements;
 CREATE extension pg_trgm;
-CREATE extension pgcrypto; 
+CREATE extension pgcrypto;
 CREATE extension intarray;
 ```
-After the database is configured, Sourcegraph will attempt to run migrations, this time using the CodeIntel DB. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+After the database is configured, Sourcegraph will attempt to run migrations, this time using the CodeIntel DB. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions.
 
 These failures must be intepreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code. The `codeintel_schema_migrations` table should be consulted for dirty migrations in this case.
 

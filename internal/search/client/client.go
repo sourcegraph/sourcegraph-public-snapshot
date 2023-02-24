@@ -9,6 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/sourcegraph/zoekt"
 )
 
 type SearchClient interface {
@@ -154,7 +155,7 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(s.db),
+		Gitserver:    gitserver.NewClient(),
 	}
 }
 
@@ -289,8 +290,8 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
 		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}

@@ -98,7 +98,7 @@ func mergeStats(a RoutineRunStats, b RoutineRunStats) RoutineRunStats {
 	} else {
 		minDurationMs = a.MinDurationMs
 	}
-	avgDurationMs := int32(math.Round(float64(a.AvgDurationMs*a.RunCount+b.AvgDurationMs*b.RunCount) / float64(a.RunCount+b.RunCount)))
+	avgDurationMs := int32(math.Round((float64(a.AvgDurationMs)*float64(a.RunCount) + float64(b.AvgDurationMs)*float64(b.RunCount)) / (float64(a.RunCount) + float64(b.RunCount))))
 	var maxDurationMs int32
 	if b.MaxDurationMs > a.MaxDurationMs {
 		maxDurationMs = b.MaxDurationMs

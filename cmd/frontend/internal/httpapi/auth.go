@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,11 +49,12 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 					// while still retaining the ability to link it back to a token, assuming
 					// the logs reader has the value in clear.
 					var redactedValue string
-					h := md5.New()
+					h := sha256.New()
 					if _, err := io.WriteString(h, headerValue); err != nil {
 						redactedValue = "[REDACTED]"
 					} else {
-						redactedValue = fmt.Sprintf("md5sum:%x", h.Sum(nil))
+						// for sake of identification, we only need around 10 characters
+						redactedValue = fmt.Sprintf("sha256:%x", h.Sum(nil)[0:10])
 					}
 					// TODO: It is possible for the unrecognized header to be legitimate, in the case
 					// of a customer setting up a HTTP header based authentication and decide to still

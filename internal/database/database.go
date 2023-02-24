@@ -31,14 +31,18 @@ type DB interface {
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
+	NamespacePermissions() NamespacePermissionStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
-	OrgStats() OrgStatsStore
+	OutboundWebhooks(encryption.Key) OutboundWebhookStore
+	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
+	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
+	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
@@ -59,9 +63,9 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	Teams() TeamStore
 
-	Transact(context.Context) (DB, error)
-	Done(error) error
+	WithTransact(context.Context, func(tx DB) error) error
 }
 
 var _ DB = (*db)(nil)
@@ -101,6 +105,12 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&db{logger: d.logger, Store: tx})
+	})
+}
+
 func (d *db) Done(err error) error {
 	return d.Store.Done(err)
 }
@@ -118,7 +128,10 @@ func (d *db) Authz() AuthzStore {
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+	return &confStore{
+		Store:  basestore.NewWithHandle(d.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -149,6 +162,10 @@ func (d *db) GlobalState() GlobalStateStore {
 	return GlobalStateWith(d.Store)
 }
 
+func (d *db) NamespacePermissions() NamespacePermissionStore {
+	return NamespacePermissionsWith(d.Store)
+}
+
 func (d *db) Namespaces() NamespaceStore {
 	return NamespacesWith(d.Store)
 }
@@ -165,8 +182,16 @@ func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
 }
 
-func (d *db) OrgStats() OrgStatsStore {
-	return OrgStatsWith(d.Store)
+func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
+	return OutboundWebhooksWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookJobs(key encryption.Key) OutboundWebhookJobStore {
+	return OutboundWebhookJobsWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
+	return OutboundWebhookLogsWith(d.Store, key)
 }
 
 func (d *db) Permissions() PermissionStore {
@@ -179,6 +204,10 @@ func (d *db) PermissionSyncJobs() PermissionSyncJobStore {
 
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
+}
+
+func (d *db) RedisKeyValue() RedisKeyValueStore {
+	return &redisKeyValueStore{d.Store}
 }
 
 func (d *db) Repos() RepoStore {
@@ -259,4 +288,8 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) Teams() TeamStore {
+	return TeamsWith(d.Store)
 }

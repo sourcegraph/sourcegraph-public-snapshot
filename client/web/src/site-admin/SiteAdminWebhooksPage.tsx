@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import { mdiCog, mdiMapSearch, mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
@@ -23,7 +22,7 @@ import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
 
-interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+interface Props extends TelemetryProps {}
 
 export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,

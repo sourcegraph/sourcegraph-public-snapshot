@@ -30,6 +30,7 @@ Use this to start your Sourcegraph environment!
 Available comamndsets in `sg.config.yaml`:
 
 * api-only
+* app
 * batches 🦡
 * codeintel
 * dotcom
@@ -122,10 +123,13 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
+* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
+* sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols
 * syntax-highlighter
-* web-integration-build: Build web application for integration tests
+* web-integration-build-prod: Build production web application for integration tests
+* web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -227,6 +231,9 @@ Flags:
 
 Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).
 
+
+Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
+
 Optionally provide a run type to build with.
 
 This command is useful when:
@@ -236,17 +243,17 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* main-dry-run
-* docker-images-patch
-* docker-images-patch-notest
-* docker-images-candidates-notest
-* executor-patch-notest
-* backend-integration
+* bzl - Bazel Exp Branch
+* wolfi - Wolfi Exp Branch
+* main-dry-run - Main dry run
+* docker-images-patch - Patch image
+* docker-images-patch-notest - Patch image without testing
+* docker-images-candidates-notest - Build all candidates without testing
+* executor-patch-notest - Build executor without testing
+* backend-integration - Backend integration tests
 
 For run types that require branch arguments, you will be prompted for an argument, or you
 can provide it directly (for example, 'sg ci build [runtype] <argument>').
-
-Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
 ```sh
 # Start a main-dry-run build
@@ -257,6 +264,9 @@ $ sg ci build docker-images-patch
 
 # Publish a custom Prometheus image build without running tests
 $ sg ci build docker-images-patch-notest prometheus
+
+# Publish all images without testing
+$ sg ci build docker-images-candidates-notest
 ```
 
 Flags:
@@ -455,6 +465,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint protobuf
+
+Check protobuf code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ### sg lint format
 
 Check client code and docs for formatting errors.
@@ -490,7 +509,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:
@@ -793,6 +812,7 @@ Flags:
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--skip-version-check`: Skip validation of the instance's current version.
 * `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log

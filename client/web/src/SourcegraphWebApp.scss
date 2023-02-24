@@ -3,13 +3,16 @@ This is the main entry point for all styles for the web app.
 It should import all component stylesheets.
 */
 
+@use 'wildcard/src/global-styles/colors';
+
 // Global libraries styles
-@import 'react-grid-layout/css/styles.css';
+@import 'react-grid-layout/css/styles';
 
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
-@import '../../wildcard/src/global-styles/index.scss';
+// Global styles
+@import 'wildcard/src/global-styles';
 
 // Document highlight is the background color for tokens which are matched with
 // a result from a document highlight provider. e.g. for references of the token
@@ -28,7 +31,7 @@ It should import all component stylesheets.
     text-decoration: inherit;
 
     &:focus {
-        background-color: rgba($blue, 0.1);
+        background-color: rgba(var(--blue), 0.1);
     }
 }
 

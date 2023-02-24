@@ -1,5 +1,4 @@
 import { act } from '@testing-library/react'
-import * as H from 'history'
 import { of } from 'rxjs'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -12,16 +11,10 @@ jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
 jest.mock('mdi-react/AddIcon', () => 'AddIcon')
 
-const history = H.createMemoryHistory()
-const location = H.createLocation('/')
-
 describe('SiteAdminProductSubscriptionPage', () => {
     test('renders', () => {
         const component = renderWithBrandedContext(
             <SiteAdminProductSubscriptionPage
-                match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
-                history={history}
-                location={location}
                 _queryProductSubscription={() =>
                     of<DotComProductSubscriptionResult['dotcom']['productSubscription']>({
                         __typename: 'ProductSubscription',
@@ -81,7 +74,7 @@ describe('SiteAdminProductSubscriptionPage', () => {
                     })
                 }
             />,
-            { history }
+            { route: '/p' }
         )
         act(() => undefined)
         expect(component.asFragment()).toMatchSnapshot()

@@ -12,7 +12,7 @@ Click **Create Instance** in your [Google Cloud Compute Engine Console](https://
 
 #### Machine configuration
 1. Select an appropriate machine type using our [resource estimator](../resource_estimator.md) as reference
-  
+
 #### Boot disk
 1. Click **CHANGE** to update the boot disk:
    * `Operating System`: Ubuntu
@@ -56,7 +56,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.0'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.2'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 # IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
@@ -121,7 +121,7 @@ docker-compose up -d --remove-orphans
 ```
 
 > NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
-> 
+>
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
@@ -132,7 +132,7 @@ docker-compose up -d --remove-orphans
 1. Click **CREATE** to create your VM with Sourcegraph installed
 2. Navigate to the public IP address assigned to your instance to visit your newly created Sourcegraph instance
 
-It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible.
 
 You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
 

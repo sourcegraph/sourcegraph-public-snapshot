@@ -1,35 +1,37 @@
-import { render, RenderResult, within, fireEvent } from '@testing-library/react'
-import * as H from 'history'
+import { within, fireEvent } from '@testing-library/react'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
+import { setExperimentalFeaturesFromSettings } from '../stores'
+
+import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
         const { url, requestMocks } = buildReferencePanelMocks()
 
-        const fakeExternalHistory = H.createMemoryHistory()
-        fakeExternalHistory.push(url)
+        // TODO: we won't need to set experimental features explicitly once we cover CodeMirror side blob view with tests:
+        // https://github.com/sourcegraph/sourcegraph/issues/48049
+        setExperimentalFeaturesFromSettings(defaultProps.settingsCascade)
 
-        const result: RenderResult = render(
+        const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
-                <ReferencesPanelWithMemoryRouter
-                    {...defaultProps}
-                    externalHistory={fakeExternalHistory}
-                    externalLocation={fakeExternalHistory.location}
-                />
-            </MockedTestProvider>
+                <ReferencesPanel {...defaultProps} />
+            </MockedTestProvider>,
+            { route: url }
         )
+
         await waitForNextApolloResponse()
         await waitForNextApolloResponse()
-        return { result, externalHistory: fakeExternalHistory }
+
+        return result
     }
 
     it('renders definitions correctly', async () => {
-        const { result } = await renderReferencesPanel()
+        const result = await renderReferencesPanel()
 
         expect(result.getByText('Definitions')).toBeVisible()
 
@@ -43,7 +45,7 @@ describe('ReferencesPanel', () => {
     })
 
     it('renders references correctly', async () => {
-        const { result } = await renderReferencesPanel()
+        const result = await renderReferencesPanel()
 
         expect(result.getByText('References')).toBeVisible()
 
@@ -57,7 +59,7 @@ describe('ReferencesPanel', () => {
     })
 
     it('renders a code view when clicking on a location', async () => {
-        const { result, externalHistory } = await renderReferencesPanel()
+        const { history, ...result } = await renderReferencesPanel()
 
         const definitionsList = result.getByTestId('definitions')
         const referencesList = result.getByTestId('references')
@@ -99,11 +101,11 @@ describe('ReferencesPanel', () => {
         expect(codeView).toHaveTextContent('package diff import')
 
         // Assert the current URL points at the reference panel
-        expect(externalHistory.createHref(externalHistory.location)).toBe(
-            '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+        expect(history.createHref(history.location)).toBe(
+            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
         fireEvent.click(referenceButton)
-        expect(externalHistory.createHref(externalHistory.location)).toBe(fullReferenceURL)
+        expect(history.createHref(history.location)).toBe(fullReferenceURL)
     })
 })

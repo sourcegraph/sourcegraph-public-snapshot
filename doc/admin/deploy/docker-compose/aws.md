@@ -34,7 +34,7 @@ Click **Launch Instance** from the [EC2 dashboard](https://console.aws.amazon.co
 
 #### Network settings
 
-1. Click `Edit` in the header to enable **Auto-assign Public IP** 
+1. Click `Edit` in the header to enable **Auto-assign Public IP**
 
 2. Under **Firewall (security group)** , create or select existing security group with the following settings:
 
@@ -69,7 +69,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.0'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.4.2'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 DOCKER_COMPOSE_VERSION='1.29.2'
@@ -129,7 +129,7 @@ docker-compose up -d --remove-orphans
 ```
 
 > NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
-> 
+>
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
@@ -139,7 +139,7 @@ docker-compose up -d --remove-orphans
 
 1. Click **Launch Instance** in the *Summary Section* on the right to launch the EC2 node running Sourcegraph.
 
-2. In your web browser, navigate to the public IP address assigned to the EC2 node. (Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel.) It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+2. In your web browser, navigate to the public IP address assigned to the EC2 node. (Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel.) It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible.
 
 You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
 

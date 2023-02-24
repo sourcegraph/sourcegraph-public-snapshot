@@ -35,6 +35,14 @@
     min-height: 32px;
     align-items: center;
 
+    .show-when-focused {
+        display: none;
+    }
+
+    .hide-when-focused {
+        display: block;
+    }
+
     &:focus-within {
         outline: 2px solid rgba(163, 208, 255, 1);
         outline-offset: 0;
@@ -49,14 +57,7 @@
         }
     }
 
-    .global-shortcut {
-        display: block;
-        align-self: center;
-        border: 1px solid var(--border-color-2);
-        width: 1.5rem;
-    }
-
-    button {
+    .input-button {
         display: none;
         align-self: flex-start;
         padding: 0.125rem 0.25rem;
@@ -70,9 +71,24 @@
             outline-offset: 0;
         }
     }
+
+    .global-shortcut {
+        display: block;
+        align-self: center;
+        border: 1px solid var(--border-color-2);
+        width: 1.5rem;
+    }
 }
 
 .suggestions {
     position: relative;
     display: none;
+}
+
+.separator {
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    width: 1px;
+    height: 1.125rem;
+    margin-right: 0.5rem;
+    background-color: var(--border-color-2);
 }

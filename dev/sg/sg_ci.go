@@ -383,7 +383,10 @@ sg ci build --help
 		Name:      "build",
 		ArgsUsage: "[runtype] <argument>",
 		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
-		Description: fmt.Sprintf(`Optionally provide a run type to build with.
+		Description: fmt.Sprintf(`
+Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
+
+Optionally provide a run type to build with.
 
 This command is useful when:
 
@@ -395,9 +398,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * %s
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] <argument>').
-
-Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
+can provide it directly (for example, 'sg ci build [runtype] <argument>').`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
 		UsageText: `
 # Start a main-dry-run build
@@ -408,6 +409,9 @@ sg ci build docker-images-patch
 
 # Publish a custom Prometheus image build without running tests
 sg ci build docker-images-patch-notest prometheus
+
+# Publish all images without testing
+sg ci build docker-images-candidates-notest
 `,
 		BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
@@ -744,21 +748,22 @@ From there, you can start exploring logs with the Grafana explore panel.
 }
 
 func buildGrafanaURL(text string, stepName string) string {
-	var base string
+	var urlWithPlaceholder string
 	if stepName == "" {
-		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+		urlWithPlaceholder = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
 	} else {
-		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+		urlWithPlaceholder = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
 	}
-	url := strings.ReplaceAll(base, "_TEXT_", text)
-	return strings.ReplaceAll(url, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
+	replaced := strings.ReplaceAll(urlWithPlaceholder, "_TEXT_", text)
+	return strings.ReplaceAll(replaced, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
 }
 
 func getAllowedBuildTypeArgs() []string {
 	var results []string
 	for _, rt := range runtype.RunTypes() {
 		if rt.Matcher().IsBranchPrefixMatcher() {
-			results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
+			display := fmt.Sprintf("%s - %s", strings.TrimSuffix(rt.Matcher().Branch, "/"), rt.String())
+			results = append(results, display)
 		}
 	}
 	return results

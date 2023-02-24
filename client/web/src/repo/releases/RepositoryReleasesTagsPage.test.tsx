@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react'
-import * as H from 'history'
+import { MemoryRouter } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 
 import { RepositoryFields } from '../../graphql-operations'
@@ -7,23 +7,22 @@ import { RepositoryFields } from '../../graphql-operations'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
 describe('RepositoryReleasesTagsPage', () => {
-    const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
             render(
-                <RepositoryReleasesTagsPage
-                    history={history}
-                    location={history.location}
-                    repo={{ id: '123' } as RepositoryFields}
-                    queryGitReferences={() =>
-                        of({
-                            totalCount: 0,
-                            nodes: [],
-                            __typename: 'GitRefConnection',
-                            pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
-                        })
-                    }
-                />
+                <MemoryRouter>
+                    <RepositoryReleasesTagsPage
+                        repo={{ id: '123' } as RepositoryFields}
+                        queryGitReferences={() =>
+                            of({
+                                totalCount: 0,
+                                nodes: [],
+                                __typename: 'GitRefConnection',
+                                pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
+                            })
+                        }
+                    />
+                </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot())
 })

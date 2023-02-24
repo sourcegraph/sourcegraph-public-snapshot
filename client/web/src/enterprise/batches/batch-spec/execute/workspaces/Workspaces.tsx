@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react'
 
-import { useHistory, useLocation } from 'react-router'
 import { delay, repeatWhen, retryWhen, filter, tap } from 'rxjs/operators'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
@@ -34,9 +33,6 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
     executionURL,
     queryWorkspacesList = _queryWorkspacesList,
 }) => {
-    const history = useHistory()
-    const location = useLocation()
-
     const [filters, setFilters] = useState<WorkspaceFilters>({ state: null, search: null })
     const [error, setError] = useState<string>()
 
@@ -90,8 +86,6 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                     }}
                     queryConnection={queryWorkspacesListConnection}
                     hideSearch={true}
-                    history={history}
-                    location={location}
                     defaultFirst={20}
                     noun="workspace"
                     pluralNoun="workspaces"

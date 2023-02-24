@@ -1,10 +1,10 @@
 package zoekt
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/hexops/autogold"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -159,17 +159,17 @@ func queryEqual(a, b zoekt.Q) bool {
 	sortChildren := func(q zoekt.Q) zoekt.Q {
 		switch s := q.(type) {
 		case *zoekt.And:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
+			slices.SortFunc(s.Children, zoektQStringLess)
 		case *zoekt.Or:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
+			slices.SortFunc(s.Children, zoektQStringLess)
 		}
 		return q
 	}
 	return zoekt.Map(a, sortChildren).String() == zoekt.Map(b, sortChildren).String()
+}
+
+func zoektQStringLess(a, b zoekt.Q) bool {
+	return a.String() < b.String()
 }
 
 func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {

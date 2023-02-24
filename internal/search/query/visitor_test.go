@@ -36,6 +36,9 @@ func TestVisitTypedPredicate(t *testing.T) {
 	}, {
 		"repo:test repo:has.file(path:test)",
 		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Path: "test"}}),
+	}, {
+		"repo:test repo:contains.file(test)",
+		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Path: "test"}}),
 	}}
 
 	for _, tc := range cases {

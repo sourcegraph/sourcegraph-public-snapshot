@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { map, switchMap, tap } from 'rxjs/operators'
 
 import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -30,7 +30,6 @@ import {
     ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import {
-    BlobFileFields,
     CommitAtTimeResult,
     CommitAtTimeVariables,
     DiffSinceResult,
@@ -47,7 +46,6 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { UserAvatar } from '../../user/UserAvatar'
-import { fetchBlob } from '../blob/backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { BATCH_COUNT } from '../RepositoriesPopover'
@@ -58,9 +56,10 @@ import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
 
-export type TreeCommitsRepositoryCommit = NonNullable<
-    Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']
->
+export interface TreeCommitsResponse {
+    ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
+    externalURLs: Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['externalURLs']
+}
 
 export const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -69,13 +68,17 @@ export const fetchTreeCommits = memoizeObservable(
         first?: number
         filePath?: string
         after?: string
-    }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
+    }): Observable<TreeCommitsResponse> =>
         requestGraphQL<TreeCommitsResult, TreeCommitsVariables>(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {
                         __typename
                         ... on Repository {
+                            externalURLs {
+                                url
+                                serviceKind
+                            }
                             commit(rev: $revspec) {
                                 ancestors(first: $first, path: $filePath, after: $after) {
                                     nodes {
@@ -109,7 +112,7 @@ export const fetchTreeCommits = memoizeObservable(
                 if (!data.node.commit) {
                     throw new Error('Commit not found')
                 }
-                return data.node.commit.ancestors
+                return { ancestors: data.node.commit.ancestors, externalURLs: data.node.externalURLs }
             })
         ),
     args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
@@ -244,46 +247,15 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     ...props
 }) => {
     const [showOlderCommits, setShowOlderCommits] = useState(false)
-    const [readmeInfo, setReadmeInfo] = useState<
-        | undefined
-        | {
-              blob: BlobFileFields
-              entry: TreeFields['entries'][number]
-          }
-    >()
-    useEffect(() => {
-        const readmeEntry = (() => {
-            for (const readmeName of ['README.md', 'README']) {
-                for (const entry of tree.entries) {
-                    if (!entry.isDirectory && entry.name === readmeName) {
-                        return entry
-                    }
-                }
-            }
-            return null
-        })()
-        if (!readmeEntry) {
-            setReadmeInfo(undefined)
-            return
-        }
 
-        const subscription = fetchBlob({
-            repoName: repo.name,
-            revision,
-            filePath: readmeEntry?.path,
-            disableTimeout: true,
-        }).subscribe(blob => {
-            if (blob) {
-                setReadmeInfo({
-                    blob,
-                    entry: readmeEntry,
-                })
-            } else {
-                setReadmeInfo(undefined)
+    const readmeEntry = useMemo(() => {
+        for (const entry of tree.entries) {
+            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+                return entry
             }
-        })
-        return () => subscription.unsubscribe()
-    }, [repo.name, revision, filePath, tree.entries])
+        }
+        return null
+    }, [tree.entries])
 
     const [diffStats, setDiffStats] = useState<DiffStat[]>()
     useEffect(() => {
@@ -298,8 +270,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
-    const queryCommits = useCallback(
-        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
+    const queryTreeCommits = useCallback(
+        (args: { first?: number }): Observable<TreeCommitsResponse> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,
@@ -310,6 +282,21 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             })
         },
         [filePath, repo.id, revision, showOlderCommits]
+    )
+    const [externalURLs, setExternalURLs] = useState<undefined | TreeCommitsResponse['externalURLs']>(undefined)
+    const queryCommits = useCallback(
+        (args: { first?: number }): Observable<TreeCommitsResponse['ancestors']> => {
+            const treeCommits = queryTreeCommits(args)
+            return treeCommits.pipe(
+                tap(data => {
+                    if (data.externalURLs) {
+                        setExternalURLs(data.externalURLs)
+                    }
+                }),
+                map(data => data.ancestors)
+            )
+        },
+        [queryTreeCommits]
     )
 
     const onShowOlderCommitsClicked = useCallback((event: React.MouseEvent): void => {
@@ -356,16 +343,10 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            {readmeInfo && (
-                <ReadmePreviewCard
-                    readmeHTML={readmeInfo.blob.richHTML}
-                    readmeURL={readmeInfo.entry.url}
-                    location={props.location}
-                    className="mb-4"
-                />
-            )}
+            {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
+
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} />
+                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
                 <Card className={styles.commits}>
                     <CardHeader className={panelStyles.cardColHeaderWrapper}>
@@ -374,9 +355,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                     <FilteredConnection<
                         GitCommitFields,
-                        Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
+                        Pick<
+                            GitCommitNodeProps,
+                            'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement' | 'externalURLs'
+                        >
                     >
-                        location={props.location}
                         listClassName="list-group list-group-flush"
                         noun="commit in this tree"
                         pluralNoun="commits in this tree"
@@ -387,6 +370,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                             messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                             compact: true,
                             wrapperElement: 'li',
+                            externalURLs,
                         }}
                         updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                         defaultFirst={20}

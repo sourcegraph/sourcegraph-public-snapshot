@@ -20,7 +20,7 @@ export const OVERVIEW_STATISTICS = gql`
             totalCount
         }
         repositories {
-            totalCount(precise: true)
+            totalCount
         }
         repositoryStats {
             gitDirBytes

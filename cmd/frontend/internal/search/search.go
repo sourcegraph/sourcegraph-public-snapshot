@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -294,6 +295,8 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo,
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
 		return fromCommit(v, repoCache)
+	case *result.OwnerMatch:
+		return fromOwner(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
@@ -516,6 +519,32 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	return commitEvent
 }
 
+func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
+	switch v := owner.ResolvedOwner.(type) {
+	case *codeowners.Person:
+		return &streamhttp.EventPersonMatch{
+			Type:        streamhttp.PersonMatchType,
+			Username:    v.User.Username,
+			DisplayName: v.User.DisplayName,
+			AvatarURL:   v.User.AvatarURL,
+		}
+	case *codeowners.Team:
+		return &streamhttp.EventTeamMatch{
+			Type:        streamhttp.TeamMatchType,
+			Name:        v.Team.Name,
+			DisplayName: v.Team.DisplayName,
+		}
+	case *codeowners.UnknownOwner:
+		return &streamhttp.EventUnknownOwnerMatch{
+			Type:   streamhttp.UnknownOwnerMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
+		}
+	default:
+		panic(fmt.Sprintf("unknown owner match type %T", v))
+	}
+}
+
 // eventStreamOTHook returns a StatHook which logs to log.
 func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
 	return func(stat streamhttp.WriterStat) {
@@ -566,8 +595,8 @@ func GuessSource(r *http.Request) trace.SourceType {
 
 func repoIDs(results []result.Match) []api.RepoID {
 	ids := make(map[api.RepoID]struct{}, 5)
-	for _, result := range results {
-		ids[result.RepoName().ID] = struct{}{}
+	for _, r := range results {
+		ids[r.RepoName().ID] = struct{}{}
 	}
 
 	res := make([]api.RepoID, 0, len(ids))

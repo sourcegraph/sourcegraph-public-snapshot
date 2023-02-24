@@ -117,6 +117,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_zoekt_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);\n\n  RETURN NULL;\nEND;\n$function$\n"
     },
     {
+      "Name": "func_lsif_dependency_repos_backfill",
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_dependency_repos_backfill()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO package_repo_versions (package_id, version)\n        VALUES (NEW.id, NEW.version);\n\n        RETURN NULL;\n    END;\n$function$\n"
+    },
+    {
       "Name": "func_lsif_uploads_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE lsif_uploads_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE upload_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -779,6 +783,51 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "outbound_webhook_event_types_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "outbound_webhook_jobs_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "outbound_webhook_logs_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "outbound_webhooks_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "package_repo_versions_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "permission_sync_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -887,6 +936,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "teams_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "temporary_settings_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -923,16 +981,16 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "users_id_seq",
-      "TypeName": "bigint",
+      "Name": "user_repo_permissions_id_seq",
+      "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
-      "MaximumValue": 9223372036854775807,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
     {
-      "Name": "webhook_build_jobs_id_seq",
+      "Name": "users_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -4176,6 +4234,19 @@
           "Name": "external_deleted_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "external_fork_name",
+          "Index": 43,
+          "TypeName": "citext",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -7431,6 +7502,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "redacted_contents",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure."
         },
         {
           "Name": "type",
@@ -12289,7 +12373,7 @@
           "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "",
+          "Default": "'👁️temporary_sentinel_value👁️'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -12318,10 +12402,25 @@
           "IndexDefinition": "CREATE UNIQUE INDEX lsif_dependency_repos_unique_triplet ON lsif_dependency_repos USING btree (scheme, name, version)",
           "ConstraintType": "u",
           "ConstraintDefinition": "UNIQUE (scheme, name, version)"
+        },
+        {
+          "Name": "lsif_dependency_repos_name_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "lsif_dependency_repos_backfill",
+          "Definition": "CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN (new.version \u003c\u003e '👁️temporary_sentinel_value👁️'::text) EXECUTE FUNCTION func_lsif_dependency_repos_backfill()"
+        }
+      ]
     },
     {
       "Name": "lsif_dependency_syncing_jobs",
@@ -13076,6 +13175,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE state \u003c\u003e 'deleted'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_indexes_queued_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -14238,12 +14347,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "lsif_uploads_uploaded_at",
+          "Name": "lsif_uploads_uploaded_at_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at)",
+          "IndexDefinition": "CREATE INDEX lsif_uploads_uploaded_at_id ON lsif_uploads USING btree (uploaded_at DESC, id) WHERE state \u003c\u003e 'deleted'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -14827,6 +14936,19 @@
           "Comment": ""
         },
         {
+          "Name": "team_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "user_id",
           "Index": 2,
           "TypeName": "integer",
@@ -14858,7 +14980,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (user_id IS NOT NULL OR org_id IS NOT NULL)"
+          "ConstraintDefinition": "CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL)"
         },
         {
           "Name": "names_org_id_fkey",
@@ -14866,6 +14988,13 @@
           "RefTableName": "orgs",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        },
+        {
+          "Name": "names_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE"
         },
         {
           "Name": "names_user_id_fkey",
@@ -14881,19 +15010,6 @@
       "Name": "namespace_permissions",
       "Comment": "",
       "Columns": [
-        {
-          "Name": "action",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
         {
           "Name": "created_at",
           "Index": 6,
@@ -14950,7 +15066,7 @@
           "Name": "user_id",
           "Index": 5,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -14977,19 +15093,12 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, action, user_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (namespace, resource_id, action, user_id)"
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
-        {
-          "Name": "action_not_blank",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
-        },
         {
           "Name": "namespace_not_blank",
           "ConstraintType": "c",
@@ -16313,12 +16422,102 @@
       "Triggers": []
     },
     {
-      "Name": "permission_sync_jobs",
+      "Name": "outbound_webhook_event_types",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "event_type",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('outbound_webhook_event_types_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "outbound_webhook_id",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "scope",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "outbound_webhook_event_types_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX outbound_webhook_event_types_pkey ON outbound_webhook_event_types USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "outbound_webhook_event_types_event_type_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX outbound_webhook_event_types_event_type_idx ON outbound_webhook_event_types USING btree (event_type, scope)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "outbound_webhook_event_types_outbound_webhook_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "outbound_webhooks",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "outbound_webhook_jobs",
       "Comment": "",
       "Columns": [
         {
           "Name": "cancel",
-          "Index": 13,
+          "Index": 17,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -16330,8 +16529,34 @@
           "Comment": ""
         },
         {
+          "Name": "encryption_key_id",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "event_type",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
-          "Index": 11,
+          "Index": 15,
           "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
@@ -16344,7 +16569,7 @@
         },
         {
           "Name": "failure_message",
-          "Index": 3,
+          "Index": 7,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -16357,7 +16582,7 @@
         },
         {
           "Name": "finished_at",
-          "Index": 6,
+          "Index": 10,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -16369,11 +16594,657 @@
           "Comment": ""
         },
         {
-          "Name": "high_priority",
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('outbound_webhook_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 14,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "payload",
+          "Index": 5,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 11,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "scope",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
           "Index": 16,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "outbound_webhook_jobs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX outbound_webhook_jobs_pkey ON outbound_webhook_jobs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "outbound_webhook_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX outbound_webhook_jobs_state_idx ON outbound_webhook_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "outbound_webhook_payload_process_after_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "outbound_webhook_logs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "encryption_key_id",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "error",
+          "Index": 9,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('outbound_webhook_logs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "job_id",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "outbound_webhook_id",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "request",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "response",
+          "Index": 8,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "sent_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "status_code",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "outbound_webhook_logs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX outbound_webhook_logs_pkey ON outbound_webhook_logs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "outbound_webhook_logs_outbound_webhook_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_logs USING btree (outbound_webhook_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "outbound_webhooks_logs_status_code_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "outbound_webhook_logs_job_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "outbound_webhook_jobs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        },
+        {
+          "Name": "outbound_webhook_logs_outbound_webhook_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "outbound_webhooks",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "outbound_webhooks",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_by",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "encryption_key_id",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('outbound_webhooks_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "secret",
+          "Index": 8,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_by",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "url",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "outbound_webhooks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX outbound_webhooks_pkey ON outbound_webhooks USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "outbound_webhooks_created_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "outbound_webhooks_updated_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "package_repo_versions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('package_repo_versions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "package_id",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "version",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "package_repo_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX package_repo_versions_pkey ON package_repo_versions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "package_repo_versions_unique_version_per_package",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "package_repo_versions_fk_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "package_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_dependency_repos",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "permission_sync_jobs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 14,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancellation_reason",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Specifies why permissions sync job was cancelled."
+        },
+        {
+          "Name": "code_host_states",
+          "Index": 25,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "execution_logs",
+          "Index": 12,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "failure_message",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -16396,7 +17267,7 @@
         },
         {
           "Name": "invalidate_caches",
-          "Index": 17,
+          "Index": 19,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -16409,7 +17280,7 @@
         },
         {
           "Name": "last_heartbeat_at",
-          "Index": 10,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -16421,8 +17292,21 @@
           "Comment": ""
         },
         {
+          "Name": "no_perms",
+          "Index": 21,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "num_failures",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -16435,7 +17319,7 @@
         },
         {
           "Name": "num_resets",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -16447,8 +17331,60 @@
           "Comment": ""
         },
         {
+          "Name": "permissions_added",
+          "Index": 22,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "permissions_found",
+          "Index": 24,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "permissions_removed",
+          "Index": 23,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "priority",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Specifies numeric priority for the permissions sync job."
+        },
+        {
           "Name": "process_after",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -16461,7 +17397,7 @@
         },
         {
           "Name": "queued_at",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "now()",
@@ -16474,9 +17410,9 @@
         },
         {
           "Name": "reason",
-          "Index": 18,
+          "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -16487,7 +17423,7 @@
         },
         {
           "Name": "repository_id",
-          "Index": 14,
+          "Index": 15,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -16500,7 +17436,7 @@
         },
         {
           "Name": "started_at",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -16526,7 +17462,7 @@
         },
         {
           "Name": "triggered_by_user_id",
-          "Index": 19,
+          "Index": 17,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -16539,7 +17475,7 @@
         },
         {
           "Name": "user_id",
-          "Index": 15,
+          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -16552,7 +17488,7 @@
         },
         {
           "Name": "worker_hostname",
-          "Index": 12,
+          "Index": 13,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "''::text",
@@ -16574,6 +17510,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_pkey ON permission_sync_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "permission_sync_jobs_unique",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "permission_sync_jobs_process_after",
@@ -16618,11 +17564,32 @@
       ],
       "Constraints": [
         {
+          "Name": "permission_sync_jobs_for_repo_or_user",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK ((user_id IS NULL) \u003c\u003e (repository_id IS NULL))"
+        },
+        {
+          "Name": "permission_sync_jobs_repository_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE"
+        },
+        {
           "Name": "permission_sync_jobs_triggered_by_user_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
+          "Name": "permission_sync_jobs_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -17154,6 +18121,65 @@
         }
       ],
       "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "redis_key_value",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace",
+          "Index": 1,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "value",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "redis_key_value_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX redis_key_value_pkey ON redis_key_value USING btree (namespace, key) INCLUDE (value)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (namespace, key) INCLUDE (value)"
+        }
+      ],
       "Constraints": null,
       "Triggers": []
     },
@@ -18442,19 +19468,6 @@
           "Comment": ""
         },
         {
-          "Name": "deleted_at",
-          "Index": 4,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -18481,7 +19494,7 @@
           "Comment": "The uniquely identifying name of the role."
         },
         {
-          "Name": "readonly",
+          "Name": "system",
           "Index": 5,
           "TypeName": "boolean",
           "IsNullable": false,
@@ -19742,6 +20755,263 @@
       "Triggers": []
     },
     {
+      "Name": "team_members",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "team_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "team_members_team_id_user_id_key",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX team_members_team_id_user_id_key ON team_members USING btree (team_id, user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (team_id, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "team_members_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "team_members_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "teams",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "creator_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "display_name",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('teams_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "citext",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "parent_team_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "readonly",
+          "Index": 4,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "teams_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX teams_name ON teams USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "teams_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX teams_pkey ON teams USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "teams_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "teams_display_name_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(display_name) \u003c= 255)"
+        },
+        {
+          "Name": "teams_name_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(name::text) \u003c= 255)"
+        },
+        {
+          "Name": "teams_name_valid_chars",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+        },
+        {
+          "Name": "teams_parent_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "temporary_settings",
       "Comment": "Stores per-user temporary settings used in the UI, for example, which modals have been dimissed or what theme is preferred.",
       "Columns": [
@@ -20688,6 +21958,199 @@
       "Triggers": []
     },
     {
+      "Name": "user_repo_permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('user_repo_permissions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "source",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'sync'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_external_account_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "user_repo_permissions_perms_unique_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "user_repo_permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_repo_permissions_pkey ON user_repo_permissions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "user_repo_permissions_repo_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX user_repo_permissions_repo_id_idx ON user_repo_permissions USING btree (repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "user_repo_permissions_source_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX user_repo_permissions_source_idx ON user_repo_permissions USING btree (source)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "user_repo_permissions_updated_at_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX user_repo_permissions_updated_at_idx ON user_repo_permissions USING btree (updated_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "user_repo_permissions_user_external_account_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "user_repo_permissions_user_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "user_repo_permissions_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "user_repo_permissions_user_external_account_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "user_external_accounts",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "user_repo_permissions_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "user_roles",
       "Comment": "",
       "Columns": [
@@ -21165,270 +22628,6 @@
           "Definition": "CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()"
         }
       ]
-    },
-    {
-      "Name": "webhook_build_jobs",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "cancel",
-          "Index": 18,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "execution_logs",
-          "Index": 13,
-          "TypeName": "json[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "extsvc_id",
-          "Index": 17,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "extsvc_kind",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "failure_message",
-          "Index": 7,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "finished_at",
-          "Index": 9,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('webhook_build_jobs_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "last_heartbeat_at",
-          "Index": 14,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "num_failures",
-          "Index": 12,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "num_resets",
-          "Index": 11,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "org",
-          "Index": 16,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "process_after",
-          "Index": 10,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "queued_at",
-          "Index": 4,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repo_id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repo_name",
-          "Index": 2,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "started_at",
-          "Index": 8,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "state",
-          "Index": 6,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "'queued'::text",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "worker_hostname",
-          "Index": 15,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "''::text",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "webhook_build_jobs_queued_at_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "webhook_build_jobs_state",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": null,
-      "Triggers": []
     },
     {
       "Name": "webhook_logs",
@@ -21926,11 +23125,15 @@
     },
     {
       "Name": "lsif_uploads_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.should_reindex,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+    },
+    {
+      "Name": "outbound_webhooks_with_event_types",
+      "Definition": " SELECT outbound_webhooks.id,\n    outbound_webhooks.created_by,\n    outbound_webhooks.created_at,\n    outbound_webhooks.updated_by,\n    outbound_webhooks.updated_at,\n    outbound_webhooks.encryption_key_id,\n    outbound_webhooks.url,\n    outbound_webhooks.secret,\n    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object\n           FROM outbound_webhook_event_types\n          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types\n   FROM outbound_webhooks;"
     },
     {
       "Name": "reconciler_changesets",
-      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_name,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
     },
     {
       "Name": "site_config",

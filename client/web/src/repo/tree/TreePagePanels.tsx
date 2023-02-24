@@ -1,8 +1,7 @@
-import React, { FC, useCallback, useRef, useState } from 'react'
+import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
@@ -11,47 +10,76 @@ import {
     Icon,
     Link,
     LinkOrSpan,
+    LoadingSpinner,
     ParentSize,
     StackedMeter,
     Tooltip,
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
+import { BlobFileFields } from '../../graphql-operations'
+import { dirname } from '../../util/path'
+import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
 import styles from './TreePagePanels.module.scss'
 
 interface ReadmePreviewCardProps {
-    readmeHTML: string
-    readmeURL: string
-    location: H.Location
-    className?: string
+    entry: TreeFields['entries'][number]
+    repoName: string
+    revision: string
 }
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({ entry, repoName, revision }) => {
+    const [readmeInfo, setReadmeInfo] = useState<null | BlobFileFields>(null)
 
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = props => {
-    const { readmeHTML, readmeURL, location, className } = props
-
-    const renderedFileRef = useRef<HTMLDivElement>(null)
-    const { bottom } = useElementObscuredArea(renderedFileRef)
+    useEffect(() => {
+        const subscription = fetchBlob({
+            repoName,
+            revision,
+            filePath: entry.path,
+            disableTimeout: true,
+        }).subscribe(blob => {
+            if (blob) {
+                setReadmeInfo(blob)
+            } else {
+                setReadmeInfo(null)
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [repoName, revision, entry.path])
 
     return (
-        <section className={className}>
-            <RenderedFile
-                key={readmeHTML}
-                ref={renderedFileRef}
-                location={location}
-                dangerousInnerHTML={readmeHTML}
-                className={styles.readme}
-            />
+        <section className="mb-4">
+            {readmeInfo ? (
+                <RenderedReadmeFile blob={readmeInfo} entryUrl={entry.url} />
+            ) : (
+                <div className={classNames('text-muted', styles.readmeLoading)}>
+                    <LoadingSpinner />
+                </div>
+            )}
+        </section>
+    )
+}
+
+interface RenderedReadmeFileProps {
+    blob: BlobFileFields
+    entryUrl: string
+}
+const RenderedReadmeFile: React.FC<RenderedReadmeFileProps> = ({ blob, entryUrl }) => {
+    const renderedFileRef = useRef<HTMLDivElement>(null)
+    const { bottom } = useElementObscuredArea(renderedFileRef)
+    return (
+        <>
+            <RenderedFile ref={renderedFileRef} dangerousInnerHTML={blob.richHTML} className={styles.readme} />
             {bottom > 0 && (
                 <>
                     <div className={styles.readmeFader} />
-                    <Link to={readmeURL} className={styles.readmeMoreLink}>
+                    <Link to={entryUrl} className={styles.readmeMoreLink}>
                         View full README
                     </Link>
                 </>
             )}
-        </section>
+        </>
     )
 }
 
@@ -62,13 +90,49 @@ export interface DiffStat {
 }
 
 export interface FilePanelProps {
-    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
+    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path' | 'isSingleChild'>[]
     diffStats?: DiffStat[]
     className?: string
+    filePath: string
 }
 
 export const FilesCard: FC<FilePanelProps> = props => {
-    const { entries, diffStats, className } = props
+    const { entries, diffStats, className, filePath } = props
+
+    const entriesWithSingleChildExpanded = useMemo(
+        () =>
+            entries.flatMap((entry, index) => {
+                // The GraphQL query with "recurse single child" will return entries
+                // that are not in the current directory. We filter them out for the
+                // view here.
+                let parentDir = dirname(entry.path)
+                if (parentDir === '.') {
+                    parentDir = ''
+                }
+                if (parentDir !== filePath) {
+                    return []
+                }
+
+                // Single child nodes may be expanded so we can skip over them more
+                // efficiently.
+                if (entry.isSingleChild) {
+                    // Find the entry before the one that is no longer a single child
+                    // and add this to the list of entries to render instead of the
+                    // entry.
+                    let idx
+                    for (idx = index; idx < entries.length && entries[idx].isSingleChild; idx++) {
+                        // Do nothing
+                    }
+                    if (idx > index && idx < entries.length && idx > 1) {
+                        const lastSingleChild = entries[idx - 1]
+                        return [lastSingleChild]
+                    }
+                }
+
+                return [entry]
+            }),
+        [entries, filePath]
+    )
 
     const [sortColumn, setSortColumn] = useState<{
         column: 'Files' | 'Activity'
@@ -86,7 +150,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
         }
     }
 
-    let sortedEntries = [...entries]
+    let sortedEntries = [...entriesWithSingleChildExpanded]
     const { column, direction } = sortColumn
     switch (column) {
         case 'Files':
@@ -95,7 +159,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
             }
             break
         case 'Activity':
-            sortedEntries = [...entries]
+            sortedEntries = [...entriesWithSingleChildExpanded]
             if (diffStats) {
                 sortedEntries.sort((entry1, entry2) => {
                     const stats1: DiffStat = diffStatsByPath[entry1.name]
@@ -242,7 +306,13 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                             svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
                                             aria-hidden={true}
                                         />
-                                        {entry.name}
+                                        {
+                                            // In case of single child expansion, we need to get the name relative to
+                                            // the start of the directory (to include subdirectories)
+                                        }
+                                        {entry.isSingleChild && filePath !== ''
+                                            ? entry.path.slice(filePath.length + 1)
+                                            : entry.name}
                                         {entry.isDirectory && '/'}
                                     </span>
                                 </div>

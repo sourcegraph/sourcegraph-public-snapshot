@@ -13,6 +13,7 @@ export {
     MultiComboboxInput,
     MultiComboboxPopover,
     MultiComboboxList,
+    MultiComboboxEmptyList,
     MultiComboboxOptionGroup,
     MultiComboboxOption,
     MultiComboboxOptionText,

@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"context"
 	"encoding/json"
 	"sort"
 	"time"
@@ -250,7 +251,7 @@ func getRoutineInstanceInfo(c *rcache.Cache, jobName string, routineName string,
 
 // loadRecentRuns loads the recent runs for a routine, in no particular order.
 func loadRecentRuns(c *rcache.Cache, jobName string, routineName string, hostName string, count int) ([]RoutineRun, error) {
-	recentRuns, err := c.GetLastListItems(jobName+":"+routineName+":"+hostName+":"+"recentRuns", count)
+	recentRuns, err := getRecentRuns(c, jobName, routineName, hostName).Slice(context.Background(), 0, count)
 	if err != nil {
 		return nil, errors.Wrap(err, "load recent runs")
 	}
@@ -258,7 +259,7 @@ func loadRecentRuns(c *rcache.Cache, jobName string, routineName string, hostNam
 	runs := make([]RoutineRun, 0, len(recentRuns))
 	for _, serializedRun := range recentRuns {
 		var run RoutineRun
-		err := json.Unmarshal([]byte(serializedRun), &run)
+		err := json.Unmarshal(serializedRun, &run)
 		if err != nil {
 			return nil, errors.Wrap(err, "deserialize run")
 		}
@@ -281,7 +282,16 @@ func loadRunStats(c *rcache.Cache, jobName string, routineName string, now time.
 			if err != nil {
 				return RoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
 			}
-			stats = mergeStats(stats, statsForDay)
+			mergedStats := mergeStats(stats, statsForDay)
+
+			// Temporary code: There was a bug that messed up past averages.
+			// This block helps ignore that messed-up data.
+			// We can pretty safely remove this in four months.
+			if mergedStats.AvgDurationMs < 0 {
+				mergedStats.AvgDurationMs = stats.AvgDurationMs
+			}
+
+			stats = mergedStats
 			if stats.Since.IsZero() {
 				stats.Since = date
 			}

@@ -6,7 +6,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { randomizeUserPassword, setUserIsSiteAdmin } from '../../backend'
-import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS } from '../queries'
+import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, RECOVER_USERS } from '../queries'
 
 import { UseUserListActionReturnType, SiteUser, getUsernames } from './UsersList'
 
@@ -14,6 +14,8 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)
     const [deleteUsers] = useMutation(DELETE_USERS)
     const [deleteUsersForever] = useMutation(DELETE_USERS_FOREVER)
+
+    const [recoverUsers] = useMutation(RECOVER_USERS)
 
     const [notification, setNotification] = useState<UseUserListActionReturnType['notification']>()
 
@@ -102,6 +104,25 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
             }
         },
         [deleteUsersForever, onError, createOnSuccess]
+    )
+
+    const handleRecoverUsers = useCallback(
+        (users: SiteUser[]) => {
+            if (confirm('Are you sure you want to recover the selected user(s)?')) {
+                recoverUsers({ variables: { userIDs: users.map(user => user.id) } })
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully recovered following {users.length} user(s):{' '}
+                                <strong>{getUsernames(users)}</strong>
+                            </Text>,
+                            true
+                        )
+                    )
+                    .catch(onError)
+            }
+        },
+        [recoverUsers, onError, createOnSuccess]
     )
 
     const handlePromoteToSiteAdmin = useCallback(
@@ -215,6 +236,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         handleDeleteUsersForever,
         handlePromoteToSiteAdmin,
         handleUnlockUser,
+        handleRecoverUsers,
         handleRevokeSiteAdmin,
         handleResetUserPassword,
         handleDismissNotification,

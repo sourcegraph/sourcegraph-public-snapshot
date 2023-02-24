@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -543,6 +544,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeAzureDevOps:
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
 		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
@@ -739,6 +742,9 @@ type ReposListOptions struct {
 	// and if it doesn't end up being used this is wasted compute.
 	ExcludeSources bool
 
+	// cursor-based pagination args
+	PaginationArgs *PaginationArgs
+
 	*LimitOffset
 }
 
@@ -930,6 +936,19 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+
+	if opt.PaginationArgs != nil {
+		p := opt.PaginationArgs.SQL()
+
+		if p.Where != nil {
+			where = append(where, p.Where)
+		}
+
+		querySuffix = p.AppendOrderToQuery(&sqlf.Query{})
+		querySuffix = p.AppendLimitToQuery(querySuffix)
+	}
+
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
 	if len(opt.Cursors) > 0 {
@@ -1115,7 +1134,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
-		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) || (opt.PaginationArgs != nil && containsOrderBySizeField(opt.PaginationArgs.OrderBy)) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
@@ -1172,8 +1191,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		queryPrefix = sqlf.Sprintf("WITH %s", sqlf.Join(ctes, ",\n"))
 	}
 
-	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-
 	columns := repoColumns
 	if !opt.ExcludeSources {
 		columns = append(columns, getSourcesByRepoQueryStr)
@@ -1204,6 +1221,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 func containsSizeField(orderBy RepoListOrderBy) bool {
 	for _, field := range orderBy {
 		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
+func containsOrderBySizeField(orderBy OrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == string(RepoListSize) {
 			return true
 		}
 	}

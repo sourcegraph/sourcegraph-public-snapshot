@@ -20,27 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// slowRequestRedisFIFOListDefaultSize sets a default value for the FIFO list.
-const slowRequestRedisFIFOListDefaultSize = 5000
-
 // slowRequestRedisFIFOListPerPage sets the default count of returned request.
 const slowRequestRedisFIFOListPerPage = 50
 
 // slowRequestRedisFIFOList is a FIFO redis cache to store the slow requests.
-var slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
-
-// slowRequestConfWatchOnce enables to ensure we're not watching for conf updates more than once.
-var slowRequestConfWatchOnce sync.Once
+var slowRequestRedisFIFOList = rcache.NewFIFOListDynamic("slow-graphql-requests-list", func() int {
+	return conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
+})
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
 func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
-	slowRequestConfWatchOnce.Do(func() {
-		conf.Watch(func() {
-			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
-			slowRequestRedisFIFOList.SetMaxSize(limit)
-		})
-	})
-
 	b, err := json.Marshal(req)
 	if err != nil {
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
@@ -188,16 +177,6 @@ func (r *slowRequestResolver) Start() gqlutil.DateTime {
 // Duration returns the recorded duration of the slow request.
 func (r *slowRequestResolver) Duration() float64 {
 	return r.req.Duration.Seconds()
-}
-
-// UserId returns the user identifier if there is one associated with the
-// slow request. Blank if none.
-func (r *slowRequestResolver) userId() *string {
-	if r.req.UserID != 0 {
-		n := strconv.Itoa(int(r.req.UserID))
-		return &n
-	}
-	return nil
 }
 
 func (r *slowRequestResolver) User(ctx context.Context) (*UserResolver, error) {

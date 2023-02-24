@@ -1,41 +1,59 @@
-import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
+import chalk from 'chalk'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
+import { SemVer } from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
-import { Config, releaseVersions } from './config'
 import {
-    getAuthenticatedGitHubClient,
-    listIssues,
-    getTrackingIssue,
+    activateRelease,
+    addScheduledRelease,
+    loadReleaseConfig,
+    newReleaseFromInput,
+    ReleaseConfig,
+    getActiveRelease,
+    removeScheduledRelease,
+    saveReleaseConfig,
+    getReleaseDefinition,
+    deactivateAllReleases,
+} from './config'
+import { getCandidateTags, getPreviousVersion } from './git'
+import {
+    cloneRepo,
+    closeTrackingIssue,
+    commentOnIssue,
     createChangesets,
     CreatedChangeset,
+    createLatestRelease,
     createTag,
     ensureTrackingIssues,
-    closeTrackingIssue,
-    releaseName,
-    commentOnIssue,
-    queryIssues,
+    getAuthenticatedGitHubClient,
+    getTrackingIssue,
     IssueLabel,
-    createLatestRelease,
+    listIssues,
+    localSourcegraphRepo,
+    queryIssues,
+    releaseName,
 } from './github'
-import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
+import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import * as update from './update'
 import {
     cacheFolder,
-    formatDate,
-    timezoneLink,
-    ensureDocker,
     changelogURL,
+    ensureDocker,
     ensureReleaseBranchUpToDate,
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
+    formatDate,
+    getAllUpgradeGuides,
     getLatestTag,
+    timezoneLink,
+    updateUpgradeGuides,
+    verifyWithInput,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -51,13 +69,21 @@ export type StepID =
     // release
     | 'release:status'
     | 'release:create-candidate'
+    | 'release:promote-candidate'
+    | 'release:check-candidate'
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
     | 'release:announce'
     | 'release:close'
+    | 'release:multi-version-bake'
+    | 'release:prepare'
+    | 'release:remove'
+    | 'release:activate-release'
+    | 'release:deactivate-release'
     // util
     | 'util:clear-cache'
+    | 'util:previous-version'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
@@ -65,11 +91,13 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:release-guide-content'
+    | '_test:release-guide-update'
 
 /**
  * Runs given release step with the provided configuration and arguments.
  */
-export async function runStep(config: Config, step: StepID, ...args: string[]): Promise<void> {
+export async function runStep(config: ReleaseConfig, step: StepID, ...args: string[]): Promise<void> {
     if (!steps.map(({ id }) => id as string).includes(step)) {
         throw new Error(`Unrecognized step ${JSON.stringify(step)}`)
     }
@@ -87,7 +115,9 @@ export async function runStep(config: Config, step: StepID, ...args: string[]): 
 interface Step {
     id: StepID
     description: string
-    run?: ((config: Config, ...args: string[]) => Promise<void>) | ((config: Config, ...args: string[]) => void)
+    run?:
+        | ((config: ReleaseConfig, ...args: string[]) => Promise<void>)
+        | ((config: ReleaseConfig, ...args: string[]) => void)
     argNames?: string[]
 }
 
@@ -122,48 +152,32 @@ const steps: Step[] = [
         id: 'tracking:timeline',
         description: 'Generate a set of Google Calendar events for a MAJOR.MINOR release',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
-            const name = releaseName(release)
+            const next = await getReleaseDefinition(config)
+            const name = releaseName(new SemVer(next.current))
             const events: EventOptions[] = [
                 {
                     title: `Security Team to Review Release Container Image Scans ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingWeekBeforeRelease),
+                    ...calendarTime(next.securityApprovalDate),
                 },
                 {
                     title: `Cut Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.threeWorkingDaysBeforeRelease),
+                    ...calendarTime(next.codeFreezeDate),
                 },
                 {
                     title: `Release Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.releaseDate),
-                },
-                {
-                    title: `Start deploying Sourcegraph ${name} to Cloud instances`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingDayAfterRelease),
-                },
-                {
-                    title: `All Cloud instances upgraded to Sourcegraph ${name}`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingWeekAfterRelease),
+                    ...calendarTime(next.releaseDate),
                 },
             ]
 
@@ -180,53 +194,43 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:issues',
-        description: 'Generate GitHub tracking issue for the configured release',
-        run: async (config: Config) => {
-            const {
-                releaseDate,
-                captainGitHubUsername,
-                oneWorkingWeekBeforeRelease,
-                threeWorkingDaysBeforeRelease,
-                oneWorkingDayAfterRelease,
-                captainSlackUsername,
-                slackAnnounceChannel,
-                dryRun,
-            } = config
-            const { upcoming: release } = await releaseVersions(config)
-            const date = new Date(releaseDate)
+        description: 'Generate GitHub tracking issues for a release',
+        run: async (config: ReleaseConfig) => {
+            const next = await getReleaseDefinition(config)
+            const version = new SemVer(next.current)
+            const date = new Date(next.releaseDate)
 
             // Create issue
             const trackingIssues = await ensureTrackingIssues({
-                version: release,
-                assignees: [captainGitHubUsername],
+                version,
+                assignees: [next.captainGitHubUsername],
                 releaseDate: date,
-                oneWorkingWeekBeforeRelease: new Date(oneWorkingWeekBeforeRelease),
-                threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
-                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
-                dryRun: dryRun.trackingIssues || false,
+                securityReviewDate: new Date(next.securityApprovalDate),
+                codeFreezeDate: new Date(next.codeFreezeDate),
+                dryRun: config.dryRun.trackingIssues || false,
             })
             console.log('Rendered tracking issues', trackingIssues)
 
             // If at least one issue was created, post to Slack
             if (trackingIssues.find(({ created }) => created)) {
-                const name = releaseName(release)
+                const name = releaseName(version)
                 const releaseDateString = slackURL(formatDate(date), timezoneLink(date, `${name} release`))
                 let annoncement = `:mega: *${name} release*
 
-:captain: Release captain: @${captainSlackUsername}
+:captain: Release captain: @${next.captainSlackUsername}
 :spiral_calendar_pad: Scheduled for: ${releaseDateString}
 :pencil: Tracking issues:
 ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n')}`
-                if (release.patch !== 0) {
-                    const patchRequestTemplate = `https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=${release.version}%3A+`
+                if (version.patch !== 0) {
+                    const patchRequestTemplate = `https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=${version.version}%3A+`
                     annoncement += `\n\nIf you have changes that should go into this patch release, ${slackURL(
                         'please *file a patch request issue*',
                         patchRequestTemplate
                     )}, or it will not be included.`
                 }
-                if (!dryRun.slack) {
-                    await postMessage(annoncement, slackAnnounceChannel)
-                    console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+                if (!config.dryRun.slack) {
+                    await postMessage(annoncement, config.metadata.slackAnnounceChannel)
+                    console.log(`Posted to Slack channel ${config.metadata.slackAnnounceChannel}`)
                 }
             } else {
                 console.log('No tracking issues were created, skipping Slack announcement')
@@ -238,8 +242,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Generate pull requests to perform a changelog cut for branch cut',
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
-            const { upcoming: release } = await releaseVersions(config)
-            const prMessage = `changelog: cut sourcegraph@${release.version}`
+            const upcoming = await getActiveRelease(config)
+            const prMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const pullRequest = await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -247,17 +251,17 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `changelog-${release.version}`,
+                        head: `changelog-${upcoming.version.version}`,
                         title: prMessage,
                         commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
-                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
+                                console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
                                 const changelogPath = path.join(directory, changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release
-                                const releaseHeader = `## ${release.format()}`
+                                const releaseHeader = `## ${upcoming.version.format()}`
                                 const unreleasedHeader = '## Unreleased'
                                 changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
 
@@ -276,20 +280,20 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-helm',
                         base: 'main',
-                        head: `changelog-${release.version}`,
+                        head: `changelog-${upcoming.version.version}`,
                         title: prMessage,
                         commitMessage: prMessage,
                         body: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
-                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
+                                console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
                                 const changelogPath = path.join(directory, 'charts', 'sourcegraph', changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release
-                                const releaseHeader = `## ${release.format()}`
+                                const releaseHeader = `## ${upcoming.version.format()}`
                                 const releaseUpdate =
-                                    releaseHeader + `\n\n- Sourcegraph ${release.format()} is now available\n`
+                                    releaseHeader + `\n\n- Sourcegraph ${upcoming.version.format()} is now available\n`
                                 const unreleasedHeader = '## Unreleased\n'
                                 changelogContents = changelogContents.replace(unreleasedHeader, releaseUpdate)
 
@@ -317,21 +321,22 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:branch-cut',
         description: 'Create release branch',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
-            const branch = `${release.major}.${release.minor}`
+            const release = await getActiveRelease(config)
             let message: string
             // notify cs team on patch release cut
-            if (release.patch !== 0) {
-                message = `:mega: *${release.version}* branch has been cut cc: @cs`
+            if (release.version.patch !== 0) {
+                message = `:mega: *${release.version.version}* branch has been cut cc: @cs`
             } else {
-                message = `:mega: *${release.version}* branch has been cut.`
+                message = `:mega: *${release.version.version}* branch has been cut.`
             }
             try {
                 // Create and push new release branch from changelog commit
-                await execa('git', ['branch', branch])
-                await execa('git', ['push', 'origin', branch])
-                await postMessage(message, config.slackAnnounceChannel)
-                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version} --wait\n`)
+                await execa('git', ['branch', release.branch])
+                await execa('git', ['push', 'origin', release.branch])
+                await postMessage(message, config.metadata.slackAnnounceChannel)
+                console.log(
+                    `To check the status of the branch, run:\nsg ci status -branch ${release.version.version} --wait\n`
+                )
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
@@ -342,11 +347,13 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Post a message in Slack summarizing the progress of a release',
         run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
-            const { upcoming: release } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
 
-            const trackingIssue = await getTrackingIssue(githubClient, release)
+            const trackingIssue = await getTrackingIssue(githubClient, release.version)
             if (!trackingIssue) {
-                throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
+                throw new Error(
+                    `Tracking issue for version ${release.version.version} not found - has it been created yet?`
+                )
             }
             const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
@@ -363,42 +370,135 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                               : `are ${blockingIssues.length} release-blocking issues`
                       }`
 
-            const message = `:mega: *${release.version} Release Status Update*
+            const message = `:mega: *${release.version.version} Release Status Update*
 
 * Tracking issue: ${trackingIssue.url}
 * ${blockingMessage}: ${blockingIssuesURL}
 * ${latestBuildMessage}`
             if (!config.dryRun.slack) {
-                await postMessage(message, config.slackAnnounceChannel)
+                await postMessage(message, config.metadata.slackAnnounceChannel)
+            } else {
+                console.log(chalk.green('Dry run: ' + message))
             }
         },
     },
     {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
-        argNames: ['candidate'],
-        run: async (config, candidate) => {
-            if (!candidate) {
-                throw new Error('Candidate information is required (either "final" or a number)')
-            }
-            const { upcoming: release } = await releaseVersions(config)
-            const branch = `${release.major}.${release.minor}`
-            const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
-            ensureReleaseBranchUpToDate(branch)
+        run: async config => {
+            const release = await getActiveRelease(config)
+            ensureReleaseBranchUpToDate(release.branch)
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
             try {
+                const client = await getAuthenticatedGitHubClient()
+                const { workdir } = await cloneRepo(client, owner, repo, {
+                    revision: release.branch,
+                    revisionMustExist: true,
+                })
+
+                const tags = getCandidateTags(workdir, release.version.version)
+                let nextCandidate = 1
+                for (const tag of tags) {
+                    const num = parseInt(tag.slice(-1), 10)
+                    if (num >= nextCandidate) {
+                        nextCandidate = num + 1
+                    }
+                }
+                const tag = `v${release.version.version}-rc.${nextCandidate}`
+
+                console.log(`Detected next candidate: ${nextCandidate}, attempting to create tag: ${tag}`)
                 await createTag(
-                    await getAuthenticatedGitHubClient(),
+                    client,
+                    workdir,
                     {
-                        owner: 'sourcegraph',
-                        repo: 'sourcegraph',
-                        branch,
+                        owner,
+                        repo,
+                        branch: release.branch,
                         tag,
                     },
                     config.dryRun.tags || false
                 )
                 console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
             } catch (error) {
-                console.error(`Failed to create tag: ${tag}`, error)
+                console.error('Failed to create tag', error)
+            }
+        },
+    },
+    {
+        id: 'release:promote-candidate',
+        description:
+            'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
+        argNames: ['candidate'],
+        run: async (config, candidate) => {
+            const release = await getActiveRelease(config)
+            ensureReleaseBranchUpToDate(release.branch)
+
+            const warnMsg =
+                'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
+            const exampleTag = `v${release.version.version}-rc.1`
+            if (!candidate) {
+                throw new Error(
+                    `Candidate tag is a required argument. This should be the git tag of the commit to promote to release (ex.${exampleTag}`
+                )
+            } else if (!candidate.match('v\\d\\.\\d(?:\\.\\d)?-rc\\.\\d')) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the standard convention (ex. ${exampleTag}). ${warnMsg}`
+                )
+            } else if (!candidate.match(`${release.version.version}-rc\\.\\d`)) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the expected version ${release.version.version} (ex. ${exampleTag}). ${warnMsg}`
+                )
+            }
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
+            const releaseTag = `v${release.version.version}`
+
+            try {
+                const client = await getAuthenticatedGitHubClient()
+                // passing the tag as branch so that only the specified tag is shallow cloned
+                const { workdir } = await cloneRepo(client, owner, repo, {
+                    revision: candidate,
+                    revisionMustExist: true,
+                })
+
+                execa.sync('git', ['fetch', '--tags'], { stdio: 'inherit', cwd: workdir })
+                await createTag(
+                    client,
+                    workdir,
+                    {
+                        owner,
+                        repo,
+                        branch: candidate,
+                        tag: releaseTag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${releaseTag} --wait\n`)
+            } catch (error) {
+                console.error('Failed to create tag', error)
+            }
+        },
+    },
+    {
+        id: 'release:check-candidate',
+        description: 'Check release candidates.',
+        argNames: ['version'],
+        run: async (config, version) => {
+            if (!version) {
+                const release = await getActiveRelease(config)
+                version = release.version.version
+            }
+            const tags = getCandidateTags(localSourcegraphRepo, version)
+            if (tags.length > 0) {
+                console.log(`Release candidate tags for version: ${version}\n${tags}`)
+                console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
+            } else {
+                console.log(chalk.yellow('No candidates found!'))
             }
         },
     },
@@ -406,8 +506,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:stage',
         description: 'Open pull requests and a batch change staging a release',
         run: async config => {
-            const { slackAnnounceChannel, dryRun } = config
-            const { upcoming: release, previous } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
             // ensure docker is running for 'batch changes'
             try {
                 await ensureDocker()
@@ -422,27 +521,28 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             await ensureSrcCliUpToDate()
             // set up batch change config
             const batchChange = batchChanges.releaseTrackingBatchChange(
-                release.version,
+                release.version.version,
                 await batchChanges.sourcegraphCLIConfig()
             )
 
             // default values
-            const notPatchRelease = release.patch === 0
-            const previousNotPatchRelease = previous.patch === 0
+            const notPatchRelease = release.version.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
-            const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
+            const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release.version)
             if (!trackingIssue) {
-                throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
+                throw new Error(
+                    `Tracking issue for version ${release.version.version} not found - has it been created yet?`
+                )
             }
 
             // default PR content
-            const defaultPRMessage = `release: sourcegraph@${release.version}`
+            const defaultPRMessage = `release: sourcegraph@${release.version.version}`
             const prBodyAndDraftState = (
                 actionItems: string[],
                 customMessage?: string
             ): { draft: boolean; body: string } => {
-                const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
+                const defaultBody = `This pull request is part of the Sourcegraph ${release.version.version} release.
 ${customMessage || ''}
 
 * [Release batch change](${batchChangeURL})
@@ -465,16 +565,11 @@ These steps must be completed before this PR can be merged, unless otherwise sta
 
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
-cc @${config.captainGitHubUsername}
+cc @${release.captainGitHubUsername}
 
 `,
                 }
             }
-
-            const [previousVersion, nextVersion] = [
-                `${previous.major}.${previous.minor}`,
-                `${release.major}.${release.minor}`,
-            ]
 
             // Render changes
             const createdChanges = await createChangesets({
@@ -484,55 +579,36 @@ cc @${config.captainGitHubUsername}
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `publish-${release.version}`,
+                        head: `publish-${release.version.version}`,
                         commitMessage: notPatchRelease
-                            ? `draft sourcegraph@${release.version} release`
+                            ? `draft sourcegraph@${release.version.version} release`
                             : defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
                             // Update references to Sourcegraph versions in docs
-                            `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
+                            `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version.version}\`/g' doc/index.md`,
                             // Update sourcegraph/server:VERSION everywhere except changelog
-                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
+                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
                             // Update Sourcegraph versions in installation guides
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' {} +`,
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version}/g' {} +`,
+                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
+                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
                             // Update fork variables in installation guides
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
+                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
 
                             notPatchRelease
-                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
-                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
+                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version.version}"}} {{$currentReleaseVersion := "${release.version.major}.${release.version.minor}"}}' doc/_resources/templates/document.html`
+                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version.version}"' doc/_resources/templates/document.html`,
 
                             // Update references to Sourcegraph deployment versions
-                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
-                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
+                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-
-                            // Cut udpate guides with entries from unreleased.
-                            (directory: string, updateDirectory = '/doc/admin/updates') => {
-                                updateDirectory = directory + updateDirectory
-                                for (const file of readdirSync(updateDirectory)) {
-                                    const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath).toString()
-                                    if (notPatchRelease) {
-                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    } else if (previousNotPatchRelease) {
-                                        updateContents = updateContents.replace(previousVersion, release.version)
-                                    } else {
-                                        updateContents = updateContents.replace(previous.version, release.version)
-                                    }
-                                    writeFileSync(fullPath, updateContents)
-                                }
-                            },
+                            updateUpgradeGuides(release.previous.version, release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -540,7 +616,7 @@ cc @${config.captainGitHubUsername}
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
-                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
+                                    'Re-run the build on this branch (using either the command `sg ci build` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
@@ -550,12 +626,12 @@ cc @${config.captainGitHubUsername}
                         owner: 'sourcegraph',
                         repo: 'about',
                         base: 'main',
-                        head: `publish-${release.version}`,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
                             // Update sourcegraph/server:VERSION in all tsx files
-                            `find . -type f -name '*.tsx' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
+                            `find . -type f -name '*.tsx' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
                         ],
                         ...prBodyAndDraftState(
                             [],
@@ -565,34 +641,52 @@ cc @${config.captainGitHubUsername}
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph',
-                        base: `${release.major}.${release.minor}`,
-                        head: `publish-${release.version}`,
+                        base: release.branch,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        edits: [`tools/update-docker-tags.sh ${release.version.version}`],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-k8s',
+                        base: release.branch,
+                        head: `publish-${release.version.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`sg ops update-images -pin-tag ${release.version.version} base/`],
                         ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-docker',
-                        base: `${release.major}.${release.minor}`,
-                        head: `publish-${release.version}`,
+                        base: release.branch,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        edits: [`tools/update-docker-tags.sh ${release.version}`],
-                        ...prBodyAndDraftState([
-                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
-                        ]),
+                        edits: [`tools/update-docker-tags.sh ${release.version.version}`],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-docker-customer-replica-1',
+                        base: release.branch,
+                        head: `publish-${release.version.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`tools/update-docker-tags.sh ${release.version.version}`],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
-                        head: `publish-${release.version}`,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version.version}/g' resources/amazon-linux2.sh`,
                         ],
                         ...prBodyAndDraftState([]),
                     },
@@ -600,42 +694,42 @@ cc @${config.captainGitHubUsername}
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-digitalocean',
                         base: 'master',
-                        head: `publish-${release.version}`,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version.version}/g' resources/user-data.sh`,
                         ],
                         ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-helm',
-                        base: `release/${release.major}.${release.minor}`,
-                        head: `publish-${release.version}`,
+                        base: `release/${release.branch}`,
+                        head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
-                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
-                            `${sed} -i 's/version:.*/version: "${release.version}"/g' charts/*/Chart.yaml`,
+                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
+                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g' charts/*/Chart.yaml`,
+                            `${sed} -i 's/version:.*/version: "${release.version.version}"/g' charts/*/Chart.yaml`,
                             './scripts/helm-docs.sh',
                         ],
                         ...prBodyAndDraftState([]),
                     },
                 ],
-                dryRun: dryRun.changesets,
+                dryRun: config.dryRun.changesets,
             })
 
             // if changesets were actually published, set up a batch change and post in Slack
-            if (!dryRun.changesets) {
+            if (!config.dryRun.changesets) {
                 // Create batch change to track changes
                 try {
                     console.log(`Creating batch change in ${batchChange.cliConfig.SRC_ENDPOINT}`)
                     await batchChanges.createBatchChange(
                         createdChanges,
                         batchChange,
-                        `Track publishing of sourcegraph v${release.version}: ${trackingIssue?.url}`
+                        `Track publishing of sourcegraph v${release.version.version}: ${trackingIssue?.url}`
                     )
                 } catch (error) {
                     console.error(error)
@@ -643,12 +737,12 @@ cc @${config.captainGitHubUsername}
                 }
 
                 // Announce release update in Slack
-                if (!dryRun.slack) {
+                if (!config.dryRun.slack) {
                     await postMessage(
-                        `:captain: *Sourcegraph ${release.version} has been staged.*
+                        `:captain: *Sourcegraph ${release.version.version} has been staged.*
 
 Batch change: ${batchChangeURL}`,
-                        slackAnnounceChannel
+                        config.metadata.slackAnnounceChannel
                     )
                 }
             }
@@ -660,13 +754,13 @@ Batch change: ${batchChangeURL}`,
         argNames: ['changeRepo', 'changeID'],
         // Example: pnpm run release release:add-to-batch-change sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
-            const { upcoming: release } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
             if (!changeRepo || !changeID) {
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
 
             const batchChange = batchChanges.releaseTrackingBatchChange(
-                release.version,
+                release.version.version,
                 await batchChanges.sourcegraphCLIConfig()
             )
             await batchChanges.addToBatchChange(
@@ -685,27 +779,38 @@ Batch change: ${batchChangeURL}`,
         id: 'release:finalize',
         description: 'Run final tasks for sourcegraph/sourcegraph release pull requests',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
             let failed = false
 
+            const owner = 'sourcegraph'
             // Push final tags
-            const branch = `${release.major}.${release.minor}`
-            const tag = `v${release.version}`
-            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+            const tag = `v${release.version.version}`
+            for (const repo of [
+                'deploy-sourcegraph',
+                'deploy-sourcegraph-docker',
+                'deploy-sourcegraph-docker-customer-replica-1',
+                'deploy-sourcegraph-k8s',
+            ]) {
                 try {
+                    const client = await getAuthenticatedGitHubClient()
+                    const { workdir } = await cloneRepo(client, owner, repo, {
+                        revision: release.branch,
+                        revisionMustExist: true,
+                    })
                     await createTag(
-                        await getAuthenticatedGitHubClient(),
+                        client,
+                        workdir,
                         {
-                            owner: 'sourcegraph',
+                            owner,
                             repo,
-                            branch,
+                            branch: release.branch,
                             tag,
                         },
                         config.dryRun.tags || false
                     )
                 } catch (error) {
                     console.error(error)
-                    console.error(`Failed to create tag ${tag} on ${repo}@${branch}`)
+                    console.error(`Failed to create tag ${tag} on ${repo}@${release.branch}`)
                     failed = true
                 }
             }
@@ -719,8 +824,7 @@ Batch change: ${batchChangeURL}`,
         id: 'release:announce',
         description: 'Announce a release as live',
         run: async config => {
-            const { slackAnnounceChannel, dryRun } = config
-            const { upcoming: release } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
             const githubClient = await getAuthenticatedGitHubClient()
 
             // Create final GitHub release
@@ -731,9 +835,9 @@ Batch change: ${batchChangeURL}`,
                     {
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
-                        release,
+                        release: release.version,
                     },
-                    dryRun.tags
+                    config.dryRun.tags
                 )
             } catch (error) {
                 console.error('Failed to generate GitHub release:', error)
@@ -742,32 +846,37 @@ Batch change: ${batchChangeURL}`,
 
             // Set up announcement message
             const batchChangeURL = batchChanges.batchChangeURL(
-                batchChanges.releaseTrackingBatchChange(release.version, await batchChanges.sourcegraphCLIConfig())
+                batchChanges.releaseTrackingBatchChange(
+                    release.version.version,
+                    await batchChanges.sourcegraphCLIConfig()
+                )
             )
-            const releaseMessage = `*Sourcegraph ${release.version} has been published*
+            const releaseMessage = `*Sourcegraph ${release.version.version} has been published*
 
-* Changelog: ${changelogURL(release.format())}
+* Changelog: ${changelogURL(release.version.format())}
 * GitHub release: ${githubRelease || 'No release generated'}
 * Release batch change: ${batchChangeURL}`
 
             // Slack
             const slackMessage = `:captain: ${releaseMessage}`
-            if (!dryRun.slack) {
-                await postMessage(slackMessage, slackAnnounceChannel)
-                console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            if (!config.dryRun.slack) {
+                await postMessage(slackMessage, config.metadata.slackAnnounceChannel)
+                console.log(`Posted to Slack channel ${config.metadata.slackAnnounceChannel}`)
             } else {
-                console.log(`dryRun enabled, skipping Slack post to ${slackAnnounceChannel}: ${slackMessage}`)
+                console.log(
+                    `dryRun enabled, skipping Slack post to ${config.metadata.slackAnnounceChannel}: ${slackMessage}`
+                )
             }
 
             // GitHub tracking issues
-            const trackingIssue = await getTrackingIssue(githubClient, release)
+            const trackingIssue = await getTrackingIssue(githubClient, release.version)
             if (!trackingIssue) {
-                console.warn(`Could not find tracking issue for release ${release.version} - skipping`)
+                console.warn(`Could not find tracking issue for release ${release.version.version} - skipping`)
             } else {
                 // Note patch release requests if there are any outstanding
                 let comment = `${releaseMessage}
 
-@${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`
+@${release.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`
                 const patchRequestIssues = await queryIssues(githubClient, '', [IssueLabel.PATCH_REQUEST])
                 if (patchRequestIssues && patchRequestIssues.length > 0) {
                     comment += `
@@ -775,7 +884,7 @@ Please also update outstanding patch requests, if relevant:
 
 ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 }
-                if (!dryRun.trackingIssues) {
+                if (!config.dryRun.trackingIssues) {
                     const commentURL = await commentOnIssue(githubClient, trackingIssue, comment)
                     console.log(`Please make sure to follow up on the release issue: ${commentURL}`)
                 } else {
@@ -788,9 +897,95 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: 'release:close',
         description: 'Close tracking issues for current release',
         run: async config => {
-            const { previous: release } = await releaseVersions(config)
+            const active = await getActiveRelease(config)
             // close tracking issue
-            await closeTrackingIssue(release)
+            await closeTrackingIssue(active.version)
+            console.log(chalk.blue('Deactivating release...'))
+            removeScheduledRelease(config, active.version.version)
+            deactivateAllReleases(config)
+            console.log(chalk.green(`Release ${active.version.format()} closed!`))
+        },
+    },
+    {
+        id: 'release:prepare',
+        description: 'Schedule a release',
+        run: async config => {
+            const rel = await newReleaseFromInput()
+            addScheduledRelease(config, rel)
+            saveReleaseConfig(config)
+        },
+    },
+    {
+        id: 'release:remove',
+        description: 'Remove a release from the config',
+        argNames: ['version'],
+        run: async (config, version) => {
+            await verifyWithInput(`Confirm you want to remove release: ${version} from the release config?`)
+            const rconfig = loadReleaseConfig()
+            removeScheduledRelease(rconfig, version)
+            saveReleaseConfig(rconfig)
+        },
+    },
+    {
+        id: 'release:activate-release',
+        description: 'Activate a feature release',
+        run: async config => {
+            await activateRelease(config)
+        },
+    },
+    {
+        id: 'release:deactivate-release',
+        description: 'Activate a feature release',
+        run: async config => {
+            await verifyWithInput('Are you sure you want to deactivate all releases?')
+            deactivateAllReleases(config)
+        },
+    },
+    {
+        id: 'release:multi-version-bake',
+        description:
+            'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
+        run: async config => {
+            const release = await getActiveRelease(config)
+
+            const releaseBranch = release.branch
+            const version = release.version.version
+            ensureReleaseBranchUpToDate(releaseBranch)
+
+            const prConfig = {
+                edits: [
+                    `git remote set-branches --add origin '${releaseBranch}'`,
+                    `git fetch --depth 1 origin ${releaseBranch}`,
+                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+                ],
+                repo: 'sourcegraph',
+                owner: 'sourcegraph',
+                body: 'Update the multi version upgrade constants',
+                title: `${version} multi version upgrade constants`,
+                commitMessage: `baking multi version upgrade files for version ${version}`,
+            }
+
+            const sets = await createChangesets({
+                requiredCommands: ['comby', 'go'],
+                changes: [
+                    {
+                        ...prConfig,
+                        base: 'main',
+                        head: `${version}-update-multi-version-upgrade`,
+                    },
+                    {
+                        ...prConfig,
+                        base: releaseBranch,
+                        head: `${version}-update-multi-version-upgrade-rb`,
+                    },
+                ],
+                dryRun: false,
+            })
+            console.log('Merge the following pull requests:\n')
+            for (const set of sets) {
+                console.log(set.pullRequestURL)
+            }
         },
     },
     {
@@ -801,15 +996,50 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
+        id: 'util:previous-version',
+        description: 'Calculate the previous version based on repo tags',
+        argNames: ['version'],
+        run: (config: ReleaseConfig, version?: string) => {
+            let ver: SemVer | undefined
+            if (version) {
+                ver = new SemVer(version)
+                console.log(`Getting previous version from: ${version}...`)
+            } else {
+                console.log('Getting previous version...')
+            }
+            const prev = getPreviousVersion(ver)
+            console.log(chalk.green(`${prev.format()}`))
+        },
+    },
+    {
+        id: '_test:release-guide-content',
+        description: 'Generate upgrade guides',
+        argNames: ['previous', 'next'],
+        run: (config, previous, next) => {
+            for (const content of getAllUpgradeGuides(previous, next)) {
+                console.log(content)
+            }
+        },
+    },
+    {
+        id: '_test:release-guide-update',
+        description: 'Test update the upgrade guides',
+        argNames: ['previous', 'next', 'dir'],
+        run: (config, previous, next, dir) => {
+            updateUpgradeGuides(previous, next)(dir)
+        },
+    },
+    {
         id: '_test:google-calendar',
         description: 'Test Google Calendar integration',
         run: async config => {
             const googleCalendar = await getClient()
+            const release = await getActiveRelease(config)
             await ensureEvent(
                 {
                     title: 'TEST EVENT',
-                    startDateTime: new Date(config.releaseDate).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDate), 1).toISOString(),
+                    startDateTime: new Date(release.releaseDate).toISOString(),
+                    endDateTime: addMinutes(new Date(release.releaseDate), 1).toISOString(),
                     transparency: 'transparent',
                 },
                 googleCalendar
@@ -859,7 +1089,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:config',
         description: 'Test release configuration loading',
         run: config => {
-            console.log(JSON.stringify(config, null, '  '))
+            console.log(JSON.stringify(config, null, 2))
         },
     },
     {

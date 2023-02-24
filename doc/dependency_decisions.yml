@@ -297,6 +297,10 @@
   - modernc.org/strutil
   - BSD-3-Clause
   - *3
+- - :license
+  - github.com/pjbgf/sha1cd
+  - Apache 2.0
+  - *3
 - - :ignore
   - github.com/OpenPeeDeeP/depguard
   - :who:
@@ -452,3 +456,46 @@
     :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/stdin#license
     :versions: []
     :when: 2023-01-09 04:58:41.642155000 Z
+- - :ignore
+  - eslint-plugin-deprecation
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:11.764982000 Z
+- - :ignore
+  - fast-shallow-equal
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:33.000495000 Z
+- - :ignore
+  - pako
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:51.213298000 Z
+- - :ignore
+  - react-universal-interface
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:04:06.690991000 Z
+- - :ignore
+  - tosource
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:25:48.126482000 Z
+- - :ignore
+  - rollup-plugin-dts
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:26:01.138835000 Z
+- - :license
+  - github.com/xi2/xz
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-01-12 01:20:17.504279000 Z
