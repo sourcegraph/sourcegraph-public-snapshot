@@ -5,7 +5,7 @@ import { mdiAccount, mdiCloudQuestion } from '@mdi/js'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Badge, BADGE_VARIANTS, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { PermissionsSyncJob, PermissionSyncJobReasonGroup, PermissionSyncJobState } from '../../graphql-operations'
+import { PermissionsSyncJob, PermissionsSyncJobReasonGroup, PermissionsSyncJobState } from '../../graphql-operations'
 
 import styles from './PermissionsSyncJobsTableItem.module.scss'
 
@@ -19,7 +19,7 @@ interface JobStateMetadata {
     timeGetter: (job: PermissionsSyncJob) => string
 }
 
-const JOB_STATE_METADATA_MAPPING: Record<PermissionSyncJobState, JobStateMetadata> = {
+const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
     QUEUED: {
         badgeVariant: 'secondary',
         temporalWording: 'Queued',
@@ -45,6 +45,11 @@ const JOB_STATE_METADATA_MAPPING: Record<PermissionSyncJobState, JobStateMetadat
         temporalWording: 'Failed',
         timeGetter: job => job.finishedAt ?? '',
     },
+    CANCELED: {
+        badgeVariant: 'outlineSecondary',
+        temporalWording: 'Canceled',
+        timeGetter: job => job.finishedAt ?? '',
+    },
 }
 
 export const ChangesetCloseNode: React.FunctionComponent<React.PropsWithChildren<ChangesetCloseNodeProps>> = ({
@@ -65,7 +70,7 @@ export const ChangesetCloseNode: React.FunctionComponent<React.PropsWithChildren
     </li>
 )
 
-const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionSyncJobState }> = ({ state }) => (
+const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({ state }) => (
     <Badge variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>{state}</Badge>
 )
 
@@ -99,7 +104,7 @@ const PermissionsSyncJobReason: React.FunctionComponent<{ job: PermissionsSyncJo
         <div>{job.reason.group}</div>
         <Text className="mb-0 text-muted">
             <small>
-                {job.reason.group === PermissionSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
+                {job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
                     ? `by ${job.triggeredByUser.username}`
                     : job.reason.message}
             </small>
