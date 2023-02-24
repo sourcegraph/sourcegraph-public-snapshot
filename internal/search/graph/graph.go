@@ -2,9 +2,9 @@ package graph
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CodeIntelStore is an abstraction over enterprise/internal/codeintel.Services for use
