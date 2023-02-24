@@ -45,11 +45,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList
-                        className={styles.jobsGrid}
-                        // className="list-group"
-                        aria-label="Permissions sync jobs"
-                    >
+                    <ConnectionList className={styles.jobsGrid} aria-label="Permissions sync jobs">
                         {connection && connection.nodes?.length > 0 && <Header />}
                         {connection?.nodes?.map(node => (
                             <ChangesetCloseNode key={node.id} node={node} />

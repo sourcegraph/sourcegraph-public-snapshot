@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiAccount, mdiCloudQuestion } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Badge, BADGE_VARIANTS, Icon, Text } from '@sourcegraph/wildcard'
+import { Badge, BADGE_VARIANTS, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { PermissionsSyncJob, PermissionSyncJobReasonGroup, PermissionSyncJobState } from '../../graphql-operations'
 
@@ -56,12 +56,8 @@ export const ChangesetCloseNode: React.FunctionComponent<React.PropsWithChildren
             <PermissionsSyncJobStatusBadge state={node.state} />
             <PermissionsSyncJobSubject job={node} />
             <PermissionsSyncJobReason job={node} />
-            <div className="text-success">
-                ++<b>{node.permissionsAdded}</b>
-            </div>
-            <div className="text-danger">
-                --<b>{node.permissionsRemoved}</b>
-            </div>
+            <PermissionsSyncJobNumbers job={node} added={true} />
+            <PermissionsSyncJobNumbers job={node} added={false} />
             <div className="text-secondary">
                 <b>{node.permissionsFound}</b>
             </div>
@@ -111,3 +107,30 @@ const PermissionsSyncJobReason: React.FunctionComponent<{ job: PermissionsSyncJo
         </Text>
     </div>
 )
+
+// added/removed access for X repositories/users
+const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: PermissionsSyncJob; added: boolean }> = ({
+    job,
+    added,
+}) =>
+    added ? (
+        <Tooltip
+            content={`Added access for ${job.permissionsAdded} ${
+                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
+            }.`}
+        >
+            <div className="text-success">
+                +<b>{job.permissionsAdded}</b>
+            </div>
+        </Tooltip>
+    ) : (
+        <Tooltip
+            content={`Removed access for ${job.permissionsRemoved} ${
+                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
+            }.`}
+        >
+            <div className="text-danger">
+                -<b>{job.permissionsRemoved}</b>
+            </div>
+        </Tooltip>
+    )
