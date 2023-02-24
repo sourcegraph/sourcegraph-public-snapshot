@@ -34,8 +34,8 @@ describe('pagination tests', () => {
     // No logs get printed
     const result: SearchMatches = new Array<SearchMatch>()
     const obs: Observable<SearchMatches> = sourcegraphService.Search.searchStream(`repo:.*`)
-    obs.subscribe((data) => console.log("data", data), (e) => console.error("err", e), () => console.log("complete!"))
     obs.pipe(share())
+    obs.subscribe((data) => console.log("data", data), (e) => console.error("err", e), () => console.log("complete!"))
 
     expect(result).toHaveLength(50)
   })
