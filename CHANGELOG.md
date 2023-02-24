@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests. [#47466](https://github.com/sourcegraph/sourcegraph/pull/47466)
 - Kubernetes Deployments: Introduced a new Kubernetes deployment option ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) to deploy Sourcegraph with Kustomize. [#46755](https://github.com/sourcegraph/sourcegraph/issues/46755)
 - Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base cluster that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources.[#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
+- Added the `other.exclude` setting to [Other external service config](https://docs.sourcegraph.com/admin/external_service/other#configuration). It can be configured to exclude mirroring of repositories matching a pattern similar to other external services. This is useful when you want to exclude repositories discovered via `src serve-git`. [#48168](https://github.com/sourcegraph/sourcegraph/pull/48168)
 
 ### Changed
 
