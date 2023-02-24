@@ -121,7 +121,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
-    const { connection, error, loading, hasNextPage, fetchMore, data } = useShowMorePagination<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
         RepositoryGitCommitsVariables,
         GitCommitFields
