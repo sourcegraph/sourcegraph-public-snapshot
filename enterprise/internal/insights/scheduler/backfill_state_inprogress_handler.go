@@ -10,26 +10,25 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 const (
@@ -196,7 +195,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	}
 
 	itrLoop := func(pageSize, concurrency int, nextFunc nextNFunc) (interrupted bool, _ error) {
-		g := group.New().WithContext(ctx).WithMaxConcurrency(concurrency)
+		g := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 		mu := sync.Mutex{}
 		for {
 			repoIds, more, finish := nextFunc(pageSize, itrConfig)

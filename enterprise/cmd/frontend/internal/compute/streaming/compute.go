@@ -3,6 +3,7 @@ package streaming
 import (
 	"context"
 
+	"github.com/sourcegraph/conc/stream"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func toComputeResult(ctx context.Context, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
@@ -38,7 +38,7 @@ func toComputeResult(ctx context.Context, cmd compute.Command, match result.Matc
 func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
-	g := group.NewWithStreaming[Event]().WithErrors().WithMaxConcurrency(8)
+	s := stream.New().WithMaxGoroutines(8)
 	cb := func(ev Event, err error) {
 		if err != nil {
 			select {
@@ -51,16 +51,16 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	}
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if !event.Stats.Zero() {
-			g.Go(func() (Event, error) {
-				return Event{nil, event.Stats}, nil
-			}, cb)
+			s.Go(func() stream.Callback {
+				return func() { cb(Event{nil, event.Stats}, nil) }
+			})
 		}
 		for _, match := range event.Results {
 			match := match
-			g.Go(func() (Event, error) {
+			s.Go(func() stream.Callback {
 				results, err := toComputeResult(ctx, computeCommand, match)
-				return Event{results, streaming.Stats{}}, err
-			}, cb)
+				return func() { cb(Event{results, streaming.Stats{}}, err) }
+			})
 		}
 	})
 
@@ -99,7 +99,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 		defer close(final)
 		defer close(eventsC)
 		defer close(errorC)
-		defer g.Wait()
+		defer s.Wait()
 
 		alert, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{alert: alert, err: err}

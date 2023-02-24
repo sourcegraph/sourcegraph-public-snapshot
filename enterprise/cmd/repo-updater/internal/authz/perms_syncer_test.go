@@ -9,6 +9,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func init() {
@@ -928,8 +928,8 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 
 		s := NewPermsSyncer(logtest.Scoped(t), db, nil, nil, timeutil.Now, nil)
 
-		syncGroups := map[requestType]group.ContextGroup{
-			requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(1),
+		syncGroups := map[requestType]*pool.ContextPool{
+			requestTypeUser: pool.New().WithContext(ctx).WithMaxGoroutines(1),
 		}
 
 		request1 := &syncRequest{
