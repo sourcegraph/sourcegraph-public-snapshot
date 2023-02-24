@@ -43,8 +43,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	)
 
 	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
-	rules := NewRulesCache(ownService)
-	// owners := NewOwnerCache(ownService)
+	cache := NewCache(ownService)
 
 	// Resolve input strings to ResolvedOwners so we can match them.
 	var (
@@ -90,11 +89,9 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		}
 	}
 
-	// fmt.Printf("Resolved Owners input: %#+v\n", includeOwners)
-
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, ownService, includeOwners, excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, cache, includeOwners.Slice(), excludeOwners.Slice(), event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -139,11 +136,9 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
-	rules *RulesCache,
-	// ownersCache *OwnerCache,
-	ownService backend.OwnService,
+	cache *Cache,
 	includeOwners,
-	excludeOwners codeowners.ResolvedOwners,
+	excludeOwners []codeowners.ResolvedOwner,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -159,7 +154,7 @@ matchesLoop:
 		}
 
 		// Load ownership data for the file in question.
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		file, err := cache.GetFromCacheOrFetch(ctx, mm.Repo.ID, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
@@ -167,48 +162,20 @@ matchesLoop:
 
 		// Find the owners for the file in question and resolve the owners to
 		// ResolvedOwners.
-		resolvedOwners, err := ownService.ResolveOwnersWithType(
-			ctx,
-			file.FindOwners(mm.File.Path),
-			backend.OwnerResolutionContext{
-				RepoID:   mm.Repo.ID,
-				RepoName: mm.Repo.Name,
-			},
-		)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue matchesLoop
-		}
-
-		// fmt.Printf("Resolved Owners output: %#+v\n", resolvedOwners)
+		resolvedOwners := file.FindOwners(mm.File.Path)
 
 		// Matching time!
 		for _, owner := range includeOwners {
-			// TODO: This doesn't work anymore since I added teams.
-			// if a team doesn't match, this returns, because includeOwners is
-			// AND. We want it to be OR though for [user, ...userTeams].
 			if !containsOwner(resolvedOwners, owner) {
 				continue matchesLoop
 			}
-
-			// Even more todo: this changes to OR now from AND
-			// if containsOwner(resolvedOwners, owner) {
-			// 	filtered = append(filtered, m)
-			// 	continue matchesLoop
-			// }
 		}
 		for _, notOwner := range excludeOwners {
-			// Even more todo: this changes to OR now from AND
 			if containsOwner(resolvedOwners, notOwner) {
 				continue matchesLoop
 			}
-			// if !containsOwner(resolvedOwners, notOwner) {
-			// 	filtered = append(filtered, m)
-			// 	continue matchesLoop
-			// }
 		}
-		// Even more todo: this changes to OR now from AND
-		// filtered = append(filtered, m)
+
 		filtered = append(filtered, m)
 	}
 
@@ -218,7 +185,7 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners codeowners.ResolvedOwners, owner codeowners.ResolvedOwner) bool {
+func containsOwner(owners []codeowners.ResolvedOwner, owner codeowners.ResolvedOwner) bool {
 	if len(owners) == 0 {
 		_, ok := owner.(*codeowners.Any)
 		return ok

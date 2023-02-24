@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -28,7 +27,15 @@ type OwnService interface {
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
-	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner, OwnerResolutionContext) (codeowners.ResolvedOwners, error)
+	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner, OwnerResolutionContext) (map[OwnerKey]codeowners.ResolvedOwner, error)
+}
+
+func NewOwnerKey(handle, email string, resCtx OwnerResolutionContext) OwnerKey {
+	return OwnerKey{
+		resCtx,
+		handle,
+		email,
+	}
 }
 
 type OwnerResolutionContext struct {
@@ -46,7 +53,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 		teamStore:       db.Teams(),
 		// TODO: Potentially long living struct, we don't do cache invalidation here.
 		// Might want to remove caching here and do that externally.
-		ownerCache: make(map[ownerKey][]codeowners.ResolvedOwner),
+		ownerCache: make(map[OwnerKey]codeowners.ResolvedOwner),
 	}
 }
 
@@ -57,10 +64,11 @@ type ownService struct {
 	db              database.DB
 
 	mu         sync.RWMutex
-	ownerCache map[ownerKey][]codeowners.ResolvedOwner
+	ownerCache map[OwnerKey]codeowners.ResolvedOwner
 }
 
-type ownerKey struct {
+type OwnerKey struct {
+	OwnerResolutionContext
 	handle, email string
 }
 
@@ -98,95 +106,41 @@ func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, comm
 	return nil, nil
 }
 
-func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner, resCtx OwnerResolutionContext) (codeowners.ResolvedOwners, error) {
+func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner, resCtx OwnerResolutionContext) (map[OwnerKey]codeowners.ResolvedOwner, error) {
 	resolved := make(codeowners.ResolvedOwners, len(protoOwners))
+	ret := make(map[OwnerKey]codeowners.ResolvedOwner)
 
 	// We have to look up owner by owner because of the branching conditions:
 	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
 	// If all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
-		ownerIdentifier := ownerKey{po.Handle, po.Email}
+		ownerIdentifier := OwnerKey{resCtx, po.Handle, po.Email}
 		s.mu.RLock()
 		cached, ok := s.ownerCache[ownerIdentifier]
 		s.mu.RUnlock()
 		if ok {
-			for _, o := range cached {
-				resolved.Add(o)
-			}
+			resolved.Add(cached)
 			continue
 		}
 
-		resolvedOwners, err := resolveWithContext(ctx, s.db, po.Handle, po.Email, resCtx)
+		resolvedOwner, err := resolveWithContext(ctx, s.db, po.Handle, po.Email, resCtx)
 		if err != nil {
 			return nil, err
 		}
-		for _, o := range resolvedOwners {
-			resolved.Add(o)
-		}
+		dedup, _ := resolved.Add(resolvedOwner)
+		// Store reference to deduplicated resolvedOwner.
+		ret[ownerIdentifier] = dedup
 		s.mu.Lock()
-		s.ownerCache[ownerIdentifier] = resolvedOwners
+		s.ownerCache[ownerIdentifier] = dedup
 		s.mu.Unlock()
 	}
 
-	return resolved, nil
+	return ret, nil
 }
 
-// func (s *ownService) resolveOwner(ctx context.Context, handle, email string, resCtx OwnerResolutionContext) (codeowners.ResolvedOwner, error) {
-// 	var resolvedOwner codeowners.ResolvedOwner
-// 	var err error
-// 	if handle != "" {
-// 		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
-// 		if err != nil {
-// 			return personOrError(handle, email, err)
-// 		}
-// 	} else if email != "" {
-// 		// Teams cannot be identified by emails, so we do not pass in a team getter here.
-// 		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
-// 		if err != nil {
-// 			return personOrError(handle, email, err)
-// 		}
-// 	} else {
-// 		return nil, nil
-// 	}
-// 	if resolvedOwner == nil {
-// 		resolvedOwner = &codeowners.Person{Handle: handle, Email: email}
-// 	}
-// 	// // TODO: This should be populated with the right data from the user, ie their email and username.
-// 	// resolvedOwner.SetOwnerData(handle, email)
-// 	return resolvedOwner, nil
-// }
-
-// type userGetterFunc func(context.Context, string) (*types.User, error)
-// type teamGetterFunc func(context.Context, string) (*types.Team, error)
-
-// func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userGetterFunc, teamGetter teamGetterFunc) (codeowners.ResolvedOwner, error) {
-// 	user, err := userGetter(ctx, identifier)
-// 	if err != nil {
-// 		if errcode.IsNotFound(err) {
-// 			if teamGetter != nil {
-// 				team, err := teamGetter(ctx, identifier)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 				return &codeowners.Team{Team: team}, nil
-// 			}
-// 		}
-// 		return nil, err
-// 	}
-// 	if user != nil {
-// 		return &codeowners.User{User: user}, nil
-// 	}
-// 	return nil, nil
-// }
-
-// func personOrError(handle, email string, err error) (*codeowners.Person, error) {
-// 	if errcode.IsNotFound(err) {
-// 		return &codeowners.Person{Handle: handle, Email: email}, nil
-// 	}
-// 	return nil, err
-// }
-
-func resolveWithContext(ctx context.Context, db database.DB, handle, email string, resCtx OwnerResolutionContext) (owners []codeowners.ResolvedOwner, err error) {
+// TODO: Make this lazy to only happen on the first comparison, so we don't need to
+// match 10000 users if only one rule matches anyways.
+func resolveWithContext(ctx context.Context, db database.DB, handle, email string, resCtx OwnerResolutionContext) (owner codeowners.ResolvedOwner, err error) {
 	var contextStr string
 	var serviceType string
 	var user *types.User
@@ -248,7 +202,6 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 		switch serviceType {
 		case "github":
 			split := strings.SplitN(teamHandle, "/", 2)
-			fmt.Printf("split result %v\n", split)
 			if len(split) == 2 {
 				teamHandle = split[1]
 			} else {
@@ -256,19 +209,18 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 			}
 		default:
 		}
-		fmt.Printf("looking up team by handle %q for service %q\n", teamHandle, serviceType)
 		team, err := db.Teams().GetTeamByName(ctx, teamHandle)
 		if err != nil {
 			if errcode.IsNotFound(err) {
-				return []codeowners.ResolvedOwner{&codeowners.Person{
+				return &codeowners.Person{
 					Handle:  handle,
 					Context: contextStr,
-				}}, nil
+				}, nil
 			}
 			return nil, err
 		}
 		// Team it is!
-		return []codeowners.ResolvedOwner{&codeowners.Team{Team: team}}, nil
+		return &codeowners.Team{Team: team}, nil
 	}
 
 	teamOwners := []*codeowners.Team{}
@@ -280,7 +232,5 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 		teamOwners = append(teamOwners, &codeowners.Team{Handle: team.Name, Team: team})
 	}
 
-	owners = append(owners, &codeowners.User{User: user, Teams: teamOwners})
-
-	return owners, nil
+	return &codeowners.User{User: user, Teams: teamOwners}, nil
 }

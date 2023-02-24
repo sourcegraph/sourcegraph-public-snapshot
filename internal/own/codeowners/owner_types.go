@@ -4,13 +4,13 @@ import "github.com/sourcegraph/sourcegraph/internal/types"
 
 type ResolvedOwners map[string]ResolvedOwner
 
-func (r ResolvedOwners) Add(ro ResolvedOwner) (added bool) {
+func (r ResolvedOwners) Add(ro ResolvedOwner) (_ ResolvedOwner, added bool) {
 	id := ro.Identifier()
-	if _, ok := r[id]; ok {
-		return false
+	if existing, ok := r[id]; ok {
+		return existing, false
 	}
 	r[id] = ro
-	return true
+	return ro, true
 }
 
 func (r ResolvedOwners) Slice() (ros []ResolvedOwner) {
@@ -28,8 +28,6 @@ type ResolvedOwner interface {
 	Identifier() string
 
 	Equals(ResolvedOwner) bool
-
-	// SetOwnerData(handle, email string)
 }
 
 // Guard to ensure all resolved owner types implement the interface
@@ -68,19 +66,20 @@ func (p *Person) Equals(o ResolvedOwner) bool {
 	if _, ok := o.(*Any); ok {
 		return true
 	}
-	// if op, ok := o.(*Person); ok {
-	// 	if op.Context != "" || p.Context != "" {
-	// 		return p.Email == op.Email && p.Handle == op.Handle && p.Context == op.Context
-	// 	}
-	// 	return p.Email == op.Email && p.Handle == op.Handle
-	// }
+
+	// If one of the two persons doesn't have context, we want to match without looking
+	// at context at all. Use-case: search input: erik, no user found, but erik
+	// is defined in codeowners. That gives an easy path for matching although no user
+	// is found.
+	if op, ok := o.(*Person); ok {
+		if op.Context != "" && p.Context != "" {
+			return p.Email == op.Email && p.Handle == op.Handle && p.Context == op.Context
+		}
+		return p.Email == op.Email && p.Handle == op.Handle
+	}
+
 	return p.Identifier() == o.Identifier()
 }
-
-// func (p *Person) SetOwnerData(handle, email string) {
-// 	p.Handle = handle
-// 	p.Email = email
-// }
 
 type User struct {
 	User *types.User
@@ -88,26 +87,27 @@ type User struct {
 	Teams []*Team
 
 	// Original proto fields.
+	// TODO: do we use these fields anymore?
 	Handle string
 	Email  string
 }
 
-func (t *User) Type() OwnerType {
+func (u *User) Type() OwnerType {
 	return OwnerTypeUser
 }
 
-func (t *User) Identifier() string {
-	return "User:" + t.User.Username
+func (u *User) Identifier() string {
+	return "User:" + u.User.Username
 }
 
-func (t *User) Equals(o ResolvedOwner) bool {
+func (u *User) Equals(o ResolvedOwner) bool {
 	if _, ok := o.(*Any); ok {
 		return true
 	}
-	if t.Identifier() == o.Identifier() {
+	if u.Identifier() == o.Identifier() {
 		return true
 	}
-	for _, innerTeam := range t.Teams {
+	for _, innerTeam := range u.Teams {
 		if innerTeam.Equals(o) {
 			return true
 		}
@@ -119,6 +119,7 @@ type Team struct {
 	Team *types.Team
 
 	// Original proto fields.
+	// TODO: do we use these fields anymore?
 	Handle string
 	Email  string
 }

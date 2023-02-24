@@ -113,3 +113,13 @@ type CodeownersFileEntry {
     """
     ruleLineMatch: Int!
 }
+
+# extend type Query {
+#     """
+#     Use this to get to the matching rule from a file result.
+#     Needs the repo/commit combination to find the right CODEOWNERS file.
+#     Also needs the owner string of the match, and the searchInput to map to each other.
+#     Last, needs the path to match.
+#     """
+#     ownershipRedirect(repo: ID! commit: String! path: String! owner: String! searchInput: String!): CodeownersFileEntry
+# }

@@ -48,7 +48,11 @@ func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend
 	if err != nil {
 		return nil, err
 	}
-	return &ownershipConnectionResolver{r.db, resolvedOwners}, nil
+	owners := make([]codeowners.ResolvedOwner, 0, len(resolvedOwners))
+	for _, o := range resolvedOwners {
+		owners = append(owners, o)
+	}
+	return &ownershipConnectionResolver{r.db, owners}, nil
 }
 
 func (r *ownResolver) PersonOwnerField(person *graphqlbackend.PersonResolver) string {
@@ -71,7 +75,7 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 // connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             database.DB
-	resolvedOwners codeowners.ResolvedOwners
+	resolvedOwners []codeowners.ResolvedOwner
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {

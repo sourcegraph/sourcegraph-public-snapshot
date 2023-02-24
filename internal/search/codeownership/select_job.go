@@ -36,11 +36,10 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	dedup := result.NewDeduper()
 
 	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
-	rules := NewRulesCache(ownService)
-	// owners := NewOwnerCache(ownService)
+	cache := NewCache(ownService)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, ownService, event.Results)
+		event.Results, err = getCodeOwnersFromMatches(ctx, cache, ownService, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -97,7 +96,7 @@ func (s *selectOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 
 func getCodeOwnersFromMatches(
 	ctx context.Context,
-	rules *RulesCache,
+	cache *Cache,
 	ownService backend.OwnService,
 	matches []result.Match,
 ) ([]result.Match, error) {
@@ -110,22 +109,13 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		file, err := cache.GetFromCacheOrFetch(ctx, mm.Repo.ID, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
 
-		resolvedOwners, err := ownService.ResolveOwnersWithType(ctx, file.FindOwners(mm.File.Path), backend.OwnerResolutionContext{
-			RepoName: mm.Repo.Name,
-			RepoID:   mm.Repo.ID,
-		})
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue matchesLoop
-		}
-
-		for _, o := range resolvedOwners {
+		for _, o := range file.FindOwners(mm.File.Path) {
 			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: o,
 				InputRev:      mm.InputRev,
