@@ -209,6 +209,25 @@ func TestOther_ListRepos(t *testing.T) {
 			RepositoryPathPattern: "pre-{repo}",
 		},
 		Want: []string{"pre-a", "pre-b/c", "pre-d"},
+	}, {
+		Name: "src-expose/exclude",
+		Conn: &schema.OtherExternalServiceConnection{
+			Url:                   srcExpose.URL,
+			Repos:                 []string{"src-expose"},
+			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
+			RepositoryPathPattern: "pre-{repo}",
+		},
+		SrcExposeRepos: []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
+		Want:           []string{"keep1", "not-exact/keep2", "keep3"},
+	}, {
+		Name: "static/pattern",
+		Conn: &schema.OtherExternalServiceConnection{
+			Url:                   "http://test",
+			Repos:                 []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
+			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
+			RepositoryPathPattern: "{repo}",
+		},
+		Want: []string{"keep1", "not-exact/keep2", "keep3"},
 	}}
 
 	for _, tc := range cases {
