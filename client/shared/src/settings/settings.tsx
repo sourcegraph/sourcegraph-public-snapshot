@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo } from 'react'
 
 import { cloneDeep, isFunction } from 'lodash'
 
-import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
+import { createAggregateError, ErrorLike, isErrorLike, logger, parseJSONCOrError } from '@sourcegraph/common'
 
 import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
 import { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
@@ -269,8 +269,7 @@ export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProvider
 export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
     if (settingsCascade === EMPTY_SETTINGS_CASCADE && process.env.JEST_WORKER_ID === undefined) {
-        // eslint-disable-next-line no-console
-        console.error(
+        logger.error(
             'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
         )
     }
