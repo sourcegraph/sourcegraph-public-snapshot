@@ -114,6 +114,9 @@ type CodeownersFileEntry {
     ruleLineMatch: Int!
 }
 
+"""
+CodeownersIngestedFile represents a manually ingested Codeowners file.
+"""
 type CodeownersIngestedFile {
     """
     The string contents of the codeowners file.
@@ -155,6 +158,9 @@ extend type Query {
     codeownersIngestedFiles(first: Int, after: Int, repoID: Int): CodeownersIngestedFileConnection!
 }
 
+"""
+A list of CodeownersIngestedFiles. 
+"""
 type CodeownersIngestedFileConnection {
     """
     The total count of items in the connection.
