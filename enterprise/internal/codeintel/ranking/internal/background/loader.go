@@ -66,9 +66,9 @@ func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 	}
 
 	batches := make(chan []string)
-	g := group.New().WithContext(ctx)
+	p := pool.New().WithContext(ctx)
 
-	g.Go(func(ctx context.Context) error {
+	p.Go(func(ctx context.Context) error {
 		defer close(batches)
 
 		batch := make([]string, 0, rankInputFileBatchSize)
@@ -114,7 +114,7 @@ func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 		return nil
 	})
 
-	g.Go(func(ctx context.Context) error {
+	p.Go(func(ctx context.Context) error {
 		for filenames := range batches {
 			knownFilenames, err := l.store.HasInputFilename(ctx, config.ResultsGraphKey, filenames)
 			if err != nil {
@@ -185,7 +185,7 @@ func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 		return nil
 	})
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return err
 	}
 
