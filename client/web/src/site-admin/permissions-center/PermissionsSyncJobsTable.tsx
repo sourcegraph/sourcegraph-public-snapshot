@@ -13,7 +13,7 @@ import {
 import { PermissionsSyncJob, PermissionsSyncJobsResult, PermissionsSyncJobsVariables } from '../../graphql-operations'
 
 import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
-import { ChangesetCloseNode } from './PermissionsSyncJobsTableItem'
+import { PermissionsSyncJobNode } from './PermissionsSyncJobNode'
 
 import styles from './PermissionsSyncJobsTable.module.scss'
 
@@ -48,7 +48,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     <ConnectionList className={styles.jobsGrid} aria-label="Permissions sync jobs">
                         {connection && connection.nodes?.length > 0 && <Header />}
                         {connection?.nodes?.map(node => (
-                            <ChangesetCloseNode key={node.id} node={node} />
+                            <PermissionsSyncJobNode key={node.id} node={node} />
                         ))}
                     </ConnectionList>
                 </ConnectionContainer>
