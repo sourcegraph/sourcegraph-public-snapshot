@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -12,6 +13,9 @@ import (
 )
 
 func TestAccessRequests_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -70,6 +74,10 @@ func TestAccessRequests_Create(t *testing.T) {
 }
 
 func TestAccessRequests_Update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx := context.Background()
@@ -101,6 +109,11 @@ func TestAccessRequests_Update(t *testing.T) {
 }
 
 func TestAccessRequests_GetByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -123,6 +136,11 @@ func TestAccessRequests_GetByID(t *testing.T) {
 }
 
 func TestAccessRequests_GetByEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -145,6 +163,11 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 }
 
 func TestAccessRequests_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -185,6 +208,11 @@ func TestAccessRequests_Count(t *testing.T) {
 }
 
 func TestAccessRequests_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -208,11 +236,11 @@ func TestAccessRequests_List(t *testing.T) {
 			names[i] = ar.Name
 		}
 
-		assert.Equal(t, names, []string{"a1", "a2", "a3"})
+		assert.Equal(t, []string{"a3", "a2", "a1"}, names)
 	})
 
 	t.Run("order", func(t *testing.T) {
-		accessRequests, err := store.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: false})
+		accessRequests, err := store.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: true})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -222,10 +250,10 @@ func TestAccessRequests_List(t *testing.T) {
 			names[i] = ar.Name
 		}
 
-		assert.Equal(t, names, []string{"a3", "a2", "a1"})
+		assert.Equal(t, names, []string{"a1", "a2", "a3"})
 	})
 
-	t.Run("limit & offset", func(t *testing.T) {
+	t.Run("limit & pagination", func(t *testing.T) {
 		one := 1
 		accessRequests, err := store.List(ctx, nil, &PaginationArgs{First: &one})
 		assert.NoError(t, err)
@@ -237,13 +265,13 @@ func TestAccessRequests_List(t *testing.T) {
 			names[i] = ar.Name
 		}
 
-		assert.Equal(t, names, []string{"a1"})
+		assert.Equal(t, names, []string{"a3"})
 
-		after := string(accessRequests[0].ID)
+		after := strconv.Itoa(int(accessRequests[0].ID))
 		two := int(2)
-		accessRequests, err = store.List(ctx, nil, &PaginationArgs{First: &two, After: &after})
+		accessRequests, err = store.List(ctx, nil, &PaginationArgs{First: &two, After: &after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
 		assert.NoError(t, err)
-		assert.Equal(t, len(accessRequests), 2)
+		assert.Equal(t, 2, len(accessRequests))
 
 		// map to names
 		names = make([]string, len(accessRequests))
@@ -251,7 +279,7 @@ func TestAccessRequests_List(t *testing.T) {
 			names[i] = ar.Name
 		}
 
-		assert.Equal(t, names, []string{"a2", "a3"})
+		assert.Equal(t, names, []string{"a2", "a1"})
 	})
 
 	t.Run("by status", func(t *testing.T) {

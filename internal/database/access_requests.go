@@ -222,13 +222,19 @@ func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.Ac
 	return updated, nil
 }
 
-func (s *accessRequestStore) Count(ctx context.Context, opt *AccessRequestsFilterArgs) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(opt.SQL(), ") AND ("))
+func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
 func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
+	if fArgs == nil {
+		fArgs = &AccessRequestsFilterArgs{}
+	}
 	where := fArgs.SQL()
+	if pArgs == nil {
+		pArgs = &PaginationArgs{}
+	}
 	p := pArgs.SQL()
 
 	if p.Where != nil {
@@ -239,7 +245,6 @@ func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilt
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
 
-	fmt.Println(q.Query(sqlf.PostgresBindVar), q.Args())
 	nodes, err := scanAccessRequests(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
