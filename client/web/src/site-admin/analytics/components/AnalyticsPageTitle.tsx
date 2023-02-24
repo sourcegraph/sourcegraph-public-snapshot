@@ -6,7 +6,7 @@ import { SiteAdminPageTitle } from '../../components/SiteAdminPageTitle'
 
 export const AnalyticsPageTitle: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <SiteAdminPageTitle icon={mdiChartLineVariant}>
-        <span>Analytics</span>
+        Analytics
         {children}
     </SiteAdminPageTitle>
 )
