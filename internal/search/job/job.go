@@ -73,7 +73,7 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
-	// CodeIntel should be provided by internal/search/graph.Store(). It may be nil if
-	// unimplemented, i.e. in Sourcegraph OSS.
+	// CodeIntel should be provided by internal/search/graph.Store(). Implementations that
+	// have past-paths for OSS can check if this is a graph.UnimplementedCodeIntelStore.
 	CodeIntel graph.CodeIntelStore
 }

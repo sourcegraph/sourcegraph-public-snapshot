@@ -785,7 +785,7 @@ func TestNewPlanJob(t *testing.T) {
 			features: search.Features{
 				CodeGraphSearch: true,
 			},
-			want: autogold.Want("symbol references search", `
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )

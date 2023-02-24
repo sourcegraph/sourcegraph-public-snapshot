@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -30,8 +31,8 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	if clients.CodeIntel == nil {
-		err = errors.New("CodeIntel graph search unimplemented")
+	if _, ok := clients.CodeIntel.(graph.UnimplementedCodeIntelStore); ok {
+		err = graph.ErrCodeIntelStoreUnimplemented
 		return nil, err
 	}
 

@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -15,13 +16,32 @@ type CodeIntelStore interface {
 	GetImplementations(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error)
 }
 
-var store CodeIntelStore
+var store CodeIntelStore = UnimplementedCodeIntelStore{}
 
 // RegisterStore sets the global CodeIntelStore implementation for search, and should only
 // be called on initialization.
 func RegisterStore(s CodeIntelStore) { store = s }
 
 // Store retrieves the globally registered CodeIntelStore implementation for search, and
-// must only be called after initialization. It may return nil if no implementation is
-// registered.
+// must only be called after initialization.
+//
+// If no implementation is registered, UnimplementedCodeIntelStore is returned.
 func Store() CodeIntelStore { return store }
+
+// UnimplementedCodeIntelStore is the default graph.CodeIntelStore implementation, unless
+// RegisterStore is called on the package. All methods return ErrCodeIntelStoreUnimplemented.
+type UnimplementedCodeIntelStore struct{}
+
+var ErrCodeIntelStoreUnimplemented = errors.New("code-intel graph store unimplemented")
+
+func (UnimplementedCodeIntelStore) GetDefinitions(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error) {
+	return nil, ErrCodeIntelStoreUnimplemented
+}
+
+func (UnimplementedCodeIntelStore) GetReferences(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error) {
+	return nil, ErrCodeIntelStoreUnimplemented
+}
+
+func (UnimplementedCodeIntelStore) GetImplementations(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error) {
+	return nil, ErrCodeIntelStoreUnimplemented
+}
