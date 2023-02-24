@@ -286,9 +286,9 @@ export const TreePage: FC<Props> = ({
     return (
         <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
-                <PageTitle title={getPageTitle()} />
-
                 <div className={classNames(styles.header)}>
+                    <PageTitle title={getPageTitle()} />
+
                     <header className="mb-3">
                         {isRoot ? (
                             <RootHeaderSection />
@@ -300,30 +300,30 @@ export const TreePage: FC<Props> = ({
                             </PageHeader>
                         )}
                     </header>
-                </div>
 
-                {treeOrError === undefined || repo === undefined ? (
-                    <div>
-                        <LoadingSpinner /> Loading files and directories
-                    </div>
-                ) : isErrorLike(treeOrError) ? (
-                    // If the tree is actually a blob, be helpful and redirect to the blob page.
-                    // We don't have error names on GraphQL errors.
-                    /not a directory/i.test(treeOrError.message) ? (
-                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
+                    {treeOrError === undefined || repo === undefined ? (
+                        <div>
+                            <LoadingSpinner /> Loading files and directories
+                        </div>
+                    ) : isErrorLike(treeOrError) ? (
+                        // If the tree is actually a blob, be helpful and redirect to the blob page.
+                        // We don't have error names on GraphQL errors.
+                        /not a directory/i.test(treeOrError.message) ? (
+                            <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
+                        ) : (
+                            <ErrorAlert error={treeOrError} />
+                        )
                     ) : (
-                        <ErrorAlert error={treeOrError} />
-                    )
-                ) : (
-                    <TreePageContent
-                        filePath={filePath}
-                        tree={treeOrError}
-                        repo={repo}
-                        revision={revision}
-                        commitID={commitID}
-                        {...props}
-                    />
-                )}
+                        <TreePageContent
+                            filePath={filePath}
+                            tree={treeOrError}
+                            repo={repo}
+                            revision={revision}
+                            commitID={commitID}
+                            {...props}
+                        />
+                    )}
+                </div>
             </Container>
         </div>
     )
