@@ -60,8 +60,6 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
-	sortExpr := "ORDER BY lr.id ASC"
-
 	depReposMap := basestore.NewOrderedMap[int, shared.PackageRepoReference]()
 	scanner := basestore.NewKeyedCollectionScanner[int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
 		dep, err := scanDependencyRepo(s)
@@ -71,11 +69,11 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	query := sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Sprintf("lr.id, lr.scheme, lr.name, prv.id, prv.package_id, prv.version"),
-		makeListDependencyReposConds(opts),
-		makeOffset(opts),
+		sqlf.Join([]*sqlf.Query{makeListDependencyReposConds(opts), makeOffset(opts.After)}, "AND"),
+		sqlf.Sprintf("ORDER BY id ASC"),
 		makeLimit(opts.Limit),
 		sqlf.Sprintf("JOIN package_repo_versions prv ON lr.id = prv.package_id"),
-		sqlf.Sprintf(sortExpr),
+		sqlf.Sprintf("ORDER BY lr.id ASC"),
 	)
 	err = scanner(s.db.Query(ctx, query))
 	if err != nil {
@@ -86,7 +84,10 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		listDependencyReposQuery,
 		sqlf.Sprintf("COUNT(lr.id)"),
 		makeListDependencyReposConds(opts),
-		sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""),
+		sqlf.Sprintf(""),
+		sqlf.Sprintf("LIMIT ALL"),
+		sqlf.Sprintf(""),
+		sqlf.Sprintf(""),
 	)
 	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
@@ -114,16 +115,10 @@ SELECT %s
 FROM (
 	SELECT id, scheme, name
 	FROM lsif_dependency_repos
-	%s
-	-- ID based offset
-	%s
-	-- limit results
-	%s
-	ORDER BY id ASC
+	WHERE %s
+	%s %s
 ) lr
--- optional join
-%s
--- final sort
+%s -- optional join
 %s
 `
 
@@ -141,25 +136,25 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
 	}
 
 	if len(conds) > 0 {
-		return sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
+		return sqlf.Sprintf("%s", sqlf.Join(conds, "AND"))
 	}
 
-	return sqlf.Sprintf("")
+	return sqlf.Sprintf("TRUE")
 }
 
 func makeLimit(limit int) *sqlf.Query {
 	if limit == 0 {
-		return sqlf.Sprintf("")
+		return sqlf.Sprintf("LIMIT ALL")
 	}
-
 	return sqlf.Sprintf("LIMIT %s", limit)
 }
 
-func makeOffset(opts ListDependencyReposOpts) *sqlf.Query {
-	if opts.After > 0 {
-		return sqlf.Sprintf("AND id < %s", opts.After)
+func makeOffset(id int) *sqlf.Query {
+	if id > 0 {
+		return sqlf.Sprintf("id > %s", id)
 	}
-	return sqlf.Sprintf("")
+
+	return sqlf.Sprintf("TRUE")
 }
 
 // InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
