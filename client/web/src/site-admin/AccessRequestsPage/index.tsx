@@ -189,7 +189,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 
     return (
         <>
-            <SiteAdminPageTitle icon={{ svgPath: mdiAccount, ariaLabel: 'Account requests icon' }}>
+            <SiteAdminPageTitle icon={mdiAccount}>
                 <span>Users</span>
                 <span>Account requests</span>
             </SiteAdminPageTitle>
@@ -214,7 +214,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     />
                 </div>
                 <Grid columnCount={5}>
-                    {['Email', 'Name', 'Last requested at', 'Extra Details', ''].map((value, index) => (
+                    {['Email', 'Name', 'Created at', 'Notes', ''].map((value, index) => (
                         // eslint-disable-next-line react/no-array-index-key
                         <Text weight="medium" key={index} className="mb-1">
                             {value}

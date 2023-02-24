@@ -5,7 +5,7 @@ import { mdiChartLineVariant } from '@mdi/js'
 import { SiteAdminPageTitle } from '../../components/SiteAdminPageTitle'
 
 export const AnalyticsPageTitle: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
-    <SiteAdminPageTitle icon={{ svgPath: mdiChartLineVariant, ariaLabel: 'Analytics icon' }}>
+    <SiteAdminPageTitle icon={mdiChartLineVariant}>
         <span>Analytics</span>
         {children}
     </SiteAdminPageTitle>

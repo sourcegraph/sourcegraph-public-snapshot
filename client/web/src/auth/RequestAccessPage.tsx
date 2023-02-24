@@ -106,7 +106,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
             </Label>
             <Label className="w-100">
                 <Text alignment="left" className="mb-2">
-                    Extra information
+                    Notes for administrator
                 </Text>
                 <TextArea
                     id="additionalInfo"

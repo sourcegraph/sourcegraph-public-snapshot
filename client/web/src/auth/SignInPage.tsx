@@ -154,8 +154,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     </Text>
                 ) : isRequestAccessAllowed ? (
                     <Text className="text-muted">
-                        Need an account? <Link to="/request-access">Request access to the admin</Link> or contact your
-                        site admin.
+                        Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin.</Text>
