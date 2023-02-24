@@ -5,7 +5,7 @@ import * as React from 'react'
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, Subject, Observable } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -22,7 +22,6 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     getUserSearchContextNamespaces,
-    SearchContextProps,
     fetchSearchContexts,
     fetchSearchContext,
     fetchSearchContextBySpec,
@@ -48,70 +47,24 @@ import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, Wildc
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
-import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
-import type { CodeIntelligenceProps } from './codeintel'
-import { CodeMonitoringProps } from './codeMonitoring'
+import { isBatchChangesExecutionEnabled } from './batches'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
-import type { CodeInsightsProps } from './insights/types'
 import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
 import { LegacyRouteContextProvider } from './LegacyRouteContext'
-import { NotebookProps } from './notebooks'
-import type { OrgAreaRoute } from './org/area/OrgArea'
-import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
-import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
 import { createPlatformContext } from './platform/context'
-import type { RepoContainerRoute } from './repo/RepoContainer'
-import type { RepoHeaderActionButton } from './repo/RepoHeader'
-import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
-import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps } from './routes'
-import { parseSearchURL, SearchAggregationProps } from './search'
+import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
-import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
-import type { UserAreaRoute } from './user/area/UserArea'
-import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
-
-export interface LegacySourcegraphWebAppProps
-    extends CodeIntelligenceProps,
-        CodeInsightsProps,
-        Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        NotebookProps,
-        CodeMonitoringProps,
-        SearchAggregationProps {
-    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
-    siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
-    userAreaRoutes: readonly UserAreaRoute[]
-    userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
-    orgSettingsSideBarItems: OrgSettingsSidebarItems
-    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
-    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
-    orgAreaRoutes: readonly OrgAreaRoute[]
-    repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps[]
-}
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
@@ -157,18 +110,14 @@ setLinkComponent(RouterLink)
 /**
  * The root component.
  */
-export class LegacySourcegraphWebApp extends React.Component<
-    LegacySourcegraphWebAppProps,
-    LegacySourcegraphWebAppState
-> {
+export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, LegacySourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
-    private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
         : createNoopController(this.platformContext)
 
-    constructor(props: LegacySourcegraphWebAppProps) {
+    constructor(props: StaticAppConfig) {
         super(props)
 
         if (this.extensionsController !== null) {
@@ -251,8 +200,6 @@ export class LegacySourcegraphWebApp extends React.Component<
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             logger.error('Error sending search context to extensions!', error)
         })
-
-        this.userRepositoriesUpdates.next()
     }
 
     public componentWillUnmount(): void {
