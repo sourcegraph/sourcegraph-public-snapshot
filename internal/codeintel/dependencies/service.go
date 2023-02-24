@@ -99,4 +99,5 @@ func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackag
 	return s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts(opts))
 }
 
-// func (s *Service) InsertPackageRepoFilters
+func (s *Service) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+}

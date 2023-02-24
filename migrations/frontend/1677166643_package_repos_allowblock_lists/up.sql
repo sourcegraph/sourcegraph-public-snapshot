@@ -12,5 +12,9 @@ CREATE TABLE IF NOT EXISTS package_repo_filters (
     )
 );
 
-CREATE INDEX IF NOT EXISTS package_repo_allowblock_list_extsvc_kind
-ON package_repo_allowblock_list USING btree (external_service_kind);
+-- CREATE UNIQUE INDEX test_path_hash_uni_idx ON test (my_hash_func(path)); instead
+-- CREATE INDEX IF NOT EXISTS package_repo_filters_matcher
+-- ON package_repo_filters USING hash (matcher)
+
+CREATE INDEX IF NOT EXISTS package_repo_filters_extsvc_kind
+ON package_repo_filters USING btree (external_service_kind);

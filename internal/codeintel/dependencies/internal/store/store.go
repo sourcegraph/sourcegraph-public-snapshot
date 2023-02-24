@@ -25,6 +25,7 @@ type Store interface {
 	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageFilter, error)
+	CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -449,4 +450,14 @@ FROM package_repo_filters
 %s
 -- limit
 %s
+`
+
+func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+	s.db.ExecResult(ctx, sqlf.Sprintf(createPackageRepoFilter, filter.Behaviour, filter.ExternalService, pq.B))
+}
+
+const createPackageRepoFilter = `
+INSERT INTO package_repo_filters (behaviour, external_service_kind, matcher)
+VALUES (%s, %s, %s)
+ON CONFLICT DO NOTHING
 `
