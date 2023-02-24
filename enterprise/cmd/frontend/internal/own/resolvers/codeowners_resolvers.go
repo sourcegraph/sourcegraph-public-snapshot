@@ -2,11 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // The Codeowners resolvers live under the parent Own resolver, but have their own file.
@@ -16,7 +20,24 @@ var (
 )
 
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	return &codeownersIngestedFileResolver{}, nil
+	fileReader := strings.NewReader(args.FileContents)
+	proto, err := codeowners.Parse(fileReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read file contents")
+	}
+
+	codeownersFile := &types.CodeownersFile{
+		RepoID:   api.RepoID(args.RepoID),
+		Contents: args.FileContents,
+		Proto:    proto,
+	}
+	if err := r.codeownersStore.CreateCodeownersFile(ctx, codeownersFile); err != nil {
+		return nil, errors.Wrap(err, "could not ingest codeowners file")
+	}
+
+	return &codeownersIngestedFileResolver{
+		codeownersFile: codeownersFile,
+	}, nil
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
@@ -32,7 +53,7 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 }
 
 type codeownersIngestedFileResolver struct {
-	codeownersFile types.CodeownersFile
+	codeownersFile *types.CodeownersFile
 }
 
 func (c *codeownersIngestedFileResolver) Contents() string {

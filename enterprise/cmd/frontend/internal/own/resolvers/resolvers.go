@@ -8,15 +8,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
-func New(db database.DB, ownService backend.OwnService) *ownResolver {
+func New(db database.DB, ownService backend.OwnService) graphqlbackend.OwnResolver {
+	enterpriseDB := edb.NewEnterpriseDB(db)
 	return &ownResolver{
-		db:         db,
-		ownService: ownService,
+		db:              enterpriseDB,
+		codeownersStore: enterpriseDB.Codeowners(),
+		ownService:      ownService,
 	}
 }
 
@@ -28,8 +31,9 @@ var (
 // that is the author of currently viewed commit, and fake ownership reason
 // pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct {
-	db         database.DB
-	ownService backend.OwnService
+	db              edb.EnterpriseDB
+	codeownersStore edb.CodeownersStore
+	ownService      backend.OwnService
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
