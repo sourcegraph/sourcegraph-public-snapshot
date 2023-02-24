@@ -53,71 +53,68 @@ const SiteUpdateCheck: FunctionComponent = () => {
 
     return (
         <>
-            <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
-            <Container className="mb-2">
-                {error && !loading && <ErrorAlert error={error} />}
-                {loading && !error && <LoadingSpinner />}
-                {data && (
-                    <>
-                        <Text className="mb-1">
-                            Version {data.site.productVersion}{' '}
-                            <small className="text-muted">
-                                (
-                                <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
-                                    changelog
-                                </Link>
-                                )
-                            </small>
-                            <br />
-                        </Text>
+            {error && !loading && <ErrorAlert error={error} />}
+            {loading && !error && <LoadingSpinner />}
+            {data && (
+                <>
+                    <Text className="mb-1">
+                        Version {data.site.productVersion}{' '}
+                        <small className="text-muted">
+                            (
+                            <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
+                                changelog
+                            </Link>
+                            )
+                        </small>
+                        <br />
+                    </Text>
 
-                        <div>
-                            {data.site.updateCheck.pending && (
-                                <Alert className={styles.alert} variant="primary">
-                                    <LoadingSpinner /> Checking for updates... (reload in a few seconds)
-                                </Alert>
-                            )}
-                            {data.site.updateCheck.errorMessage && (
-                                <ErrorAlert
-                                    className={styles.alert}
-                                    prefix="Error checking for updates"
-                                    error={data.site.updateCheck.errorMessage}
-                                />
-                            )}
-                            {!data.site.updateCheck.errorMessage && (
-                                <small>
-                                    {data.site.updateCheck.updateVersionAvailable ? (
-                                        <Link to="https://about.sourcegraph.com">
-                                            Update available to version {data.site.updateCheck.updateVersionAvailable}{' '}
-                                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                        </Link>
-                                    ) : (
-                                        <span>
-                                            <Icon
-                                                aria-hidden={true}
-                                                className="text-success mr-1"
-                                                svgPath={mdiCheckCircle}
-                                            />
-                                            Up to date
-                                        </span>
-                                    )}
-                                    <span className={classNames('text-muted pl-2 ml-2', styles.lastChecked)}>
-                                        {data.site.updateCheck.checkedAt
-                                            ? `Last checked ${formatDistance(
-                                                  parseISO(data.site.updateCheck.checkedAt),
-                                                  new Date(),
-                                                  {
-                                                      addSuffix: true,
-                                                  }
-                                              )}`
-                                            : 'Never checked for updates'}
+                    <div>
+                        {data.site.updateCheck.pending && (
+                            <Alert className={styles.alert} variant="primary">
+                                <LoadingSpinner /> Checking for updates... (reload in a few seconds)
+                            </Alert>
+                        )}
+                        {data.site.updateCheck.errorMessage && (
+                            <ErrorAlert
+                                className={styles.alert}
+                                prefix="Error checking for updates"
+                                error={data.site.updateCheck.errorMessage}
+                            />
+                        )}
+                        {!data.site.updateCheck.errorMessage && (
+                            <small>
+                                {data.site.updateCheck.updateVersionAvailable ? (
+                                    <Link to="https://about.sourcegraph.com">
+                                        Update available to version {data.site.updateCheck.updateVersionAvailable}{' '}
+                                        <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                    </Link>
+                                ) : (
+                                    <span>
+                                        <Icon
+                                            aria-hidden={true}
+                                            className="text-success mr-1"
+                                            svgPath={mdiCheckCircle}
+                                        />
+                                        Up to date
                                     </span>
-                                </small>
-                            )}
-                        </div>
-                    </>
-                )}
-            </Container>
+                                )}
+                                <span className={classNames('text-muted pl-2 ml-2', styles.lastChecked)}>
+                                    {data.site.updateCheck.checkedAt
+                                        ? `Last checked ${formatDistance(
+                                              parseISO(data.site.updateCheck.checkedAt),
+                                              new Date(),
+                                              {
+                                                  addSuffix: true,
+                                              }
+                                          )}`
+                                        : 'Never checked for updates'}
+                                </span>
+                            </small>
+                        )}
+                    </div>
+                </>
+            )}
 
             <small>
                 {autoUpdateCheckingEnabled
@@ -138,82 +135,70 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
     const [isExpanded, setIsExpanded] = useState(false)
     return (
         <>
-            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
-            <Container className="mb-3">
-                {error && !loading && <ErrorAlert error={error} />}
-                {loading && !error && <LoadingSpinner />}
-                {data && (
-                    <>
-                        <H3 as={H4}>Schema drift</H3>
-                        {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
-                            <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
-                                <CollapseHeader
-                                    as={Button}
-                                    className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
-                                >
-                                    <span>
-                                        <Icon
-                                            aria-hidden={true}
-                                            svgPath={mdiAlertCircleOutline}
-                                            className="text-danger"
-                                        />{' '}
-                                        There are schema drifts detected, please contact{' '}
-                                        <Link
-                                            to="mailto:support@sourcegraph.com"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            Sourcegraph support
-                                        </Link>{' '}
-                                        for assistance.
-                                    </span>
-                                    <Icon
-                                        aria-hidden={true}
-                                        svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
-                                        className="mr-1"
-                                    />
-                                </CollapseHeader>
-                                <CollapsePanel>
-                                    <LogOutput
-                                        text={data.site.upgradeReadiness.schemaDrift}
-                                        logDescription="Drift details:"
-                                    />
-                                </CollapsePanel>
-                            </Collapse>
-                        ) : (
-                            <Text>
-                                <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There is no
-                                schema drift detected.
-                            </Text>
-                        )}
-
-                        <H3 as={H4} className="mt-3">
-                            Required out-of-band migrations
-                        </H3>
-                        {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
-                            <>
+            {error && !loading && <ErrorAlert error={error} />}
+            {loading && !error && <LoadingSpinner />}
+            {data && (
+                <>
+                    <H3 as={H4}>Schema drift</H3>
+                    {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
+                        <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
+                            <CollapseHeader
+                                as={Button}
+                                className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                            >
                                 <span>
                                     <Icon aria-hidden={true} svgPath={mdiAlertCircleOutline} className="text-danger" />{' '}
-                                    There are pending out-of-band migrations that need to complete in the latest
-                                    version, please go to{' '}
-                                    <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check
-                                    details.
+                                    There are schema drifts detected, please contact{' '}
+                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                        Sourcegraph support
+                                    </Link>{' '}
+                                    for assistance.
                                 </span>
-                                <ul className="mt-2 pl-3">
-                                    {data.site.upgradeReadiness.requiredOutOfBandMigrations.map(oobm => (
-                                        <li key={oobm.id}>{oobm.description}</li>
-                                    ))}
-                                </ul>
-                            </>
-                        ) : (
-                            <Text>
-                                <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There are no
-                                pending out-of-band migrations that need to complete in the latest version.
-                            </Text>
-                        )}
-                    </>
-                )}
-            </Container>
+                                <Icon
+                                    aria-hidden={true}
+                                    svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                                    className="mr-1"
+                                />
+                            </CollapseHeader>
+                            <CollapsePanel>
+                                <LogOutput
+                                    text={data.site.upgradeReadiness.schemaDrift}
+                                    logDescription="Drift details:"
+                                />
+                            </CollapsePanel>
+                        </Collapse>
+                    ) : (
+                        <Text>
+                            <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There is no
+                            schema drift detected.
+                        </Text>
+                    )}
+
+                    <H3 as={H4} className="mt-3">
+                        Required out-of-band migrations
+                    </H3>
+                    {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
+                        <>
+                            <span>
+                                <Icon aria-hidden={true} svgPath={mdiAlertCircleOutline} className="text-danger" />{' '}
+                                There are pending out-of-band migrations that need to complete in the latest version,
+                                please go to <Link to="/site-admin/migrations?filters=pending">migrations</Link> to
+                                check details.
+                            </span>
+                            <ul className="mt-2 pl-3">
+                                {data.site.upgradeReadiness.requiredOutOfBandMigrations.map(oobm => (
+                                    <li key={oobm.id}>{oobm.description}</li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : (
+                        <Text>
+                            <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There are no
+                            pending out-of-band migrations that need to complete in the latest version.
+                        </Text>
+                    )}
+                </>
+            )}
         </>
     )
 }
@@ -229,8 +214,16 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
     return (
         <div>
             <PageTitle title="Updates - Admin" />
-            <SiteUpdateCheck />
-            <SiteUpgradeReadiness />
+
+            <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
+            <Container className="mb-2">
+                <SiteUpdateCheck />
+            </Container>
+
+            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
+            <Container className="mb-3">
+                <SiteUpgradeReadiness />
+            </Container>
         </div>
     )
 }
