@@ -13,8 +13,7 @@ RUN ls '/generated/grafana'
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
 #FROM us.gcr.io/sourcegraph-dev/wolfi-grafana-base:latest
 # TODO: Match up with correct name
-FROM sourcegraph-dev/wolfi-grafana-base:latest as production
-#FROM grafana/grafana:7.5.17@sha256:15abb652aa82eeb9f45589278b34ae6ef0e96f74c389cadde31831eb0b1ce228 as production
+FROM --platform=linux/x86_64 sourcegraph-wolfi/grafana-base:latest as production
 LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"
@@ -33,8 +32,15 @@ ADD config /sg_config_grafana
 COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
+# Can we fix this in a better way? Are these permissions set by the installed package?
+RUN chown -R grafana:grafana /var/lib/grafana
+RUN chown -R grafana:grafana /sg_config_grafana
+
 # hadolint ignore=DL3020
-ADD entry.sh /
+ADD entry-wolfi.sh /entry.sh
+# TODO: Improve this. Needs to move out of /var/lib/grafana as some docker-compose configs shadow this dir
+#   This file is part of grafana, and placed here by the chainguard grafana package. In the official grafana image it's at /run.sh
+RUN mv /var/lib/grafana/run.sh /run.sh
 
 
 USER root
@@ -43,17 +49,7 @@ USER root
 RUN mkdir /sg_grafana_additional_dashboards
 RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_config_grafana/provisioning/plugins
 
-# @FIXME: Update redis image
-# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache \
-    'apk-tools>=2.12' \
-    'krb5-libs>=1.18.4' \
-    'libssl1.1>=1.1.1s-r0' \
-    'openssl>=1.1.1s-r0' \
-    'busybox>=1.32.1' \
-    'ncurses-libs>=6.2_p20210109-r1' \
-    'ncurses-terminfo-base>=6.2_p20210109-r1' \
-    'libtirpc>=1.3.1-r1'
+
 
 EXPOSE 3370
 USER grafana
