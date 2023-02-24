@@ -184,17 +184,31 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                 label: 'Successfully indexed projects',
                 value: numCompletedIndexes,
                 valueClassName: 'text-success',
+                to: `?${buildParamsFromFilterState({
+                    show: 'indexes',
+                    indexState: 'success',
+                    language: 'all',
+                }).toString()}`,
             },
             {
                 label: 'Projects with errors',
                 value: numFailedIndexes,
                 className: styles.summaryItemThin,
                 valueClassName: 'text-danger',
+                to: `?${buildParamsFromFilterState({
+                    show: 'indexes',
+                    indexState: 'error',
+                    language: 'all',
+                }).toString()}`,
             },
             {
-                label: 'Unconfigured projects',
+                label: 'Configurable projects',
                 value: numUnconfiguredProjects,
                 valueClassName: 'text-primary',
+                to: `?${buildParamsFromFilterState({
+                    show: 'suggestions',
+                    language: 'all',
+                }).toString()}`,
             },
         ]
     }, [indexes, suggestedIndexers])
@@ -345,7 +359,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         }}
                     />
                 ) : (
-                    <>No code intel to display.</>
+                    <Text className="text-muted">No data to display.</Text>
                 )}
             </Container>
         </>

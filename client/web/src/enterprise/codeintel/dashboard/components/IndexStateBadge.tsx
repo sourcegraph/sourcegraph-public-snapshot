@@ -9,6 +9,7 @@ import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-opera
 import { INDEX_TERMINAL_STATES } from '../constants'
 
 import { getIndexerKey } from './tree/util'
+import styles from './IndexStateBadge.module.scss'
 
 export interface IndexStateBadgeProps {
     indexes: PreciseIndexFields[]
@@ -32,9 +33,11 @@ export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ index
 
     return (
         <Badge as={Link} to={`../indexes/${preferredIndex.id}`} variant="outlineSecondary" className={className}>
-            {mostRecentTerminalIndex && <IndexStateBadgeIcon state={mostRecentTerminalIndex.state} className="mr-1" />}
+            {mostRecentTerminalIndex && (
+                <IndexStateBadgeIcon state={mostRecentTerminalIndex.state} className={styles.icon} />
+            )}
             {mostRecentNonTerminalIndex && (
-                <IndexStateBadgeIcon state={mostRecentNonTerminalIndex.state} className="mr-1" />
+                <IndexStateBadgeIcon state={mostRecentNonTerminalIndex.state} className={styles.icon} />
             )}
             {getIndexerKey(preferredIndex)}
         </Badge>

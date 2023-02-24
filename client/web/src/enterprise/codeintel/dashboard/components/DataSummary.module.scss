@@ -8,9 +8,21 @@
         display: block;
         text-align: center;
         max-width: 8rem;
+
+        &:hover {
+            text-decoration: none;
+        }
     }
 
     &-number {
         font-size: 3rem;
+    }
+
+    &-label {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--body-color);
+        }
     }
 }
