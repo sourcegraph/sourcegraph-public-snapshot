@@ -100,7 +100,7 @@ const YARN_ADOPTION: Template = {
         'Are more repos increasingly using yarn? Track yarn adoption across teams and groups in your organization',
     templateValues: {
         title: 'Yarn adoption',
-        repoQuery: 'repo:has.file(path:yarn.lock$)',
+        repoQuery: 'repo:has.file(path:yarn\\.lock$)',
         series: [
             {
                 name: 'Yarn',
