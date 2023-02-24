@@ -1,5 +1,4 @@
 import {
-    Ref,
     createContext,
     ComponentType,
     FC,
@@ -9,6 +8,7 @@ import {
     useCallback,
     useEffect,
     useState,
+    ReactNode,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
@@ -29,63 +29,62 @@ export interface StepConfiguration {
 
 interface SetupStepsContextData {
     steps: StepConfiguration[]
+    activeStepIndex: number
     nextButtonPortalElement: HTMLDivElement | null
+    setNextButtonPortal: (nextButton: HTMLDivElement | null) => void
+    onPrevStep: () => void
     onNextStep: () => void
 }
 
 const SetupStepsContext = createContext<SetupStepsContextData>({
     steps: [],
+    activeStepIndex: 0,
     nextButtonPortalElement: null,
+    setNextButtonPortal: () => {},
+    onPrevStep: () => {},
     onNextStep: () => {},
 })
 
 interface SetupStepsProps {
     initialStepId: string | undefined
     steps: StepConfiguration[]
+    children?: ReactNode
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
 interface SetupStepURLContext {
-    currentStep: StepConfiguration
     activeStepIndex: number
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, onStepChange } = props
+    const { initialStepId, steps, onStepChange, children } = props
 
     const navigate = useNavigate()
     const location = useLocation()
     const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
 
     // Resolve current setup step and its index by URL matches
-    const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
+    const { activeStepIndex } = useMemo<SetupStepURLContext>(() => {
         // Try to find step by URL based on available steps
         const urlStepIndex = steps.findIndex(step => matchPath(step.path, location.pathname) !== null)
 
         if (urlStepIndex !== -1) {
-            return {
-                activeStepIndex: urlStepIndex,
-                currentStep: steps[urlStepIndex],
-            }
+            return { activeStepIndex: urlStepIndex }
         }
 
         // Try to find step by pre-saved settings if URL doesn't resolve any step
         const savedStepIndex = steps.findIndex(step => step.id === initialStepId)
 
         if (savedStepIndex !== -1) {
-            return {
-                activeStepIndex: savedStepIndex,
-                currentStep: steps[savedStepIndex],
-            }
+            return { activeStepIndex: savedStepIndex }
         }
 
         // Fallback on the first available step if URL doesn't match any step, and we
         // don't have any pre-saved step
-        return {
-            activeStepIndex: 0,
-            currentStep: steps[0],
-        }
+        return { activeStepIndex: 0 }
     }, [location, initialStepId, steps])
+
+    const currentStep = steps[activeStepIndex]
 
     useEffect(() => {
         onStepChange(currentStep)
@@ -114,35 +113,32 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const cachedContext = useMemo(
         () => ({
             steps,
+            activeStepIndex,
+            setNextButtonPortal,
             nextButtonPortalElement: nextButtonPortal,
+            onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [handleGoToNextStep, steps, nextButtonPortal]
+        [handleGoToNextStep, handleGoToPrevStep, steps, nextButtonPortal, activeStepIndex]
     )
 
+    return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
+}
+
+export const SetupStepsContent: FC<HTMLAttributes<HTMLElement>> = props => {
+    const { className, ...attributes } = props
+    const { steps, activeStepIndex } = useContext(SetupStepsContext)
+
     return (
-        <SetupStepsContext.Provider value={cachedContext}>
-            <div className={styles.root}>
-                <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
-                <Routes>
-                    {steps.map(({ path, component: Component }) => (
-                        <Route
-                            key="hardcoded-key"
-                            path={`${path}/*`}
-                            element={<Component className={styles.content} />}
-                        />
-                    ))}
-                    <Route path="*" element={<Navigate to={currentStep.path} />} />
-                </Routes>
-                <SetupStepsFooter
-                    steps={steps}
-                    activeStepIndex={activeStepIndex}
-                    nextButtonPortalRef={setNextButtonPortal}
-                    onPrevStep={handleGoToPrevStep}
-                    onNextStep={handleGoToNextStep}
-                />
-            </div>
-        </SetupStepsContext.Provider>
+        <div {...attributes} className={classNames(styles.root, className)}>
+            <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
+            <Routes>
+                {steps.map(({ path, component: Component }) => (
+                    <Route key="hardcoded-key" path={`${path}/*`} element={<Component className={styles.content} />} />
+                ))}
+                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} />} />
+            </Routes>
+        </div>
     )
 }
 
@@ -180,19 +176,14 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
     )
 }
 
-interface SetupStepsFooterProps {
-    steps: StepConfiguration[]
-    activeStepIndex: number
-    nextButtonPortalRef: Ref<HTMLDivElement>
-    onPrevStep: () => void
-    onNextStep: () => void
-}
+export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
+    const { className, ...attributes } = props
 
-export const SetupStepsFooter: FC<SetupStepsFooterProps> = props => {
-    const { steps, activeStepIndex, nextButtonPortalRef, onPrevStep, onNextStep } = props
+    const { steps, activeStepIndex, setNextButtonPortal, onPrevStep, onNextStep } = useContext(SetupStepsContext)
 
     return (
-        <footer className={styles.navigation}>
+        <footer {...attributes} className={classNames(styles.navigation, className)}>
+            <div />
             <div className={styles.navigationInner}>
                 {activeStepIndex > 0 && (
                     <Button variant="secondary" onClick={onPrevStep}>
@@ -200,7 +191,7 @@ export const SetupStepsFooter: FC<SetupStepsFooterProps> = props => {
                     </Button>
                 )}
 
-                <div ref={nextButtonPortalRef} className={styles.navigationNextPortal} />
+                <div ref={setNextButtonPortal} className={styles.navigationNextPortal} />
                 <Button variant="primary" className={styles.navigationNext} onClick={onNextStep}>
                     {activeStepIndex < steps.length - 1 ? 'Next' : 'Finish'}{' '}
                     <Icon svgPath={mdiChevronRight} aria-hidden={true} />
