@@ -7,6 +7,7 @@ proto_library(
     #keep
     name = "proto_proto",
     srcs = ["gitserver.proto"],
+    strip_import_prefix = "/internal",
     visibility = ["//:__subpackages__"],
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )
@@ -32,7 +33,7 @@ go_library(
 )
 
 buf_lint_test(
-    #keep
+    # keep
     name = "v1_proto_lint",
     config = "//internal:buf.yaml",
     targets = [":proto_proto"],
