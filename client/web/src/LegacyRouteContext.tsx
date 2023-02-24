@@ -152,7 +152,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         ...breadcrumbProps,
     } satisfies LegacyRouteStaticInjections
 
-    const derivedFromSettings = {
+    const computedContextFields = {
         globbing: globbingEnabledFromSettings(settingsCascade),
         batchChangesExecutionEnabled: isBatchChangesExecutionEnabled(settingsCascade),
         isMacPlatform: isMacPlatform(),
@@ -161,7 +161,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
     const legacyContext = {
         ...context,
         ...injections,
-        ...derivedFromSettings,
+        ...computedContextFields,
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
