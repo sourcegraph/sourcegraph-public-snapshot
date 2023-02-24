@@ -649,7 +649,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
             class="anchorLink"
             href="/request-access"
           >
-            Request access to the admin
+            Request access
           </a>
            or contact your site admin.
         </p>

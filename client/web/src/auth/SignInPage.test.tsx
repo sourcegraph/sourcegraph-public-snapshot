@@ -88,7 +88,7 @@ describe('SignInPage', () => {
         const rendered = render('/sign-in', { allowSignup: false })
         expect(
             within(rendered.baseElement)
-                .queryByText(txt => txt.includes('Request access to the admin'))
+                .queryByText(txt => txt.includes('Request access'))
                 ?.closest('a')
         ).toHaveAttribute('href', '/request-access')
 

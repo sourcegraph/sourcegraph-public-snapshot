@@ -42,12 +42,14 @@ describe('RequestAccessPage', () => {
     afterEach(() => {
         window.context = origContext
     })
+
     test('renders form if all conditions are met', () => {
-        const { locationRef, getByTestId } = renderPage()
+        const { locationRef, getByTestId, asFragment } = renderPage()
 
         expect(locationRef?.current?.pathname).toBe('/request-access')
         expect(document.title).toBe('Request access - Sourcegraph')
         expect(getByTestId('request-access-form')).toBeInTheDocument()
+        expect(asFragment()).toMatchSnapshot()
     })
 
     test('handles inputs', () => {
@@ -62,7 +64,7 @@ describe('RequestAccessPage', () => {
         fireEvent.change(emailInput, { target: { value: 'john@wick.com' } })
         expect(emailInput.value).toBe('john@wick.com')
 
-        const companyInput = getByLabelText('Extra information') as HTMLInputElement
+        const companyInput = getByLabelText('Notes for administrator') as HTMLInputElement
         expect(companyInput.value).toBe('')
         fireEvent.change(companyInput, { target: { value: "I think I', back" } })
         expect(companyInput.value).toBe("I think I', back")
