@@ -106,7 +106,7 @@ const PermissionsSyncJobReason: React.FunctionComponent<{ job: PermissionsSyncJo
             <small>
                 {job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
                     ? `by ${job.triggeredByUser.username}`
-                    : job.reason.message}
+                    : job.reason.reason}
             </small>
             {/*    TODO(sashaostrikov) use pretty-printed message*/}
         </Text>
