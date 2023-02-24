@@ -41,6 +41,8 @@ go_library(
         "github_util.go",
         "gitlab_util.go",
         "schema.go",
+        # TODO enable back when we switch to Bazel fully
+        # ":schema.go",
         "stringdata.go",
     ],
     embedsrcs = [
@@ -71,3 +73,12 @@ go_library(
     visibility = ["//visibility:public"],
     deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
 )
+
+# TODO enable back when we switch to Bazel fully
+# genrule(
+#     name = "schema_go",
+#     srcs = glob(["*.schema.json"], exclude = ["*json-schema-draft*"]),
+#     outs = ["schema.go"],
+#     tools = ["@com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler"],
+#     cmd = "$(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)",
+# )
