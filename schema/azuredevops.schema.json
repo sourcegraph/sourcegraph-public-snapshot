@@ -19,6 +19,11 @@
       "format": "uri",
       "examples": ["https://dev.azure.com"]
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Azure DevOps repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "username": {
       "description": "A username for authentication withe the Gerrit code host.",
       "type": "string",
