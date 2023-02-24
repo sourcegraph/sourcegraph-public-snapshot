@@ -19,9 +19,10 @@ type PersonResolver struct {
 	includeUserInfo bool
 
 	// cache result because it is used by multiple fields
-	once sync.Once
-	user *types.User
-	err  error
+	once          sync.Once
+	user          *types.User
+	err           error
+	preloadedUser bool
 }
 
 func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool) *PersonResolver {
@@ -33,10 +34,23 @@ func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool)
 	}
 }
 
+func NewPersonResolverWithUser(db database.DB, name, email string, user *types.User) *PersonResolver {
+	return &PersonResolver{
+		db:            db,
+		name:          name,
+		email:         email,
+		preloadedUser: true,
+		user:          user,
+	}
+}
+
 // resolveUser resolves the person to a user (using the email address). Not all persons can be
 // resolved to a user.
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
+		if r.preloadedUser {
+			return
+		}
 		if r.includeUserInfo && r.email != "" {
 			r.user, r.err = r.db.Users().GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {

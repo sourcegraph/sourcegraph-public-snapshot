@@ -7,7 +7,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -38,10 +37,10 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 
 	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
 	rules := NewRulesCache(ownService)
-	owners := NewOwnerCache(ownService)
+	// owners := NewOwnerCache(ownService)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, &owners, event.Results)
+		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, ownService, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -99,7 +98,7 @@ func (s *selectOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func getCodeOwnersFromMatches(
 	ctx context.Context,
 	rules *RulesCache,
-	ownerCache *OwnerCache,
+	ownService backend.OwnService,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -116,16 +115,16 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
-		resolvedOwners := make([]codeowners.ResolvedOwner, 0, len(owners))
-		for _, owner := range owners {
-			resolvedOwner, err := ownerCache.GetFromCacheOrFetch(ctx, mm.Repo.Name, owner)
-			if err != nil {
-				errs = errors.Append(errs, err)
-				continue matchesLoop
-			}
-			resolvedOwners = append(resolvedOwners, resolvedOwner)
+
+		resolvedOwners, err := ownService.ResolveOwnersWithType(ctx, file.FindOwners(mm.File.Path), backend.OwnerResolutionContext{
+			RepoName: mm.Repo.Name,
+			RepoID:   mm.Repo.ID,
+		})
+		if err != nil {
+			errs = errors.Append(errs, err)
+			continue matchesLoop
 		}
+
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: o,

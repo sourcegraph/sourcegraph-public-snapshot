@@ -2,16 +2,41 @@ package codeowners
 
 import "github.com/sourcegraph/sourcegraph/internal/types"
 
+type ResolvedOwners map[string]ResolvedOwner
+
+func (r ResolvedOwners) Add(ro ResolvedOwner) (added bool) {
+	id := ro.Identifier()
+	if _, ok := r[id]; ok {
+		return false
+	}
+	r[id] = ro
+	return true
+}
+
+func (r ResolvedOwners) Slice() (ros []ResolvedOwner) {
+	ros = make([]ResolvedOwner, len(r))
+	i := 0
+	for _, ro := range r {
+		ros[i] = ro
+		i++
+	}
+	return ros
+}
+
 type ResolvedOwner interface {
 	Type() OwnerType
 	Identifier() string
 
-	SetOwnerData(handle, email string)
+	Equals(ResolvedOwner) bool
+
+	// SetOwnerData(handle, email string)
 }
 
 // Guard to ensure all resolved owner types implement the interface
 var (
+	_ ResolvedOwner = (*Any)(nil)
 	_ ResolvedOwner = (*Person)(nil)
+	_ ResolvedOwner = (*User)(nil)
 	_ ResolvedOwner = (*Team)(nil)
 )
 
@@ -19,15 +44,16 @@ type OwnerType string
 
 const (
 	OwnerTypePerson OwnerType = "person"
+	OwnerTypeUser   OwnerType = "user"
 	OwnerTypeTeam   OwnerType = "team"
 )
 
 type Person struct {
-	User *types.User // If this is nil we've been unable to identify a user from the owner proto. Matches Own API.
-
 	// Original proto fields.
 	Handle string
 	Email  string
+
+	Context string
 }
 
 func (p *Person) Type() OwnerType {
@@ -35,16 +61,48 @@ func (p *Person) Type() OwnerType {
 }
 
 func (p *Person) Identifier() string {
-	// Make found users match.
-	if p.User != nil {
-		return p.User.Username
-	}
-	return p.Handle + p.Email
+	return "Person:" + p.Handle + p.Email + p.Context
 }
 
-func (p *Person) SetOwnerData(handle, email string) {
-	p.Handle = handle
-	p.Email = email
+func (p *Person) Equals(o ResolvedOwner) bool {
+	if _, ok := o.(*Any); ok {
+		return true
+	}
+	// if op, ok := o.(*Person); ok {
+	// 	if op.Context != "" || p.Context != "" {
+	// 		return p.Email == op.Email && p.Handle == op.Handle && p.Context == op.Context
+	// 	}
+	// 	return p.Email == op.Email && p.Handle == op.Handle
+	// }
+	return p.Identifier() == o.Identifier()
+}
+
+// func (p *Person) SetOwnerData(handle, email string) {
+// 	p.Handle = handle
+// 	p.Email = email
+// }
+
+type User struct {
+	User *types.User
+
+	// Original proto fields.
+	Handle string
+	Email  string
+}
+
+func (t *User) Type() OwnerType {
+	return OwnerTypeUser
+}
+
+func (t *User) Identifier() string {
+	return "User:" + t.User.Username
+}
+
+func (p *User) Equals(o ResolvedOwner) bool {
+	if _, ok := o.(*Any); ok {
+		return true
+	}
+	return p.Identifier() == o.Identifier()
 }
 
 type Team struct {
@@ -60,10 +118,31 @@ func (t *Team) Type() OwnerType {
 }
 
 func (t *Team) Identifier() string {
-	return t.Handle + t.Email
+	return "Team:" + t.Team.Name
 }
 
-func (t *Team) SetOwnerData(handle, email string) {
-	t.Handle = handle
-	t.Email = email
+func (p *Team) Equals(o ResolvedOwner) bool {
+	if _, ok := o.(*Any); ok {
+		return true
+	}
+	return p.Identifier() == o.Identifier()
+}
+
+const anyOwnerIdentifier = "099a4966-a3f5-4566-bd09-3bd5aeec809e"
+
+// A person but matches anything.
+type Any struct {
+	Person
+}
+
+func (p *Any) Type() OwnerType {
+	return p.Person.Type()
+}
+
+func (p *Any) Identifier() string {
+	return anyOwnerIdentifier
+}
+
+func (p *Any) Equals(o ResolvedOwner) bool {
+	return true
 }

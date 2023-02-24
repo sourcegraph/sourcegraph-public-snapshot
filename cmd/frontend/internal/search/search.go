@@ -526,12 +526,17 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			Handle: v.Handle,
 			Email:  v.Email,
 		}
-		if v.User != nil {
-			person.User = &streamhttp.UserMetadata{
+		return person
+	case *codeowners.User:
+		person := &streamhttp.EventPersonMatch{
+			Type:   streamhttp.PersonMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
+			User: &streamhttp.UserMetadata{
 				Username:    v.User.Username,
 				DisplayName: v.User.DisplayName,
 				AvatarURL:   v.User.AvatarURL,
-			}
+			},
 		}
 		return person
 	case *codeowners.Team:

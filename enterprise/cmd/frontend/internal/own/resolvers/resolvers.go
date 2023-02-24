@@ -35,12 +35,16 @@ type ownResolver struct {
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
+
 	file, err := r.ownService.OwnersFile(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
-	owners := file.FindOwners(blob.Path())
-	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
+
+	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, file.FindOwners(blob.Path()), backend.OwnerResolutionContext{
+		RepoName: repoName,
+		RepoID:   blob.Repository().IDInt32(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +71,7 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 // connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             database.DB
-	resolvedOwners []codeowners.ResolvedOwner
+	resolvedOwners codeowners.ResolvedOwners
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
@@ -116,15 +120,21 @@ type ownerResolver struct {
 func (r *ownerResolver) OwnerField(_ context.Context) (string, error) { return "owner", nil }
 
 func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
-	if r.resolvedOwner.Type() != codeowners.OwnerTypePerson {
+	if r.resolvedOwner.Type() != codeowners.OwnerTypePerson && r.resolvedOwner.Type() != codeowners.OwnerTypeUser {
 		return nil, false
 	}
 	person, ok := r.resolvedOwner.(*codeowners.Person)
-	if !ok {
-		return nil, false
+	if ok {
+		return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.Email, false), true
 	}
-	includeUserInfo := true
-	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.Email, includeUserInfo), true
+
+	user, ok := r.resolvedOwner.(*codeowners.User)
+	if ok {
+		// TODO: Email empty can person backfill this?
+		return graphqlbackend.NewPersonResolverWithUser(r.db, user.Handle, user.Email, user.User), true
+	}
+
+	return nil, false
 }
 
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
