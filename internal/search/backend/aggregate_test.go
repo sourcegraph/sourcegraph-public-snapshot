@@ -8,6 +8,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/zoekt"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestFlushCollectSender(t *testing.T) {
@@ -103,5 +106,69 @@ func TestFlushCollectSender(t *testing.T) {
 	want := []string{"400", "300", "200", "100"}
 	if !cmp.Equal(want, repos[:nonemptyEndpoints]) {
 		t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, repos))
+	}
+}
+
+func TestFlushCollectSenderMaxSize(t *testing.T) {
+	replicas := prefixMap{"1", "2", "3"}
+
+	var endpoints atomicMap
+	endpoints.Store(replicas)
+
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) zoekt.Streamer {
+			repoID, _ := strconv.Atoi(endpoint)
+			repoName := strconv.Itoa(repoID)
+
+			repoList := []*zoekt.RepoListEntry{{
+				Repository: zoekt.Repository{
+					Name: repoName,
+					ID:   uint32(repoID),
+				}}}
+			results := []*zoekt.SearchResult{{
+				Files: []zoekt.FileMatch{{
+					Score:              float64(repoID),
+					RepositoryPriority: float64(repoID),
+					Repository:         repoName,
+				},
+				}}}
+
+			return &FakeStreamer{
+				Results: results,
+				Repos:   repoList,
+			}
+		},
+	}
+	defer searcher.Close()
+
+	// Set the maximum bytes size to a low number, so that we collect
+	// some results but eventually hit this limit
+	cfg := conf.Get()
+	maxSizeBytes := 512
+	cfg.ExperimentalFeatures.Ranking = &schema.Ranking{
+		MaxQueueSizeBytes: &maxSizeBytes,
+	}
+	conf.Mock(cfg)
+
+	opts := zoekt.SearchOptions{
+		UseDocumentRanks: true,
+		FlushWallTime:    100000000 * time.Millisecond,
+	}
+
+	// Collect all search results in order they were sent to stream
+	var results []*zoekt.SearchResult
+	err := searcher.StreamSearch(context.Background(), nil, &opts,
+		ZoektStreamFunc(func(event *zoekt.SearchResult) { results = append(results, event) }))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check the aggregated result was flushed early
+	if len(results) == 3 {
+		t.Fatalf("expected search to return 3 results, but got %d", len(results))
+	}
+	if results[0].Stats.FlushReason != zoekt.FlushReasonMaxSize {
+		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonMaxSize, results[0].Stats.FlushReason)
 	}
 }
