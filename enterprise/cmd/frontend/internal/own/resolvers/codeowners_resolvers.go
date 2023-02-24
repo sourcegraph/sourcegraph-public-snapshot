@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,10 +21,9 @@ var (
 )
 
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	fileReader := strings.NewReader(args.FileContents)
-	proto, err := codeowners.Parse(fileReader)
+	proto, err := parseInputString(args.FileContents)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not read file contents")
+		return nil, err
 	}
 
 	codeownersFile := &types.CodeownersFile{
@@ -41,7 +41,32 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	return &codeownersIngestedFileResolver{}, nil
+	proto, err := parseInputString(args.FileContents)
+	if err != nil {
+		return nil, err
+	}
+
+	codeownersFile := &types.CodeownersFile{
+		RepoID:   api.RepoID(args.RepoID),
+		Contents: args.FileContents,
+		Proto:    proto,
+	}
+	if err := r.codeownersStore.UpdateCodeownersFile(ctx, codeownersFile); err != nil {
+		return nil, errors.Wrap(err, "could not update codeowners file")
+	}
+
+	return &codeownersIngestedFileResolver{
+		codeownersFile: codeownersFile,
+	}, nil
+}
+
+func parseInputString(fileContents string) (*codeownerspb.File, error) {
+	fileReader := strings.NewReader(fileContents)
+	proto, err := codeowners.Parse(fileReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse input")
+	}
+	return proto, nil
 }
 
 func (r *ownResolver) DeleteCodeownersFile(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
