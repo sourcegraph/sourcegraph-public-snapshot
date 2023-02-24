@@ -12,10 +12,11 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/group"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type config struct {
@@ -166,7 +167,7 @@ func main() {
 	}
 	progress := out.Progress(bars, nil)
 
-	g := group.New().WithMaxConcurrency(20)
+	p := pool.New().WithMaxGoroutines(20)
 	var done int64
 	for _, repo := range repos {
 		repo := repo
@@ -175,7 +176,7 @@ func main() {
 			progress.SetValue(0, float64(done))
 			continue
 		}
-		g.Go(func() {
+		p.Go(func() {
 			newRepo, _, err := gh.Repositories.Create(ctx, cfg.githubOrg, &github.Repository{Name: github.String(repo.Name)})
 			if err != nil {
 				writeFailure(out, "Failed to create repository %s", repo.Name)
@@ -196,15 +197,15 @@ func main() {
 			progress.SetValue(0, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	done = 0
 	// Adding a remote will lock git configuration, so we shard
 	// them by blank repo duplicates.
-	g = group.New().WithMaxConcurrency(20)
+	p = pool.New().WithMaxGoroutines(20)
 	for _, repo := range repos {
 		repo := repo
-		g.Go(func() {
+		p.Go(func() {
 			err = repo.blank.addRemote(ctx, repo.Name, repo.GitURL)
 			if err != nil {
 				writeFailure(out, "Failed to add remote to repository %s", repo.Name)
@@ -214,10 +215,10 @@ func main() {
 			progress.SetValue(1, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	done = 0
-	g = group.New().WithMaxConcurrency(30)
+	p = pool.New().WithMaxGoroutines(30)
 	for _, repo := range repos {
 		repo := repo
 		if !repo.Created {
@@ -230,7 +231,7 @@ func main() {
 			progress.SetValue(2, float64(done))
 			continue
 		}
-		g.Go(func() {
+		p.Go(func() {
 			err := repo.blank.pushRemote(ctx, repo.Name, cfg.retry)
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", repo.Name)
@@ -249,7 +250,7 @@ func main() {
 			progress.SetValue(2, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	progress.Destroy()
 	all, err := state.CountAllRepos()
