@@ -72,6 +72,57 @@ const (
 	PermissionsSyncJobReasonGroupUnknown     PermissionsSyncJobReasonGroup = "UNKNOWN"
 )
 
+var ReasonGroupToReasons = map[PermissionsSyncJobReasonGroup][]PermissionsSyncJobReason{
+	PermissionsSyncJobReasonGroupManual: {
+		ReasonManualRepoSync,
+		ReasonManualUserSync,
+	},
+	PermissionsSyncJobReasonGroupWebhook: {
+		ReasonGitHubUserEvent,
+		ReasonGitHubUserAddedEvent,
+		ReasonGitHubUserRemovedEvent,
+		ReasonGitHubUserMembershipAddedEvent,
+		ReasonGitHubUserMembershipRemovedEvent,
+		ReasonGitHubTeamAddedToRepoEvent,
+		ReasonGitHubTeamRemovedFromRepoEvent,
+		ReasonGitHubOrgMemberAddedEvent,
+		ReasonGitHubOrgMemberRemovedEvent,
+		ReasonGitHubRepoEvent,
+		ReasonGitHubRepoMadePrivateEvent,
+	},
+	PermissionsSyncJobReasonGroupSchedule: {
+		ReasonUserOutdatedPermissions,
+		ReasonUserNoPermissions,
+		ReasonRepoOutdatedPermissions,
+		ReasonRepoNoPermissions,
+		ReasonRepoUpdatedFromCodeHost,
+	},
+	PermissionsSyncJobReasonGroupSourcegraph: {
+		ReasonUserEmailRemoved,
+		ReasonUserEmailVerified,
+		ReasonUserAddedToOrg,
+		ReasonUserRemovedFromOrg,
+		ReasonUserAcceptedOrgInvite,
+	},
+}
+
+// sqlConds returns SQL query conditions to filter by reasons which are included
+// into given PermissionsSyncJobReasonGroup.
+//
+// If provided PermissionsSyncJobReasonGroup doesn't contain any reasons
+// (currently it is only PermissionsSyncJobReasonGroupUnknown), then nil is
+// returned.
+func (g PermissionsSyncJobReasonGroup) sqlConds() (conditions *sqlf.Query) {
+	if reasons, ok := ReasonGroupToReasons[g]; ok {
+		reasonQueries := make([]*sqlf.Query, 0, len(reasons))
+		for _, reason := range reasons {
+			reasonQueries = append(reasonQueries, sqlf.Sprintf("%s", reason))
+		}
+		conditions = sqlf.Sprintf("reason IN (%s)", sqlf.Join(reasonQueries, ", "))
+	}
+	return
+}
+
 type PermissionsSyncJobReason string
 
 // ResolveGroup returns a PermissionsSyncJobReasonGroup for a given
@@ -391,6 +442,7 @@ type ListPermissionSyncJobOpts struct {
 	UserID              int
 	RepoID              int
 	Reason              PermissionsSyncJobReason
+	ReasonGroup         PermissionsSyncJobReasonGroup
 	State               PermissionsSyncJobState
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
@@ -411,6 +463,13 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	}
 	if opts.RepoID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+	}
+	// If both reason group and reason are provided, we narrow down the filtering to
+	// just a reason.
+	if opts.ReasonGroup != "" && opts.Reason == "" {
+		if reasonConds := opts.ReasonGroup.sqlConds(); reasonConds != nil {
+			conds = append(conds, reasonConds)
+		}
 	}
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
