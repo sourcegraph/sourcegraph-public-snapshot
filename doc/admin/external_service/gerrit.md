@@ -25,8 +25,22 @@ To connect Gerrit to Sourcegraph:
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure
-Sourcegraph to use Gerrit's access management, see "[Repository permissions](../repo/permissions.md#gerrit)".
+Prerequisite: [Add Gerrit as an authentication provider](../auth/index.md#gerrit).
+
+Then, add or edit a Gerrit connection as described above and include the `authorization` field:
+
+```json
+{
+  // The Gerrit URL used to set up the Gerrit authentication provider must match this URL.
+  "url": "https://gerrit.example.com",
+  "username": "<admin username>",
+  "password": "<admin password>",
+  // ...
+  "authorization": {}
+}
+```
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ## User authentication
 

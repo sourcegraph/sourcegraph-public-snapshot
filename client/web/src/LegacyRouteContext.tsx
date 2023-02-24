@@ -31,6 +31,7 @@ export interface LegacyLayoutRouteComponentProps
         CodeIntelligenceProps,
         BatchChangesProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     isMacPlatform: boolean
 }
 
@@ -75,6 +76,7 @@ export interface LegacyRouteContextProviderProps {
         LegacyLayoutRouteComponentProps,
         | 'isMacPlatform'
         | 'isSourcegraphDotCom'
+        | 'isSourcegraphApp'
         | 'getUserSearchContextNamespaces'
         | 'fetchSearchContexts'
         | 'fetchSearchContextBySpec'
@@ -113,6 +115,7 @@ export const LegacyRouteContextProvider: React.FC<React.PropsWithChildren<Legacy
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
         isSourcegraphDotCom: window.context.sourcegraphDotComMode,
+        isSourcegraphApp: window.context.sourcegraphAppMode,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
         fetchSearchContextBySpec,
