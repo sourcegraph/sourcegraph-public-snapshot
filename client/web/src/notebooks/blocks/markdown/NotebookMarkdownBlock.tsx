@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 
 import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
@@ -100,7 +100,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
             ...props
         }) => {
             const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
-            const [container, setContainer] = useState<HTMLDivElement | null>(null)
+            const containerRef = useRef<HTMLDivElement | null>(null)
 
             const runBlock = useCallback(() => {
                 onRunBlock(id)
@@ -138,7 +138,9 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                 [runBlock, onInputChange, newBlock]
             )
 
-            const editor = useCodeMirror(container, input.text, extensions)
+            const editorRef = useRef<EditorView | null>(null)
+
+            useCodeMirror(editorRef, containerRef, input.text, extensions)
 
             const editMarkdown = useCallback(() => {
                 if (!isReadOnly) {
@@ -147,10 +149,10 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
             }, [isReadOnly, setIsEditing])
 
             useEffect(() => {
-                if (editor) {
-                    focusEditor(editor)
+                if (editorRef.current) {
+                    focusEditor(editorRef.current)
                 }
-            }, [isEditing, editor])
+            }, [isEditing, editorRef])
 
             const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, onNewBlock, ...props })
 
@@ -187,10 +189,10 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                     'aria-label': 'Notebook markdown block',
                     isInputVisible: isEditing,
                     setIsInputVisible: setIsEditing,
-                    focusInput: () => editor && focusEditor(editor),
+                    focusInput: () => editorRef.current && focusEditor(editorRef.current),
                     ...props,
                 }),
-                [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
+                [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editorRef, props]
             )
 
             const isInputFocused = useIsBlockInputFocused(id)
@@ -213,8 +215,9 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                     className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
                     {...notebookBlockProps}
                 >
-                    <div ref={setContainer} />
+                    <div ref={containerRef} />
                 </NotebookBlock>
             )
         }
     )
+NotebookMarkdownBlock.displayName = 'NotebookMarkdownBlock'
