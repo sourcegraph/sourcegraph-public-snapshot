@@ -206,7 +206,7 @@ const PYTHON_2_3: Template = {
     description: 'How far along is the Python major version migration',
     templateValues: {
         title: 'Python 2 to Python 3',
-        repoQuery: 'repo:has.file(path:.py$)',
+        repoQuery: 'repo:has.file(path:\\.py$)',
         series: [
             {
                 name: 'Python 3',
@@ -321,11 +321,11 @@ const CI_TOOLING: Template = {
     description: 'How many repos are using our CI system',
     templateValues: {
         title: 'CI tooling adoption',
-        repoQuery: 'repo:has.file(path:\\.circleci/config.yml)',
+        repoQuery: 'repo:has.file(path:\\.circleci/config\\.yml)',
         series: [
             {
                 name: 'Repo with CircleCI config',
-                query: 'file:\\.circleci/config.yml select:repo',
+                query: 'file:\\.circleci/config\\.yml select:repo',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -446,7 +446,7 @@ const LICENSE_TYPES: Template = {
     description: 'See the breakdown of licenses from package.json files',
     templateValues: {
         title: 'License types in the codebase',
-        repoQuery: 'repo:has.file(path:package\\.json)',
+        repoQuery: 'repo:has.file(path:package\\.json$)',
         groupSearchQuery: 'file:package.json "license":\\s"(.*)"',
     },
 }
