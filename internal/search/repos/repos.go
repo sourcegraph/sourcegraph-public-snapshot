@@ -654,6 +654,10 @@ func (r *Resolver) filterRepoHasFileContent(
 					if err != nil {
 						if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 							return false, err
+						} else if e := (&gitdomain.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
+							// In the case that we can't find HEAD, that means there are no commits, which means
+							// we can safely say this repo does not have the file being requested.
+							return false, nil
 						}
 
 						// For any other error, add this repo/rev pair to the set of missing repos
