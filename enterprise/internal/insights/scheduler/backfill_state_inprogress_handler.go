@@ -195,7 +195,6 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	}
 
 	itrLoop := func(pageSize, concurrency int, nextFunc nextNFunc) (interrupted bool, _ error) {
-		g := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 		mu := sync.Mutex{}
 		for {
 			repoIds, more, finish := nextFunc(pageSize, itrConfig)
@@ -206,11 +205,12 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 			case <-timeExpired:
 				return true, nil
 			default:
+				p := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 				repoErrors := map[int32]error{}
 				startPage := time.Now()
 				for i := 0; i < len(repoIds); i++ {
 					repoId := repoIds[i]
-					g.Go(func(ctx context.Context) error {
+					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
 						if repoErr != nil {
 							mu.Lock()
@@ -232,7 +232,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 
 				}
 				// The groups functions don't return errors so not checking for them
-				g.Wait()
+				p.Wait()
 				execution.logger.Debug("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
 				err = finish(ctx, h.backfillStore.Store, repoErrors)
 				if err != nil {
