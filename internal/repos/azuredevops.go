@@ -165,5 +165,6 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 			},
 		},
 		Metadata: p,
+		Private:  p.Project.Visibility == "private",
 	}, nil
 }
