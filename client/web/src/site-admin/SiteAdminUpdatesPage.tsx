@@ -143,7 +143,7 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
     loading,
     error,
 }) => {
-    const [isExpanded, setIsExpanded] = useState(true)
+    const [isExpanded, setIsExpanded] = useState(false)
     return (
         <>
             <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
@@ -159,7 +159,17 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
                                     as={Button}
                                     className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                                 >
-                                    <span>❌ There are schema drifts detected.</span>
+                                    <span>
+                                        ❌ There are schema drifts detected, please contact{' '}
+                                        <Link
+                                            to="mailto:support@sourcegraph.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Sourcegraph support
+                                        </Link>{' '}
+                                        for assistance.
+                                    </span>
                                     <Icon
                                         aria-hidden={true}
                                         svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
