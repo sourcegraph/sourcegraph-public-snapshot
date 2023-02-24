@@ -2,13 +2,8 @@
 # Build syntect_server statically #
 ###################################
 
-<<<<<<< Updated upstream
-FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
-=======
 FROM rust:1.61.0-alpine3.14@sha256:2e07fc0d66b00d6acc4b243f65f292aa21afc8a1df99196a3f1904cab140298d as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10
->>>>>>> Stashed changes
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
 RUN cargo test --release --workspace
