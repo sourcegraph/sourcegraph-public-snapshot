@@ -127,7 +127,7 @@ func GetRepositorySizeHistorgram(ctx context.Context, db database.DB) ([]RepoSiz
 type RepoSizeBucket struct {
 	Lt    *int64 `json:"lt,omitempty"`
 	Gte   int64  `json:"gte,omitempty"`
-	Count int64  `json:"count,omitempty"`
+	Count int64  `json:"count"`
 }
 
 func (r RepoSizeBucket) String() string {
