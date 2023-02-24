@@ -1,5 +1,5 @@
 FROM prometheuscommunity/postgres-exporter:v0.11.1@sha256:a7f8f66064b95c2b08dce9a0aaafe78c6639b7546d472fab649e9e7480be0454 as postgres_exporter
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 # hadolint ignore=DL3048
 LABEL com.sourcegraph.postgres_exporter.version=v0.9.0
 

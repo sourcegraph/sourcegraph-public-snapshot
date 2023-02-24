@@ -52,7 +52,6 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
     isActive,
     nestedRender,
 }) => {
-    const isActiveFunc = (): boolean => isActive
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
     return (
@@ -65,10 +64,8 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
             ) : (
                 <NavLink
                     to={node.url}
-                    isActive={isActiveFunc}
-                    className={classNames('test-symbol-link', styles.link)}
-                    activeClassName={styles.linkActive}
                     onClick={onHandleClick}
+                    className={classNames('test-symbol-link', styles.link, isActive && styles.linkActive)}
                 >
                     <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">

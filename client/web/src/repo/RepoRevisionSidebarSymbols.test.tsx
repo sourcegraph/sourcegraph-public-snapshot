@@ -111,11 +111,11 @@ describe('RepoRevisionSidebarSymbols', () => {
     })
 
     it('clicking symbol updates route', () => {
-        expect(renderResult.history.location.search).toEqual('')
+        expect(renderResult.locationRef.current?.search).toEqual('')
 
         const symbol = renderResult.getByText('firstSymbol')
         fireEvent.click(symbol)
 
-        expect(renderResult.history.location.search).toEqual('?L13:14')
+        expect(renderResult.locationRef.current?.search).toEqual('?L13:14')
     })
 })

@@ -18,11 +18,13 @@ import {
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
+import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { languageSupport } from './languageSupport'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -69,6 +71,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
         return [
             showTooltip.computeN([field], state => {
                 const { hover, focus, pin } = state.field(field)
+                const isLanguageSupported = state.facet(languageSupport)
 
                 // Only show one tooltip for the occurrence at a time
                 const uniqueTooltips = [pin, focus, hover]
@@ -79,6 +82,9 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                         return acc
                     }, [] as NonNullable<CodeIntelTooltipState>[])
                     .map(({ tooltip }) => tooltip)
+                    .filter(tooltip =>
+                        tooltip instanceof CodeIntelTooltip ? (isLanguageSupported ? tooltip : null) : tooltip
+                    )
 
                 return uniqueTooltips
             }),
@@ -507,12 +513,17 @@ export function codeIntelTooltipsExtension(): Extension {
             update(update: ViewUpdate) {
                 if (update.viewportChanged) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM.
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     * Ignore cases when viewport change is caused by navigating to next/previous search result
+                     * (e.g., by clicking 'Enter' when the search input field is focused).
                      */
                     view.requestMeasure({
                         read(view: EditorView) {
-                            if (!view.contentDOM.contains(document.activeElement)) {
+                            if (
+                                !view.contentDOM.contains(document.activeElement) &&
+                                !document.activeElement?.closest(`#${BLOB_SEARCH_CONTAINER_ID}`)
+                            ) {
                                 view.contentDOM.focus()
                             }
                         },

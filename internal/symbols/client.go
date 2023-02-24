@@ -324,8 +324,7 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 		return nil, err
 	}
 
-	response := protoResponse.ToInternal()
-	return &response, nil
+	return protoResponse.ToInternal(), nil
 }
 
 func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
@@ -521,7 +520,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
+	conn, err := defaults.DialContext(ctx, u.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}

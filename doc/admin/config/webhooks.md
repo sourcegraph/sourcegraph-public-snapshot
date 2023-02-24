@@ -73,7 +73,7 @@ Done! Sourcegraph will now receive webhook events from GitHub and use them to sy
 
 Follow the same steps as above, but ensure you include the `push` event under **Let me select individual events**
 
-#### User permissions
+#### Repository permissions
 
 Follow the same steps as above, but ensure you include the following events under **Let me select individual events**:
 - `Collaborator add, remove, or changed`

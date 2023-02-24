@@ -20,7 +20,9 @@ import (
 )
 
 type UploadService interface {
-	SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error
+	ExportRankingGraph(ctx context.Context, numRankingRoutines int, numBatchSize int, rankingJobEnabled bool) error
+	MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (int, int, error)
+	ReduceRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (float64, float64, error)
 	VacuumRankingGraph(ctx context.Context) error
 }
 

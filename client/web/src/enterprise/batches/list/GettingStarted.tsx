@@ -3,11 +3,10 @@ import React from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../../components/CallToActionBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -78,18 +77,18 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             </div>
         </Container>
         {isSourcegraphDotCom ? (
-            <CloudCtaBanner variant="filled">
-                To automate changes across your team's private repos,{' '}
+            <CallToActionBanner variant="filled">
+                To automate changes across your team's private repositories,{' '}
                 <Link
-                    to={buildCloudTrialURL(authenticatedUser, 'batch')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'BatchChangesGettingStarted' })}
+                    to="https://about.sourcegraph.com"
+                    onClick={() =>
+                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
+                    }
                 >
-                    try Sourcegraph Cloud
+                    get Sourcegraph Enterprise
                 </Link>
                 .
-            </CloudCtaBanner>
+            </CallToActionBanner>
         ) : (
             <div className="d-flex justify-content-start">
                 <CtaBanner

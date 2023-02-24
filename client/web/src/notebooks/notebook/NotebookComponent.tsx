@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -11,7 +11,6 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
@@ -34,7 +33,6 @@ import styles from './NotebookComponent.module.scss'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
     globbing: boolean
@@ -84,7 +82,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         exportedFileName,
         isEmbedded,
         authenticatedUser,
-        isLightTheme,
         telemetryService,
         isSourcegraphDotCom,
         platformContext,
@@ -378,7 +375,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     onAddBlock,
                     onMoveBlock,
                     onDuplicateBlock,
-                    isLightTheme,
                     isReadOnly,
                     isSelected,
                     showMenu: isSelected || !isSomethingElseSelected,
@@ -434,7 +430,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onMoveBlock,
                 onDuplicateBlock,
                 isEmbedded,
-                isLightTheme,
                 isReadOnly,
                 selectedBlockId,
                 telemetryService,

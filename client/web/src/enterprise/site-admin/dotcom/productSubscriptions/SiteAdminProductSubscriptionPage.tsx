@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 

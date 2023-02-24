@@ -251,7 +251,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe('')
+        expect(page.locationRef.current?.search).toBe('')
     })
 
     it('supports forward pagination', async () => {
@@ -270,7 +270,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?after=${getCursorForId('3')}`)
+        expect(page.locationRef.current?.search).toBe(`?after=${getCursorForId('3')}`)
 
         await goToNextPage(page)
 
@@ -285,7 +285,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?after=${getCursorForId('6')}`)
+        expect(page.locationRef.current?.search).toBe(`?after=${getCursorForId('6')}`)
 
         await goToNextPage(page)
 
@@ -298,7 +298,7 @@ describe('usePageSwitcherPagination', () => {
         expect(() => page.getByText('Next page')).toThrowError(/Unable to find an element/)
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?after=${getCursorForId('9')}`)
+        expect(page.locationRef.current?.search).toBe(`?after=${getCursorForId('9')}`)
     })
 
     it('supports restoration from forward pagination URL', async () => {
@@ -332,7 +332,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe('')
+        expect(page.locationRef.current?.search).toBe('')
     })
 
     it('supports jumping to the last page', async () => {
@@ -351,7 +351,7 @@ describe('usePageSwitcherPagination', () => {
         expect(() => page.getByText('Next page')).toThrowError(/Unable to find an element/)
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe('?last=3')
+        expect(page.locationRef.current?.search).toBe('?last=3')
     })
 
     it('supports restoration from last page URL', async () => {
@@ -386,7 +386,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?before=${getCursorForId('8')}`)
+        expect(page.locationRef.current?.search).toBe(`?before=${getCursorForId('8')}`)
 
         await goToPreviousPage(page)
 
@@ -401,7 +401,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?before=${getCursorForId('5')}`)
+        expect(page.locationRef.current?.search).toBe(`?before=${getCursorForId('5')}`)
 
         await goToPreviousPage(page)
 
@@ -414,7 +414,7 @@ describe('usePageSwitcherPagination', () => {
         expect(page.getByText('Next page')).toBeVisible()
         expect(page.getByText('Last page')).toBeVisible()
 
-        expect(page.history.location.search).toBe(`?before=${getCursorForId('2')}`)
+        expect(page.locationRef.current?.search).toBe(`?before=${getCursorForId('2')}`)
     })
 
     it('supports restoration from backward pagination URL', async () => {
@@ -448,6 +448,6 @@ describe('usePageSwitcherPagination', () => {
 
         await goToLastPage(page)
 
-        expect(page.history.location.search).toBe(`?after=${getCursorForId('6')}`)
+        expect(page.locationRef.current?.search).toBe(`?after=${getCursorForId('6')}`)
     })
 })

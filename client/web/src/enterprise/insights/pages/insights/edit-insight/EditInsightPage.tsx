@@ -1,7 +1,7 @@
 import { FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 

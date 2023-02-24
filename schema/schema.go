@@ -684,6 +684,12 @@ type ExcludedGitoliteRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
 }
+type ExcludedOtherRepo struct {
+	// Name description: The name of a Other repo ("my-repo") to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a Other repo to exclude from mirroring.
+	Pattern string `json:"pattern,omitempty"`
+}
 type ExistingChangesetSpec struct {
 	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
 	BaseRepository string `json:"baseRepository"`
@@ -1590,12 +1596,16 @@ type OrganizationInvitations struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	Repos []string `json:"repos"`
+	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
+	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
+	Repos   []string             `json:"repos"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
 	//
 	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	//
+	// Note: These patterns are ignored if using src-expose / src-serve.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }
@@ -2171,16 +2181,12 @@ type SettingsExperimentalFeatures struct {
 	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
-	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
-	SearchStreaming *bool `json:"searchStreaming,omitempty"`
 	// SetupWizard description: Experimental setup wizard
 	SetupWizard *bool `json:"setupWizard,omitempty"`
 	// ShowCodeMonitoringLogs description: Shows code monitoring logs tab.
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowSearchContext description: Enables the search context dropdown.
-	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
 	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
@@ -2246,11 +2252,9 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "searchStats")
-	delete(m, "searchStreaming")
 	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
-	delete(m, "showSearchContext")
 	delete(m, "symbolKindTags")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
@@ -2335,8 +2339,6 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
-	// AuthzSyncJobsRecordsLimit description: EXPERIMENTAL: Number of sync job records to retain. Set to a negative value to disable sync jobs records entirely.
-	AuthzSyncJobsRecordsLimit int `json:"authz.syncJobsRecordsLimit,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2575,7 +2577,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
-	delete(m, "authz.syncJobsRecordsLimit")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
