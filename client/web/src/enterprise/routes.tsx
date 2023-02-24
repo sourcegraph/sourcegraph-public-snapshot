@@ -84,7 +84,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     },
     {
         path: EnterprisePageRoutes.Cody,
-        element: <LegacyRoute render={props => <GlobalCodyArea {...props} />} />,
+        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
     },
     ...routes,
 ]
