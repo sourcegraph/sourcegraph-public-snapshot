@@ -50,7 +50,9 @@
   "eslint.packageManager": "pnpm",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {},
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],
