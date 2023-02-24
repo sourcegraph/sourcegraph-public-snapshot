@@ -6,7 +6,7 @@ FROM rust:1.61.0-alpine3.14@sha256:2e07fc0d66b00d6acc4b243f65f292aa21afc8a1df991
 RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
-ENV CFLAGS=-mno-outline-atomics
+ENV CFLAGS=-fno-outline-atomics
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
