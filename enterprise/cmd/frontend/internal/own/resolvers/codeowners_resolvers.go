@@ -72,9 +72,9 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return proto, nil
 }
 
-func (r *ownResolver) DeleteCodeownersFile(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.codeownersStore.DeleteCodeownersForRepo(ctx, api.RepoID(args.RepoID)); err != nil {
-		return nil, errors.Wrapf(err, "could not delete codeowners file for repo %d", args.RepoID)
+func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepoIDs...); err != nil {
+		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepoIDs)
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }

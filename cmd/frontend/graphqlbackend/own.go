@@ -28,7 +28,7 @@ type OwnResolver interface {
 	// Codeowners mutations
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
-	DeleteCodeownersFile(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
+	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 }
 
 type OwnershipConnectionResolver interface {
@@ -70,7 +70,7 @@ type CodeownersFileArgs struct {
 }
 
 type DeleteCodeownersFileArgs struct {
-	RepoID int32
+	RepoIDs []int32
 }
 
 type CodeownersIngestedFilesArgs struct {

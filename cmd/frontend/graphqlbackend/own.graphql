@@ -143,9 +143,9 @@ extend type Mutation {
     """
     updateCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
     """
-    deleteCodeownersFile deletes any existing Codeowners file for the given repository.
+    deleteCodeownersFile deletes any existing Codeowners file for the given repositories.
     """
-    deleteCodeownersFiles(repoID: Int!): EmptyResponse
+    deleteCodeownersFiles(repoIDs: [Int!]!): EmptyResponse
 }
 
 extend type Query {

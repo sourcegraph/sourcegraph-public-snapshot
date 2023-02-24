@@ -85,13 +85,13 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
-		if err := store.DeleteCodeownersForRepo(ctx, repoID); err != nil {
+		if err := store.DeleteCodeownersForRepos(ctx, 5); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("delete non existent codeowners file", func(t *testing.T) {
-		err := store.DeleteCodeownersForRepo(ctx, api.RepoID(6))
+		err := store.DeleteCodeownersForRepos(ctx, 6)
 		if err == nil {
 			t.Fatal("did not return useful not found information")
 		}
