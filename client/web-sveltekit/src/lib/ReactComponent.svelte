@@ -1,8 +1,8 @@
 <script lang="ts">
-    import React from "react"
-    import { createRoot, type Root } from "react-dom/client"
-    import { onDestroy, onMount } from "svelte"
-    import { ReactAdapter } from "./react-interop"
+    import React from 'react'
+    import { createRoot, type Root } from 'react-dom/client'
+    import { onDestroy, onMount } from 'svelte'
+    import { ReactAdapter } from './react-interop'
 
     type T = $$Generic<{}>
 
@@ -11,7 +11,7 @@
     export let route: string
 
     let container: HTMLDivElement
-    let root: Root|null
+    let root: Root | null
 
     onMount(() => {
         createRootIfNecessary(container)
@@ -34,10 +34,7 @@
                 {
                     route,
                 },
-                React.createElement(
-                    component,
-                    props
-                )
+                React.createElement(component, props)
             )
         )
     }

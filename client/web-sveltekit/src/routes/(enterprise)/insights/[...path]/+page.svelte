@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {CodeInsightsRouter} from '@sourcegraph/web/src/enterprise/insights/CodeInsightsRouter'
+    import { CodeInsightsRouter } from '$lib/web'
     import { PUBLIC_DOTCOM } from '$env/static/public'
     import type { PageData } from './$types'
     import ReactComponent from '$lib/ReactComponent.svelte'
@@ -21,4 +21,3 @@
 </script>
 
 <ReactComponent route="/insights/*" component={CodeInsightsRouter} {props} />
-

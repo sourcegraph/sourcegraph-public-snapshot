@@ -17,6 +17,8 @@ export type { ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
 export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
 export { setExperimentalFeaturesFromSettings } from '@sourcegraph/web/src/stores/experimentalFeatures'
+export { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '@sourcegraph/web/src/notebooks/GlobalNotebooksArea'
+export { CodeInsightsRouter } from '@sourcegraph/web/src/enterprise/insights/CodeInsightsRouter'
 
 // Copy of non-reusable code
 
