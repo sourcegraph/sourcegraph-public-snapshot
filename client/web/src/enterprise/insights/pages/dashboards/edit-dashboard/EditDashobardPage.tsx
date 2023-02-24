@@ -2,7 +2,7 @@ import { FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useParams, useNavigate } from 'react-router-dom-v5-compat'
+import { useParams, useNavigate } from 'react-router-dom'
 
 import {
     Button,

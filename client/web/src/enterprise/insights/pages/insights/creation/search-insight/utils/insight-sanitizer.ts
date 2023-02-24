@@ -1,6 +1,5 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedSeries } from '../../../../../components'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { MinimalSearchBasedInsightData, InsightType } from '../../../../../core'
 import { CreateInsightFormFields } from '../types'
 
@@ -22,7 +21,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             includeRepoRegexp: '',
             context: '',
             seriesDisplayOptions: {
-                limit: MAX_NUMBER_OF_SERIES,
+                limit: null,
                 numSamples: null,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,

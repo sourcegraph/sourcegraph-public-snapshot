@@ -1,42 +1,36 @@
 import { act, fireEvent } from '@testing-library/react'
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import { Route, Routes } from 'react-router-dom'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { RequestAccessPage } from './RequestAccessPage'
 
 function renderPage({
     route = '/request-access',
-    authenticatedUser = null,
     sourcegraphDotComMode = false,
     allowSignup = false,
     experimentalFeatures = {},
+    isAuthenticatedUser = false,
+    xhrHeaders = {},
 }: {
     route?: string
-    authenticatedUser?: AuthenticatedUser | null
+    isAuthenticatedUser?: boolean
     sourcegraphDotComMode?: boolean
     allowSignup?: boolean
     experimentalFeatures?: SiteConfiguration['experimentalFeatures']
+    xhrHeaders?: Record<string, string>
 } = {}) {
+    window.context = {
+        sourcegraphDotComMode,
+        allowSignup,
+        experimentalFeatures,
+        isAuthenticatedUser,
+        xhrHeaders,
+    } as any
     return renderWithBrandedContext(
         <Routes>
-            <Route
-                path="/request-access/*"
-                element={
-                    <RequestAccessPage
-                        authenticatedUser={authenticatedUser}
-                        context={{
-                            allowSignup,
-                            sourcegraphDotComMode,
-                            experimentalFeatures,
-                            xhrHeaders: {},
-                        }}
-                    />
-                }
-            />
+            <Route path="/request-access/*" element={<RequestAccessPage />} />
             <Route path="/sign-in" element={<div>Sign in</div>} />
         </Routes>,
         { route }
@@ -44,10 +38,14 @@ function renderPage({
 }
 
 describe('RequestAccessPage', () => {
+    const origContext = window.context
+    afterEach(() => {
+        window.context = origContext
+    })
     test('renders form if all conditions are met', () => {
-        const { history, getByTestId } = renderPage()
+        const { locationRef, getByTestId } = renderPage()
 
-        expect(history.location.pathname).toBe('/request-access')
+        expect(locationRef?.current?.pathname).toBe('/request-access')
         expect(document.title).toBe('Request access - Sourcegraph')
         expect(getByTestId('request-access-form')).toBeInTheDocument()
     })
@@ -79,27 +77,27 @@ describe('RequestAccessPage', () => {
 
     describe('redirects', () => {
         test('if authenticatedUser', () => {
-            const { history } = renderPage({ authenticatedUser: mockAuthenticatedUser })
-            expect(history.location.pathname).toBe('/search')
+            const { locationRef } = renderPage({ isAuthenticatedUser: true })
+            expect(locationRef?.current?.pathname).toBe('/search')
         })
 
         test('if allowSignup=true', () => {
-            const { history } = renderPage({ allowSignup: true })
-            expect(history.location.pathname).toBe('/sign-in')
+            const { locationRef } = renderPage({ allowSignup: true })
+            expect(locationRef?.current?.pathname).toBe('/sign-in')
         })
 
         test('if sourcegraphDotComMode=true', () => {
-            const { history } = renderPage({ sourcegraphDotComMode: true })
-            expect(history.location.pathname).toBe('/sign-in')
+            const { locationRef } = renderPage({ sourcegraphDotComMode: true })
+            expect(locationRef?.current?.pathname).toBe('/sign-in')
         })
 
         test('if experimentalFeatures.accessRequests.enabled=false', () => {
-            const { history } = renderPage({
+            const { locationRef } = renderPage({
                 experimentalFeatures: {
                     'accessRequests.enabled': false,
                 },
             })
-            expect(history.location.pathname).toBe('/sign-in')
+            expect(locationRef?.current?.pathname).toBe('/sign-in')
         })
     })
 })

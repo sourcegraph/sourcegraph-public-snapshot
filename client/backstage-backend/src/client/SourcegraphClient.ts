@@ -1,6 +1,6 @@
 import { getGraphQLClient, GraphQLClient } from '@sourcegraph/http-client'
 import { generateCache } from '@sourcegraph/shared/src/backend/apolloCache'
-import { UserQuery, Query, AuthenticatedUser, AuthenticatedUserQuery, SearchQuery, SearchResult } from './Query'
+import { UserQuery, Query, SearchQuery, SearchResult, SearchResults } from './Query'
 
 export interface Config {
     endpoint: string
@@ -10,26 +10,11 @@ export interface Config {
 
 export interface UserService {
     currentUsername(): Promise<string>
-    getAuthenticatedUser(): Promise<AuthenticatedUser>
-}
-
-export const createService = (config: Config): SourcegraphService => {
-    const { endpoint, token, sudoUsername } = config
-    const base = new BaseClient(endpoint, token, sudoUsername || '')
-    return new SourcegraphClient(base)
-}
-
-export const createDummySearch = (): SearchService => {
-    return {
-        searchQuery: async (_: string): Promise<SearchResult[]> => {
-            console.log('DummySearch not doing anything')
-            return []
-        },
-    }
 }
 
 export interface SearchService {
-    searchQuery(query: string): Promise<SearchResult[]>
+    searchQuery(query: string): Promise<SearchResults>
+    doQuery<T>(query: Query<T>): Promise<T>
 }
 
 export interface SourcegraphService {
@@ -37,7 +22,13 @@ export interface SourcegraphService {
     Search: SearchService
 }
 
-class SourcegraphClient implements SourcegraphService, UserService, SearchService {
+export const createService = async (config: Config): Promise<SourcegraphService> => {
+    const { endpoint, token, sudoUsername } = config
+    const base = await BaseClient.create(endpoint, token, sudoUsername || '')
+    return new SourcegraphClient(base)
+}
+
+export class SourcegraphClient implements SourcegraphService, UserService, SearchService {
     private client: BaseClient
     Users: UserService = this
     Search: SearchService = this
@@ -47,29 +38,25 @@ class SourcegraphClient implements SourcegraphService, UserService, SearchServic
     }
 
     async searchQuery(query: string): Promise<SearchResult[]> {
-        const q = new SearchQuery(query)
-        const results = await this.client.fetch(q)
+        return await this.doQuery(new SearchQuery(query))
+    }
 
-        return results
+    async doQuery<T>(query: Query<T>): Promise<T> {
+        return await this.client.fetch(query)
     }
 
     async currentUsername(): Promise<string> {
         const q = new UserQuery()
 
-        const data = await this.client.fetch(q)
-        return data[0]
-    }
-
-    async getAuthenticatedUser(): Promise<AuthenticatedUser> {
-        const q = new AuthenticatedUserQuery()
-        const data = await this.client.fetch(q)
-        return data
+        const result = await this.client.fetch(q)
+        return result
     }
 }
 
-class BaseClient {
-    private static client: GraphQLClient
-    constructor(baseUrl: string, token: string, sudoUsername: string) {
+export class BaseClient {
+    private client: GraphQLClient
+
+    static async create(baseUrl: string, token: string, sudoUsername: string): Promise<BaseClient> {
         const authz =
             sudoUsername?.length > 0 ? `token - sudo user = "${sudoUsername}", token = "${token}"` : `token ${token}`
         const headers: RequestInit['headers'] = {
@@ -77,21 +64,24 @@ class BaseClient {
             Authorization: authz,
         }
 
-        if (!BaseClient.client) {
-            getGraphQLClient({
+        try {
+            const client: GraphQLClient = await getGraphQLClient({
                 baseUrl: baseUrl,
                 headers: headers,
                 isAuthenticated: true,
                 cache: generateCache(),
-            }).then(client => {
-                BaseClient.client = client
             })
+            return new BaseClient(client)
+        } catch (e) {
+            throw new Error(`failed to create graphsql client: ${e}`)
         }
+    }
+    constructor(client: GraphQLClient) {
+        this.client = client
     }
 
     async fetch<T>(query: Query<T>): Promise<T> {
-        const client = BaseClient.client
-        const { data } = await client.query({
+        const { data } = await this.client.query({
             query: query.gql(),
             variables: query.vars(),
         })

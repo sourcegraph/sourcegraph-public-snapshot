@@ -180,7 +180,10 @@ describe('Search aggregation', () => {
                                 latestSettings: {
                                     id: 0,
                                     contents: JSON.stringify({
-                                        experimentalFeatures: { searchResultsAggregations: true },
+                                        experimentalFeatures: {
+                                            searchResultsAggregations: true,
+                                            searchQueryInput: 'v1',
+                                        },
                                     }),
                                 },
                             },

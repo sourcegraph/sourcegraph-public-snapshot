@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
@@ -18,7 +18,6 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -51,7 +50,6 @@ export interface StreamingSearchResultsProps
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
-        ThemeProps,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps {
@@ -306,11 +304,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
 
-    const handleSearchAggregationBarClick = (query: string): void => {
+    /**
+     * The `updatedSearchQuery` is required in case we synchronously update the search
+     * query in the event handlers and want to submit a new search. Without this argument,
+     * the `handleSidebarSearchSubmit` function uses the outdated location reference
+     * because the component was not re-rendered yet.
+     *
+     * Example use-case: search-aggregation result bar click where we first update the URL
+     * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+     */
+    const handleSearchAggregationBarClick = (query: string, updatedSearchQuery: string): void => {
         const { selectedSearchContextSpec } = props
         submitSearch({
             historyOrNavigate: navigate,
-            location,
+            location: { ...location, search: updatedSearchQuery },
             selectedSearchContextSpec,
             caseSensitive,
             patternType,

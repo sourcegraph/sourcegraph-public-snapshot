@@ -1,5 +1,5 @@
 import { within } from '@testing-library/dom'
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import { Route, Routes } from 'react-router-dom'
 
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

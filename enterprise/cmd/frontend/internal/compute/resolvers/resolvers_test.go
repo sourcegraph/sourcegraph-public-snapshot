@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -50,8 +50,8 @@ func TestToResultResolverList(t *testing.T) {
 			}},
 		},
 	}
-	autogold.Want("resolver copies all match results", `["a","b"]`).Equal(t, test("a|b", nonNilMatches))
+	autogold.Expect(`["a","b"]`).Equal(t, test("a|b", nonNilMatches))
 
 	producesNilResult := []result.Match{&result.CommitMatch{}}
-	autogold.Want("resolver ignores nil compute result", "[]").Equal(t, test("a|b", producesNilResult))
+	autogold.Expect("[]").Equal(t, test("a|b", producesNilResult))
 }

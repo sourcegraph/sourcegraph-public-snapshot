@@ -523,8 +523,13 @@ type RepositoryPreviewPayloadResolver interface {
 	NumberOfRepositories(ctx context.Context) *int32
 }
 
+type BackfillQueueID struct {
+	BackfillID int
+	InsightID  string
+}
 type BackfillQueueItemResolver struct {
 	BackfillID      int
+	InsightUniqueID string
 	InsightTitle    string
 	CreatorID       *int32
 	Label           string
@@ -534,7 +539,7 @@ type BackfillQueueItemResolver struct {
 }
 
 func (r *BackfillQueueItemResolver) ID() graphql.ID {
-	return relay.MarshalID("backfill", r.BackfillID)
+	return relay.MarshalID("backfillQueueItem", BackfillQueueID{BackfillID: r.BackfillID, InsightID: r.InsightUniqueID})
 }
 
 func (r *BackfillQueueItemResolver) IDInt32() int32 {

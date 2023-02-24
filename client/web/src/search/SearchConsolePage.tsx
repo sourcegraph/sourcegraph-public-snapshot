@@ -3,7 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
@@ -120,7 +120,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                     <div className={styles.editor}>
                         <CodeMirrorQueryInput
                             className="d-flex flex-column overflow-hidden"
-                            isLightTheme={props.isLightTheme}
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}

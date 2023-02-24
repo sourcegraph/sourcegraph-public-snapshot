@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -620,6 +621,13 @@ type ExternalServiceSyncJob struct {
 	ReposDeleted    int32
 	ReposModified   int32
 	ReposUnmodified int32
+}
+
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1858,6 +1866,15 @@ type TeamMember struct {
 	TeamID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type CodeownersFile struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	RepoID   api.RepoID
+	Contents string
+	Proto    *codeownerspb.File
 }
 
 type AccessRequestStatus string

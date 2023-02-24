@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, ErrorAlert } from '@sourcegraph/wildcard'

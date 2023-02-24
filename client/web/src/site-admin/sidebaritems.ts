@@ -7,6 +7,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
 
+import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
@@ -89,6 +90,11 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Repositories',
             to: '/site-admin/repositories',
+        },
+        {
+            label: 'Packages',
+            to: '/site-admin/packages',
+            condition: isPackagesEnabled,
         },
     ],
 }

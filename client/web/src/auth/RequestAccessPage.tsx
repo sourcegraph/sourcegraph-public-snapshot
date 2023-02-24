@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import { Text, Link, ErrorAlert, Form, Input, Button, LoadingSpinner, TextArea, Label } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
@@ -21,14 +20,14 @@ import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 interface RequestAccessFormProps {
     onSuccess: () => void
     onError: (error?: any) => void
-    context: Pick<SourcegraphContext, 'xhrHeaders'>
+    xhrHeaders: SourcegraphContext['xhrHeaders']
 }
 
 /**
  * The request access form smart component.
  * It handles the form submission.
  */
-const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ onSuccess, onError, context }) => {
+const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ onSuccess, onError, xhrHeaders }) => {
     const [loading, setLoading] = useState<boolean>(false)
     const [email, setEmail] = useState<string>('')
     const [name, setName] = useState<string>('')
@@ -46,7 +45,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
                 credentials: 'same-origin',
                 method: 'POST',
                 headers: {
-                    ...context.xhrHeaders,
+                    ...xhrHeaders,
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
@@ -127,28 +126,22 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
     )
 }
 
-interface RequestAccessPageProps {
-    authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'allowSignup' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'experimentalFeatures'>
-}
 /**
  * The request access page component.
  */
-export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<RequestAccessPageProps>> = ({
-    context,
-    authenticatedUser,
-}) => {
+export const RequestAccessPage: React.FunctionComponent<{}> = () => {
     useEffect(() => eventLogger.logPageView('RequestAccessPage'), [])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
+    const { sourcegraphDotComMode, allowSignup, experimentalFeatures, isAuthenticatedUser, xhrHeaders } = window.context
     const isRequestAccessAllowed = checkIsRequestAccessAllowed(
-        context.sourcegraphDotComMode,
-        context.allowSignup,
-        context.experimentalFeatures['accessRequests.enabled']
+        sourcegraphDotComMode,
+        allowSignup,
+        experimentalFeatures['accessRequests.enabled']
     )
 
-    if (authenticatedUser) {
+    if (isAuthenticatedUser) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
     }
@@ -181,7 +174,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
                         element={
                             <RequestAccessForm
                                 onError={setError}
-                                context={context}
+                                xhrHeaders={xhrHeaders}
                                 onSuccess={() => navigate('done')}
                             />
                         }
@@ -199,7 +192,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
             <PageTitle title="Request access" />
             <HeroPage
                 icon={SourcegraphIcon}
-                iconLinkTo={context.sourcegraphDotComMode ? '/search' : undefined}
+                iconLinkTo={sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
                 title="Request access to Sourcegraph"

@@ -9,8 +9,7 @@ export const SymbolKind: React.FC<{
     kind: SymbolKindEnum
     className?: string
     symbolKindTags?: boolean
-}> = ({ symbolKindTags, ...props }) => {
+}> = ({ symbolKindTags, className, kind }) => {
     const Component = symbolKindTags ? SymbolTag : SymbolIcon
-
-    return <Component {...props} />
+    return <Component kind={kind} className={className} />
 }

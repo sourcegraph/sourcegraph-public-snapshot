@@ -1,6 +1,6 @@
 /** Component exports */
+export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
-export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -52,7 +52,7 @@ export { SourcegraphIcon } from './SourcegraphIcon'
 export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
 export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
-export { Tree } from './Tree'
+export { Tree, flattenTree } from './Tree'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
@@ -100,6 +100,7 @@ export {
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { ButtonGroupProps } from './Button'
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { ButtonProps } from './Button'

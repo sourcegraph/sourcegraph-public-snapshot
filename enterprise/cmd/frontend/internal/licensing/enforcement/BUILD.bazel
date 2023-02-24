@@ -41,11 +41,10 @@ go_test(
         "//enterprise/internal/licensing",
         "//internal/auth",
         "//internal/database",
-        "//internal/database/basestore",
         "//internal/extsvc",
         "//internal/types",
+        "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
     ],
 )

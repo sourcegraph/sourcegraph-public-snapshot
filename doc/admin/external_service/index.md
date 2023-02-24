@@ -140,9 +140,9 @@ A code host status is:
 - 🔴 _Not available:_ This functionality is not available within Sourcegraph
 
 ## Tier 2: Code Hosts
-We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and many more. Today, we do not offer native integrations with these code hosts and customers are advised to leverage [Src-srv-git](./non-git.md) and the [explicit permissions API](../repo/permissions.md#explicit-permissions-api) as a way to ingest code and permissions respectively into Sourcegraph. 
+We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and many more. Today, we do not offer native integrations with these code hosts and customers are advised to leverage [Src-srv-git](./non-git.md) and the [explicit permissions API](../permissions/api.md) as a way to ingest code and permissions respectively into Sourcegraph. 
 
-[Src-srv-git](./non-git.md) and the [explicit permissions API](../repo/permissions.md#explicit-permissions-api) follow the same scale guidance shared above (up to 100k repos and 10k users). 
+[Src-srv-git](./non-git.md) and the [explicit permissions API](../permissions/api.md) follow the same scale guidance shared above (up to 100k repos and 10k users). 
 
 
 ## Full Code Host Docs

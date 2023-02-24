@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail, mdiMicrosoftAzureDevops } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 
@@ -113,6 +113,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
                                 {provider.serviceType === 'bitbucketCloud' && (
                                     <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}
+                                {provider.serviceType === 'azuredevops' && (
+                                    <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
                                 )}{' '}
                                 Continue with {provider.displayName}
                             </Button>
@@ -133,20 +136,20 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph?{' '}
-                        {props.isSourcegraphDotCom ? (
-                            <Link
-                                to="https://signup.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() =>
-                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedOut' })
-                                }
-                            >
-                                Sign up
-                            </Link>
-                        ) : (
-                            <Link to="/sign-up">Sign up</Link>
+                        New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
+                        {props.isSourcegraphDotCom && (
+                            <>
+                                To use Sourcegraph on private repositories,
+                                <Link
+                                    to="https://signup.sourcegraph.com"
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                                    }
+                                >
+                                    get Sourcegraph Enterprise
+                                </Link>
+                                .
+                            </>
                         )}
                     </Text>
                 ) : isRequestAccessAllowed ? (
@@ -155,7 +158,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         site admin.
                     </Text>
                 ) : (
-                    <Text className="text-muted">Need an account? Contact your site admin</Text>
+                    <Text className="text-muted">Need an account? Contact your site admin.</Text>
                 )}
             </div>
         )
