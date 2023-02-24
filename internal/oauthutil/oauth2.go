@@ -27,6 +27,9 @@ type OAuthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
+
+	// AdditionalArgs if any needed by a specific provider that may have a custom implementation.
+	AdditionalArgs map[string]string
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.

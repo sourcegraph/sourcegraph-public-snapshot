@@ -62,15 +62,11 @@ type Provider struct {
 }
 
 func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
-	externalURL, err := url.Parse(cfg.SiteConfig().ExternalURL)
+	callbackURL, err := azuredevops.GetRedirectURL()
 	if err != nil {
-		problems = append(problems, conf.NewSiteProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
-
+		problems = append(problems, conf.NewSiteProblem(err.Error()))
 		return ps, problems
 	}
-
-	callbackURL := *externalURL
-	callbackURL.Path = "/.auth/azuredevops/callback"
 
 	var configured bool
 	for _, pr := range cfg.SiteConfig().AuthProviders {
@@ -80,7 +76,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 
 		setProviderDefaults(pr.AzureDevOps)
 
-		provider, providerProblems := parseProvider(logger, db, pr, callbackURL)
+		provider, providerProblems := parseProvider(logger, db, pr, *callbackURL)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 
 		if provider == nil {
@@ -155,8 +151,8 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 				ClientSecret: azureProvider.ClientSecret,
 				Scopes:       strings.Split(azureProvider.ApiScope, ","),
 				Endpoint: oauth2.Endpoint{
-					AuthURL:  azuredevops.VISUAL_STUDIO_APP_URL + "/oauth2/authorize",
-					TokenURL: azuredevops.VISUAL_STUDIO_APP_URL + "/oauth2/token",
+					AuthURL:  azuredevops.VISUAL_STUDIO_APP_URL + "oauth2/authorize",
+					TokenURL: azuredevops.VISUAL_STUDIO_APP_URL + "oauth2/token",
 					// The access_token request wants the body as application/x-www-form-urlencoded. See:
 					// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#http-request-body---authorize-app
 					AuthStyle: oauth2.AuthStyleInParams,

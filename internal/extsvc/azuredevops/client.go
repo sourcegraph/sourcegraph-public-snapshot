@@ -10,14 +10,18 @@ import (
 	"net/url"
 
 	"github.com/goware/urlx"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
 )
 
 const (
-	azureDevOpsServicesURL = "https://dev.azure.com/"
+	AZURE_DEV_OPS_API_URL = "https://dev.azure.com/"
 	// TODO: @varsanojidan look into which API version/s we want to support.
 	apiVersion              = "7.0"
 	continuationTokenHeader = "x-ms-continuationtoken"
@@ -78,17 +82,20 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// Add Basic Auth headers for authenticated requests.
+	// Add authentication headers for authenticated requests.
 	c.auth.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return "", err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
+	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
 		return "", err
 	}
+
+	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -96,7 +103,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return "", &httpError{
+		return "", &HTTPError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
@@ -129,9 +136,59 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
 // Services (https://dev.azure.com
 func (c *Client) IsAzureDevOpsServices() bool {
-	return c.URL.String() == azureDevOpsServicesURL
+	return c.URL.String() == AZURE_DEV_OPS_API_URL
 }
 
-func (e *httpError) Error() string {
-	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StatusCode, e.URL)
+}
+
+func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.AzureDevOps != nil {
+			authURL, err := url.JoinPath(VISUAL_STUDIO_APP_URL, "oauth2/authorize")
+			if err != nil {
+				continue
+			}
+			tokenURL, err := url.JoinPath(VISUAL_STUDIO_APP_URL, "oauth2/token")
+			if err != nil {
+				continue
+			}
+
+			redirectURL, err := GetRedirectURL()
+			if err != nil {
+				return nil, err
+			}
+
+			p := authProvider.AzureDevOps
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  authURL,
+					TokenURL: tokenURL,
+				},
+				AdditionalArgs: map[string]string{
+					"client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+					"client_assertion":      url.QueryEscape(p.ClientSecret),
+					"grant_type":            "refresh_token",
+					"assertion":             url.QueryEscape(refreshToken),
+					"redirect_uri":          redirectURL.String(),
+				},
+			}, nil
+		}
+	}
+
+	return nil, errors.New("No authprovider configured for AzureDevOps, check site configuraiton.")
+}
+
+func GetRedirectURL() (*url.URL, error) {
+	externalURL, err := url.Parse(conf.SiteConfig().ExternalURL)
+	if err != nil {
+		return nil, errors.New("Could not parse `externalURL`, which is needed to determine the OAuth callback URL.")
+	}
+
+	callbackURL := *externalURL
+	callbackURL.Path = "/.auth/azuredevops/callback"
+	return &callbackURL, nil
 }

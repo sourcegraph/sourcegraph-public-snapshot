@@ -117,6 +117,10 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 		v.Set("refresh_token", refreshToken)
 	}
 
+	for key, value := range oauthCtx.AdditionalArgs {
+		v.Set(key, value)
+	}
+
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
 
 	if err != nil {

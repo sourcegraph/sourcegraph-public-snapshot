@@ -54,7 +54,7 @@ type ExternalServiceStore interface {
 	//
 	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 	// recalculated based on whether "authorization" field is presented in
-	// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
+	// `es.Config`. For Sourcegraph Dotcom, the `es.Unrestricted` will always be
 	// false (i.e. enforce permissions).
 	Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error
 
@@ -1597,6 +1597,11 @@ WHERE EXISTS(
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
 	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+
+	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
+	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
+		es.Unrestricted = !enforcePermissions.Bool()
+	}
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

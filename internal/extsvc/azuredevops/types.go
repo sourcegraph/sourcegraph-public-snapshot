@@ -226,7 +226,7 @@ type CreatorInfo struct {
 	ImageURL    string `json:"imageUrl"`
 }
 
-type httpError struct {
+type HTTPError struct {
 	StatusCode int
 	URL        *url.URL
 	Body       []byte
