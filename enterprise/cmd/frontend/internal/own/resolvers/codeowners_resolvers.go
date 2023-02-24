@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
@@ -23,7 +24,16 @@ var (
 	_ graphqlbackend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
 )
 
+func (r *ownResolver) ViewerCanAdminister(ctx context.Context) error {
+	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
+	// Eventually we should allow users to access the Get method, but check that they have view permissions on the repository.
+	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+}
+
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	if err := r.ViewerCanAdminister(ctx); err != nil {
+		return nil, err
+	}
 	proto, err := parseInputString(args.FileContents)
 	if err != nil {
 		return nil, err
@@ -44,6 +54,9 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	if err := r.ViewerCanAdminister(ctx); err != nil {
+		return nil, err
+	}
 	proto, err := parseInputString(args.FileContents)
 	if err != nil {
 		return nil, err
@@ -73,6 +86,9 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.ViewerCanAdminister(ctx); err != nil {
+		return nil, err
+	}
 	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepoIDs...); err != nil {
 		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepoIDs)
 	}
@@ -80,6 +96,9 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
+	if err := r.ViewerCanAdminister(ctx); err != nil {
+		return nil, err
+	}
 	connectionResolver := &codeownersIngestedFileConnectionResolver{
 		codeownersStore: r.codeownersStore,
 	}
