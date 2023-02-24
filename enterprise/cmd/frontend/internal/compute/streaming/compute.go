@@ -39,27 +39,29 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
 	s := stream.New().WithMaxGoroutines(8)
-	cb := func(ev Event, err error) {
-		if err != nil {
-			select {
-			case errorC <- err:
-			default:
+	cb := func(ev Event, err error) stream.Callback {
+		return func() {
+			if err != nil {
+				select {
+				case errorC <- err:
+				default:
+				}
+			} else {
+				eventsC <- ev
 			}
-		} else {
-			eventsC <- ev
 		}
 	}
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if !event.Stats.Zero() {
 			s.Go(func() stream.Callback {
-				return func() { cb(Event{nil, event.Stats}, nil) }
+				return cb(Event{nil, event.Stats}, nil)
 			})
 		}
 		for _, match := range event.Results {
 			match := match
 			s.Go(func() stream.Callback {
 				results, err := toComputeResult(ctx, computeCommand, match)
-				return func() { cb(Event{results, streaming.Stats{}}, err) }
+				return cb(Event{results, streaming.Stats{}}, err)
 			})
 		}
 	})
