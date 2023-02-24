@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes, useState } from 'react'
 
 import classNames from 'classnames'
 import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { Container, Text } from '@sourcegraph/wildcard'
 
 import { CustomNextButton } from '../setup-steps'
 
+import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
@@ -19,6 +20,8 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
     const { className, ...attributes } = props
 
     const location = useLocation()
+    const [codeHostToDelete, setCodeHostToDelete] = useState<CodeHostToDelete | null>(null)
+
     const editConnectionRouteMatch = matchPath('/setup/remote-repositories/:codehostId/edit', location.pathname)
     const newConnectionRouteMatch = matchPath('/setup/remote-repositories/:codeHostType/create', location.pathname)
 
@@ -34,6 +37,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                         activeConnectionId={editConnectionRouteMatch?.params?.codehostId}
                         createConnectionType={newConnectionRouteMatch?.params?.codeHostType}
                         className={styles.navigation}
+                        onCodeHostDelete={setCodeHostToDelete}
                     />
                 </Container>
 
@@ -41,12 +45,19 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                     <Routes>
                         <Route index={true} element={<CodeHostsPicker />} />
                         <Route path=":codeHostType/create" element={<CodeHostCreation />} />
-                        <Route path=":codehostId/edit" element={<CodeHostEdit />} />
+                        <Route
+                            path=":codehostId/edit"
+                            element={<CodeHostEdit onCodeHostDelete={setCodeHostToDelete} />}
+                        />
                     </Routes>
                 </Container>
             </section>
 
             <CustomNextButton label="Custom next step label" disabled={true} />
+
+            {codeHostToDelete && (
+                <CodeHostDeleteModal codeHost={codeHostToDelete} onDismiss={() => setCodeHostToDelete(null)} />
+            )}
         </div>
     )
 }

@@ -6,7 +6,6 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -68,7 +67,6 @@ export interface UserAreaRoute extends RouteV6Descriptor<UserAreaRouteContext> {
 interface UserAreaProps
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -93,7 +91,6 @@ interface UserAreaProps
 export interface UserAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,

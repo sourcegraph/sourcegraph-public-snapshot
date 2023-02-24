@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -35,17 +35,15 @@ import {
     setSearchPatternType,
     setSearchMode,
 } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
 import { useRecentSearches } from '../input/useRecentSearches'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
@@ -72,8 +70,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const location = useLocation()
     const navigate = useNavigate()
 
+    const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -156,6 +155,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}
@@ -163,7 +163,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             queryState={props.queryState}
             onChange={props.setQueryState}
             onSubmit={onSubmit}
-            isLightTheme={props.isLightTheme}
+            isLightTheme={isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
             extensions={experimentalExtensions}

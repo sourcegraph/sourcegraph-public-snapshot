@@ -123,7 +123,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes/specs',
-            render: props => <BatchSpecsPage {...props} />,
+            render: () => <BatchSpecsPage />,
             condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
                 batchChangesEnabled && batchChangesExecutionEnabled,
         },

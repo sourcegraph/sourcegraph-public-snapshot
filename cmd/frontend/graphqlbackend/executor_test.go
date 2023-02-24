@@ -60,10 +60,17 @@ func TestExecutorResolver(t *testing.T) {
 			// The executor is not outdated when both sourcegraph and executor are the same (insiders).
 			{
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_patch",
-				sourcegraphVersion: "169135_2022-08-25_a2b623dce148",
+				sourcegraphVersion: "169135_2022-08-25_4.4-a2b623dce148",
 				isActive:           true,
 				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
 				description:        "executor and the sourcegraph instance are the same version (insiders)",
+			},
+			{
+				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_patch",
+				sourcegraphVersion: "169135_2022-08-25_a2b623dce148",
+				isActive:           true,
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
+				description:        "executor and the sourcegraph instance are the same version (insiders - old version)",
 			},
 			// The executor is outdated if the sourcegraph version is more than one version
 			// greater than the executor version (SEMVER).

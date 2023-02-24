@@ -21,7 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -43,6 +43,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
@@ -60,7 +61,6 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         CodeMirrorBlobProps {
     className: string
     wrapCode: boolean
@@ -177,7 +177,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
-        isLightTheme,
         ariaLabel,
         role,
         extensionsController,
@@ -225,6 +224,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [props, navigate, location]
     )
 
+    const isLightTheme = useIsLightTheme()
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
@@ -297,6 +297,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({

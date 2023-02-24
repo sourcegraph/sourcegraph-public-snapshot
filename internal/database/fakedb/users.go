@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Users partially implements database.UserStore using in-memory storage.
@@ -17,7 +18,7 @@ type Users struct {
 	list       []types.User
 }
 
-// NewUser creates new user in the fake user storage.
+// AddUser creates new user in the fake user storage.
 // This method is tailored for data setup in tests - it does not fail,
 // and conveniently returns ID of newly created user.
 func (fs Fakes) AddUser(u types.User) int32 {
@@ -43,4 +44,20 @@ func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 		return nil, database.ErrNoCurrentUser
 	}
 	return a.User(ctx, users)
+}
+
+func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+	if len(opts.UserIDs) == 0 {
+		return nil, errors.New("not implemented")
+	}
+	ret := []*types.User{}
+	for _, wantID := range opts.UserIDs {
+		for _, u := range users.list {
+			u := u
+			if u.ID == wantID {
+				ret = append(ret, &u)
+			}
+		}
+	}
+	return ret, nil
 }

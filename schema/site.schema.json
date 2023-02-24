@@ -906,11 +906,6 @@
       "type": "integer",
       "default": 5
     },
-    "authz.syncJobsRecordsLimit": {
-      "description": "EXPERIMENTAL: Number of sync job records to retain. Set to a negative value to disable sync jobs records entirely.",
-      "type": "integer",
-      "default": 100
-    },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
