@@ -140,6 +140,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of dashboards
   - Total count of insights per dashboard
   - Weekly count of time to complete an insight series backfill in seconds 
+  - Weekly count of requests of exports of Code Insights data
 - Search aggregations usage data
   - Weekly count of hovers over the search aggregations information icon
   - Weekly count of open/collapse clicks on the sidebar and expanded view of search aggregations
