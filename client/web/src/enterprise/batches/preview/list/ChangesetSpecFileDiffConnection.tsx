@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import { FileDiffNode, FileDiffNodeProps } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { Scalars, FileDiffFields } from '../../../../graphql-operations'
+import { FileDiffFields, Scalars } from '../../../../graphql-operations'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 

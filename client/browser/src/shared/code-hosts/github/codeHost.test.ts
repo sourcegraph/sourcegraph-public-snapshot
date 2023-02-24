@@ -10,10 +10,10 @@ import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/code
 import { CodeView } from '../shared/codeViews'
 
 import {
+    checkIsGitHubDotCom,
     createFileActionsToolbarMount,
     createFileLineContainerToolbarMount,
     githubCodeHost,
-    checkIsGitHubDotCom,
     isPrivateRepository,
     parseHash,
 } from './codeHost'

@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'

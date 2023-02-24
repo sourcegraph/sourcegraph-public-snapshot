@@ -1,20 +1,20 @@
 import React from 'react'
 
 import {
-    mdiSourceBranch,
-    mdiSourcePull,
-    mdiSourceMerge,
-    mdiDelete,
     mdiAlertCircle,
-    mdiAutorenew,
-    mdiTimerSand,
     mdiArchive,
+    mdiAutorenew,
+    mdiDelete,
     mdiLock,
+    mdiSourceBranch,
+    mdiSourceMerge,
+    mdiSourcePull,
+    mdiTimerSand,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Tooltip, Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 

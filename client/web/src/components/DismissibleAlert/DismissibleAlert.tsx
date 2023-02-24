@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Alert, AlertProps, Icon } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './DismissibleAlert.module.scss'
 

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { interval, Observable } from 'rxjs'
-import { switchMap, filter, take, tap } from 'rxjs/operators'
+import { filter, switchMap, take, tap } from 'rxjs/operators'
 
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useEventObservable } from '@sourcegraph/wildcard'

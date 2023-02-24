@@ -4,7 +4,7 @@ import fetch from 'node-fetch'
 import YAML from 'yaml'
 
 import { CreatedChangeset } from './github'
-import { readLine, cacheFolder } from './util'
+import { cacheFolder, readLine } from './util'
 
 // https://handbook.sourcegraph.com/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'

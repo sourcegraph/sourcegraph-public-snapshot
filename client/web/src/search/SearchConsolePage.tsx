@@ -8,24 +8,24 @@ import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
-    StreamingSearchResultsList,
-    StreamingSearchResultsListProps,
+    changeListener,
     CodeMirrorQueryInput,
     createDefaultSuggestions,
-    changeListener,
+    StreamingSearchResultsList,
+    StreamingSearchResultsListProps,
 } from '@sourcegraph/branded'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { parseSearchURLPatternType, parseSearchURLQuery, SearchStreamingProps } from '.'
 
 import styles from './SearchConsolePage.module.scss'
 

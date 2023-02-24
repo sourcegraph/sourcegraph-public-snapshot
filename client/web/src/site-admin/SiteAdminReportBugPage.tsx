@@ -5,7 +5,7 @@ import { mapValues, values } from 'lodash'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Alert, H2, Link, LoadingSpinner, Text, useObservable } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import azureDevOpsJSON from '../../../../schema/azuredevops.schema.json'

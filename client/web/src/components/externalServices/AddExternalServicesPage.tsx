@@ -4,13 +4,13 @@ import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, H2, H3, Icon, Link, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
-import { allExternalServices, AddExternalServiceOptions } from './externalServices'
+import { AddExternalServiceOptions, allExternalServices } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
 

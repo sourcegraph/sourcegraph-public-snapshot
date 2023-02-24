@@ -1,20 +1,16 @@
-export * from './live-preview'
+export { CodeInsightTimeStepPicker } from './code-insight-time-step-picker/CodeInsightTimeStepPicker'
+export { CodeInsightDashboardsVisibility } from './CodeInsightDashboardsVisibility'
+export { CodeInsightCreationMode, CodeInsightsCreationActions } from './creation-actions/CodeInsightsCreationActions'
 export * from './creation-ui-layout/CreationUiLayout'
-
-export { getSanitizedSeries, getSanitizedRepositoryScope } from './sanitizers'
-
+export { createDefaultEditSeries, FormSeries } from './form-series'
+export type { EditableDataSeries } from './form-series'
 export { RepoSettingSection } from './insight-repo-section/InsightRepoSection'
 export { useRepoFields } from './insight-repo-section/use-repo-fields'
-
-export { CodeInsightDashboardsVisibility } from './CodeInsightDashboardsVisibility'
-export { CodeInsightTimeStepPicker } from './code-insight-time-step-picker/CodeInsightTimeStepPicker'
-export { FormSeries, createDefaultEditSeries } from './form-series'
-export { CodeInsightCreationMode, CodeInsightsCreationActions } from './creation-actions/CodeInsightsCreationActions'
-export type { EditableDataSeries } from './form-series'
-
+export * from './live-preview'
+export { getSanitizedRepositoryScope, getSanitizedSeries } from './sanitizers'
 export {
-    insightTitleValidator,
     insightRepositoriesValidator,
-    insightStepValueValidator,
     insightSeriesValidator,
+    insightStepValueValidator,
+    insightTitleValidator,
 } from './validators/validators'

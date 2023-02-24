@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'

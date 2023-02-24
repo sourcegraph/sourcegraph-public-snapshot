@@ -12,20 +12,20 @@ import { Optional } from 'utility-types'
 import { asError, isDefined } from '@sourcegraph/common'
 import { gql, GraphQLResult } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
 import { ConditionalTelemetryService, EventLogger } from '../../shared/tracking/eventLogger'
-import { observeSourcegraphURL, getExtensionVersion, isDefaultSourcegraphUrl } from '../../shared/util/context'
+import { getExtensionVersion, isDefaultSourcegraphUrl, observeSourcegraphURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
-    OptionFlagKey,
-    optionFlagDefinitions,
-    observeSendTelemetry,
     observeOptionFlagsWithValues,
+    observeSendTelemetry,
+    optionFlagDefinitions,
+    OptionFlagKey,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'

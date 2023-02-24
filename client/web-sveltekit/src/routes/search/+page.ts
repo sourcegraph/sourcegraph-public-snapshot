@@ -8,13 +8,13 @@ import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
 import {
     aggregateStreamingSearch,
-    LATEST_VERSION,
-    type AggregateStreamingSearchResults,
-    type StreamSearchOptions,
     filterExists,
     FilterType,
     getGlobalSearchContextFilter,
+    LATEST_VERSION,
     omitFilter,
+    type AggregateStreamingSearchResults,
+    type StreamSearchOptions,
 } from '$lib/shared'
 import { parseSearchURL } from '$lib/web'
 

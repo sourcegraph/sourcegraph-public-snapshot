@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 
-import { Icon, Code } from '@sourcegraph/wildcard'
+import { Code, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchQueryChecks.module.scss'
 

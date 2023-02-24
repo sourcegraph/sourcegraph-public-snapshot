@@ -6,14 +6,14 @@ import { Observable } from 'rxjs'
 
 import {
     Scalars,
+    SearchContextFields,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
-    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'

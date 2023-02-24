@@ -1,9 +1,9 @@
 import { of } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
-import { ActionsProvider, HoverProvider, DocumentHighlightProvider } from '../hoverifier'
+import { ActionsProvider, DocumentHighlightProvider, HoverProvider } from '../hoverifier'
 import { MaybeLoadingResult } from '../loading'
-import { HoverAttachment, DocumentHighlight } from '../types'
+import { DocumentHighlight, HoverAttachment } from '../types'
 
 /**
  * Create a stubbed HoverAttachment object.

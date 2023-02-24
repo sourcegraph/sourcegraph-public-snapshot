@@ -4,7 +4,7 @@ import { QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
-import { Location, buildPreciseLocation } from '../../codeintel/location'
+import { buildPreciseLocation, Location } from '../../codeintel/location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
@@ -14,12 +14,12 @@ import { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../..
 import { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { asGraphQLResult } from '../../components/FilteredConnection/utils'
 import {
-    UsePreciseCodeIntelForPositionVariables,
-    UsePreciseCodeIntelForPositionResult,
-    LoadAdditionalReferencesResult,
-    LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
     LoadAdditionalImplementationsVariables,
+    LoadAdditionalReferencesResult,
+    LoadAdditionalReferencesVariables,
+    UsePreciseCodeIntelForPositionResult,
+    UsePreciseCodeIntelForPositionVariables,
 } from '../../graphql-operations'
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'

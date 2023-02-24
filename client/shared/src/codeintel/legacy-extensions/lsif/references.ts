@@ -4,8 +4,8 @@ import * as sourcegraph from '../api'
 import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 import { concat } from '../util/ix'
 
-import { queryLSIF, GenericLSIFResponse } from './api'
-import { nodeToLocation, LocationConnectionNode, getQueryPage, LocationCursor } from './locations'
+import { GenericLSIFResponse, queryLSIF } from './api'
+import { getQueryPage, LocationConnectionNode, LocationCursor, nodeToLocation } from './locations'
 
 /**
  * The maximum number of chained GraphQL requests to make for a single

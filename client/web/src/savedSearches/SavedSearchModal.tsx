@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import type { NavigateFunction } from 'react-router-dom'
 
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
+import { Button, Form, H3, Modal, Select } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 

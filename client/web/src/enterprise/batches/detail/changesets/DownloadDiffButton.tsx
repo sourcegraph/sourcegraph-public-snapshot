@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiAlertCircle, mdiDownload } from '@mdi/js'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { getChangesetDiff } from '../backend'
 

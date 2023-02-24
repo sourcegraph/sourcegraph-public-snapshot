@@ -2,9 +2,9 @@ import { Duration } from 'date-fns'
 
 import {
     InsightViewNode,
-    TimeIntervalStepInput,
     SeriesSortDirection,
     SeriesSortMode,
+    TimeIntervalStepInput,
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SAMPLES } from '../../../../constants'

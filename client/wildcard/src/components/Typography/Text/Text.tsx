@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../../types'
 import { TYPOGRAPHY_SIZES, TYPOGRAPHY_WEIGHTS } from '../constants'
-import { getModeStyle, getAlignmentStyle, TypographyProps, getFontWeightStyle } from '../utils'
+import { getAlignmentStyle, getFontWeightStyle, getModeStyle, TypographyProps } from '../utils'
 
 import typographyStyles from '../Typography.module.scss'
 

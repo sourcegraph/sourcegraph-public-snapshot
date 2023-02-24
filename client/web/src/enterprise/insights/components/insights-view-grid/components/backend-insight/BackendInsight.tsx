@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
+import { Link, Text, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
@@ -28,10 +28,10 @@ import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 import { InsightContext } from '../InsightContext'
 
 import {
+    BackendInsightChart,
     BackendInsightErrorAlert,
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
-    BackendInsightChart,
     InsightIncompleteAlert,
 } from './components'
 

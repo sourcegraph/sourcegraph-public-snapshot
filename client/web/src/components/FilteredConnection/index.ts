@@ -1,3 +1,3 @@
-export * from './FilteredConnection'
-export * from './FilterControl'
 export * from './ConnectionType'
+export * from './FilterControl'
+export * from './FilteredConnection'

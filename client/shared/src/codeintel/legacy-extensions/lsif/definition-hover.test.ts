@@ -8,7 +8,7 @@ import { QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse } from './api'
 import { definitionAndHoverForPosition, DefinitionAndHoverResponse } from './definition-hover'
-import { makeEnvelope, resource1, resource2, resource3, range1, range2, range3, document, position } from './util.test'
+import { document, makeEnvelope, position, range1, range2, range3, resource1, resource2, resource3 } from './util.test'
 
 describe('definitionAndHoverForPosition', () => {
     it('should correctly parse result', async () => {

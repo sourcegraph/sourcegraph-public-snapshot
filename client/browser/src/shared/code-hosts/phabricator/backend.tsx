@@ -1,12 +1,12 @@
 import { from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
+import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql, checkOk } from '@sourcegraph/http-client'
+import { checkOk, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { storage } from '../../../browser-extension/web-extension-api/storage'
 import { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../graphql-operations'
@@ -15,7 +15,7 @@ import { resolveRepo } from '../../repo/backend'
 
 import { normalizeRepoName } from './util'
 
-import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
+import { BaseDiffSpec, DiffSpec, RevisionSpec } from '.'
 
 interface PhabEntity {
     id: string // e.g. "48"

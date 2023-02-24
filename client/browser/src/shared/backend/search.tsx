@@ -1,5 +1,5 @@
 /* eslint rxjs/no-ignored-subscription: warn */
-import { Subject, forkJoin } from 'rxjs'
+import { forkJoin, Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged, map, publishReplay, refCount, repeat, switchMap } from 'rxjs/operators'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'

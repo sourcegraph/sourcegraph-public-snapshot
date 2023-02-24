@@ -1,6 +1,6 @@
 import React, { SVGProps, useCallback } from 'react'
 
-import { LineChart, SeriesLikeChart, LineChartProps } from '@sourcegraph/wildcard'
+import { LineChart, LineChartProps, SeriesLikeChart } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { LockedChart } from '../locked/LockedChart'

@@ -6,8 +6,8 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import {
     commonProps,
     FIXTURE_ACTIONS,
-    FIXTURE_SEMANTIC_BADGE,
     FIXTURE_CONTENT,
+    FIXTURE_SEMANTIC_BADGE,
 } from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
 
 import { WebStory } from '../WebStory'

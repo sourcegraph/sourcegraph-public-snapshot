@@ -1,12 +1,12 @@
-import React, { useMemo, useContext } from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, useObservable } from '@sourcegraph/wildcard'
 
-import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
+import { AllChangesetIDsVariables, BulkOperationType, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'

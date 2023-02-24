@@ -1,16 +1,16 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { indentUnit, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { classHighlighter, tags } from '@lezer/highlight'
-import { mdiPlayCircleOutline, mdiPencil } from '@mdi/js'
+import { mdiPencil, mdiPlayCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { changeListener } from '@sourcegraph/branded'
-import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Icon, Markdown } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'

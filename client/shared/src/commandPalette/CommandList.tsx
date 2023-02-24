@@ -11,7 +11,7 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
-import { memoizeObservable, logger } from '@sourcegraph/common'
+import { logger, memoizeObservable } from '@sourcegraph/common'
 import {
     ButtonProps,
     ForwardReferenceComponent,

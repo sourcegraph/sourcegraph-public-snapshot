@@ -1,8 +1,8 @@
 import { useRef } from 'react'
 
 import { act, fireEvent, screen } from '@testing-library/react'
-import { Routes, Route } from 'react-router-dom'
-import { spy, assert } from 'sinon'
+import { Route, Routes } from 'react-router-dom'
+import { assert, spy } from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

@@ -35,7 +35,7 @@ import { ViewResolver } from '../shared/views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor } from './util'
+import { getFileContainers, getSelectorFor, parseURL } from './util'
 
 import styles from './codeHost.module.scss'
 

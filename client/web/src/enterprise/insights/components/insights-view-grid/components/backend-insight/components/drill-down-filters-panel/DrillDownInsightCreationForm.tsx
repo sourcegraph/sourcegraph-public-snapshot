@@ -2,15 +2,15 @@ import { FunctionComponent } from 'react'
 
 import {
     Button,
-    Input,
-    H3,
+    createRequiredValidator,
     ErrorAlert,
-    useForm,
-    useField,
     FORM_ERROR,
     getDefaultInputProps,
-    createRequiredValidator,
+    H3,
+    Input,
     SubmissionResult,
+    useField,
+    useForm,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'

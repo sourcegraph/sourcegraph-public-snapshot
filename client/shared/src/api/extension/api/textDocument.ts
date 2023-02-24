@@ -1,4 +1,4 @@
-import type { TextDocument, Position as APIPosition, Range as APIRange } from 'sourcegraph'
+import type { Position as APIPosition, Range as APIRange, TextDocument } from 'sourcegraph'
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 

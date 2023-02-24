@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
-import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
+import { SeriesSortDirection, SeriesSortMode, SeriesSortOptionsInput } from '../../../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SAMPLES, MAX_NUMBER_OF_SERIES } from '../../../../../../constants'
 import { InsightSeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'

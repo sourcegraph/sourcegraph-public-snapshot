@@ -7,10 +7,10 @@ import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Block, BlockInit, BlockInput, FileBlockInput, SerializableBlock, SymbolBlockInput } from '..'
 import {
     CreateNotebookBlockInput,
-    NotebookBlockType,
-    SymbolKind,
     HighlightLineRange,
+    NotebookBlockType,
     NotebookFields,
+    SymbolKind,
 } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 

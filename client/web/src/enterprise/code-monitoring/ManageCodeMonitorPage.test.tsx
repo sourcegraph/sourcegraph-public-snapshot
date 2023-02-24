@@ -10,9 +10,9 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
     FetchCodeMonitorResult,
+    MonitorEditActionInput,
     MonitorEditInput,
     MonitorEditTriggerInput,
-    MonitorEditActionInput,
     MonitorEmailPriority,
 } from '../../graphql-operations'
 

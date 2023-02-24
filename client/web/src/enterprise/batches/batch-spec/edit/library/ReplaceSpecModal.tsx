@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
+import { Button, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 export interface ReplaceSpecModalProps {
     libraryItemName: string

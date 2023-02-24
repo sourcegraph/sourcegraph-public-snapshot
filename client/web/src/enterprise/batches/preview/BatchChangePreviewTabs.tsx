@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
-import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { mdiFileDocument, mdiSourceBranch } from '@mdi/js'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
@@ -13,8 +13,8 @@ import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
 import {
-    queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
+    queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
 } from './list/backend'
 import { PreviewList } from './list/PreviewList'
 

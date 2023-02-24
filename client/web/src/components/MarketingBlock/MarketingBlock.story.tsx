@@ -1,7 +1,7 @@
 import { mdiArrowRight } from '@mdi/js'
 import { DecoratorFn, Meta } from '@storybook/react'
 
-import { Link, Icon, H3 } from '@sourcegraph/wildcard'
+import { H3, Icon, Link } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 

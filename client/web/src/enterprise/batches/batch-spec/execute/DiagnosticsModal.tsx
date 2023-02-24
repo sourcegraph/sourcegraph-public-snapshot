@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 
-import { mdiClose, mdiTimerSand, mdiCheck, mdiAlertCircle, mdiProgressClock } from '@mdi/js'
+import { mdiAlertCircle, mdiCheck, mdiClose, mdiProgressClock, mdiTimerSand } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
-import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, H3, H4, Icon, Modal } from '@sourcegraph/wildcard'
 
 import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'

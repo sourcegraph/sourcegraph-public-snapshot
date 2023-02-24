@@ -7,18 +7,18 @@ import * as sourcegraph from '../api'
 import { QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse } from './api'
-import { ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition } from './references'
+import { MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition, ReferencesResponse } from './references'
 import {
+    document,
     gatherValues,
     makeEnvelope,
-    resource1,
-    resource2,
-    resource3,
+    position,
     range1,
     range2,
     range3,
-    document,
-    position,
+    resource1,
+    resource2,
+    resource3,
 } from './util.test'
 
 describe('referencesForPosition', () => {

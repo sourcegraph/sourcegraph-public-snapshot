@@ -1,1 +1,1 @@
-export { CodeInsightsJobStatusPicker, CodeInsightsJobsOrderPicker, formatFilter } from './CodeInsightsJobsFilters'
+export { CodeInsightsJobsOrderPicker, CodeInsightsJobStatusPicker, formatFilter } from './CodeInsightsJobsFilters'

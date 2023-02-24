@@ -2,16 +2,16 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { validateFilter } from './filters'
 import {
-    PatternOf,
-    each,
-    matchesValue,
-    eachOf,
     allOf,
-    some,
-    oneOf,
-    not,
     DataMapper,
+    each,
+    eachOf,
     MatchContext,
+    matchesValue,
+    not,
+    oneOf,
+    PatternOf,
+    some,
 } from './patternMatcher'
 import { CharacterRange, Filter, Token } from './token'
 

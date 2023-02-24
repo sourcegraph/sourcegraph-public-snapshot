@@ -1,13 +1,13 @@
 import {
     AggregateStreamingSearchResults,
+    CommitMatch,
     ContentMatch,
+    getCommitMatchUrl,
     getFileMatchUrl,
     getRepositoryUrl,
-    SearchMatch,
     PathMatch,
     RepositoryMatch,
-    CommitMatch,
-    getCommitMatchUrl,
+    SearchMatch,
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 

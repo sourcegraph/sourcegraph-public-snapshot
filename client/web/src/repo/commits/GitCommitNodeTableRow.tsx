@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
+import { Button, Code, Icon, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'

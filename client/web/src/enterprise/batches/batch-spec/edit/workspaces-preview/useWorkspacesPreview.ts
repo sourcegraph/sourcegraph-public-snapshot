@@ -1,21 +1,21 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import {
+    BatchSpecImportingChangesetsResult,
+    BatchSpecImportingChangesetsVariables,
+    BatchSpecWorkspaceResolutionState,
+    BatchSpecWorkspacesPreviewResult,
+    BatchSpecWorkspacesPreviewVariables,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
     ReplaceBatchSpecInputResult,
     ReplaceBatchSpecInputVariables,
     Scalars,
-    BatchSpecWorkspaceResolutionState,
-    WorkspaceResolutionStatusVariables,
     WorkspaceResolutionStatusResult,
-    BatchSpecWorkspacesPreviewResult,
-    BatchSpecWorkspacesPreviewVariables,
-    BatchSpecImportingChangesetsVariables,
-    BatchSpecImportingChangesetsResult,
+    WorkspaceResolutionStatusVariables,
 } from '../../../../../graphql-operations'
 import {
     CREATE_BATCH_SPEC_FROM_RAW,
@@ -26,7 +26,7 @@ import {
 } from '../../../create/backend'
 
 import { CHANGESETS_PER_PAGE_COUNT } from './useImportingChangesets'
-import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './useWorkspaces'
+import { WorkspacePreviewFilters, WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'CANCELED'
 

@@ -1,4 +1,4 @@
-import { useQuery, gql, ApolloError } from '@apollo/client'
+import { ApolloError, gql, useQuery } from '@apollo/client'
 import { groupBy } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { ComponentStory, ComponentMeta } from '@storybook/react'
+import { ComponentMeta, ComponentStory } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'

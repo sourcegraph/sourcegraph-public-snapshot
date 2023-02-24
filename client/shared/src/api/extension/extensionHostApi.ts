@@ -13,9 +13,9 @@ import {
 import { ProviderResult } from 'sourcegraph'
 
 import {
+    ContributableViewContainer,
     fromHoverMerged,
     TextDocumentIdentifier,
-    ContributableViewContainer,
     TextDocumentPositionParameters,
 } from '@sourcegraph/client-api'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -34,13 +34,13 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
 import type {
-    ReferenceContext,
+    DirectoryViewContext,
     DocumentSelector,
     NotificationType as LegacyNotificationType,
-    Progress,
-    DirectoryViewContext,
-    View,
     PanelView,
+    Progress,
+    ReferenceContext,
+    View,
 } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'

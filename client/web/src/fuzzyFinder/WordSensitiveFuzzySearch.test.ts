@@ -1,5 +1,5 @@
 import { FuzzySearchParameters } from './FuzzySearch'
-import { WordSensitiveFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './WordSensitiveFuzzySearch'
+import { allFuzzyParts, fuzzyMatchesQuery, WordSensitiveFuzzySearch } from './WordSensitiveFuzzySearch'
 
 const all = [
     't1/README.md',

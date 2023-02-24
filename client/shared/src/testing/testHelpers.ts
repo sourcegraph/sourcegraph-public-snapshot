@@ -1,7 +1,7 @@
 import 'message-port-polyfill'
 
 import { Remote } from 'comlink'
-import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
+import { of, Subscribable, Subscription, throwError, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'

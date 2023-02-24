@@ -1,25 +1,25 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Observable, Subject, NEVER } from 'rxjs'
-import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
+import { NEVER, Observable, Subject } from 'rxjs'
+import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import {
     Button,
-    LoadingSpinner,
-    useObservable,
-    useEventObservable,
-    Link,
-    CardHeader,
-    CardBody,
     Card,
-    Icon,
-    H2,
+    CardBody,
+    CardHeader,
     ErrorAlert,
+    H2,
+    Icon,
+    Link,
+    LoadingSpinner,
+    useEventObservable,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -29,8 +29,8 @@ import {
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
     DotComProductSubscriptionResult,
-    ProductLicensesResult,
     ProductLicenseFields,
+    ProductLicensesResult,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'

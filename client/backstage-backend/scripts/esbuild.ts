@@ -4,7 +4,7 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
-import { WORKSPACES_PATH, buildTimerPlugin } from '@sourcegraph/build-config'
+import { buildTimerPlugin, WORKSPACES_PATH } from '@sourcegraph/build-config'
 
 const PACKAGE_ROOT_PATH = path.resolve(WORKSPACES_PATH, 'backstage-frontend')
 const DIST_PATH = path.resolve(PACKAGE_ROOT_PATH, 'dist')

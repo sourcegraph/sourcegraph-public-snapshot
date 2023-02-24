@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/shared/src/search'
-import { Icon, Link, H5, useObservable, Button } from '@sourcegraph/wildcard'
+import { Button, H5, Icon, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
 

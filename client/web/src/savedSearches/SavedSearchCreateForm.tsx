@@ -1,11 +1,11 @@
 import React, { FC } from 'react'
 
-import { useLocation, useNavigate, NavigateFunction, Location } from 'react-router-dom'
+import { Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

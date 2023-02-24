@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { AlertLink, Alert } from '@sourcegraph/wildcard'
+import { Alert, AlertLink } from '@sourcegraph/wildcard'
 
 interface UnpublishedNoticeProps {
     unpublished: number

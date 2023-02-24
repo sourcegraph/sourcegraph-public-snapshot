@@ -6,9 +6,9 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { GitRefType } from '../../../../../shared/src/graphql-operations'
 import {
-    SearchSidebarGitRefsResult,
     // SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
+    SearchSidebarGitRefsResult,
 } from '../../../graphql-operations'
 
 import { GIT_REVS_QUERY } from './Revisions'

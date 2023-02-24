@@ -5,18 +5,18 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import {
+    Checkbox,
+    Icon,
     Link,
     Menu,
     MenuButton,
     MenuDivider,
+    MenuHeader,
     MenuItem,
     MenuLink,
     MenuList,
     Position,
-    Checkbox,
     Tooltip,
-    Icon,
-    MenuHeader,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../stores'

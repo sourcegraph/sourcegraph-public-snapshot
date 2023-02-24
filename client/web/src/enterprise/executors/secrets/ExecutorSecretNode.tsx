@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react'
 import { mdiDocker, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Badge, Button, Icon, H3, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 

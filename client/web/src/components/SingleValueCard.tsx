@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { CardText, CardTitle, CardBody, Card, H4, Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
+import { Card, CardBody, CardText, CardTitle, H4, LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SingleValueCard.module.scss'
 

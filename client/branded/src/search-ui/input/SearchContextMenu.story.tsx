@@ -1,4 +1,4 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
 import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'

@@ -1,6 +1,5 @@
 import { FC } from 'react'
 
-import './SourcegraphWebApp.scss'
 import { LegacySourcegraphWebApp } from './LegacySourcegraphWebApp'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
@@ -14,6 +13,7 @@ import { repoSettingsSideBarGroups } from './repo/settings/sidebaritems'
 import { routes } from './routes'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
+import './SourcegraphWebApp.scss'
 import {
     StaticAppConfig,
     StaticHardcodedAppConfig,

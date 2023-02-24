@@ -12,13 +12,13 @@ import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/sr
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
+    CHUNK_MATCH_RESULT,
     COLLAPSABLE_SEARCH_RESULT,
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
+    LINE_MATCH_RESULT,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
-    CHUNK_MATCH_RESULT,
-    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 

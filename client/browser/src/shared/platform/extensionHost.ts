@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { EndpointPair, ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
+import { ClosableEndpointPair, EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import { isInPage } from '../context'
 

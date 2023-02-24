@@ -4,18 +4,18 @@ import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import {
-    ProductStatusBadge,
     Button,
     ButtonGroup,
+    H4,
+    Icon,
     Menu,
     MenuButton,
+    MenuDivider,
+    MenuItem,
     MenuList,
     Position,
-    MenuItem,
-    MenuDivider,
-    H4,
+    ProductStatusBadge,
     Text,
-    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'

@@ -3,7 +3,7 @@ import path from 'path'
 
 import { parse } from 'jsonc-parser'
 
-import { ROOT_PATH, MONACO_EDITOR_PATH } from '@sourcegraph/build-config'
+import { MONACO_EDITOR_PATH, ROOT_PATH } from '@sourcegraph/build-config'
 
 export const monacoEditorPath = MONACO_EDITOR_PATH
 export const storybookWorkspacePath = path.resolve(ROOT_PATH, 'client/storybook')

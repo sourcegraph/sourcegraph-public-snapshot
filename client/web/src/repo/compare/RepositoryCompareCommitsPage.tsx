@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-import { NavigateFunction, Location } from 'react-router-dom'
+import { Location, NavigateFunction } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { CardHeader, Card } from '@sourcegraph/wildcard'
+import { Card, CardHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'

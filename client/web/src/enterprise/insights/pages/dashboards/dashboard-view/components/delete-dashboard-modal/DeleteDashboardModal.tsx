@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Modal, H2, Icon, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, H2, Icon, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'

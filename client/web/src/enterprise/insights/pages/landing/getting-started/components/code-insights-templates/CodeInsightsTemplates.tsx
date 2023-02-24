@@ -11,15 +11,15 @@ import {
     CardBody,
     CardText,
     CardTitle,
+    H2,
+    Icon,
+    Link,
+    ProductStatusBadge,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Icon,
-    Link,
-    ProductStatusBadge,
-    H2,
     Text,
     Tooltip,
 } from '@sourcegraph/wildcard'
@@ -35,7 +35,7 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import { Template, getTemplateSections } from './constants'
+import { getTemplateSections, Template } from './constants'
 
 import styles from './CodeInsightsTemplates.module.scss'
 

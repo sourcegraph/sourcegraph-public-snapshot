@@ -1,5 +1,5 @@
 import { onDestroy, type ComponentType } from 'svelte'
-import { writable, derived, type Readable } from 'svelte/store'
+import { derived, writable, type Readable } from 'svelte/store'
 
 interface Action {
     key: string

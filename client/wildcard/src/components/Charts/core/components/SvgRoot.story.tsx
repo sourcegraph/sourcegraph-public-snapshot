@@ -6,7 +6,7 @@ import { timeFormat } from 'd3-time-format'
 
 import { BrandedStory } from '../../../../stories/BrandedStory'
 
-import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
+import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from './SvgRoot'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts/Core',

@@ -2,7 +2,7 @@ import { FunctionComponent, useContext } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, LegendItem, LegendList, ParentSize, LegendItemPoint } from '@sourcegraph/wildcard'
+import { Button, LegendItem, LegendItemPoint, LegendList, Link, ParentSize } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
 import {

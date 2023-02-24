@@ -3,15 +3,15 @@ import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    CHUNK_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
-    CHUNK_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileContentSearchResult } from './FileContentSearchResult'

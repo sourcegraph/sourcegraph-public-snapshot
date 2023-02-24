@@ -1,4 +1,4 @@
-import { Badged, Hover, MarkupContent, HoverAlert, AggregableBadge } from 'sourcegraph'
+import { AggregableBadge, Badged, Hover, HoverAlert, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'

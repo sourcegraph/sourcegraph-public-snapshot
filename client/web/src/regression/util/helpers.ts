@@ -5,7 +5,7 @@ import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { asError, logger } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     GitHubAuthProvider,
@@ -28,14 +28,14 @@ import {
 } from '../../graphql-operations'
 
 import {
-    deleteUser,
-    getUser,
-    createUser,
-    fetchAllOrganizations,
     createOrganization,
+    createUser,
     deleteOrganization,
-    getViewerSettings,
+    deleteUser,
+    fetchAllOrganizations,
     fetchSiteConfiguration,
+    getUser,
+    getViewerSettings,
     updateSiteConfiguration,
 } from './api'
 import { GraphQLClient } from './GraphQlClient'

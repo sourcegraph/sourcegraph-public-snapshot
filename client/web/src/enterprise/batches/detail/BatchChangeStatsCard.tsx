@@ -7,19 +7,19 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon, Heading, H3, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, H3, H4, Heading, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields } from '../../../graphql-operations'
 import { BatchChangeStatePill } from '../list/BatchChangeStatePill'
 
 import {
-    ChangesetStatusUnpublished,
-    ChangesetStatusOpen,
-    ChangesetStatusClosed,
-    ChangesetStatusMerged,
-    ChangesetStatusDraft,
     ChangesetStatusArchived,
+    ChangesetStatusClosed,
+    ChangesetStatusDraft,
+    ChangesetStatusMerged,
+    ChangesetStatusOpen,
+    ChangesetStatusUnpublished,
 } from './changesets/ChangesetStatusCell'
 
 import styles from './BatchChangeStatsCard.module.scss'

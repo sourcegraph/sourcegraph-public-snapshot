@@ -11,20 +11,20 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 
 import {
     DiffHunkLineType,
+    ExternalServiceKind,
     RepositoryContributorsResult,
     WebGraphQlOperations,
-    ExternalServiceKind,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    createResolveRepoRevisionResult,
-    createFileExternalLinksResult,
-    createTreeEntriesResult,
     createBlobContentResult,
-    createRepoChangesetsStatsResult,
+    createFileExternalLinksResult,
     createFileNamesResult,
+    createRepoChangesetsStatsResult,
     createResolveCloningRepoRevisionResult,
+    createResolveRepoRevisionResult,
+    createTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'

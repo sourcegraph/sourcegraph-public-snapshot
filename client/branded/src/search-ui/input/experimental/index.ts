@@ -1,15 +1,15 @@
+export * from './codemirror/history'
+export * from './filters'
 export { LazyCodeMirrorQueryInput } from './LazyCodeMirrorQueryInput'
+export * from './optionRenderer'
+export { combineResults, getEditorConfig } from './suggestionsExtension'
 export type {
-    Group,
-    Option,
+    CommandAction,
     CompletionAction,
     GoToAction,
-    CommandAction,
+    Group,
+    Option,
     Source,
     SuggestionResult,
 } from './suggestionsExtension'
-export { getEditorConfig, combineResults } from './suggestionsExtension'
-export * from './optionRenderer'
 export * from './utils'
-export * from './codemirror/history'
-export * from './filters'

@@ -1,10 +1,10 @@
 import React from 'react'
 
-import { mdiSourceFork, mdiAccountQuestion } from '@mdi/js'
+import { mdiAccountQuestion, mdiSourceFork } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Badge, Icon, BadgeProps, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, BadgeProps, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 export interface ForkTarget {
     pushUser: boolean

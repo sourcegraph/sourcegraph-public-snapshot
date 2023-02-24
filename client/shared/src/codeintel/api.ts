@@ -23,7 +23,7 @@ import type { PlatformContext } from '../platform/context'
 import { isSettingsValid, Settings, SettingsCascade } from '../settings/settings'
 import { parseRepoURI } from '../util/url'
 
-import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
+import type { DocumentHighlight, DocumentSelector, TextDocument } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
 import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'

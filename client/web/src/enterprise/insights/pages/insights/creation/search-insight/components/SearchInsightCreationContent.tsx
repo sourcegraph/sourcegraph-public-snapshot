@@ -5,10 +5,10 @@ import { noop } from 'rxjs'
 import { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
 
 import {
-    CreationUiLayout,
-    CreationUIForm,
-    CreationUIPreview,
     createDefaultEditSeries,
+    CreationUIForm,
+    CreationUiLayout,
+    CreationUIPreview,
     EditableDataSeries,
     getSanitizedSeries,
 } from '../../../../../components'

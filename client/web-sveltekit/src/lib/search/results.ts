@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs'
 
-import type { HighlightResponseFormat, HighlightLineRange } from '$lib/graphql-operations'
+import type { HighlightLineRange, HighlightResponseFormat } from '$lib/graphql-operations'
 import { fetchHighlightedFileLineRanges } from '$lib/loader/blob'
 import type { PlatformContext } from '$lib/shared'
 

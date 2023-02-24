@@ -5,7 +5,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
-import { Scalars, KeyPathSegment, ConfigurationEdit, SettingsEdit as SettingsEditArg } from '../graphql-operations'
+import { ConfigurationEdit, KeyPathSegment, Scalars, SettingsEdit as SettingsEditArg } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 
 /**

@@ -4,27 +4,27 @@ import { MockedResponse } from '@apollo/client/testing'
 import { of } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, getDocumentNode, useQuery } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
 import {
-    UsePreciseCodeIntelForPositionResult,
-    UsePreciseCodeIntelForPositionVariables,
     HighlightResponseFormat,
     LocationFields,
     ReferencesPanelHighlightedBlobVariables,
     ResolveRepoAndRevisionVariables,
+    UsePreciseCodeIntelForPositionResult,
+    UsePreciseCodeIntelForPositionVariables,
 } from '../graphql-operations'
 
 import { buildPreciseLocation } from './location'
 import { ReferencesPanelProps } from './ReferencesPanel'
 import {
-    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-    RESOLVE_REPO_REVISION_BLOB_QUERY,
     FETCH_HIGHLIGHTED_BLOB,
+    RESOLVE_REPO_REVISION_BLOB_QUERY,
+    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
 import { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
 

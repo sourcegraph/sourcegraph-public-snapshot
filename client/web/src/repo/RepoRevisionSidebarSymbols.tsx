@@ -1,33 +1,33 @@
-import React, { useState, useMemo, Suspense, useCallback } from 'react'
+import React, { Suspense, useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { escapeRegExp, isEqual, groupBy } from 'lodash'
+import { escapeRegExp, groupBy, isEqual } from 'lodash'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
+import { Alert, ErrorMessage, useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
-    ConnectionForm,
     ConnectionContainer,
+    ConnectionForm,
     ConnectionLoading,
     ConnectionSummary,
-    SummaryContainer,
     ShowMoreButton,
+    SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
     Scalars,
+    SymbolKind as SymbolKindEnum,
     SymbolNodeFields,
     SymbolsResult,
     SymbolsVariables,
-    SymbolKind as SymbolKindEnum,
 } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'

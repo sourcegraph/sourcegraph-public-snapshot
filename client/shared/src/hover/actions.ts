@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
+import { combineLatest, concat, EMPTY, from, merge, Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
     delay,
@@ -9,15 +9,15 @@ import {
     filter,
     first,
     map,
+    mapTo,
+    scan,
     share,
     switchMap,
     takeUntil,
-    scan,
-    mapTo,
 } from 'rxjs/operators'
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { emitLoading, HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import {
     asError,
     compatNavigate,

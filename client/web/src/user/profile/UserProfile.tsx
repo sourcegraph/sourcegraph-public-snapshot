@@ -1,4 +1,4 @@
-import { Fragment, FC } from 'react'
+import { FC, Fragment } from 'react'
 
 import { formatDistanceToNowStrict } from 'date-fns'
 

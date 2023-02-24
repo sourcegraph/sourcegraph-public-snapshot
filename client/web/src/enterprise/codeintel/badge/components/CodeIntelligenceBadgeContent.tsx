@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceBadgeProps as DefaultRepositoryMenuProps } from '../../../../codeintel/CodeIntelligenceBadge'
 import {

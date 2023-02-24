@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { logger } from '@sourcegraph/common'
-import { Button, H3, Modal, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, H3, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretFields } from '../../../graphql-operations'

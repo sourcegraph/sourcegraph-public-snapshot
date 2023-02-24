@@ -1,15 +1,15 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
     GetSearchAggregationResult,
     GetSearchAggregationVariables,
-    SearchAggregationMode,
     NotAvailableReasonType,
+    SearchAggregationMode,
     SearchPatternType,
 } from '../../../../graphql-operations'
 

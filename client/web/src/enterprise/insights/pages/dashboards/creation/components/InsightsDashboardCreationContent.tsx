@@ -3,16 +3,16 @@ import React, { ReactNode } from 'react'
 import classNames from 'classnames'
 
 import {
-    Input,
-    ErrorAlert,
-    FormGroup,
-    useForm,
-    useField,
-    getDefaultInputProps,
     createRequiredValidator,
-    FORM_ERROR,
+    ErrorAlert,
     FormAPI,
+    FormGroup,
+    FORM_ERROR,
+    getDefaultInputProps,
+    Input,
     SubmissionErrors,
+    useField,
+    useForm,
 } from '@sourcegraph/wildcard'
 
 import { FormRadioInput, LimitedAccessLabel } from '../../../../components'

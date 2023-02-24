@@ -5,12 +5,12 @@ import classNames from 'classnames'
 
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5, Button, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, Form, H5, Input, Link, Text } from '@sourcegraph/wildcard'
 
 import {
+    VSCE_LINK_AUTH,
     VSCE_LINK_DOTCOM,
     VSCE_LINK_MARKETPLACE,
-    VSCE_LINK_AUTH,
     VSCE_LINK_TOKEN_CALLBACK,
     VSCE_LINK_TOKEN_CALLBACK_TEST,
     VSCE_LINK_USER_DOCS,

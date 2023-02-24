@@ -1,4 +1,4 @@
-import { Observable, of, zip, OperatorFunction, from } from 'rxjs'
+import { from, Observable, of, OperatorFunction, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -11,7 +11,7 @@ import { ButtonProps } from '../../components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { MutationRecordLike } from '../../util/dom'
 
-import { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
+import { CodeHost, DiffOrBlobInfo, FileInfoWithContent, FileInfoWithRepoName } from './codeHost'
 import { ensureRevisionIsClonedForFileInfo } from './util/fileInfo'
 import { trackViews, ViewResolver, ViewWithSubscriptions } from './views'
 

@@ -1,4 +1,4 @@
-export * from './hover'
-export * from './textDocument'
-export * from './reference'
 export * from './contribution'
+export * from './hover'
+export * from './reference'
+export * from './textDocument'

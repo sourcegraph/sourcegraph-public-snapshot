@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import { javaStyleComment } from './comments'
-import { FilterContext, LanguageSpec, Result, LSIFSupport } from './language-spec'
+import { FilterContext, LanguageSpec, LSIFSupport, Result } from './language-spec'
 import { extractFromLines, filterResultsByImports, slashToDot } from './util'
 
 /**

@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useEffect, useMemo, forwardRef } from 'react'
+import { FC, forwardRef, MouseEvent, useEffect, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'

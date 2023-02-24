@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon, H2 } from '@sourcegraph/wildcard'
+import { H2, Icon, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { AuthProvider, SourcegraphContext } from '../jscontext'

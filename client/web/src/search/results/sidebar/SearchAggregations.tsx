@@ -1,4 +1,4 @@
-import { FC, useEffect, useState, memo } from 'react'
+import { FC, memo, useEffect, useState } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
@@ -8,14 +8,14 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 import { SearchAggregationMode, SearchPatternType } from '../../../graphql-operations'
 import {
     AggregationChartCard,
-    AggregationModeControls,
     AggregationLimitLabel,
+    AggregationModeControls,
     AggregationUIMode,
+    GroupResultsPing,
+    isNonExhaustiveAggregationResults,
     useAggregationSearchMode,
     useAggregationUIMode,
     useSearchAggregationData,
-    isNonExhaustiveAggregationResults,
-    GroupResultsPing,
 } from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'

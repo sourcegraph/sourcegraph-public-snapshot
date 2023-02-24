@@ -4,13 +4,13 @@ import {
     CodeMonitorFields,
     MonitorActionInput,
     MonitorEditActionInput,
+    MonitorEmailFields,
     MonitorEmailInput,
     MonitorEmailPriority,
-    MonitorWebhookInput,
+    MonitorSlackWebhookFields,
     MonitorSlackWebhookInput,
     MonitorWebhookFields,
-    MonitorSlackWebhookFields,
-    MonitorEmailFields,
+    MonitorWebhookInput,
 } from '../../graphql-operations'
 
 function convertEmailAction(

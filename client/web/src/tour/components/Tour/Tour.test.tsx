@@ -1,4 +1,4 @@
-import { render, cleanup, RenderResult, fireEvent, act } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 

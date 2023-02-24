@@ -2,34 +2,34 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, isErrorGraphQLResult } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, isErrorGraphQLResult } from '@sourcegraph/http-client'
 
 import { AuthenticatedUser } from '../auth'
 import {
-    EventLogsDataResult,
-    EventLogsDataVariables,
-    ListSearchContextsResult,
-    ListSearchContextsVariables,
-    IsSearchContextAvailableResult,
-    IsSearchContextAvailableVariables,
-    Scalars,
-    FetchSearchContextResult,
-    FetchSearchContextVariables,
     CreateSearchContextResult,
     CreateSearchContextVariables,
-    UpdateSearchContextVariables,
-    UpdateSearchContextResult,
-    DeleteSearchContextVariables,
-    DeleteSearchContextResult,
-    Maybe,
-    FetchSearchContextBySpecResult,
-    FetchSearchContextBySpecVariables,
-    highlightCodeResult,
-    highlightCodeVariables,
-    SearchContextsOrderBy,
-    SearchContextFields,
     DefaultSearchContextSpecResult,
     DefaultSearchContextSpecVariables,
+    DeleteSearchContextResult,
+    DeleteSearchContextVariables,
+    EventLogsDataResult,
+    EventLogsDataVariables,
+    FetchSearchContextBySpecResult,
+    FetchSearchContextBySpecVariables,
+    FetchSearchContextResult,
+    FetchSearchContextVariables,
+    highlightCodeResult,
+    highlightCodeVariables,
+    IsSearchContextAvailableResult,
+    IsSearchContextAvailableVariables,
+    ListSearchContextsResult,
+    ListSearchContextsVariables,
+    Maybe,
+    Scalars,
+    SearchContextFields,
+    SearchContextsOrderBy,
+    UpdateSearchContextResult,
+    UpdateSearchContextVariables,
 } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 

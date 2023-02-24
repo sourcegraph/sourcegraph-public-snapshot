@@ -1,6 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { H1, H2, H3, Text, Input } from '..'
+import { H1, H2, H3, Input, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Alert } from '../Alert'
 import { Button } from '../Button'

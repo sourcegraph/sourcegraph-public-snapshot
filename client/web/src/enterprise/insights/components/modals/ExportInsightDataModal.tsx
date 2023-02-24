@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { escapeRegExp } from 'lodash'
 
-import { Modal, Text, H2, Link } from '@sourcegraph/wildcard'
+import { H2, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { DownloadFileButton } from '../DownloadFileButton'
 

@@ -3,7 +3,7 @@ import React from 'react'
 import { Args } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
-import { PopoverTrigger, H1 } from '../..'
+import { H1, PopoverTrigger } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 

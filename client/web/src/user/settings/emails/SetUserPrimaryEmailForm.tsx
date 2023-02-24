@@ -1,10 +1,10 @@
-import React, { useState, FunctionComponent, useCallback } from 'react'
+import React, { FunctionComponent, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { ErrorAlert, Form, Select } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'

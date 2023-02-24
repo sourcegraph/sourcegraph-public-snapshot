@@ -8,17 +8,17 @@ import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import puppeteer, {
-    PageEventObject,
-    Page,
-    Serializable,
-    LaunchOptions,
-    ConsoleMessage,
-    Target,
-    BrowserLaunchArgumentOptions,
     BrowserConnectOptions,
+    BrowserLaunchArgumentOptions,
+    ConsoleMessage,
+    LaunchOptions,
+    Page,
+    PageEventObject,
+    Serializable,
+    Target,
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
-import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
+import { concatAll, filter, map, mergeAll, mergeMap, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'

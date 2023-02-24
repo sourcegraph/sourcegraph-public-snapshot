@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,

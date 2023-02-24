@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { PageHeader, Alert, Text } from '@sourcegraph/wildcard'
+import { Alert, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 

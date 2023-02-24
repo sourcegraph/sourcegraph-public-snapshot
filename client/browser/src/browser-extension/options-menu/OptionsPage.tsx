@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper, mdiOpenInNew } from '@mdi/js'
-import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
+import { mdiBlockHelper, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiEarth, mdiLock, mdiOpenInNew } from '@mdi/js'
+import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxPopover } from '@reach/combobox'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text, LoaderInput } from '@sourcegraph/wildcard'
+import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button, H4, Icon, Label, Link, LoaderInput, Text } from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'

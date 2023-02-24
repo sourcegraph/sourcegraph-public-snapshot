@@ -9,12 +9,12 @@ import { QueryGraphQLFn } from '../util/graphql'
 import { GenericLSIFResponse } from './api'
 import {
     calculateRangeWindow,
-    rangesInRangeWindow,
-    findOverlappingWindows,
-    RangesResponse,
     findOverlappingCodeIntelligenceRange,
+    findOverlappingWindows,
+    rangesInRangeWindow,
+    RangesResponse,
 } from './ranges'
-import { range1, makeEnvelope, range2, range3, document, makeResource, position } from './util.test'
+import { document, makeEnvelope, makeResource, position, range1, range2, range3 } from './util.test'
 
 describe('findOverlappingWindows', () => {
     const aggregate1 = { range: range1 }

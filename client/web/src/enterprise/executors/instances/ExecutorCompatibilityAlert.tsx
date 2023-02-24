@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Text, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, Text } from '@sourcegraph/wildcard'
 
 import { ExecutorCompatibility } from '../../../graphql-operations'
 

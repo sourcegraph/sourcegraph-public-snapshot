@@ -1,13 +1,13 @@
 import React, {
-    useState,
-    useEffect,
-    useRef,
-    useMemo,
-    KeyboardEvent,
-    useLayoutEffect,
-    useCallback,
-    SetStateAction,
     Dispatch,
+    KeyboardEvent,
+    SetStateAction,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -19,23 +19,23 @@ import { escapeRegExp } from 'lodash'
 import { pluralize } from '@sourcegraph/common'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import {
-    Button,
-    Modal,
-    Icon,
-    Text,
-    Input,
-    useSessionStorage,
-    Code,
-    Link,
-    Tabs,
-    Tab,
-    Select,
-    H3,
-    TabPanels,
-    TabPanel,
-    TabList,
     Badge,
+    Button,
+    Code,
+    H3,
+    Icon,
+    Input,
+    Link,
     LoadingSpinner,
+    Modal,
+    Select,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Text,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
@@ -44,7 +44,7 @@ import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCac
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
-import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './FuzzyTabs'
+import { fuzzyErrors, FuzzyScope, FuzzyState, FuzzyTabKey, FuzzyTabs } from './FuzzyTabs'
 import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'

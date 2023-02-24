@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -8,7 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, Container, H3, Link, PageHeader, screenReaderAnnounce, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -25,14 +25,14 @@ import {
 } from '../../../components/FilteredConnection/ui'
 import { Page } from '../../../components/Page'
 import {
-    ListBatchChange,
-    Scalars,
-    BatchChangesVariables,
-    BatchChangesResult,
     BatchChangesByNamespaceResult,
     BatchChangesByNamespaceVariables,
+    BatchChangesResult,
+    BatchChangesVariables,
     GetLicenseAndUsageInfoResult,
     GetLicenseAndUsageInfoVariables,
+    ListBatchChange,
+    Scalars,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

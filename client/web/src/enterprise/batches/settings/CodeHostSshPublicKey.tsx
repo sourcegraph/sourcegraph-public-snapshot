@@ -4,7 +4,7 @@ import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 
-import { Button, TextArea, Link, Icon, Label, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, Label, Link, Text, TextArea } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 

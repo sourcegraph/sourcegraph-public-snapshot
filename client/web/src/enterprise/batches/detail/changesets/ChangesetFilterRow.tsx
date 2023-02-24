@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Input, Form } from '@sourcegraph/wildcard'
+import { Form, Input } from '@sourcegraph/wildcard'
 
-import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
+import { ChangesetCheckState, ChangesetReviewState, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
-import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
+import { isValidChangesetCheckState, isValidChangesetReviewState, isValidChangesetState } from '../../utils'
 
 export interface ChangesetFilters {
     state: ChangesetState | null

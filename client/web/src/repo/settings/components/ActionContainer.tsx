@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 
 import { asError } from '@sourcegraph/common'
-import { Button, ButtonProps, H4, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, ErrorAlert, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 

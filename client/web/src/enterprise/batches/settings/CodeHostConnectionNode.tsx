@@ -1,11 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
+import { mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import {

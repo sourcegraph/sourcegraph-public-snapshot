@@ -1,12 +1,12 @@
 import {
-    isRepoSeeOtherErrorLike,
-    RepoSeeOtherError,
-    RepoNotFoundError,
-    isRevisionNotFoundErrorLike,
-    RevisionNotFoundError,
     CloneInProgressError,
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
+    isRepoSeeOtherErrorLike,
+    isRevisionNotFoundErrorLike,
+    RepoNotFoundError,
+    RepoSeeOtherError,
+    RevisionNotFoundError,
 } from './errors'
 
 describe('backend errors', () => {

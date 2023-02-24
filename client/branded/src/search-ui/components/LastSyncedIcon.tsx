@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCloudAlert, mdiCloudClock, mdiCloudCheckOutline } from '@mdi/js'
+import { mdiCloudAlert, mdiCloudCheckOutline, mdiCloudClock } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 

@@ -13,7 +13,7 @@ import { execSync } from 'child_process'
 import path from 'path'
 
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { cleanEnv, bool, str } from 'envalid'
+import { bool, cleanEnv, str } from 'envalid'
 
 import { STATIC_ASSETS_PATH, WORKSPACES_PATH } from '@sourcegraph/build-config'
 

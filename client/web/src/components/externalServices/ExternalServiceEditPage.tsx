@@ -1,22 +1,22 @@
-import React, { FC, useEffect, useState, useCallback } from 'react'
+import React, { FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiCog } from '@mdi/js'
 import { Navigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, PageHeader, Icon, ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, ErrorAlert, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import {
-    ExternalServiceFields,
     AddExternalServiceInput,
+    ExternalServiceFields,
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
 
-import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
+import { FETCH_EXTERNAL_SERVICE, useUpdateExternalService } from './backend'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'

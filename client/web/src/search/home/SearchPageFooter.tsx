@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, H2 } from '@sourcegraph/wildcard'
+import { H2, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'

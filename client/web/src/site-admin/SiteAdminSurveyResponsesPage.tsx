@@ -8,17 +8,17 @@ import {
     Badge,
     BADGE_VARIANTS,
     Button,
-    useLocalStorage,
+    Card,
+    H2,
+    H3,
     Link,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    H2,
-    H3,
     Text,
-    Card,
+    useLocalStorage,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -26,8 +26,8 @@ import { PageTitle } from '../components/PageTitle'
 import {
     SurveyResponseAggregateFields,
     SurveyResponseFields,
-    UserWithSurveyResponseFields,
     UserActivePeriod,
+    UserWithSurveyResponseFields,
 } from '../graphql-operations'
 import {
     fetchAllSurveyResponses,

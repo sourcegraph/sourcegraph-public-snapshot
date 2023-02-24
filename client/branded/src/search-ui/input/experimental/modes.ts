@@ -3,14 +3,14 @@ import { useMemo, useState } from 'react'
 import {
     Compartment,
     EditorState,
-    type Extension,
     Facet,
     Prec,
     StateEffect,
     StateField,
+    type Extension,
     type Transaction,
 } from '@codemirror/state'
-import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
+import { EditorView, keymap, type KeyBinding } from '@codemirror/view'
 
 import { placeholderConfig } from '../codemirror/placeholder'
 

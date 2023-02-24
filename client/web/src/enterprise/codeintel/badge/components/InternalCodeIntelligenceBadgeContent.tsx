@@ -3,7 +3,7 @@ import React from 'react'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { MenuDivider, Code, H3, Link } from '@sourcegraph/wildcard'
+import { Code, H3, Link, MenuDivider } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { UseCodeIntelStatusPayload } from '../hooks/useCodeIntelStatus'

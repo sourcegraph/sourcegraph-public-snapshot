@@ -6,7 +6,7 @@ import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
+import { formatRelativeExpirationDate, isProductLicenseExpired } from '../productSubscription/helpers'
 
 /**
  * A global alert that appears telling the site admin that their license key is about to expire. Even after being dismissed,

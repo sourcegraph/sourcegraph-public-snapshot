@@ -5,15 +5,15 @@ import { memoizeObservable } from '@sourcegraph/common'
 
 import type { PlatformContext } from '../../platform/context'
 import {
-    fetchSearchContexts,
-    getUserSearchContextNamespaces,
+    createSearchContext,
+    deleteSearchContext,
+    fetchDefaultSearchContextSpec,
     fetchSearchContext,
     fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
+    fetchSearchContexts,
+    getUserSearchContextNamespaces,
     isSearchContextAvailable,
-    fetchDefaultSearchContextSpec,
+    updateSearchContext,
 } from '../backend'
 
 export interface SearchContextProps {

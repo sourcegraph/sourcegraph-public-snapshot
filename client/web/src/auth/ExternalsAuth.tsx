@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 

@@ -1,7 +1,7 @@
 import { FC, HTMLAttributes, useState } from 'react'
 
 import classNames from 'classnames'
-import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
+import { matchPath, Route, Routes, useLocation } from 'react-router-dom'
 
 import { Container, Text } from '@sourcegraph/wildcard'
 

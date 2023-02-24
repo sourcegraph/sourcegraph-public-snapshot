@@ -5,7 +5,7 @@ import { spy } from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/wildcard/src/testing'
 
 import { NotebookFields } from '../graphql-operations'
 import * as backend from '../notebooks/backend'

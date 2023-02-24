@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
-import { mapTo, map, tap } from 'rxjs/operators'
+import { map, mapTo, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../../../backend/graphql'

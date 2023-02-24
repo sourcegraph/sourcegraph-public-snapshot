@@ -1,5 +1,5 @@
-export { Tooltip, TooltipContent } from './tooltip'
-export { LegendList, LegendItem, LegendItemPoint } from './legend-list/LegendList'
-export { PointGlyph } from './PointGlyph'
+export { LegendItem, LegendItemPoint, LegendList } from './legend-list/LegendList'
 export { LineDataSeries } from './LineDataSeries'
+export { PointGlyph } from './PointGlyph'
 export { StackedArea } from './stacked-area/StackedArea'
+export { Tooltip, TooltipContent } from './tooltip'

@@ -1,18 +1,18 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { diffStatFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    CreateBatchChangeVariables,
-    CreateBatchChangeResult,
     ApplyBatchChangeResult,
     ApplyBatchChangeVariables,
-    QueryApplyPreviewStatsVariables,
-    QueryApplyPreviewStatsResult,
     ApplyPreviewStatsFields,
+    CreateBatchChangeResult,
+    CreateBatchChangeVariables,
+    QueryApplyPreviewStatsResult,
+    QueryApplyPreviewStatsVariables,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 

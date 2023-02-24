@@ -7,7 +7,7 @@ import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetSearchAggregationResult, WebGraphQlOperations, SearchAggregationMode } from '../graphql-operations'
+import { GetSearchAggregationResult, SearchAggregationMode, WebGraphQlOperations } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'

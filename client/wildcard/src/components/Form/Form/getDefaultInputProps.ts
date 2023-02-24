@@ -1,4 +1,4 @@
-import { InputStatus, InputProps } from '../Input'
+import { InputProps, InputStatus } from '../Input'
 
 import { useFieldAPI } from './hooks'
 

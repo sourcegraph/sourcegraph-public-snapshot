@@ -10,7 +10,7 @@ import { TimeIntervalStepUnit } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
-import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE, LANG_STATS_INSIGHT_DATA_FIXTURE } from './fixtures/runtime-insights'
+import { LANG_STATS_INSIGHT_DATA_FIXTURE, SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Code insight create insight page', () => {

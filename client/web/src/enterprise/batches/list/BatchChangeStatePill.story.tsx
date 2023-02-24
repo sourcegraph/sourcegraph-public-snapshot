@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { upperFirst } from 'lodash'
 
 import { H3 } from '@sourcegraph/wildcard'

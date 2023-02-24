@@ -4,7 +4,7 @@ import { filter, map } from 'rxjs/operators'
 import { getPlatformName } from '../../shared/util/context'
 
 import { fromBrowserEvent } from './fromBrowserEvent'
-import { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
+import { LocalStorageItems, ManagedStorageItems, SyncStorageItems } from './types'
 
 interface ExtensionStorageItems {
     local: LocalStorageItems

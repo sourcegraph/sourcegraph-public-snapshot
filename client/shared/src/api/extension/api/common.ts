@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from 'comlink'
+import { proxy, ProxyMarked, proxyMarker, Remote, UnproxyOrClone } from 'comlink'
 import { identity } from 'lodash'
 import { from, isObservable, Observable, Observer, of, Subscribable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'

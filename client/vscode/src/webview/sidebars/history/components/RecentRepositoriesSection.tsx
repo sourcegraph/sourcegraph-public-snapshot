@@ -8,7 +8,7 @@ import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/sea
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
+import { Button, H5, Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'

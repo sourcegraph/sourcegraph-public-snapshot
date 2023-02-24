@@ -16,9 +16,9 @@ import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
 import { requestGraphQL } from '../../../../../backend/graphql'
 import {
-    Scalars,
     BatchSpecExecutionAvailableSecretKeysResult,
     BatchSpecExecutionAvailableSecretKeysVariables,
+    Scalars,
 } from '../../../../../graphql-operations'
 
 import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'

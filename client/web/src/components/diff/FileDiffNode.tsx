@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
 import { useLocation } from 'react-router-dom'
 
-import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, createLinkUrl, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'

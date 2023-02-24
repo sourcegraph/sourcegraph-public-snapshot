@@ -8,25 +8,25 @@ import * as sourcegraph from '../api'
 import { QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse } from './api'
-import { DefinitionResponse, DefinitionAndHoverResponse } from './definition-hover'
+import { DefinitionAndHoverResponse, DefinitionResponse } from './definition-hover'
 import { createGraphQLProviders as createProviders, searchStencil } from './providers'
-import { ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS } from './references'
+import { MAX_REFERENCE_PAGE_REQUESTS, ReferencesResponse } from './references'
 import { makeStencilFn } from './stencil'
 import {
+    document,
     gatherValues,
     makeEnvelope,
-    resource0,
-    resource1,
-    resource2,
-    resource3,
+    position,
     range1,
     range2,
     range3,
     range4,
     range5,
     range6,
-    document,
-    position,
+    resource0,
+    resource1,
+    resource2,
+    resource3,
     stencil1,
 } from './util.test'
 

@@ -1,4 +1,4 @@
-import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEvent } from 'react'
+import { ChangeEvent, FC, ReactElement, ReactNode, useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
@@ -6,27 +6,27 @@ import { noop } from 'lodash'
 
 import { modify } from '@sourcegraph/common'
 import {
-    Tabs,
+    Checkbox,
+    ErrorAlert,
+    FormInstance,
+    FORM_ERROR,
+    getDefaultInputProps,
+    Input,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
-    Input,
-    Checkbox,
-    useLocalStorage,
-    useField,
-    useForm,
-    FormInstance,
-    getDefaultInputProps,
-    useFieldAPI,
+    Tabs,
     useControlledField,
-    ErrorAlert,
-    FORM_ERROR,
+    useField,
+    useFieldAPI,
+    useForm,
+    useLocalStorage,
 } from '@sourcegraph/wildcard'
 
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import { AddExternalServiceInput, ExternalServiceKind } from '../../../../../../graphql-operations'
-import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
+import { CodeHostConnectFormFields, CodeHostJSONFormContent, CodeHostJSONFormState, RadioGroupSection } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
 

@@ -11,15 +11,15 @@ import { WebStory } from '../../../components/WebStory'
 
 import { Revisions } from './Revisions'
 import {
+    DEFAULT_MOCKS,
+    EMPTY_FILTERED_MOCKS,
     EMPTY_MOCKS,
     FEW_RESULTS_MOCKS,
     FILTERED_MOCKS,
-    MOCK_PROPS,
     FILTERED_MOCK_PROPS,
-    DEFAULT_MOCKS,
-    EMPTY_FILTERED_MOCKS,
-    NETWORK_ERROR_MOCKS,
     GRAPHQL_ERROR_MOCKS,
+    MOCK_PROPS,
+    NETWORK_ERROR_MOCKS,
 } from './Revisions.mocks'
 
 export default {

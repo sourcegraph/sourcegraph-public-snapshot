@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ButtonGroup, Button, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Tooltip } from '@sourcegraph/wildcard'
 
 interface ToggleSelectProps<T> {
     selected: T

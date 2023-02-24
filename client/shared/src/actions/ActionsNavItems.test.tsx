@@ -1,6 +1,6 @@
-import { render, act, RenderResult } from '@testing-library/react'
+import { act, render, RenderResult } from '@testing-library/react'
 import * as H from 'history'
-import { of, NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 

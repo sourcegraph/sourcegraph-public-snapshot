@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Button, H3, Text } from '@sourcegraph/wildcard'
+import { Button, H3, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
 

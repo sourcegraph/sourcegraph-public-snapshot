@@ -4,19 +4,19 @@ import classNames from 'classnames'
 
 import {
     Card,
+    FormGroup,
+    FormInstance,
+    getDefaultInputProps,
     Input,
     Label,
     Link,
-    FormGroup,
-    getDefaultInputProps,
-    useFieldAPI,
-    FormInstance,
     SubmissionErrors,
+    useFieldAPI,
 } from '@sourcegraph/wildcard'
 
 import {
-    CodeInsightTimeStepPicker,
     CodeInsightDashboardsVisibility,
+    CodeInsightTimeStepPicker,
     LimitedAccessLabel,
     RepoSettingSection,
 } from '../../../../../components'

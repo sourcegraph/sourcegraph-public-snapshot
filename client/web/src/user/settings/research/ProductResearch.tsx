@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Icon, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'

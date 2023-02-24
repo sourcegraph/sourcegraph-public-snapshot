@@ -1,8 +1,8 @@
 import {
-    lprToSelectionsZeroIndexed,
+    appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
     encodeURIPathComponent,
-    appendLineRangeQueryParameter,
+    lprToSelectionsZeroIndexed,
 } from './url'
 
 /**

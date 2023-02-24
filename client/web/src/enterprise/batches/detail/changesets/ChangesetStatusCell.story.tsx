@@ -1,4 +1,4 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetState } from '../../../../graphql-operations'

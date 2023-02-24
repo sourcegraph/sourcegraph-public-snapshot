@@ -1,14 +1,14 @@
-import React, { useCallback, useRef, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import copy from 'copy-to-clipboard'
-import { Observable, merge, of } from 'rxjs'
-import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
+import { merge, Observable, of } from 'rxjs'
+import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { Button, Icon, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, useEventObservable } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string

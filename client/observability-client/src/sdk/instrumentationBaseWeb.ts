@@ -1,4 +1,4 @@
-import { Instrumentation, InstrumentationConfig, InstrumentationBase } from '@opentelemetry/instrumentation'
+import { Instrumentation, InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { createActiveSpan } from './createActiveSpan'
 import { createFinishedSpan } from './createFinishedSpan'

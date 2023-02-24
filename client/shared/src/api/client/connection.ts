@@ -4,7 +4,7 @@ import { first } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 
-import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
+import { ClosableEndpointPair, PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { ExtensionHostAPIFactory } from '../extension/api/api'

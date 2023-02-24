@@ -1,5 +1,5 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { decorate, type Decoration, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { decorate, toDecoration, type Decoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 export function decorateQuery(query: string, searchPatternType?: SearchPatternType): Decoration[] | null {

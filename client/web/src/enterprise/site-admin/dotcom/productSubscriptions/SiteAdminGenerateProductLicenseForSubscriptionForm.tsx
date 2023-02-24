@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Button, Link, Label, Input, ErrorAlert, Form, Select, useDebounce } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, Form, Input, Label, Link, Select, useDebounce } from '@sourcegraph/wildcard'
 
 import {
     GenerateProductLicenseForSubscriptionResult,

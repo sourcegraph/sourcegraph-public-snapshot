@@ -1,4 +1,4 @@
-import { HTMLAttributes, forwardRef, useEffect } from 'react'
+import { forwardRef, HTMLAttributes, useEffect } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 

@@ -1,6 +1,6 @@
 import { FC, FormEventHandler, FormHTMLAttributes, ReactNode } from 'react'
 
-import { Input, useFieldAPI, getDefaultInputProps, SubmissionErrors } from '@sourcegraph/wildcard'
+import { getDefaultInputProps, Input, SubmissionErrors, useFieldAPI } from '@sourcegraph/wildcard'
 
 import { CodeInsightDashboardsVisibility, RepositoryField } from '../../../../../../components'
 import { LangStatsCreationFormFields } from '../../types'

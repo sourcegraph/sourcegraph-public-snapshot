@@ -1,4 +1,4 @@
-import { MinimalLangStatsInsightData, InsightType } from '../../../../../core'
+import { InsightType, MinimalLangStatsInsightData } from '../../../../../core'
 import { LangStatsCreationFormFields } from '../types'
 
 /**

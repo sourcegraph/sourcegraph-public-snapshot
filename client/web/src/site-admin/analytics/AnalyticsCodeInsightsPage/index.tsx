@@ -1,9 +1,9 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, Text, LineChart, Series, H2 } from '@sourcegraph/wildcard'
+import { Card, H2, LineChart, LoadingSpinner, Series, Text } from '@sourcegraph/wildcard'
 
 import { InsightsStatisticsResult, InsightsStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'

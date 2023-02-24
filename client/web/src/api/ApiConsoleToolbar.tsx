@@ -1,7 +1,7 @@
-import { usePrettifyEditors, useHistoryContext } from '@graphiql/react'
+import { useHistoryContext, usePrettifyEditors } from '@graphiql/react'
 import graphiql from 'graphiql'
 
-import { Button, Alert, ButtonLink } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from './ApiConsoleToolbar.module.scss'
 

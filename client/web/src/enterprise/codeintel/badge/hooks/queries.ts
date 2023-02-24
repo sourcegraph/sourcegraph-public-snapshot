@@ -2,9 +2,9 @@ import { gql } from '@sourcegraph/http-client'
 
 import {
     gitTreeCodeIntelInfoFragment,
+    inferredAvailableIndexersFieldsFragment,
     preciseSupportFragment,
     searchBasedCodeIntelSupportFragment,
-    inferredAvailableIndexersFieldsFragment,
 } from '../../dashboard/hooks/queries'
 import { codeIntelIndexerFieldsFragment } from '../../indexes/hooks/types'
 

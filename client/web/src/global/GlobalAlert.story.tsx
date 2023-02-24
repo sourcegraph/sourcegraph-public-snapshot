@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { H1, H2, Code, Text } from '@sourcegraph/wildcard'
+import { Code, H1, H2, Text } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AlertType } from '../graphql-operations'

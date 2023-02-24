@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
+import { Button, H3, H4, Icon, Link, Text, useLocalStorage, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'

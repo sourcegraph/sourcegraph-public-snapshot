@@ -10,8 +10,8 @@ import {
     GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
     GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
     GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
-    LANG_STAT_INSIGHT_CONTENT,
     LANG_STATS_INSIGHT,
+    LANG_STAT_INSIGHT_CONTENT,
     SEARCH_BASED_INSIGHT,
 } from '../fixtures/dashboards'
 import { mockDashboardWithInsights } from '../utils/mock-helpers'

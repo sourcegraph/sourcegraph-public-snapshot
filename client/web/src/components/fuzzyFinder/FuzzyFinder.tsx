@@ -1,4 +1,4 @@
-import React, { useEffect, Dispatch, SetStateAction, useCallback, useRef } from 'react'
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef } from 'react'
 
 import * as H from 'history'
 
@@ -8,7 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
-import { fuzzyIsActive, FuzzyTabsProps, FuzzyState, useFuzzyState, FuzzyTabKey } from './FuzzyTabs'
+import { fuzzyIsActive, FuzzyState, FuzzyTabKey, FuzzyTabsProps, useFuzzyState } from './FuzzyTabs'
 
 const DEFAULT_MAX_RESULTS = 50
 

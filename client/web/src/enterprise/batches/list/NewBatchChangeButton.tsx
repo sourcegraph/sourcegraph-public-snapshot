@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
-import { Link, LinkProps, Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, LinkProps } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 

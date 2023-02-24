@@ -2,10 +2,10 @@ import React, { useCallback } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 import { Observable, throwError } from 'rxjs'
-import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
+import { catchError, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, H3, LoadingSpinner, Modal, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 

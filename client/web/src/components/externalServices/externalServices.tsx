@@ -15,7 +15,7 @@ import NpmIcon from 'mdi-react/NpmIcon'
 
 import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Code, Text, setLinkComponent, RouterLink } from '@sourcegraph/wildcard'
+import { Code, Link, RouterLink, setLinkComponent, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import azureDevOpsSchemaJSON from '../../../../../schema/azuredevops.schema.json'

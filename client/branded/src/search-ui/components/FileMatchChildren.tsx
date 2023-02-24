@@ -1,4 +1,4 @@
-import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
+import React, { KeyboardEvent, MouseEvent, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'

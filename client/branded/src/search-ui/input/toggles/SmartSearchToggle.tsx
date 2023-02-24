@@ -5,16 +5,16 @@ import classNames from 'classnames'
 
 import {
     Button,
+    H2,
+    H4,
     Icon,
     Input,
     Label,
     Popover,
     PopoverContent,
     PopoverTrigger,
-    Tooltip,
     Position,
-    H4,
-    H2,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ToggleProps } from './QueryInputToggle'

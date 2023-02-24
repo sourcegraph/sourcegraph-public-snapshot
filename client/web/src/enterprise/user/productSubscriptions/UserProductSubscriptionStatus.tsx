@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
-import { mdiKey, mdiInformation } from '@mdi/js'
+import { mdiInformation, mdiKey } from '@mdi/js'
 
-import { Button, CardFooter, Link, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Code, H3, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'

@@ -2,10 +2,10 @@ import {
     ApolloLink,
     FetchResult,
     NextLink,
-    Operation,
     Observable,
-    Observer,
     ObservableSubscription,
+    Observer,
+    Operation,
 } from '@apollo/client'
 
 import { ApolloContext } from '../types'

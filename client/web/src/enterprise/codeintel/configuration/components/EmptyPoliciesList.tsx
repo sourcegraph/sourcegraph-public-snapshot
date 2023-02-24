@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiMapSearch, mdiOpenInNew } from '@mdi/js'
 
-import { Link, Text, Icon, H4 } from '@sourcegraph/wildcard'
+import { H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { CreatePolicyButtons } from './CreatePolicyButtons'
 

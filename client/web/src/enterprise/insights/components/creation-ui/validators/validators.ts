@@ -1,4 +1,4 @@
-import { Validator, createRequiredValidator } from '@sourcegraph/wildcard'
+import { createRequiredValidator, Validator } from '@sourcegraph/wildcard'
 
 import { EditableDataSeries } from '../form-series'
 

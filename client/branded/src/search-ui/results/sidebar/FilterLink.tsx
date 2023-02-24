@@ -10,7 +10,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
-import { SyntaxHighlightedSearchQuery, CodeHostIcon } from '../../components'
+import { CodeHostIcon, SyntaxHighlightedSearchQuery } from '../../components'
 
 import { getFiltersOfKind } from './helpers'
 

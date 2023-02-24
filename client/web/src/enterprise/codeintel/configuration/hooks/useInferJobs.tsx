@@ -1,6 +1,6 @@
 import { ApolloError, gql, useQuery } from '@apollo/client'
 
-import { InferAutoIndexJobsForRepoVariables, InferAutoIndexJobsForRepoResult } from '../../../../graphql-operations'
+import { InferAutoIndexJobsForRepoResult, InferAutoIndexJobsForRepoVariables } from '../../../../graphql-operations'
 
 interface InferJobsScriptResult {
     data?: InferAutoIndexJobsForRepoResult

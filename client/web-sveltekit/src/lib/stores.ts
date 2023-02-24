@@ -2,7 +2,7 @@ import { getContext } from 'svelte'
 import { readable, type Readable } from 'svelte/store'
 
 import type { GraphQLClient } from '$lib/http-client'
-import type { SettingsCascade, AuthenticatedUser, PlatformContext, TemporarySettingsStorage } from '$lib/shared'
+import type { AuthenticatedUser, PlatformContext, SettingsCascade, TemporarySettingsStorage } from '$lib/shared'
 import { getWebGraphQLClient } from '$lib/web'
 
 export interface SourcegraphContext {

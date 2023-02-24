@@ -1,6 +1,6 @@
 import { SearchMatch, SearchType, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { searchResultsToFileContent, buildFileName } from './searchResultsExport'
+import { buildFileName, searchResultsToFileContent } from './searchResultsExport'
 
 describe('searchResultsToFileContent', () => {
     const sourcegraphURL = 'http://localhost:3443'

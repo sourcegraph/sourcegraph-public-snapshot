@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled, Unsubscribable } from 'rxjs'
-import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
+import { asyncScheduler, from, Observable, ObservableInput, of, scheduled, Subject, Unsubscribable } from 'rxjs'
+import { catchError, map, mergeMap, publish, refCount, switchMap, take, takeUntil, takeWhile } from 'rxjs/operators'
 
-import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 interface Request<T> {
     /**

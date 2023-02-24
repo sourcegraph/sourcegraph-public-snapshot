@@ -2,23 +2,23 @@ import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
-import { merge, of, Observable } from 'rxjs'
+import { merge, Observable, of } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, Form, H2, Icon, Link, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
+    CreateProductSubscriptionResult,
     CreateProductSubscriptionVariables,
+    ProductSubscriptionAccountFields,
     ProductSubscriptionAccountsResult,
     ProductSubscriptionAccountsVariables,
-    ProductSubscriptionAccountFields,
-    CreateProductSubscriptionResult,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 

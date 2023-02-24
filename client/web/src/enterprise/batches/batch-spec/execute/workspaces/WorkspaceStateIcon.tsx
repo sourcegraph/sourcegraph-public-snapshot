@@ -1,9 +1,9 @@
 import React from 'react'
 
-import { mdiTimerSand, mdiLinkVariantRemove, mdiCancel, mdiAlertCircle, mdiContentSave, mdiCheckBold } from '@mdi/js'
+import { mdiAlertCircle, mdiCancel, mdiCheckBold, mdiContentSave, mdiLinkVariantRemove, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 
-import { LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 

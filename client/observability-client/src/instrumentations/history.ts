@@ -1,7 +1,7 @@
 import { AttributeValue } from '@opentelemetry/api'
 
 import { ClientAttributes } from '../processors/clientAttributesSpanProcessor'
-import { SharedSpanName, InstrumentationBaseWeb, sharedSpanStore } from '../sdk'
+import { InstrumentationBaseWeb, SharedSpanName, sharedSpanStore } from '../sdk'
 
 const PATCHED_HISTORY_METHODS = ['replaceState', 'pushState', 'back', 'forward', 'go'] as const
 type PatchedKeys = typeof PATCHED_HISTORY_METHODS[number]

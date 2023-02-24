@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -7,8 +7,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
-    GlobalExecutorSecretsResult,
     ExecutorSecretScope,
+    GlobalExecutorSecretsResult,
     UserExecutorSecretsResult,
 } from '../../../graphql-operations'
 

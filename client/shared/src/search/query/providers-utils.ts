@@ -3,7 +3,7 @@
 // Monaco
 
 import { Observable, of } from 'rxjs'
-import { delay, takeUntil, switchMap } from 'rxjs/operators'
+import { delay, switchMap, takeUntil } from 'rxjs/operators'
 
 import { SearchMatch } from '../stream'
 

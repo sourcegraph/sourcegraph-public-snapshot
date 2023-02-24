@@ -11,10 +11,10 @@ import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text }
 
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
+    GitRefType,
+    SearchSidebarGitRefFields,
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,
-    SearchSidebarGitRefFields,
-    GitRefType,
 } from '../../../graphql-operations'
 
 import revisionStyles from './Revisions.module.scss'

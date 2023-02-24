@@ -8,7 +8,7 @@ import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
+import { createPath, Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 
 import {
     addLineRangeQueryParameter,

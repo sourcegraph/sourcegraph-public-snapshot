@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from 'react'
 
-import { mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Popover, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 import { ExternalServiceKind } from '../../graphql-operations'

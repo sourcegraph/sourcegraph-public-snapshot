@@ -9,13 +9,13 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
-    LoadingSpinner,
     Button,
     ButtonLink,
     ButtonLinkProps,
-    WildcardThemeContext,
     Icon,
+    LoadingSpinner,
     Tooltip,
+    WildcardThemeContext,
 } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'

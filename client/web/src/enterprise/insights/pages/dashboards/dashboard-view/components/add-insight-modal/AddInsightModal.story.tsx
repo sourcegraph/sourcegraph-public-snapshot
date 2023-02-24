@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing/core'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'

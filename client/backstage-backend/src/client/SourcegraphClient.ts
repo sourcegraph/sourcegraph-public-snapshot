@@ -1,6 +1,6 @@
 import { getGraphQLClient, GraphQLClient } from '@sourcegraph/http-client'
 import { generateCache } from '@sourcegraph/shared/src/backend/apolloCache'
-import { UserQuery, Query, SearchQuery, SearchResult, SearchResults } from './Query'
+import { Query, SearchQuery, SearchResult, SearchResults, UserQuery } from './Query'
 
 export interface Config {
     endpoint: string

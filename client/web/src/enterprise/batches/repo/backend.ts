@@ -6,9 +6,9 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     RepoBatchChangesResult,
-    RepoBatchChangesVariables,
-    RepoBatchChangeStatsVariables,
     RepoBatchChangeStatsResult,
+    RepoBatchChangeStatsVariables,
+    RepoBatchChangesVariables,
 } from '../../../graphql-operations'
 import { changesetFieldsFragment } from '../detail/backend'
 

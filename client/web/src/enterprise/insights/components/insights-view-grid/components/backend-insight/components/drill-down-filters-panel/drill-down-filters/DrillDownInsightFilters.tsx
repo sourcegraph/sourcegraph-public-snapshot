@@ -1,22 +1,22 @@
 import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiArrowExpand, mdiArrowCollapse, mdiPlus } from '@mdi/js'
+import { mdiArrowCollapse, mdiArrowExpand, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual, noop } from 'lodash'
 
 import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Button,
+    ErrorAlert,
+    FormChangeEvent,
+    FORM_ERROR,
+    H4,
     Icon,
     Link,
-    H4,
-    ErrorAlert,
-    useField,
-    FormChangeEvent,
     SubmissionResult,
+    useField,
     useForm,
-    FORM_ERROR,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'

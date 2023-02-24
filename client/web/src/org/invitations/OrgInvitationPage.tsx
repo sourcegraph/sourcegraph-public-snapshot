@@ -7,7 +7,7 @@ import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, Form, H2, H3, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'

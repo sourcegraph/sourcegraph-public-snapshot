@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { H3, Link } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { ChangesetState, ExternalChangesetFields } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'

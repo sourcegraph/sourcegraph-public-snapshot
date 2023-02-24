@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ExternalChangesetFields } from '../../../graphql-operations'

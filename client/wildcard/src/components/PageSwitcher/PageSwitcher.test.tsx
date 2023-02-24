@@ -1,4 +1,4 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'

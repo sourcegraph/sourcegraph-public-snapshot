@@ -1,20 +1,20 @@
 import * as React from 'react'
 
-import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
+import { mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
 
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
-    TreeLayerRowContentsText,
     TreeLayerCell,
-    TreeRowAlert,
     TreeLayerRowContents,
+    TreeLayerRowContentsText,
+    TreeRow,
+    TreeRowAlert,
     TreeRowIconLink,
     TreeRowLabelLink,
-    TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
-import { TreeEntryInfo, getTreeItemOffset } from './util'
+import { getTreeItemOffset, TreeEntryInfo } from './util'
 
 import styles from './Tree.module.scss'
 

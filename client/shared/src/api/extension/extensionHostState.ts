@@ -16,11 +16,11 @@ import { ExtensionDocument } from './api/textDocument'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { InitData } from './extensionHost'
 import {
-    RegisteredProvider,
-    RegisteredViewProvider,
     PanelViewData,
     PlainNotification,
     ProgressNotification,
+    RegisteredProvider,
+    RegisteredViewProvider,
 } from './extensionHostApi'
 import { ReferenceCounter } from './utils/ReferenceCounter'
 

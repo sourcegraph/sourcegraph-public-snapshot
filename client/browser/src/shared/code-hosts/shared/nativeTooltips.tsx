@@ -12,7 +12,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
+import { ErrorLike, isDefined, isErrorLike, isNot } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import type { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'

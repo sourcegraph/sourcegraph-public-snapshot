@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState, memo, FC, ReactElement, ReactNode } from 'react'
+import React, { FC, memo, ReactElement, ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H5, Input, H3 } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, H3, H5, Icon, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 

@@ -8,7 +8,7 @@ import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
 
-import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4, Form } from '../../components'
+import { Button, Checkbox, Code, Form, H1, H2, H3, H4, Input, Link, Select, Text, TextArea } from '../../components'
 import { BrandedStory } from '../../stories'
 
 import { ColorVariants } from './ColorVariants'

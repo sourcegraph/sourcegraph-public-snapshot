@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { gql, useLazyQuery } from '@apollo/client'
 
-import { renderError, AsyncValidator, Validator } from '@sourcegraph/wildcard'
+import { AsyncValidator, renderError, Validator } from '@sourcegraph/wildcard'
 
 import { CheckRepositoryExistsResult, CheckRepositoryExistsVariables } from '../../../../../../../graphql-operations'
 

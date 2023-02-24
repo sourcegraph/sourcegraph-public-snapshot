@@ -2,7 +2,7 @@ import path from 'path'
 
 import webpack from 'webpack'
 
-import { ROOT_PATH, NODE_MODULES_PATH } from '../paths'
+import { NODE_MODULES_PATH, ROOT_PATH } from '../paths'
 
 export const getBasicCSSLoader = (): webpack.RuleSetUseItem => ({
     loader: 'css-loader',

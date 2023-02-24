@@ -5,13 +5,13 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import {
-    LastSyncedIcon,
-    SymbolSearchResultStyles as styles,
-    SearchResultStyles as searchResultStyles,
     CodeExcerpt,
+    CopyPathAction,
+    LastSyncedIcon,
     navigateToFileOnMiddleMouseButtonClick,
     ResultContainer,
-    CopyPathAction,
+    SearchResultStyles as searchResultStyles,
+    SymbolSearchResultStyles as styles,
 } from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'

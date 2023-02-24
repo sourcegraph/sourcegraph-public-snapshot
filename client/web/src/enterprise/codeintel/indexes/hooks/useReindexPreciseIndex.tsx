@@ -1,8 +1,8 @@
-import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { ApolloError, FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { ReindexPreciseIndexResult, ReindexPreciseIndexVariables, Exact } from '../../../../graphql-operations'
+import { Exact, ReindexPreciseIndexResult, ReindexPreciseIndexVariables } from '../../../../graphql-operations'
 
 type ReindexPreciseIndexResults = Promise<
     FetchResult<ReindexPreciseIndexResult, Record<string, any>, Record<string, any>>

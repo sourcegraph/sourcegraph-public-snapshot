@@ -1,4 +1,4 @@
-import { encodeCaptureInsightURL, decodeCaptureInsightURL } from './capture-insight-url-parsers'
+import { decodeCaptureInsightURL, encodeCaptureInsightURL } from './capture-insight-url-parsers'
 
 describe('decodeCaptureInsightURL', () => {
     test('should return null of non of insight relevant fields are presented in the URL query params', () => {

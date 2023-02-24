@@ -1,4 +1,4 @@
-import { Observable, from, concat } from 'rxjs'
+import { concat, from, Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -8,10 +8,10 @@ import type { DocumentHighlight } from '@sourcegraph/shared/src/codeintel/legacy
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     FileSpec,
-    UIPositionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     toURIWithPath,
+    UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 /**

@@ -1,10 +1,10 @@
-import React, { useMemo, useContext } from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 import { noop } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'

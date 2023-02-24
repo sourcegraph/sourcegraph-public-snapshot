@@ -1,32 +1,32 @@
-import { QueryTuple, MutationTuple } from '@apollo/client'
+import { MutationTuple, QueryTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
-    UpdateExternalServiceResult,
-    UpdateExternalServiceVariables,
-    Scalars,
-    AddExternalServiceVariables,
     AddExternalServiceResult,
-    DeleteExternalServiceVariables,
+    AddExternalServiceVariables,
+    CancelExternalServiceSyncResult,
+    CancelExternalServiceSyncVariables,
     DeleteExternalServiceResult,
-    ExternalServicesVariables,
-    ExternalServicesResult,
-    ExternalServiceCheckConnectionByIdVariables,
+    DeleteExternalServiceVariables,
     ExternalServiceCheckConnectionByIdResult,
-    SyncExternalServiceResult,
-    SyncExternalServiceVariables,
-    ExternalServiceSyncJobsVariables,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServicesResult,
+    ExternalServicesVariables,
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceSyncJobsResult,
-    CancelExternalServiceSyncVariables,
-    CancelExternalServiceSyncResult,
+    ExternalServiceSyncJobsVariables,
     ListExternalServiceFields,
+    Scalars,
+    SyncExternalServiceResult,
+    SyncExternalServiceVariables,
+    UpdateExternalServiceResult,
+    UpdateExternalServiceVariables,
 } from '../../graphql-operations'
 import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
 

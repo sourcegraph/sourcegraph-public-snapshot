@@ -8,7 +8,7 @@ import { isDefined } from '@sourcegraph/common'
 
 import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
-import { Link, AnchorLink } from '../Link'
+import { AnchorLink, Link } from '../Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     (event.key === Key.Enter || event.key === ' ') &&

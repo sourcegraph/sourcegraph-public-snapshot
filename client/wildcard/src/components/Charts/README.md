@@ -27,7 +27,7 @@ As you can see in the storybook stories of this package, you can use these chart
 directly from this package as the following example
 
 ```tsx
-import { LineChart, LegendList, LegendItem } from './charts'
+import { LegendItem, LegendList, LineChart } from './charts'
 
 const SERIES = [
   {

@@ -8,10 +8,10 @@ import create from 'zustand'
 import {
     BuildSearchQueryURLParameters,
     canSubmitSearch,
-    SearchQueryState,
-    updateQuery,
     InitialParametersSource,
     SearchMode,
+    SearchQueryState,
+    updateQuery,
 } from '@sourcegraph/shared/src/search'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'

@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
+import { createMemoryRouter, MemoryRouterProps, RouterProvider } from 'react-router-dom'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

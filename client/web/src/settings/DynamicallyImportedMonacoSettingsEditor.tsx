@@ -5,9 +5,9 @@ import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
+import { BeforeUnloadPrompt, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
 import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'

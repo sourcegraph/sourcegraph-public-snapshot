@@ -1,21 +1,21 @@
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
-    ChangesetSpecFileDiffsVariables,
-    ChangesetSpecFileDiffsResult,
+    AllPublishableChangesetSpecIDsResult,
+    AllPublishableChangesetSpecIDsVariables,
     BatchSpecApplyPreviewConnectionFields,
     BatchSpecApplyPreviewResult,
     BatchSpecApplyPreviewVariables,
     ChangesetSpecFileDiffConnectionFields,
-    Scalars,
-    AllPublishableChangesetSpecIDsVariables,
+    ChangesetSpecFileDiffsResult,
+    ChangesetSpecFileDiffsVariables,
     PublishableChangesetSpecIDsConnectionFields,
-    AllPublishableChangesetSpecIDsResult,
+    Scalars,
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { filterPublishableIDs } from '../utils'

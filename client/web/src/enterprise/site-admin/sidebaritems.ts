@@ -4,8 +4,8 @@ import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
-    apiConsoleGroup,
     analyticsGroup,
+    apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,

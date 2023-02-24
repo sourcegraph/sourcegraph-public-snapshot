@@ -7,8 +7,8 @@ import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    SearchContextsOrderBy,
     SearchContextMinimalFields,
+    SearchContextsOrderBy,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'

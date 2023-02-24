@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { trace, Span } from '@opentelemetry/api'
+import { Span, trace } from '@opentelemetry/api'
 
 import { IS_OPEN_TELEMETRY_TRACING_ENABLED, noopSpan } from '../constants'
 

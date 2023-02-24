@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiFormatLetterCase, mdiRegex, mdiCodeBrackets, mdiMagnify } from '@mdi/js'
+import { mdiCodeBrackets, mdiFormatLetterCase, mdiMagnify, mdiRegex } from '@mdi/js'
 
 import { Icon } from '@sourcegraph/wildcard'
 

@@ -8,19 +8,19 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
     CreateNotebookBlockInput,
-    NotebookFields,
-    WebGraphQlOperations,
     NotebookBlockType,
+    NotebookFields,
     SymbolKind,
+    WebGraphQlOperations,
 } from '../graphql-operations'
 import { BlockType } from '../notebooks'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'

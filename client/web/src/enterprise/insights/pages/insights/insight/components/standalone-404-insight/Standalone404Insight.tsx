@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Button, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from './Standalone404Insight.module.scss'
 

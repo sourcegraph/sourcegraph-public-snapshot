@@ -7,18 +7,18 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    Alert,
+    Button,
+    Code,
     Container,
     ErrorAlert,
+    Icon,
+    Input,
     Link,
     LoadingSpinner,
     PageHeader,
-    Input,
-    useDebounce,
-    Button,
-    Alert,
     Text,
-    Code,
-    Icon,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { externalRepoIcon } from '../components/externalServices/externalServices'
@@ -33,13 +33,13 @@ import { ConnectionSummary } from '../components/FilteredConnection/ui'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
 import {
+    ExternalServiceKind,
+    ExternalServiceKindsResult,
+    ExternalServiceKindsVariables,
+    PackageRepoReferenceKind,
     PackagesResult,
     PackagesVariables,
     SiteAdminPackageFields,
-    ExternalServiceKindsVariables,
-    ExternalServiceKindsResult,
-    ExternalServiceKind,
-    PackageRepoReferenceKind,
 } from '../graphql-operations'
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'

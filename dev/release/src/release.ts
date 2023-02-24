@@ -12,14 +12,14 @@ import * as changelog from './changelog'
 import {
     activateRelease,
     addScheduledRelease,
+    deactivateAllReleases,
+    getActiveRelease,
+    getReleaseDefinition,
     loadReleaseConfig,
     newReleaseFromInput,
     ReleaseConfig,
-    getActiveRelease,
     removeScheduledRelease,
     saveReleaseConfig,
-    getReleaseDefinition,
-    deactivateAllReleases,
 } from './config'
 import { getCandidateTags, getPreviousVersion } from './git'
 import {

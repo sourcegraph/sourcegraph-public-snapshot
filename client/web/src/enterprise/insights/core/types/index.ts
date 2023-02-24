@@ -1,2 +1,2 @@
-export * from './insight'
 export * from './dashboard'
+export * from './insight'

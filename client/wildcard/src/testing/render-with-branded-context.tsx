@@ -1,19 +1,19 @@
 import { FC, ReactNode, useEffect } from 'react'
 
-import { RenderResult, render } from '@testing-library/react'
+import { render, RenderResult } from '@testing-library/react'
 import { InitialEntry } from 'history'
 import {
-    RouterProvider,
     createMemoryRouter,
     Location,
-    useLocation,
     NavigateFunction,
-    useNavigate,
-    RouteObject,
     Outlet,
+    RouteObject,
+    RouterProvider,
+    useLocation,
+    useNavigate,
 } from 'react-router-dom'
 
-import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
+import { WildcardTheme, WildcardThemeContext } from '../hooks/useWildcardTheme'
 
 export interface RenderWithBrandedContextResult extends RenderResult {
     locationRef: LocationRef

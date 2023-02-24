@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 
 import { gql } from '@sourcegraph/http-client'
-import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
+import { LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import { PersonLinkFields } from '../graphql-operations'
 

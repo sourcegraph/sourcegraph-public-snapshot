@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Badge,
+    ErrorAlert,
     Icon,
     LoadingSpinner,
     Menu,
@@ -14,10 +15,9 @@ import {
     MenuHeader,
     MenuList,
     Position,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { LSIFUploadState, LSIFIndexState } from '../../../../graphql-operations'
+import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 import {
     massageIndexerSupportMetadata,
     useCodeIntelStatus as defaultUseCodeIntelStatus,

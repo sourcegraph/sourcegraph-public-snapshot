@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Link, H3, Text } from '@sourcegraph/wildcard'
+import { H3, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from './EmptyDraftChangesetListElement.module.scss'
 

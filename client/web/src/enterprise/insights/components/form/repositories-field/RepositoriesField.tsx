@@ -6,16 +6,16 @@ import { identity } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 
 import {
-    MultiCombobox,
-    MultiComboboxInput,
-    MultiComboboxPopover,
-    MultiComboboxList,
-    MultiComboboxOption,
-    MultiComboboxOptionText,
+    ErrorMessage,
     ForwardReferenceComponent,
     Icon,
     InputStatus,
-    ErrorMessage,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxList,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
+    MultiComboboxPopover,
     useDebounce,
 } from '@sourcegraph/wildcard'
 

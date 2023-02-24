@@ -6,11 +6,11 @@ import { setAct } from '../__mocks__/zustand'
 
 import {
     addNotepadEntry,
+    NotepadEntry,
+    NotepadEntryInput,
     removeAllNotepadEntries,
     removeFromNotepad,
     restorePreviousSession,
-    NotepadEntry,
-    NotepadEntryInput,
     useNotepadState,
 } from './notepad'
 

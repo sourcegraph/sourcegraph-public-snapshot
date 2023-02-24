@@ -12,7 +12,7 @@ import type { InputBoxOptions } from '../codeintel/legacy-extensions/api'
 import { Scalars } from '../graphql-operations'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec, UIPositionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */

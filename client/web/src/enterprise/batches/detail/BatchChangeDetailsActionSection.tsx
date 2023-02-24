@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiClose, mdiDelete, mdiInformation, mdiPencil } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
-import { isErrorLike, asError } from '@sourcegraph/common'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'

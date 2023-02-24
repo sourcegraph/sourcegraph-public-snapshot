@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react'
 
-import { mdiAccount, mdiSourceRepository, mdiCommentOutline } from '@mdi/js'
+import { mdiAccount, mdiCommentOutline, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, Card, H2, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'

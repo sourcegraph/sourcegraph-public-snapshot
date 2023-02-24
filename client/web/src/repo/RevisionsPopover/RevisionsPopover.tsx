@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose } from '@mdi/js'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tab, TabList, TabPanel, TabPanels, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

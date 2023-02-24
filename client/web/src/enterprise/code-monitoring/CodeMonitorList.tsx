@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { of } from 'rxjs'
 
-import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
+import { Container, H2, H3, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CallToActionBanner } from '../../components/CallToActionBanner'

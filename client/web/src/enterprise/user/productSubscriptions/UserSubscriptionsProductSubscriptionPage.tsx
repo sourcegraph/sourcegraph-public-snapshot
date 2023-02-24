@@ -8,7 +8,7 @@ import { validate as validateUUID } from 'uuid'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { LoadingSpinner, useObservable, Link, H2, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, H2, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'

@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState, forwardRef } from 'react'
+import React, { forwardRef, useEffect, useRef, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import { LinkProps, NavLink as RouterNavLink } from 'react-router-dom'
 
-import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Button, ForwardReferenceComponent, H1, Icon, Link } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 

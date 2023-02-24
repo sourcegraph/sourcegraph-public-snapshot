@@ -1,11 +1,10 @@
-import { InsightType, InsightFilters, InsightDashboardReference } from './common'
+import { InsightDashboardReference, InsightFilters, InsightType } from './common'
 import { CaptureGroupInsight } from './types/capture-group-insight'
 import { ComputeInsight } from './types/compute-insight'
 import { LangStatsInsight } from './types/lang-stat-insight'
 import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
 export { InsightType }
-
 export type {
     InsightDashboardReference,
     SearchBasedInsight,

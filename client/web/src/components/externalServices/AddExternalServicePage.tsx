@@ -1,4 +1,4 @@
-import { FC, useEffect, useCallback, useState } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
@@ -6,7 +6,7 @@ import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/commo
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
+import { AddExternalServiceInput, ExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 

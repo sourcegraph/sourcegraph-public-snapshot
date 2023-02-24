@@ -4,7 +4,7 @@ import { BatchChangeState } from '../../graphql-operations'
 
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
-import { SectionID, NoResultsSectionID } from './searchSidebar'
+import { NoResultsSectionID, SectionID } from './searchSidebar'
 import { TourListState } from './tourState'
 
 // Prior to this type we store in settings list of MultiSelectState

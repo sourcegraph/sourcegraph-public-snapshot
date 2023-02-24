@@ -14,7 +14,7 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
-import { findFilter, FilterKind } from '../search/query/query'
+import { FilterKind, findFilter } from '../search/query/query'
 import { appendContextFilter, omitFilter } from '../search/query/transformer'
 import { SearchMode } from '../search/searchQueryState'
 

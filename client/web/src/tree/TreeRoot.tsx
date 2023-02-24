@@ -24,11 +24,11 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
-import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
+import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
 import { TreeRootContext } from './TreeContext'
-import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
+import { compareTreeProps, hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 import styles from './Tree.module.scss'
 

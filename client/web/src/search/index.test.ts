@@ -1,6 +1,6 @@
-import { Location, createPath } from 'react-router-dom'
-import { Subscription, Subject } from 'rxjs'
-import { tap, last } from 'rxjs/operators'
+import { createPath, Location } from 'react-router-dom'
+import { Subject, Subscription } from 'rxjs'
+import { last, tap } from 'rxjs/operators'
 
 import { logger, resetAllMemoizationCaches } from '@sourcegraph/common'
 import { SearchMode } from '@sourcegraph/shared/src/search'
@@ -8,7 +8,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { parseSearchURL, repoFilterForRepoRevision, getQueryStateFromLocation } from '.'
+import { getQueryStateFromLocation, parseSearchURL, repoFilterForRepoRevision } from '.'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),

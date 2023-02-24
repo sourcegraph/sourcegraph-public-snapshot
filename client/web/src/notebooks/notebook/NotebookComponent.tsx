@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
+import { mdiContentCopy, mdiDownload, mdiPlayCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom'
@@ -11,7 +11,7 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, useEventObservable } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -27,7 +27,7 @@ import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
-import { Notebook, CopyNotebookProps } from '.'
+import { CopyNotebookProps, Notebook } from '.'
 
 import styles from './NotebookComponent.module.scss'
 

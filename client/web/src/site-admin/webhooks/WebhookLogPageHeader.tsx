@@ -4,7 +4,7 @@ import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, Select, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Select } from '@sourcegraph/wildcard'
 
 import { WebhookLogPageHeaderResult } from '../../graphql-operations'
 

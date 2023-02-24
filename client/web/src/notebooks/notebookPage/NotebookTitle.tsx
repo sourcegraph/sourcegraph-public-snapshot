@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { mdiPencilOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useOnClickOutside, Icon, Input } from '@sourcegraph/wildcard'
+import { Icon, Input, useOnClickOutside } from '@sourcegraph/wildcard'
 
 import styles from './NotebookTitle.module.scss'
 

@@ -7,22 +7,22 @@ import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import {
     Button,
+    Checkbox,
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Icon,
-    Checkbox,
-    H4,
-    Text,
-    H3,
-    Markdown,
     Form,
+    H3,
+    H4,
+    Icon,
+    Markdown,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
-import { sortBySeverity, limitHit } from './utils'
+import { limitHit, sortBySeverity } from './utils'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
 

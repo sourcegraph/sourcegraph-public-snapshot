@@ -7,7 +7,7 @@ import differenceInDays from 'date-fns/differenceInDays'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, useObservable, Markdown } from '@sourcegraph/wildcard'
+import { Link, Markdown, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'

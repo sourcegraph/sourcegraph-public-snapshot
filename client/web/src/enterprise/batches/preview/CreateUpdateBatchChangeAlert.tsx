@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, ErrorAlert, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'

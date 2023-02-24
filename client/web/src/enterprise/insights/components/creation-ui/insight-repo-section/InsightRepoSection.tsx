@@ -10,24 +10,24 @@ import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/s
 import {
     Button,
     Code,
-    Label,
-    InputElement,
-    InputErrorMessage,
-    InputDescription,
-    InputStatus,
-    useDebounce,
-    Link,
     FormGroup,
-    useFieldAPI,
+    getDefaultInputError,
     getDefaultInputProps,
     getDefaultInputStatus,
-    getDefaultInputError,
+    InputDescription,
+    InputElement,
+    InputErrorMessage,
+    InputStatus,
+    Label,
+    Link,
+    useDebounce,
+    useFieldAPI,
 } from '@sourcegraph/wildcard'
 
 import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
+import { getRepoQueryPreview, MonacoField, RepositoriesField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'

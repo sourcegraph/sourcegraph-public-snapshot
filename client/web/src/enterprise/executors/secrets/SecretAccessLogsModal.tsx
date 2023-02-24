@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
+import { Button, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,

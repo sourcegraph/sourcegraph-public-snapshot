@@ -7,11 +7,11 @@ import { WebStory } from '../../components/WebStory'
 import { WebhookLogFields } from '../../graphql-operations'
 
 import {
-    webhookLogNode,
-    LARGE_HEADERS_JSON,
     LARGE_BODY_JSON,
-    LARGE_HEADERS_PLAIN,
     LARGE_BODY_PLAIN,
+    LARGE_HEADERS_JSON,
+    LARGE_HEADERS_PLAIN,
+    webhookLogNode,
 } from './story/fixtures'
 import { WebhookLogNode } from './WebhookLogNode'
 

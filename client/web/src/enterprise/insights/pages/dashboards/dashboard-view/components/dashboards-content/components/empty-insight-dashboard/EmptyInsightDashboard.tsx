@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
-import { Button, Link, Card, Tooltip, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { CustomInsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks'

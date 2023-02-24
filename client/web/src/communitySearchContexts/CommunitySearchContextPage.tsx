@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiSourceRepositoryMultiple } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -11,9 +11,9 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Card, Code, H2, H3, Icon, Link, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'

@@ -4,17 +4,17 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 
 import {
+    buildMonaco,
+    buildTimerPlugin,
+    experimentalNoticePlugin,
+    monacoPlugin,
     MONACO_LANGUAGES_AND_FEATURES,
+    packageResolutionPlugin,
     ROOT_PATH,
+    RXJS_RESOLUTIONS,
     STATIC_ASSETS_PATH,
     stylePlugin,
-    packageResolutionPlugin,
     workerPlugin,
-    monacoPlugin,
-    RXJS_RESOLUTIONS,
-    buildMonaco,
-    experimentalNoticePlugin,
-    buildTimerPlugin,
 } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
 

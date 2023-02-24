@@ -12,9 +12,9 @@ import { ComboboxOptionText } from './Combobox'
 import {
     MultiCombobox,
     MultiComboboxInput,
-    MultiComboboxPopover,
     MultiComboboxList,
     MultiComboboxOption,
+    MultiComboboxPopover,
 } from './MultiCombobox'
 
 import styles from './MultiComboboxStory.module.scss'

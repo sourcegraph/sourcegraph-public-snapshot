@@ -3,9 +3,9 @@ import { promisify } from 'util'
 
 import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
-import { uniqueId, noop, pick } from 'lodash'
+import { noop, pick, uniqueId } from 'lodash'
 import { BehaviorSubject, NEVER, of, Subscription } from 'rxjs'
-import { take, first } from 'rxjs/operators'
+import { first, take } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
@@ -28,11 +28,11 @@ import { MutationRecordLike } from '../../util/dom'
 
 import {
     CodeIntelligenceProps,
+    DiffOrBlobInfo,
     getExistingOrCreateOverlayMount,
     handleCodeHost,
-    observeHoverOverlayMountLocation,
     HandleCodeHostOptions,
-    DiffOrBlobInfo,
+    observeHoverOverlayMountLocation,
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'

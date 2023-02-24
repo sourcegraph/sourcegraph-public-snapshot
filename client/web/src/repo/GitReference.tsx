@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable, numberWithCommas } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 

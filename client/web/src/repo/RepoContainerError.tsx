@@ -5,8 +5,8 @@ import { ErrorLike } from '@sourcegraph/common'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
-    isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
+    isRevisionNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import { mdiAlertCircle, mdiSync, mdiInformationOutline } from '@mdi/js'
+import { mdiAlertCircle, mdiInformationOutline, mdiSync } from '@mdi/js'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon, Tooltip, Button } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'

@@ -1,22 +1,22 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { useDeepMemo, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Series, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
-    SeriesChart,
-    SeriesBasedChartTypes,
-    LivePreviewUpdateButton,
-    LivePreviewCard,
-    LivePreviewLoading,
-    LivePreviewChart,
-    LivePreviewBlurBackdrop,
-    LivePreviewBanner,
-    LivePreviewLegend,
     getSanitizedRepositoryScope,
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewLegend,
+    LivePreviewLoading,
+    LivePreviewUpdateButton,
+    SeriesBasedChartTypes,
+    SeriesChart,
     SERIES_MOCK_CHART,
 } from '../../../components'
-import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core'
+import { LivePreviewStatus, useLivePreviewSeriesInsight } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'

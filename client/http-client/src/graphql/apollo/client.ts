@@ -1,5 +1,5 @@
 import { ApolloClient, createHttpLink, from, HttpOptions, InMemoryCache, NormalizedCacheObject } from '@apollo/client'
-import { LocalStorageWrapper, CachePersistor } from 'apollo3-cache-persist'
+import { CachePersistor, LocalStorageWrapper } from 'apollo3-cache-persist'
 import { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
 import { once } from 'lodash'
 

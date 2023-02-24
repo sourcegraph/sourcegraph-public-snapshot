@@ -1,20 +1,20 @@
 import { useMemo } from 'react'
 
 import {
-    gql as apolloGql,
-    useQuery as useApolloQuery,
-    useMutation as useApolloMutation,
-    useSuspenseQuery_experimental as useApolloSuspenseQuery,
-    useLazyQuery as useApolloLazyQuery,
     DocumentNode,
+    gql as apolloGql,
+    MutationHookOptions as ApolloMutationHookOptions,
+    MutationTuple,
     OperationVariables,
     QueryHookOptions as ApolloQueryHookOptions,
     QueryResult,
-    MutationHookOptions as ApolloMutationHookOptions,
-    MutationTuple,
     QueryTuple,
-    UseSuspenseQueryResult,
     SuspenseQueryHookOptions,
+    useLazyQuery as useApolloLazyQuery,
+    useMutation as useApolloMutation,
+    useQuery as useApolloQuery,
+    UseSuspenseQueryResult,
+    useSuspenseQuery_experimental as useApolloSuspenseQuery,
 } from '@apollo/client'
 
 import { ApolloContext } from '../types'

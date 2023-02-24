@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from 'mz/fs'
+import { mkdir, writeFile } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import { Browser, WebWorker } from 'puppeteer'
 import * as uuid from 'uuid'

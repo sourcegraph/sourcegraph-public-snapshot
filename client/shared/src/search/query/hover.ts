@@ -3,16 +3,16 @@ import * as Monaco from 'monaco-editor'
 import {
     decorate,
     DecoratedToken,
+    MetaGitRevision,
+    MetaPredicate,
     MetaRegexp,
     MetaRegexpKind,
     MetaRevision,
-    MetaGitRevision,
+    MetaSelector,
+    MetaSelectorKind,
     MetaSourcegraphRevision,
     MetaStructural,
     MetaStructuralKind,
-    MetaSelector,
-    MetaSelectorKind,
-    MetaPredicate,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 import { toMonacoRange } from './monaco'

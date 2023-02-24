@@ -5,16 +5,16 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
-    LoadingSpinner,
-    useObservable,
-    Link,
-    CardFooter,
     Alert,
     ButtonLink,
-    Tooltip,
+    CardFooter,
     ErrorAlert,
+    Link,
+    LoadingSpinner,
+    Tooltip,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'

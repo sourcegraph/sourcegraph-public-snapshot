@@ -1,4 +1,4 @@
-import { parseSearchQuery, Node, ParseSuccess } from './parser'
+import { Node, parseSearchQuery, ParseSuccess } from './parser'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, '  '),

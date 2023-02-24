@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {

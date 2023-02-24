@@ -4,7 +4,7 @@ import { mdiCheckboxBlankCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { H4, Icon, Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
 import { ExecutorFields } from '../../../graphql-operations'

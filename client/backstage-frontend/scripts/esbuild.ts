@@ -1,11 +1,11 @@
+import { nodeExternalsPlugin } from 'esbuild-node-externals'
 import { existsSync } from 'fs'
 import path from 'path'
-import { nodeExternalsPlugin } from 'esbuild-node-externals'
 
 import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
-import { stylePlugin, workerPlugin, buildTimerPlugin, WORKSPACES_PATH } from '@sourcegraph/build-config'
+import { buildTimerPlugin, stylePlugin, workerPlugin, WORKSPACES_PATH } from '@sourcegraph/build-config'
 
 const PACKAGE_ROOT_PATH = path.resolve(WORKSPACES_PATH, 'backstage-frontend')
 const DIST_PATH = path.resolve(PACKAGE_ROOT_PATH, 'dist')

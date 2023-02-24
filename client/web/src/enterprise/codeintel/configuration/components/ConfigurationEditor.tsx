@@ -4,7 +4,7 @@ import { editor } from 'monaco-editor'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'

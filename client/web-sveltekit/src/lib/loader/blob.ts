@@ -6,9 +6,9 @@ export { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/
 import { memoizeObservable } from '$lib/common'
 import type {
     BlobFileFields,
-    HighlightingFields,
     BlobResult,
     BlobVariables,
+    HighlightingFields,
     HighlightResult,
     HighlightVariables,
 } from '$lib/graphql-operations'

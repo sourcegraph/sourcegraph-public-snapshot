@@ -1,9 +1,9 @@
-import { FC, useState, useCallback } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, ProductStatusBadge, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'

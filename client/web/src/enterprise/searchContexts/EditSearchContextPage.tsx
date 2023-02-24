@@ -9,13 +9,13 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
     SearchContextEditInput,
-    SearchContextRepositoryRevisionsInput,
     SearchContextFields,
+    SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'

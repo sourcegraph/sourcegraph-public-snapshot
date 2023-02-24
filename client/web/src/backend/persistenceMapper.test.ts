@@ -1,4 +1,4 @@
-import { persistenceMapper, ROOT_QUERY_KEY, CacheObject } from './persistenceMapper'
+import { CacheObject, persistenceMapper, ROOT_QUERY_KEY } from './persistenceMapper'
 
 describe('persistenceMapper', () => {
     const userKey = 'User:01'

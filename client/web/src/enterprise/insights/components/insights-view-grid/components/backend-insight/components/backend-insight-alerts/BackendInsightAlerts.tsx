@@ -9,16 +9,16 @@ import { ErrorLike } from '@sourcegraph/common'
 import {
     Alert,
     Button,
+    ErrorAlert,
     H4,
     Icon,
-    Text,
+    Link,
     Popover,
-    PopoverTrigger,
     PopoverContent,
     PopoverTail,
+    PopoverTrigger,
     ScrollBox,
-    Link,
-    ErrorAlert,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { BackendInsightSeries } from '../../../../../../core'

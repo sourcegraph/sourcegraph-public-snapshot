@@ -1,9 +1,9 @@
-import { useMemo, useContext } from 'react'
+import { useContext, useMemo } from 'react'
 
-import { context, trace, Span, Context, Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
+import { Attributes, context, Context, ROOT_CONTEXT, Span, trace } from '@opentelemetry/api'
 
-import { sharedSpanStore, areOnTheSameTrace } from '../../sdk'
-import { TraceContext, reactManualTracer, ReactAttributes } from '../constants'
+import { areOnTheSameTrace, sharedSpanStore } from '../../sdk'
+import { ReactAttributes, reactManualTracer, TraceContext } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
 

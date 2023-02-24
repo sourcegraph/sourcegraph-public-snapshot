@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { lowerCase, upperFirst } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Input, Select, Form } from '@sourcegraph/wildcard'
+import { Form, Input, Select } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { isValidBatchSpecWorkspaceState } from '../util'

@@ -1,6 +1,6 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedSeries } from '../../../../../components'
-import { MinimalSearchBasedInsightData, InsightType } from '../../../../../core'
+import { InsightType, MinimalSearchBasedInsightData } from '../../../../../core'
 import { CreateInsightFormFields } from '../types'
 
 /**

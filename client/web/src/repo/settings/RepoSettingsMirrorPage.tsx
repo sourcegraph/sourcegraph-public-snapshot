@@ -6,21 +6,21 @@ import classNames from 'classnames'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    FeedbackText,
-    Button,
-    Link,
     Alert,
+    Button,
+    Code,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Container,
+    ErrorAlert,
+    FeedbackText,
     Icon,
     Input,
+    Link,
+    LoadingSpinner,
+    PageHeader,
     Text,
-    Code,
-    ErrorAlert,
-    CollapseHeader,
-    Collapse,
-    CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

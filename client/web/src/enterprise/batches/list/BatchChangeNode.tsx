@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { Badge, Link, H3, H4, Markdown } from '@sourcegraph/wildcard'
+import { Badge, H3, H4, Link, Markdown } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeState,
@@ -13,9 +13,9 @@ import {
     ListBatchChangeLatestSpecFields,
 } from '../../../graphql-operations'
 import {
-    ChangesetStatusOpen,
     ChangesetStatusClosed,
     ChangesetStatusMerged,
+    ChangesetStatusOpen,
 } from '../detail/changesets/ChangesetStatusCell'
 
 import { BatchChangeStatePill } from './BatchChangeStatePill'

@@ -12,15 +12,15 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
-    useObservable,
+    Icon,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Icon,
     Tooltip,
     useKeyboard,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'

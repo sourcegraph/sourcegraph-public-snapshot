@@ -7,18 +7,18 @@ import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graph
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS, WORKSPACES } from '../../../create/backend'
+import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../../../create/backend'
 import {
+    LARGE_SUCCESS_CONNECTION_MOCKS,
+    LICENSED_MOCK,
     mockBatchChange,
     mockBatchSpec,
     mockBatchSpecImportingChangesets,
     mockBatchSpecWorkspaces,
     mockWorkspaceResolutionStatus,
+    UNLICENSED_MOCK,
     UNSTARTED_CONNECTION_MOCKS,
     UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
-    LARGE_SUCCESS_CONNECTION_MOCKS,
-    UNLICENSED_MOCK,
-    LICENSED_MOCK,
 } from '../../batch-spec.mock'
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 

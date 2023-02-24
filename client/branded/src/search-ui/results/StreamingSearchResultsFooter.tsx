@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, LoadingSpinner, Code, Text, Link, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Code, ErrorAlert, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 

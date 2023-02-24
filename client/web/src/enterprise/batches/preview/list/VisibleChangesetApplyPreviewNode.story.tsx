@@ -1,4 +1,4 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { of } from 'rxjs'
 

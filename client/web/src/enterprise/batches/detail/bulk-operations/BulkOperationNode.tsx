@@ -1,12 +1,12 @@
 import React from 'react'
 
-import { mdiCommentOutline, mdiLinkVariantRemove, mdiSync, mdiSourceBranch, mdiUpload, mdiOpenInNew } from '@mdi/js'
+import { mdiCommentOutline, mdiLinkVariantRemove, mdiOpenInNew, mdiSourceBranch, mdiSync, mdiUpload } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, AlertLink, Link, Alert, Icon, H4, Text, ErrorMessage } from '@sourcegraph/wildcard'
+import { Alert, AlertLink, Badge, ErrorMessage, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { BulkOperationFields } from '../../../../graphql-operations'

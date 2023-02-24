@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { Container, Text, Code } from '@sourcegraph/wildcard'
+import { Code, Container, Text } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { CodeSnippet } from './CodeSnippet'

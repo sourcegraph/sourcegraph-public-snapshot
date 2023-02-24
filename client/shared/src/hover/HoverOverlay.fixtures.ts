@@ -5,7 +5,7 @@ import { of } from 'rxjs'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { ActionItemAction } from '../actions/ActionItem'
-import type { MarkupContent, Badged, AggregableBadge } from '../codeintel/legacy-extensions/api'
+import type { AggregableBadge, Badged, MarkupContent } from '../codeintel/legacy-extensions/api'
 import { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'

@@ -8,7 +8,7 @@ import { Omit } from 'utility-types'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Checkbox, Container, Icon, PageHeader, Code, Label, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Checkbox, Code, Container, ErrorAlert, Form, Icon, Input, Label, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'

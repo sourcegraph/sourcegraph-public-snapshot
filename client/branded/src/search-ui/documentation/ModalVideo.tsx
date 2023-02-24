@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Modal, Icon, H3 } from '@sourcegraph/wildcard'
+import { Button, H3, Icon, Modal } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 

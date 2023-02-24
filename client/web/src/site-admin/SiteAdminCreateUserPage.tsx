@@ -5,7 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
-import { Button, Link, Alert, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, Form, H2, Label, Link, Text } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'

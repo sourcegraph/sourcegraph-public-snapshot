@@ -24,8 +24,8 @@ import {
 import { AddSecretModal } from './AddSecretModal'
 import {
     globalExecutorSecretsConnectionFactory,
-    userExecutorSecretsConnectionFactory,
     orgExecutorSecretsConnectionFactory,
+    userExecutorSecretsConnectionFactory,
 } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'

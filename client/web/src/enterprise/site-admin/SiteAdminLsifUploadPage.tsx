@@ -4,7 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

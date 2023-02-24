@@ -1,8 +1,8 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { compact, head } from 'lodash'
 import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from 'rxjs'
-import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
+import { catchError, debounceTime, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import { useEventObservable } from '@sourcegraph/wildcard'

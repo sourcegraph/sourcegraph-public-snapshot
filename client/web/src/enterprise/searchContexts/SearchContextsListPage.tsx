@@ -4,7 +4,7 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CallToActionBanner } from '../../components/CallToActionBanner'

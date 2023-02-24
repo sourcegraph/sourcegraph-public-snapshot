@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { Optional } from 'utility-types'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { WebhookLogFields } from '../../graphql-operations'
 

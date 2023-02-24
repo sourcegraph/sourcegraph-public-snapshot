@@ -1,11 +1,11 @@
 import React, { VideoHTMLAttributes } from 'react'
 
-import { mdiOpenInNew, mdiGithub, mdiCheck, mdiGitlab, mdiBitbucket, mdiLock, mdiBookOpenPageVariant } from '@mdi/js'
+import { mdiBitbucket, mdiBookOpenPageVariant, mdiCheck, mdiGithub, mdiGitlab, mdiLock, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Icon, Code, H1, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Code, H1, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 

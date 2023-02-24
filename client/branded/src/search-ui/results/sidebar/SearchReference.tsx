@@ -7,30 +7,30 @@ import { escapeRegExp } from 'lodash'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchQueryState,
     createQueryExampleFromString,
-    updateQueryWithFilterAndExample,
-    QueryExample,
     EditorHint,
+    QueryExample,
+    SearchQueryState,
+    updateQueryWithFilterAndExample,
 } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
-    useLocalStorage,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Icon,
     Link,
+    Markdown,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Collapse,
-    CollapseHeader,
-    CollapsePanel,
-    Icon,
     Text,
-    Markdown,
+    useLocalStorage,
 } from '@sourcegraph/wildcard'
 
 import sidebarStyles from './SearchFilterSection.module.scss'

@@ -1,6 +1,6 @@
 import execa from 'execa'
-import { SemVer } from 'semver'
 import * as semver from 'semver'
+import { SemVer } from 'semver'
 
 import { localSourcegraphRepo } from './github'
 

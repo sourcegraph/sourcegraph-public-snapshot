@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon, H2 } from '@sourcegraph/wildcard'
+import { H2, Icon, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'

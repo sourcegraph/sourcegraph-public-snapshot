@@ -1,19 +1,19 @@
-import { Observable, from } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { asObservable } from '@sourcegraph/common'
 
-import { DiffInfo, BlobInfo } from '../shared/codeHost'
+import { BlobInfo, DiffInfo } from '../shared/codeHost'
 
 import { getBaseCommitIDForCommit, getMergeRequestDetailsFromAPI } from './api'
 import {
     getCommitIDFromPermalink,
     getCommitPageInfo,
+    getDiffID,
     getFilePageInfo,
     getFilePathsFromCodeView,
-    getPageInfo,
     getMergeRequestID,
-    getDiffID,
+    getPageInfo,
 } from './scrape'
 
 /**

@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Link, Menu, MenuButton, MenuLink, MenuList, Position, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 

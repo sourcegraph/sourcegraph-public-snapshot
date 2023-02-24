@@ -6,7 +6,7 @@ import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 
 import { Point } from '../types'
-import { getDatumValue, encodePointId, isDatumWithValidNumber, SeriesDatum } from '../utils'
+import { encodePointId, getDatumValue, isDatumWithValidNumber, SeriesDatum } from '../utils'
 
 import { PointGlyph } from './PointGlyph'
 

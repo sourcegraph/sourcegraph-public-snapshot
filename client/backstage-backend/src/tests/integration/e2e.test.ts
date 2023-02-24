@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals'
-import { createService, Config, SourcegraphService } from '../../client/SourcegraphClient'
+import { Config, createService, SourcegraphService } from '../../client/SourcegraphClient'
 
 const sgConf: Config = {
     endpoint: 'https://scaletesting.sgdev.org',

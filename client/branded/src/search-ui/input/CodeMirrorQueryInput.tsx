@@ -3,14 +3,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
-import { EditorSelection, Extension, Prec, Compartment, Range, EditorState } from '@codemirror/state'
+import { Compartment, EditorSelection, EditorState, Extension, Prec, Range } from '@codemirror/state'
 import {
-    EditorView,
-    ViewUpdate,
-    keymap,
     Decoration,
+    EditorView,
+    keymap,
     placeholder as placeholderExtension,
     ViewPlugin,
+    ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
 import classNames from 'classnames'
@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
@@ -33,7 +33,7 @@ import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
-import { queryTokens, parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
+import { parseInputAsQuery, queryTokens, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
 import { QueryInputProps } from './QueryInput'

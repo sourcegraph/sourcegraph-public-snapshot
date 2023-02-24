@@ -3,26 +3,26 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiChevronDown, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import {
+    endOfDay,
     endOfMonth,
     endOfToday,
     endOfWeek,
+    format,
     startOfMonth,
     startOfToday,
     startOfWeek,
-    format,
-    endOfDay,
     subMonths,
 } from 'date-fns'
 
 import {
     Button,
+    Checkbox,
     Container,
     Icon,
     Popover,
     PopoverContent,
     PopoverOpenEvent,
     PopoverTrigger,
-    Checkbox,
     Tooltip,
 } from '@sourcegraph/wildcard'
 

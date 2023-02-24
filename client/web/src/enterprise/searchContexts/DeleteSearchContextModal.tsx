@@ -2,13 +2,13 @@ import React, { useCallback } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
+import { catchError, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, H3, LoadingSpinner, Modal, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
 

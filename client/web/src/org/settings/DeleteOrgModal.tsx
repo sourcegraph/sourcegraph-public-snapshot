@@ -4,7 +4,7 @@ import { gql, useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
+import { Button, H3, Icon, Input, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaRouteContext } from '../area/OrgArea'

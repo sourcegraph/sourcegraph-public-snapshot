@@ -1,31 +1,31 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
-    mdiMenuUp,
-    mdiMenuDown,
-    mdiArrowRightTop,
     mdiArrowRightBottom,
+    mdiArrowRightTop,
     mdiChevronDown,
-    mdiChevronRight,
     mdiChevronLeft,
+    mdiChevronRight,
     mdiFilterRemoveOutline,
+    mdiMenuDown,
+    mdiMenuUp,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 
 import {
-    Icon,
-    Text,
-    Checkbox,
-    PopoverTrigger,
-    PopoverContent,
-    Popover,
-    Position,
     Button,
-    Tooltip,
-    PopoverOpenEvent,
+    Checkbox,
+    Icon,
     Input,
+    Popover,
+    PopoverContent,
+    PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
     Select,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'

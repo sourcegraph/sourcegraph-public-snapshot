@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiAccount, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon, H2, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, H2, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'

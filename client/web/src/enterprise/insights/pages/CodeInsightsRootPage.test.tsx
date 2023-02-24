@@ -4,7 +4,7 @@ import { ReactElement } from 'react'
 import { MockedResponse } from '@apollo/client/testing'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

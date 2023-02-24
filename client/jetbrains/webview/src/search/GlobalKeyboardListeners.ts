@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { onWindowClose } from './js-to-java-bridge'
 

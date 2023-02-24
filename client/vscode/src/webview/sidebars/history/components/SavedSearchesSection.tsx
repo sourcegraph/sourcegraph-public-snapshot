@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
+import { Button, H5, Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'

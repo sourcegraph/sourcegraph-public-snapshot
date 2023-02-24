@@ -4,18 +4,18 @@
 import type { Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
-import { requestGraphQL, getWebGraphQLClient, mutateGraphQL } from '@sourcegraph/web/src/backend/graphql'
+import { getWebGraphQLClient, mutateGraphQL, requestGraphQL } from '@sourcegraph/web/src/backend/graphql'
 
 import { resetAllMemoizationCaches } from './common'
 import type { CheckMirrorRepositoryConnectionResult, Scalars } from './graphql-operations'
 import { dataOrThrowErrors, gql } from './http-client'
 
-export { requestGraphQL, getWebGraphQLClient, mutateGraphQL }
-export { parseSearchURL } from '@sourcegraph/web/src/search/index'
-export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 export type { ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
+export { parseSearchURL } from '@sourcegraph/web/src/search/index'
 export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
+export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
+export { requestGraphQL, getWebGraphQLClient, mutateGraphQL }
 
 // Copy of non-reusable code
 

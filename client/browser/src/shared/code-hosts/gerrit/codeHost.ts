@@ -1,11 +1,11 @@
 import { compact, find, head } from 'lodash'
 import { interval, Observable, Subject } from 'rxjs'
-import { filter, map, refCount, publishReplay } from 'rxjs/operators'
+import { filter, map, publishReplay, refCount } from 'rxjs/operators'
 
 import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
+import { CustomSelectorFunction, queryWithSelector, ViewResolver } from '../shared/views'
 
 import styles from './codeHost.module.scss'
 

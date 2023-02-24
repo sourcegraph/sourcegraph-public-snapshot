@@ -10,7 +10,7 @@ import { highlightNode, logger } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { highlightCode } from '@sourcegraph/shared/src/search'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
+import { Code, Link, LoadingSpinner, Markdown } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 

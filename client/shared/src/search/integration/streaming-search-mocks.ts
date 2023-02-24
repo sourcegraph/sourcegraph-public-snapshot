@@ -1,9 +1,9 @@
 /* eslint-disable no-template-curly-in-string */
 import {
-    SymbolKind,
     HighlightedFileResult,
-    SharedGraphQlOperations,
     HighlightedFileVariables,
+    SharedGraphQlOperations,
+    SymbolKind,
 } from '../../graphql-operations'
 import { SearchEvent } from '../stream'
 

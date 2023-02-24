@@ -4,7 +4,7 @@
 
 /* eslint-disable id-length */
 
-import { every, matchesValue, some, oneOf, allOf, not, PatternOfNoInfer } from './patternMatcher'
+import { allOf, every, matchesValue, not, oneOf, PatternOfNoInfer, some } from './patternMatcher'
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace

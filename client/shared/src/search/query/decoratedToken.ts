@@ -16,7 +16,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { Predicate, scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
-import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
+import { CharacterRange, createLiteral, Literal, Pattern, PatternKind, Token } from './token'
 
 /* eslint-disable unicorn/better-regex */
 

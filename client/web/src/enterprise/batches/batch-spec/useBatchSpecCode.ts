@@ -14,8 +14,8 @@ import helloWorldSample from './edit/library/hello-world.batch.yaml'
 import {
     excludeRepo as excludeRepoFromYaml,
     hasOnOrImportChangesetsStatement,
-    isMinimalBatchSpec,
     insertNameIntoLibraryItem,
+    isMinimalBatchSpec,
 } from './yaml-util'
 
 const ajv = new AJV()

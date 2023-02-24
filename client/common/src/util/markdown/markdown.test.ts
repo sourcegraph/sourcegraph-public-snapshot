@@ -1,4 +1,4 @@
-import { renderMarkdown, registerHighlightContributions } from '.'
+import { registerHighlightContributions, renderMarkdown } from '.'
 
 registerHighlightContributions()
 

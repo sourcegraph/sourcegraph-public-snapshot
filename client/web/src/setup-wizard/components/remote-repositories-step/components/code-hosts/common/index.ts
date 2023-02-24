@@ -1,5 +1,4 @@
-export { RadioGroupSection } from './radio-group-section/RadioGroupSection'
 export { CodeHostJSONForm, CodeHostJSONFormContent } from './CodeHostConnection'
-
 // Types export
-export type { CodeHostJSONFormState, CodeHostConnectFormFields } from './CodeHostConnection'
+export type { CodeHostConnectFormFields, CodeHostJSONFormState } from './CodeHostConnection'
+export { RadioGroupSection } from './radio-group-section/RadioGroupSection'

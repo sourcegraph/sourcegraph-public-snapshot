@@ -6,13 +6,13 @@ import { rm } from 'shelljs'
 
 import {
     buildMonaco,
+    buildTimerPlugin,
     monacoPlugin,
     MONACO_LANGUAGES_AND_FEATURES,
     packageResolutionPlugin,
+    RXJS_RESOLUTIONS,
     stylePlugin,
     workerPlugin,
-    RXJS_RESOLUTIONS,
-    buildTimerPlugin,
 } from '@sourcegraph/build-config'
 
 const minify = process.env.NODE_ENV === 'production'

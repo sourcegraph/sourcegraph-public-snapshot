@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { mdiContentDuplicate, mdiArrowUp, mdiArrowDown, mdiDelete, mdiPlusCircleOutline } from '@mdi/js'
+import { mdiArrowDown, mdiArrowUp, mdiContentDuplicate, mdiDelete, mdiPlusCircleOutline } from '@mdi/js'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'

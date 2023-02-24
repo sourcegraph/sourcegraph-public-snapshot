@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 
-import { repeatWhen, delay } from 'rxjs/operators'
+import { delay, repeatWhen } from 'rxjs/operators'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Container } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
-import { Scalars, ChangesetFields, BatchChangeChangesetsResult } from '../../../graphql-operations'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
+import { BatchChangeChangesetsResult, ChangesetFields, Scalars } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -16,7 +16,7 @@ import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
 } from './BatchChangeCloseHeader'
-import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
+import { ChangesetCloseNode, ChangesetCloseNodeProps } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
 import styles from './BatchChangeCloseChangesetsList.module.scss'

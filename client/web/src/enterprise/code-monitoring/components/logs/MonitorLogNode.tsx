@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 

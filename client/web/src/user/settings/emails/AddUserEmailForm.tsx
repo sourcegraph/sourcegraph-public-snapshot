@@ -2,10 +2,10 @@ import React, { FunctionComponent, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Input, Label, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'

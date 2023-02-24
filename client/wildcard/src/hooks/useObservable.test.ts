@@ -1,13 +1,13 @@
 // causes false positive on act()
 
-import { useMemo, useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { Observable, Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'
 
-import { useObservable, useEventObservable } from './useObservable'
+import { useEventObservable, useObservable } from './useObservable'
 
 describe('useObservable()', () => {
     it('should return the latest value of the given Observable', () => {

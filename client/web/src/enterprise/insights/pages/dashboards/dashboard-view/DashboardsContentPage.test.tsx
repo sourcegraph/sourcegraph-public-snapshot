@@ -10,7 +10,7 @@ import sinon from 'sinon'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/wildcard/src/testing'
 
 import {
     FindInsightsBySearchTermResult,
@@ -22,8 +22,8 @@ import {
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import {
     GET_DASHBOARD_INSIGHTS_GQL,
-    GET_INSIGHTS_GQL,
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
+    GET_INSIGHTS_GQL,
 } from '../../../core/backend/gql-backend'
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
 import { useCodeInsightsLicenseState } from '../../../stores'

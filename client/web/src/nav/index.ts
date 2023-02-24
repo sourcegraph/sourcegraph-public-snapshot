@@ -1,1 +1,1 @@
-export { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from './NavBar'
+export { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from './NavBar'

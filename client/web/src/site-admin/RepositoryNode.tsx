@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiClose, mdiCog, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -8,18 +8,18 @@ import {
     Alert,
     Badge,
     Button,
+    H4,
     Icon,
     Link,
-    H4,
-    LoadingSpinner,
-    Tooltip,
     LinkOrSpan,
-    PopoverTrigger,
+    LoadingSpinner,
+    MenuDivider,
+    Popover,
     PopoverContent,
     PopoverTail,
-    Popover,
+    PopoverTrigger,
     Position,
-    MenuDivider,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields } from '../graphql-operations'

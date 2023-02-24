@@ -48,14 +48,14 @@ import {
     Subscription,
 } from 'rxjs'
 import {
-    startWith,
-    filter,
-    scan,
-    switchMap,
-    shareReplay,
-    map,
-    distinctUntilChanged,
     debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    scan,
+    shareReplay,
+    startWith,
+    switchMap,
 } from 'rxjs/operators'
 
 import {
@@ -73,14 +73,14 @@ import {
     WebHoverOverlay,
     WebHoverOverlayProps,
 } from '../../../components/WebHoverOverlay'
-import { updateBrowserHistoryIfChanged, BlobPropsFacet } from '../CodeMirrorBlob'
+import { BlobPropsFacet, updateBrowserHistoryIfChanged } from '../CodeMirrorBlob'
 
 import { CodeMirrorContainer } from './react-interop'
 import {
-    preciseWordAtCoords,
     offsetToUIPosition,
     positionToOffset,
     preciseOffsetAtCoords,
+    preciseWordAtCoords,
     uiPositionToOffset,
     zeroToOneBasedPosition,
 } from './utils'

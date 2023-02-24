@@ -4,24 +4,24 @@ import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'w
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import {
-    BatchSpecWorkspaceResolutionState,
-    WorkspaceResolutionStatusResult,
-    BatchSpecImportingChangesetsResult,
-    PreviewBatchSpecImportingChangesetFields,
-    BatchSpecWorkspacesPreviewResult,
-    EditBatchChangeFields,
-    PreviewVisibleBatchSpecWorkspaceFields,
-    BatchSpecState,
     BatchChangeState,
-    BatchSpecWorkspaceState,
-    HiddenBatchSpecWorkspaceFields,
-    ChangesetSpecType,
-    VisibleBatchSpecWorkspaceFields,
-    BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
-    BatchSpecWorkspacesResult,
+    BatchSpecImportingChangesetsResult,
     BatchSpecSource,
+    BatchSpecState,
+    BatchSpecWorkspaceResolutionState,
+    BatchSpecWorkspacesPreviewResult,
+    BatchSpecWorkspacesResult,
+    BatchSpecWorkspaceState,
+    BatchSpecWorkspaceStepFields,
+    ChangesetSpecType,
+    EditBatchChangeFields,
     ExecutorCompatibility,
+    HiddenBatchSpecWorkspaceFields,
+    PreviewBatchSpecImportingChangesetFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+    VisibleBatchSpecWorkspaceFields,
+    WorkspaceResolutionStatusResult,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'

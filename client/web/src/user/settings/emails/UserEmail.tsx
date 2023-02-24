@@ -1,4 +1,4 @@
-import { useState, FunctionComponent } from 'react'
+import { FunctionComponent, useState } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -6,13 +6,13 @@ import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    UserEmailsResult,
     RemoveUserEmailResult,
     RemoveUserEmailVariables,
-    SetUserEmailVerifiedResult,
-    SetUserEmailVerifiedVariables,
     ResendVerificationEmailResult,
     ResendVerificationEmailVariables,
+    SetUserEmailVerifiedResult,
+    SetUserEmailVerifiedVariables,
+    UserEmailsResult,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

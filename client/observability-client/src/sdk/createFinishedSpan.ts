@@ -1,4 +1,4 @@
-import { context, trace, Tracer, ROOT_CONTEXT, SpanOptions, Context, Span, TimeInput } from '@opentelemetry/api'
+import { context, Context, ROOT_CONTEXT, Span, SpanOptions, TimeInput, trace, Tracer } from '@opentelemetry/api'
 import { addSpanNetworkEvents, PerformanceEntries } from '@opentelemetry/sdk-trace-web'
 
 export interface FinishedSpanConfig extends SpanOptions {

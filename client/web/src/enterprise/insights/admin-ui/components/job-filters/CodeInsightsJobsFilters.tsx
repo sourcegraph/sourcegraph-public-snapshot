@@ -1,4 +1,4 @@
-import { ChangeEvent, useId, useState, FC } from 'react'
+import { ChangeEvent, FC, useId, useState } from 'react'
 
 import classNames from 'classnames'
 import { identity, upperFirst } from 'lodash'

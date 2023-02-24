@@ -1,10 +1,10 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, Series } from '@sourcegraph/wildcard'
+import { AnchorLink, Card, H2, H4, LineChart, LoadingSpinner, Series, Text } from '@sourcegraph/wildcard'
 
 import { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'

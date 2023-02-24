@@ -8,9 +8,9 @@ import {
     areOnTheSameTrace,
     isNavigationSpanName,
     isSharedSpanName,
+    ReadWriteSpan,
     SharedSpanName,
     sharedSpanStore,
-    ReadWriteSpan,
 } from '../sdk'
 
 export enum ClientAttributes {

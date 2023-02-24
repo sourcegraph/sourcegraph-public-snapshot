@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 export interface TimeoutManager {
     setTimeout: (callback: (...args: unknown[]) => void, timeout: number | undefined, ...args: unknown[]) => void

@@ -1,7 +1,7 @@
 import { renderWithBrandedContext } from '../../testing'
 
 import { Button } from './Button'
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
+import { BUTTON_SIZES, BUTTON_VARIANTS } from './constants'
 
 describe('Button', () => {
     it('renders a simple button correctly', () => {

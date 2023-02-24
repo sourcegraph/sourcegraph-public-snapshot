@@ -1,6 +1,6 @@
-import { PropsWithChildren, useEffect, FunctionComponent, useRef } from 'react'
+import { FunctionComponent, PropsWithChildren, useEffect, useRef } from 'react'
 
-import { SpanOptions, Context, ROOT_CONTEXT } from '@opentelemetry/api'
+import { Context, ROOT_CONTEXT, SpanOptions } from '@opentelemetry/api'
 
 import { IS_OPEN_TELEMETRY_TRACING_ENABLED } from '../../constants'
 import { TraceContext } from '../constants'

@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Code, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/Timestamp'
 

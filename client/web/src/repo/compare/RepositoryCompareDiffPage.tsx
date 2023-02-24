@@ -6,14 +6,14 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { fileDiffFields, diffStatFields } from '../../backend/diff'
+import { diffStatFields, fileDiffFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
 import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
 import { ConnectionQueryArguments, FilteredConnection } from '../../components/FilteredConnection'
 import {
+    FileDiffFields,
     RepositoryComparisonDiffResult,
     RepositoryComparisonDiffVariables,
-    FileDiffFields,
 } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'

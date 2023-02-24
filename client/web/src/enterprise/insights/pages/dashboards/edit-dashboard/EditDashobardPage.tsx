@@ -2,16 +2,16 @@ import { FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import {
     Button,
     Container,
+    Link,
     LoadingSpinner,
     PageHeader,
-    useObservable,
-    Link,
     SubmissionErrors,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'

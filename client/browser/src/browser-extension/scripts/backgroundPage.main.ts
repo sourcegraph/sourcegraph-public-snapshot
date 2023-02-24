@@ -5,20 +5,20 @@ import { Endpoint } from 'comlink'
 import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
+    catchError,
+    concatMap,
+    distinctUntilChanged,
     filter,
     groupBy,
     map,
+    mapTo,
     mergeMap,
     switchMap,
     take,
-    concatMap,
-    mapTo,
-    catchError,
-    distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 
-import { isDefined, fetchCache } from '@sourcegraph/common'
+import { fetchCache, isDefined } from '@sourcegraph/common'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'

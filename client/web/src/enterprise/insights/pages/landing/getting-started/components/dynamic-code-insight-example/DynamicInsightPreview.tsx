@@ -1,25 +1,25 @@
 import { FC } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Series, useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Series, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import {
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewHeader,
+    LivePreviewLegend,
+    LivePreviewLoading,
     SeriesBasedChartTypes,
     SeriesChart,
-    LivePreviewCard,
-    LivePreviewHeader,
-    LivePreviewLoading,
-    LivePreviewChart,
-    LivePreviewBlurBackdrop,
-    LivePreviewBanner,
-    LivePreviewLegend,
     SERIES_MOCK_CHART,
 } from '../../../../../components'
 import { DATA_SERIES_COLORS } from '../../../../../constants'
 import {
+    LivePreviewStatus,
     SeriesWithStroke,
     useLivePreviewSeriesInsight,
-    LivePreviewStatus,
 } from '../../../../../core/hooks/live-preview-insight'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 

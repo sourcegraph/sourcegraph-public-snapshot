@@ -13,21 +13,19 @@ import { Observable } from 'rxjs'
 import { UseBoundStore } from 'zustand'
 
 export {
-    useNavbarQueryState,
-    setQueryStateFromSettings,
-    setSearchPatternType,
-    setSearchCaseSensitivity,
-    setSearchMode,
-    buildSearchURLQueryFromQueryState,
-} from './navbarSearchQueryState'
-
-export {
-    useExperimentalFeatures,
     getExperimentalFeatures,
     setExperimentalFeaturesFromSettings,
+    useExperimentalFeatures,
 } from './experimentalFeatures'
-
-export { useNotepadState, useNotepad } from './notepad'
+export {
+    buildSearchURLQueryFromQueryState,
+    setQueryStateFromSettings,
+    setSearchCaseSensitivity,
+    setSearchMode,
+    setSearchPatternType,
+    useNavbarQueryState,
+} from './navbarSearchQueryState'
+export { useNotepad, useNotepadState } from './notepad'
 
 /**
  * observeStore converts a zustand store to an observable. The observable emits

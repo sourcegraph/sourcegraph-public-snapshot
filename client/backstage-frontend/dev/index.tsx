@@ -1,6 +1,6 @@
-import React from 'react'
 import { createDevApp } from '@backstage/dev-utils'
-import { sourcegraphPlugin, SourcegraphPage } from '../src/plugin'
+import React from 'react'
+import { SourcegraphPage, sourcegraphPlugin } from '../src/plugin'
 
 createDevApp()
     .registerPlugin(sourcegraphPlugin)

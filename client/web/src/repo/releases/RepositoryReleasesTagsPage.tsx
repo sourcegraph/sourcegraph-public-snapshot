@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields, RepositoryFields } from '../../graphql-operations'
+import { GitRefConnectionFields, GitRefFields, GitRefType, RepositoryFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 

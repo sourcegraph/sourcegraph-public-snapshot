@@ -4,8 +4,8 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { combineLatest, from, fromEvent, Subscription } from 'rxjs'
 
 import { isTruthy, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -15,9 +15,9 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
+    getDefaultSearchContextSpec,
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
-    getDefaultSearchContextSpec,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
@@ -30,9 +30,9 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { FeedbackText, RouterLink, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { AuthenticatedUser, authenticatedUser as authenticatedUserSubject, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -45,7 +45,7 @@ import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setExperimentalFeaturesFromSettings, setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 

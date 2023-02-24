@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { subDays, startOfDay } from 'date-fns'
+import { startOfDay, subDays } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useParams } from 'react-router-dom'
 
@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { PageHeader, LoadingSpinner, Alert, ErrorMessage } from '@sourcegraph/wildcard'
+import { Alert, ErrorMessage, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -20,7 +20,7 @@ import { Description } from '../Description'
 import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
 
 import { ActiveExecutionNotice } from './ActiveExecutionNotice'
-import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
+import { BATCH_CHANGE_BY_NAMESPACE, deleteBatchChange as _deleteBatchChange } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'

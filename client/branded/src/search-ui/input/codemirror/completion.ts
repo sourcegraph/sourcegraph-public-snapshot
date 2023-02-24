@@ -1,20 +1,20 @@
 import { basename } from 'path'
 
 import {
+    acceptCompletion,
     autocompletion,
-    startCompletion,
+    Completion,
     completionKeymap,
     CompletionResult,
-    Completion,
-    snippet,
     CompletionSource,
-    acceptCompletion,
-    selectedCompletion,
     currentCompletions,
+    selectedCompletion,
     setSelectedCompletion,
+    snippet,
+    startCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
-import { keymap, EditorView } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import {
     mdiCodeArray,
     mdiCodeBraces,

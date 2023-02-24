@@ -1,5 +1,5 @@
 import delay from 'delay'
-import { describe, before, test } from 'mocha'
+import { before, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'

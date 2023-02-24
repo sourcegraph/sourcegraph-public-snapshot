@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 
-import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
+import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
 import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'

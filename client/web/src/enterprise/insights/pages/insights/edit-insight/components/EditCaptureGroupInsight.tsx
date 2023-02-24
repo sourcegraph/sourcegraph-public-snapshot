@@ -1,9 +1,9 @@
-import { useMemo, FC } from 'react'
+import { FC, useMemo } from 'react'
 
 import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
-import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
+import { CaptureGroupInsight, MinimalCaptureGroupInsightData } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
 import { getSanitizedCaptureGroupInsight } from '../../creation/capture-group/utils/capture-group-insight-sanitizer'

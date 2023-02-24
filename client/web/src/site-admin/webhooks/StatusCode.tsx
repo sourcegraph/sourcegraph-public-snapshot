@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCheck, mdiAlertCircle } from '@mdi/js'
+import { mdiAlertCircle, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon } from '@sourcegraph/wildcard'

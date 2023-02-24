@@ -1,5 +1,4 @@
-export { SeriesChart, SeriesBasedChartTypes } from './series/SeriesChart'
-export { CategoricalChart, CategoricalBasedChartTypes } from './categorical/CategoricalChart'
-
-export type { SeriesChartProps } from './series/SeriesChart'
+export { CategoricalBasedChartTypes, CategoricalChart } from './categorical/CategoricalChart'
 export type { CategoricalChartProps } from './categorical/CategoricalChart'
+export { SeriesBasedChartTypes, SeriesChart } from './series/SeriesChart'
+export type { SeriesChartProps } from './series/SeriesChart'

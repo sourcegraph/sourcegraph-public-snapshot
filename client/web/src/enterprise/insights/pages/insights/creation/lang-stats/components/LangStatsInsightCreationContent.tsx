@@ -2,9 +2,9 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
-import { useForm, useField, FormChangeEvent, SubmissionErrors, createRequiredValidator } from '@sourcegraph/wildcard'
+import { createRequiredValidator, FormChangeEvent, SubmissionErrors, useField, useForm } from '@sourcegraph/wildcard'
 
-import { CreationUiLayout, CreationUIForm, CreationUIPreview, insightTitleValidator } from '../../../../../components'
+import { CreationUIForm, CreationUiLayout, CreationUIPreview, insightTitleValidator } from '../../../../../components'
 import { LangStatsCreationFormFields } from '../types'
 
 import {

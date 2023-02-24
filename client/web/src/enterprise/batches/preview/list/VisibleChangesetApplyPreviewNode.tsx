@@ -1,17 +1,17 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    mdiCardTextOutline,
-    mdiFileDocumentEditOutline,
     mdiAccountEdit,
+    mdiCardTextOutline,
     mdiCheckboxBlankCircle,
     mdiChevronDown,
     mdiChevronUp,
+    mdiFileDocumentEditOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, H3, Icon, Link, Tab, TabList, TabPanel, TabPanels, Tabs, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'

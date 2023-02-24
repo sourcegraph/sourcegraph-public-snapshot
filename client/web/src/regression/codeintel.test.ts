@@ -1,5 +1,5 @@
 import { applyEdits, JSONPath, modify } from 'jsonc-parser'
-import { describe, before, after, test } from 'mocha'
+import { after, before, describe, test } from 'mocha'
 
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'

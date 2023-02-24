@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Button, H3, Icon, Input, Link, Select, Text, Form } from '@sourcegraph/wildcard'
+import { Button, Form, H3, Icon, Input, Link, Select, Text } from '@sourcegraph/wildcard'
 
 import { isProjectPathValid } from './build-url'
 import { EditorSettings } from './editor-settings'

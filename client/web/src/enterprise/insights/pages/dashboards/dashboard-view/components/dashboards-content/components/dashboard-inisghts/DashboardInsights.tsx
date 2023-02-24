@@ -4,7 +4,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../../../stores'
-import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
+import { InsightContext, SmartInsightsViewGrid } from '../../../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../../../core'
 import { EmptyCustomDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 

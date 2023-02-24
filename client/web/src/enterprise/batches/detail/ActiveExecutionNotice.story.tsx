@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecState } from '../../../graphql-operations'

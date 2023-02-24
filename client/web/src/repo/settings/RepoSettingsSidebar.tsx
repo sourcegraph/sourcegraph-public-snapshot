@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { NavGroupDescriptor } from '../../util/contributions'
 

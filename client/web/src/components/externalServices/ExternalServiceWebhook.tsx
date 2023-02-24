@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Link, H3, Text, H4 } from '@sourcegraph/wildcard'
+import { Alert, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { CopyableText } from '../CopyableText'

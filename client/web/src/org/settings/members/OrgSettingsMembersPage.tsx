@@ -7,14 +7,14 @@ import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
-    Container,
-    PageHeader,
+    Alert,
     Button,
+    Container,
+    ErrorAlert,
     Input,
     Link,
     LoadingSpinner,
-    Alert,
-    ErrorAlert,
+    PageHeader,
     PageSwitcher,
     Tooltip,
     useDebounce,
@@ -24,10 +24,10 @@ import { AuthenticatedUser } from '../../../auth'
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    OrgAreaOrganizationFields,
+    OrganizationMemberNode,
     OrganizationSettingsMembersResult,
     OrganizationSettingsMembersVariables,
-    OrganizationMemberNode,
+    OrgAreaOrganizationFields,
     RemoveUserFromOrganizationResult,
     RemoveUserFromOrganizationVariables,
 } from '../../../graphql-operations'

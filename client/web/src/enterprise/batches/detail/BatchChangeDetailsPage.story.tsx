@@ -12,18 +12,18 @@ import { WebStory } from '../../../components/WebStory'
 import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import {
-    queryExternalChangesetWithFileDiffs,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
     BULK_OPERATIONS,
     CHANGESETS,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
+    queryExternalChangesetWithFileDiffs,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 import {
-    MOCK_BATCH_CHANGE,
-    MOCK_BULK_OPERATIONS,
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
+    MOCK_BATCH_CHANGE,
+    MOCK_BULK_OPERATIONS,
 } from './BatchChangeDetailsPage.mock'
 import { CHANGESET_COUNTS_OVER_TIME_MOCK } from './testdata'
 

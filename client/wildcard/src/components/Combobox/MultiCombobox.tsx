@@ -1,21 +1,21 @@
 import {
-    Ref,
+    createContext,
+    FocusEvent,
     forwardRef,
-    useRef,
-    ReactNode,
-    ReactElement,
+    HTMLAttributes,
     InputHTMLAttributes,
+    KeyboardEvent,
     MouseEvent,
     PropsWithChildren,
-    createContext,
-    useContext,
-    KeyboardEvent,
-    FocusEvent,
-    useState,
+    ReactElement,
+    ReactNode,
+    Ref,
     useCallback,
-    HTMLAttributes,
-    useMemo,
+    useContext,
     useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -35,11 +35,11 @@ import {
     Combobox,
     ComboboxInput,
     ComboboxList,
-    ComboboxOptionGroup,
     ComboboxOption,
+    ComboboxOptionGroup,
+    ComboboxOptionProps,
     ComboboxOptionText,
     ComboboxProps,
-    ComboboxOptionProps,
 } from './Combobox'
 
 import styles from './MultiCombobox.module.scss'

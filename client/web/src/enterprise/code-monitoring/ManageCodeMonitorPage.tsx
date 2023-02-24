@@ -3,10 +3,10 @@ import React, { useEffect } from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { startWith, catchError, tap } from 'rxjs/operators'
+import { catchError, startWith, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -17,9 +17,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForUpdate } from './action-converters'
 import {
+    deleteCodeMonitor as _deleteCodeMonitor,
     fetchCodeMonitor as _fetchCodeMonitor,
     updateCodeMonitor as _updateCodeMonitor,
-    deleteCodeMonitor as _deleteCodeMonitor,
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 

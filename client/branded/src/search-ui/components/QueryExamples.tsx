@@ -7,11 +7,11 @@ import { useNavigate } from 'react-router-dom'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
+import { Button, H2, Icon, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
-import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
+import { QueryExamplesSection, useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 

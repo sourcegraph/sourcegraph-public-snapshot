@@ -7,30 +7,30 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     ButtonGroup,
-    Link,
-    CardHeader,
-    CardBody,
     Card,
+    CardBody,
+    CardHeader,
+    Form,
     Input,
     Label,
-    Tooltip,
+    Link,
     PageSwitcher,
-    Form,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
-    ConnectionList,
     ConnectionContainer,
-    ConnectionLoading,
     ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'

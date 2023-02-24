@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -9,10 +9,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { NotFoundPage } from '../components/HeroPage'
 
-import { OrgArea, type OrgAreaProps, OrgAreaRoute } from './area/OrgArea'
+import { OrgArea, OrgAreaRoute, type OrgAreaProps } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'

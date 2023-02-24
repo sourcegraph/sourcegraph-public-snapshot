@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { PageHeader, FeedbackBadge } from '@sourcegraph/wildcard'
+import { FeedbackBadge, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../../batches/icons'
 

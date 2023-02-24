@@ -1,21 +1,21 @@
-import { Suspense, FC, memo } from 'react'
+import { FC, memo, Suspense } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     Button,
-    Link,
-    PageHeader,
-    Tabs,
-    TabList,
-    Tab,
     Icon,
-    TabPanels,
-    TabPanel,
+    Link,
     LoadingSpinner,
+    PageHeader,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'

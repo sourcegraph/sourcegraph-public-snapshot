@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Card, CardBody, H3, H1, Icon, Text, Code, ErrorAlert } from '@sourcegraph/wildcard'
+import { Card, CardBody, Code, ErrorAlert, H1, H3, Icon, Text } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'

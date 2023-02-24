@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of } from 'rxjs'
+import { fromEventPattern, Observable, of } from 'rxjs'
 import { map, takeUntil } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'

@@ -3,10 +3,10 @@ import React, { useCallback, useState } from 'react'
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link, Icon, Button } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../batches'
-import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
+import { SidebarCollapseItems, SidebarGroup, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 import styles from './SiteAdminSidebar.module.scss'

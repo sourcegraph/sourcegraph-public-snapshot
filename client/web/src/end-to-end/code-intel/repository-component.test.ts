@@ -1,6 +1,6 @@
 import expect from 'expect'
 import { sortBy } from 'lodash'
-import { describe, test, before, beforeEach, after } from 'mocha'
+import { after, before, beforeEach, describe, test } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'

@@ -1,30 +1,27 @@
+export type {
+    AlphabetKey,
+    ApplicationSelectorKey,
+    AudioControlKey,
+    BrowserControlKey,
+    DeviceKey,
+    DocumentKey,
+    EditingKey,
+    FunctionKey,
+    IMEKey,
+    Key,
+    MediaControllerKey,
+    ModifierKey,
+    MultimediaKey,
+    NavigationKey,
+    NumericKey,
+    PhoneKey,
+    SpeechRecognitionKey,
+    TVControlKey,
+    UIKey,
+    WhiteSpaceKey,
+} from './keys'
 export { Shortcut } from './Shortcut'
 export type { Props as ShortcutProps } from './Shortcut'
-
-export { ShortcutProvider, Provider as ContextProvider } from './ShortcutProvider'
-export type { Context, Props as ProviderProps } from './ShortcutProvider'
-
 export { ShortcutManager } from './ShortcutManager'
-
-export type {
-    Key,
-    AlphabetKey,
-    NumericKey,
-    ModifierKey,
-    WhiteSpaceKey,
-    NavigationKey,
-    EditingKey,
-    UIKey,
-    DeviceKey,
-    IMEKey,
-    FunctionKey,
-    PhoneKey,
-    MultimediaKey,
-    AudioControlKey,
-    TVControlKey,
-    MediaControllerKey,
-    SpeechRecognitionKey,
-    DocumentKey,
-    ApplicationSelectorKey,
-    BrowserControlKey,
-} from './keys'
+export { Provider as ContextProvider, ShortcutProvider } from './ShortcutProvider'
+export type { Context, Props as ProviderProps } from './ShortcutProvider'

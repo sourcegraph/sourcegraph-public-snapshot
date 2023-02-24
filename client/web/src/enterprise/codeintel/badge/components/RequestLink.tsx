@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, LoadingSpinner, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiPlus, mdiEmailOpenOutline, mdiClose } from '@mdi/js'
+import { mdiClose, mdiEmailOpenOutline, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
@@ -8,17 +8,17 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    LoadingSpinner,
-    Button,
-    Link,
     Alert,
-    Icon,
-    Input,
-    Text,
+    Button,
     Code,
-    Tooltip,
     ErrorAlert,
     Form,
+    Icon,
+    Input,
+    Link,
+    LoadingSpinner,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -26,11 +26,11 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import {
-    InviteUserToOrganizationResult,
-    InviteUserToOrganizationVariables,
     AddUserToOrganizationResult,
     AddUserToOrganizationVariables,
     InviteUserToOrganizationFields,
+    InviteUserToOrganizationResult,
+    InviteUserToOrganizationVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

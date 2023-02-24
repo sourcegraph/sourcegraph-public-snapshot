@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, forwardRef } from 'react'
+import { forwardRef, ReactNode, useMemo } from 'react'
 
 import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 import { uniqueId } from 'lodash'

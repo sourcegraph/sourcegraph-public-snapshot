@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, CardTitle, CardBody, Card, Icon, H3 } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, CardTitle, H3, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Toast.module.scss'
 

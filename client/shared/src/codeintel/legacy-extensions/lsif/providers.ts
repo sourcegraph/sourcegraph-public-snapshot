@@ -13,8 +13,8 @@ import { raceWithDelayOffset } from '../util/promise'
 import { definitionAndHoverForPosition, hoverPayloadToHover } from './definition-hover'
 import { filterLocationsForDocumentHighlights } from './highlights'
 import { implementationsForPosition } from './implementations'
-import { RangeWindowFactoryFn, makeRangeWindowFactory } from './ranges'
-import { referencesForPosition, referencePageForPosition } from './references'
+import { makeRangeWindowFactory, RangeWindowFactoryFn } from './ranges'
+import { referencePageForPosition, referencesForPosition } from './references'
 import { makeStencilFn, StencilFn } from './stencil'
 
 /**

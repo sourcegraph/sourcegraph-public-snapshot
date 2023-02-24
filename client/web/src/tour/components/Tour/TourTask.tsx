@@ -14,7 +14,7 @@ import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
 import { TourNewTabLink } from './TourNewTabLink'
-import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
+import { getTourTaskStepActionValue, isLanguageRequired } from './utils'
 
 import styles from './Tour.module.scss'
 

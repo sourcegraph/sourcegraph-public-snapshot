@@ -1,4 +1,4 @@
-import { subMonths, addDays } from 'date-fns'
+import { addDays, subMonths } from 'date-fns'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

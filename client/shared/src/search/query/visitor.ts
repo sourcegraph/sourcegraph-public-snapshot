@@ -1,4 +1,4 @@
-import { Node, Operator, Parameter, Pattern, OperatorKind, Sequence } from './parser'
+import { Node, Operator, OperatorKind, Parameter, Pattern, Sequence } from './parser'
 import { CharacterRange, PatternKind } from './token'
 
 export class Visitor {

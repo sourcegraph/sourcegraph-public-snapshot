@@ -4,12 +4,12 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    FormChangeEvent,
+    FORM_ERROR,
     PageHeader,
+    SubmissionErrors,
     useLocalStorage,
     useObservable,
-    FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'

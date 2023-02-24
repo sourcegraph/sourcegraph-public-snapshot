@@ -1,34 +1,34 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilterValue,
     FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import {
+    ExternalServiceIDsAndNamesResult,
+    ExternalServiceIDsAndNamesVariables,
     RepositoriesResult,
     RepositoriesVariables,
     RepositoryOrderBy,
     RepositoryStatsResult,
-    ExternalServiceIDsAndNamesVariables,
-    ExternalServiceIDsAndNamesResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { REPOSITORIES_QUERY, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {

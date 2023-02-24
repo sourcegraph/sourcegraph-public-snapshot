@@ -1,4 +1,4 @@
-import { InsightViewNode, GroupByField } from '../../../../../../graphql-operations'
+import { GroupByField, InsightViewNode } from '../../../../../../graphql-operations'
 import { ComputeInsight, Insight, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
 

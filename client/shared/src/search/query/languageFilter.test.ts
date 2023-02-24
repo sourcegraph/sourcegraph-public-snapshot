@@ -1,5 +1,5 @@
-import { languageCompletion, POPULAR_LANGUAGES, ALL_LANGUAGES } from './languageFilter'
-import { Literal, createLiteral } from './token'
+import { ALL_LANGUAGES, languageCompletion, POPULAR_LANGUAGES } from './languageFilter'
+import { createLiteral, Literal } from './token'
 
 const create = (value: string): Literal => createLiteral(value, { start: 0, end: 0 })
 

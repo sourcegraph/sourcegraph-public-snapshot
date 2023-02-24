@@ -1,15 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    mdiClose,
-    mdiTimelineClockOutline,
-    mdiSourceBranch,
-    mdiEyeOffOutline,
-    mdiSync,
-    mdiLinkVariantRemove,
     mdiChevronDown,
     mdiChevronUp,
+    mdiClose,
+    mdiEyeOffOutline,
+    mdiLinkVariantRemove,
     mdiOpenInNew,
+    mdiSourceBranch,
+    mdiSync,
+    mdiTimelineClockOutline,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -19,30 +19,30 @@ import indicator from 'ordinal/indicator'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import {
+    Alert,
     Badge,
+    Button,
+    Card,
+    CardBody,
+    Code,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    ErrorAlert,
+    H1,
+    H3,
+    H4,
+    Heading,
+    Icon,
+    Link,
     LoadingSpinner,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Button,
-    Link,
-    CardBody,
-    Card,
-    Icon,
-    Code,
-    H1,
-    H3,
-    H4,
     Text,
-    Alert,
-    CollapsePanel,
-    CollapseHeader,
-    Collapse,
-    Heading,
     Tooltip,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
@@ -56,21 +56,21 @@ import {
     BatchSpecWorkspaceChangesetSpecFields,
     BatchSpecWorkspaceState,
     BatchSpecWorkspaceStepFields,
+    BatchSpecWorkspaceStepResult,
+    BatchSpecWorkspaceStepVariables,
+    FileDiffFields,
     HiddenBatchSpecWorkspaceFields,
     Scalars,
     VisibleBatchSpecWorkspaceFields,
-    FileDiffFields,
-    BatchSpecWorkspaceStepResult,
-    BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
+    BATCH_SPEC_WORKSPACE_STEP,
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
     useBatchSpecWorkspace,
     useRetryWorkspaceExecution,
-    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
-    BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 import { DiagnosticsModal } from '../DiagnosticsModal'
 

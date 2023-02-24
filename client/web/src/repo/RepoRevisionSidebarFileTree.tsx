@@ -2,26 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
     mdiFileDocumentOutline,
-    mdiSourceRepository,
-    mdiFolderOutline,
-    mdiFolderOpenOutline,
     mdiFolderArrowUp,
+    mdiFolderOpenOutline,
+    mdiFolderOutline,
+    mdiSourceRepository,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
+    ErrorAlert,
     ErrorMessage,
     Icon,
-    TreeNode as WildcardTreeNode,
     Link,
     LoadingSpinner,
-    Tree,
     Tooltip,
-    ErrorAlert,
+    Tree,
+    TreeNode as WildcardTreeNode,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'

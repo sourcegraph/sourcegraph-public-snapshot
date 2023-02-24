@@ -4,7 +4,7 @@ import { mdiArchive } from '@mdi/js'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 

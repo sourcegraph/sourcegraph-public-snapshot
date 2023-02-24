@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
+import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon, LoadingSpinner } from '..'

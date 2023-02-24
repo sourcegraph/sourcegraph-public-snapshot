@@ -1,5 +1,5 @@
 import { selectorCompletion } from './selectFilter'
-import { Literal, createLiteral } from './token'
+import { createLiteral, Literal } from './token'
 
 expect.addSnapshotSerializer({
     serialize: (value: string[]): string => value.join(',\n'),

@@ -3,7 +3,7 @@ import { FC, useMemo } from 'react'
 import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
-import { MinimalLangStatsInsightData, LangStatsInsight } from '../../../../core'
+import { LangStatsInsight, MinimalLangStatsInsightData } from '../../../../core'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/LangStatsInsightCreationContent'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'

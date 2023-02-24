@@ -4,7 +4,7 @@ import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon, H3 } from '@sourcegraph/wildcard'
+import { H3, Icon, Link } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../MarketingBlock'
 

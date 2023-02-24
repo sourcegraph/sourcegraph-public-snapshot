@@ -1,5 +1,5 @@
 import { AxePuppeteer } from '@axe-core/puppeteer'
-import type { Result, NodeResult, RunOptions } from 'axe-core'
+import type { NodeResult, Result, RunOptions } from 'axe-core'
 import { Page } from 'puppeteer'
 
 import { logger } from '@sourcegraph/common'

@@ -19,7 +19,7 @@ import {
 } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view'
 import { from, fromEvent, Observable, Subscription } from 'rxjs'
-import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, mergeAll, switchMap, tap } from 'rxjs/operators'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'

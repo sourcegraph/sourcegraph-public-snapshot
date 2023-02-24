@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
-import { SeriesSortMode, SeriesSortDirection } from '@sourcegraph/shared/src/graphql-operations'
+import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
 import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'

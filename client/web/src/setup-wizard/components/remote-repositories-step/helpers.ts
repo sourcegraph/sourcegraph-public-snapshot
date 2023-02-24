@@ -1,4 +1,4 @@
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws, mdiGit } from '@mdi/js'
+import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab } from '@mdi/js'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiCheck, mdiClose } from '@mdi/js'
 
-import { Button, LoadingSpinner, Icon, Alert } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 export interface CheckButtonProps {
     label: string

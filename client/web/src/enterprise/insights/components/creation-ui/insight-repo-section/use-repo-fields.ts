@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { ApolloClient, gql, useApolloClient } from '@apollo/client'
 
 import { QueryState } from '@sourcegraph/shared/src/search'
-import { FormAPI, AsyncValidator, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
+import { AsyncValidator, FormAPI, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
 
 import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'

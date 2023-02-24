@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Alert, H4, Code, Text } from '@sourcegraph/wildcard'
+import { Alert, Code, H4, Text } from '@sourcegraph/wildcard'
 
 export const ExternalServiceEditingTemporaryAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <Alert variant="warning">

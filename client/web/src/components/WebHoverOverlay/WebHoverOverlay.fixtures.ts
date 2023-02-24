@@ -1,9 +1,9 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type {
-    MarkupContent,
-    Badged,
     AggregableBadge,
+    Badged,
     HoverAlert,
+    MarkupContent,
 } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { FIXTURE_SEMANTIC_BADGE } from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
 

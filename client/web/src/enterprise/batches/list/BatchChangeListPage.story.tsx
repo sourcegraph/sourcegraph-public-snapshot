@@ -1,5 +1,5 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
-import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -9,10 +9,10 @@ import { WebStory } from '../../../components/WebStory'
 import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
 
 import {
-    GLOBAL_CHANGESETS_STATS,
     BATCH_CHANGES,
     BATCH_CHANGES_BY_NAMESPACE,
     GET_LICENSE_AND_USAGE_INFO,
+    GLOBAL_CHANGESETS_STATS,
 } from './backend'
 import { BatchChangeListPage } from './BatchChangeListPage'
 import {

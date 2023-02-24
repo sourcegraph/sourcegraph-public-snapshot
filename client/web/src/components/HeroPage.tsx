@@ -3,7 +3,7 @@ import { FC } from 'react'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Link, H1, Icon } from '@sourcegraph/wildcard'
+import { H1, Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 

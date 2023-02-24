@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link, LoadingSpinner, useDebounce, ErrorAlert, InputProps } from '@sourcegraph/wildcard'
+import { ErrorAlert, InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'

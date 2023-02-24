@@ -16,16 +16,16 @@ import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemir
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
-import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
+import { closestOccurrenceByCharacter, positionAtCmPosition } from '../occurrence-utils'
 import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { positionToOffset } from '../utils'
 
 import {
     getCodeIntelTooltipState,
-    setFocusedOccurrenceTooltip,
-    selectOccurrence,
     getHoverTooltip,
+    selectOccurrence,
+    setFocusedOccurrenceTooltip,
 } from './code-intel-tooltips'
 import { goToDefinitionAtOccurrence } from './definition'
 import { isModifierKeyHeld } from './modifier-click'

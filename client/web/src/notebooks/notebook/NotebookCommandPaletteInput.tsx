@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Button, useOnClickOutside, Input } from '@sourcegraph/wildcard'
+import { Button, Input, useOnClickOutside } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
 

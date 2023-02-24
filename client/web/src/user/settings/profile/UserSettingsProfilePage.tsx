@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'

@@ -7,7 +7,7 @@ import useResizeObserver from 'use-resize-observer'
 
 import { createAggregateError } from '@sourcegraph/common'
 
-import { useOffsetPagination, useDebounce } from '../../hooks'
+import { useDebounce, useOffsetPagination } from '../../hooks'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 

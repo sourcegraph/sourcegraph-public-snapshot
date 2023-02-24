@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Text, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import styles from './ItemPicker.module.scss'
 

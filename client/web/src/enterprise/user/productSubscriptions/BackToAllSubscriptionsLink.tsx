@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiArrowLeft } from '@mdi/js'
 
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { UserAreaUserFields } from '../../../graphql-operations'
 

@@ -6,9 +6,9 @@ import { Fzf, type FzfOptions } from 'fzf'
 import { pluralize } from '@sourcegraph/common'
 import { type RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
-import { type ModeDefinition, modesFacet } from '../modes'
+import { modesFacet, type ModeDefinition } from '../modes'
 import { queryRenderer } from '../optionRenderer'
-import { type Source, suggestionSources, type Option } from '../suggestionsExtension'
+import { suggestionSources, type Option, type Source } from '../suggestionsExtension'
 
 const fzfOptions: FzfOptions<RecentSearch> = {
     selector: search => search.query,

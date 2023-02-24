@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { H2, H3, Icon, Text, Link } from '@sourcegraph/wildcard'
+import { H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 interface Props {
     className?: string

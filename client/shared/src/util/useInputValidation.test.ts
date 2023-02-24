@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { last, min, noop } from 'lodash'
 import { BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
 import { delay } from 'rxjs/operators'
 import * as sinon from 'sinon'
 
 import {
-    useInputValidation,
     createValidationPipeline,
     InputValidationState,
+    useInputValidation,
     ValidationOptions,
     VALIDATION_DEBOUNCE_TIME,
 } from './useInputValidation'

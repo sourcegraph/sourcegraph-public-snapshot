@@ -1,3 +1,3 @@
-import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 setLinkComponent(AnchorLink)

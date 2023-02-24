@@ -21,13 +21,13 @@ import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AssignInsightsToDashboardInput,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    DashboardCreateResult,
 } from '../code-insights-backend-types'
 
 import { createInsightView } from './deserialization/create-insight-view'

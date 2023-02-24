@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { H3, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'

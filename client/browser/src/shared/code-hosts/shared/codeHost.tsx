@@ -7,35 +7,35 @@ import { Renderer } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
+    BehaviorSubject,
     combineLatest,
+    concat,
     EMPTY,
     from,
+    fromEvent,
     Observable,
     of,
     Subject,
     Subscription,
     Unsubscribable,
-    concat,
-    BehaviorSubject,
-    fromEvent,
 } from 'rxjs'
 import {
     catchError,
     concatAll,
     concatMap,
+    distinctUntilChanged,
     filter,
     finalize,
     map,
+    mapTo,
     mergeMap,
     observeOn,
-    switchMap,
-    withLatestFrom,
-    tap,
-    startWith,
-    distinctUntilChanged,
     retryWhen,
-    mapTo,
+    startWith,
+    switchMap,
     take,
+    tap,
+    withLatestFrom,
 } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -51,12 +51,12 @@ import {
     asError,
     asObservable,
     isDefined,
-    isInstanceOf,
-    property,
-    registerHighlightContributions,
     isExternalLink,
+    isInstanceOf,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
+    property,
+    registerHighlightContributions,
 } from '@sourcegraph/common'
 import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -79,13 +79,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
-    UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
     toRootURI,
     toURIWithPath,
+    UIPositionSpec,
     ViewStateSpec,
 } from '@sourcegraph/shared/src/util/url'
 
@@ -98,8 +98,8 @@ import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/Cod
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
+import { BrowserPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
+import { resolvePrivateRepo, resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
@@ -111,7 +111,7 @@ import { GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/code
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
-import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
+import { CodeView, fetchFileContentForDiffOrFileInfo, trackCodeViews } from './codeViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { initializeExtensions, renderCommandPalette } from './extensions'
 import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
@@ -122,11 +122,11 @@ import {
     registerNativeTooltipContributions,
 } from './nativeTooltips'
 import { SignInButton } from './SignInButton'
-import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { defaultRevisionToCommitID, resolveRepoNamesForDiffOrFileInfo } from './util/fileInfo'
 import {
-    ViewOnSourcegraphButtonClassProps,
-    ViewOnSourcegraphButton,
     ConfigureSourcegraphButton,
+    ViewOnSourcegraphButton,
+    ViewOnSourcegraphButtonClassProps,
 } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 

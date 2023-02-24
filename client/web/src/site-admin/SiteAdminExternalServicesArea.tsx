@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -9,7 +9,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { codeHostExternalServices, nonCodeHostExternalServices } from '../components/externalServices/externalServices'
 

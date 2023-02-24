@@ -6,8 +6,8 @@ import HttpsProxyAgent from 'https-proxy-agent'
 import fetch, { Headers } from 'node-fetch'
 import vscode from 'vscode'
 
+export type { BodyInit, HeadersInit, Response } from 'node-fetch'
 export { fetch, Headers }
-export type { BodyInit, Response, HeadersInit } from 'node-fetch'
 
 interface HttpsProxyAgentInterface {
     callback(req: ClientRequest, opts: RequestOptions): Promise<net.Socket>

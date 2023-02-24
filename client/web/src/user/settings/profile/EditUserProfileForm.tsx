@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'

@@ -6,7 +6,7 @@ import { SymbolKind } from '../../graphql-operations'
 import { SearchMatch } from '../stream'
 
 import { createFilterSuggestions, PREDICATE_REGEX, regexInsertText, repositoryInsertText } from './completion-utils'
-import { FilterType, resolveFilter, FILTERS, ResolvedFilter } from './filters'
+import { FILTERS, FilterType, ResolvedFilter, resolveFilter } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
 import { CharacterRange, Filter, Pattern, Token, Whitespace } from './token'
 

@@ -11,13 +11,13 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
+    ClientAttributesSpanProcessor,
     ConsoleBatchSpanExporter,
-    WindowLoadInstrumentation,
+    getTracingURL,
     HistoryInstrumentation,
     SharedSpanStoreProcessor,
-    ClientAttributesSpanProcessor,
-    getTracingURL,
     SourcegraphWebTracerProvider,
+    WindowLoadInstrumentation,
 } from '@sourcegraph/observability-client'
 
 import { PageRoutes } from '../../routes.constants'

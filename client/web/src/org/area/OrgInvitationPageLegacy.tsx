@@ -7,10 +7,10 @@ import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLa
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, Form, H3, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
-import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
+import { AuthenticatedUser, refreshAuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { requestGraphQL } from '../../backend/graphql'
 import { ModalPage } from '../../components/ModalPage'

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
+import { mdiAlert, mdiAlertCircle, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -10,21 +10,21 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    LoadingSpinner,
-    useObservable,
     Alert,
-    Container,
-    Icon,
     Code,
+    Container,
+    ErrorAlert,
     H3,
+    Icon,
+    LoadingSpinner,
+    PageHeader,
     Text,
     Tooltip,
-    PageHeader,
-    ErrorAlert,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
-import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
+import { Connection, FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { OutOfBandMigrationFields } from '../graphql-operations'
 

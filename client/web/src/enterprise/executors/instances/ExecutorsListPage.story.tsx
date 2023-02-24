@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { Observable, of } from 'rxjs'
 

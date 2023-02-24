@@ -29,11 +29,11 @@ import { TreeNode } from './Tree'
 import { TreeRootProps } from './TreeRoot'
 import {
     compareTreeProps,
+    getTreeItemOffset,
     hasSingleChild,
     singleChildEntriesToGitTree,
     SingleChildGitTree,
     TreeEntryInfo,
-    getTreeItemOffset,
 } from './util'
 
 export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {

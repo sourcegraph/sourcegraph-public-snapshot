@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiClose, mdiCheckCircle } from '@mdi/js'
+import { mdiCheckCircle, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { chunk, upperFirst } from 'lodash'
 

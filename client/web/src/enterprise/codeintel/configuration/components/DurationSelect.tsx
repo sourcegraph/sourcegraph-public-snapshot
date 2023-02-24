@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { intervalToDuration } from 'date-fns'
 import formatDuration from 'date-fns/formatDuration'
 
-import { Select, Input } from '@sourcegraph/wildcard'
+import { Input, Select } from '@sourcegraph/wildcard'
 
 import { defaultDurationValues } from '../shared'
 

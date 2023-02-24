@@ -5,16 +5,16 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import {
+    Alert,
     Button,
     Container,
-    PageHeader,
-    LoadingSpinner,
-    Link,
-    Alert,
-    Input,
-    Label,
     ErrorAlert,
     Form,
+    Input,
+    Label,
+    Link,
+    LoadingSpinner,
+    PageHeader,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -22,7 +22,7 @@ import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { validatePassword, getPasswordRequirements } from '../../../util/security'
+import { getPasswordRequirements, validatePassword } from '../../../util/security'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'

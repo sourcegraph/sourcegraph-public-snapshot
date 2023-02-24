@@ -7,7 +7,7 @@ import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, useEventObservable } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 

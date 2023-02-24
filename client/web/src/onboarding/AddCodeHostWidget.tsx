@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { mdiCodeBraces, mdiLock, mdiChevronRight } from '@mdi/js'
+import { mdiChevronRight, mdiCodeBraces, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { H3, Text, Link, Icon } from '@sourcegraph/wildcard'
+import { H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { MarketingBlock } from '../components/MarketingBlock'

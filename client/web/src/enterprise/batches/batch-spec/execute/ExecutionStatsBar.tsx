@@ -1,8 +1,8 @@
-import { mdiAlertCircle, mdiCheckBold, mdiTimerSand, mdiTimelineClockOutline, mdiCircleOffOutline } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiCircleOffOutline, mdiTimelineClockOutline, mdiTimerSand } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { pluralize } from '@sourcegraph/common'
-import { Icon, H3 } from '@sourcegraph/wildcard'
+import { H3, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceStats } from '../../../../graphql-operations'
 

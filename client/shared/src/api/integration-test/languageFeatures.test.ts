@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { asyncScheduler, Observable, of, Unsubscribable } from 'rxjs'
-import { observeOn, take, toArray, map, first } from 'rxjs/operators'
+import { first, map, observeOn, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'

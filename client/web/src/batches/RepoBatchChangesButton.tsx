@@ -2,7 +2,7 @@ import React, { FC, forwardRef } from 'react'
 
 import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { RepoChangesetsStatsResult, RepoChangesetsStatsVariables } from '../graphql-operations'
 

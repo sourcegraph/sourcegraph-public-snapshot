@@ -3,40 +3,40 @@ import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 're
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate, createPath } from 'react-router-dom'
+import { createPath, useLocation, useNavigate } from 'react-router-dom'
 import {
     BehaviorSubject,
     combineLatest,
-    merge,
     EMPTY,
     from,
     fromEvent,
+    merge,
     ReplaySubject,
-    Subscription,
     Subject,
+    Subscription,
 } from 'rxjs'
 import { concatMap, filter, first, map, mapTo, pairwise, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import {
+    createHoverifier,
+    findPositionsFromEvents,
     getCodeElementsInRange,
     HoveredToken,
-    locateTarget,
-    findPositionsFromEvents,
-    createHoverifier,
     HoverState,
+    locateTarget,
 } from '@sourcegraph/codeintellify'
 import {
-    isErrorLike,
-    isDefined,
-    property,
-    LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
-    toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
+    isDefined,
+    isErrorLike,
+    LineOrPositionOrRange,
     logger,
+    lprToSelectionsZeroIndexed,
+    property,
+    toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -50,16 +50,16 @@ import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-crea
 import {
     FileSpec,
     ModeSpec,
-    UIPositionSpec,
+    parseQueryAndHash,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
     toURIWithPath,
-    parseQueryAndHash,
+    UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
 import { Code, useObservable } from '@sourcegraph/wildcard'
 
-import { getHover, getDocumentHighlights } from '../../backend/features'
+import { getDocumentHighlights, getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 
 import { BlameColumn } from './BlameColumn'

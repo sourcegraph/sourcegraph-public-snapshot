@@ -1,22 +1,20 @@
 export {
     Combobox,
     ComboboxInput,
-    ComboboxPopover,
     ComboboxList,
-    ComboboxOptionGroup,
     ComboboxOption,
+    ComboboxOptionGroup,
     ComboboxOptionText,
+    ComboboxPopover,
 } from './Combobox'
-
 export {
     MultiCombobox,
-    MultiComboboxInput,
-    MultiComboboxPopover,
-    MultiComboboxList,
     MultiComboboxEmptyList,
-    MultiComboboxOptionGroup,
+    MultiComboboxInput,
+    MultiComboboxList,
     MultiComboboxOption,
+    MultiComboboxOptionGroup,
     MultiComboboxOptionText,
+    MultiComboboxPopover,
 } from './MultiCombobox'
-
 export type { MultiComboboxProps } from './MultiCombobox'

@@ -5,13 +5,13 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import webpack, { optimize } from 'webpack'
 
 import {
-    ROOT_PATH,
     getBabelLoader,
+    getBasicCSSLoader,
     getCSSLoaders,
+    getCSSModulesLoader,
     getProvidePlugin,
     getTerserPlugin,
-    getCSSModulesLoader,
-    getBasicCSSLoader,
+    ROOT_PATH,
 } from '@sourcegraph/build-config'
 import { subtypeOf } from '@sourcegraph/common'
 

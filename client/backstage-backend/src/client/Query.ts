@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client'
 import type { DocumentNode } from '@apollo/client'
+import { gql } from '@apollo/client'
 
 export interface Query<T> {
     gql(): DocumentNode

@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ShortcutProvider } from '../../components/ShortcutProvider'
-import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { BrowserPlatformContext, createPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
 
 import { CodeHost } from './codeHost'
 

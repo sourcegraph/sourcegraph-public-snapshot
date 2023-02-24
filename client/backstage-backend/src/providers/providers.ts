@@ -1,7 +1,7 @@
 import { Config } from '@backstage/config'
-import { SearchService, createService } from '../client'
-import { parserForType, ParserFunction } from './parsers'
 import { EntityProvider, EntityProviderConnection } from '@backstage/plugin-catalog-backend'
+import { createService, SearchService } from '../client'
+import { parserForType, ParserFunction } from './parsers'
 
 export type EntityType = 'file' | 'grpc' | 'graphql'
 

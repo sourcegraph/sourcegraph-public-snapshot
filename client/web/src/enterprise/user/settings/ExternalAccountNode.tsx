@@ -6,7 +6,7 @@ import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button, Link, AnchorLink, ErrorAlert } from '@sourcegraph/wildcard'
+import { AnchorLink, Badge, Button, ErrorAlert, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {

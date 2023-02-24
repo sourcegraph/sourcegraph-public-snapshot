@@ -3,12 +3,12 @@ import { AddressInfo } from 'net'
 
 import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
-import { google, calendar_v3 } from 'googleapis'
+import { calendar_v3, google } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
 import { readFile, writeFile } from 'mz/fs'
 import open from 'open'
 
-import { readLine, cacheFolder } from './util'
+import { cacheFolder, readLine } from './util'
 
 export interface Installed {
     client_id?: string

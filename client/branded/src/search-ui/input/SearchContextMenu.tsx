@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
+import { FC, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
+import { mdiArrowRight, mdiClose, mdiStar } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -13,19 +13,19 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getDefaultSearchContextSpec, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    Alert,
     Badge,
     Button,
-    Icon,
     ButtonLink,
-    Link,
-    Text,
-    Tooltip,
     Combobox,
     ComboboxInput,
     ComboboxList,
     ComboboxOption,
     ComboboxOptionText,
-    Alert,
+    Icon,
+    Link,
+    Text,
+    Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
 

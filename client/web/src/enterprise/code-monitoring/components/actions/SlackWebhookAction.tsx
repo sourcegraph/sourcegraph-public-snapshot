@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
+import { Alert, Input, Label, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'

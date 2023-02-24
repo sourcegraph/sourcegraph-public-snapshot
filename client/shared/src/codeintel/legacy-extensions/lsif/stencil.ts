@@ -2,7 +2,7 @@ import gql from 'tagged-template-noop'
 
 import * as sourcegraph from '../api'
 import { cache } from '../util'
-import { QueryGraphQLFn, queryGraphQL as sgQueryGraphQL } from '../util/graphql'
+import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse, queryLSIF } from './api'
 

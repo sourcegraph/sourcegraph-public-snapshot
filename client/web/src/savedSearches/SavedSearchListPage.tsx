@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiDelete, mdiMessageTextOutline, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -12,20 +12,20 @@ import { logger } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
     Button,
-    Link,
-    Icon,
-    Tooltip,
+    Container,
     ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
     PageSwitcher,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../components/PageTitle'
-import { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
+import { SavedSearchesResult, SavedSearchesVariables, SavedSearchFields } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'

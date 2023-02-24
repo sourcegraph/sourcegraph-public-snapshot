@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink'
 import * as uuid from 'uuid'
 
-import { EventSource, Event as EventType } from '@sourcegraph/shared/src/graphql-operations'
+import { Event as EventType, EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../../package.json'
 import { ExtensionCoreAPI } from '../../contract'

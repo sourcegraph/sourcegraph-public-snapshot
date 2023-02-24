@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'

@@ -1,16 +1,16 @@
-import { HTMLAttributes, FC } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
-import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { BarChart, ErrorAlert, LegendItem, LegendList, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { GroupByField } from '../../../../../../../graphql-operations'
 import {
-    LivePreviewUpdateButton,
-    LivePreviewCard,
-    LivePreviewLoading,
-    LivePreviewChart,
-    LivePreviewBlurBackdrop,
-    LivePreviewBanner,
     COMPUTE_MOCK_CHART,
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewLoading,
+    LivePreviewUpdateButton,
 } from '../../../../../components'
 import { CategoricalChartContent, SearchBasedInsightSeries } from '../../../../../core'
 import { LivePreviewStatus, useLivePreviewComputeInsight } from '../../../../../core/hooks/live-preview-insight'

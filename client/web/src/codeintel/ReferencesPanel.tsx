@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -32,29 +32,29 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    RepoSpec,
-    RevisionSpec,
     FileSpec,
-    ResolvedRevisionSpec,
     parseQueryAndHash,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
     toPrettyBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 import {
-    Link,
-    LoadingSpinner,
-    CardHeader,
-    useDebounce,
-    Button,
-    Input,
-    Icon,
     Badge,
+    Button,
+    CardHeader,
+    Code,
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
     H4,
+    Icon,
+    Input,
+    Link,
+    LoadingSpinner,
     Text,
     Tooltip,
+    useDebounce,
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
@@ -66,7 +66,7 @@ import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
+import { buildRepoLocationGroups, Location, LocationGroup, locationGroupQuality, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'

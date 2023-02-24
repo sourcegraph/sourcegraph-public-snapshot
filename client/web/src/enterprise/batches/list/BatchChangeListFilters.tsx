@@ -8,11 +8,11 @@ import {
     H4,
     Label,
     MultiCombobox,
-    MultiComboboxInput,
-    MultiComboboxPopover,
-    MultiComboboxList,
     MultiComboboxEmptyList,
+    MultiComboboxInput,
+    MultiComboboxList,
     MultiComboboxOption,
+    MultiComboboxPopover,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../../graphql-operations'

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
+import { mdiBookOutline, mdiCheckCircle, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 import { useStickyBox } from 'react-sticky-box'
@@ -15,16 +15,16 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
+    Alert,
+    Button,
+    H3,
+    Icon,
     LoadingSpinner,
     PageHeader,
+    ProductStatusBadge,
+    Text,
     useEventObservable,
     useObservable,
-    Alert,
-    ProductStatusBadge,
-    Button,
-    Icon,
-    H3,
-    Text,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -35,11 +35,11 @@ import { NotebookFields, NotebookInput } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
 import {
+    createNotebookStar as _createNotebookStar,
+    deleteNotebook as _deleteNotebook,
+    deleteNotebookStar as _deleteNotebookStar,
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
-    deleteNotebook as _deleteNotebook,
-    createNotebookStar as _createNotebookStar,
-    deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
 import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPageHeader'
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'

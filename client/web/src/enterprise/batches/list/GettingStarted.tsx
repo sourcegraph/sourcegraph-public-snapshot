@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
+import { Container, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CallToActionBanner } from '../../../components/CallToActionBanner'

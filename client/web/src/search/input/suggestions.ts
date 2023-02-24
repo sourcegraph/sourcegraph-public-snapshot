@@ -1,20 +1,20 @@
 import { EditorState } from '@codemirror/state'
-import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
+import { mdiFileOutline, mdiFilterOutline, mdiSourceRepository, mdiStar } from '@mdi/js'
 import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
 // eslint-disable-next-line no-restricted-imports
 import {
-    Group,
-    Option,
-    Source,
-    SuggestionResult,
-    filterRenderer,
-    filterValueRenderer,
-    shortenPath,
     combineResults,
     defaultLanguages,
+    filterRenderer,
+    filterValueRenderer,
+    Group,
+    Option,
+    shortenPath,
+    Source,
+    SuggestionResult,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -32,10 +32,10 @@ import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcon
 
 import { AuthenticatedUser } from '../../auth'
 import {
-    SuggestionsRepoResult,
-    SuggestionsRepoVariables,
     SuggestionsFileResult,
     SuggestionsFileVariables,
+    SuggestionsRepoResult,
+    SuggestionsRepoVariables,
     SuggestionsSymbolResult,
     SuggestionsSymbolVariables,
     SymbolKind,

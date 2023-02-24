@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
+import { Alert, Container, H5, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'

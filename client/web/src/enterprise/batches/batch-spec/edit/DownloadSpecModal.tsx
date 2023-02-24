@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Link, Modal, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
+import { Button, H3, H4, Icon, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 

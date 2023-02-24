@@ -3,7 +3,7 @@ import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 
-import { LogEventsResult, LogEventsVariables, Event } from '../graphql-operations'
+import { Event, LogEventsResult, LogEventsVariables } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

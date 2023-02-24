@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'

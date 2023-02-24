@@ -1,5 +1,5 @@
 import { getPositions } from './geometry'
-import { TetherState, getPositionState } from './tether-position'
+import { getPositionState, TetherState } from './tether-position'
 import { TetherLayout } from './types'
 
 /**

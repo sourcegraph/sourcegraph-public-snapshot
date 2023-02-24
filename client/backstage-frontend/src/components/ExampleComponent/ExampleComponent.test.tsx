@@ -1,9 +1,9 @@
-import React from 'react'
-import { ExampleComponent } from './ExampleComponent'
+import { renderInTestApp, setupRequestMockHandlers } from '@backstage/test-utils'
+import { screen } from '@testing-library/react'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { screen } from '@testing-library/react'
-import { setupRequestMockHandlers, renderInTestApp } from '@backstage/test-utils'
+import React from 'react'
+import { ExampleComponent } from './ExampleComponent'
 
 describe('ExampleComponent', () => {
     const server = setupServer()

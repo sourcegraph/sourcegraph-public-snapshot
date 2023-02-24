@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, useMemo, useCallback } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 

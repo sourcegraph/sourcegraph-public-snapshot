@@ -1,7 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
-import { H3, Code } from '@sourcegraph/wildcard'
+import { Code, H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 

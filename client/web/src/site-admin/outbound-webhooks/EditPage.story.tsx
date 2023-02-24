@@ -7,7 +7,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../components/WebStory'
 
 import { EditPage } from './EditPage'
-import { logConnectionLink, buildOutboundWebhookMock, eventTypesMock } from './mocks'
+import { buildOutboundWebhookMock, eventTypesMock, logConnectionLink } from './mocks'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

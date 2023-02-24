@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiPuzzle } from '@mdi/js'
 
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { EmptyPanelView } from './EmptyPanelView'
 

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiFileDownloadOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import { encodeRepoRevision, FileSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'

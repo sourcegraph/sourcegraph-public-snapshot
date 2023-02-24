@@ -2,7 +2,7 @@ import { EditorState, Extension, Facet, StateEffect, StateField } from '@codemir
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
+import { Node, ParseResult, parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 

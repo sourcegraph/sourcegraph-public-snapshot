@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { map, tap } from 'rxjs/operators'
 
@@ -6,7 +6,7 @@ import { Alert } from '@sourcegraph/wildcard'
 
 import { FileDiffNode, FileDiffNodeProps } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { Scalars, FileDiffFields } from '../../../../graphql-operations'
+import { FileDiffFields, Scalars } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 
 export interface ChangesetFileDiffProps {

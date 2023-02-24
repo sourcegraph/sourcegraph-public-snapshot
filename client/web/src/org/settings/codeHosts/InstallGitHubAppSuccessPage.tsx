@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiPlus, mdiGithub } from '@mdi/js'
+import { mdiGithub, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { SourcegraphIcon, Card, CardBody, Link, H2, Text, Icon } from '@sourcegraph/wildcard'
+import { Card, CardBody, H2, Icon, Link, SourcegraphIcon, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'

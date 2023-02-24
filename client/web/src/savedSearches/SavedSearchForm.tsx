@@ -6,18 +6,18 @@ import { Omit } from 'utility-types'
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import {
-    Container,
-    PageHeader,
-    ProductStatusBadge,
-    Button,
-    Link,
     Alert,
+    Button,
     Checkbox,
-    Input,
     Code,
-    Label,
+    Container,
     ErrorAlert,
     Form,
+    Input,
+    Label,
+    Link,
+    PageHeader,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

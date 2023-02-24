@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { Button, Modal, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'

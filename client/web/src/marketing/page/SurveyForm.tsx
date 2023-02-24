@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
-import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
+import { gql, useMutation } from '@sourcegraph/http-client'
+import { Button, Form, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'

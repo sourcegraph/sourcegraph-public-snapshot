@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, Link, H4, Text } from '@sourcegraph/wildcard'
+import { Card, CardBody, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 

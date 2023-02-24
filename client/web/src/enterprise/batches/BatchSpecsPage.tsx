@@ -3,15 +3,15 @@ import React, { FC, useCallback, useMemo } from 'react'
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
+import { Container, H3, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import {
-    queryBatchSpecs as _queryBatchSpecs,
     queryBatchChangeBatchSpecs as _queryBatchChangeBatchSpecs,
+    queryBatchSpecs as _queryBatchSpecs,
 } from './backend'
 import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
 

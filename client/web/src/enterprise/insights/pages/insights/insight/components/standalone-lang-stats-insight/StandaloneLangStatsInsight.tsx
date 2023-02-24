@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ParentSize, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, ParentSize } from '@sourcegraph/wildcard'
 
 import {
     CategoricalBasedChartTypes,

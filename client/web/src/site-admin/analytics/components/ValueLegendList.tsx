@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, ReactNode } from 'react'
+import React, { ReactNode, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'

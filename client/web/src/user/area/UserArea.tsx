@@ -1,6 +1,6 @@
-import { FC, useMemo, Suspense } from 'react'
+import { FC, Suspense, useMemo } from 'react'
 
-import { useParams, useLocation, Routes, Route } from 'react-router-dom'
+import { Route, Routes, useLocation, useParams } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -10,7 +10,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'

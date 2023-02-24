@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -20,11 +20,11 @@ import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 
 import {
-    useSyncExternalService,
-    queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
-    FETCH_EXTERNAL_SERVICE,
     deleteExternalService,
+    FETCH_EXTERNAL_SERVICE,
+    queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     useExternalServiceCheckConnectionByIdLazyQuery,
+    useSyncExternalService,
 } from './backend'
 import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'

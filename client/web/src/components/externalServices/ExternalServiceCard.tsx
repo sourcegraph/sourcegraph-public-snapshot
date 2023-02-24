@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, Link, H3, Text, Tooltip, Badge, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Badge, H3, Icon, Link, ProductStatusBadge, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceOptions } from './externalServices'
 

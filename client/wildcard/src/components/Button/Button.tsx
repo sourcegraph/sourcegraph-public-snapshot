@@ -1,11 +1,11 @@
-import { MouseEvent, ButtonHTMLAttributes, forwardRef } from 'react'
+import { ButtonHTMLAttributes, forwardRef, MouseEvent } from 'react'
 
 import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
-import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { BUTTON_DISPLAY, BUTTON_SIZES, BUTTON_VARIANTS } from './constants'
 import { getButtonClassName } from './utils'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

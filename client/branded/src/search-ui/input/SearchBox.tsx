@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'

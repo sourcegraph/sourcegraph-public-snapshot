@@ -1,4 +1,4 @@
-import { USER_DISPLAY_NAME_MAX_LENGTH, USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
+import { USERNAME_MAX_LENGTH, USER_DISPLAY_NAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
 /**
  * Regular expression to identify valid organization names.

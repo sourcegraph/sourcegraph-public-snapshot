@@ -17,12 +17,12 @@ import {
     BatchSpecWorkspacesVariables,
     CancelBatchSpecExecutionResult,
     CancelBatchSpecExecutionVariables,
-    Scalars,
-    WorkspaceStepFileDiffConnectionFields,
-    VisibleBatchSpecWorkspaceFields,
     HiddenBatchSpecWorkspaceFields,
     RetryWorkspaceExecutionResult,
     RetryWorkspaceExecutionVariables,
+    Scalars,
+    VisibleBatchSpecWorkspaceFields,
+    WorkspaceStepFileDiffConnectionFields,
 } from '../../../../graphql-operations'
 
 export const batchSpecWorkspaceStepOutputLinesFieldsFragment = gql`

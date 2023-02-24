@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { AlertLink, Alert } from '@sourcegraph/wildcard'
+import { Alert, AlertLink } from '@sourcegraph/wildcard'
 
 import { BatchSpecState } from '../../../graphql-operations'
 

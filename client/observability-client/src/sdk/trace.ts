@@ -1,4 +1,4 @@
-import { context, trace, Span, TimeInput } from '@opentelemetry/api'
+import { context, Span, TimeInput, trace } from '@opentelemetry/api'
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 

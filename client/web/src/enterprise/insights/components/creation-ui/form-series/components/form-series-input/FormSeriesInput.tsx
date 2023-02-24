@@ -3,7 +3,7 @@ import { FC, ReactNode } from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Input, Code, useForm, useField, getDefaultInputProps } from '@sourcegraph/wildcard'
+import { Button, Card, Code, getDefaultInputProps, Input, useField, useForm } from '@sourcegraph/wildcard'
 
 import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
 import { InsightQueryInput } from '../../../../form'

@@ -10,14 +10,14 @@ import {
     Button,
     ButtonLink,
     Container,
+    ErrorAlert,
     H2,
     H5,
+    Icon,
     Link,
     LoadingSpinner,
     PageHeader,
     Tooltip,
-    ErrorAlert,
-    Icon,
 } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'

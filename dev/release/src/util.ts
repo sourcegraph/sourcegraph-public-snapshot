@@ -4,7 +4,7 @@ import * as readline from 'readline'
 
 import chalk from 'chalk'
 import execa from 'execa'
-import { readFile, writeFile, mkdir } from 'mz/fs'
+import { mkdir, readFile, writeFile } from 'mz/fs'
 import fetch from 'node-fetch'
 
 import { EditFunc } from './github'

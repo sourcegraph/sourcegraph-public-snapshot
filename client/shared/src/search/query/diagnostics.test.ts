@@ -1,7 +1,7 @@
 import { SearchPatternType } from '../../graphql-operations'
 
 import { getDiagnostics } from './diagnostics'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
+import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
 
 expect.addSnapshotSerializer({

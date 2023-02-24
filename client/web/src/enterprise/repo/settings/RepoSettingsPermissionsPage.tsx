@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useMemo } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Container, Link, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'

@@ -1,4 +1,4 @@
-import { from, defer } from 'rxjs'
+import { defer, from } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 
 import { repeatUntil } from './repeatUntil'

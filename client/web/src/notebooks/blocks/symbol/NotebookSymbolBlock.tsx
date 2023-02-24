@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { EditorView } from '@codemirror/view'
-import { mdiOpenInNew, mdiInformationOutline, mdiCheck, mdiPencil } from '@mdi/js'
+import { mdiCheck, mdiInformationOutline, mdiOpenInNew, mdiPencil } from '@mdi/js'
 import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'

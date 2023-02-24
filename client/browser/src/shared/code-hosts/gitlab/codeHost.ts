@@ -5,7 +5,7 @@ import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { fetchCache, LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -22,11 +22,11 @@ import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import {
+    getFilePathsFromCodeView,
+    getGitlabRepoURL,
     getPageInfo,
     GitLabPageKind,
-    getFilePathsFromCodeView,
     repoNameOnSourcegraph,
-    getGitlabRepoURL,
 } from './scrape'
 
 import styles from './codeHost.module.scss'

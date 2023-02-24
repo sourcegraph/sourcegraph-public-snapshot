@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MenuPopover as ReachMenuPopover, MenuItems } from '@reach/menu-button'
+import { MenuItems, MenuPopover as ReachMenuPopover } from '@reach/menu-button'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../types'

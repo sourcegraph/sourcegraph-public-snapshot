@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { times } from 'lodash'
 
-import { INCREMENTAL_ITEMS_TO_SHOW, DEFAULT_INITIAL_ITEMS_TO_SHOW, useItemsToShow } from './use-items-to-show'
+import { DEFAULT_INITIAL_ITEMS_TO_SHOW, INCREMENTAL_ITEMS_TO_SHOW, useItemsToShow } from './use-items-to-show'
 
 const RESULTS_NUMBER = 50
 

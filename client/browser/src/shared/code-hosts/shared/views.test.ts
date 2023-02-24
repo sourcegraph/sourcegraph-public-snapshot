@@ -1,5 +1,5 @@
 import { noop } from 'lodash'
-import { from, Observable, of, Subject, Subscription, NEVER } from 'rxjs'
+import { from, NEVER, Observable, of, Subject, Subscription } from 'rxjs'
 import { bufferCount, map, switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 
@@ -8,12 +8,12 @@ import { createBarrier } from '@sourcegraph/shared/src/testing/testHelpers'
 import { MutationRecordLike } from '../../util/dom'
 
 import {
+    delayUntilIntersecting,
+    IntersectionObserverCallbackLike,
+    IntersectionObserverLike,
     trackViews,
     ViewResolver,
-    IntersectionObserverCallbackLike,
-    delayUntilIntersecting,
     ViewWithSubscriptions,
-    IntersectionObserverLike,
 } from './views'
 
 const FIXTURE_HTML = `

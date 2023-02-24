@@ -4,20 +4,20 @@ import VisuallyHidden from '@reach/visually-hidden'
 
 import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
+import { H2, H4, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
+import { RepoBatchChangeStats, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { BatchChangeStatsTotalAction } from '../detail/BatchChangeStatsCard'
 import {
-    ChangesetStatusUnpublished,
-    ChangesetStatusOpen,
     ChangesetStatusClosed,
     ChangesetStatusMerged,
+    ChangesetStatusOpen,
+    ChangesetStatusUnpublished,
 } from '../detail/changesets/ChangesetStatusCell'
 import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
 

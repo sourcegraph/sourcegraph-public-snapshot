@@ -8,13 +8,13 @@ import {
     LabelFormatter,
     ResponsiveContainer,
     Tooltip,
+    TooltipPayload,
     XAxis,
     YAxis,
-    TooltipPayload,
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Checkbox, Container, LoadingSpinner, Label, ErrorAlert } from '@sourcegraph/wildcard'
+import { Checkbox, Container, ErrorAlert, Label, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 

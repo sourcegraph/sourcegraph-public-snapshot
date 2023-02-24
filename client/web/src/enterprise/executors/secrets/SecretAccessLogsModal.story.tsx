@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { noop } from 'lodash'
 

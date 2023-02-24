@@ -1,10 +1,10 @@
-import { cleanup, fireEvent, act } from '@testing-library/react'
+import { act, cleanup, fireEvent } from '@testing-library/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/wildcard/src/testing'
 
-import { RepositoriesPopover, BATCH_COUNT } from './RepositoriesPopover'
+import { BATCH_COUNT, RepositoriesPopover } from './RepositoriesPopover'
 import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
 
 const repo = {

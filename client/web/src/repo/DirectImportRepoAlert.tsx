@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 export const DirectImportRepoAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
     className = '',

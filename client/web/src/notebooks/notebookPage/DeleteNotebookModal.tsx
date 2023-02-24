@@ -2,11 +2,11 @@ import React, { FC, useCallback, useEffect } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
+import { catchError, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, H3, LoadingSpinner, Modal, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from '../backend'
 

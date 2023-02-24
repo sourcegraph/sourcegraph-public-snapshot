@@ -4,8 +4,8 @@ import { mdiStar, mdiStarOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { renderMarkdown, pluralize } from '@sourcegraph/common'
-import { Link, Badge, Icon } from '@sourcegraph/wildcard'
+import { pluralize, renderMarkdown } from '@sourcegraph/common'
+import { Badge, Icon, Link } from '@sourcegraph/wildcard'
 
 import { NotebookFields } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'

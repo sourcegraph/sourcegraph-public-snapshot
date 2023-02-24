@@ -1,4 +1,4 @@
-import { combineLatest, ReplaySubject, of } from 'rxjs'
+import { combineLatest, of, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'

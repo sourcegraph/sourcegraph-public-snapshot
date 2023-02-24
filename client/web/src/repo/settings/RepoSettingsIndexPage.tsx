@@ -10,17 +10,17 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import {
-    Button,
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Link,
     Alert,
-    Icon,
+    Button,
     Code,
-    H3,
+    Container,
     ErrorAlert,
+    H3,
+    Icon,
+    Link,
     LinkOrSpan,
+    LoadingSpinner,
+    PageHeader,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -29,9 +29,9 @@ import {
     reindexResult,
     reindexVariables,
     RepositoryTextSearchIndexRepository,
+    RepositoryTextSearchIndexResult,
     Scalars,
     SettingsAreaRepositoryFields,
-    RepositoryTextSearchIndexResult,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'

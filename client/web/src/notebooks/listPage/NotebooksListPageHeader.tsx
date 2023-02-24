@@ -8,17 +8,17 @@ import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Link,
     Button,
-    Menu,
     ButtonGroup,
-    MenuButton,
-    Position,
-    MenuList,
-    MenuItem,
-    Input,
-    Modal,
     Icon,
+    Input,
+    Link,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    Modal,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -28,7 +28,7 @@ import { NotepadIcon } from '../../search/Notepad'
 import { blockToGQLInput } from '../serialize'
 import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
 
-import { NOTEPAD_CTA_ID, NotepadCTA } from './NotepadCta'
+import { NotepadCTA, NOTEPAD_CTA_ID } from './NotepadCta'
 
 import styles from './NotebooksListPageHeader.module.scss'
 

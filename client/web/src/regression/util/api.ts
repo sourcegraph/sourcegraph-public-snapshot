@@ -2,15 +2,15 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
-import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
+import { concat, defer, Observable, throwError, timer, zip } from 'rxjs'
+import { delayWhen, map, mergeMap, retryWhen, take, tap } from 'rxjs/operators'
 
-import { isErrorLike, createAggregateError, logger } from '@sourcegraph/common'
+import { createAggregateError, isErrorLike, logger } from '@sourcegraph/common'
 import {
-    dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
-    isErrorGraphQLResult,
+    dataOrThrowErrors,
     gql,
+    isErrorGraphQLResult,
 } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
@@ -24,46 +24,46 @@ import { Config } from '@sourcegraph/shared/src/testing/config'
 
 import {
     AddExternalServiceInput,
-    ExternalServiceKind,
-    UpdateExternalServiceInput,
-    Scalars,
-    DeleteOrganizationResult,
-    SearchPatternType,
-    UpdateSiteConfigurationResult,
-    SiteResult,
-    OrganizationsConnectionFields,
-    OrganizationsResult,
-    CreateOrganizationResult,
-    CreateUserResult,
-    UpdateExternalServiceResult,
-    UpdateExternalServiceVariables,
-    OrganizationsVariables,
-    SearchVersion,
-    DeleteOrganizationVariables,
-    CreateOrganizationVariables,
-    CreateUserVariables,
-    SetUserIsSiteAdminResult,
-    SetUserIsSiteAdminVariables,
-    DeleteExternalServiceResult,
-    DeleteExternalServiceVariables,
-    UpdateSiteConfigurationVariables,
-    ResolveRevResult,
-    ResolveRevVariables,
-    ExternalServicesRegressionResult,
-    ExternalServicesRegressionVariables,
-    ExternalServiceNodeFields,
-    UserResult,
-    DeleteUserResult,
-    DeleteUserVariables,
-    SetTosAcceptedResult,
-    SetTosAcceptedVariables,
-    SiteProductVersionResult,
-    SiteProductVersionVariables,
-    UserVariables,
     addExternalServiceResult,
     addExternalServiceVariables,
+    CreateOrganizationResult,
+    CreateOrganizationVariables,
+    CreateUserResult,
+    CreateUserVariables,
+    DeleteExternalServiceResult,
+    DeleteExternalServiceVariables,
+    DeleteOrganizationResult,
+    DeleteOrganizationVariables,
+    DeleteUserResult,
+    DeleteUserVariables,
+    ExternalServiceKind,
+    ExternalServiceNodeFields,
+    ExternalServicesRegressionResult,
+    ExternalServicesRegressionVariables,
+    OrganizationsConnectionFields,
+    OrganizationsResult,
+    OrganizationsVariables,
+    ResolveRevResult,
+    ResolveRevVariables,
+    Scalars,
+    SearchPatternType,
     SearchResult,
     SearchVariables,
+    SearchVersion,
+    SetTosAcceptedResult,
+    SetTosAcceptedVariables,
+    SetUserIsSiteAdminResult,
+    SetUserIsSiteAdminVariables,
+    SiteProductVersionResult,
+    SiteProductVersionVariables,
+    SiteResult,
+    UpdateExternalServiceInput,
+    UpdateExternalServiceResult,
+    UpdateExternalServiceVariables,
+    UpdateSiteConfigurationResult,
+    UpdateSiteConfigurationVariables,
+    UserResult,
+    UserVariables,
 } from '../../graphql-operations'
 
 import { GraphQLClient } from './GraphQlClient'

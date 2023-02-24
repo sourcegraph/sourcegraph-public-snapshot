@@ -1,22 +1,22 @@
 import React, {
-    useCallback,
-    useState,
-    useMemo,
     KeyboardEvent,
-    SyntheticEvent,
     MouseEvent,
-    useRef,
+    SyntheticEvent,
+    useCallback,
     useEffect,
     useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react'
 
 import {
     mdiBookPlusOutline,
     mdiChevronUp,
-    mdiDelete,
-    mdiMagnify,
-    mdiFileDocumentOutline,
     mdiCodeBrackets,
+    mdiDelete,
+    mdiFileDocumentOutline,
+    mdiMagnify,
     mdiTextBox,
 } from '@mdi/js'
 import classNames from 'classnames'
@@ -31,7 +31,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
+import { Button, createLinkUrl, H2, H3, Icon, Link, Text, TextArea, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import { createNotebook } from '../notebooks/backend'

@@ -5,7 +5,7 @@ import { EditorView } from '@codemirror/view'
 import { Observable, of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
-import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery, singleLine, changeListener } from '@sourcegraph/branded'
+import { changeListener, CodeMirrorQueryInput, singleLine, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { pluralize } from '@sourcegraph/common'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'

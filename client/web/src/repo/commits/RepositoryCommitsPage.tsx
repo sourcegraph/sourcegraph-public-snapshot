@@ -6,7 +6,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
+import { Code, ErrorAlert, Heading } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'

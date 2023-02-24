@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+import { Button, H3, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 

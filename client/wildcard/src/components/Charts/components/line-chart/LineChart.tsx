@@ -1,6 +1,6 @@
-import { ReactElement, useMemo, SVGProps, CSSProperties, FocusEvent, useCallback, useState } from 'react'
+import { CSSProperties, FocusEvent, ReactElement, SVGProps, useCallback, useMemo, useState } from 'react'
 
-import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
+import { getTicks, scaleLinear, scaleTime } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import classNames from 'classnames'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
@@ -15,7 +15,7 @@ import { Series, SeriesLikeChart } from '../../types'
 import { getSortedByFirstPointSeries } from './keyboard-navigation'
 import { LineChartContent } from './LineChartContent'
 import { Point } from './types'
-import { getSeriesData, getMinMaxBoundaries } from './utils'
+import { getMinMaxBoundaries, getSeriesData } from './utils'
 
 import styles from './LineChart.module.scss'
 

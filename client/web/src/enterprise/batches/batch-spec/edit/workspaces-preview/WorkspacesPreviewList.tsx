@@ -6,9 +6,9 @@ import {
     ConnectionContainer,
     ConnectionError,
     ConnectionList,
-    SummaryContainer,
     ConnectionSummary,
     ShowMoreButton,
+    SummaryContainer,
 } from '../../../../../components/FilteredConnection/ui'
 import {
     BatchSpecWorkspacesPreviewResult,

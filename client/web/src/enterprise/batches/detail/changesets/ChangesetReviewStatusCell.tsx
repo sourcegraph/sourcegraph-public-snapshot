@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { mdiTimerSand, mdiGateArrowRight, mdiCommentOutline, mdiDelta, mdiCheckCircle } from '@mdi/js'
+import { mdiCheckCircle, mdiCommentOutline, mdiDelta, mdiGateArrowRight, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
+import { ChangesetReviewState, ExternalChangesetFields } from '../../../../graphql-operations'
 
 export interface ChangesetReviewStatusCellProps {
     className?: string

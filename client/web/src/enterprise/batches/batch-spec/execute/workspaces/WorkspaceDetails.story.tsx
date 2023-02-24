@@ -5,29 +5,29 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { Card, CardBody } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import {
+    CANCELED_WORKSPACE,
+    CANCELING_WORKSPACE,
+    FAILED_WORKSPACE,
     HIDDEN_WORKSPACE,
-    QUEUED_WORKSPACE,
+    LOTS_OF_STEPS_WORKSPACE,
     mockWorkspace,
     PROCESSING_WORKSPACE,
+    QUEUED_WORKSPACE,
     SKIPPED_WORKSPACE,
     UNSUPPORTED_WORKSPACE,
-    LOTS_OF_STEPS_WORKSPACE,
-    FAILED_WORKSPACE,
-    CANCELING_WORKSPACE,
-    CANCELED_WORKSPACE,
     WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
     WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,
 } from '../../batch-spec.mock'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
-    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
     BATCH_SPEC_WORKSPACE_STEP,
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
 } from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'

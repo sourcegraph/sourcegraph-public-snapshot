@@ -4,11 +4,11 @@ import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 
-import { H1, H2, Text, Tooltip, ButtonLink, Code } from '../..'
+import { ButtonLink, Code, H1, H2, Text, Tooltip } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
-import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
+import { BUTTON_SIZES, BUTTON_VARIANTS } from '../constants'
 
 import { ButtonVariants } from './ButtonVariants'
 

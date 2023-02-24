@@ -1,5 +1,5 @@
 import { first, identity } from 'lodash'
-import { Observable, zip, of } from 'rxjs'
+import { Observable, of, zip } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, switchMap } from 'rxjs/operators'
 

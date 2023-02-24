@@ -1,6 +1,6 @@
 import { ApolloClient, gql } from '@apollo/client'
 import { isEqual } from 'lodash'
-import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
+import { from, Observable, of, ReplaySubject, Subscriber, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'

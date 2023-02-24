@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Link, H4, Text } from '@sourcegraph/wildcard'
+import { Button, H4, Link, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'

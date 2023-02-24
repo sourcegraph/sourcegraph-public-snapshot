@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
@@ -14,7 +14,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
+import { setSearchCaseSensitivity, useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 

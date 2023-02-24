@@ -7,16 +7,16 @@ import { catchError, startWith, tap } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Container,
-    PageHeader,
-    Button,
-    useObservable,
-    Link,
-    LoadingSpinner,
     Alert,
-    Text,
+    Button,
+    Container,
     ErrorAlert,
     Form,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'

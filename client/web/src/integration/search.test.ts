@@ -6,20 +6,20 @@ import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/gra
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
-    diffSearchStreamEvents,
     diffHighlightResult,
-    mixedSearchStreamEvents,
+    diffSearchStreamEvents,
     highlightFileResult,
+    mixedSearchStreamEvents,
     symbolSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 

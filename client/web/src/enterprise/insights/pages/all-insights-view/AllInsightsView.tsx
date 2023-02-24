@@ -5,7 +5,7 @@ import { mdiPlus } from '@mdi/js'
 import { isDefined } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, Icon, Link, LoadingSpinner, Button, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Card, ErrorAlert, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {

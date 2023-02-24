@@ -9,7 +9,7 @@ import { Card, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
-import { SearchExample, exampleQueries } from './SearchExamples'
+import { exampleQueries, SearchExample } from './SearchExamples'
 
 import styles from './HomeFooter.module.scss'
 

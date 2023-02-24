@@ -1,6 +1,6 @@
 import { ReactElement, useMemo } from 'react'
 
-import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from '@mdi/js'
+import { mdiCodeTags, mdiFunction, mdiLanguageMarkdownOutline, mdiMagnify } from '@mdi/js'
 
 import { Icon } from '@sourcegraph/wildcard'
 

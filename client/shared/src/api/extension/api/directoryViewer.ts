@@ -1,6 +1,6 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
 
-import type { DirectoryViewer, Directory } from '../../../codeintel/legacy-extensions/api'
+import type { Directory, DirectoryViewer } from '../../../codeintel/legacy-extensions/api'
 import { DirectoryViewerData, ViewerId } from '../../viewerTypes'
 
 export class ExtensionDirectoryViewer implements DirectoryViewer, ProxyMarked {

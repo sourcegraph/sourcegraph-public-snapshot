@@ -1,7 +1,7 @@
-import { Observable, from } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
+import { checkOk, gql, isErrorGraphQLResult } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'

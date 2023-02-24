@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink, ErrorAlert, Form, H2, Input, Select } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'

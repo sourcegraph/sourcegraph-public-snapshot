@@ -1,10 +1,10 @@
 import { FC, ReactElement } from 'react'
 
 import { useQuery } from '@apollo/client'
-import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiDelete, mdiInformationOutline, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'

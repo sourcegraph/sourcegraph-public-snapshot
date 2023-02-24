@@ -1,31 +1,31 @@
 import {
     createContext,
     forwardRef,
-    useContext,
-    useState,
     HTMLAttributes,
+    InputHTMLAttributes,
     RefObject,
-    useMemo,
-    useRef,
+    useContext,
     useEffect,
     useLayoutEffect,
-    InputHTMLAttributes,
+    useMemo,
+    useRef,
+    useState,
 } from 'react'
 
 import {
     Combobox as ReachCombobox,
-    ComboboxProps as ReachComboboxProps,
+    ComboboxContextValue as ReachComboboxContextValue,
     ComboboxInput as ReachComboboxInput,
     ComboboxInputProps as ReachComboboxInputProps,
-    ComboboxPopover as ReachComboboxPopover,
-    ComboboxContextValue as ReachComboboxContextValue,
     ComboboxList as ReachComboboxList,
     ComboboxListProps as ReachComboboxListProps,
     ComboboxOption as ReachComboboxOption,
     ComboboxOptionProps as ReachComboboxOptionProps,
     ComboboxOptionText as ReachComboboxOptionText,
-    useComboboxOptionContext,
+    ComboboxPopover as ReachComboboxPopover,
+    ComboboxProps as ReachComboboxProps,
     useComboboxContext,
+    useComboboxOptionContext,
 } from '@reach/combobox'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'

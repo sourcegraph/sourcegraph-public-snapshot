@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields, Scalars } from '../../graphql-operations'
+import { Scalars, UserAreaUserFields } from '../../graphql-operations'
 
 type Scopes = string[] | null
 

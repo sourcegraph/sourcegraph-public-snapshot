@@ -8,32 +8,32 @@ import {
     from,
     fromEvent,
     merge,
+    MonoTypeOperatorFunction,
     Observable,
     of,
+    race,
     Subject,
     Subscribable,
     SubscribableOrPromise,
     Subscription,
-    race,
-    MonoTypeOperatorFunction,
 } from 'rxjs'
 import {
     catchError,
     debounceTime,
+    delay,
     distinctUntilChanged,
     filter,
     first,
     map,
     mapTo,
+    mergeMap,
     observeOn,
     share,
+    startWith,
     switchMap,
     takeUntil,
-    withLatestFrom,
-    mergeMap,
-    delay,
-    startWith,
     tap,
+    withLatestFrom,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
@@ -41,7 +41,7 @@ import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
-import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
+import { emitLoading, LOADING, MaybeLoadingResult } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
 import { PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
@@ -55,7 +55,7 @@ import {
     HoveredToken,
     shouldTokenize,
 } from './tokenPosition'
-import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
+import { DocumentHighlight, HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange } from './types'
 
 const defaultSelectionHighlightClassName = 'selection-highlight'
 const defaultDocumentHighlightClassName = 'sourcegraph-document-highlight'

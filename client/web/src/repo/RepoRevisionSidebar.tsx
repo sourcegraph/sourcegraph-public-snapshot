@@ -1,6 +1,6 @@
 import { FC, useCallback, useState } from 'react'
 
-import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
+import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -10,16 +10,16 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
-    useLocalStorage,
-    useMatchMedia,
+    Icon,
+    Panel,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Icon,
-    Panel,
     Tooltip,
+    useLocalStorage,
+    useMatchMedia,
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'

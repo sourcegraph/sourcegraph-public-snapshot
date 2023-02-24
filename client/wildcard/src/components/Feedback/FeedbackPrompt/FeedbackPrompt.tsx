@@ -1,9 +1,9 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiCheck } from '@mdi/js'
+import { mdiCheck, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
+import { Button, FlexTextArea, H3, Link, LoadingSpinner, Popover, PopoverContent, Position, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../../hooks'
 import { ErrorAlert } from '../../ErrorAlert'
 import { Form } from '../../Form'

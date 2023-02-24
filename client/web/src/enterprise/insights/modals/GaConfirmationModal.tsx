@@ -1,7 +1,7 @@
 import { FC } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
+import { Button, H1, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { useUiFeatures } from '../hooks'
 

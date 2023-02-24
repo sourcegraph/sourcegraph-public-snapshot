@@ -2,7 +2,7 @@ import React, { FC, useCallback, useContext, useEffect, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Input, Form } from '@sourcegraph/wildcard'
+import { Form, Input } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'

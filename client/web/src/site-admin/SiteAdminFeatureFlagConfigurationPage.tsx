@@ -12,21 +12,21 @@ import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
-    Container,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    Select,
-    useObservable,
-    Icon,
-    Modal,
-    Input,
     Code,
-    Label,
-    H3,
-    Text,
+    Container,
     ErrorAlert,
     Form,
+    H3,
+    Icon,
+    Input,
+    Label,
+    Link,
+    LoadingSpinner,
+    Modal,
+    PageHeader,
+    Select,
+    Text,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'

@@ -1,11 +1,11 @@
 import {
-    modify as jsoncModify,
     applyEdits,
-    JSONPath,
+    format as jsoncFormat,
     FormattingOptions,
+    JSONPath,
+    modify as jsoncModify,
     parse,
     ParseError,
-    format as jsoncFormat,
     printParseErrorCode,
 } from 'jsonc-parser'
 

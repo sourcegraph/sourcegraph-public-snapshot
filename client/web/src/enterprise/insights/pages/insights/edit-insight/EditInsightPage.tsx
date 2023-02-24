@@ -3,7 +3,7 @@ import { FC, useContext, useMemo } from 'react'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useParams } from 'react-router-dom'
 
-import { LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'

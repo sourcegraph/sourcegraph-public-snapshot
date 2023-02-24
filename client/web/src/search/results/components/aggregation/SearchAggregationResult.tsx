@@ -3,7 +3,7 @@ import { FC, HTMLAttributes, useEffect, useState } from 'react'
 import { mdiArrowCollapse } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Code, H2, Icon } from '@sourcegraph/wildcard'
 
 import { SearchAggregationMode, SearchPatternType } from '../../../../graphql-operations'
 

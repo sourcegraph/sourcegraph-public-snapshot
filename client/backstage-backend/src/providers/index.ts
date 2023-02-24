@@ -1,1 +1,1 @@
-export { GrpcEntityProvider, YamlFileEntityProvider, GraphQLEntityProvider } from './providers'
+export { GraphQLEntityProvider, GrpcEntityProvider, YamlFileEntityProvider } from './providers'

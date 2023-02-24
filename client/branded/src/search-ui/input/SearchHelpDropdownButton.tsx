@@ -1,22 +1,22 @@
-import { useCallback, FC } from 'react'
+import { FC, useCallback } from 'react'
 
 import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    PopoverTrigger,
-    PopoverContent,
-    PopoverTail,
-    Popover,
     Button,
-    Position,
+    Code,
+    Icon,
     Link,
     MenuDivider,
     MenuHeader,
-    Icon,
     MenuText,
-    Code,
+    Popover,
+    PopoverContent,
+    PopoverTail,
+    PopoverTrigger,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'

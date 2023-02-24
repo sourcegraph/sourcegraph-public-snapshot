@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import * as H from 'history'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'

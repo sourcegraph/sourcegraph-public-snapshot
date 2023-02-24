@@ -5,7 +5,7 @@ import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobo
 import classNames from 'classnames'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
 

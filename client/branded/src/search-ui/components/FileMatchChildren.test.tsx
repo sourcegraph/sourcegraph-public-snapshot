@@ -3,14 +3,14 @@ import * as H from 'history'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     CHUNK_MATCH_RESULT,
+    HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
-    HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileMatchChildren } from './FileMatchChildren'

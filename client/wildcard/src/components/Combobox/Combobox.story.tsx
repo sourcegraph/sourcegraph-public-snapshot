@@ -13,11 +13,11 @@ import { H1 } from '../Typography'
 import {
     Combobox,
     ComboboxInput,
-    ComboboxPopover,
     ComboboxList,
     ComboboxOption,
-    ComboboxOptionText,
     ComboboxOptionGroup,
+    ComboboxOptionText,
+    ComboboxPopover,
 } from './Combobox'
 
 const decorator: DecoratorFn = story => (

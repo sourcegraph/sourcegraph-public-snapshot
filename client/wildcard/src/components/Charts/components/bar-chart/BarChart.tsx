@@ -1,4 +1,4 @@
-import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
+import { MouseEvent, ReactElement, SVGProps, useMemo } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'

@@ -1,6 +1,6 @@
-import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { ApolloError, FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
 import { DeletePreciseIndexResult, DeletePreciseIndexVariables, Exact } from '../../../../graphql-operations'
 

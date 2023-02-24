@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
-import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument } from '@mdi/js'
+import { mdiContentCopy, mdiDotsHorizontal, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Code, Icon, Link, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind, GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

@@ -1,8 +1,8 @@
-import { FC, useState, useCallback } from 'react'
+import { FC, useCallback, useState } from 'react'
 
-import { Location, useNavigate, unstable_useBlocker as useBlocker, unstable_BlockerFunction } from 'react-router-dom'
+import { Location, unstable_BlockerFunction, unstable_useBlocker as useBlocker, useNavigate } from 'react-router-dom'
 
-import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+import { Button, H3, Modal } from '@sourcegraph/wildcard'
 
 interface Props {
     message: string

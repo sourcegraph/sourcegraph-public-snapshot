@@ -1,16 +1,16 @@
 import React from 'react'
 
-import { mdiMagnify, mdiSitemap, mdiBookOutline, mdiPuzzleOutline, mdiPoll } from '@mdi/js'
+import { mdiBookOutline, mdiMagnify, mdiPoll, mdiPuzzleOutline, mdiSitemap } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { H2, H3, Text, LoadingSpinner, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { H2, H3, Icon, Link, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchChangesIconNav } from '../../../batches/icons'
 import {
+    AnalyticsDateRange,
     OverviewDevTimeSavedResult,
     OverviewDevTimeSavedVariables,
-    AnalyticsDateRange,
 } from '../../../graphql-operations'
 import { ValueLegendItem } from '../components/ValueLegendList'
 import { formatNumber } from '../utils'

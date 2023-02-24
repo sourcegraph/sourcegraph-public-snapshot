@@ -1,4 +1,4 @@
-import { PlatformName, getPlatformName, getExtensionVersion } from '../../util/context'
+import { getExtensionVersion, getPlatformName, PlatformName } from '../../util/context'
 
 export const EXTENSION_MARKER_ID = 'sourcegraph-app-background'
 

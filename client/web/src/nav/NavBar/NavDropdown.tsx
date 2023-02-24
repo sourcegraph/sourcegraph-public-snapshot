@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
+import { EMPTY_RECTANGLE, Icon, Link, Menu, MenuButton, MenuLink, MenuList } from '@sourcegraph/wildcard'
 
 import { NavItem, NavLink, NavLinkProps } from '.'
 

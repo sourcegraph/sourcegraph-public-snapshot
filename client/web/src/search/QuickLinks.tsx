@@ -4,7 +4,7 @@ import { mdiLink } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
-import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './QuickLinks.module.scss'
 

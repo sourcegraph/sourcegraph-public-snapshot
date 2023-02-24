@@ -1,27 +1,27 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
+import { mdiAlert, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline, mdiInformation, mdiSync } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
-    CloudSyncIconRefresh,
     CloudCheckIconRefresh,
+    CloudSyncIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
 import {
     Button,
+    ErrorAlert,
+    H4,
+    Icon,
     Link,
     Popover,
     PopoverContent,
     PopoverTail,
     PopoverTrigger,
     Position,
-    Icon,
-    H4,
     Text,
     Tooltip,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { StatusMessagesResult } from '../graphql-operations'

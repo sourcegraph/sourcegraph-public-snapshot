@@ -1,7 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import * as React from 'react'
 
-import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiSourceRepository } from '@mdi/js'
 
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { Icon } from '@sourcegraph/wildcard'
@@ -13,15 +13,15 @@ import {
     TreeLayerCell,
     TreeLayerRowContents,
     TreeLayerRowContentsLink,
-    TreeRowAlert,
     TreeLayerRowContentsText,
+    TreeRow,
+    TreeRowAlert,
     TreeRowIcon,
     TreeRowLabel,
-    TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { useTreeRootContext } from './TreeContext'
-import { TreeEntryInfo, getTreeItemOffset } from './util'
+import { getTreeItemOffset, TreeEntryInfo } from './util'
 
 import treeStyles from './Tree.module.scss'
 

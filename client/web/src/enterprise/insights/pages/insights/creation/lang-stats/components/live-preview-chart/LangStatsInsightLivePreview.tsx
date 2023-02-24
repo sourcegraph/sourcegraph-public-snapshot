@@ -1,6 +1,6 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import {
     CategoricalBasedChartTypes,

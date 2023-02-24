@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './SaveToolbar.module.scss'
 

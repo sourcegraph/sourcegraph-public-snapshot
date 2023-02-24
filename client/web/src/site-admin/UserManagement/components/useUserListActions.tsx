@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -8,7 +8,7 @@ import { CopyableText } from '../../../components/CopyableText'
 import { randomizeUserPassword, setUserIsSiteAdmin } from '../../backend'
 import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, RECOVER_USERS } from '../queries'
 
-import { UseUserListActionReturnType, SiteUser, getUsernames } from './UsersList'
+import { getUsernames, SiteUser, UseUserListActionReturnType } from './UsersList'
 
 export function useUserListActions(onEnd: (error?: any) => void): UseUserListActionReturnType {
     const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)

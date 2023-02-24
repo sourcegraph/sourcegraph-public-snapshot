@@ -5,12 +5,12 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
-    BatchSpecsVariables,
-    BatchSpecsResult,
-    Scalars,
-    BatchChangeBatchSpecsVariables,
     BatchChangeBatchSpecsResult,
+    BatchChangeBatchSpecsVariables,
     BatchSpecListConnectionFields,
+    BatchSpecsResult,
+    BatchSpecsVariables,
+    Scalars,
 } from '../../graphql-operations'
 
 export const queryBatchSpecs = ({

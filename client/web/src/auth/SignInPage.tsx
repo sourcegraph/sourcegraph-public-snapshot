@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail, mdiMicrosoftAzureDevops } from '@mdi/js'
+import { mdiBitbucket, mdiEmail, mdiGithub, mdiGitlab, mdiMicrosoftAzureDevops } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, ErrorAlert, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'

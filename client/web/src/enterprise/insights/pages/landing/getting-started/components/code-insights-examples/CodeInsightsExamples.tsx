@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, H2, Text } from '@sourcegraph/wildcard'
+import { H2, Link, Text } from '@sourcegraph/wildcard'
 
 import { InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container, Button, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Container, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 import combySample from '../batch-spec/edit/library/comby.batch.yaml'

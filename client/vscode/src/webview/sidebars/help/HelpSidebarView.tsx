@@ -10,10 +10,10 @@ import { version } from '../../../../package.json'
 import {
     VSCE_LINK_FEEDBACK,
     VSCE_LINK_ISSUES,
+    VSCE_LINK_SIGNUP,
     VSCE_LINK_TROUBLESHOOT,
     VSCE_SG_LOGOMARK_DARK,
     VSCE_SG_LOGOMARK_LIGHT,
-    VSCE_LINK_SIGNUP,
 } from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'

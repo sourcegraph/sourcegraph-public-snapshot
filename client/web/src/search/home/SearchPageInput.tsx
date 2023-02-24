@@ -12,14 +12,14 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
-    SearchContextInputProps,
+    canSubmitSearch,
     CaseSensitivityProps,
+    QueryState,
+    SearchContextInputProps,
+    SearchContextProps,
+    SearchModeProps,
     SearchPatternTypeProps,
     SubmitSearchParameters,
-    canSubmitSearch,
-    QueryState,
-    SearchModeProps,
-    SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -29,11 +29,11 @@ import { Form } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import {
+    setSearchCaseSensitivity,
+    setSearchMode,
+    setSearchPatternType,
     useExperimentalFeatures,
     useNavbarQueryState,
-    setSearchCaseSensitivity,
-    setSearchPatternType,
-    setSearchMode,
 } from '../../stores'
 import { submitSearch } from '../helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'

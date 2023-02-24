@@ -1,4 +1,4 @@
-import { mkdirSync, WriteStream, createWriteStream } from 'fs'
+import { createWriteStream, mkdirSync, WriteStream } from 'fs'
 import path from 'path'
 import { Readable } from 'stream'
 

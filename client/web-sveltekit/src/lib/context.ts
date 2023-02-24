@@ -8,9 +8,9 @@ import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError } from '$lib/common'
 import type { ViewerSettingsResult, ViewerSettingsVariables } from '$lib/graphql/shared'
-import { getDocumentNode, type GraphQLClient, fromObservableQuery } from '$lib/http-client'
+import { fromObservableQuery, getDocumentNode, type GraphQLClient } from '$lib/http-client'
 import { viewerSettingsQuery } from '$lib/loader/settings'
-import { type PlatformContext, type SettingsSubject, gqlToCascade } from '$lib/shared'
+import { gqlToCascade, type PlatformContext, type SettingsSubject } from '$lib/shared'
 import { requestGraphQL } from '$lib/web'
 
 export function createPlatformContext(client: GraphQLClient): Pick<PlatformContext, 'requestGraphQL' | 'settings'> {

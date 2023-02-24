@@ -9,7 +9,7 @@ import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, PageHeader, useObservable, H4, Text, Button } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 

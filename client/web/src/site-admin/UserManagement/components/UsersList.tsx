@@ -1,39 +1,39 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    mdiLogoutVariant,
+    mdiAccountReactivate,
     mdiArchive,
-    mdiDelete,
-    mdiLockReset,
     mdiChevronDown,
     mdiClipboardMinus,
     mdiClipboardPlus,
     mdiClose,
+    mdiDelete,
     mdiLock,
     mdiLockOpen,
-    mdiAccountReactivate,
+    mdiLockReset,
+    mdiLogoutVariant,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
+import { endOfDay, formatDistanceToNowStrict, startOfDay } from 'date-fns'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import {
-    H2,
-    LoadingSpinner,
-    Text,
-    Button,
     Alert,
-    useDebounce,
-    Link,
-    Icon,
-    PopoverTrigger,
-    PopoverContent,
-    Popover,
-    Position,
-    PopoverOpenEvent,
-    Tooltip,
+    Button,
     ErrorAlert,
+    H2,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Popover,
+    PopoverContent,
+    PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
+    Text,
+    Tooltip,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {

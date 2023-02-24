@@ -4,16 +4,16 @@ import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Button,
-    LoadingSpinner,
     Alert,
-    H4,
-    Text,
-    Input,
+    Button,
+    ButtonLink,
     ErrorAlert,
     ErrorMessage,
     Form,
-    ButtonLink,
+    H4,
+    Input,
+    LoadingSpinner,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'

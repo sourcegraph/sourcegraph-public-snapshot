@@ -4,7 +4,7 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Menu, MenuButton, MenuItem, MenuList, Position, Checkbox, Icon } from '@sourcegraph/wildcard'
+import { Checkbox, Icon, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
 import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'

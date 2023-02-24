@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { H1, H2 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
-import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
+import { Tab, TabList, TabPanel, TabPanels, Tabs, TabsProps } from '.'
 
 export const TabsStory: Story<TabsProps & { actions: boolean }> = args => (
     <>

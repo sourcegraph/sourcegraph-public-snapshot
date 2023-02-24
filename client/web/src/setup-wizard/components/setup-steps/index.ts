@@ -1,2 +1,2 @@
-export { SetupStepsRoot, CustomNextButton } from './SetupSteps'
+export { CustomNextButton, SetupStepsRoot } from './SetupSteps'
 export type { StepConfiguration } from './SetupSteps'

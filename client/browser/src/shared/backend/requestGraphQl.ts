@@ -3,7 +3,7 @@ import { once } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 
-import { GraphQLResult, getGraphQLClient, GraphQLClient, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { getGraphQLClient, GraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 

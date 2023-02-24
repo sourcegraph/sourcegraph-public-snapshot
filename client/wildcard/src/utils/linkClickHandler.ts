@@ -1,6 +1,6 @@
 import { MouseEventHandler } from 'react'
 
-import { anyOf, isInstanceOf, isExternalLink, HistoryOrNavigate, compatNavigate } from '@sourcegraph/common'
+import { anyOf, compatNavigate, HistoryOrNavigate, isExternalLink, isInstanceOf } from '@sourcegraph/common'
 
 /**
  * Returns a click handler for link element that will make sure clicks on in-app links are handled on the client

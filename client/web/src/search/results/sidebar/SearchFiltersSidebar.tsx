@@ -1,16 +1,16 @@
-import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo, PropsWithChildren } from 'react'
+import { FC, HTMLAttributes, memo, PropsWithChildren, ReactElement, ReactNode, useCallback, useMemo } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
 import {
+    getDynamicFilterLinks,
+    getFiltersOfKind,
+    getRepoFilterLinks,
+    getSearchReferenceFactory,
+    getSearchSnippetLinks,
+    getSearchTypeLinks,
     SearchSidebar,
     SearchSidebarSection,
-    getDynamicFilterLinks,
-    getRepoFilterLinks,
-    getSearchSnippetLinks,
-    getSearchReferenceFactory,
-    getSearchTypeLinks,
-    getFiltersOfKind,
     useLastRepoName,
 } from '@sourcegraph/branded'
 import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
@@ -19,7 +19,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
+import { Code, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'

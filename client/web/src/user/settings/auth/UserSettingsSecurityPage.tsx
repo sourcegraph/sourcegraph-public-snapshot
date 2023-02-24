@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    Link,
     Alert,
+    Button,
+    Container,
+    ErrorAlert,
+    Form,
     H3,
     Input,
     Label,
+    Link,
+    LoadingSpinner,
+    PageHeader,
     Text,
-    ErrorAlert,
-    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -32,7 +32,7 @@ import {
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
-import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
+import { CREATE_PASSWORD, UPDATE_PASSWORD, USER_EXTERNAL_ACCOUNTS } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 

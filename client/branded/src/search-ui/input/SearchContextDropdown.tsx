@@ -10,15 +10,15 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Code,
+    createRectangle,
     Popover,
-    PopoverOpenEvent,
-    Tooltip,
     PopoverContent,
+    PopoverOpenEvent,
+    PopoverOpenEventReason,
     PopoverTrigger,
     Position,
-    PopoverOpenEventReason,
+    Tooltip,
     useUpdateEffect,
-    createRectangle,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'

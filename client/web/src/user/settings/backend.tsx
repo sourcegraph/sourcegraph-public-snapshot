@@ -2,18 +2,18 @@ import { EMPTY, Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
+    Event,
+    LogEventsResult,
+    LogEventsVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
     UpdatePasswordVariables,
-    LogEventsResult,
-    LogEventsVariables,
-    Event,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 

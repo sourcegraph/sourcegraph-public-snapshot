@@ -9,8 +9,8 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
-    LANG_STAT_INSIGHT_CONTENT,
     LANG_STATS_INSIGHT,
+    LANG_STAT_INSIGHT_CONTENT,
     SEARCH_BASED_INSIGHT,
 } from '../fixtures/dashboards'
 import { mockDashboardWithInsights } from '../utils/mock-helpers'

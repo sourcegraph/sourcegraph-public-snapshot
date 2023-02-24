@@ -1,15 +1,15 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { EditorView } from '@codemirror/view'
-import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
+import { mdiMagnify, mdiOpenInNew, mdiPlayCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
 import {
-    StreamingSearchResultsList,
-    CodeMirrorQueryInput,
     changeListener,
+    CodeMirrorQueryInput,
     createDefaultSuggestions,
+    StreamingSearchResultsList,
 } from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -19,7 +19,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'

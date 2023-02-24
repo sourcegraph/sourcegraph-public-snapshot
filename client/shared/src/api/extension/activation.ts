@@ -4,7 +4,7 @@ import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap
 import sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable, logger } from '@sourcegraph/common'
+import { asError, ErrorLike, hashCode, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'

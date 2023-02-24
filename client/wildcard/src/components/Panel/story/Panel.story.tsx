@@ -11,7 +11,7 @@ import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
-import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../../Tabs'
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '../../Tabs'
 import { PANEL_POSITIONS } from '../constants'
 import { Panel } from '../Panel'
 

@@ -3,7 +3,7 @@ import React from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { BadgeProps, Badge } from './Badge'
+import { Badge, BadgeProps } from './Badge'
 import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
 
 import styles from './ProductStatusBadge.module.scss'

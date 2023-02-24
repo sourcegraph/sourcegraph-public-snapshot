@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
+import { LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { ProductLicenseFields } from '../../../../graphql-operations'

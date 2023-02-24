@@ -1,4 +1,4 @@
-import { FC, useContext, useMemo, useEffect } from 'react'
+import { FC, useContext, useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,19 +8,19 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import {
     Button,
     Card,
-    Link,
+    getDefaultInputProps,
     Icon,
     Input,
-    Text,
     Label,
-    useForm,
-    useField,
-    useObservable,
+    Link,
+    Text,
     useDebounce,
-    getDefaultInputProps,
+    useField,
+    useForm,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
-import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
+import { InsightQueryInput, insightRepositoriesValidator, RepositoriesField } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'

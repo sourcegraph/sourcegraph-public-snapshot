@@ -8,8 +8,8 @@ import { BehaviorSubject } from 'rxjs'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
-    createRectangle,
     createLinkClickHandler,
+    createRectangle,
     Icon,
     Link,
     Popover,

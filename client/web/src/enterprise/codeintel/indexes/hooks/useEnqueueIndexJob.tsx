@@ -1,12 +1,12 @@
-import { MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
 import {
-    QueueAutoIndexJobsForRepoVariables,
     Exact,
     Maybe,
     QueueAutoIndexJobsForRepoResult,
+    QueueAutoIndexJobsForRepoVariables,
 } from '../../../../graphql-operations'
 
 export const lsifIndexFieldsFragment = gql`

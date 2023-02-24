@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
+import { Button, Checkbox, H3, Modal } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 

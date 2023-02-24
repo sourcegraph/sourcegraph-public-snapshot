@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import { mdiInformationOutline } from '@mdi/js'
@@ -8,7 +8,7 @@ import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
+import { Button, Icon, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { HighlightLineRange } from '../../../graphql-operations'

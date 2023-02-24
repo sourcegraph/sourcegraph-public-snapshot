@@ -1,22 +1,22 @@
 import React, { useState } from 'react'
 
-import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { animated } from 'react-spring'
 
 import {
     Button,
-    Checkbox,
     ButtonGroup,
-    Position,
-    useAccordion,
+    Checkbox,
+    H3,
+    Icon,
     Popover,
     PopoverContent,
     PopoverTrigger,
-    Icon,
-    H3,
+    Position,
     Text,
     Tooltip,
+    useAccordion,
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../tracking/eventLogger'

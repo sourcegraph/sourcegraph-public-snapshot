@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/extensions
 import { Subscription } from 'rxjs'
 
-import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
+import { ClosableEndpointPair, EndpointPair } from '../../platform/context'
 
 // eslint-disable-next-line import/extensions
 import ExtensionHostWorker from './main.worker.ts'

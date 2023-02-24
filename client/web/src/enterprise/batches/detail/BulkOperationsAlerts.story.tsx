@@ -1,5 +1,5 @@
 import { useMemo } from '@storybook/addons'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 

@@ -1,22 +1,22 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
+    AnchorLink,
+    BarChart,
     Card,
     H2,
-    Text,
-    LoadingSpinner,
-    AnchorLink,
     H4,
-    LineChart,
-    Series,
-    BarChart,
-    LegendList,
     LegendItem,
+    LegendList,
+    LineChart,
     Link,
+    LoadingSpinner,
+    Series,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'

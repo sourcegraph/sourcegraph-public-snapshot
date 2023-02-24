@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiOpenInNew, mdiCheckCircle } from '@mdi/js'
+import { mdiCheckCircle, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -8,7 +8,7 @@ import { SiteUpdateCheckResult, SiteUpdateCheckVariables } from 'src/graphql-ope
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Link, PageHeader, Alert, Icon, Code, Container, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Code, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 

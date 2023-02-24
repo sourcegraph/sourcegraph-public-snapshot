@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
+import { mdiAccount, mdiDownload, mdiPlus } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, Card, H1, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

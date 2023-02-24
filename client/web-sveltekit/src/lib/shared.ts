@@ -1,48 +1,48 @@
 // We want to limit the number of imported modules as much as possible
 
-export { parseRepoRevision, buildSearchURLQuery, makeRepoURI } from '@sourcegraph/shared/src/util/url'
+export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 export {
     isCloneInProgressErrorLike,
-    isRepoSeeOtherErrorLike,
     isRepoNotFoundErrorLike,
+    isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
-export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-export {
-    type ContentMatch,
-    type Skipped,
-    getFileMatchUrl,
-    getRepositoryUrl,
-    aggregateStreamingSearch,
-    LATEST_VERSION,
-    type AggregateStreamingSearchResults,
-    type StreamSearchOptions,
-    type SearchMatch,
-    getRepoMatchLabel,
-    getRepoMatchUrl,
-    type RepositoryMatch,
-    type SymbolMatch,
-    type Progress,
-} from '@sourcegraph/shared/src/search/stream'
+export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 export type {
-    MatchItem,
-    MatchGroupMatch,
     MatchGroup,
+    MatchGroupMatch,
+    MatchItem,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
-export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-export { type SettingsCascade, type SettingsSubject, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export {
+    aggregateStreamingSearch,
+    getFileMatchUrl,
+    getRepoMatchLabel,
+    getRepoMatchUrl,
+    getRepositoryUrl,
+    LATEST_VERSION,
+    type AggregateStreamingSearchResults,
+    type ContentMatch,
+    type Progress,
+    type RepositoryMatch,
+    type SearchMatch,
+    type Skipped,
+    type StreamSearchOptions,
+    type SymbolMatch,
+} from '@sourcegraph/shared/src/search/stream'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
+export { gqlToCascade, type SettingsCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
+export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+export { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
+export { buildSearchURLQuery, makeRepoURI, parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 
 // Copies of non-reusable code
 

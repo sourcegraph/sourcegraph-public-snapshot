@@ -9,16 +9,16 @@ import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import {
+    deriveInputClassName,
     useInputValidation,
     ValidationOptions,
-    deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } from '@sourcegraph/wildcard'
+import { AnchorLink, Button, ErrorAlert, Icon, Label, Link, LoaderInput, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { validatePassword, getPasswordRequirements } from '../util/security'
+import { getPasswordRequirements, validatePassword } from '../util/security'
 
 import { OrDivider } from './OrDivider'
 import { PasswordInput, UsernameInput } from './SignInSignUpCommon'

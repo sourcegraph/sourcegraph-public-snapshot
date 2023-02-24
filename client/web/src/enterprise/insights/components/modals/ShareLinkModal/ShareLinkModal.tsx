@@ -6,14 +6,14 @@ import { noop } from 'lodash'
 import {
     Badge,
     Button,
+    ErrorAlert,
+    H3,
     Input,
     LoadingSpinner,
     Modal,
     ModalProps,
-    H3,
     Text,
     Tooltip,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import {

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { Card, CardBody } from '@sourcegraph/wildcard'
 
 import styles from './ModalPage.module.scss'
 

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { BUTTON_DISPLAY, BUTTON_SIZES, BUTTON_VARIANTS } from './constants'
 
 import styles from './Button.module.scss'
 

@@ -1,7 +1,7 @@
 import { authentication } from 'vscode'
 
 import { asError } from '@sourcegraph/common'
-import { checkOk, GRAPHQL_URI, GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
+import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'

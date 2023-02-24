@@ -6,18 +6,18 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
-    EventLogsDataResult,
-    EventLogsDataVariables,
     CreateSavedSearchResult,
     CreateSavedSearchVariables,
     DeleteSavedSearchResult,
     DeleteSavedSearchVariables,
+    EventLogsDataResult,
+    EventLogsDataVariables,
+    ReposByQueryResult,
+    SavedSearchFields,
+    SavedSearchResult,
+    Scalars,
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
-    Scalars,
-    SavedSearchFields,
-    ReposByQueryResult,
-    SavedSearchResult,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {

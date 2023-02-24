@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Text, H4, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { H4, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatNumber } from '../utils'
 

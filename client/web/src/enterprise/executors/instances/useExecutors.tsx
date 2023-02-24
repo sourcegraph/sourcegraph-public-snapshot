@@ -2,9 +2,9 @@ import { ApolloClient } from '@apollo/client'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { ExecutorsResult, ExecutorsVariables, ExecutorConnectionFields } from '../../../graphql-operations'
+import { ExecutorConnectionFields, ExecutorsResult, ExecutorsVariables } from '../../../graphql-operations'
 
 export const executorFieldsFragment = gql`
     fragment ExecutorFields on Executor {

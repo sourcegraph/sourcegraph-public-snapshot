@@ -2,8 +2,8 @@ import React from 'react'
 
 import {
     MenuItem as ReachMenuItem,
-    MenuLink as ReachMenuLink,
     MenuItemProps as ReachMenuItemProps,
+    MenuLink as ReachMenuLink,
     MenuLinkProps as ReachMenuLinkProps,
 } from '@reach/menu-button'
 import { noop } from 'lodash'

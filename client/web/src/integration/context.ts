@@ -8,7 +8,7 @@ import {
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { getWebpackManifest, getIndexHTML } from '../../dev/utils/get-index-html'
+import { getIndexHTML, getWebpackManifest } from '../../dev/utils/get-index-html'
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 

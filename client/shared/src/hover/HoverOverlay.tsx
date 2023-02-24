@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
-import { Card, Icon, Button } from '@sourcegraph/wildcard'
+import { Button, Card, Icon } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
@@ -13,7 +13,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { CopyLinkIcon } from './CopyLinkIcon'
 import { toNativeEvent } from './helpers'
-import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
+import type { GetAlertClassName, GetAlertVariant, HoverContext, HoverOverlayBaseProps } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import { HoverOverlayLogo } from './HoverOverlayLogo'

@@ -10,7 +10,7 @@ the package exposes low-level UI blocks that
 - Enforce all-important accessibility aspects around keyboard and screen-reader navigations.
 
 ```tsx
-import { Combobox, ComboboxInput, ComboboxPopover, ComboboxList, ComboboxOption } from '@sourcegraph/wildcard'
+import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxPopover } from '@sourcegraph/wildcard'
 
 function RepositoriesCombobox() {
   return (

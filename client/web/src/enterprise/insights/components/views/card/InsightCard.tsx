@@ -1,14 +1,14 @@
 import React, {
+    createContext,
     FC,
+    FocusEvent,
     forwardRef,
     HTMLAttributes,
-    ReactNode,
     PropsWithChildren,
-    useState,
-    FocusEvent,
-    createContext,
-    useMemo,
+    ReactNode,
     useContext,
+    useMemo,
+    useState,
 } from 'react'
 
 import classNames from 'classnames'
@@ -19,9 +19,9 @@ import {
     ForwardReferenceComponent,
     H2,
     H4,
-    LoadingSpinner,
     LegendItem,
     LegendList,
+    LoadingSpinner,
     Series,
 } from '@sourcegraph/wildcard'
 

@@ -7,7 +7,7 @@ import { upperFirst } from 'lodash'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
+import { asError, ErrorLike, isDefined, isErrorLike, logger, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { Badged } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
@@ -16,7 +16,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
+import { Alert, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FileContentSearchResult } from '../../../search-ui'
 

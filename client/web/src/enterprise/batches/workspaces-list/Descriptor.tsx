@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 import { mdiSourceBranch } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, H4, Badge } from '@sourcegraph/wildcard'
+import { Badge, H4, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 

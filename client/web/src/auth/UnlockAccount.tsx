@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { Alert, Link, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, ErrorAlert, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'

@@ -7,7 +7,7 @@ import { isMacPlatform } from '@sourcegraph/common'
 import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, Label, Modal } from '@sourcegraph/wildcard'
 
 import styles from './KeyboardShortcutsHelp.module.scss'
 

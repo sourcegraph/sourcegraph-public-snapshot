@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
 import type { HoverAlert } from '../../codeintel/legacy-extensions/api'

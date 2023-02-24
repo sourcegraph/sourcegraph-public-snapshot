@@ -5,11 +5,11 @@ import {
     UseShowMorePaginationResult,
 } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
-    Scalars,
     BatchSpecWorkspacesPreviewResult,
     BatchSpecWorkspacesPreviewVariables,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
+    Scalars,
 } from '../../../../../graphql-operations'
 import { WORKSPACES } from '../../../create/backend'
 

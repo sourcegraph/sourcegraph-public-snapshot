@@ -2,10 +2,10 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
-import { useField, FormChangeEvent, SubmissionErrors, useForm } from '@sourcegraph/wildcard'
+import { FormChangeEvent, SubmissionErrors, useField, useForm } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
-import { CreationUiLayout, CreationUIForm, CreationUIPreview, useRepoFields } from '../../../../../components'
+import { CreationUIForm, CreationUiLayout, CreationUIPreview, useRepoFields } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
 

@@ -1,5 +1,5 @@
-import { Remote, proxy } from 'comlink'
-import { Unsubscribable, Subscription, from, Observable, Subject, of } from 'rxjs'
+import { proxy, Remote } from 'comlink'
+import { from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'

@@ -1,11 +1,11 @@
-import { FC, FormEventHandler, ReactNode, FormHTMLAttributes } from 'react'
+import { FC, FormEventHandler, FormHTMLAttributes, ReactNode } from 'react'
 
-import { Input, FormGroup, getDefaultInputProps, useFieldAPI, SubmissionErrors } from '@sourcegraph/wildcard'
+import { FormGroup, getDefaultInputProps, Input, SubmissionErrors, useFieldAPI } from '@sourcegraph/wildcard'
 
 import {
-    FormSeries,
     CodeInsightDashboardsVisibility,
     CodeInsightTimeStepPicker,
+    FormSeries,
     RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'

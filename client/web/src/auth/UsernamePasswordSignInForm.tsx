@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'
-import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
+import { Button, Form, Input, Label, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'

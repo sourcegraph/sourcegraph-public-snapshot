@@ -1,7 +1,7 @@
-import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyOrClone } from 'comlink'
+import { proxyMarker, ProxyMethods, ProxyOrClone, releaseProxy, Remote } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, Subscription, Subscribable } from 'rxjs'
-import { mergeMap, finalize } from 'rxjs/operators'
+import { from, Observable, observable as symbolObservable, Subscribable, Subscription } from 'rxjs'
+import { finalize, mergeMap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
 

@@ -4,12 +4,12 @@ import expect from 'expect'
 
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { siteID, siteGQLID } from './jscontext'
+import { siteGQLID, siteID } from './jscontext'
 import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {

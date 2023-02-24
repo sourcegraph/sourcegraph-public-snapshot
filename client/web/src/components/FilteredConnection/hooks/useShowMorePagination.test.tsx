@@ -4,7 +4,7 @@ import { fireEvent } from '@testing-library/react'
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { Text } from '@sourcegraph/wildcard'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/wildcard/src/testing'
 
 import {
     TestShowMorePaginationQueryFields,

@@ -11,7 +11,7 @@ import {
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../graphql-operations'
-import { InsightType, BackendInsight } from '../../core'
+import { BackendInsight, InsightType } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'

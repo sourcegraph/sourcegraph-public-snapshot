@@ -7,11 +7,11 @@ import {
     makeRepoURI,
     parseHash,
     parseRepoURI,
-    toPrettyBlobURL,
-    withWorkspaceRootInputRevision,
-    toAbsoluteBlobURL,
     RepoFile,
+    toAbsoluteBlobURL,
+    toPrettyBlobURL,
     toRepoURL,
+    withWorkspaceRootInputRevision,
 } from './url'
 
 /**

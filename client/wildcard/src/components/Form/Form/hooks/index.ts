@@ -1,12 +1,9 @@
 // form hooks
-export { useForm, FORM_ERROR } from './useForm'
-export type { FormInstance, FormAPI, SubmissionResult, SubmissionErrors, FormChangeEvent } from './useForm'
-
-export { useField, useControlledField } from './useField'
-export type { useFieldAPI } from './useField'
-
 export { useCheckboxes } from './useCheckboxes'
-
+export { useControlledField, useField } from './useField'
+export type { useFieldAPI } from './useField'
+export { FORM_ERROR, useForm } from './useForm'
+export type { FormAPI, FormChangeEvent, FormInstance, SubmissionErrors, SubmissionResult } from './useForm'
 // validators
 export { composeValidators, createRequiredValidator } from './validators'
-export type { Validator, AsyncValidator, ValidationResult } from './validators'
+export type { AsyncValidator, ValidationResult, Validator } from './validators'

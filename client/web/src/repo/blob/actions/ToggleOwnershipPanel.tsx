@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { mdiAccountOutline } from '@mdi/js'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import {
     addLineRangeQueryParameter,

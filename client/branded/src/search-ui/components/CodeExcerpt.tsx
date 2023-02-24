@@ -4,12 +4,12 @@ import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { range } from 'lodash'
 import VisibilitySensor from 'react-visibility-sensor'
-import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject, Observable, of, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
+import { asError, ErrorLike, highlightNodeMultiline, isErrorLike } from '@sourcegraph/common'
 import { Repo } from '@sourcegraph/shared/src/util/url'
-import { Icon, Code } from '@sourcegraph/wildcard'
+import { Code, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
 

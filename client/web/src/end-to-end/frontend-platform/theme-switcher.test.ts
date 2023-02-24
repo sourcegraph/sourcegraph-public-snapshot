@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { describe, test, before, after } from 'mocha'
+import { after, before, describe, test } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -6,7 +6,7 @@ import classNames from 'classnames'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, ErrorMessage, H4, Icon, Text } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'

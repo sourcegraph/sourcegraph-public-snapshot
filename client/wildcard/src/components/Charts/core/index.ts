@@ -1,6 +1,5 @@
-export { AxisLeft, AxisBottom } from './components/axis/Axis'
+export { AxisBottom, AxisLeft } from './components/axis/Axis'
 export { MaybeLink } from './components/MaybeLink'
 export { ScrollBox } from './components/scroll-box'
-export { Tooltip, TooltipList, TooltipListItem, TooltipListBlankItem } from './components/tooltip/Tooltip'
-
-export { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent, SVGRootContext } from './components/SvgRoot'
+export { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot, SVGRootContext } from './components/SvgRoot'
+export { Tooltip, TooltipList, TooltipListBlankItem, TooltipListItem } from './components/tooltip/Tooltip'

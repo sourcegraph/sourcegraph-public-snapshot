@@ -2,12 +2,12 @@ import * as React from 'react'
 
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
-import { useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
+import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'

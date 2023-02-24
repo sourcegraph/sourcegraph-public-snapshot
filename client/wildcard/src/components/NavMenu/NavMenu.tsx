@@ -9,16 +9,16 @@ import { Icon } from '../Icon'
 import { Link } from '../Link'
 import {
     Menu,
+    MenuButton,
     MenuDivider,
     MenuHeader,
-    MenuButton,
+    MenuHeadingType,
+    MenuItem,
+    MenuItemProps,
+    MenuLink,
     MenuList,
     MenuListProps,
-    MenuItemProps,
     MenuText,
-    MenuItem,
-    MenuLink,
-    MenuHeadingType,
 } from '../Menu'
 
 export interface NavMenuSectionProps {

@@ -4,7 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, H3, Tooltip } from '@sourcegraph/wildcard'
+import { H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'

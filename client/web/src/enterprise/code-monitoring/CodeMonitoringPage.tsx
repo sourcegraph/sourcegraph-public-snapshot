@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useLayoutEffect } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,13 +9,13 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
     Button,
-    Link,
-    ProductStatusBadge,
     Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    ProductStatusBadge,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

@@ -1,5 +1,5 @@
 import { Args, useMemo } from '@storybook/addons'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'

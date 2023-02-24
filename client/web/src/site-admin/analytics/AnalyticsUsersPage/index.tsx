@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, FC } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
+import { BarChart, Card, LineChart, LoadingSpinner, Series, Text, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -14,7 +14,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
+import { buildFrequencyDatum, FrequencyDatum, StandardDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 

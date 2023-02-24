@@ -9,12 +9,12 @@ import type { Repo, ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
 import { browser } from '$app/environment'
 import { isErrorLike, type ErrorLike } from '$lib/common'
 import type {
-    RepositoryGitCommitsResult,
+    GitCommitFields,
     RepositoryCommitResult,
-    Scalars,
     RepositoryComparisonDiffResult,
     RepositoryComparisonDiffVariables,
-    GitCommitFields,
+    RepositoryGitCommitsResult,
+    Scalars,
 } from '$lib/graphql-operations'
 import { dataOrThrowErrors, gql, type GraphQLResult } from '$lib/http-client'
 import { requestGraphQL } from '$lib/web'

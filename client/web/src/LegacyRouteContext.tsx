@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, createContext, useContext, useCallback } from 'react'
+import { createContext, FC, PropsWithChildren, useCallback, useContext } from 'react'
 
 import { Observable } from 'rxjs'
 
@@ -6,24 +6,24 @@ import { isMacPlatform } from '@sourcegraph/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
+    createSearchContext,
+    deleteSearchContext,
+    fetchSearchContext,
     fetchSearchContextBySpec,
     fetchSearchContexts,
-    fetchSearchContext,
     getUserSearchContextNamespaces,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
     isSearchContextSpecAvailable,
     SearchContextProps,
+    updateSearchContext,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { isBatchChangesExecutionEnabled } from './batches'
-import { useBreadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from './components/Breadcrumbs'
+import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './components/Breadcrumbs'
 import { SearchStreamingProps } from './search'
-import { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
+import { DynamicSourcegraphWebAppContext, StaticSourcegraphWebAppContext } from './SourcegraphWebApp'
 import { StaticAppConfig } from './staticAppConfig'
 import { eventLogger } from './tracking/eventLogger'
 

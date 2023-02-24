@@ -9,7 +9,7 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import { SeriesChartContent, SearchBasedInsight, CaptureGroupInsight, InsightType } from '../../../../core'
+import { CaptureGroupInsight, InsightType, SearchBasedInsight, SeriesChartContent } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 

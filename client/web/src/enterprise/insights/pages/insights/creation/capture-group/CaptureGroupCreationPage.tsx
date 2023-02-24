@@ -1,7 +1,7 @@
 import { FC, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, useObservable, FORM_ERROR, FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+import { FormChangeEvent, FORM_ERROR, Link, PageHeader, SubmissionErrors, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'

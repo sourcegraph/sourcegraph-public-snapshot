@@ -3,14 +3,14 @@ import { FC, HTMLAttributes, ReactNode } from 'react'
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Code,
+    FormChangeEvent,
+    FormGroup,
+    getDefaultInputProps,
     Input,
     Label,
-    useForm,
-    useField,
-    FormGroup,
-    FormChangeEvent,
-    getDefaultInputProps,
     SubmissionErrors,
+    useField,
+    useForm,
 } from '@sourcegraph/wildcard'
 
 import {

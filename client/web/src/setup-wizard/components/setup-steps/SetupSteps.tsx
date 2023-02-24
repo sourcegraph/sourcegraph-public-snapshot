@@ -1,20 +1,20 @@
 import {
-    Ref,
-    createContext,
     ComponentType,
+    createContext,
     FC,
     HTMLAttributes,
-    useMemo,
-    useContext,
+    Ref,
     useCallback,
+    useContext,
     useEffect,
+    useMemo,
     useState,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
+import { matchPath, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 

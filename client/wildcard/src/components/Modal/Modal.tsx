@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
+import { DialogContent, DialogOverlay, DialogProps } from '@reach/dialog'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../types'

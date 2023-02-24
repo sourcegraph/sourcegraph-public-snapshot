@@ -1,4 +1,4 @@
-import { FC, AnchorHTMLAttributes, HTMLAttributes } from 'react'
+import { AnchorHTMLAttributes, FC, HTMLAttributes } from 'react'
 
 import { Link } from '../../../Link'
 

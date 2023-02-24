@@ -4,7 +4,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
-import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
+import { DiffOrBlobInfo, FileInfo, FileInfoWithRepoName } from '../codeHost'
 
 /**
  * Use `rawRepoName` for the value of `repoName`, as a fallback if `repoName`

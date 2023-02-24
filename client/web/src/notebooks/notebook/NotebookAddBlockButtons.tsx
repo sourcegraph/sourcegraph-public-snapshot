@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from '@mdi/js'
+import { mdiCodeTags, mdiFunction, mdiLanguageMarkdownOutline, mdiMagnify } from '@mdi/js'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 

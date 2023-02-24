@@ -2,7 +2,7 @@ import { map } from 'rxjs/operators'
 
 import type { PageLoad } from './$types'
 
-import { fetchHighlight, fetchBlobPlaintext } from '$lib/loader/blob'
+import { fetchBlobPlaintext, fetchHighlight } from '$lib/loader/blob'
 import { parseRepoRevision } from '$lib/shared'
 import { asStore } from '$lib/utils'
 

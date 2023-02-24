@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import {
-    mdiCheckCircle,
-    mdiTimerSand,
-    mdiCancel,
     mdiAlertCircle,
+    mdiCancel,
+    mdiCheckCircle,
     mdiChevronDown,
     mdiChevronUp,
-    mdiStar,
-    mdiPencil,
-    mdiFileDownload,
     mdiFileDocumentOutline,
+    mdiFileDownload,
+    mdiPencil,
+    mdiStar,
+    mdiTimerSand,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
@@ -19,26 +19,26 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    Code,
-    Link,
-    Icon,
-    H3,
-    H4,
-    Tooltip,
-    Text,
-    Button,
-    LoadingSpinner,
     Alert,
     AnchorLink,
+    Button,
+    Code,
+    H3,
+    H4,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import {
     BatchSpecListFields,
-    Scalars,
-    PartialBatchSpecWorkspaceFileFields,
     BatchSpecWorkspaceFileResult,
     BatchSpecWorkspaceFileVariables,
+    PartialBatchSpecWorkspaceFileFields,
+    Scalars,
 } from '../../graphql-operations'
 
 import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'

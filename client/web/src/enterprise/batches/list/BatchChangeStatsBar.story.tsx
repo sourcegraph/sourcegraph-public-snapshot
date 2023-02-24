@@ -1,5 +1,5 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
-import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

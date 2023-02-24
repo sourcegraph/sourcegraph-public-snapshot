@@ -2,8 +2,8 @@ import React, { useCallback, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
-import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
+import { Alert, AlertLink, Button, Card, CardBody, Checkbox, ErrorAlert, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'

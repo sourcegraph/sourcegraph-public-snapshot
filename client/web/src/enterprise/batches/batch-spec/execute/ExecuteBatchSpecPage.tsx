@@ -10,7 +10,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
+import { Badge, ErrorMessage, Icon, LinkOrSpan, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'

@@ -1,4 +1,4 @@
-import React, { MouseEvent, KeyboardEvent } from 'react'
+import React, { KeyboardEvent, MouseEvent } from 'react'
 
 import { NavigateFunction } from 'react-router-dom'
 

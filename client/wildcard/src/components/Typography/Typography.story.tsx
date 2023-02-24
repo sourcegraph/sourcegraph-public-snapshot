@@ -6,7 +6,7 @@ import { Link } from '../Link'
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
 import { Heading } from './Heading'
 
-import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
+import { Code, H1, H2, H3, H4, H5, H6, Label, Text } from '.'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>

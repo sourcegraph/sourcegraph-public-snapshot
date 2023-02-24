@@ -1,6 +1,6 @@
 import { pick } from 'lodash'
 import { from, of } from 'rxjs'
-import { switchMap, take, toArray, first } from 'rxjs/operators'
+import { first, switchMap, take, toArray } from 'rxjs/operators'
 import type { ViewComponent, Window } from 'sourcegraph'
 
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'

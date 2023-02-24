@@ -10,13 +10,13 @@ import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
 import {
-    editorHeight,
-    useCodeMirror,
     defaultEditorTheme,
+    editorHeight,
     jsonHighlighting,
+    useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
+import { H2, H3, LoadingSpinner, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'

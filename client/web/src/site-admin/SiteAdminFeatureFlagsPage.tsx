@@ -2,13 +2,13 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { of, Observable, forkJoin } from 'rxjs'
+import { forkJoin, Observable, of } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Code, Container, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'

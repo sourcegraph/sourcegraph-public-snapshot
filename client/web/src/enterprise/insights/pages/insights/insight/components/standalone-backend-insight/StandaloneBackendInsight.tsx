@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, useDebounce, useDeepMemo, FormChangeEvent } from '@sourcegraph/wildcard'
+import { Card, CardBody, FormChangeEvent, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import {
     GetInsightViewResult,
@@ -16,23 +16,23 @@ import {
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import { InsightCard, InsightCardHeader, InsightCardLoading } from '../../../../../components'
 import {
-    DrillDownInsightFilters,
-    FilterSectionVisualMode,
-    DrillDownInsightCreationForm,
-    DrillDownFiltersStep,
     BackendInsightChart,
     BackendInsightErrorAlert,
-    InsightIncompleteAlert,
     DrillDownFiltersFormValues,
+    DrillDownFiltersStep,
+    DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
+    DrillDownInsightFilters,
+    FilterSectionVisualMode,
+    InsightIncompleteAlert,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
-    BackendInsightData,
     BackendInsight,
+    BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
-    useSaveInsightAsNewView,
     isComputeInsight,
+    useSaveInsightAsNewView,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'

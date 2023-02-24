@@ -8,8 +8,8 @@ import {
     ForwardReferenceComponent,
     MenuButton,
     MenuItem,
-    MenuLink,
     MenuItemProps,
+    MenuLink,
     MenuLinkProps,
 } from '@sourcegraph/wildcard'
 

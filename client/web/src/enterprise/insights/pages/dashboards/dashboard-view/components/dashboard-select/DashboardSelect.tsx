@@ -5,6 +5,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
 import {
+    Badge,
     Button,
     Combobox,
     ComboboxInput,
@@ -14,23 +15,22 @@ import {
     ComboboxOptionText,
     createRectangle,
     Flipping,
+    H3,
+    Link,
     Popover,
     PopoverContent,
-    PopoverTrigger,
-    usePopoverContext,
-    Strategy,
-    Badge,
     PopoverOpenEvent,
-    Link,
+    PopoverTrigger,
+    Strategy,
     Text,
-    H3,
+    usePopoverContext,
 } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../components'
 import { CustomInsightDashboard, isGlobalDashboard, isPersonalDashboard, isVirtualDashboard } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
-import { getDashboardOwnerName, getDashboardOrganizationsGroups } from './helpers'
+import { getDashboardOrganizationsGroups, getDashboardOwnerName } from './helpers'
 
 import styles from './DashboardSelect.module.scss'
 

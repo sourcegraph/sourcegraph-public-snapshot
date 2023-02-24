@@ -5,7 +5,7 @@ import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
-import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
+import { ANONYMOUS_USER_ID_KEY, LocalStorageService } from '../settings/LocalStorageService'
 
 import { browserActions } from './browserActionsNode'
 

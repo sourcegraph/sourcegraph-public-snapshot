@@ -20,8 +20,8 @@ import { findPositionsFromEvents, SupportedMouseEvent } from './positions'
 import { CodeViewProps, DOM } from './testutils/dom'
 import {
     createStubActionsProvider,
-    createStubHoverProvider,
     createStubDocumentHighlightProvider,
+    createStubHoverProvider,
 } from './testutils/fixtures'
 import { dispatchMouseEventAtPositionImpure } from './testutils/mouse'
 

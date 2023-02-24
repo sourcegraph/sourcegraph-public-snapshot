@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { Button, Grid, Code, Text, Input } from '..'
+import { Button, Code, Grid, Input, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Tooltip } from '.'

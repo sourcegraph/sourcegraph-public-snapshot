@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { EditorView } from '@codemirror/view'
-import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
+import { mdiCheck, mdiFileDocument, mdiOpenInNew, mdiPencil } from '@mdi/js'
 import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -12,7 +12,7 @@ import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
+import { Alert, Icon, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
 import { HighlightLineRange } from '../../../graphql-operations'

@@ -1,6 +1,6 @@
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
-import { UserAreaUserFields, OrgAreaOrganizationFields } from '../graphql-operations'
+import { OrgAreaOrganizationFields, UserAreaUserFields } from '../graphql-operations'
 import { NavItemWithIconDescriptor, RouteV6Descriptor } from '../util/contributions'
 
 /**

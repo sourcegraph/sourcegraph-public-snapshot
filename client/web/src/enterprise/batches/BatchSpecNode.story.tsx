@@ -10,7 +10,7 @@ import { WebStory } from '../../components/WebStory'
 
 import { BATCH_SPEC_WORKSPACE_FILE } from './backend'
 import { BatchSpecNode } from './BatchSpecNode'
-import { NODES, MOCK_HIGHLIGHTED_FILES } from './testData'
+import { MOCK_HIGHLIGHTED_FILES, NODES } from './testData'
 
 import styles from './BatchSpecsPage.module.scss'
 

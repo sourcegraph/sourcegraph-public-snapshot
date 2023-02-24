@@ -8,7 +8,7 @@ import { catchError, startWith } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
+import { asError, isErrorLike, pluralize, renderMarkdown } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -16,17 +16,17 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
-    Badge,
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Button,
-    Link,
     Alert,
+    Badge,
+    Button,
+    Container,
     H3,
     Input,
+    Link,
+    LoadingSpinner,
     Markdown,
+    PageHeader,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'

@@ -5,31 +5,31 @@ import { useNavigate } from 'react-router-dom'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
+import { LazyQueryInput, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
+    SearchContextFields,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
     SearchPatternType,
-    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Container,
+    Alert,
     Button,
+    Code,
+    Container,
+    Form,
+    Input,
+    Link,
+    ProductStatusBadge,
     RadioButton,
     TextArea,
     useEventObservable,
-    Alert,
-    ProductStatusBadge,
-    Link,
-    Code,
-    Input,
-    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

@@ -19,10 +19,10 @@ import {
     ListNotebooksVariables,
     Maybe,
     NotebookFields,
+    NotebooksOrderBy,
     Scalars,
     UpdateNotebookResult,
     UpdateNotebookVariables,
-    NotebooksOrderBy,
 } from '../graphql-operations'
 
 const notebooksFragment = gql`

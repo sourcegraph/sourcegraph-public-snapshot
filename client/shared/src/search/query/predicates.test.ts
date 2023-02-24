@@ -1,4 +1,4 @@
-import { scanPredicate, resolveAccess, PREDICATES } from './predicates'
+import { PREDICATES, resolveAccess, scanPredicate } from './predicates'
 
 expect.addSnapshotSerializer({
     serialize: value => (value ? JSON.stringify(value) : 'invalid'),

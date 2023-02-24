@@ -1,5 +1,5 @@
 import { readFile } from 'mz/fs'
-import { Observable, throwError, of } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -8,7 +8,7 @@ import { DiffOrBlobInfo } from '../shared/codeHost'
 import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
 
 import { QueryConduitHelper } from './backend'
-import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
+import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
 
 interface ConduitResponseMap {
     [endpoint: string]: (parameters: any) => Observable<any>

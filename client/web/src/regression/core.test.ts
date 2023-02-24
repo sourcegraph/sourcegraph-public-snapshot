@@ -1,21 +1,18 @@
 import delay from 'delay'
 import expect from 'expect'
-import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
+import { after, afterEach, before, beforeEach, describe, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { getUser, setTosAccepted } from './util/api'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
-import {
-    ensureSignedInOrCreateTestUser,
-    // getGlobalSettings
-} from './util/helpers'
+import { createGraphQLClient, GraphQLClient } from './util/GraphQlClient'
+import { ensureSignedInOrCreateTestUser } from './util/helpers'
 import { getTestTools } from './util/init'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'

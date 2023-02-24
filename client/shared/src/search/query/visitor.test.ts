@@ -1,4 +1,4 @@
-import { parseSearchQuery, ParseSuccess, Node, OperatorKind } from './parser'
+import { Node, OperatorKind, parseSearchQuery, ParseSuccess } from './parser'
 import { visit, Visitors } from './visitor'
 
 expect.addSnapshotSerializer({

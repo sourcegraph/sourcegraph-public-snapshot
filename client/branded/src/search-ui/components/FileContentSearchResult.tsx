@@ -14,7 +14,7 @@ import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRa
 import { ContentMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Icon, Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'

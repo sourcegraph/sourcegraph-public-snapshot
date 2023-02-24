@@ -11,15 +11,15 @@ import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Button,
-    LoadingSpinner,
-    Link,
     Alert,
+    Button,
     Code,
-    Text,
-    PageHeader,
     Container,
     ErrorAlert,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'

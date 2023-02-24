@@ -2,7 +2,7 @@ import React from 'react'
 
 import { NavLink } from 'react-router-dom'
 
-import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'

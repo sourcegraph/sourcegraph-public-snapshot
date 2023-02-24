@@ -4,11 +4,11 @@ import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
+import { catchError, filter, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Form, Input, Link, Select, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'

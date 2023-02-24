@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 
-import { Container, Link, PageHeader, Icon, H3, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,

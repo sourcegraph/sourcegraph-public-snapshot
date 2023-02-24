@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
 
-import { PageHeader, Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryComparePopover } from './RepositoryComparePopover'

@@ -1,14 +1,14 @@
-import { Remote, ProxyMarked } from 'comlink'
+import { ProxyMarked, Remote } from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { DocumentHighlight } from 'sourcegraph'
 
-import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
+import { Contributions, Evaluated, HoverMerged, Raw, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { DeepReplace, ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
-import type { ReferenceContext, InputBoxOptions } from '../codeintel/legacy-extensions/api'
+import type { InputBoxOptions, ReferenceContext } from '../codeintel/legacy-extensions/api'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
@@ -16,12 +16,12 @@ import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
 import {
-    ViewContexts,
-    PanelViewData,
-    ViewProviderResult,
-    ProgressNotification,
-    PlainNotification,
     ContributionOptions,
+    PanelViewData,
+    PlainNotification,
+    ProgressNotification,
+    ViewContexts,
+    ViewProviderResult,
 } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 

@@ -8,19 +8,19 @@ import { catchError, concatMap, tap } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
     Button,
-    useObservable,
-    Link,
-    Icon,
     Checkbox,
-    Input,
-    Text,
-    Label,
+    Container,
     ErrorAlert,
     Form,
+    Icon,
+    Input,
+    Label,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'

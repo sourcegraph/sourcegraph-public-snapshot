@@ -16,7 +16,7 @@ import {
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 
-import { useWebhooksConnection, useWebhookPageHeader } from './backend'
+import { useWebhookPageHeader, useWebhooksConnection } from './backend'
 import { WebhookNode } from './WebhookNode'
 import { PerformanceGauge } from './webhooks/PerformanceGauge'
 

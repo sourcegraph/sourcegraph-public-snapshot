@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useContext, useState, useMemo, FormEvent } from 'react'
+import { FC, FormEvent, ReactElement, ReactNode, useContext, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
@@ -6,16 +6,16 @@ import { mdiClose } from '@mdi/js'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import {
     Button,
-    Modal,
+    ErrorAlert,
     H2,
     Icon,
-    ErrorAlert,
+    Link,
+    Modal,
     MultiCombobox,
     MultiComboboxInput,
     MultiComboboxList,
     MultiComboboxOption,
     MultiComboboxOptionText,
-    Link,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'

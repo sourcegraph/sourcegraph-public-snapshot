@@ -3,7 +3,7 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
+import { BlobInfo, DiffInfo, FileInfo } from '../shared/codeHost'
 
 import { queryConduitHelper, resolveDiffRevision } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'

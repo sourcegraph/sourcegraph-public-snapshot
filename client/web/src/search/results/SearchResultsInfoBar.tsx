@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
@@ -9,7 +9,7 @@ import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
+import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -18,11 +18,11 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 
 import {
+    CreateAction,
+    getBatchChangeCreateAction,
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
-    getBatchChangeCreateAction,
-    CreateAction,
 } from './createActions'
 import { SearchActionsMenu } from './SearchActionsMenu'
 

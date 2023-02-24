@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, H4, Input } from '@sourcegraph/wildcard'
+import { Button, H4, Input, Modal } from '@sourcegraph/wildcard'
 
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 

@@ -1,5 +1,3 @@
-export { formatRepositoryStarCount } from '@sourcegraph/branded/src/search-ui/util/stars'
-export { limitHit, sortBySeverity } from '@sourcegraph/branded/src/search-ui/results/progress/utils'
 export {
     basicSyntaxColumns,
     exampleQueryColumns,
@@ -7,4 +5,6 @@ export {
 export { createDefaultSuggestions, singleLine } from '@sourcegraph/branded/src/search-ui/input/codemirror'
 export { parseInputAsQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 export { querySyntaxHighlighting } from '@sourcegraph/branded/src/search-ui/input/codemirror/syntax-highlighting'
+export { limitHit, sortBySeverity } from '@sourcegraph/branded/src/search-ui/results/progress/utils'
 export { decorateQuery } from '@sourcegraph/branded/src/search-ui/util/query'
+export { formatRepositoryStarCount } from '@sourcegraph/branded/src/search-ui/util/stars'

@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { subDays } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useParams } from 'react-router-dom'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -13,9 +13,9 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeChangesetsResult, Scalars } from '../../../graphql-operations'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesets as _queryChangesets,
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../detail/backend'
 
 import { closeBatchChange as _closeBatchChange } from './backend'

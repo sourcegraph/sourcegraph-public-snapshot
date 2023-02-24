@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react'
 
-import { delay, repeatWhen, retryWhen, filter, tap } from 'rxjs/operators'
+import { delay, filter, repeatWhen, retryWhen, tap } from 'rxjs/operators'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
 import { ConnectionError } from '../../../../../components/FilteredConnection/ui'
 import {
+    HiddenBatchSpecWorkspaceListFields,
     Scalars,
     VisibleBatchSpecWorkspaceListFields,
-    HiddenBatchSpecWorkspaceListFields,
 } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { queryWorkspacesList as _queryWorkspacesList } from '../backend'

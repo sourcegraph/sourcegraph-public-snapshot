@@ -4,14 +4,14 @@ import { mdiArrowRight } from '@mdi/js'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { CaseSensitivityProps, SearchContextProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Link, createLinkUrl, Icon } from '@sourcegraph/wildcard'
+import { createLinkUrl, Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './QuerySuggestion.module.scss'
 

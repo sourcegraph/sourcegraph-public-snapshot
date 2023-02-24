@@ -8,13 +8,13 @@ import { useMatch } from 'react-router-dom'
 import {
     AnchorLink,
     ButtonLink,
-    Icon,
     Collapse,
     CollapseHeader,
     CollapsePanel,
+    ForwardReferenceComponent,
     H2,
     H3,
-    ForwardReferenceComponent,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'

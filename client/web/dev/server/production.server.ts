@@ -7,7 +7,7 @@ import signale from 'signale'
 
 import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
 
-import { getAPIProxySettings, ENVIRONMENT_CONFIG, HTTP_WEB_SERVER_URL, HTTPS_WEB_SERVER_URL } from '../utils'
+import { ENVIRONMENT_CONFIG, getAPIProxySettings, HTTPS_WEB_SERVER_URL, HTTP_WEB_SERVER_URL } from '../utils'
 
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 

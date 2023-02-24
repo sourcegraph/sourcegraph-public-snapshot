@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals'
-import { createService, Config } from './SourcegraphClient'
+import { Config, createService } from './SourcegraphClient'
 
 const INTEGRATION_TEST = true
 

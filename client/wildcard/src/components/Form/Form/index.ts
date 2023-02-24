@@ -1,3 +1,3 @@
 export * from './Form'
+export { getDefaultInputError, getDefaultInputProps, getDefaultInputStatus } from './getDefaultInputProps'
 export * from './hooks'
-export { getDefaultInputStatus, getDefaultInputError, getDefaultInputProps } from './getDefaultInputProps'

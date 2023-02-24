@@ -7,15 +7,15 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
-    Position,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuLink,
     Icon,
     Link,
+    Menu,
+    MenuButton,
     MenuHeader,
     MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
     Tooltip,
 } from '@sourcegraph/wildcard'
 

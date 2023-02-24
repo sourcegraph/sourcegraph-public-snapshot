@@ -1,14 +1,14 @@
-import { escapeRegExp, find, filter } from 'lodash'
+import { escapeRegExp, filter, find } from 'lodash'
 import {
-    load,
+    determineScalarType,
     Kind as YAMLKind,
+    load,
+    ScalarType,
     YamlMap as YAMLMap,
     YAMLMapping,
     YAMLNode,
-    YAMLSequence,
     YAMLScalar,
-    determineScalarType,
-    ScalarType,
+    YAMLSequence,
 } from 'yaml-ast-parser'
 
 const isYAMLMap = (node: YAMLNode): node is YAMLMap => node.kind === YAMLKind.MAP

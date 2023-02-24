@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, H3, Text, Heading } from '@sourcegraph/wildcard'
+import { Card, CardBody, H3, Heading, Text } from '@sourcegraph/wildcard'
 
 import styles from './ProductCertificate.module.scss'
 

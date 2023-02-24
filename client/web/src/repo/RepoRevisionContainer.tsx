@@ -2,7 +2,7 @@ import { FC, useCallback, useMemo, useState } from 'react'
 
 import { Route, Routes, useLocation } from 'react-router-dom'
 
-import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
+import { CopyPathAction, StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

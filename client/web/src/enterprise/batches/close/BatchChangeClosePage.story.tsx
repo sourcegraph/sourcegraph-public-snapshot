@@ -1,23 +1,23 @@
-import { useMemo, useCallback } from '@storybook/addons'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { useCallback, useMemo } from '@storybook/addons'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../components/WebStory'
 import {
+    BatchChangeFields,
+    BatchChangeState,
+    BatchSpecSource,
+    BatchSpecState,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeFields,
-    BatchSpecState,
-    BatchChangeState,
-    BatchSpecSource,
 } from '../../../graphql-operations'
 import {
+    fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
-    fetchBatchChangeByNamespace,
 } from '../detail/backend'
 
 import { BatchChangeClosePage } from './BatchChangeClosePage'

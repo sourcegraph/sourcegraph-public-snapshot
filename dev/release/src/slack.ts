@@ -1,6 +1,6 @@
 import got from 'got'
 
-import { readLine, cacheFolder } from './util'
+import { cacheFolder, readLine } from './util'
 
 export async function postMessage(message: string, channel: string): Promise<void> {
     const webhookURL = await readLine(

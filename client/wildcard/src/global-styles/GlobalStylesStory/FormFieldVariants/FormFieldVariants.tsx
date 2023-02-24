@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react'
 
-import { Checkbox, RadioButton, Select, TextArea, Input } from '../../../components'
 import 'storybook-addon-designs'
+import { Checkbox, Input, RadioButton, Select, TextArea } from '../../../components'
 
 import styles from './FormFieldVariants.module.scss'
 

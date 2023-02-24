@@ -1,9 +1,9 @@
-import { forwardRef, useContext, useState, HTMLAttributes } from 'react'
+import { forwardRef, HTMLAttributes, useContext, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, ParentSize, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Link, ParentSize } from '@sourcegraph/wildcard'
 
 import { LangStatsInsight } from '../../../../core'
 import { useLazyLivePreviewLangStatsInsight } from '../../../../core/hooks/live-preview-insight'

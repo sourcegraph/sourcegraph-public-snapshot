@@ -1,4 +1,4 @@
-import { mdiPoll, mdiAntenna, mdiMenu, mdiMenuUp, mdiMenuDown } from '@mdi/js'
+import { mdiAntenna, mdiMenu, mdiMenuDown, mdiMenuUp, mdiPoll } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import FileTreeOutlineIcon from 'mdi-react/FileTreeOutlineIcon'

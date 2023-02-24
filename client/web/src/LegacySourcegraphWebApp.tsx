@@ -4,8 +4,8 @@ import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, Observable } from 'rxjs'
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom'
+import { combineLatest, from, fromEvent, Observable, Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -21,16 +21,16 @@ import { Notifications } from '@sourcegraph/shared/src/notifications/Notificatio
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
-    getUserSearchContextNamespaces,
-    fetchSearchContexts,
+    createSearchContext,
+    deleteSearchContext,
     fetchSearchContext,
     fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
+    fetchSearchContexts,
+    getDefaultSearchContextSpec,
+    getUserSearchContextNamespaces,
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
-    getDefaultSearchContextSpec,
+    updateSearchContext,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
@@ -43,9 +43,9 @@ import {
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
-import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { FeedbackText, RouterLink, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { AuthenticatedUser, authenticatedUser as authenticatedUserSubject, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
 import { ComponentsComposer } from './components/ComponentsComposer'
@@ -59,7 +59,7 @@ import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setExperimentalFeaturesFromSettings, setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'

@@ -1,5 +1,5 @@
 import { asError } from '@sourcegraph/common'
-import { GRAPHQL_URI, GraphQLResult } from '@sourcegraph/http-client'
+import { GraphQLResult, GRAPHQL_URI } from '@sourcegraph/http-client'
 
 import { getAccessToken, getCustomRequestHeaders, getInstanceURL } from '..'
 

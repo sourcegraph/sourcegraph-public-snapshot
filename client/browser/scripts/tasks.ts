@@ -2,7 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { omit, cloneDeep, curry } from 'lodash'
+import { cloneDeep, curry, omit } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'

@@ -1,10 +1,10 @@
-import { writable, type Writable, derived, type Readable } from 'svelte/store'
+import { derived, writable, type Readable, type Writable } from 'svelte/store'
 
 import { getStores } from './stores'
 import type { LoadingData } from './utils'
 
 import { logger } from '$lib/common'
-import { type TemporarySettings, TemporarySettingsStorage, migrateLocalStorageToTemporarySettings } from '$lib/shared'
+import { migrateLocalStorageToTemporarySettings, TemporarySettingsStorage, type TemporarySettings } from '$lib/shared'
 
 const loggedOutUserStore = new TemporarySettingsStorage(null, false)
 

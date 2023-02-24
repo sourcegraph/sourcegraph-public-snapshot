@@ -5,8 +5,8 @@ import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    MULTIPLE_MATCH_RESULT,
     NOOP_SETTINGS_CASCADE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

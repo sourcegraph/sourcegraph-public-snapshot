@@ -7,17 +7,17 @@ import { ResizableBox } from 'react-resizable'
 import { BrandedStory } from '../../../../../stories/BrandedStory'
 import { Badge } from '../../../../Badge'
 import { Button } from '../../../../Button'
-import { H2, Text, Code } from '../../../../Typography'
+import { Code, H2, Text } from '../../../../Typography'
 import { Series } from '../../../types'
-import { LineChart, LegendList, LegendItem, getLineColor } from '../index'
+import { getLineColor, LegendItem, LegendList, LineChart } from '../index'
 
 import {
     FLAT_SERIES,
-    STANDARD_SERIES,
-    SERIES_WITH_HUGE_DATA,
-    UNALIGNED_SERIES,
-    StandardDatum,
     FLAT_XY_SERIES,
+    SERIES_WITH_HUGE_DATA,
+    StandardDatum,
+    STANDARD_SERIES,
+    UNALIGNED_SERIES,
 } from './mocks'
 
 const StoryConfig: Meta = {

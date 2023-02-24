@@ -3,7 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { TabbedPanelContent } from './TabbedPanelContent'
-import { panels, panelProps } from './TabbedPanelContent.fixtures'
+import { panelProps, panels } from './TabbedPanelContent.fixtures'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>

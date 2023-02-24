@@ -2,12 +2,12 @@ import { Series } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsight,
-    LangStatsInsight,
-    InsightsDashboardOwner,
-    SearchBasedInsight,
     ComputeInsight,
+    InsightsDashboardOwner,
+    LangStatsInsight,
+    SearchBasedInsight,
 } from '../types'
-import { InsightContentType, IncompleteDatapointAlert } from '../types/insight/common'
+import { IncompleteDatapointAlert, InsightContentType } from '../types/insight/common'
 
 export interface CategoricalChartContent<Datum> {
     data: Datum[]

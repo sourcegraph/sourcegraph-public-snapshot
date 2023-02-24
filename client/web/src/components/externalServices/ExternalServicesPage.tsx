@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,

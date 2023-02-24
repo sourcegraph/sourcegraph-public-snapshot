@@ -2,7 +2,7 @@ import React, { FC, useCallback, useRef, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Input, Form } from '@sourcegraph/wildcard'
+import { Form, Input } from '@sourcegraph/wildcard'
 
 import { WorkspacePreviewFilters } from './useWorkspaces'
 

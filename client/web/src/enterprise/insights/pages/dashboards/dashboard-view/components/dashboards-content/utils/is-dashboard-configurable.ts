@@ -1,4 +1,4 @@
-import { InsightDashboard, CustomInsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
+import { CustomInsightDashboard, InsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
 
 /**
  * Only dashboards that are stored in user/org/global settings can be edited.

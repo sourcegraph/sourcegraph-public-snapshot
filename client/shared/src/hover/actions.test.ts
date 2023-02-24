@@ -1,5 +1,5 @@
 import { Remote } from 'comlink'
-import { createMemoryHistory, MemoryHistory, createPath } from 'history'
+import { createMemoryHistory, createPath, MemoryHistory } from 'history'
 import { from, Observable, of, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
@@ -21,13 +21,13 @@ import { PlatformContext, URLToFileContext } from '../platform/context'
 import { integrationTestContext } from '../testing/testHelpers'
 import {
     FileSpec,
-    UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
     RevisionSpec,
-    ViewStateSpec,
     toAbsoluteBlobURL,
     toPrettyBlobURL,
+    UIPositionSpec,
+    ViewStateSpec,
 } from '../util/url'
 
 import {

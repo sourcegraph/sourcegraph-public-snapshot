@@ -6,7 +6,7 @@ import { withConsole } from '@storybook/addon-console'
 import { DecoratorFn, Parameters } from '@storybook/react'
 import { withDesign } from 'storybook-addon-designs'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { isChromatic } from '@sourcegraph/wildcard/src/stories'
 
 import { withChromaticThemes } from './decorators/withChromaticThemes'

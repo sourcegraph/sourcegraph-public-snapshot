@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
+import { Card, CardBody, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'

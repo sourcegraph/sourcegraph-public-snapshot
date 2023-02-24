@@ -5,14 +5,14 @@ import classNames from 'classnames'
 
 import {
     Button,
+    createRectangle,
+    FormChangeEvent,
     Icon,
     Popover,
     PopoverContent,
-    PopoverTrigger,
     PopoverTail,
+    PopoverTrigger,
     Position,
-    createRectangle,
-    FormChangeEvent,
     SubmissionResult,
 } from '@sourcegraph/wildcard'
 

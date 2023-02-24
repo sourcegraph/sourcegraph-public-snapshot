@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
@@ -9,18 +9,18 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import {
     ExternalLinkFields,
+    FileDiffFields,
     GitCommitFields,
     RepositoryCommitResult,
     RepositoryCommitVariables,
     RepositoryFields,
-    FileDiffFields,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'

@@ -1,5 +1,5 @@
 import { InsightDataNode } from '../../../../../../../graphql-operations'
-import { BackendInsight, isComputeInsight, isCaptureGroupInsight } from '../../../../types'
+import { BackendInsight, isCaptureGroupInsight, isComputeInsight } from '../../../../types'
 import { InsightContentType } from '../../../../types/insight/common'
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createComputeCategoricalChart } from '../../../utils/create-categorical-content'

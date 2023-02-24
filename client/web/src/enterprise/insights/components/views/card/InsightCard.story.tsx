@@ -1,20 +1,20 @@
-import { mdiFilterOutline, mdiDotsVertical } from '@mdi/js'
+import { mdiDotsVertical, mdiFilterOutline } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import {
     Button,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuList,
+    ErrorAlert,
     H2,
     Icon,
     LegendItem,
     LegendList,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
     ParentSize,
     Series,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'

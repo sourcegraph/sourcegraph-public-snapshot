@@ -1,4 +1,4 @@
-import React, { MouseEvent, useMemo, useState, useCallback, useLayoutEffect } from 'react'
+import React, { MouseEvent, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 import classnames from 'classnames'

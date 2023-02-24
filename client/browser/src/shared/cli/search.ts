@@ -1,7 +1,7 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
+import { ErrorLike, isDefined, isErrorLike, isNot } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -9,7 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
-import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL, getPlatformName, observeSourcegraphURL } from '../util/context'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension
