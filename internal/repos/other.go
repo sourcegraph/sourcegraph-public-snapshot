@@ -24,10 +24,11 @@ type (
 	// A OtherSource yields repositories from a single Other connection configured
 	// in Sourcegraph via the external services configuration.
 	OtherSource struct {
-		svc    *types.ExternalService
-		conn   *schema.OtherExternalServiceConnection
-		client httpcli.Doer
-		logger log.Logger
+		svc     *types.ExternalService
+		conn    *schema.OtherExternalServiceConnection
+		exclude excludeFunc
+		client  httpcli.Doer
+		logger  log.Logger
 	}
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
@@ -58,7 +59,23 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	return &OtherSource{svc: svc, conn: &c, client: cli, logger: logger}, nil
+	var eb excludeBuilder
+	for _, r := range c.Exclude {
+		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return &OtherSource{
+		svc:     svc,
+		conn:    &c,
+		exclude: exclude,
+		client:  cli,
+		logger:  logger,
+	}, nil
 }
 
 // CheckConnection at this point assumes availability and relies on errors returned
@@ -95,6 +112,10 @@ func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 			results <- SourceResult{Source: s, Err: err}
 			return
 		}
+		if s.excludes(r) {
+			continue
+		}
+
 		results <- SourceResult{Source: s, Repo: r}
 	}
 }
@@ -102,6 +123,10 @@ func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 // ExternalServices returns a singleton slice containing the external service.
 func (s OtherSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
+}
+
+func (s OtherSource) excludes(r *types.Repo) bool {
+	return s.exclude(string(r.Name))
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {
@@ -249,6 +274,11 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 		}
 		// Remove any trailing .git in the name if exists (bare repos)
 		repo.Name = api.RepoName(strings.TrimSuffix(name, ".git"))
+
+		if s.excludes(repo) {
+			continue
+		}
+
 		repos = append(repos, repo)
 	}
 
