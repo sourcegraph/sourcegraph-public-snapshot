@@ -24,6 +24,7 @@ import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
 import { languageSupport } from './languageSupport'
+import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -512,12 +513,17 @@ export function codeIntelTooltipsExtension(): Extension {
             update(update: ViewUpdate) {
                 if (update.viewportChanged) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM.
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     * Ignore cases when viewport change is caused by navigating to next/previous search result
+                     * (e.g., by clicking 'Enter' when the search input field is focused).
                      */
                     view.requestMeasure({
                         read(view: EditorView) {
-                            if (!view.contentDOM.contains(document.activeElement)) {
+                            if (
+                                !view.contentDOM.contains(document.activeElement) &&
+                                !document.activeElement?.closest(`#${BLOB_SEARCH_CONTAINER_ID}`)
+                            ) {
                                 view.contentDOM.focus()
                             }
                         },
