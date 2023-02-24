@@ -16,6 +16,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/sourcegraph/src-cli/internal/validate"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,6 +38,10 @@ type Config struct {
 	exitStatus bool
 	clientSet  *kubernetes.Clientset
 	restConfig *rest.Config
+	eks        bool
+	eksClient  *eks.Client
+	ec2Client  *ec2.Client
+	iamClient  *iam.Client
 }
 
 func WithNamespace(namespace string) Option {
@@ -50,41 +57,64 @@ func Quiet() Option {
 	}
 }
 
-type validation func(ctx context.Context, config *Config) ([]validate.Result, error)
+type validation struct {
+	Validate   func(ctx context.Context, config *Config) ([]validate.Result, error)
+	WaitMsg    string
+	SuccessMsg string
+	ErrMsg     string
+}
 
 // Validate will call a series of validation functions in a table driven tests style.
 func Validate(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *rest.Config, opts ...Option) error {
-	config := &Config{
+	cfg := &Config{
 		namespace:  "default",
 		output:     os.Stdout,
 		exitStatus: false,
 		clientSet:  clientSet,
 		restConfig: restConfig,
+		eks:        false,
 	}
 
 	for _, opt := range opts {
-		opt(config)
+		opt(cfg)
 	}
 
-	log.SetOutput(config.output)
+	log.SetOutput(cfg.output)
 
-	var validations = []struct {
-		Validate   validation
-		WaitMsg    string
-		SuccessMsg string
-		ErrMsg     string
-	}{
+	validations := []validation{
 		{Pods, "validating pods", "pods validated", "validating pods failed"},
 		{Services, "validating services", "services validated", "validating services failed"},
 		{PVCs, "validating pvcs", "pvcs validated", "validating pvcs failed"},
 		{Connections, "validating connections", "connections validated", "validating connections failed"},
 	}
 
+	if cfg.eks {
+		if err := CurrentContextSetToEKSCluster(); err != nil {
+			return errors.Newf("%s %s", validate.FailureEmoji, err)
+		}
+
+		GenerateAWSClients(ctx)
+
+		validations = append(validations, validation{
+			Validate:   EksEbsCsiDrivers,
+			WaitMsg:    "EKS: validating ebs-csi drivers",
+			SuccessMsg: "EKS: ebs-csi drivers validated",
+			ErrMsg:     "EKS: validating ebs-csi drivers failed",
+		})
+
+		validations = append(validations, validation{
+			Validate:   EksVpc,
+			WaitMsg:    "EKS: validating vpc",
+			SuccessMsg: "EKS: vpc validated",
+			ErrMsg:     "EKS: validating vpc failed",
+		})
+	}
+
 	var totalFailCount int
 
 	for _, v := range validations {
 		log.Printf("%s %s...", validate.HourglassEmoji, v.WaitMsg)
-		results, err := v.Validate(ctx, config)
+		results, err := v.Validate(ctx, cfg)
 		if err != nil {
 			return errors.Wrapf(err, v.ErrMsg)
 		}

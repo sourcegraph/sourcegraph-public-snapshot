@@ -4,6 +4,8 @@ go 1.18
 
 require (
 	cloud.google.com/go/storage v1.28.0
+	github.com/aws/aws-sdk-go-v2/config v1.18.13
+	github.com/aws/aws-sdk-go-v2/service/eks v1.27.3
 	github.com/creack/goselect v0.1.2
 	github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -44,6 +46,19 @@ require (
 	github.com/Masterminds/sprig v2.15.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/aokoli/goutils v1.0.1 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.17.5 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.13 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.22 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.29 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.29 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.86.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/iam v1.19.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.22 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.12.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.18.3 // indirect
+	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bufbuild/buf v1.4.0 // indirect
 	github.com/charmbracelet/glamour v0.5.0 // indirect
@@ -81,6 +96,7 @@ require (
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a // indirect
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f // indirect
 	github.com/jhump/protoreflect v1.12.1-0.20220417024638-438db461d753 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect

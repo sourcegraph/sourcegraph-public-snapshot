@@ -44,6 +44,7 @@ Examples:
 		kubeConfig *string
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
 		quiet      = flagSet.Bool("quiet", false, "(optional) suppress output and return exit status only")
+		eks        = flagSet.Bool("eks", false, "(optional) check EKS cluster")
 	)
 
 	if home := homedir.HomeDir(); home != "" {
@@ -77,6 +78,10 @@ Examples:
 
 		if *quiet {
 			options = append(options, kube.Quiet())
+		}
+
+		if *eks {
+			options = append(options, kube.GenerateAWSClients(context.Background()))
 		}
 
 		return kube.Validate(context.Background(), clientSet, config, options...)
