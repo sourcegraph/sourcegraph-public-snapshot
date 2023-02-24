@@ -1,0 +1,8 @@
+genrule(
+    name = "sg_reference",
+    outs = ["dev/background-information/sg/reference.md"],
+    # sg needs $HOME to be set.
+    cmd = "HOME=/tmp $(location //dev/sg) -disable-overwrite help -full -output $@",
+    tools = ["//dev/sg"],
+    srcs = ["//:go.mod"],
+)
