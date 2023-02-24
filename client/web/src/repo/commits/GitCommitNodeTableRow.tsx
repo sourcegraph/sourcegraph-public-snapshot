@@ -24,14 +24,7 @@ export const GitCommitNodeTableRow: React.FC<
         | 'onHandleDiffMode'
         | 'diffMode'
     >
-> = ({
-    node,
-    className,
-    expandCommitMessageBody,
-    hideExpandCommitMessageBody,
-    messageSubjectClassName,
-    externalURLs,
-}) => {
+> = ({ node, className, expandCommitMessageBody, hideExpandCommitMessageBody, messageSubjectClassName }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
@@ -46,7 +39,7 @@ export const GitCommitNodeTableRow: React.FC<
                     to={node.canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
                     message={node.subject}
-                    externalURLs={externalURLs}
+                    externalURLs={node.externalURLs}
                 />
             </span>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
