@@ -7,12 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,12 +32,8 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
-	logger          log.Logger
-	db              edb.EnterpriseDB
-	syncJobsRecords interface {
-		Get(ctx context.Context, timestamp time.Time) (*syncjobs.Status, error)
-		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
-	}
+	logger log.Logger
+	db     edb.EnterpriseDB
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -55,14 +51,10 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	return nil
 }
 
-// syncJobRecordsReadLimit caps syncJobsRecords retrieval to 500 items
-const syncJobRecordsReadLimit = 500
-
-func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
+func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger:          observationCtx.Logger.Scoped("authz.Resolver", ""),
-		db:              edb.NewEnterpriseDB(db),
-		syncJobsRecords: syncjobs.NewRecordsReader(syncJobRecordsReadLimit),
+		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
+		db:     edb.NewEnterpriseDB(db),
 	}
 }
 
@@ -194,13 +186,13 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can trigger user permissions syncs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
 		return nil, err
 	}
 
-	userID, err := graphqlbackend.UnmarshalUserID(args.User)
-	if err != nil {
+	// 🚨 SECURITY: User can trigger permission sync for themselves, site admins for any user.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -589,15 +581,16 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 }
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
-	// 🚨 SECURITY: Only site admins can query user permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := graphqlbackend.UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
 	}
+
+	// 🚨 SECURITY: User can query own permissions, site admins all user permissions.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
 	// Make sure the user ID is valid and not soft-deleted.
 	if _, err = r.db.Users().GetByID(ctx, userID); err != nil {
 		return nil, err
@@ -624,42 +617,11 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	}, nil
 }
 
-func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsConnection, error) {
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	// 🚨 SECURITY: Only site admins can query sync jobs records.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if args.First == 0 {
-		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
-	}
-	if args.First > syncJobRecordsReadLimit {
-		return nil, errors.Newf("cannot retrieve more than %d records", syncJobRecordsReadLimit)
-	}
-
-	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))
-	if err != nil {
-		return nil, err
-	}
-
-	jobs := &permissionsSyncJobsConnection{
-		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
-	}
-	for _, j := range records {
-		// If status is not provided, add all - otherwise, check if the job's status
-		// matches the argument status.
-		if args.Status == nil {
-			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
-		} else if j.Status == *args.Status {
-			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
-		}
-	}
-
-	return jobs, nil
-}
-
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		permissionsSyncJobKind: getPermissionsSyncJobByIDFunc(r),
-	}
+	return NewPermissionsSyncJobsResolver(r.db, args)
 }

@@ -3,7 +3,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'

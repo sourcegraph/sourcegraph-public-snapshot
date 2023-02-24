@@ -16,8 +16,8 @@ import {
 import { Compartment, Extension, StateEffect } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
-import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
+import { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
@@ -58,7 +58,6 @@ class SearchPanel implements Panel {
     private state: {
         searchQuery: SearchQuery
         overrideBrowserSearch: boolean
-        history: History
         matches: SearchMatches
         // Currently selected 1-based match index.
         currentMatchIndex: number | null
@@ -67,17 +66,18 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
+    private navigate: NavigateFunction
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
             className: 'cm-sg-search-container d-flex align-items-center',
             onkeydown: this.onkeydown,
         })
+        this.navigate = view.state.facet(blobPropsFacet).navigate
 
         this.state = {
             searchQuery: getSearchQuery(this.view.state),
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
-            history: this.view.state.facet(blobPropsFacet).history,
             matches: this.view.state.field(searchMatches),
             currentMatchIndex: this.view.state.field(currentSearchMatchIndex),
         }
@@ -100,11 +100,6 @@ class SearchPanel implements Panel {
         const overrideBrowserSearch = update.state.field(overrideBrowserFindInPageShortcut)
         if (overrideBrowserSearch !== this.state.overrideBrowserSearch) {
             newState = { ...newState, overrideBrowserSearch }
-        }
-
-        const history = update.state.facet(blobPropsFacet).history
-        if (history !== this.state.history) {
-            newState = { ...newState, history }
         }
 
         const currentMatchIndex = update.state.field(currentSearchMatchIndex)
@@ -137,13 +132,11 @@ class SearchPanel implements Panel {
     private render({
         searchQuery,
         overrideBrowserSearch,
-        history,
         currentMatchIndex,
         totalMatches,
     }: {
         searchQuery: SearchQuery
         overrideBrowserSearch: boolean
-        history: History
         currentMatchIndex: number | null
         totalMatches: number
     }): void {
@@ -153,7 +146,7 @@ class SearchPanel implements Panel {
 
         this.root.render(
             <CodeMirrorContainer
-                history={history}
+                navigate={this.navigate}
                 onMount={() => {
                     this.input?.focus()
                     this.input?.select()

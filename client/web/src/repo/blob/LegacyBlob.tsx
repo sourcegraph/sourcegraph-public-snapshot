@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
-import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, createPath } from 'react-router-dom'
 import {
     BehaviorSubject,
     combineLatest,
@@ -129,21 +128,19 @@ const domFunctions = {
  * previous viewer (e.g. hoverifier subscription). If we don't remove extension features
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
-export const LegacyBlob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
+export const LegacyBlob: FC<BlobProps> = props => {
     const {
-        isLightTheme,
         extensionsController,
         blobInfo,
         platformContext,
         settingsCascade,
         role,
         ariaLabel,
-        history,
         'data-testid': dataTestId,
-
-        location,
-        navigate,
     } = props
+
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
     useEffect(() => {
@@ -377,11 +374,12 @@ export const LegacyBlob: React.FunctionComponent<React.PropsWithChildren<BlobPro
                         const isClickOnBlankSpace = !('character' in position)
                         if (isClickOnBlankSpace || props.navigateToLineOnAnyClick) {
                             if (customHistoryAction) {
-                                const entry: H.LocationDescriptor<unknown> = {
-                                    ...location,
-                                    search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                                }
-                                customHistoryAction(createPath(entry))
+                                customHistoryAction(
+                                    createPath({
+                                        ...location,
+                                        search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                                    })
+                                )
                             } else {
                                 updateBrowserHistoryIfChanged(
                                     navigate,
@@ -656,6 +654,7 @@ export const LegacyBlob: React.FunctionComponent<React.PropsWithChildren<BlobPro
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
+                        location={location}
                         nav={url => (props.nav ? props.nav(url) : navigate(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
@@ -665,11 +664,9 @@ export const LegacyBlob: React.FunctionComponent<React.PropsWithChildren<BlobPro
                 )}
 
                 <BlameColumn
-                    history={history}
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
-                    isLightTheme={isLightTheme}
                 />
             </div>
         </>

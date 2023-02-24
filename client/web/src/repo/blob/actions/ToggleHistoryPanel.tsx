@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import { Location, NavigateFunction, To } from 'react-router-dom-v5-compat'
+import { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 

@@ -18,7 +18,7 @@ Reference Materials
 
 
 
-* [Docs: Configure custom Redis](../deploy/kubernetes/configure.md#configure-custom-redis)
+* [Docs: Configure custom Redis](../deploy/kubernetes/configure.md#external-redis)
 * [Docs: Using your own Redis server](../external_services/redis.md)
 
 
@@ -179,7 +179,7 @@ metadata:
 </pre>
 
 
-7. Modify the manifests for all services listed in[ Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis). The listing below is an example of the two environment variables that must be added to the services listed in the documentation.
+7. Modify the manifests for all services listed in[ Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#external-redis). The listing below is an example of the two environment variables that must be added to the services listed in the documentation.
 
 
 <pre>
@@ -200,7 +200,7 @@ kind: Deployment
 
 
 
-**Note:** Be sure to add both environment variables to all services listed in [Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis).
+**Note:** Be sure to add both environment variables to all services listed in [Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#external-redis).
 
 
 

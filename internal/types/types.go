@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -622,6 +623,13 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -814,8 +822,12 @@ type UserForSCIM struct {
 
 type SystemRole string
 
-var (
-	UserSystemRole              SystemRole = "USER"
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
 	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
 )
 
@@ -826,9 +838,30 @@ type Role struct {
 	CreatedAt time.Time
 }
 
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+
 type Permission struct {
 	ID        int32
-	Namespace string
+	Namespace PermissionNamespace
 	Action    string
 	CreatedAt time.Time
 }
@@ -850,6 +883,20 @@ type UserRole struct {
 	RoleID    int32
 	UserID    int32
 	CreatedAt time.Time
+}
+
+type NamespacePermission struct {
+	ID         int64
+	Namespace  PermissionNamespace
+	ResourceID int64
+	UserID     int32
+	CreatedAt  time.Time
+}
+
+func (n *NamespacePermission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -1819,4 +1866,13 @@ type TeamMember struct {
 	TeamID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type CodeownersFile struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	RepoID   api.RepoID
+	Contents string
+	Proto    *codeownerspb.File
 }

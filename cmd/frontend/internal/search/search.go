@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -80,7 +81,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		eventWriter.Error(err)
 		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -294,6 +294,8 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo,
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
 		return fromCommit(v, repoCache)
+	case *result.OwnerMatch:
+		return fromOwner(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
@@ -514,6 +516,35 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	return commitEvent
+}
+
+func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
+	switch v := owner.ResolvedOwner.(type) {
+	case *codeowners.Person:
+		person := &streamhttp.EventPersonMatch{
+			Type:   streamhttp.PersonMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
+		}
+		if v.User != nil {
+			person.User = &streamhttp.UserMetadata{
+				Username:    v.User.Username,
+				DisplayName: v.User.DisplayName,
+				AvatarURL:   v.User.AvatarURL,
+			}
+		}
+		return person
+	case *codeowners.Team:
+		return &streamhttp.EventTeamMatch{
+			Type:        streamhttp.TeamMatchType,
+			Handle:      v.Handle,
+			Email:       v.Email,
+			Name:        v.Team.Name,
+			DisplayName: v.Team.DisplayName,
+		}
+	default:
+		panic(fmt.Sprintf("unknown owner match type %T", v))
+	}
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.

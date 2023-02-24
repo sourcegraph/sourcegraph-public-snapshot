@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { Redirect } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import {
@@ -14,7 +13,6 @@ import {
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -26,8 +24,7 @@ import { parseSearchURLQuery } from '../../search'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
-    extends ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
@@ -53,7 +50,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
     )
 
     if (!authenticatedUser) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     return (

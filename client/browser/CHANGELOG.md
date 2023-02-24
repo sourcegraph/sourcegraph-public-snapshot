@@ -13,6 +13,11 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome 23.2.17.1613, Firefox 23.2.17.1612, Safari 1.20
+
+- Omit credentials in legacy extension bundles requests: [pull/47486](https://github.com/sourcegraph/sourcegraph/pull/47486)
+- Fix selectors used to inject Sourcegraph code intelligence on GitHub: [pull/47427](https://github.com/sourcegraph/sourcegraph/pull/47427)
+
 ## Chrome & Firefox 22.11.24.1820, Safari v1.19
 
 - Fix route change handlers for GitHub: [issues/44074](https://github.com/sourcegraph/sourcegraph/issues/44074), [pull/44783](https://github.com/sourcegraph/sourcegraph/pull/44783)

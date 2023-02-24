@@ -1,9 +1,10 @@
-import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
+import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
@@ -42,7 +43,10 @@ const BatchChangesSiteConfigSettingsArea = lazyComponent(
     () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
     'BatchChangesSiteConfigSettingsArea'
 )
-const BatchSpecsPage = lazyComponent(() => import('../batches/BatchSpecsPage'), 'BatchSpecsPage')
+const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
+    () => import('../batches/BatchSpecsPage'),
+    'BatchSpecsPage'
+)
 const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
 const CodeIntelPreciseIndexesPage = lazyComponent(
     () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),
@@ -69,6 +73,8 @@ const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
     'ExecutorsSiteAdminArea'
 )
+
+const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -117,7 +123,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes/specs',
-            render: props => <BatchSpecsPage {...props} />,
+            render: () => <BatchSpecsPage />,
             condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
                 batchChangesEnabled && batchChangesExecutionEnabled,
         },
@@ -128,11 +134,15 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
                 batchChangesEnabled && batchChangesWebhookLogsEnabled,
         },
 
-        // Code intelligence redirect
+        // Enterprise maintenance area
+
         {
-            path: '/code-intelligence',
-            render: () => <NavigateToCodeGraph />,
+            exact: true,
+            path: '/code-insights-jobs',
+            render: () => <CodeInsightsJobsPage />,
         },
+
+        // Code intelligence redirect
         {
             path: '/code-intelligence/*',
             render: () => <NavigateToCodeGraph />,
@@ -173,11 +183,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
 
         // Executor routes
-        {
-            path: '/executors',
-            render: () => <ExecutorsSiteAdminArea />,
-            condition: () => Boolean(window.context?.executorsEnabled),
-        },
         {
             path: '/executors/*',
             render: () => <ExecutorsSiteAdminArea />,

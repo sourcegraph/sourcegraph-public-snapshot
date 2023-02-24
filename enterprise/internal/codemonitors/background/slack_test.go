@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -39,7 +39,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(b))
+			autogold.ExpectFile(t, autogold.Raw(b))
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -53,7 +53,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(b))
+			autogold.ExpectFile(t, autogold.Raw(b))
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
@@ -68,7 +68,7 @@ func TestSlackWebhook(t *testing.T) {
 	t.Run("golden with results", func(t *testing.T) {
 		actionCopy := action
 		actionCopy.IncludeResults = true
-		autogold.Equal(t, jsonSlackPayload(actionCopy))
+		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
 	})
 
 	t.Run("golden with truncated results", func(t *testing.T) {
@@ -77,11 +77,11 @@ func TestSlackWebhook(t *testing.T) {
 		// quadruple the number of results
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		autogold.Equal(t, jsonSlackPayload(actionCopy))
+		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
 	})
 
 	t.Run("golden without results", func(t *testing.T) {
-		autogold.Equal(t, jsonSlackPayload(action))
+		autogold.ExpectFile(t, jsonSlackPayload(action))
 	})
 }
 
@@ -89,7 +89,7 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		autogold.Equal(t, autogold.Raw(b))
+		autogold.ExpectFile(t, autogold.Raw(b))
 		w.WriteHeader(200)
 	}))
 	defer s.Close()

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { NavigateFunction, Location } from 'react-router-dom-v5-compat'
+import { NavigateFunction, Location } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 

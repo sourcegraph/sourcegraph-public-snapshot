@@ -443,7 +443,7 @@ commands:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
     install_func: 'installDocsite'
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -842,7 +842,6 @@ commands:
       go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      USE_EMBEDDED_POSTGRESQL: false
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
@@ -866,7 +865,6 @@ commands:
       go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
     checkBinary: .bin/sourcegraph-oss
     env:
-      USE_EMBEDDED_POSTGRESQL: false
       WEBPACK_DEV_SERVER: 1
     watch:
       - cmd
@@ -1131,7 +1129,6 @@ commandsets:
     requiresDevPrivate: true
     checks:
       - docker
-      - postgres
       - git
     commands:
       - sourcegraph
@@ -1176,7 +1173,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |

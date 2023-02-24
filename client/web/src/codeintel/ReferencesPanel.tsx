@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { Location as RRLocation, useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -31,7 +31,6 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     RepoSpec,
     RevisionSpec,
@@ -60,7 +59,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
@@ -91,7 +90,6 @@ export interface ReferencesPanelProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
@@ -235,22 +233,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 > = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
-    const tokenResult = findSearchToken({
-        text: props.fileContent,
-        position: {
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-        },
-        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
-        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
-        identCharPattern: spec.identCharPattern,
-    })
+    const tokenResult =
+        spec &&
+        findSearchToken({
+            text: props.fileContent,
+            position: {
+                line: props.token.line - 1,
+                character: props.token.character - 1,
+            },
+            lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+            blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+            identCharPattern: spec.identCharPattern,
+        })
     const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
         'codeIntel.mixPreciseAndSearchBasedReferences',
         false
     )
 
-    if (!tokenResult?.searchToken) {
+    if (!spec || !tokenResult?.searchToken) {
         return (
             <div>
                 <Text className="text-danger">Could not find token.</Text>
@@ -630,7 +630,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     ) : (
-                        <Text className="text-muted pl-2">
+                        <Text className="text-muted pl-4 pb-0">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -693,8 +693,7 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const navigate = useNavigate()
-    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
@@ -714,12 +713,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
-
-    const history = useMemo(() => H.createMemoryHistory(), [])
-    const location = useMemo(() => {
-        history.replace(props.activeURL)
-        return history.location as RRLocation
-    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -760,9 +753,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            navigate={navigate}
-            history={history}
-            location={location}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}

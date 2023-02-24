@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -23,7 +23,8 @@ interface URLStateOptions<State, SerializedState> {
     serializer: (state: State) => string | null
 }
 
-type SetStateResult<State> = [state: State, dispatch: (state: State) => void]
+type UpdatedSearchQuery = string
+type SetStateResult<State> = [state: State, dispatch: (state: State) => UpdatedSearchQuery]
 
 /**
  * React hook analog standard react useState hook but with synced value with URL
@@ -33,7 +34,7 @@ function useSyncedWithURLState<State, SerializedState>(
     options: URLStateOptions<State, SerializedState>
 ): SetStateResult<State> {
     const { urlKey, serializer, deserializer } = options
-    const history = useHistory()
+    const navigate = useNavigate()
     const { search } = useLocation()
 
     const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
@@ -52,9 +53,12 @@ function useSyncedWithURLState<State, SerializedState>(
                 urlSearchParameters.set(urlKey, serializedValue)
             }
 
-            history.replace({ search: `?${urlSearchParameters.toString()}` })
+            const search = `?${urlSearchParameters.toString()}`
+            navigate({ search }, { replace: true })
+
+            return search
         },
-        [history, serializer, urlKey, urlSearchParameters]
+        [navigate, serializer, urlKey, urlSearchParameters]
     )
 
     return [queryParameter, setNextState]

@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,218 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const (
-	actorID = 54123451
-)
-
-type fakeTeamsDb struct {
-	database.TeamStore
-	list       []*types.Team
-	members    orderedTeamMembers
-	lastUsedID int32
-}
-
-func (teams *fakeTeamsDb) CreateTeam(_ context.Context, t *types.Team) error {
-	teams.lastUsedID++
-	u := *t
-	u.ID = teams.lastUsedID
-	teams.list = append(teams.list, &u)
-	return nil
-}
-
-func (teams *fakeTeamsDb) UpdateTeam(_ context.Context, t *types.Team) error {
-	if t == nil {
-		return errors.New("UpdateTeam: team cannot be nil")
-	}
-	if t.ID == 0 {
-		return errors.New("UpdateTeam: team.ID must be set (not 0)")
-	}
-	for _, u := range teams.list {
-		if u.ID == t.ID {
-			*u = *t
-			return nil
-		}
-	}
-	return errors.Newf("UpdateTeam: cannot find team with ID=%d", t.ID)
-}
-
-func (teams *fakeTeamsDb) GetTeamByID(_ context.Context, id int32) (*types.Team, error) {
-	for _, t := range teams.list {
-		if t.ID == id {
-			return t, nil
-		}
-	}
-	return nil, database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) GetTeamByName(_ context.Context, name string) (*types.Team, error) {
-	for _, t := range teams.list {
-		if t.Name == name {
-			return t, nil
-		}
-	}
-	return nil, database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) DeleteTeam(_ context.Context, id int32) error {
-	for i, t := range teams.list {
-		if t.ID == id {
-			maxI := len(teams.list) - 1
-			teams.list[i], teams.list[maxI] = teams.list[maxI], teams.list[i]
-			teams.list = teams.list[:maxI]
-			return nil
-		}
-	}
-	return database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
-	for _, t := range teams.list {
-		if matches(t, opts) {
-			selected = append(selected, t)
-		}
-	}
-	if opts.LimitOffset != nil {
-		selected = selected[opts.LimitOffset.Offset:]
-		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
-			next = selected[opts.LimitOffset.Limit].ID
-			selected = selected[:opts.LimitOffset.Limit]
-		}
-	}
-	return selected, next, nil
-}
-
-func (teams *fakeTeamsDb) CountTeams(ctx context.Context, opts database.ListTeamsOpts) (int32, error) {
-	selected, _, err := teams.ListTeams(ctx, opts)
-	return int32(len(selected)), err
-}
-
-func matches(team *types.Team, opts database.ListTeamsOpts) bool {
-	if opts.Cursor != 0 && team.ID < opts.Cursor {
-		return false
-	}
-	if opts.WithParentID != 0 && team.ParentTeamID != opts.WithParentID {
-		return false
-	}
-	if opts.RootOnly && team.ParentTeamID != 0 {
-		return false
-	}
-	if opts.Search != "" {
-		search := strings.ToLower(opts.Search)
-		name := strings.ToLower(team.Name)
-		displayName := strings.ToLower(team.DisplayName)
-		if !strings.Contains(name, search) && !strings.Contains(displayName, search) {
-			return false
-		}
-	}
-	// opts.ForUserMember is not supported yet as there is no membership fake.
-	return true
-}
-
-type orderedTeamMembers []*types.TeamMember
-
-func (o orderedTeamMembers) Len() int { return len(o) }
-func (o orderedTeamMembers) Less(i, j int) bool {
-	if o[i].TeamID < o[j].TeamID {
-		return true
-	}
-	if o[i].TeamID == o[j].TeamID {
-		return o[i].UserID < o[j].UserID
-	}
-	return false
-}
-func (o orderedTeamMembers) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-
-func (teams *fakeTeamsDb) CountTeamMembers(ctx context.Context, opts database.ListTeamMembersOpts) (int32, error) {
-	ms, _, err := teams.ListTeamMembers(ctx, opts)
-	return int32(len(ms)), err
-}
-
-func (teams *fakeTeamsDb) ListTeamMembers(_ context.Context, opts database.ListTeamMembersOpts) (selected []*types.TeamMember, next *database.TeamMemberListCursor, err error) {
-	sort.Sort(teams.members)
-	if opts.Search != "" {
-		return nil, nil, errors.New("fakeTeamsDb does not suppor Search parameter in ListTeamMembers yet")
-	}
-	for _, m := range teams.members {
-		if opts.Cursor.TeamID > m.TeamID {
-			continue
-		}
-		if opts.Cursor.TeamID == m.TeamID && opts.Cursor.UserID > m.UserID {
-			continue
-		}
-		if opts.TeamID != 0 && opts.TeamID != m.TeamID {
-			continue
-		}
-		selected = append(selected, m)
-	}
-	if opts.LimitOffset != nil {
-		selected = selected[opts.LimitOffset.Offset:]
-		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
-			next = &database.TeamMemberListCursor{
-				TeamID: selected[opts.LimitOffset.Limit].TeamID,
-				UserID: selected[opts.LimitOffset.Limit].UserID,
-			}
-			selected = selected[:opts.LimitOffset.Limit]
-		}
-	}
-	return selected, next, nil
-}
-
-type fakeUsersDB struct {
-	database.UserStore
-	lastUserID int32
-	list       []types.User
-}
-
-func fakeContext(u types.User) context.Context {
-	return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID})
-}
-
-func (users *fakeUsersDB) GetByID(_ context.Context, id int32) (*types.User, error) {
-	for _, u := range users.list {
-		if u.ID == id {
-			return &u, nil
-		}
-	}
-	return nil, nil
-}
-
-func (users *fakeUsersDB) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, database.ErrNoCurrentUser
-	}
-	return a.User(ctx, users)
-}
-
-func (users *fakeUsersDB) newUser(u types.User) int32 {
-	id := users.lastUserID + 1
-	users.lastUserID = id
-	u.ID = id
-	users.list = append(users.list, u)
-	return id
-}
-
-var (
-	db        *database.MockDB
-	fakeTeams *fakeTeamsDb
-	fakeUsers *fakeUsersDB
-)
-
-func setupDB() {
-	fakeTeams = &fakeTeamsDb{}
-	fakeUsers = &fakeUsersDB{}
-	db = database.NewMockDB()
-	db.TeamsFunc.SetDefaultReturn(fakeTeams)
-	db.UsersFunc.SetDefaultReturn(fakeUsers)
-	db.WithTransactFunc.SetDefaultHook(func(_ context.Context, callback func(database.DB) error) error {
-		return callback(db)
-	})
-}
 
 func userCtx(userID int32) context.Context {
 	a := &actor.Actor{
@@ -236,12 +25,14 @@ func userCtx(userID int32) context.Context {
 }
 
 func TestTeamNode(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
-	team, err := fakeTeams.GetTeamByName(ctx, "team")
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
 	if err != nil {
 		t.Fatalf("failed to get fake team: %s", err)
 	}
@@ -269,12 +60,14 @@ func TestTeamNode(t *testing.T) {
 }
 
 func TestTeamNodeURL(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	team := &types.Team{
 		Name: "team-刺身", // team-sashimi
 	}
-	if err := fakeTeams.CreateTeam(ctx, team); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -298,12 +91,14 @@ func TestTeamNodeURL(t *testing.T) {
 func TestTeamNodeSiteAdminCanAdminister(t *testing.T) {
 	for _, isAdmin := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
-			setupDB()
-			ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: isAdmin}))
-			if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+			fs := fakedb.New()
+			db := database.NewMockDB()
+			fs.Wire(db)
+			ctx := userCtx(fs.AddUser(types.User{SiteAdmin: isAdmin}))
+			if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 				t.Fatalf("failed to create fake team: %s", err)
 			}
-			team, err := fakeTeams.GetTeamByName(ctx, "team")
+			team, err := fs.TeamStore.GetTeamByName(ctx, "team")
 			if err != nil {
 				t.Fatalf("failed to get fake team: %s", err)
 			}
@@ -333,8 +128,10 @@ func TestTeamNodeSiteAdminCanAdminister(t *testing.T) {
 }
 
 func TestCreateTeamBare(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -357,14 +154,16 @@ func TestCreateTeamBare(t *testing.T) {
 		Name:      "team-name-testing",
 		CreatorID: actor.FromContext(ctx).UID,
 	}
-	if diff := cmp.Diff([]*types.Team{expected}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{expected}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("unexpected teams in fake database (-want,+got):\n%s", diff)
 	}
 }
 
 func TestCreateTeamDisplayName(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -386,8 +185,10 @@ func TestCreateTeamDisplayName(t *testing.T) {
 }
 
 func TestCreateTeamReadOnlyDefault(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -408,8 +209,10 @@ func TestCreateTeamReadOnlyDefault(t *testing.T) {
 }
 
 func TestCreateTeamReadOnlyTrue(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -431,15 +234,17 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 }
 
 func TestCreateTeamParentByID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	err := fakeTeams.CreateTeam(ctx, &types.Team{
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name: "team-name-parent",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	parentTeam, err := fakeTeams.GetTeamByName(ctx, "team-name-parent")
+	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "team-name-parent")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -468,12 +273,14 @@ func TestCreateTeamParentByID(t *testing.T) {
 }
 
 func TestCreateTeamParentByName(t *testing.T) {
-	setupDB()
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
 	parentTeam := types.Team{Name: "team-name-parent"}
-	if err := fakeTeams.CreateTeam(context.Background(), &parentTeam); err != nil {
+	if err := fs.TeamStore.CreateTeam(context.Background(), &parentTeam); err != nil {
 		t.Fatal(err)
 	}
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -499,15 +306,17 @@ func TestCreateTeamParentByName(t *testing.T) {
 }
 
 func TestUpdateTeamByID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
-	team, err := fakeTeams.GetTeamByName(ctx, "team-name-testing")
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team-name-testing")
 	if err != nil {
 		t.Fatalf("failed to get fake team: %s", err)
 	}
@@ -536,15 +345,17 @@ func TestUpdateTeamByID(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff(wantTeams, fs.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
 
 func TestUpdateTeamByName(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -575,21 +386,23 @@ func TestUpdateTeamByName(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff(wantTeams, fs.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
 
 func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
-	team, err := fakeTeams.GetTeamByName(ctx, "team-name-testing")
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team-name-testing")
 	if err != nil {
 		t.Fatalf("failed to get fake team: %s", err)
 	}
@@ -617,16 +430,18 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 }
 
 func TestUpdateParentByID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
-	parentTeam, err := fakeTeams.GetTeamByName(ctx, "parent")
+	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -654,12 +469,14 @@ func TestUpdateParentByID(t *testing.T) {
 }
 
 func TestUpdateParentByName(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -687,16 +504,18 @@ func TestUpdateParentByName(t *testing.T) {
 }
 
 func TestUpdateParentErrorBothNameAndID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
-	parentTeam, err := fakeTeams.GetTeamByName(ctx, "parent")
+	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -725,12 +544,14 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 }
 
 func TestDeleteTeamByID(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
-	team, err := fakeTeams.GetTeamByName(ctx, "team")
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
 	if err != nil {
 		t.Fatalf("cannot find fake team: %s", err)
 	}
@@ -751,15 +572,17 @@ func TestDeleteTeamByID(t *testing.T) {
 			"id": string(relay.MarshalID("Team", team.ID)),
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
 
 func TestDeleteTeamByName(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -779,18 +602,20 @@ func TestDeleteTeamByName(t *testing.T) {
 			"name": "team",
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
 
 func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
-	team, err := fakeTeams.GetTeamByName(ctx, "team")
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
 	if err != nil {
 		t.Fatalf("cannot find fake team: %s", err)
 	}
@@ -819,8 +644,10 @@ func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 }
 
 func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -842,8 +669,10 @@ func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
 }
 
 func TestDeleteTeamNotFound(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -868,9 +697,11 @@ func TestDeleteTeamNotFound(t *testing.T) {
 }
 
 func TestDeleteTeamUnauthorized(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: false}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: false}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -897,9 +728,11 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 }
 
 func TestTeamByName(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -922,8 +755,10 @@ func TestTeamByName(t *testing.T) {
 }
 
 func TestTeamByNameNotFound(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -942,9 +777,11 @@ func TestTeamByNameNotFound(t *testing.T) {
 }
 
 func TestTeamByNameUnauthorized(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: false}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: false}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -971,11 +808,13 @@ func TestTeamByNameUnauthorized(t *testing.T) {
 }
 
 func TestTeamsPaginated(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1024,7 +863,7 @@ func TestTeamsPaginated(t *testing.T) {
 		}
 	}
 	var wantNames []string
-	for _, team := range fakeTeams.list {
+	for _, team := range fs.ListAllTeams() {
 		wantNames = append(wantNames, team.Name)
 	}
 	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
@@ -1034,10 +873,12 @@ func TestTeamsPaginated(t *testing.T) {
 
 // Skip testing DisplayName search as this is the same except the fake behavior.
 func TestTeamsNameSearch(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	for _, name := range []string{"hit-1", "Hit-2", "HIT-3", "miss-4", "mIss-5", "MISS-6"} {
-		if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1064,11 +905,13 @@ func TestTeamsNameSearch(t *testing.T) {
 }
 
 func TestTeamsCount(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1099,24 +942,26 @@ func TestTeamsCount(t *testing.T) {
 }
 
 func TestChildTeams(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
-	parent, err := fakeTeams.GetTeamByName(ctx, "parent")
+	parent, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("cannot fetch parent team: %s", err)
 	}
 	for i := 1; i <= 5; i++ {
 		name := fmt.Sprintf("child-%d", i)
-		if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
 			t.Fatalf("cannot create child team: %s", err)
 		}
 	}
 	for i := 6; i <= 10; i++ {
 		name := fmt.Sprintf("not-child-%d", i)
-		if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("cannot create a team: %s", err)
 		}
 	}
@@ -1149,30 +994,31 @@ func TestChildTeams(t *testing.T) {
 }
 
 func TestMembersPaginated(t *testing.T) {
-	setupDB()
-	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
-	teamWithMembers, err := fakeTeams.GetTeamByName(ctx, "team-with-members")
+	teamWithMembers, err := fs.TeamStore.GetTeamByName(ctx, "team-with-members")
 	if err != nil {
 		t.Fatalf("failed to featch fake team: %s", err)
 	}
-	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
-	differentTeam, err := fakeTeams.GetTeamByName(ctx, "different-team")
+	differentTeam, err := fs.TeamStore.GetTeamByName(ctx, "different-team")
 	if err != nil {
 		t.Fatalf("failed to featch fake team: %s", err)
 	}
 	for _, team := range []*types.Team{teamWithMembers, differentTeam} {
 		for i := 1; i <= 25; i++ {
-			id := fakeUsers.newUser(types.User{Username: fmt.Sprintf("user-%d-%d", team.ID, i)})
-			m := &types.TeamMember{
+			id := fs.AddUser(types.User{Username: fmt.Sprintf("user-%d-%d", team.ID, i)})
+			fs.AddTeamMember(&types.TeamMember{
 				TeamID: team.ID,
 				UserID: id,
-			}
-			fakeTeams.members = append(fakeTeams.members, m)
+			})
 		}
 	}
 	var (
@@ -1240,4 +1086,240 @@ func TestMembersPaginated(t *testing.T) {
 	if diff := cmp.Diff(wantUsernames, gotUsernames); diff != "" {
 		t.Errorf("unexpected member usernames (-want,+got):\n%s", diff)
 	}
+}
+
+func TestMembersSearch(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("failed to fetch fake team by ID: %s", err)
+	}
+	for _, u := range []types.User{
+		{
+			Username: "username-hit",
+		},
+		{
+			Username: "username-miss",
+		},
+		{
+			Username:    "look-at-displayname",
+			DisplayName: "Display Name Hit",
+		},
+	} {
+		userID := fs.AddUser(u)
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: userID,
+		})
+	}
+	idOfMissingUser := -7
+	fs.AddTeamMember(&types.TeamMember{
+		TeamID: team.ID,
+		UserID: int32(idOfMissingUser),
+	})
+	fs.AddUser(types.User{Username: "search-hit-but-not-team-member"})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			team(name: "team") {
+				members(search: "hit") {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"members": {
+					"nodes": [
+						{"username": "username-hit"},
+						{"username": "look-at-displayname"}
+					]
+				}
+			}
+		}`,
+	})
+}
+
+func TestMembersAdd(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	userExistingID := fs.AddUser(types.User{Username: "existing"})
+	userExistingAndAddedID := fs.AddUser(types.User{Username: "existingAndAdded"})
+	userAddedID := fs.AddUser(types.User{Username: "added"})
+	fs.AddTeamMember(
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingID},
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingAndAddedID},
+	)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
+			addTeamMembers(teamName: "team", members: [
+				{ userID: $existingAndAddedId },
+				{ userID: $addedId }
+			]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"addTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "existing"},
+						{"username": "existingAndAdded"},
+						{"username": "added"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"existingAndAddedId": string(relay.MarshalID("User", userExistingAndAddedID)),
+			"addedId":            string(relay.MarshalID("User", userAddedID)),
+		},
+	})
+}
+
+func TestMembersRemove(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	var removedIDs []int32
+	for i := 1; i <= 3; i++ {
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: fs.AddUser(types.User{Username: fmt.Sprintf("retained-%d", i)}),
+		})
+		id := fs.AddUser(types.User{Username: fmt.Sprintf("removed-%d", i)})
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: id,
+		})
+		removedIDs = append(removedIDs, id)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation RemoveTeamMembers($r1: ID!, $r2: ID!, $r3: ID!) {
+			removeTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"removeTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "retained-1"},
+						{"username": "retained-2"},
+						{"username": "retained-3"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"r1": string(relay.MarshalID("User", removedIDs[0])),
+			"r2": string(relay.MarshalID("User", removedIDs[1])),
+			"r3": string(relay.MarshalID("User", removedIDs[2])),
+		},
+	})
+}
+
+func TestMembersSet(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	var setIDs []int32
+	for i := 1; i <= 2; i++ {
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: fs.AddUser(types.User{Username: fmt.Sprintf("before-%d", i)}),
+		})
+		id := fs.AddUser(types.User{Username: fmt.Sprintf("before-and-after-%d", i)})
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: id,
+		})
+		setIDs = append(setIDs, id)
+		setIDs = append(setIDs, fs.AddUser(types.User{Username: fmt.Sprintf("after-%d", i)}))
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation SetTeamMembers($r1: ID!, $r2: ID!, $r3: ID!, $r4: ID!) {
+			setTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }, { userID: $r4 }]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"setTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "before-and-after-1"},
+						{"username": "after-1"},
+						{"username": "before-and-after-2"},
+						{"username": "after-2"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"r1": string(relay.MarshalID("User", setIDs[0])),
+			"r2": string(relay.MarshalID("User", setIDs[1])),
+			"r3": string(relay.MarshalID("User", setIDs[2])),
+			"r4": string(relay.MarshalID("User", setIDs[3])),
+		},
+	})
 }

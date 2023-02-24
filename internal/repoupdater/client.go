@@ -276,6 +276,28 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	return &result, nil
 }
 
+// MockExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
+var MockExternalServiceNamespaces func(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error)
+
+// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
+func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (result *protocol.ExternalServiceNamespacesResult, err error) {
+	if MockExternalServiceNamespaces != nil {
+		return MockExternalServiceNamespaces(ctx, args)
+	}
+
+	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
+}
+
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {

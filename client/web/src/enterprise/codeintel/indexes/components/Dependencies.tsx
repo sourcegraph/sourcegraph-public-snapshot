@@ -1,9 +1,8 @@
 import { FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiMapSearch } from '@mdi/js'
+import { mdiChevronRight, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -74,7 +73,7 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
 }) => (
     <FilteredConnection
         listComponent="div"
-        listClassName={classNames(styles.grid, 'mb-3')}
+        listClassName={classNames(styles.list, 'mb-3')}
         noun={noun}
         pluralNoun={pluralNoun}
         nodeComponent={DependencyOrDependentNode}
@@ -89,25 +88,13 @@ interface DependencyOrDependentNodeProps {
     node: PreciseIndexFields
 }
 
-const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => {
-    const navigate = useNavigate()
-
-    return (
-        <div
-            className={classNames(styles.grid, 'px-4')}
-            onClick={() => {
-                if (node.projectRoot) {
-                    navigate(`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`)
-                }
-            }}
-            aria-hidden={true}
-        >
+const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+    <div className={classNames(styles.listItem, 'px-4')}>
+        <div>
             <div>
                 <H3 className="m-0 mb-1">
                     {node.projectRoot ? (
-                        <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
-                            {node.projectRoot.repository.name}
-                        </Link>
+                        <Link to={node.projectRoot.repository.url}>{node.projectRoot.repository.name}</Link>
                     ) : (
                         <span>Unknown repository</span>
                     )}
@@ -116,7 +103,7 @@ const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProp
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
-                    <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
+                    <ProjectDescription index={node} />
                 </span>
 
                 <small className="text-mute">
@@ -131,8 +118,16 @@ const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProp
                 </small>
             </div>
         </div>
-    )
-}
+        {node.projectRoot && (
+            <Link
+                to={`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`}
+                className="d-flex justify-content-end align-items-center align-self-stretch p-0"
+            >
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View details" />
+            </Link>
+        )}
+    </div>
+)
 
 interface EmptyDependencyOrDependentsProps {
     pluralNoun: string

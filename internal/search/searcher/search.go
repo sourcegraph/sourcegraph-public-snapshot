@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -197,7 +197,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		onMatches := func(searcherMatch *proto.FileMatch) {
 			stream.Send(streaming.SearchEvent{
 				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
@@ -219,7 +219,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 		})
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
 	} else {
 		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)

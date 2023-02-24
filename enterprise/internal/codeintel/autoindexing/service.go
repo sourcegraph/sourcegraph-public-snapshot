@@ -16,18 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
 	store           store.Store
-	uploadSvc       UploadService
 	inferenceSvc    InferenceService
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
@@ -41,7 +40,6 @@ type Service struct {
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
-	uploadSvc UploadService,
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
 	gitserver GitserverClient,
@@ -56,7 +54,6 @@ func newService(
 
 	jobSelector := jobselector.NewJobSelector(
 		store,
-		uploadSvc,
 		inferenceSvc,
 		gitserver,
 		log.Scoped("autoindexing job selector", ""),
@@ -72,7 +69,6 @@ func newService(
 
 	return &Service{
 		store:           store,
-		uploadSvc:       uploadSvc,
 		inferenceSvc:    inferenceSvc,
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
@@ -156,7 +152,7 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
 	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -182,7 +178,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -290,14 +286,26 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
-func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+}
+
+func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {
+	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
+}
+
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error) {
+	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
+}
+
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
 }

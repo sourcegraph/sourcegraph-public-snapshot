@@ -196,6 +196,7 @@ type MetaEnvironment struct {
 	Date    time.Time
 	Email   string
 	Lang    string
+	Owner   string
 }
 
 var empty = struct{}{}
@@ -300,6 +301,13 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Email:   m.Commit.Author.Email,
 			Path:    path,
 			Lang:    lang,
+			Content: content,
+		}
+	case *searchresult.OwnerMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.CommitID),
+			Owner:   m.ResolvedOwner.Identifier(),
 			Content: content,
 		}
 	}

@@ -1,7 +1,7 @@
 import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
@@ -23,6 +23,7 @@ import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { languageSupport } from './languageSupport'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -69,6 +70,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
         return [
             showTooltip.computeN([field], state => {
                 const { hover, focus, pin } = state.field(field)
+                const isLanguageSupported = state.facet(languageSupport)
 
                 // Only show one tooltip for the occurrence at a time
                 const uniqueTooltips = [pin, focus, hover]
@@ -79,6 +81,9 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                         return acc
                     }, [] as NonNullable<CodeIntelTooltipState>[])
                     .map(({ tooltip }) => tooltip)
+                    .filter(tooltip =>
+                        tooltip instanceof CodeIntelTooltip ? (isLanguageSupported ? tooltip : null) : tooltip
+                    )
 
                 return uniqueTooltips
             }),
@@ -189,7 +194,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === null || hover.contents.length === 0
+        hover === null || hover === undefined || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)
@@ -201,7 +206,7 @@ async function hoverRequest(
     return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null): boolean {
+function isPrecise(hover: HoverMerged | null | undefined): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
@@ -349,7 +354,6 @@ const hoverManager = ViewPlugin.fromClass(
                                     }
 
                                     return from(getHoverTooltip(view, offset)).pipe(
-                                        catchError(() => of(null)),
                                         map(tooltip => (tooltip ? { tooltip, occurrence } : null))
                                     )
                                 }),
@@ -451,14 +455,14 @@ const pinManager = ViewPlugin.fromClass(
 
             if (update.selectionSet && update.state.field(pin)) {
                 // Remove `popover=pinned` from the URL when the user updates the selection.
-                const history = update.state.facet(blobPropsFacet).history
-                const params = new URLSearchParams(history.location.search)
+                const { navigate, location } = update.state.facet(blobPropsFacet)
+                const params = new URLSearchParams(location.search)
                 params.delete('popover')
                 window.requestAnimationFrame(() =>
-                    // Use `history.push` instead of `history.replace` in case
+                    // Use `navigate(to)` instead of `navigate(to, { replace: true })` in case
                     // the user accidentally clicked somewhere without intending to
                     // dismiss the popover.
-                    history.push({ ...history.location, search: formatSearchParameters(params) })
+                    navigate({ search: formatSearchParameters(params) })
                 )
             }
         }
@@ -503,6 +507,24 @@ export function codeIntelTooltipsExtension(): Extension {
         hoverManager,
         pinManager,
         tooltipStyles,
+
+        ViewPlugin.define(view => ({
+            update(update: ViewUpdate) {
+                if (update.viewportChanged) {
+                    /**
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM.
+                     * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     */
+                    view.requestMeasure({
+                        read(view: EditorView) {
+                            if (!view.contentDOM.contains(document.activeElement)) {
+                                view.contentDOM.focus()
+                            }
+                        },
+                    })
+                }
+            },
+        })),
 
         EditorView.domEventHandlers({
             click(event, view) {

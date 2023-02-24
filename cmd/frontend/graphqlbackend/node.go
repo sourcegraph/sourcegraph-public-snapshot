@@ -161,6 +161,11 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
+	n, ok := r.Node.(*externalServiceNamespaceResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -334,8 +339,8 @@ func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToTeam() (*teamResolver, bool) {
-	n, ok := r.Node.(*teamResolver)
+func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
+	n, ok := r.Node.(*TeamResolver)
 	return n, ok
 }
 

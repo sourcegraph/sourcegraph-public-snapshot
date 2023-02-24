@@ -2,7 +2,7 @@
 
 > WARNING: The migration from LSIF -> SCIP is **destructive and irreversible**. A downgrade from 4.6 to a previous version will result in the inability to access migrated code intelligence data (powering precise code navigation features).
 
-Sourcegraph 4.5 introduced an [out-of-band migration](/admin/how-to/unfinished_migration#checking-progress) that re-encodes LSIF code intelligence data as SCIP in the `codeintel-db`. This migration is required to complete prior to a subsequent upgrade to 4.6, as support for reading LSIF-encoded data has been removed as of this version.
+Sourcegraph 4.5 introduced an [out-of-band migration](unfinished_migration.md#checking-progress) that re-encodes LSIF code intelligence data as SCIP in the `codeintel-db`. This migration is required to complete prior to a subsequent upgrade to 4.6, as support for reading LSIF-encoded data has been removed as of this version.
 
 As of [src-cli 4.5](https://github.com/sourcegraph/src-cli/releases/tag/4.5.0), LSIF indexes will be converted to SCIP prior to upload. This ensures that only _existing_ data needs to be migrated in the background. Using an older version of src-cli to upload code intelligence to your index may continue to feed additional LSIF data that needs to be subsequently migrated. This will ultimately block the ability to upgrade to the next version as the migration will never reach 100% (and remain there).
 

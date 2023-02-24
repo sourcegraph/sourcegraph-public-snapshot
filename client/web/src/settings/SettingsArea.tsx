@@ -2,7 +2,6 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { Route, Switch } from 'react-router'
 import { combineLatest, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
@@ -14,12 +13,11 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { gqlToCascade, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
-import { HeroPage, NotFoundPage } from '../components/HeroPage'
+import { HeroPage } from '../components/HeroPage'
 import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -27,7 +25,7 @@ import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
     /** The subject whose settings to edit. */
     subject: Pick<SettingsSubject, '__typename' | 'id'>
 
@@ -35,6 +33,8 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
     authenticatedUser: AuthenticatedUser | null
+
+    isLightTheme: boolean
 }
 
 interface SettingsData {
@@ -53,7 +53,6 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
 interface Props extends SettingsAreaPageCommonProps {
     className?: string
     extraHeader?: JSX.Element
-    url: string
 }
 
 const LOADING = 'loading' as const
@@ -172,15 +171,7 @@ export class SettingsArea extends React.Component<Props, State> {
                     </PageHeader.Heading>
                 </PageHeader>
                 {this.props.extraHeader}
-                <Switch>
-                    <Route
-                        path={this.props.url}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
-                    />
-                    <Route key="hardcoded-key" render={() => <NotFoundPage pageType="settings" />} />
-                </Switch>
+                <SettingsPage {...transferProps} />
             </div>
         )
     }

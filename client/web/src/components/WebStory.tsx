@@ -1,13 +1,12 @@
-import React, { useMemo } from 'react'
+import { FC } from 'react'
 
-import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
-import { usePrependStyles, useTheme } from '@sourcegraph/wildcard/src/stories'
+import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
 import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
@@ -22,47 +21,61 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-export type WebStoryChildrenProps = ThemeProps &
-    BreadcrumbSetters &
+export type WebStoryChildrenProps = BreadcrumbSetters &
     BreadcrumbsProps &
-    TelemetryProps &
-    RouteComponentProps<any>
+    TelemetryProps & {
+        isLightTheme: boolean
+    }
 
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<WebStoryChildrenProps>
+    children: FC<WebStoryChildrenProps>
+    path?: string
 }
 
 /**
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: React.FunctionComponent<WebStoryProps> = ({
-    children,
+export const WebStory: FC<WebStoryProps> = ({
+    children: Children,
     mocks,
+    path = '*',
     useStrictMocking,
-    ...memoryRouterProps
+    initialEntries = ['/'],
+    initialIndex = 1,
 }) => {
-    const isLightTheme = useTheme()
+    const isLightTheme = useStorybookTheme()
     const breadcrumbSetters = useBreadcrumbs()
-    const Children = useMemo(() => withRouter(children), [children])
 
     usePrependStyles('web-styles', webStyles)
     setExperimentalFeaturesForTesting()
 
+    const routes = [
+        {
+            path,
+            element: (
+                <Children
+                    {...breadcrumbSetters}
+                    isLightTheme={isLightTheme}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
+            ),
+        },
+    ]
+
+    const router = createMemoryRouter(routes, {
+        initialEntries,
+        initialIndex,
+    })
+
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <MemoryRouter {...memoryRouterProps}>
-                    <CompatRouter>
-                        <Children
-                            {...breadcrumbSetters}
-                            isLightTheme={isLightTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
-                    </CompatRouter>
-                </MemoryRouter>
+                <ThemeContext.Provider value={{ themeSetting: isLightTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
+                    <RouterProvider router={router} />
+                </ThemeContext.Provider>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )

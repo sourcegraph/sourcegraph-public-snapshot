@@ -46,6 +46,10 @@ type AutoIndexingService interface {
 	GetUnsafeDB() database.DB
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
+
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingShared.RepositoryWithCount, totalCount int, err error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []autoindexingShared.RepositoryWithAvailableIndexers, totalCount int, err error)
 }
 
 type UploadsService interface {

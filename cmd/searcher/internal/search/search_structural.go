@@ -389,7 +389,13 @@ type subset []string
 
 var all universalSet = struct{}{}
 
+var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
+
 func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+	if mockStructuralSearch != nil {
+		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer func() {
@@ -469,9 +475,11 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if r := comby.ToCombyFileMatchWithChunks(b); r != nil {
-				sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
+			r, err := comby.ToCombyFileMatchWithChunks(b)
+			if err != nil {
+				return errors.Wrap(err, "ToCombyFileMatchWithChunks")
 			}
+			sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
 		}
 
 		return errors.Wrap(scanner.Err(), "scan")
@@ -520,14 +528,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			cfm := comby.ToFileMatch(b)
-			if cfm != nil {
-				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
-				if err != nil {
-					return errors.Wrap(err, "convert comby match to FileMatch")
-				}
-				sender.Send(fm)
+
+			cfm, err := comby.ToFileMatch(b)
+			if err != nil {
+				return errors.Wrap(err, "ToFileMatch")
 			}
+
+			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+			if err != nil {
+				return errors.Wrap(err, "toFileMatch")
+			}
+
+			sender.Send(fm)
 		}
 
 		return errors.Wrap(scanner.Err(), "scan")

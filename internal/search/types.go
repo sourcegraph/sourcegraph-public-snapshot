@@ -351,6 +351,10 @@ type Features struct {
 	// using `file:has.owner({owner})` filter.
 	CodeOwnershipFilters bool `json:"codeownersip"`
 
+	// CodeOwnershipSearch when true will enable searching through code ownership
+	// using `file:has.owner({owner})` and `select:file.owners` filters.
+	CodeOwnershipSearch bool `json:"codeownership"`
+
 	// CodeGraphSearch when true will enable searching through code intel graph
 	// relationships with `symbol:references(...)` and `symbol:implements(...)`
 	CodeGraphSearch bool `json:"codegraphsearch"`

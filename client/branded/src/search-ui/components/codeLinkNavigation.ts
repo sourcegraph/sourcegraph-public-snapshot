@@ -1,6 +1,6 @@
 import React, { MouseEvent, KeyboardEvent } from 'react'
 
-import * as H from 'history'
+import { NavigateFunction } from 'react-router-dom'
 
 /**
  * A helper function to replicate browser behavior when clicking on links.
@@ -143,13 +143,13 @@ export function onClickCodeExcerptHref(
 export function navigateToCodeExcerpt(
     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>,
     openInNewTab: boolean,
-    history: H.History
+    navigate: NavigateFunction
 ): void {
     onClickCodeExcerptHref(event, href => {
         if (openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
             openLinkInNewTab(href, event, 'primary')
         } else {
-            history.push(href)
+            navigate(href)
         }
     })
 }

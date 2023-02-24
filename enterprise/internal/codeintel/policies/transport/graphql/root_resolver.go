@@ -92,6 +92,9 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	if args.ForIndexing != nil {
 		opts.ForIndexing = *args.ForIndexing
 	}
+	if args.Protected != nil {
+		opts.Protected = args.Protected
+	}
 
 	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
@@ -220,7 +223,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 		pageSize = int(*args.First)
 	}
 
-	ids, totalMatches, repositoryMatchLimit, err := r.policySvc.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize)
+	ids, totalMatches, matchesAll, repositoryMatchLimit, err := r.policySvc.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +245,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 		limitedCount = *repositoryMatchLimit
 	}
 
-	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, repositoryMatchLimit), nil
+	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, matchesAll, repositoryMatchLimit), nil
 }
 
 const DefaultGitObjectFilterPreviewPageSize = 15 // TEMP: 100

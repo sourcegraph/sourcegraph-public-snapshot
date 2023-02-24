@@ -1,37 +1,35 @@
 import { renderHook, act } from '@testing-library/react'
-import type { useHistory } from 'react-router'
+import type { useNavigate } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { useURLSyncedState } from './useUrlSyncedState'
 
-const replaceSpy = sinon.spy()
-function useMockHistory() {
-    return {
-        replace: replaceSpy,
-    }
+const navigateSpy = sinon.spy()
+function useMockNavigate() {
+    return navigateSpy
 }
 
 describe('useURLSyncedState', () => {
     beforeEach(() => {
-        replaceSpy.resetHistory()
+        navigateSpy.resetHistory()
     })
 
     it('should sync state with URL search parameters', () => {
         const searchParameters = new URLSearchParams()
         searchParameters.set('foo', 'foo')
         const { result } = renderHook(() =>
-            useURLSyncedState({ bar: 'bar' }, searchParameters, useMockHistory as unknown as typeof useHistory)
+            useURLSyncedState({ bar: 'bar' }, searchParameters, useMockNavigate as unknown as typeof useNavigate)
         )
         const [data, setData] = result.current
 
         // initial state
         expect(data).toEqual({ foo: 'foo', bar: 'bar' })
-        sinon.assert.calledWithExactly(replaceSpy, { search: 'bar=bar&foo=foo' })
+        sinon.assert.calledWithExactly(navigateSpy, { search: 'bar=bar&foo=foo' }, { replace: true })
 
         // on local state change
         act(() => setData({ bar: undefined }))
         const [data2] = result.current
         expect(data2).toEqual({ foo: 'foo' })
-        sinon.assert.calledWithExactly(replaceSpy, { search: 'foo=foo' })
+        sinon.assert.calledWithExactly(navigateSpy, { search: 'foo=foo' }, { replace: true })
     })
 })
