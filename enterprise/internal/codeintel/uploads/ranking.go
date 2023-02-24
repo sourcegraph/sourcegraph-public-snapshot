@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func (s *Service) ExportRankingGraph(
@@ -34,7 +34,7 @@ func (s *Service) ExportRankingGraph(
 		return err
 	}
 
-	g := group.New().WithContext(ctx)
+	p := pool.New().WithContext(ctx)
 
 	sharedUploads := make(chan shared.ExportedUpload, len(uploads))
 	for _, upload := range uploads {
@@ -43,7 +43,7 @@ func (s *Service) ExportRankingGraph(
 	close(sharedUploads)
 
 	for i := 0; i < numRankingRoutines; i++ {
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
 				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
@@ -70,7 +70,7 @@ func (s *Service) ExportRankingGraph(
 		})
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return err
 	}
 
