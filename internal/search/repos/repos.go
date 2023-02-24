@@ -649,22 +649,31 @@ func (r *Resolver) filterRepoHasFileContent(
 			for _, rev := range repoRevs.Revs {
 				repo, rev := repoRevs.Repo, rev
 
-				p.Go(func(ctx context.Context) error {
-					for _, arg := range op.HasFileContent {
-						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-						if err != nil {
-							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
-								return err
-							}
-							addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
-							return nil
+				checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs) (bool, error) {
+					commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+					if err != nil {
+						if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+							return false, err
 						}
 
-						foundMatches, err := r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+						// For any other error, add this repo/rev pair to the set of missing repos
+						addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
+						return false, nil
+					}
+
+					return r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+				}
+
+				p.Go(func(ctx context.Context) error {
+					for _, arg := range op.HasFileContent {
+						hasMatches, err := checkHasMatches(ctx, arg)
 						if err != nil {
 							return err
 						}
-						if !foundMatches {
+
+						wantMatches := !arg.Negated
+						if wantMatches != hasMatches {
+							// One of the conditions has failed, so we can return early
 							return nil
 						}
 					}
