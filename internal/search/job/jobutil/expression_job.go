@@ -62,7 +62,6 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 		})
 	}
 
-	err = p.Wait()
 	return maxAlerter.Alert, p.Wait()
 }
 
