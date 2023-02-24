@@ -9,7 +9,7 @@ import { CustomNextButton } from '../setup-steps'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
-//TODO: Error & loading state
+//TODO: Node error & loading state
 //TODO: Connect to api --> Validate repo selection
 //TODO: Skip logic
 
@@ -21,26 +21,18 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const [repos, setRepos] = useState<File[]>([])
     //store data as an edit state?? or use data.externalServices.nodes?
 
-    // TODO: New node (loading state & error / api call)
+    // TODO: Implement BE solution for repo absolute file grab & connection
     const handleFileInputChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             const files = event.target.files
-            console.log(event.target)
             if (files) {
                 setRepos([...Object.values(files)])
             }
             if (!files) {
-                // setImportState(INVALID_IMPORT_FILE_ERROR)
                 return
             }
-
-            // setImportState(LOADING)
-
-            // const reader = new FileReader()
-            // reader.addEventListener('load', event => onFileLoad(event, files[0].name))
-            // reader.readAsText(files[0])
         },
-        [className]
+        [repos]
     )
 
     const onLocalRepoSelect = useCallback(() => {
@@ -101,8 +93,6 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                         <Input
                             type="file"
                             multiple={true}
-                            // @ts-expect-error
-                            webkitdirectory="true"
                             className="d-none"
                             ref={fileInputReference}
                             onChange={handleFileInputChange}
