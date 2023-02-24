@@ -4,7 +4,6 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Link,
     Menu,
@@ -32,7 +31,7 @@ import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
 
-export interface InsightCardMenuProps extends TelemetryProps {
+export interface InsightCardMenuProps {
     insight: Insight
     currentDashboard: InsightDashboard | null
     zeroYAxisMin: boolean
@@ -43,7 +42,7 @@ export interface InsightCardMenuProps extends TelemetryProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: FC<InsightCardMenuProps> = props => {
-    const { insight, currentDashboard, zeroYAxisMin, onToggleZeroYAxisMin = noop, telemetryService } = props
+    const { insight, currentDashboard, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -52,11 +51,6 @@ export const InsightContextMenu: FC<InsightCardMenuProps> = props => {
 
     const { insight: insightPermissions } = useUiFeatures()
     const features = useExperimentalFeatures()
-
-    const handleDataExportConfirm = (): void => {
-        setShowExportDataConfirm(false)
-        telemetryService.log('InsightsDataExportClick')
-    }
 
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
     const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
@@ -207,7 +201,7 @@ export const InsightContextMenu: FC<InsightCardMenuProps> = props => {
                 insightTitle={insight.title}
                 showModal={showExportDataConfirm}
                 onCancel={() => setShowExportDataConfirm(false)}
-                onConfirm={handleDataExportConfirm}
+                onConfirm={() => setShowExportDataConfirm(false)}
             />
         </>
     )
