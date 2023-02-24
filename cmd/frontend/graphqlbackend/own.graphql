@@ -115,20 +115,43 @@ type CodeownersFileEntry {
 }
 
 type CodeownersIngestedFile {
+    """
+    The string contents of the codeowners file.
+    """
     contents: String!
+    """
+    The ID of the repository this codeowners file has been manually ingested for.
+    """
     repoID: Int!
+    """
+    The creation date of this codeowners file.
+    """
     createdAt: DateTime!
+    """
+    The last updated date of this codeowners file.
+    """
     updatedAt: DateTime!
 }
 
 extend type Mutation {
-    # todo make it input
+    """
+    addCodeownersFile creates a new Codeowners file for the given repository and file contents.
+    """
     addCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
+    """
+    updateCodeownersFile updates an existing Codeowners file for a repository.
+    """
     updateCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
-    deleteCodeownersFile(repoID: Int!): EmptyResponse
+    """
+    deleteCodeownersFile deletes any existing Codeowners file for the given repository.
+    """
+    deleteCodeownersFiles(repoID: Int!): EmptyResponse
 }
 
 extend type Query {
+    """
+    codeownersIngestedFiles returns all existing manually ingested codeowners files.
+    """
     codeownersIngestedFiles(first: Int, after: Int, repoID: Int): CodeownersIngestedFileConnection!
 }
 
@@ -144,7 +167,7 @@ type CodeownersIngestedFileConnection {
     pageInfo: PageInfo!
 
     """
-    The current page of teams in this connection.
+    The current page of codeowners files in this connection.
     """
     nodes: [CodeownersIngestedFile!]!
 }
