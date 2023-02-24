@@ -9,10 +9,12 @@ import {
     useEffect,
     useState,
     ReactNode,
+    PropsWithChildren,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
@@ -30,8 +32,10 @@ export interface StepConfiguration {
 interface SetupStepsContextData {
     steps: StepConfiguration[]
     activeStepIndex: number
-    nextButtonPortalElement: HTMLDivElement | null
-    setNextButtonPortal: (nextButton: HTMLDivElement | null) => void
+    footerPortal: HTMLDivElement | null
+    nextButtonPortal: HTMLDivElement | null
+    setFooterPortal: (container: HTMLDivElement | null) => void
+    setNextButtonPortal: (container: HTMLDivElement | null) => void
     onPrevStep: () => void
     onNextStep: () => void
 }
@@ -39,10 +43,12 @@ interface SetupStepsContextData {
 const SetupStepsContext = createContext<SetupStepsContextData>({
     steps: [],
     activeStepIndex: 0,
-    nextButtonPortalElement: null,
-    setNextButtonPortal: () => {},
-    onPrevStep: () => {},
-    onNextStep: () => {},
+    footerPortal: null,
+    nextButtonPortal: null,
+    setFooterPortal: noop,
+    setNextButtonPortal: noop,
+    onPrevStep: noop,
+    onNextStep: noop,
 })
 
 interface SetupStepsProps {
@@ -62,6 +68,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
     const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
+    const [footerPortal, setFooterPortal] = useState<HTMLDivElement | null>(null)
 
     // Resolve current setup step and its index by URL matches
     const { activeStepIndex } = useMemo<SetupStepURLContext>(() => {
@@ -114,12 +121,14 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         () => ({
             steps,
             activeStepIndex,
+            footerPortal,
+            nextButtonPortal,
+            setFooterPortal,
             setNextButtonPortal,
-            nextButtonPortalElement: nextButtonPortal,
             onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [handleGoToNextStep, handleGoToPrevStep, steps, nextButtonPortal, activeStepIndex]
+        [steps, activeStepIndex, footerPortal, nextButtonPortal, handleGoToPrevStep, handleGoToNextStep]
     )
 
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
@@ -179,26 +188,42 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
 export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
     const { className, ...attributes } = props
 
-    const { steps, activeStepIndex, setNextButtonPortal, onPrevStep, onNextStep } = useContext(SetupStepsContext)
+    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onPrevStep, onNextStep } =
+        useContext(SetupStepsContext)
 
     return (
-        <footer {...attributes} className={classNames(styles.navigation, className)}>
-            <div />
-            <div className={styles.navigationInner}>
-                {activeStepIndex > 0 && (
-                    <Button variant="secondary" onClick={onPrevStep}>
-                        <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Go to previous step
-                    </Button>
-                )}
+        <footer {...attributes} className={classNames(styles.footer, className)}>
+            <div className={styles.footerWidget}>
+                <div ref={setFooterPortal} className={styles.footerInnerWidget} />
+            </div>
+            <div className={styles.footerNavigation}>
+                <div className={styles.footerInnerNavigation}>
+                    {activeStepIndex > 0 && (
+                        <Button variant="secondary" onClick={onPrevStep}>
+                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Go to previous step
+                        </Button>
+                    )}
 
-                <div ref={setNextButtonPortal} className={styles.navigationNextPortal} />
-                <Button variant="primary" className={styles.navigationNext} onClick={onNextStep}>
-                    {activeStepIndex < steps.length - 1 ? 'Next' : 'Finish'}{' '}
-                    <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-                </Button>
+                    <div ref={setNextButtonPortal} className={styles.footerNextPortal} />
+                    <Button variant="primary" className={styles.footerNext} onClick={onNextStep}>
+                        {activeStepIndex < steps.length - 1 ? 'Next' : 'Finish'}{' '}
+                        <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+                    </Button>
+                </div>
             </div>
         </footer>
     )
+}
+
+export const FooterWidget: FC<PropsWithChildren<{}>> = props => {
+    const { children } = props
+    const { footerPortal } = useContext(SetupStepsContext)
+
+    if (!footerPortal) {
+        return null
+    }
+
+    return createPortal(children, footerPortal)
 }
 
 interface CustomNextButtonProps {
@@ -208,9 +233,9 @@ interface CustomNextButtonProps {
 
 export const CustomNextButton: FC<CustomNextButtonProps> = props => {
     const { label, disabled } = props
-    const { nextButtonPortalElement, onNextStep } = useContext(SetupStepsContext)
+    const { nextButtonPortal, onNextStep } = useContext(SetupStepsContext)
 
-    if (!nextButtonPortalElement) {
+    if (!nextButtonPortal) {
         return null
     }
 
@@ -218,6 +243,6 @@ export const CustomNextButton: FC<CustomNextButtonProps> = props => {
         <Button variant="primary" disabled={disabled} onClick={onNextStep}>
             {label}
         </Button>,
-        nextButtonPortalElement
+        nextButtonPortal
     )
 }
