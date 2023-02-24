@@ -85,6 +85,8 @@ func (p *Person) Equals(o ResolvedOwner) bool {
 type User struct {
 	User *types.User
 
+	Teams []*Team
+
 	// Original proto fields.
 	Handle string
 	Email  string
@@ -98,11 +100,19 @@ func (t *User) Identifier() string {
 	return "User:" + t.User.Username
 }
 
-func (p *User) Equals(o ResolvedOwner) bool {
+func (t *User) Equals(o ResolvedOwner) bool {
 	if _, ok := o.(*Any); ok {
 		return true
 	}
-	return p.Identifier() == o.Identifier()
+	if t.Identifier() == o.Identifier() {
+		return true
+	}
+	for _, innerTeam := range t.Teams {
+		if innerTeam.Equals(o) {
+			return true
+		}
+	}
+	return false
 }
 
 type Team struct {

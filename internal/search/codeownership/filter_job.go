@@ -187,28 +187,29 @@ matchesLoop:
 			// TODO: This doesn't work anymore since I added teams.
 			// if a team doesn't match, this returns, because includeOwners is
 			// AND. We want it to be OR though for [user, ...userTeams].
-			// if !containsOwner(resolvedOwners, owner) {
-			// 	continue matchesLoop
-			// }
-
-			// Even more todo: this changes to OR now from AND
-			if containsOwner(resolvedOwners, owner) {
-				filtered = append(filtered, m)
+			if !containsOwner(resolvedOwners, owner) {
 				continue matchesLoop
 			}
+
+			// Even more todo: this changes to OR now from AND
+			// if containsOwner(resolvedOwners, owner) {
+			// 	filtered = append(filtered, m)
+			// 	continue matchesLoop
+			// }
 		}
 		for _, notOwner := range excludeOwners {
 			// Even more todo: this changes to OR now from AND
-			// if containsOwner(resolvedOwners, notOwner) {
-			// 	continue matchesLoop
-			// }
-			if !containsOwner(resolvedOwners, notOwner) {
-				filtered = append(filtered, m)
+			if containsOwner(resolvedOwners, notOwner) {
 				continue matchesLoop
 			}
+			// if !containsOwner(resolvedOwners, notOwner) {
+			// 	filtered = append(filtered, m)
+			// 	continue matchesLoop
+			// }
 		}
 		// Even more todo: this changes to OR now from AND
 		// filtered = append(filtered, m)
+		filtered = append(filtered, m)
 	}
 
 	return filtered, errs

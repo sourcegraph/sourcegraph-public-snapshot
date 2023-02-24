@@ -3,7 +3,9 @@ package backend
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -186,6 +188,7 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 
 func resolveWithContext(ctx context.Context, db database.DB, handle, email string, resCtx OwnerResolutionContext) (owners []codeowners.ResolvedOwner, err error) {
 	var contextStr string
+	var serviceType string
 	var user *types.User
 	if email != "" {
 		user, err = db.Users().GetByVerifiedEmail(ctx, email)
@@ -216,7 +219,7 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 
 		// TODO: How does this distinguish github and github enterprise?
 		p := providers.GetProviderbyServiceType(r.ExternalRepo.ServiceType)
-
+		serviceType = r.ExternalRepo.ServiceType
 		contextStr = r.ExternalRepo.ServiceType + ":" + r.ExternalRepo.ServiceID
 		for _, ea := range eas {
 			data, err := p.ExternalAccountInfo(ctx, *ea)
@@ -241,7 +244,20 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 	}
 
 	if user == nil {
-		team, err := db.Teams().GetTeamByName(ctx, handle)
+		teamHandle := handle
+		switch serviceType {
+		case "github":
+			split := strings.SplitN(teamHandle, "/", 2)
+			fmt.Printf("split result %v\n", split)
+			if len(split) == 2 {
+				teamHandle = split[1]
+			} else {
+				teamHandle = split[0]
+			}
+		default:
+		}
+		fmt.Printf("looking up team by handle %q for service %q\n", teamHandle, serviceType)
+		team, err := db.Teams().GetTeamByName(ctx, teamHandle)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				return []codeowners.ResolvedOwner{&codeowners.Person{
@@ -255,15 +271,16 @@ func resolveWithContext(ctx context.Context, db database.DB, handle, email strin
 		return []codeowners.ResolvedOwner{&codeowners.Team{Team: team}}, nil
 	}
 
-	owners = append(owners, &codeowners.User{User: user})
-
+	teamOwners := []*codeowners.Team{}
 	teams, _, err := db.Teams().ListTeams(ctx, database.ListTeamsOpts{ForUserMember: user.ID})
 	if err != nil {
 		return nil, err
 	}
 	for _, team := range teams {
-		owners = append(owners, &codeowners.Team{Handle: team.Name, Team: team})
+		teamOwners = append(teamOwners, &codeowners.Team{Handle: team.Name, Team: team})
 	}
+
+	owners = append(owners, &codeowners.User{User: user, Teams: teamOwners})
 
 	return owners, nil
 }
