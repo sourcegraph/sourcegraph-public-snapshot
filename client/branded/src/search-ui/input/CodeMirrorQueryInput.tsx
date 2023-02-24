@@ -385,7 +385,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
 CodeMirrorQueryInput.displayName = 'CodeMirrorQueryInput'
 
 /**
- * Update the editor's selection and cursor depending on how the search
+ * Update the editor's value, selection and cursor depending on how the search
  * query was changed.
  */
 export function useUpdateEditorFromQueryState(
@@ -400,7 +400,8 @@ export function useUpdateEditorFromQueryState(
     }, [startCompletion])
 
     useEffect(() => {
-        if (!editorRef.current) {
+        const editor = editorRef.current
+        if (!editor) {
             return
         }
 
@@ -409,22 +410,23 @@ export function useUpdateEditorFromQueryState(
             return
         }
 
-        editorRef.current.dispatch({
+        editor.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: queryState.query },
             selection: queryState.selectionRange
                 ? // Select the specified range (most of the time this will be a
                   // placeholder filter value).
                   EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
                 : // Place the cursor at the end of the query.
-                  EditorSelection.cursor(editorRef.current.state.doc.length),
+                  EditorSelection.cursor(queryState.query.length),
             scrollIntoView: true,
         })
 
         if (queryState.hint) {
             if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
-                editorRef.current.focus()
+                editor.focus()
             }
             if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
-                startCompletionRef.current(editorRef.current)
+                startCompletionRef.current(editor)
             }
         }
     }, [editorRef, queryState])
