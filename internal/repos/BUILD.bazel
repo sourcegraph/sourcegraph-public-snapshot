@@ -9,6 +9,7 @@ go_library(
         "bitbucketserver.go",
         "clone_url.go",
         "conf.go",
+        "discoverable_sources.go",
         "doc.go",
         "exclude.go",
         "gerrit.go",

@@ -92,7 +92,7 @@ go_library(
         "own.go",
         "package_repos.go",
         "parse_search_query.go",
-        "permission_sync_jobs.go",
+        "permissions_sync_jobs.go",
         "person.go",
         "phabricator.go",
         "preview_repository_comparison.go",
@@ -313,8 +313,6 @@ go_library(
 
 go_test(
     name = "graphqlbackend_test",
-    # graphqlbackend_test.go opens itself during its test, so we need to make it available.
-    data = ["graphqlbackend_test.go"], # keep
     srcs = [
         "access_tokens_test.go",
         "client_configuration_test.go",
@@ -379,6 +377,8 @@ go_test(
         "virtual_file_test.go",
         "webhook_logs_test.go",
     ],
+    # graphqlbackend_test.go opens itself during its test, so we need to make it available.
+    data = ["graphqlbackend_test.go"],  # keep
     embed = [":graphqlbackend"],
     deps = [
         "//cmd/frontend/auth/providers",

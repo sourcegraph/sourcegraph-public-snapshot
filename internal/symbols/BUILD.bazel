@@ -48,6 +48,5 @@ go_test(
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
-        "@org_golang_google_grpc//:go_default_library",
     ],
 )

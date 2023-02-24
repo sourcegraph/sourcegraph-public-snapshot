@@ -34,5 +34,6 @@ go_library(
 buf_lint_test(
     #keep
     name = "v1_proto_lint",
+    config = "//internal:buf.yaml",
     targets = [":proto_proto"],
 )

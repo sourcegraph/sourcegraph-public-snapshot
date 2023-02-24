@@ -27,6 +27,7 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
+        "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/jscontext",
         "//cmd/frontend/internal/app/ui/router",
         "//cmd/frontend/internal/handlerutil",

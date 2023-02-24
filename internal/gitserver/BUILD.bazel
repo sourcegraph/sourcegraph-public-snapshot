@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "gitserver",
     srcs = [
+        "addrs.go",
         "client.go",
         "commands.go",
         "git_command.go",
@@ -53,6 +54,7 @@ go_library(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
         "@org_golang_x_sync//semaphore",
     ],
@@ -61,8 +63,10 @@ go_library(
 go_test(
     name = "gitserver_test",
     srcs = [
+        "addrs_test.go",
         "client_test.go",
         "commands_test.go",
+        "grpc_test.go",
         "internal_test.go",
     ],
     embed = [":gitserver"],
@@ -72,6 +76,7 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/database",
         "//internal/errcode",
         "//internal/gitserver/gitdomain",
