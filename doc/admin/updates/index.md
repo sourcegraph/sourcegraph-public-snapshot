@@ -11,7 +11,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 Starting 4.6.0, you are able to check the instance upgrade readiness by navigating to **Site admin > Updates** page, readiness information includes:
 
 - Whether there are [schema drifts](../how-to/schema-drift.md)
-- Whether there are pending [out-of-band migrations](../../dev/background-information/oobmigrations.md) but depreacted in the latest version
+- Whether there are pending [out-of-band migrations](../../dev/background-information/oobmigrations.md) but need to complete
 
 ## Choosing the correct upgrade path
 
