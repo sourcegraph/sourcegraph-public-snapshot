@@ -74,6 +74,10 @@
     color: var(--white) !important;
 }
 
+.text-inherit {
+    color: inherit !important;
+}
+
 @each $color, $value in $theme-colors {
     .text-#{$color} {
         color: $value !important;
