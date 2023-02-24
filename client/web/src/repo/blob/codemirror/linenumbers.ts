@@ -26,7 +26,6 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
-
 import { blobPropsFacet } from './index'
 
 /**
