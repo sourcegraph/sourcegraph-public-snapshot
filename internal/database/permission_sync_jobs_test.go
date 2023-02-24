@@ -49,17 +49,17 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, jobs, 0, "jobs returned even though database is empty")
 
-	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
+	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
 	err = store.CreateRepoSyncJob(ctx, repo1.ID, opts)
 	require.NoError(t, err)
 
 	processAfter := clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 	err = store.CreateUserSyncJob(ctx, user1.ID, opts)
 	require.NoError(t, err)
 
 	processAfter = clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 	err = store.CreateUserSyncJob(ctx, user2.ID, opts)
 	require.NoError(t, err)
 	codeHostStates := getSampleCodeHostStates()
@@ -77,9 +77,9 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	wantJobs := []*PermissionSyncJob{
 		{
 			ID:                jobs[0].ID,
-			State:             PermissionSyncJobStateQueued,
+			State:             PermissionsSyncJobStateQueued,
 			RepositoryID:      int(repo1.ID),
-			Priority:          HighPriorityPermissionSync,
+			Priority:          HighPriorityPermissionsSync,
 			InvalidateCaches:  true,
 			Reason:            ReasonUserNoPermissions,
 			NoPerms:           true,
@@ -87,18 +87,18 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		},
 		{
 			ID:               jobs[1].ID,
-			State:            PermissionSyncJobStateQueued,
+			State:            PermissionsSyncJobStateQueued,
 			UserID:           int(user1.ID),
-			Priority:         MediumPriorityPermissionSync,
+			Priority:         MediumPriorityPermissionsSync,
 			InvalidateCaches: true,
 			ProcessAfter:     processAfter,
 			Reason:           ReasonManualUserSync,
 		},
 		{
 			ID:                 jobs[2].ID,
-			State:              PermissionSyncJobStateQueued,
+			State:              PermissionsSyncJobStateQueued,
 			UserID:             int(user2.ID),
-			Priority:           LowPriorityPermissionSync,
+			Priority:           LowPriorityPermissionsSync,
 			InvalidateCaches:   true,
 			ProcessAfter:       processAfter,
 			Reason:             ReasonManualUserSync,
@@ -228,7 +228,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	require.Equal(t, allDelayedJobs[1].UserID, allDelayedJobs[1].ID-2)
 
 	// 5) Insert *medium* priority job without process_after for user1. Check that low priority job is canceled.
-	user1MediumPrioJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user1MediumPrioJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 	err = store.CreateUserSyncJob(ctx, 1, user1MediumPrioJob)
 	require.NoError(t, err)
 
@@ -240,14 +240,15 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	for _, job := range allUser1Jobs {
 		if job.ID == 1 {
 			require.True(t, job.Cancel)
+			require.Equal(t, PermissionsSyncJobStateCanceled, job.State)
 		} else {
 			require.False(t, job.Cancel)
 		}
 	}
 
 	// 6) Insert some medium priority jobs with process_after for both users. All of them should be inserted.
-	user1MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionSync, ProcessAfter: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	user2MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionSync, ProcessAfter: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user1MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user2MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 
 	err = store.CreateUserSyncJob(ctx, 1, user1MediumPrioDelayedJob)
 	require.NoError(t, err)
@@ -266,7 +267,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	require.Equal(t, allDelayedJobs[3].UserID, allDelayedJobs[1].ID-2)
 
 	// 5) Insert *high* priority job without process_after for user1. Check that medium and low priority job is canceled.
-	user1HighPrioJob := PermissionSyncJobOpts{Priority: HighPriorityPermissionSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user1HighPrioJob := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 	err = store.CreateUserSyncJob(ctx, 1, user1HighPrioJob)
 	require.NoError(t, err)
 
@@ -576,7 +577,7 @@ func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store Permi
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	for i := 0; i < 10; i++ {
 		processAfter := clock.Now().Add(5 * time.Minute)
-		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 		err := store.CreateUserSyncJob(ctx, userID, opts)
 		require.NoError(t, err)
 	}

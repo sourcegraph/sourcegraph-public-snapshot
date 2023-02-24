@@ -1,5 +1,9 @@
 # Using Helm
 
+Helm offers a simple deployment process on Kubernetes.
+
+>NOTE: We highly recommend [deploying Sourcegraph on Kubernetes with Kustomize](index.md) due to the flexibility it provides.
+
 ## Requirements
 
 * [Helm 3 CLI](https://helm.sh/docs/intro/install/)
@@ -20,7 +24,7 @@
 
 ## Why use Helm
 
-Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
+Our Helm chart has a lot of sensible defaults baked into the values.yaml so that when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
 
 
 ## High-level overview of how to use Helm with Sourcegraph

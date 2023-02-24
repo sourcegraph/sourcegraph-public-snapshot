@@ -25,7 +25,7 @@ interface CreatePolicyButtonsProps {
 export const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo }) => (
     <Menu>
         <ButtonGroup>
-            <Button to="./configuration/new?type=head" variant="primary" as={Link}>
+            <Button to="./new?type=head" variant="primary" as={Link}>
                 Create new {!repo && 'global'} policy
             </Button>
             <MenuButton variant="primary" className={styles.dropdownButton}>
@@ -34,7 +34,7 @@ export const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = 
             </MenuButton>
         </ButtonGroup>
         <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
+            <MenuLink as={Link} className={styles.dropdownItem} to="./new?type=head">
                 <>
                     <Text weight="medium" className="mb-2">
                         Create new {!repo && 'global'} policy for HEAD
@@ -45,7 +45,7 @@ export const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = 
                     </Text>
                 </>
             </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
+            <MenuLink as={Link} className={styles.dropdownItem} to="./new?type=branch">
                 <Text weight="medium" className="mb-2">
                     Create new {!repo && 'global'} branch policy
                 </Text>
@@ -53,7 +53,7 @@ export const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = 
                     Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
                 </Text>
             </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
+            <MenuLink as={Link} className={styles.dropdownItem} to="./new?type=tag">
                 <Text weight="medium" className="mb-2">
                     Create new {!repo && 'global'} tag policy
                 </Text>

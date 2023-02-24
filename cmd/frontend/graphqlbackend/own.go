@@ -50,7 +50,6 @@ type OwnerResolver interface {
 	OwnerField(context.Context) (string, error)
 
 	ToPerson() (*PersonResolver, bool)
-	ToUser() (*UserResolver, bool)
 	ToTeam() (*TeamResolver, bool)
 }
 

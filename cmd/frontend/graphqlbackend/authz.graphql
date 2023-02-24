@@ -140,7 +140,7 @@ extend type Query {
     """
     Returns a list of recent permissions sync jobs for a given set of parameters.
     """
-    permissionSyncJobs(
+    permissionsSyncJobs(
         """
         Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
         """
@@ -161,7 +161,7 @@ extend type Query {
         also used in conjunction with "last" to return the last N nodes.
         """
         before: String
-    ): PermissionSyncJobsConnection!
+    ): PermissionsSyncJobsConnection!
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -323,13 +323,13 @@ input FetchPermissionsOptions {
 }
 
 """
-Permission sync jobs.
+Permissions sync jobs.
 """
-type PermissionSyncJobsConnection implements Connection {
+type PermissionsSyncJobsConnection implements Connection {
     """
     Permission sync jobs.
     """
-    nodes: [PermissionSyncJob!]!
+    nodes: [PermissionsSyncJob!]!
     """
     The total number of jobs in the connection.
     """
@@ -343,12 +343,13 @@ type PermissionSyncJobsConnection implements Connection {
 """
 State types of permission sync jobs.
 """
-enum PermissionSyncJobState {
+enum PermissionsSyncJobState {
     QUEUED
     PROCESSING
     FAILED
     ERRORED
     COMPLETED
+    CANCELED
 }
 
 """
@@ -356,11 +357,11 @@ Compound type for a permission sync job trigger reason.
 Consists of a reason group (PermissionSyncJobReasonGroup) and a message, providing details
 about why/how the sync was triggered.
 """
-type PermissionSyncJobReason {
+type PermissionsSyncJobReason {
     """
     PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
     """
-    group: PermissionSyncJobReasonGroup!
+    group: PermissionsSyncJobReasonGroup!
     """
     Message with details about why/how the sync was triggered.
     """
@@ -370,7 +371,7 @@ type PermissionSyncJobReason {
 """
 State types of permission sync jobs.
 """
-enum PermissionSyncJobReasonGroup {
+enum PermissionsSyncJobReasonGroup {
     MANUAL
     WEBHOOK
     SCHEDULE
@@ -385,7 +386,7 @@ union PermissionSyncJobSubject = User | Repository
 """
 Permission sync job priority.
 """
-enum PermissionSyncJobPriority {
+enum PermissionsSyncJobPriority {
     LOW
     MEDIUM
     HIGH
@@ -416,7 +417,7 @@ type CodeHostState {
 """
 State of a permission sync job.
 """
-type PermissionSyncJob implements Node {
+type PermissionsSyncJob implements Node {
     """
     Unique node ID.
     """
@@ -424,7 +425,7 @@ type PermissionSyncJob implements Node {
     """
     State of a permission sync job.
     """
-    state: PermissionSyncJobState!
+    state: PermissionsSyncJobState!
     """
     Failure message for failed sync job.
     """
@@ -432,7 +433,7 @@ type PermissionSyncJob implements Node {
     """
     Reason for triggering a permission sync job.
     """
-    reason: PermissionSyncJobReason!
+    reason: PermissionsSyncJobReason!
     """
     Reason for cancellation of a given permission sync job.
     """
@@ -488,7 +489,7 @@ type PermissionSyncJob implements Node {
     """
     Priority of a permission sync job.
     """
-    priority: PermissionSyncJobPriority!
+    priority: PermissionsSyncJobPriority!
     """
     Flag showing that there are no permissions for a given repository/user.
     """

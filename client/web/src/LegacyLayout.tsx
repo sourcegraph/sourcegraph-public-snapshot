@@ -1,32 +1,18 @@
-import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
+import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { isMacPlatform } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from './auth'
-import type { BatchChangesProps } from './batches'
-import type { CodeIntelligenceProps } from './codeintel'
-import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
@@ -36,30 +22,14 @@ import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
+import { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { NotebookProps } from './notebooks'
-import { OrgAreaRoute } from './org/area/OrgArea'
-import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
-import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
-import type { RepoContainerRoute } from './repo/RepoContainer'
-import { RepoHeaderActionButton } from './repo/RepoHeader'
-import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
-import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LegacyLayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
-import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
+import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useExperimentalFeatures } from './stores'
-import type { UserAreaRoute } from './user/area/UserArea'
-import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
@@ -68,57 +38,17 @@ import styles from './Layout.module.scss'
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps
-    extends SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        SearchContextProps,
-        SearchStreamingProps,
-        CodeIntelligenceProps,
-        BatchChangesProps,
-        NotebookProps,
-        CodeMonitoringProps,
-        SearchAggregationProps {
-    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
-    siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
-    userAreaRoutes: readonly UserAreaRoute[]
-    userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
-    orgSettingsSideBarItems: OrgSettingsSidebarItems
-    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
-    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
-    orgAreaRoutes: readonly OrgAreaRoute[]
-    repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps[]
-
-    authenticatedUser: AuthenticatedUser | null
-
-    /**
-     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
-     * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
-     */
-    viewerSubject: SettingsSubjectCommonFields
-
-    // Search
-    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
-    globbing: boolean
-    isSourcegraphDotCom: boolean
+    extends Omit<LegacyLayoutRouteContext, 'breadcrumbs' | 'useBreadcrumb' | 'setBreadcrumb' | 'isMacPlatform'> {
     children?: never
 }
+
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
-export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<LegacyLayoutProps>> = props => {
+export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
     // TODO: Replace with useMatches once top-level <Router/> is V6
@@ -158,8 +88,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
-    const breadcrumbProps = useBreadcrumbs()
-
     const { theme } = useTheme()
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
@@ -195,12 +123,6 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
     if (location.pathname !== '/' && location.pathname.endsWith('/')) {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
-
-    const context = {
-        ...props,
-        ...breadcrumbProps,
-        isMacPlatform: isMacPlatform(),
-    } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     if (isSetupWizardPage) {
         return (
@@ -281,16 +203,13 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                 >
                     <AppRouterContainer>
                         <Routes>
-                            {props.routes.map(
-                                ({ condition = () => true, ...route }) =>
-                                    condition(context) && (
-                                        <Route
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            path={route.path}
-                                            element={route.render(context)}
-                                        />
-                                    )
-                            )}
+                            {props.routes.map(({ ...route }) => (
+                                <Route
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    path={route.path}
+                                    element={route.element}
+                                />
+                            ))}
                         </Routes>
                     </AppRouterContainer>
                 </Suspense>
