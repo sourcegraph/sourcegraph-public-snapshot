@@ -19,7 +19,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         }
         reason {
             group
-            message
+            reason
         }
         queuedAt
         startedAt
