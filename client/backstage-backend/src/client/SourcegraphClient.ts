@@ -5,7 +5,7 @@ import { UserQuery, Query, SearchQuery, SearchResult, SearchResults } from './Qu
 import { SearchEvent, SearchMatch, StreamSearchOptions, search, LATEST_VERSION, MessageHandlers, messageHandlers, observeMessages, switchAggregateSearchResults, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-//import 'whatwg-fetch'
+import 'whatwg-fetch'
 import { of, OperatorFunction, Observable, pipe } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
@@ -185,7 +185,7 @@ class StreamAPIClient {
       //   })
       // }
     }
-    return search(of(query), opts, handlers).pipe(share())
+    return search(of(query), opts, handlers)
   }
 
   paginate(query: string, start: number = 0, perPage: number = 30): Observable<AggregateStreamingSearchResults> {
