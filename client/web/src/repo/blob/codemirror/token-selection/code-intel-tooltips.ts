@@ -18,13 +18,13 @@ import {
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
+import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
 import { languageSupport } from './languageSupport'
-import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
