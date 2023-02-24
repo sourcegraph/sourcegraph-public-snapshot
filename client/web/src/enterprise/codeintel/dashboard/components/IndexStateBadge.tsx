@@ -1,14 +1,14 @@
 import { FunctionComponent } from 'react'
 
-import { mdiCheck, mdiClose, mdiTimerSand } from '@mdi/js'
+import { mdiAlert, mdiCheck, mdiClose, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Badge, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { INDEX_TERMINAL_STATES } from '../constants'
 
 import { getIndexerKey } from './tree/util'
-import { INDEX_TERMINAL_STATES } from '../constants'
 
 export interface IndexStateBadgeProps {
     indexes: PreciseIndexFields[]
@@ -75,7 +75,7 @@ const IndexStateBadgeIcon: FunctionComponent<IndexStateBadgeIconProps> = ({ stat
             ) : state === PreciseIndexState.QUEUED_FOR_INDEXING || state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
                 <Icon {...ariaProps} svgPath={mdiTimerSand} className={className} />
             ) : state === PreciseIndexState.INDEXING_ERRORED || state === PreciseIndexState.PROCESSING_ERRORED ? (
-                <Icon {...ariaProps} svgPath={mdiClose} className={classNames('text-danger', className)} />
+                <Icon {...ariaProps} svgPath={mdiAlert} className={classNames('text-danger', className)} />
             ) : (
                 <Icon {...ariaProps} svgPath={mdiClose} className={classNames('text-muted', className)} />
             )}

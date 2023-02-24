@@ -34,6 +34,7 @@
     &-link {
         padding: 0.5rem 0;
         display: flex;
+        align-items: center;
         &:hover {
             text-decoration: none;
         }
@@ -41,6 +42,5 @@
 }
 
 .badge {
-    // Avoid inconsistencies in label width
-    min-width: 6rem;
+    padding: 0.25rem 0.5rem;
 }

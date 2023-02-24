@@ -2,6 +2,17 @@ import { gql } from '@sourcegraph/http-client'
 
 import { codeIntelIndexerFieldsFragment, preciseIndexFieldsFragment } from '../indexes/hooks/types'
 
+export const dashboardRepoFieldsFragment = gql`
+    fragment DashboardRepoFields on CodeIntelRepository {
+        name
+        url
+        externalRepository {
+            serviceID
+            serviceType
+        }
+    }
+`
+
 export const globalCodeIntelStatusQuery = gql`
     query GlobalCodeIntelStatus {
         codeIntelSummary {
@@ -33,7 +44,6 @@ export const globalCodeIntelStatusQuery = gql`
                         indexer {
                             ...CodeIntelIndexerFields
                         }
-
                         count
                     }
                 }
@@ -88,6 +98,7 @@ export const searchBasedCodeIntelSupportFragment = gql`
     }
 `
 
+// todo: recent uploads?
 export const repoCodeIntelStatusQuery = gql`
     query RepoCodeIntelStatus($repository: String!) {
         repository(name: $repository) {
@@ -101,22 +112,9 @@ export const repoCodeIntelStatusQuery = gql`
                     ...InferredAvailableIndexersFields
                 }
             }
-            commit(rev: "HEAD") {
-                path(path: "/") {
-                    ... on GitTree {
-                        codeIntelInfo {
-                            ...GitTreeCodeIntelInfoFields
-                        }
-                    }
-                }
-            }
         }
     }
 
     ${preciseIndexFieldsFragment}
     ${inferredAvailableIndexersFieldsFragment}
-
-    ${gitTreeCodeIntelInfoFragment}
-    ${preciseSupportFragment}
-    ${searchBasedCodeIntelSupportFragment}
 `

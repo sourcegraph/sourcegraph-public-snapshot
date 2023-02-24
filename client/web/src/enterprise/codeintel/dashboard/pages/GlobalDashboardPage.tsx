@@ -1,20 +1,83 @@
 import { useEffect, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
-import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { GlobalCodeIntelStatusResult } from '../../../../graphql-operations'
+import {
+    DashboardRepoFields,
+    GlobalCodeIntelStatusResult,
+    CodeIntelIndexerFields,
+} from '../../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { globalCodeIntelStatusQuery } from '../backend'
 
 import { DataSummary, DataSummaryItem } from '../components/DataSummary'
 
+import { buildParamsFromFilterState } from './RepoDashboardPage'
 import styles from './GlobalDashboardPage.module.scss'
+
+type DashboardNodeProps =
+    | {
+          type: 'error'
+          repository: DashboardRepoFields
+          errorCount: number
+      }
+    | {
+          type: 'configurable'
+          repository: DashboardRepoFields
+          indexers: { indexer: CodeIntelIndexerFields | null }[]
+      }
+
+const DashboardNode: React.FunctionComponent<DashboardNodeProps> = props => {
+    const repoLink =
+        props.type === 'error'
+            ? `${props.repository.url}/-/code-graph/dashboard?${buildParamsFromFilterState({
+                  show: 'all',
+                  language: 'all',
+                  indexState: 'error',
+              }).toString()}`
+            : `${props.repository.url}/-/code-graph/dashboard?${buildParamsFromFilterState({
+                  show: 'suggestions',
+                  language: 'all',
+              }).toString()}`
+
+    return (
+        <li key={props.repository.name} className={styles.detailsListItem}>
+            <div>
+                {props.repository.externalRepository && (
+                    <ExternalRepositoryIcon
+                        externalRepo={{
+                            serviceID: props.repository.externalRepository.serviceID,
+                            serviceType: props.repository.externalRepository.serviceType,
+                        }}
+                    />
+                )}
+                <RepoLink repoName={props.repository.name} to={repoLink} />
+            </div>
+            <Link to={repoLink} className={styles.detailsLink}>
+                {props.type === 'error' ? (
+                    <>
+                        <Badge variant="danger" className={styles.badge} pill={true}>
+                            {props.errorCount}
+                        </Badge>
+                        <Icon svgPath={mdiChevronRight} size="md" aria-label="Fix" />
+                    </>
+                ) : (
+                    <>
+                        <Badge variant="primary" className={styles.badge} pill={true}>
+                            {props.indexers.length}
+                        </Badge>
+                        <Icon svgPath={mdiChevronRight} size="md" aria-label="Configure" />
+                    </>
+                )}
+            </Link>
+        </li>
+    )
+}
 
 interface GlobalDashboardPageProps extends TelemetryProps {}
 
@@ -79,7 +142,6 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                 className="mb-3"
             />
             <Container>
-                {/* TODO: Make data summary links to configure? */}
                 <DataSummary items={summaryItems} className="pb-3" />
             </Container>
 
@@ -91,31 +153,12 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
 
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithErrors.nodes.map(({ repository, count }) => (
-                                    <li key={repository.name} className={styles.detailsListItem}>
-                                        <div>
-                                            {repository.externalRepository && (
-                                                <ExternalRepositoryIcon
-                                                    externalRepo={{
-                                                        serviceID: repository.externalRepository.serviceID,
-                                                        serviceType: repository.externalRepository.serviceType,
-                                                    }}
-                                                />
-                                            )}
-                                            <RepoLink
-                                                repoName={repository.name}
-                                                to={`${repository.url}/-/code-graph/dashboard?show=errors`}
-                                            />
-                                        </div>
-                                        <Link
-                                            to={`${repository.url}/-/code-graph/dashboard?show=errors`}
-                                            className={styles.detailsLink}
-                                        >
-                                            <Badge variant="danger" className={styles.badge} pill={true}>
-                                                {count} {count > 1 ? 'errors' : 'error'}
-                                            </Badge>
-                                            <Icon svgPath={mdiChevronRight} size="md" aria-label="Fix" />
-                                        </Link>
-                                    </li>
+                                    <DashboardNode
+                                        type="error"
+                                        repository={repository}
+                                        errorCount={count}
+                                        key={repository.name}
+                                    />
                                 ))}
                             </ul>
                         </div>
@@ -124,37 +167,17 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                 {data.codeIntelSummary.repositoriesWithConfiguration &&
                     data.codeIntelSummary.repositoriesWithConfiguration.nodes.length > 0 && (
                         <div className={styles.details}>
-                            <H3 className="px-3">Configurable repositories</H3>
+                            <H3 className="px-3">Repositories with suggestions</H3>
 
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithConfiguration.nodes.map(
                                     ({ repository, indexers }) => (
-                                        <li key={repository.name} className={styles.detailsListItem}>
-                                            <div>
-                                                {repository.externalRepository && (
-                                                    <ExternalRepositoryIcon
-                                                        externalRepo={{
-                                                            serviceID: repository.externalRepository.serviceID,
-                                                            serviceType: repository.externalRepository.serviceType,
-                                                        }}
-                                                    />
-                                                )}
-                                                <RepoLink
-                                                    repoName={repository.name}
-                                                    to={`${repository.url}/-/code-graph/dashboard?show=suggestions`}
-                                                />
-                                            </div>
-                                            <Link
-                                                to={`${repository.url}/-/code-graph/dashboard?show=suggestions`}
-                                                className={styles.detailsLink}
-                                            >
-                                                <Badge variant="info" className={styles.badge} pill={true}>
-                                                    {indexers.length}{' '}
-                                                    {indexers.length > 1 ? 'suggestions' : 'suggestion'}
-                                                </Badge>
-                                                <Icon svgPath={mdiChevronRight} size="md" aria-label="Configure" />
-                                            </Link>
-                                        </li>
+                                        <DashboardNode
+                                            type="configurable"
+                                            repository={repository}
+                                            indexers={indexers}
+                                            key={repository.name}
+                                        />
                                     )
                                 )}
                             </ul>
