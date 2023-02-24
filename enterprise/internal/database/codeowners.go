@@ -32,6 +32,8 @@ type CodeownersStore interface {
 	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
 	// ListCodeowners lists manually ingested Codeowners files given the options.
 	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
+	// CountCodeownersFiles counts the number of manually ingested Codeowners files.
+	CountCodeownersFiles(context.Context) (int32, error)
 }
 
 type codeownersStore struct {
@@ -245,6 +247,18 @@ WHERE %s
 ORDER BY 
     repo_id ASC 
 %s
+`
+
+func (s *codeownersStore) CountCodeownersFiles(ctx context.Context) (int32, error) {
+	q := sqlf.Sprintf(countCodeownersFilesQueryFmtStr)
+
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	return int32(count), err
+}
+
+const countCodeownersFilesQueryFmtStr = `
+SELECT COUNT(*)
+FROM codeowners
 `
 
 func CodeownersWith(other basestore.ShareableStore) CodeownersStore {

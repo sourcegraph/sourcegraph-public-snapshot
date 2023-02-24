@@ -3,10 +3,13 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
@@ -77,7 +80,23 @@ func (r *ownResolver) DeleteCodeownersFile(ctx context.Context, args *graphqlbac
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
-	return nil, nil
+	connectionResolver := &codeownersIngestedFileConnectionResolver{
+		codeownersStore: r.codeownersStore,
+	}
+	if args.After != nil {
+		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		connectionResolver.cursor = int32(cursor)
+		if int(connectionResolver.cursor) != cursor {
+			return nil, errors.Newf("cursor int32 overflow: %d", cursor)
+		}
+	}
+	if args.First != nil {
+		connectionResolver.limit = int(*args.First)
+	}
+	return connectionResolver, nil
 }
 
 type codeownersIngestedFileResolver struct {
@@ -100,19 +119,59 @@ func (c *codeownersIngestedFileResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: c.codeownersFile.UpdatedAt}
 }
 
-type codeownersIngestedFileConnectionResolver struct{}
+type codeownersIngestedFileConnectionResolver struct {
+	codeownersStore edb.CodeownersStore
 
-func (c *codeownersIngestedFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CodeownersIngestedFileResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	once     sync.Once
+	cursor   int32
+	limit    int
+	pageInfo *graphqlutil.PageInfo
+	err      error
+
+	codeownersFiles []*types.CodeownersFile
 }
 
-func (c *codeownersIngestedFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) {
+	r.once.Do(func() {
+		opts := edb.ListCodeownersOpts{
+			Cursor: r.cursor,
+		}
+		if r.limit != 0 {
+			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+		}
+		codeownersFiles, next, err := r.codeownersStore.ListCodeowners(ctx, opts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.codeownersFiles = codeownersFiles
+		if next > 0 {
+			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
+	})
 }
 
-func (c *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *codeownersIngestedFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CodeownersIngestedFileResolver, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	var resolvers = make([]graphqlbackend.CodeownersIngestedFileResolver, 0, len(r.codeownersFiles))
+	for _, cf := range r.codeownersFiles {
+		resolvers = append(resolvers, &codeownersIngestedFileResolver{
+			codeownersFile: cf,
+		})
+	}
+	return resolvers, nil
+}
+
+func (r *codeownersIngestedFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return r.codeownersStore.CountCodeownersFiles(ctx)
+}
+
+func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	r.compute(ctx)
+	return r.pageInfo, r.err
 }
