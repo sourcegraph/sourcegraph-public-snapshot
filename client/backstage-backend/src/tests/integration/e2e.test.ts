@@ -1,6 +1,8 @@
 import { describe, expect, test } from '@jest/globals'
-import { SearchRepoQuery, SearchResults } from '../../client/Query'
-import { createService, Config, SourcegraphService } from '../../client/SourcegraphClient'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { Observable, Subscriber, Subscription, NextObserver } from 'rxjs'
+import { first, materialize, publish, scan, share, take, tap } from 'rxjs/operators'
+import { createService, Config, SourcegraphService, PaginatedResult, PageInfo, SearchMatches, SearchEvent } from '../../client/SourcegraphClient'
 
 const sgConf: Config = {
   endpoint: 'https://scaletesting.sgdev.org',
@@ -27,10 +29,15 @@ describe('basic api check', () => {
 
 describe('pagination tests', () => {
   test('get 50 repos', async () => {
-    const sourcegraphService: SourcegraphService = await getClient()
-    const query: SearchRepoQuery = new SearchRepoQuery("repo:.* count:50")
-    const results: SearchResults = await sourcegraphService.Search.doQuery(query)
 
-    expect(results).toHaveLength(50)
+    const sourcegraphService: SourcegraphService = await getClient()
+    // No logs get printed
+    const result: SearchMatches = new Array<SearchMatch>()
+    const obs: Observable<SearchMatches> = sourcegraphService.Search.searchStream(`repo:.*`)
+    obs.subscribe((data) => console.log("data", data), (e) => console.error("err", e), () => console.log("complete!"))
+    obs.pipe(share())
+
+    expect(result).toHaveLength(50)
   })
 })
+

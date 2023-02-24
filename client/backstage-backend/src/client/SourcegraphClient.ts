@@ -2,10 +2,12 @@ import { getGraphQLClient, GraphQLClient } from '@sourcegraph/http-client'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { generateCache } from '@sourcegraph/shared/src/backend/apolloCache'
 import { UserQuery, Query, SearchQuery, SearchResult, SearchResults } from './Query'
-import { SearchEvent, StreamSearchOptions, search, LATEST_VERSION, MessageHandlers, messageHandlers, observeMessages, switchAggregateSearchResults, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { of, OperatorFunction, pipe } from 'rxjs'
-import { SearchPatternType } from '@sourcegraph/../shared/src/graphql-operations'
-import { skip, take, tap } from 'rxjs/operators'
+import { SearchEvent, SearchMatch, StreamSearchOptions, search, LATEST_VERSION, MessageHandlers, messageHandlers, observeMessages, switchAggregateSearchResults, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
+//import 'whatwg-fetch'
+import { of, OperatorFunction, Observable, pipe } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 
 export interface Config {
   endpoint: string
@@ -26,11 +28,19 @@ export interface PageInfo {
   perPage: number
 }
 
+export type SearchMatches = SearchMatch[]
+export interface PaginatedResult<T> {
+  results: T
+  next: PageInfo
+}
+
 export interface SearchService {
   searchQuery(query: string): Promise<SearchResults>
   doQuery<T>(query: Query<T>): Promise<T>
-  paginatedQuery(query: string, pageInfo: PageInfo): Promise<SearchResults>
+  searchStream(query: string): Observable<SearchMatch[]>
 }
+
+export { SearchEvent, AggregateStreamingSearchResults }
 
 
 export interface SourcegraphService {
@@ -57,9 +67,8 @@ export class SourcegraphClient implements SourcegraphService, UserService, Searc
     this.streamer = streamClient
   }
 
-  async paginatedQuery(query: string, page: PageInfo = { start: 0, perPage: 30 }): Promise<SearchResults> {
-    const streamedResults: AggregateStreamingSearchResults = await this.streamer.stream(query, page.start, page.perPage)
-
+  searchStream(query: string): Observable<SearchMatch[]> {
+    return this.streamer.search(query)
   }
 
   async searchQuery(query: string): Promise<SearchResult[]> {
@@ -95,7 +104,7 @@ export class ClientFactory {
   }
 
   async createStreamAPIClient(): Promise<StreamAPIClient> {
-    return new StreamClient(this.baseURL, this.token, this.sudoUsername ?? "")
+    return new StreamAPIClient(this.baseURL, this.token, this.sudoUsername ?? "")
   }
 
 }
@@ -147,18 +156,18 @@ class StreamAPIClient {
 
 
   constructor(url: string, token: string, sudoUsername?: string) {
+    console.log('stream ctor')
     polyfillEventSource(
       {
         'X-Requested-With': 'Sourcegraph Backstage DEV',
         ...authZHeader(token, sudoUsername ?? "")
       },
-      undefined, // let's see if we really need to proxy a proxy-agent
+      undefined,
     )
     this.baseURL = url
   }
 
-
-  async stream(query: string, start: number = 0, perPage: number = 30): Promise<AggregateStreamingSearchResults> {
+  doStream(query: string): Observable<SearchEvent> {
     const opts: StreamSearchOptions = {
       version: LATEST_VERSION,
       patternType: SearchPatternType.standard,
@@ -170,21 +179,29 @@ class StreamAPIClient {
 
     const handlers: MessageHandlers = {
       ...messageHandlers,
-      matches: (type, eventSource, observer) => {
-        return observeMessages(type, eventSource).subscribe(data => { observer.next(data) })
-      }
+      // matches: (type, eventSource, observer) => {
+      //   return observeMessages(type, eventSource).subscribe(data => {
+      //     return observer.next(data)
+      //   })
+      // }
     }
-    const fn: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
-      tap(val => console.log(`START ${val}`)),
-      skip(start),
-      tap(val => console.log(`SKIP ${val}`)),
-      take(perPage),
-      switchAggregateSearchResults,
-      tap(val => console.log(`AGGREGATE ${val}`))
-    )
-    const r = search(of(`${query}`), opts, handlers).pipe(fn)
-    r.subscribe(obs => console.log('result count', obs.results.length))
-    const res = r.toPromise()
-    return res
+    return search(of(query), opts, handlers).pipe(share())
   }
+
+  paginate(query: string, start: number = 0, perPage: number = 30): Observable<AggregateStreamingSearchResults> {
+    const fn: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
+      switchAggregateSearchResults,
+    )
+    const stream = this.doStream(query).pipe(fn)
+    return stream
+  }
+
+  search(query: string): Observable<SearchMatch[]> {
+    const fn: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
+      switchAggregateSearchResults,
+    )
+    const stream = this.doStream(query).pipe(fn, map((r: AggregateStreamingSearchResults) => r.results))
+    return stream
+  }
+
 }
