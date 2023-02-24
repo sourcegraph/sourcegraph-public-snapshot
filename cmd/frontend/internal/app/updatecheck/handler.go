@@ -14,6 +14,7 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -195,6 +196,7 @@ type pingRequest struct {
 	HomepagePanels                json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
 	Repositories                  json.RawMessage `json:"repositories"`
+	RepositorySizeHistogram       json.RawMessage `json:"repository_size_histogram"`
 	RetentionStatistics           json.RawMessage `json:"retentionStatistics"`
 	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage"`
 	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage"`
