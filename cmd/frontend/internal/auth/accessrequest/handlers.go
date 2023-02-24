@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
@@ -67,7 +67,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	_, err := db.AccessRequests().Create(r.Context(), &accessRequest)
 	if err == nil {
 		w.WriteHeader(http.StatusCreated)
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 			logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
 		}
 		return
@@ -85,7 +85,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		http.Error(w, "Request access failed unexpectedly.", http.StatusInternalServerError)
 	}
 
-	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
 	}
 }
