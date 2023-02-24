@@ -160,7 +160,7 @@ func TestFlushCollectSenderMaxSize(t *testing.T) {
 
 	opts := zoekt.SearchOptions{
 		UseDocumentRanks: true,
-		FlushWallTime:    100000000 * time.Millisecond,
+		FlushWallTime:    100 * time.Millisecond,
 	}
 
 	// Collect all search results in order they were sent to stream
