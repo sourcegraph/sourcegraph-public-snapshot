@@ -35,6 +35,10 @@ func (p *Person) Type() OwnerType {
 }
 
 func (p *Person) Identifier() string {
+	// Make found users match.
+	if p.User != nil {
+		return p.User.Username
+	}
 	return p.Handle + p.Email
 }
 

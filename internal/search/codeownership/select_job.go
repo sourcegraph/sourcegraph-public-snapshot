@@ -6,6 +6,8 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -28,15 +30,18 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	defer finish(alert, err)
 
 	var (
-		mu   sync.Mutex
-		errs error
+		mu           sync.Mutex
+		errs         error
+		hasSentAlert bool
 	)
 	dedup := result.NewDeduper()
 
-	rules := NewRulesCache(clients.Gitserver, clients.DB)
+	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
+	rules := NewRulesCache(ownService)
+	owners := NewOwnerCache(ownService)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, event.Results)
+		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, &owners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -51,11 +56,22 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 			}
 		}
 		event.Results = results
+
+		if len(event.Results) == 0 && !hasSentAlert {
+			hasSentAlert = true
+			alert = &search.Alert{
+				PrometheusType: "unowned_results_found",
+				Title:          "Some results didn't have an owner",
+				Description:    `To see which, run the same query with -file:has.owner() to see affected files.`,
+			}
+		}
+
 		mu.Unlock()
 		stream.Send(event)
 	})
 
-	alert, err = s.child.Run(ctx, clients, filteredStream)
+	// TODO: Don't drop.
+	_, err = s.child.Run(ctx, clients, filteredStream)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -83,6 +99,7 @@ func (s *selectOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func getCodeOwnersFromMatches(
 	ctx context.Context,
 	rules *RulesCache,
+	ownerCache *OwnerCache,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -100,10 +117,14 @@ matchesLoop:
 			continue matchesLoop
 		}
 		owners := file.FindOwners(mm.File.Path)
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue matchesLoop
+		resolvedOwners := make([]codeowners.ResolvedOwner, 0, len(owners))
+		for _, owner := range owners {
+			resolvedOwner, err := ownerCache.GetFromCacheOrFetch(ctx, mm.Repo.Name, owner)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				continue matchesLoop
+			}
+			resolvedOwners = append(resolvedOwners, resolvedOwner)
 		}
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{

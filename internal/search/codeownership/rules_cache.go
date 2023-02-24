@@ -6,8 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
@@ -23,10 +21,10 @@ type RulesCache struct {
 	mu sync.RWMutex
 }
 
-func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
+func NewRulesCache(ownService backend.OwnService) RulesCache {
 	return RulesCache{
 		rules:      make(map[RulesKey]*codeownerspb.File),
-		ownService: backend.NewOwnService(gs, db),
+		ownService: ownService,
 	}
 }
 

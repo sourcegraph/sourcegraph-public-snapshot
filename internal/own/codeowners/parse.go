@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var emailRegex = lazyregexp.New(`^\w+@[\w.]+$`)
+
 // Parse parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
@@ -36,15 +38,8 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
 		}
 		for _, ownerText := range owners {
-			var o codeownerspb.Owner
-			if strings.HasPrefix(ownerText, "@") {
-				o.Handle = strings.TrimPrefix(ownerText, "@")
-			} else {
-				// Note: we assume owner text is an email if it does not
-				// start with an `@` which would make it a handle.
-				o.Email = ownerText
-			}
-			r.Owner = append(r.Owner, &o)
+			o := ParseOwner(ownerText)
+			r.Owner = append(r.Owner, o)
 		}
 		rs = append(rs, &r)
 	}
@@ -52,6 +47,21 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 		return nil, err
 	}
 	return &codeownerspb.File{Rule: rs}, nil
+}
+
+func ParseOwner(ownerText string) *codeownerspb.Owner {
+	var o codeownerspb.Owner
+	if strings.HasPrefix(ownerText, "@") {
+		o.Handle = strings.TrimPrefix(ownerText, "@")
+	} else if emailRegex.MatchString(ownerText) {
+		// TODO: This detection needs to be improved.
+		// Note: we assume owner text is an email if it does not
+		// start with an `@` which would make it a handle.
+		o.Email = ownerText
+	} else {
+		o.Handle = ownerText
+	}
+	return &o
 }
 
 // parsing implements matching and parsing primitives for CODEOWNERS files

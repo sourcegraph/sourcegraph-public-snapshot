@@ -35,7 +35,9 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 		gitserverClient: g,
 		userStore:       db.Users(),
 		teamStore:       db.Teams(),
-		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
+		// TODO: Potentially long living struct, we don't do cache invalidation here.
+		// Might want to remove caching here and do that externally.
+		ownerCache: make(map[ownerKey]codeowners.ResolvedOwner),
 	}
 }
 
@@ -136,6 +138,7 @@ func (s *ownService) resolveOwner(ctx context.Context, handle, email string) (co
 	} else {
 		return nil, nil
 	}
+	// TODO: This should be populated with the right data from the user, ie their email and username.
 	resolvedOwner.SetOwnerData(handle, email)
 	return resolvedOwner, nil
 }

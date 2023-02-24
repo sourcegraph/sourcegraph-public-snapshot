@@ -2,11 +2,15 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -40,11 +44,73 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		errs error
 	)
 
-	rules := NewRulesCache(clients.Gitserver, clients.DB)
+	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
+	rules := NewRulesCache(ownService)
+	owners := NewOwnerCache(ownService)
+
+	// Resolve input strings to ResolvedOwners so we can match them.
+	var (
+		includeOwners []codeowners.ResolvedOwner
+		excludeOwners []codeowners.ResolvedOwner
+	)
+	for _, o := range s.includeOwners {
+		if o == "" {
+			includeOwners = append(includeOwners, &codeowners.Person{Handle: matchesAllOwner})
+			continue
+		}
+		owners, err := ownService.ResolveOwnersWithType(ctx, []*codeownerspb.Owner{codeowners.ParseOwner(strings.ToLower(o))})
+		if err != nil {
+			return nil, err
+		}
+		if len(owners) == 1 {
+			// Append teams of a user, if any.
+			if person, ok := owners[0].(*codeowners.Person); ok {
+				if person.User != nil {
+					teams, _, err := clients.DB.Teams().ListTeams(ctx, database.ListTeamsOpts{ForUserMember: person.User.ID})
+					if err != nil {
+						return nil, err
+					}
+					for _, team := range teams {
+						includeOwners = append(includeOwners, &codeowners.Team{Handle: team.Name, Team: team})
+					}
+				}
+			}
+			includeOwners = append(includeOwners, owners[0])
+		}
+	}
+	for _, o := range s.excludeOwners {
+		if o == "" {
+			excludeOwners = append(includeOwners, &codeowners.Person{Handle: matchesAllOwner})
+			continue
+		}
+		owners, err := ownService.ResolveOwnersWithType(ctx, []*codeownerspb.Owner{codeowners.ParseOwner(strings.ToLower(o))})
+		if err != nil {
+			return nil, err
+		}
+		if len(owners) == 1 {
+			// Append teams of a user, if any.
+			if person, ok := owners[0].(*codeowners.Person); ok {
+				if person.User != nil {
+					teams, _, err := clients.DB.Teams().ListTeams(ctx, database.ListTeamsOpts{ForUserMember: person.User.ID})
+					if err != nil {
+						return nil, err
+					}
+					for _, team := range teams {
+						includeOwners = append(includeOwners, &codeowners.Team{Handle: team.Name, Team: team})
+					}
+				}
+			}
+			excludeOwners = append(excludeOwners, owners[0])
+		}
+	}
+
+	for _, o := range includeOwners {
+		fmt.Printf("Include Owners #%+v\n", o)
+	}
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, &owners, includeOwners, excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -90,8 +156,9 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	rules *RulesCache,
+	ownersCache *OwnerCache,
 	includeOwners,
-	excludeOwners []string,
+	excludeOwners []codeowners.ResolvedOwner,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -112,13 +179,25 @@ matchesLoop:
 			continue matchesLoop
 		}
 		owners := file.FindOwners(mm.File.Path)
+		resolvedOwners := make([]codeowners.ResolvedOwner, 0, len(owners))
+		for _, owner := range owners {
+			resolvedOwner, err := ownersCache.GetFromCacheOrFetch(ctx, mm.Repo.Name, owner)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				continue matchesLoop
+			}
+			resolvedOwners = append(resolvedOwners, resolvedOwner)
+		}
 		for _, owner := range includeOwners {
-			if !containsOwner(owners, owner) {
+			// TODO: This doesn't work anymore since I added teams.
+			// if a team doesn't match, this returns, because includeOwners is
+			// AND. We want it to be OR though for [user, ...userTeams].
+			if !containsOwner(resolvedOwners, owner) {
 				continue matchesLoop
 			}
 		}
 		for _, notOwner := range excludeOwners {
-			if containsOwner(owners, notOwner) {
+			if containsOwner(resolvedOwners, notOwner) {
 				continue matchesLoop
 			}
 		}
@@ -132,21 +211,27 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners []*codeownerspb.Owner, owner string) bool {
-	if owner == "" {
+func containsOwner(owners []codeowners.ResolvedOwner, owner codeowners.ResolvedOwner) bool {
+	fmt.Printf("containsOwner %d\n", len(owners))
+	if owner.Identifier() == matchesAllOwner {
 		return len(owners) > 0
 	}
-	isHandle := strings.HasPrefix(owner, "@")
-	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))
 	for _, o := range owners {
-		if strings.ToLower(o.Handle) == owner {
-			return true
-		}
-		// Prefixing the search term with `@` indicates intent to match a handle,
-		// so we do not match email in that case.
-		if !isHandle && (strings.ToLower(o.Email) == owner) {
+		if equalOwners(o, owner) {
 			return true
 		}
 	}
 	return false
+}
+
+const matchesAllOwner = "owner-superlongrandomstringthatnooneshoulduse"
+
+func equalOwners(a, b codeowners.ResolvedOwner) (ok bool) {
+	defer func() {
+		fmt.Printf("Comparing owners %#+v %#+v: %t\n", a, b, ok)
+	}()
+	if a.Identifier() == matchesAllOwner || b.Identifier() == matchesAllOwner {
+		return true
+	}
+	return a.Identifier() == b.Identifier()
 }
