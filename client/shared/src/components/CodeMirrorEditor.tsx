@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/check-indentation */
-import { MutableRefObject, RefObject, useEffect, useMemo } from 'react'
+import React, { forwardRef, MutableRefObject, RefObject, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
@@ -72,6 +72,41 @@ export function useCodeMirror(
         [editorRef]
     )
 }
+
+export interface Editor {
+    focus(): void
+}
+
+/**
+ * Simple React component around useCodeMirror. Use this if you have a simple setup and/or need
+ * to render an editor conditionally.
+ */
+export const CodeMirrorEditor = React.memo(
+    forwardRef<Editor, { value: string; extensions?: Extension }>(({ value, extensions }, ref) => {
+        const containerRef = useRef<HTMLDivElement | null>(null)
+        const editorRef = useRef<EditorView | null>(null)
+        useCodeMirror(editorRef, containerRef, value, extensions)
+
+        useImperativeHandle(
+            ref,
+            () => ({
+                focus() {
+                    const editor = editorRef.current
+                    if (editor && !editor.hasFocus) {
+                        editor.focus()
+                        editor.dispatch({
+                            selection: { anchor: editor.state.doc.length },
+                            scrollIntoView: true,
+                        })
+                    }
+                },
+            }),
+            []
+        )
+
+        return <div ref={containerRef} />
+    })
+)
 
 /**
  * Create a {@link ChangeSpec} for replacing the current editor value. Returns `undefined` if the
