@@ -122,22 +122,39 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	store, err := r.db.AccessRequests().Transact(ctx)
+	r.db.WithTransact(ctx, func(tx database.DB) error {
+		store := tx.AccessRequests()
+
+		accessRequest, err := store.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		accessRequest.Status = args.Status
+		if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status}); err != nil {
+			return err
+		}
+		return nil
+	})
+	return &EmptyResponse{}, nil
+}
+
+func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*accessRequestResolver, error) {
+	// 🚨 SECURITY: Only site admins can see access requests.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
+
+	accessRequestID, err := unmarshalAccessRequestID(id)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = store.Done(err) }()
-
-	accessRequest, err := store.GetByID(ctx, id)
+	accessRequest, err := db.AccessRequests().GetByID(ctx, accessRequestID)
 	if err != nil {
 		return nil, err
 	}
 
-	accessRequest.Status = args.Status
-	if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status}); err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return &accessRequestResolver{accessRequest}, nil
 }
 
 func marshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }

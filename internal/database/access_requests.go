@@ -81,7 +81,7 @@ type AccessRequestStore interface {
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
 	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
-	Transact(ctx context.Context) (AccessRequestStore, error)
+	WithTransact(context.Context, func(AccessRequestStore) error) error
 	Done(error) error
 }
 
@@ -136,49 +136,48 @@ var (
 )
 
 func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var newAccessRequest *types.AccessRequest
+	err := s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		// We don't allow adding a new request_access with an email address that has already been
+		// verified by another user.
+		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
+		exists, _, err := basestore.ScanFirstBool(tx.Query(ctx, userExistsQuery))
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrCannotCreateAccessRequest{errorCodeUserWithEmailExists}
+		}
 
-	// We don't allow adding a new request_access with an email address that has already been
-	// verified by another user.
-	userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
-	exists, _, err := basestore.ScanFirstBool(tx.Query(ctx, userExistsQuery))
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, ErrCannotCreateAccessRequest{errorCodeUserWithEmailExists}
-	}
+		// We don't allow adding a new request_access with an email address that has already been used
+		accessRequestsExistsQuery := sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)
+		exists, _, err = basestore.ScanFirstBool(tx.Query(ctx, accessRequestsExistsQuery))
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
+		}
 
-	// We don't allow adding a new request_access with an email address that has already been used
-	accessRequestsExistsQuery := sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)
-	exists, _, err = basestore.ScanFirstBool(tx.Query(ctx, accessRequestsExistsQuery))
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, ErrCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
-	}
+		// Continue with creating the new access request.
+		createQuery := sqlf.Sprintf(
+			accessRequestInsertQuery,
+			sqlf.Join(accessRequestInsertColumns, ","),
+			accessRequest.Name,
+			accessRequest.Email,
+			accessRequest.AdditionalInfo,
+			types.AccessRequestStatusPending,
+			sqlf.Join(accessRequestColumns, ","),
+		)
+		data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
+		newAccessRequest = data
+		if err != nil {
+			return errors.Wrap(err, "scanning access_request")
+		}
 
-	// Continue with creating the new access request.
-	createQuery := sqlf.Sprintf(
-		accessRequestInsertQuery,
-		sqlf.Join(accessRequestInsertColumns, ","),
-		accessRequest.Name,
-		accessRequest.Email,
-		accessRequest.AdditionalInfo,
-		types.AccessRequestStatusPending,
-		sqlf.Join(accessRequestColumns, ","),
-	)
-	data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
-	if err != nil {
-		return nil, errors.Wrap(err, "scanning access_request")
-	}
-
-	return data, nil
+		return nil
+	})
+	return newAccessRequest, err
 }
 
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
@@ -249,19 +248,13 @@ func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilt
 	return nodes, nil
 }
 
-func (s *accessRequestStore) Transact(ctx context.Context) (AccessRequestStore, error) {
-	return s.transact(ctx)
-}
-
-func (s *accessRequestStore) transact(ctx context.Context) (*accessRequestStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &accessRequestStore{
-		Store:  txBase,
-		logger: s.logger,
-	}, nil
+func (s *accessRequestStore) WithTransact(ctx context.Context, f func(tx AccessRequestStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&accessRequestStore{
+			logger: s.logger,
+			Store:  tx,
+		})
+	})
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {

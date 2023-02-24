@@ -79,11 +79,11 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 			require.NoError(t, err)
 			accessRequests[index] = &types.AccessRequest{
 				ID:        id,
-				Name:      accessRequestResolver.Name(ctx),
-				Email:     accessRequestResolver.Email(ctx),
-				CreatedAt: accessRequestResolver.CreatedAt(ctx).Time,
+				Name:      accessRequestResolver.Name(),
+				Email:     accessRequestResolver.Email(),
+				CreatedAt: accessRequestResolver.CreatedAt().Time,
 			}
-			additionalInfo := accessRequestResolver.AdditionalInfo(ctx)
+			additionalInfo := accessRequestResolver.AdditionalInfo()
 			if additionalInfo != nil {
 				accessRequests[index].AdditionalInfo = *additionalInfo
 			}
@@ -95,7 +95,6 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 	newMockAccessRequestStore := func(t *testing.T, existing *types.AccessRequest, want *types.AccessRequest) database.AccessRequestStore {
 		mockStore := database.NewMockAccessRequestStore()
-		mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 		mockStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.AccessRequest, error) {
 			if id == existing.ID {
 				return existing, nil
@@ -206,5 +205,50 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 		_, err := rootResolver.SetAccessRequestStatus(ctx, &graphqlArgs)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), "access request with id 123 not found")
+	})
+}
+
+func TestAccessRequestNode(t *testing.T) {
+	mockAccessRequest := &types.AccessRequest{
+		ID:             1,
+		Email:          "a1@example.com",
+		Name:           "a1",
+		CreatedAt:      time.Now(),
+		AdditionalInfo: "af1",
+		Status:         types.AccessRequestStatusPending,
+	}
+	db := database.NewMockDB()
+
+	accessRequestStore := database.NewMockAccessRequestStore()
+	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
+
+	userStore := database.NewMockUserStore()
+	db.UsersFunc.SetDefaultReturn(userStore)
+	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `
+		query AccessRequestID($id: ID!){
+			node(id: $id) {
+				__typename
+				... on AccessRequest {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"node": {
+				"__typename": "AccessRequest",
+				"name": "a1"
+			}
+		}`,
+		Variables: map[string]any{
+			"id": string(marshalAccessRequestID(mockAccessRequest.ID)),
+		},
 	})
 }
