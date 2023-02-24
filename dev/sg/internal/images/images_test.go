@@ -41,7 +41,7 @@ func TestParseTag(t *testing.T) {
 		},
 		{
 			"from constructor",
-			images.MainBranchImageTag(mustTime(), "abcde", 1234),
+			images.BranchImageTag(mustTime(), "abcde", 1234, "main", ""),
 			&ParsedMainBranchImageTag{
 				Build:       1234,
 				Date:        "2006-01-02",

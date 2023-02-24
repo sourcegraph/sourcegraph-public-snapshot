@@ -24,7 +24,7 @@ func TestPermissionSyncJobsResolver(t *testing.T) {
 
 		db.PermissionSyncJobsFunc.SetDefaultReturn(jobsStore)
 
-		resolver, err := NewPermissionSyncJobsResolver(db, graphqlbackend.ListPermissionSyncJobsArgs{ConnectionResolverArgs: args})
+		resolver, err := NewPermissionsSyncJobsResolver(db, graphqlbackend.ListPermissionsSyncJobsArgs{ConnectionResolverArgs: args})
 		require.NoError(t, err)
 		jobs, err := resolver.Nodes(ctx)
 		require.NoError(t, err)
@@ -42,11 +42,11 @@ func TestPermissionSyncJobsResolver(t *testing.T) {
 		db.PermissionSyncJobsFunc.SetDefaultReturn(jobsStore)
 		db.ReposFunc.SetDefaultReturn(repoStore)
 
-		resolver, err := NewPermissionSyncJobsResolver(db, graphqlbackend.ListPermissionSyncJobsArgs{ConnectionResolverArgs: args})
+		resolver, err := NewPermissionsSyncJobsResolver(db, graphqlbackend.ListPermissionsSyncJobsArgs{ConnectionResolverArgs: args})
 		require.NoError(t, err)
 		jobs, err := resolver.Nodes(ctx)
 		require.NoError(t, err)
 		require.Len(t, jobs, 1)
-		require.Equal(t, marshalPermissionSyncJobID(1), jobs[0].ID())
+		require.Equal(t, marshalPermissionsSyncJobID(1), jobs[0].ID())
 	})
 }

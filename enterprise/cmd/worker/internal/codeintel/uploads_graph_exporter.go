@@ -23,6 +23,7 @@ func (j *graphExporterJob) Description() string {
 
 func (j *graphExporterJob) Config() []env.Config {
 	return []env.Config{
+		uploads.RankingConfigInst,
 		uploads.ConfigExportInst,
 	}
 }

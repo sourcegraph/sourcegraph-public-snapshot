@@ -849,6 +849,121 @@ func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
 	}
 }
 
+func TestServer_ExternalServiceNamespaces(t *testing.T) {
+	githubConnection := `
+{
+	"url": "https://github.com",
+	"token": "secret-token",
+}`
+
+	githubSource := types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(githubConnection),
+	}
+
+	gitlabConnection := `
+	{
+	   "url": "https://gitlab.com",
+	   "token": "abc",
+	}`
+
+	gitlabSource := types.ExternalService{
+		Kind:         extsvc.KindGitLab,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+	}
+
+	githubOrg := &types.ExternalServiceNamespace{
+		ID:         1,
+		Name:       "sourcegraph",
+		ExternalID: "aaaaa",
+	}
+
+	testCases := []struct {
+		name   string
+		kind   string
+		config string
+		result *protocol.ExternalServiceNamespacesResult
+		src    repos.Source
+		assert typestest.ReposAssertion
+		err    string
+	}{
+		{
+			name:   "discoverable source - github",
+			kind:   extsvc.KindGitHub,
+			config: githubConnection,
+			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
+			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
+		},
+		{
+			name:   "unavailable - github.com",
+			kind:   extsvc.KindGitHub,
+			config: githubConnection,
+			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), true, githubOrg),
+			result: &protocol.ExternalServiceNamespacesResult{Error: "fake source unavailable"},
+			err:    "fake source unavailable",
+		},
+		{
+			name:   "discoverable source - github - empty namespaces result",
+			kind:   extsvc.KindGitHub,
+			config: githubConnection,
+			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false),
+			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{}, Error: ""},
+		},
+		{
+			name:   "source does not implement discoverable source",
+			kind:   extsvc.KindGitLab,
+			config: gitlabConnection,
+			src:    repos.NewFakeSource(&gitlabSource, nil, &types.Repo{}),
+			result: &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
+			err:    repos.UnimplementedDiscoverySource,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			logger := logtest.Scoped(t)
+
+			s := &Server{
+				Logger: logger,
+			}
+
+			mockNewGenericSourcer = func() repos.Sourcer {
+				return repos.NewFakeSourcer(nil, tc.src)
+			}
+			defer func() { mockNewGenericSourcer = nil }()
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+
+			cli := repoupdater.NewClient(srv.URL)
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			args := protocol.ExternalServiceNamespacesArgs{
+				Kind:   tc.kind,
+				Config: tc.config,
+			}
+
+			res, err := cli.ExternalServiceNamespaces(ctx, args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have err: %q, want: %q", have, want)
+			}
+
+			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
+				t.Fatalf("response mismatch(-have, +want): %s", diff)
+			}
+		})
+	}
+}
+
 type testSource struct {
 	fn func() error
 }

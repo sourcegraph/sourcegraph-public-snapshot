@@ -161,6 +161,11 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
+	n, ok := r.Node.(*externalServiceNamespaceResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -324,8 +329,8 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 	return n, ok
 }
 
-func (r *NodeResolver) ToPermissionSyncJob() (PermissionSyncJobResolver, bool) {
-	n, ok := r.Node.(PermissionSyncJobResolver)
+func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionsSyncJobResolver)
 	return n, ok
 }
 

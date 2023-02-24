@@ -1,5 +1,5 @@
 import { Config } from '@backstage/config'
-import { SearchService, createService, createDummySearch } from '../client'
+import { SearchService, createService } from '../client'
 import { parserForType, ParserFunction } from './parsers'
 import { EntityProvider, EntityProviderConnection } from '@backstage/plugin-catalog-backend'
 
@@ -7,7 +7,7 @@ export type EntityType = 'file' | 'grpc' | 'graphql'
 
 abstract class BaseEntityProvider implements EntityProvider {
     private connection?: EntityProviderConnection
-    private readonly sourcegraph: SearchService
+    private sourcegraph?: SearchService
     private query: string
     private endpoint: string
     private disabled: boolean = false
@@ -24,13 +24,13 @@ abstract class BaseEntityProvider implements EntityProvider {
         this.entityParseFn = parserForType(entityType)
         this.query = queryConfig.getOptionalString('query') ?? ''
 
-        // TODO(@burmudar): remove - only temporary
-        console.log(entityType, 'QUERY', this.query)
         this.disabled = this.query == ''
-        if (this.disabled) {
-            this.sourcegraph = createDummySearch()
+        if (!this.disabled) {
+            createService({ endpoint: this.endpoint, token, sudoUsername }).then(
+                service => (this.sourcegraph = service.Search)
+            )
         } else {
-            this.sourcegraph = createService({ endpoint: this.endpoint, token, sudoUsername }).Search
+            console.error("query '' is invalid - provider will be in disabled state")
         }
     }
 
@@ -52,12 +52,14 @@ abstract class BaseEntityProvider implements EntityProvider {
 
     async fullMutation() {
         // TODO(@burmudar): remove - only temporary
-        console.log(`STARTING ${this.entityType} SEARCH ⌛`)
-        const results = await this.sourcegraph.searchQuery(this.query)
-        console.log(`${results.length} items matched query ${this.query}`)
-        console.log(`END ${this.entityType} SEARCH ⌛`)
+        if (this.disabled) {
+            console.log(`${this.getProviderName} is disabled`)
+            return
+        }
+        const results = await this.sourcegraph?.searchQuery(this.query)
+        console.log(`${results?.length} items matched query ${this.query}`)
 
-        const entities = this.entityParseFn(results, this.getProviderName())
+        const entities = this.entityParseFn(results ?? [], this.getProviderName())
 
         await this.connection?.applyMutation({
             type: 'full',

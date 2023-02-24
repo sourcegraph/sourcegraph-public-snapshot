@@ -16,7 +16,6 @@ describe('SiteInitPage', () => {
     test('site already initialized', () => {
         const result = renderWithBrandedContext(
             <SiteInitPage
-                isLightTheme={true}
                 needsSiteInit={false}
                 authenticatedUser={null}
                 context={{
@@ -36,7 +35,6 @@ describe('SiteInitPage', () => {
         expect(
             renderWithBrandedContext(
                 <SiteInitPage
-                    isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
                     context={{
@@ -53,7 +51,6 @@ describe('SiteInitPage', () => {
         expect(
             renderWithBrandedContext(
                 <SiteInitPage
-                    isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={null}
                     context={{

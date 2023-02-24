@@ -5,7 +5,6 @@ import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
@@ -20,9 +19,9 @@ const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.d
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-        ThemeProps,
         TelemetryProps {
     value: string
+    isLightTheme: boolean
 
     actions?: EditorAction[]
 
@@ -80,7 +79,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     }
 
     private get effectiveValue(): string {
-        return this.props.value
+        return this.state.value === undefined ? this.props.value : this.state.value
     }
 
     private get isDirty(): boolean {
@@ -110,11 +109,13 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             )
         }
 
-        const { className, ...otherProps } = this.props
+        const { className, blockNavigationIfDirty, ...otherProps } = this.props
 
         return (
             <div className={className || ''}>
-                <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                {blockNavigationIfDirty && (
+                    <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                )}
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}

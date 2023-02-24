@@ -23,64 +23,65 @@ import (
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
-type PermissionSyncJobState string
+type PermissionsSyncJobState string
 
-// PermissionSyncJobState constants.
+// PermissionsSyncJobState constants.
 const (
-	PermissionSyncJobStateQueued     PermissionSyncJobState = "queued"
-	PermissionSyncJobStateProcessing PermissionSyncJobState = "processing"
-	PermissionSyncJobStateErrored    PermissionSyncJobState = "errored"
-	PermissionSyncJobStateFailed     PermissionSyncJobState = "failed"
-	PermissionSyncJobStateCompleted  PermissionSyncJobState = "completed"
+	PermissionsSyncJobStateQueued     PermissionsSyncJobState = "queued"
+	PermissionsSyncJobStateProcessing PermissionsSyncJobState = "processing"
+	PermissionsSyncJobStateErrored    PermissionsSyncJobState = "errored"
+	PermissionsSyncJobStateFailed     PermissionsSyncJobState = "failed"
+	PermissionsSyncJobStateCompleted  PermissionsSyncJobState = "completed"
+	PermissionsSyncJobStateCanceled   PermissionsSyncJobState = "canceled"
 )
 
 // ToGraphQL returns the GraphQL representation of the worker state.
-func (s PermissionSyncJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+func (s PermissionsSyncJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
-type PermissionSyncJobPriority int
+type PermissionsSyncJobPriority int
 
 const (
-	LowPriorityPermissionSync    PermissionSyncJobPriority = 0
-	MediumPriorityPermissionSync PermissionSyncJobPriority = 5
-	HighPriorityPermissionSync   PermissionSyncJobPriority = 10
+	LowPriorityPermissionsSync    PermissionsSyncJobPriority = 0
+	MediumPriorityPermissionsSync PermissionsSyncJobPriority = 5
+	HighPriorityPermissionsSync   PermissionsSyncJobPriority = 10
 )
 
-func (p PermissionSyncJobPriority) ToString() string {
+func (p PermissionsSyncJobPriority) ToString() string {
 	switch p {
-	case HighPriorityPermissionSync:
+	case HighPriorityPermissionsSync:
 		return "HIGH"
-	case MediumPriorityPermissionSync:
+	case MediumPriorityPermissionsSync:
 		return "MEDIUM"
-	case LowPriorityPermissionSync:
+	case LowPriorityPermissionsSync:
 		fallthrough
 	default:
 		return "LOW"
 	}
 }
 
-// PermissionSyncJobReasonGroup combines multiple permission sync job trigger
+// PermissionsSyncJobReasonGroup combines multiple permission sync job trigger
 // reasons into groups with similar grounds.
-type PermissionSyncJobReasonGroup string
+type PermissionsSyncJobReasonGroup string
 
-// PermissionSyncJobReasonGroup constants.
+// PermissionsSyncJobReasonGroup constants.
 const (
-	PermissionSyncJobReasonGroupManual      PermissionSyncJobReasonGroup = "MANUAL"
-	PermissionSyncJobReasonGroupWebhook     PermissionSyncJobReasonGroup = "WEBHOOK"
-	PermissionSyncJobReasonGroupSchedule    PermissionSyncJobReasonGroup = "SCHEDULE"
-	PermissionSyncJobReasonGroupSourcegraph PermissionSyncJobReasonGroup = "SOURCEGRAPH"
-	PermissionSyncJobReasonGroupUnknown     PermissionSyncJobReasonGroup = "UNKNOWN"
+	PermissionsSyncJobReasonGroupManual      PermissionsSyncJobReasonGroup = "MANUAL"
+	PermissionsSyncJobReasonGroupWebhook     PermissionsSyncJobReasonGroup = "WEBHOOK"
+	PermissionsSyncJobReasonGroupSchedule    PermissionsSyncJobReasonGroup = "SCHEDULE"
+	PermissionsSyncJobReasonGroupSourcegraph PermissionsSyncJobReasonGroup = "SOURCEGRAPH"
+	PermissionsSyncJobReasonGroupUnknown     PermissionsSyncJobReasonGroup = "UNKNOWN"
 )
 
-type PermissionSyncJobReason string
+type PermissionsSyncJobReason string
 
-// ResolveGroup returns a PermissionSyncJobReasonGroup for a given
-// PermissionSyncJobReason or PermissionSyncJobReasonGroupUnknown if the reason
+// ResolveGroup returns a PermissionsSyncJobReasonGroup for a given
+// PermissionsSyncJobReason or PermissionsSyncJobReasonGroupUnknown if the reason
 // doesn't belong to any of groups.
-func (r PermissionSyncJobReason) ResolveGroup() PermissionSyncJobReasonGroup {
+func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
 	switch r {
 	case ReasonManualRepoSync,
 		ReasonManualUserSync:
-		return PermissionSyncJobReasonGroupManual
+		return PermissionsSyncJobReasonGroupManual
 	case ReasonGitHubUserEvent,
 		ReasonGitHubUserAddedEvent,
 		ReasonGitHubUserRemovedEvent,
@@ -92,66 +93,66 @@ func (r PermissionSyncJobReason) ResolveGroup() PermissionSyncJobReasonGroup {
 		ReasonGitHubOrgMemberRemovedEvent,
 		ReasonGitHubRepoEvent,
 		ReasonGitHubRepoMadePrivateEvent:
-		return PermissionSyncJobReasonGroupWebhook
+		return PermissionsSyncJobReasonGroupWebhook
 	case ReasonUserOutdatedPermissions,
 		ReasonUserNoPermissions,
 		ReasonRepoOutdatedPermissions,
 		ReasonRepoNoPermissions,
 		ReasonRepoUpdatedFromCodeHost:
-		return PermissionSyncJobReasonGroupSchedule
+		return PermissionsSyncJobReasonGroupSchedule
 	case ReasonUserEmailRemoved,
 		ReasonUserEmailVerified,
 		ReasonUserAddedToOrg,
 		ReasonUserRemovedFromOrg,
 		ReasonUserAcceptedOrgInvite:
-		return PermissionSyncJobReasonGroupSourcegraph
+		return PermissionsSyncJobReasonGroupSourcegraph
 	default:
-		return PermissionSyncJobReasonGroupUnknown
+		return PermissionsSyncJobReasonGroupUnknown
 	}
 }
 
 const (
 	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
 	// syncs.
-	ReasonUserOutdatedPermissions PermissionSyncJobReason = "REASON_USER_OUTDATED_PERMS"
-	ReasonUserNoPermissions       PermissionSyncJobReason = "REASON_USER_NO_PERMS"
-	ReasonRepoOutdatedPermissions PermissionSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
-	ReasonRepoNoPermissions       PermissionSyncJobReason = "REASON_REPO_NO_PERMS"
-	ReasonRepoUpdatedFromCodeHost PermissionSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
+	ReasonUserOutdatedPermissions PermissionsSyncJobReason = "REASON_USER_OUTDATED_PERMS"
+	ReasonUserNoPermissions       PermissionsSyncJobReason = "REASON_USER_NO_PERMS"
+	ReasonRepoOutdatedPermissions PermissionsSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
+	ReasonRepoNoPermissions       PermissionsSyncJobReason = "REASON_REPO_NO_PERMS"
+	ReasonRepoUpdatedFromCodeHost PermissionsSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
 
 	// ReasonUserEmailRemoved and below are reasons of permission syncs scheduled due
 	// to Sourcegraph internal events.
-	ReasonUserEmailRemoved      PermissionSyncJobReason = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified     PermissionSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAddedToOrg        PermissionSyncJobReason = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg    PermissionSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite PermissionSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonUserEmailRemoved      PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified     PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg        PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg    PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
 
 	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
 	// webhook events.
-	ReasonGitHubUserEvent                  PermissionSyncJobReason = "REASON_GITHUB_USER_EVENT"
-	ReasonGitHubUserAddedEvent             PermissionSyncJobReason = "REASON_GITHUB_USER_ADDED_EVENT"
-	ReasonGitHubUserRemovedEvent           PermissionSyncJobReason = "REASON_GITHUB_USER_REMOVED_EVENT"
-	ReasonGitHubUserMembershipAddedEvent   PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
-	ReasonGitHubUserMembershipRemovedEvent PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
-	ReasonGitHubTeamAddedToRepoEvent       PermissionSyncJobReason = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
-	ReasonGitHubTeamRemovedFromRepoEvent   PermissionSyncJobReason = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
-	ReasonGitHubOrgMemberAddedEvent        PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
-	ReasonGitHubOrgMemberRemovedEvent      PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
-	ReasonGitHubRepoEvent                  PermissionSyncJobReason = "REASON_GITHUB_REPO_EVENT"
-	ReasonGitHubRepoMadePrivateEvent       PermissionSyncJobReason = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
+	ReasonGitHubUserEvent                  PermissionsSyncJobReason = "REASON_GITHUB_USER_EVENT"
+	ReasonGitHubUserAddedEvent             PermissionsSyncJobReason = "REASON_GITHUB_USER_ADDED_EVENT"
+	ReasonGitHubUserRemovedEvent           PermissionsSyncJobReason = "REASON_GITHUB_USER_REMOVED_EVENT"
+	ReasonGitHubUserMembershipAddedEvent   PermissionsSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
+	ReasonGitHubUserMembershipRemovedEvent PermissionsSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
+	ReasonGitHubTeamAddedToRepoEvent       PermissionsSyncJobReason = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
+	ReasonGitHubTeamRemovedFromRepoEvent   PermissionsSyncJobReason = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
+	ReasonGitHubOrgMemberAddedEvent        PermissionsSyncJobReason = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
+	ReasonGitHubOrgMemberRemovedEvent      PermissionsSyncJobReason = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
+	ReasonGitHubRepoEvent                  PermissionsSyncJobReason = "REASON_GITHUB_REPO_EVENT"
+	ReasonGitHubRepoMadePrivateEvent       PermissionsSyncJobReason = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
 
 	// ReasonManualRepoSync and below are reasons of permission syncs triggered
 	// manually.
-	ReasonManualRepoSync PermissionSyncJobReason = "REASON_MANUAL_REPO_SYNC"
-	ReasonManualUserSync PermissionSyncJobReason = "REASON_MANUAL_USER_SYNC"
+	ReasonManualRepoSync PermissionsSyncJobReason = "REASON_MANUAL_REPO_SYNC"
+	ReasonManualUserSync PermissionsSyncJobReason = "REASON_MANUAL_USER_SYNC"
 )
 
 type PermissionSyncJobOpts struct {
-	Priority          PermissionSyncJobPriority
+	Priority          PermissionsSyncJobPriority
 	InvalidateCaches  bool
 	ProcessAfter      time.Time
-	Reason            PermissionSyncJobReason
+	Reason            PermissionsSyncJobReason
 	TriggeredByUserID int32
 	NoPerms           bool
 }
@@ -302,7 +303,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	defer func() {
 		err = tx.Done(err)
 	}()
-	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, State: PermissionSyncJobStateQueued, NotCanceled: true, NullProcessAfter: true}
+	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, State: PermissionsSyncJobStateQueued, NotCanceled: true, NullProcessAfter: true}
 	syncJobs, err := tx.List(ctx, opts)
 	if err != nil {
 		return err
@@ -389,8 +390,8 @@ type ListPermissionSyncJobOpts struct {
 	ID                  int
 	UserID              int
 	RepoID              int
-	Reason              PermissionSyncJobReason
-	State               PermissionSyncJobState
+	Reason              PermissionsSyncJobReason
+	State               PermissionsSyncJobState
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
@@ -497,9 +498,9 @@ func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
 
 type PermissionSyncJob struct {
 	ID                 int
-	State              PermissionSyncJobState
+	State              PermissionsSyncJobState
 	FailureMessage     *string
-	Reason             PermissionSyncJobReason
+	Reason             PermissionsSyncJobReason
 	CancellationReason *string
 	TriggeredByUserID  int32
 	QueuedAt           time.Time
@@ -516,7 +517,7 @@ type PermissionSyncJob struct {
 	RepositoryID int
 	UserID       int
 
-	Priority         PermissionSyncJobPriority
+	Priority         PermissionsSyncJobPriority
 	NoPerms          bool
 	InvalidateCaches bool
 

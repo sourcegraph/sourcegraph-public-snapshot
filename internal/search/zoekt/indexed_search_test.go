@@ -277,9 +277,9 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fakeZoekt := &searchbackend.FakeSearcher{
-				Result: &zoekt.SearchResult{Files: tt.args.results},
-				Repos:  zoektRepos,
+			fakeZoekt := &searchbackend.FakeStreamer{
+				Results: []*zoekt.SearchResult{{Files: tt.args.results}},
+				Repos:   zoektRepos,
 			}
 
 			var resultTypes result.Types

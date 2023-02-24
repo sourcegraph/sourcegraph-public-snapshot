@@ -12,7 +12,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
@@ -26,7 +25,6 @@ interface Props
         ModeSpec,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ThemeProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
@@ -48,7 +46,6 @@ function useBlobPanelViews({
     filePath,
     repoID,
     settingsCascade,
-    isLightTheme,
     platformContext,
     useCodeIntel,
     telemetryService,
@@ -85,7 +82,6 @@ function useBlobPanelViews({
                               <ReferencesPanel
                                   settingsCascade={settingsCascade}
                                   platformContext={platformContext}
-                                  isLightTheme={isLightTheme}
                                   extensionsController={extensionsController}
                                   telemetryService={telemetryService}
                                   key="references"
@@ -132,7 +128,6 @@ function useBlobPanelViews({
             position,
             settingsCascade,
             platformContext,
-            isLightTheme,
             extensionsController,
             telemetryService,
             fetchHighlightedFileLineRanges,
