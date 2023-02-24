@@ -164,7 +164,12 @@ func (s *store) InsertPathCountInputs(
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	parentGraphKey := strings.Split(derivativeGraphKey, "-")[0]
+	parts := strings.Split(derivativeGraphKey, "-")
+	if len(parts) < 2 {
+		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	}
+	// Remove last segment, which indicates the current time bucket
+	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
@@ -261,6 +266,11 @@ func (s *store) InsertPathRanks(
 		}},
 	)
 	defer endObservation(1, observation.Args{})
+
+	// Validation for testing (test graph keys do not have hyphens)
+	if parts := strings.Split(derivativeGraphKey, "-"); len(parts) < 2 {
+		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, derivativeGraphKey, batchSize))
 	if err != nil {
