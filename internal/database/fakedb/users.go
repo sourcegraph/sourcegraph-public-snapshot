@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Users partially implements database.UserStore using in-memory storage.
@@ -43,4 +44,20 @@ func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 		return nil, database.ErrNoCurrentUser
 	}
 	return a.User(ctx, users)
+}
+
+func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+	if len(opts.UserIDs) == 0 {
+		return nil, errors.New("not implemented")
+	}
+	ret := []*types.User{}
+	for _, wantID := range opts.UserIDs {
+		for _, u := range users.list {
+			u := u
+			if u.ID == wantID {
+				ret = append(ret, &u)
+			}
+		}
+	}
+	return ret, nil
 }

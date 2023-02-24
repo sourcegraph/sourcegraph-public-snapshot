@@ -32,6 +32,7 @@ const (
 	PermissionsSyncJobStateErrored    PermissionsSyncJobState = "errored"
 	PermissionsSyncJobStateFailed     PermissionsSyncJobState = "failed"
 	PermissionsSyncJobStateCompleted  PermissionsSyncJobState = "completed"
+	PermissionsSyncJobStateCanceled   PermissionsSyncJobState = "canceled"
 )
 
 // ToGraphQL returns the GraphQL representation of the worker state.

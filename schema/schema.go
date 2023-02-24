@@ -684,6 +684,12 @@ type ExcludedGitoliteRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
 }
+type ExcludedOtherRepo struct {
+	// Name description: The name of a Other repo ("my-repo") to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a Other repo to exclude from mirroring.
+	Pattern string `json:"pattern,omitempty"`
+}
 type ExistingChangesetSpec struct {
 	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
 	BaseRepository string `json:"baseRepository"`
@@ -1590,12 +1596,16 @@ type OrganizationInvitations struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	Repos []string `json:"repos"`
+	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
+	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
+	Repos   []string             `json:"repos"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
 	//
 	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	//
+	// Note: These patterns are ignored if using src-expose / src-serve.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }

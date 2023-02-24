@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	mockRankingGraphKey    = "mockDev"
+	mockRankingGraphKey    = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
 	mockRankingBatchNumber = 10
 )
 
@@ -144,7 +144,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -154,7 +154,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Finally! Test InsertPathRanks
-	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, mockRankingGraphKey, 10)
+	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, mockRankingGraphKey+"-123", 10)
 	if err != nil {
 		t.Fatalf("unexpected error inserting path ranks: %s", err)
 	}
@@ -217,7 +217,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -463,11 +463,11 @@ func getRankingPathCountsInputs(
 	db database.DB,
 	graphKey string,
 ) (repository, documentPath string, count int, err error) {
-	query := fmt.Sprintf(
-		`SELECT repository, document_path, count FROM codeintel_ranking_path_counts_inputs WHERE graph_key = '%s'`,
+	query := sqlf.Sprintf(
+		`SELECT repository, document_path, count FROM codeintel_ranking_path_counts_inputs WHERE graph_key LIKE %s || '%%'`,
 		graphKey,
 	)
-	rows, err := db.QueryContext(ctx, query)
+	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return "", "", 0, err
 	}
