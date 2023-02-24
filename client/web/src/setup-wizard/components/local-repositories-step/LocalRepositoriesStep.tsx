@@ -9,9 +9,9 @@ import { CustomNextButton } from '../setup-steps'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
-//TODO: Node error & loading state
-//TODO: Connect to api --> Validate repo selection
-//TODO: Skip logic
+// TODO: Node error & loading state
+// TODO: Connect to api --> Validate repo selection
+// TODO: Skip logic
 
 interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -19,21 +19,18 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
     const fileInputReference = useRef<HTMLInputElement>(null)
     const [repos, setRepos] = useState<File[]>([])
-    //store data as an edit state?? or use data.externalServices.nodes?
+    // store data as an edit state?? or use data.externalServices.nodes?
 
     // TODO: Implement BE solution for repo absolute file grab & connection
-    const handleFileInputChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            const files = event.target.files
-            if (files) {
-                setRepos([...Object.values(files)])
-            }
-            if (!files) {
-                return
-            }
-        },
-        [repos]
-    )
+    const handleFileInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files
+        if (files) {
+            setRepos([...Object.values(files)])
+        }
+        if (!files) {
+            return
+        }
+    }, [])
 
     const onLocalRepoSelect = useCallback(() => {
         fileInputReference.current?.click()
