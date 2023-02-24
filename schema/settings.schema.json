@@ -55,14 +55,6 @@
             "pointer": true
           }
         },
-        "searchStats": {
-          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",

@@ -2179,8 +2179,6 @@ type SettingsExperimentalFeatures struct {
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
 	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
-	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
-	SearchStats *bool `json:"searchStats,omitempty"`
 	// SetupWizard description: Experimental setup wizard
 	SetupWizard *bool `json:"setupWizard,omitempty"`
 	// ShowCodeMonitoringLogs description: Shows code monitoring logs tab.
@@ -2251,7 +2249,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
-	delete(m, "searchStats")
 	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
