@@ -181,9 +181,8 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         <>
                             <span>
                                 <Icon aria-hidden={true} svgPath={mdiAlertCircleOutline} className="text-danger" />{' '}
-                                There are pending out-of-band migrations that need to complete in the latest version,
-                                please go to <Link to="/site-admin/migrations?filters=pending">migrations</Link> to
-                                check details.
+                                There are pending out-of-band migrations that need to complete, please go to{' '}
+                                <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check details.
                             </span>
                             <ul className="mt-2 pl-3">
                                 {data.site.upgradeReadiness.requiredOutOfBandMigrations.map(oobm => (
@@ -194,7 +193,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     ) : (
                         <Text>
                             <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There are no
-                            pending out-of-band migrations that need to complete in the latest version.
+                            pending out-of-band migrations that need to complete.
                         </Text>
                     )}
                 </>
