@@ -1,8 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
-// TODO(sashaostrikov): move all properties to PermissionsSyncJob and make a storybook more elaborate
 export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
-    fragment PermissionsSyncJob on PermissionSyncJob {
+    fragment PermissionsSyncJob on PermissionsSyncJob {
         id
         state
         subject {
@@ -31,8 +30,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         permissionsFound
     }
 
-    query PermissionSyncJobs($first: Int, $last: Int, $after: String, $before: String) {
-        permissionSyncJobs(first: $first, last: $last, after: $after, before: $before) {
+    query PermissionsSyncJobs($first: Int, $last: Int, $after: String, $before: String) {
+        permissionsSyncJobs(first: $first, last: $last, after: $after, before: $before) {
             totalCount
             pageInfo {
                 hasNextPage

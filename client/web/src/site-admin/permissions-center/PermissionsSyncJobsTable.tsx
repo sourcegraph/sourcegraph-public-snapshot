@@ -10,7 +10,7 @@ import {
     ConnectionList,
     ConnectionLoading,
 } from '../../components/FilteredConnection/ui'
-import { PermissionsSyncJob, PermissionSyncJobsResult, PermissionSyncJobsVariables } from '../../graphql-operations'
+import { PermissionsSyncJob, PermissionsSyncJobsResult, PermissionsSyncJobsVariables } from '../../graphql-operations'
 
 import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
 import { ChangesetCloseNode } from './PermissionsSyncJobsTableItem'
@@ -27,15 +27,15 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     }, [telemetryService])
 
     const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
-        PermissionSyncJobsResult,
-        PermissionSyncJobsVariables,
+        PermissionsSyncJobsResult,
+        PermissionsSyncJobsVariables,
         PermissionsSyncJob
     >({
         query: PERMISSIONS_SYNC_JOBS_QUERY,
         variables: {
             first: 20,
         },
-        getConnection: ({ data }) => data?.permissionSyncJobs || undefined,
+        getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
         options: { pollInterval: 5000 },
     })
 
