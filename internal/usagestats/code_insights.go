@@ -38,7 +38,7 @@ func (p *pingLoader) generate(ctx context.Context, db database.DB) *types.CodeIn
 	for name, loadFunc := range p.operations {
 		err := loadFunc(ctx, db, stats, p.now)
 		if err != nil {
-			logger.Error("insights pings loading error, skipping ping", log.String("name", name))
+			logger.Error("insights pings loading error, skipping ping", log.String("name", name), log.Error(err))
 		}
 	}
 	return stats
@@ -684,9 +684,11 @@ WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
 GROUP BY argument;
 `
 
+// getDataExportClickCountSql depends on the InsightsDataExportRequest ping,
+// which is defined in enterprise/cmd/frontend/internal/insights/httpapi/export.go
 const getDataExportClickCountSql = `
 SELECT COUNT(*) FROM event_logs
-WHERE name = 'InsightsDataExportClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);
+WHERE name = 'InsightsDataExportRequest' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
