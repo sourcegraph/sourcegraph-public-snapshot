@@ -568,6 +568,16 @@ func TestRepoHasFileContent(t *testing.T) {
 			mkHead(repoC),
 		},
 	}, {
+		name: "one negated unindexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Negated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoD),
+		},
+	}, {
 		name: "path but no content",
 		filters: []query.RepoHasFileContentArgs{{
 			Path:    "pathC",
