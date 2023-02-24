@@ -154,9 +154,11 @@ func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 	defer f.mu.Unlock()
 	if f.collectSender != nil {
 		// Ignore first events with no files, like stats-only events
-		if f.firstEvent[endpoint] && len(event.Files) > 0 {
+		if f.firstEvent[endpoint] {
 			f.collectSender.Send(event)
-			delete(f.firstEvent, endpoint)
+			if len(event.Files) > 0 {
+				delete(f.firstEvent, endpoint)
+			}
 		} else {
 			f.collectSender.SendOverflow(event)
 		}
