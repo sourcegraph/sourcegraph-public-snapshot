@@ -165,7 +165,7 @@ export const RequestAccessPage: React.FunctionComponent<{}> = () => {
                         path="done"
                         element={
                             <Text data-testid="request-access-post-submit">
-                                Thank you! We notified the admin of this instance of your request.
+                                Thank you! We notified the admin of your request.
                             </Text>
                         }
                     />
