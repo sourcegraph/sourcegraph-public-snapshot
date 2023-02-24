@@ -17,7 +17,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests. [#47466](https://github.com/sourcegraph/sourcegraph/pull/47466)
+- Kubernetes Deployments: Introduced a new Kubernetes deployment option ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) to deploy Sourcegraph with Kustomize. [#46755](https://github.com/sourcegraph/sourcegraph/issues/46755)
+- Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base cluster that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources.[#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
 
 ### Changed
 
@@ -34,6 +36,13 @@ All notable changes to Sourcegraph are documented in this file.
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
 - The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+
+## 4.5.1
+
+### Changed
+
+- Updated git to version 2.39.2 to address [reported security vulnerabilities](https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/) [#47892](https://github.com/sourcegraph/sourcegraph/pull/47892/files)
+- Updated curl to 7.88.1 to address [reported security vulnerabilities](https://curl.se/docs/CVE-2022-42915.html) [#48144](https://github.com/sourcegraph/sourcegraph/pull/48144)
 
 ## 4.5.0
 

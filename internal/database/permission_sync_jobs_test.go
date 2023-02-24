@@ -240,6 +240,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	for _, job := range allUser1Jobs {
 		if job.ID == 1 {
 			require.True(t, job.Cancel)
+			require.Equal(t, PermissionsSyncJobStateCanceled, job.State)
 		} else {
 			require.False(t, job.Cancel)
 		}
