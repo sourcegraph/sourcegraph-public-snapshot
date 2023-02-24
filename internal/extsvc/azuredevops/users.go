@@ -12,7 +12,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const VISUAL_STUDIO_APP_URL = "https://app.vssps.visualstudio.com"
+const VISUAL_STUDIO_APP_URL = "https://app.vssps.visualstudio.com/"
 
 // GetAuthorizedProfile is used to return information about the currently authorized user. Should
 // only be used for Azure Services (https://dev.azure.com).
