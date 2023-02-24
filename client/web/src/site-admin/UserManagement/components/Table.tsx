@@ -6,6 +6,8 @@ import {
     mdiArrowRightTop,
     mdiArrowRightBottom,
     mdiChevronDown,
+    mdiChevronRight,
+    mdiChevronLeft,
     mdiFilterRemoveOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
@@ -27,7 +29,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'
-import { DropdownPagination, DropdownPaginationProps } from './DropdownPagination'
 
 import styles from './Table.module.scss'
 
@@ -125,7 +126,7 @@ interface TableProps<T> {
     }
     onClearAllFiltersClick?: () => void
     onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
-    pagination?: DropdownPaginationProps
+    pagination?: PaginationProps
 }
 
 export function Table<T>({
@@ -185,15 +186,19 @@ export function Table<T>({
         [actions, columns]
     )
 
-    const onOffsetChange = useCallback(
-        (offset: number) => {
-            if (pagination) {
-                pagination.onOffsetChange(offset)
-                setSelection([])
-            }
-        },
-        [pagination]
-    )
+    const onPreviousPage = useCallback(() => {
+        if (pagination) {
+            pagination.onPrevious()
+            setSelection([])
+        }
+    }, [pagination])
+
+    const onNextPage = useCallback(() => {
+        if (pagination) {
+            pagination.onNext()
+            setSelection([])
+        }
+    }, [pagination])
 
     const onLimitChange = useCallback(
         (newLimit: number) => {
@@ -210,7 +215,12 @@ export function Table<T>({
             <div className="mb-4 d-flex justify-content-between">
                 {selectable && <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />}
                 {pagination && (
-                    <DropdownPagination {...pagination} onOffsetChange={onOffsetChange} onLimitChange={onLimitChange} />
+                    <Pagination
+                        {...pagination}
+                        onPrevious={onPreviousPage}
+                        onLimitChange={onLimitChange}
+                        onNext={onNextPage}
+                    />
                 )}
             </div>
             <table className={styles.table}>
@@ -444,5 +454,72 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
                 </ul>
             </PopoverContent>
         </Popover>
+    )
+}
+
+interface PaginationProps {
+    total: number
+    offset: number
+    limit: number
+    limitOptions?: { value: number; label: string }[]
+    onPrevious: () => void
+    onNext: () => void
+    onLimitChange: (limit: number) => void
+    formatLabel?: (start: number, end: number, total: number) => string
+}
+
+const Pagination: React.FunctionComponent<PaginationProps> = ({
+    onPrevious,
+    limit,
+    offset,
+    total,
+    limitOptions,
+    onLimitChange,
+    onNext,
+    formatLabel = (start: number, end: number, total: number) => `${start}-${end} of ${total}`,
+}) => {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+    return (
+        <div className={classNames('d-flex justify-content-between align-items-center', styles.pagination)}>
+            <Button className="mr-2" onClick={onPrevious}>
+                <Icon aria-label="Show previous icon" svgPath={mdiChevronLeft} />
+            </Button>
+            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                <PopoverTrigger as={Text} className="m-0 p-0 cursor-pointer">
+                    <Text as="span">{formatLabel(Math.min(offset + 1), Math.min(offset + limit, total), total)}</Text>
+                </PopoverTrigger>
+                <PopoverContent focusLocked={false}>
+                    <ul className="list-unstyled mb-0">
+                        {limitOptions?.map(item => (
+                            <Button
+                                className="d-flex cursor-pointer"
+                                key={item.value}
+                                variant="link"
+                                as="li"
+                                outline={true}
+                                onClick={() => {
+                                    onLimitChange(item.value)
+                                    setIsOpen(false)
+                                }}
+                            >
+                                <span
+                                    className={classNames(
+                                        item.value === limit ? 'font-weight-medium' : 'font-weight-normal ml-3'
+                                    )}
+                                >
+                                    {item.value === limit && '✓'} {item.label}
+                                </span>
+                            </Button>
+                        ))}
+                    </ul>
+                </PopoverContent>
+            </Popover>
+            <Button onClick={onNext}>
+                <Icon aria-label="Show next icon" svgPath={mdiChevronRight} />
+            </Button>
+        </div>
     )
 }

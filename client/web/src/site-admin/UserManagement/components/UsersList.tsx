@@ -187,7 +187,16 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     const onLimitChange = useCallback((newLimit: number) => setFilters({ limit: newLimit.toString() }), [setFilters])
 
     const users = (data || previousData)?.site.users
-    const onOffsetChange = useCallback((offset: number) => setFilters({ offset: offset.toString() }), [setFilters])
+    const onPreviousPage = useCallback(
+        () => setFilters({ offset: Math.max(0, offset - limit).toString() }),
+        [limit, offset, setFilters]
+    )
+    const onNextPage = useCallback(() => {
+        const newOffset = offset + limit
+        if (users?.totalCount && users?.totalCount >= newOffset) {
+            setFilters({ offset: newOffset.toString() })
+        }
+    }, [limit, offset, setFilters, users?.totalCount])
 
     return (
         <div className="position-relative">
@@ -221,11 +230,25 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                         sortBy={{ key: filters.orderBy, descending: !!descending }}
                         data={users.nodes}
                         pagination={{
-                            onOffsetChange,
+                            onPrevious: onPreviousPage,
+                            onNext: onNextPage,
                             onLimitChange,
                             formatLabel: (start: number, end: number, total: number) =>
                                 `Showing ${start}-${end} of ${total} users`,
-                            options: [LIMIT, LIMIT * 2, LIMIT * 4],
+                            limitOptions: [
+                                {
+                                    label: 'Show 25 per page',
+                                    value: LIMIT,
+                                },
+                                {
+                                    label: 'Show 50 per page',
+                                    value: LIMIT * 2,
+                                },
+                                {
+                                    label: 'Show 100 per page',
+                                    value: LIMIT * 4,
+                                },
+                            ],
                             total: users.totalCount,
                             offset,
                             limit,
