@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,7 +47,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		configDeps = connection.Maven.Dependencies
 	}
 
-	allowList, blockList, err := repos.NewAllowBlockLists(connection.Maven.Blocklist)
+	allowList, blockList, err := packagerepos.NewFilterLists(connection.Maven.Blocklist)
 	if err != nil {
 		panic(fmt.Sprintf("failed to build allow/block lists: %v", err))
 	}

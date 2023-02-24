@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -33,7 +33,7 @@ type vcsPackagesSyncer struct {
 	// so it can have any random value.
 	placeholder          reposource.VersionedPackage
 	configDeps           []string
-	allowList, blockList []repos.PackageMatcher
+	allowList, blockList []packagerepos.PackageMatcher
 	source               packagesSource
 	svc                  dependenciesService
 }
@@ -149,7 +149,7 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		return nil
 	}
 
-	if !repos.IsVersionedPackageAllowed(dep.PackageSyntax(), dep.PackageVersion(), s.allowList, s.blockList) {
+	if !packagerepos.IsVersionedPackageAllowed(dep.PackageSyntax(), dep.PackageVersion(), s.allowList, s.blockList) {
 		return nil
 	}
 
@@ -359,7 +359,7 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	defer func() {
 		filteredVersions := versions[:0]
 		for _, version := range versions {
-			if repos.IsVersionedPackageAllowed(packageName, version, s.allowList, s.blockList) {
+			if packagerepos.IsVersionedPackageAllowed(packageName, version, s.allowList, s.blockList) {
 				filteredVersions = append(filteredVersions, version)
 			}
 		}

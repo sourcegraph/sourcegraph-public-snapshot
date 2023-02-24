@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -453,7 +455,26 @@ FROM package_repo_filters
 `
 
 func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
-	s.db.ExecResult(ctx, sqlf.Sprintf(createPackageRepoFilter, filter.Behaviour, filter.ExternalService, pq.B))
+	var matcherJSON driver.Value
+	if filter.NameMatcher != nil {
+		matcherJSON, err = json.Marshal(filter.NameMatcher)
+		err = errors.Wrapf(err, "error marshalling %+v", filter.NameMatcher)
+	} else if filter.VersionMatcher != nil {
+		matcherJSON, err = json.Marshal(filter.VersionMatcher)
+		err = errors.Wrapf(err, "error marshalling %+v", filter.VersionMatcher)
+	}
+	if err != nil {
+		return err
+	}
+
+	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(createPackageRepoFilter, filter.Behaviour, filter.ExternalService, matcherJSON))
+	if err != nil {
+		return errors.Wrap(err, "error inserting package repo filter")
+	}
+	if n, _ := result.RowsAffected(); n != 1 {
+		return errors.New("package repo filter already exists")
+	}
+	return nil
 }
 
 const createPackageRepoFilter = `

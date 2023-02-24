@@ -100,4 +100,5 @@ func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackag
 }
 
 func (s *Service) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+	return s.store.CreatePackageRepoFilter(ctx, filter)
 }
