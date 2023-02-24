@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// AccountData stores information of a Perforce Server account.
+type AccountData struct {
+	ExternalUsername string `json:"externalUsername"`
+}
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
@@ -40,17 +46,29 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			DisplayName:     displayName,
 			EmailIsVerified: true,
 		}
+		var externalID = ""
 		if optionalExternalID.Present() {
-			accountSpec := extsvc.AccountSpec{
-				ServiceType: "scim",
-				// TODO: provide proper service ID
-				ServiceID: "TODO",
-				AccountID: optionalExternalID.Value(),
-			}
-			user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{})
-		} else {
-			user, err = h.db.Users().Create(r.Context(), newUser)
+			externalID = optionalExternalID.Value()
 		}
+		accountSpec := extsvc.AccountSpec{
+			ServiceType: "scim",
+			// TODO: provide proper service ID
+			ServiceID: "TODO",
+			AccountID: externalID,
+		}
+
+		// Add account data
+		data := AccountData{
+			ExternalUsername: requestedUsername,
+		}
+		serializedAccountData, err := json.Marshal(data)
+		if err != nil {
+			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		}
+		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{
+			Data: extsvc.NewUnencryptedData(serializedAccountData),
+		})
+
 		if err != nil {
 			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
 				code := dbErr.Code()
@@ -65,7 +83,6 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	if err != nil {
 		return scim.Resource{}, err
 	}
-	attributes["userName"] = user.Username
 
 	var now = time.Now()
 

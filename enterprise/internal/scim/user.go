@@ -135,7 +135,7 @@ func createCoreSchema() schema.Schema {
 	}
 }
 
-// updateUser updates a user in the database.
+// updateUser updates a user in the database. This is meant to be used in a transaction.
 func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
 	usernameUpdate := ""
 	requestedUsername := extractUsername(newUser.Attributes)

@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -116,11 +117,18 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 		emailMap = append(emailMap, map[string]interface{}{"value": email})
 	}
 
+	// Convert account data
+	var accountData AccountData
+	err := json.Unmarshal([]byte(user.SCIMAccountData), &accountData)
+	if err != nil {
+		return scim.Resource{}
+	}
+
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
 		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{
-			"userName":   user.Username,
+			"userName":   accountData.ExternalUsername,
 			"externalId": user.SCIMExternalID,
 			"name": map[string]interface{}{
 				"givenName":  firstName,
