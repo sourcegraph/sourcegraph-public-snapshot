@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { from } from 'rxjs'
-import { switchMap, tap } from 'rxjs/operators'
+import { switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 
@@ -13,8 +13,7 @@ import { FlatExtensionHostAPI } from './contract'
 export const haveInitialExtensionsLoaded = memoizeObservable(
     (extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>) =>
         from(extensionHostAPI).pipe(
-            switchMap(extensionHost => wrapRemoteObservable(extensionHost.haveInitialExtensionsLoaded())),
-            tap(console.log)
+            switchMap(extensionHost => wrapRemoteObservable(extensionHost.haveInitialExtensionsLoaded()))
         ),
     () => 'haveInitialExtensionsLoaded' // only one instance
 )
