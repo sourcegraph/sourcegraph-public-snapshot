@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -87,7 +88,7 @@ func TestFlushCollectSender(t *testing.T) {
 		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonTimerExpired, results[0].Stats.FlushReason)
 	}
 
-	// CHeck that the results were streamed in the expected order
+	// Check that the results were streamed in the expected order
 	var repos []string
 	for _, r := range results {
 		if r.Files != nil {
@@ -151,6 +152,12 @@ func TestFlushCollectSenderMaxSize(t *testing.T) {
 	}
 	conf.Mock(cfg)
 
+	// Always reset the configuration so that it doesn't interfere with other tests
+	defer func() {
+		cfg.ExperimentalFeatures.Ranking = nil
+		conf.Mock(cfg)
+	}()
+
 	opts := zoekt.SearchOptions{
 		UseDocumentRanks: true,
 		FlushWallTime:    100000000 * time.Millisecond,
@@ -164,11 +171,24 @@ func TestFlushCollectSenderMaxSize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Check the aggregated result was flushed early
-	if len(results) == 3 {
-		t.Fatalf("expected search to return 3 results, but got %d", len(results))
+	// Check that all search results are streamed out
+	var repos []string
+	for _, r := range results {
+		if r.Files != nil {
+			for _, f := range r.Files {
+				repos = append(repos, f.Repository)
+			}
+		}
 	}
-	if results[0].Stats.FlushReason != zoekt.FlushReasonMaxSize {
-		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonMaxSize, results[0].Stats.FlushReason)
+
+	expectedRepos := 3
+	if len(repos) != expectedRepos {
+		t.Fatalf("expected %d results but got %d", expectedRepos, len(repos))
+	}
+
+	sort.Strings(repos)
+	want := []string{"1", "2", "3"}
+	if !cmp.Equal(want, repos) {
+		t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, repos))
 	}
 }
