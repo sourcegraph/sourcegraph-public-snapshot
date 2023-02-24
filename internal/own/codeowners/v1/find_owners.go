@@ -9,17 +9,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (r *Rule) Match(path string) bool {
+	r.compileOnce.Do(func() {
+		r.compiledPattern, r.compileErr = compile(r.GetPattern())
+	})
+	if r.compileErr != nil {
+		return false
+	}
+	return r.compiledPattern.match(path)
+}
+
 // FindOwners returns the Owners associated with given path as per this CODEOWNERS file.
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.
 func (x *File) FindOwners(path string) []*Owner {
 	var owners []*Owner
 	for _, rule := range x.GetRule() {
-		glob, err := compile(rule.GetPattern())
-		if err != nil {
-			continue
-		}
-		if glob.match(path) {
+		if rule.Match(path) {
 			owners = rule.GetOwner()
 		}
 	}

@@ -34,7 +34,7 @@ type codeownershipJob struct {
 }
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
 	var (
@@ -45,6 +45,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
 	cache := NewCache(ownService)
 
+	tr.AddEvent("StartEvaluateInput")
 	// Resolve input strings to ResolvedOwners so we can match them.
 	var (
 		includeOwners = make(codeowners.ResolvedOwners, len(s.includeOwners))
@@ -88,6 +89,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 			excludeOwners.Add(o)
 		}
 	}
+	tr.AddEvent("EndEvaluateInput")
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
@@ -140,8 +142,12 @@ func applyCodeOwnershipFiltering(
 	includeOwners,
 	excludeOwners []codeowners.ResolvedOwner,
 	matches []result.Match,
-) ([]result.Match, error) {
-	var errs error
+) (_ []result.Match, errs error) {
+	tr, ctx := trace.New(ctx, "applyCodeOwnershipFiltering", "")
+	defer func() {
+		tr.SetError(errs)
+		tr.Finish()
+	}()
 
 	filtered := matches[:0]
 

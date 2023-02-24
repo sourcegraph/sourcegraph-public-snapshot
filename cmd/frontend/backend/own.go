@@ -5,7 +5,6 @@ import (
 	"context"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,7 +52,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 		teamStore:       db.Teams(),
 		// TODO: Potentially long living struct, we don't do cache invalidation here.
 		// Might want to remove caching here and do that externally.
-		ownerCache: make(map[OwnerKey]codeowners.ResolvedOwner),
+		// ownerCache: make(map[OwnerKey]codeowners.ResolvedOwner),
 	}
 }
 
@@ -63,8 +62,8 @@ type ownService struct {
 	teamStore       database.TeamStore
 	db              database.DB
 
-	mu         sync.RWMutex
-	ownerCache map[OwnerKey]codeowners.ResolvedOwner
+	// mu         sync.RWMutex
+	// ownerCache map[OwnerKey]codeowners.ResolvedOwner
 }
 
 type OwnerKey struct {
@@ -115,14 +114,6 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 	// If all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
 		ownerIdentifier := OwnerKey{resCtx, po.Handle, po.Email}
-		s.mu.RLock()
-		cached, ok := s.ownerCache[ownerIdentifier]
-		s.mu.RUnlock()
-		if ok {
-			resolved.Add(cached)
-			continue
-		}
-
 		resolvedOwner, err := resolveWithContext(ctx, s.db, po.Handle, po.Email, resCtx)
 		if err != nil {
 			return nil, err
@@ -130,9 +121,6 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 		dedup, _ := resolved.Add(resolvedOwner)
 		// Store reference to deduplicated resolvedOwner.
 		ret[ownerIdentifier] = dedup
-		s.mu.Lock()
-		s.ownerCache[ownerIdentifier] = dedup
-		s.mu.Unlock()
 	}
 
 	return ret, nil
