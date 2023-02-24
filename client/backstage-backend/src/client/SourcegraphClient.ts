@@ -2,12 +2,11 @@ import { getGraphQLClient, GraphQLClient } from '@sourcegraph/http-client'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { generateCache } from '@sourcegraph/shared/src/backend/apolloCache'
 import { UserQuery, Query, SearchQuery, SearchResult, SearchResults } from './Query'
-import { SearchEvent, SearchMatch, StreamSearchOptions, search, LATEST_VERSION, MessageHandlers, messageHandlers, observeMessages, switchAggregateSearchResults, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { SearchEvent, SearchMatch, StreamSearchOptions, search, LATEST_VERSION, MessageHandlers, messageHandlers, switchAggregateSearchResults, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import 'whatwg-fetch'
 import { of, OperatorFunction, Observable, pipe } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 export interface Config {
   endpoint: string

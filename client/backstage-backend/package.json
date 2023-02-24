@@ -30,7 +30,7 @@
     "babel-jest": "^28.1.3",
     "babel-loader": "^9.1.0",
     "esbuild": "^0.17.8",
-    "whatwg-fetch": "^3.6.2",
+    "jsdom": "^20.0.3",
     "winston": "^3.8.2"
   },
   "dependencies": {
