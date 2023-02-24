@@ -1,4 +1,4 @@
-# Using Helm
+# Sourcegraph Helm Charts
 
 Helm offers a simple deployment process on Kubernetes.
 
