@@ -15,10 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) AccessRequests(ctx context.Context, args *struct {
+type AccessRequestsArgs struct {
 	database.AccessRequestsFilterArgs
 	graphqlutil.ConnectionResolverArgs
-}) (*graphqlutil.ConnectionResolver[*accessRequestResolver], error) {
+}
+
+func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequestsArgs) (*graphqlutil.ConnectionResolver[*accessRequestResolver], error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -122,7 +124,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	r.db.WithTransact(ctx, func(tx database.DB) error {
+	err = r.db.WithTransact(ctx, func(tx database.DB) error {
 		store := tx.AccessRequests()
 
 		accessRequest, err := store.GetByID(ctx, id)
@@ -136,6 +138,11 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 
