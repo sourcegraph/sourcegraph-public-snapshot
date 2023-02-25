@@ -23,7 +23,7 @@ To learn more about Sourcegraph, check out [Sourcegraph 101](../../../getting-st
 
 This page describes how to launch a verified and pre-configured Sourcegraph instance in just ~10 minutes using our one-click CloudFormation template and standard AMIs.
 
-<small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
+<small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) installation options or our [script-install](../single-node/script.md) installation options.</small>
 
 ---
 
