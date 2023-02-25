@@ -5,7 +5,6 @@ import * as H from 'history'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -49,7 +48,6 @@ export interface CodeViewToolbarClassProps {
 
 export interface CodeViewToolbarProps
     extends PlatformContextProps<'settings' | 'requestGraphQL'>,
-        ExtensionsControllerProps,
         TelemetryProps,
         CodeViewToolbarClassProps {
     sourcegraphURL: string

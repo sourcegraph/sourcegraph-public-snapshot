@@ -11,8 +11,6 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 
-import { createExtensionHost } from './extensionHost'
-import { getInlineExtensions } from './inlineExtensionsService'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 
 export interface SourcegraphIntegrationURLs {
@@ -22,8 +20,7 @@ export interface SourcegraphIntegrationURLs {
     sourcegraphURL: string
 
     /**
-     * The base URL where assets will be fetched from (CSS, extension host
-     * worker bundle, ...)
+     * The base URL where assets will be fetched from (CSS, bundle, ...)
      *
      * This is the sourcegraph URL in most cases, but may be different for
      * native code hosts that self-host the integration bundle.
@@ -46,7 +43,7 @@ export interface BrowserPlatformContext extends PlatformContext {
  */
 export function createPlatformContext(
     { urlToFile }: Pick<CodeHost, 'urlToFile'>,
-    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
+    { sourcegraphURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<{
@@ -115,7 +112,6 @@ export function createPlatformContext(
         },
         requestGraphQL,
         getGraphQLClient: getBrowserGraphQLClient,
-        createExtensionHost: () => createExtensionHost({ assetsURL }),
         urlToFile: ({ rawRepoName, ...target }, context) => {
             // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.
             // Construct URL to file on code host, if possible.
@@ -126,8 +122,6 @@ export function createPlatformContext(
             return `${sourcegraphURL}${toPrettyBlobURL(target)}`
         },
         sourcegraphURL,
-        clientApplication: 'other',
-        getStaticExtensions: () => getInlineExtensions(),
     }
     return context
 }

@@ -42,7 +42,6 @@ import {
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
-    MaybeLoadingResult,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -56,9 +55,7 @@ import {
 } from '@sourcegraph/common'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -77,12 +74,12 @@ import { background } from '../../../browser-extension/web-extension-api/runtime
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { UserSettingsURLResult } from '../../../graphql-operations'
-import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
+import { getHover, getActions } from '../../codeintel/codeintel'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext, createPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
@@ -282,7 +279,6 @@ export interface CodeIntelligenceProps extends TelemetryProps {
         'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
-    extensionsController: Controller
 }
 
 export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
@@ -304,12 +300,11 @@ export const getExistingOrCreateOverlayMount = (codeHostName: string, container:
 function initCodeIntelligence({
     mutations,
     codeHost,
-    platformContext,
-    extensionsController,
     render,
     telemetryService,
+    platformContext,
     repoSyncErrors,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'telemetryService'> & {
     render: Renderer
     mutations: Observable<MutationRecordLike[]>
     repoSyncErrors: Observable<boolean>
@@ -336,47 +331,10 @@ function initCodeIntelligence({
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement })),
             filter(property('hoverOverlayElement', isDefined))
         ),
-        getHover: ({ line, character, part, ...rest }) =>
-            concat(
-                [{ isLoading: true, result: null }],
-                from(extensionsController.extHostAPI)
-                    .pipe(
-                        withLatestFrom(repoSyncErrors),
-                        switchMap(([extensionHost, hasRepoSyncError]) =>
-                            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                            hasRepoSyncError
-                                ? of({ isLoading: true, result: null })
-                                : wrapRemoteObservable(
-                                      extensionHost.getHover(
-                                          toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                      )
-                                  )
-                        )
-                    )
-                    .pipe(
-                        map(
-                            ({ isLoading, result: hoverMerged }): MaybeLoadingResult<HoverMerged | null> => ({
-                                isLoading,
-                                result: hoverMerged || null,
-                            })
-                        )
-                    )
-            ),
-        getDocumentHighlights: ({ line, character, part, ...rest }) =>
-            from(extensionsController.extHostAPI).pipe(
-                withLatestFrom(repoSyncErrors),
-                switchMap(([extensionHost, hasRepoSyncError]) =>
-                    // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                    hasRepoSyncError
-                        ? of([])
-                        : wrapRemoteObservable(
-                              extensionHost.getDocumentHighlights(
-                                  toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                              )
-                          )
-                )
-            ),
-        getActions: () => of([]),
+        // TODO(sqs): for getHover and getDocumentHighlights, respect comment "Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)" and use repoSyncErrors
+        getHover: params => getHover(platformContext, params),
+        getDocumentHighlights: ({ line, character, part, ...rest }) => of([]),
+        getActions: params => getActions(platformContext, params),
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
@@ -439,8 +397,6 @@ function initCodeIntelligence({
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        extensionsController={extensionsController}
-                        platformContext={platformContext}
                         location={H.createLocation(window.location)}
                         useBrandedLogo={true}
                     />
@@ -674,7 +630,6 @@ const isSafeToContinueCodeIntel = async ({
 export async function handleCodeHost({
     mutations,
     codeHost,
-    extensionsController,
     platformContext,
     telemetryService,
     render,
@@ -740,7 +695,6 @@ export async function handleCodeHost({
 
     const { hoverifier, subscription } = initCodeIntelligence({
         codeHost,
-        extensionsController,
         platformContext,
         telemetryService,
         render,
@@ -895,8 +849,6 @@ export async function handleCodeHost({
                                     fileInfoOrError={error}
                                     sourcegraphURL={sourcegraphURL}
                                     telemetryService={telemetryService}
-                                    platformContext={platformContext}
-                                    extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
                                     // The bound function is constant
                                     onSignInClose={nextSignInClose}
@@ -1025,8 +977,6 @@ export async function handleCodeHost({
                         fileInfoOrError={diffOrBlobInfo}
                         sourcegraphURL={sourcegraphURL}
                         telemetryService={telemetryService}
-                        platformContext={platformContext}
-                        extensionsController={extensionsController}
                         buttonProps={toolbarButtonProps}
                         location={H.createLocation(window.location)}
                         // The bound function is constant
@@ -1117,16 +1067,8 @@ export function injectCodeIntelligenceToCodeHost(
     isExtension: boolean
 ): Subscription {
     const subscriptions = new Subscription()
-    const { platformContext, extensionsController } = initializeExtensions(
-        codeHost,
-        { sourcegraphURL, assetsURL },
-        isExtension
-    )
+    const platformContext = createPlatformContext(codeHost, { sourcegraphURL, assetsURL }, isExtension)
     const { requestGraphQL } = platformContext
-
-    if (extensionsController !== null) {
-        subscriptions.add(extensionsController)
-    }
 
     const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
 
@@ -1175,11 +1117,10 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else if (isCodeHostReady && extensionsController !== null) {
+            } else if (isCodeHostReady) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,
-                    extensionsController,
                     platformContext,
                     telemetryService,
                     render: renderWithThemeProvider as Renderer,

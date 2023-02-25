@@ -1,7 +1,5 @@
-import { Badged, Hover, MarkupContent, AggregableBadge } from 'sourcegraph'
-
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
-import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'
+import { Badged, Hover, MarkupContent, AggregableBadge, Range as PlainRange } from '@sourcegraph/extension-api-types'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
@@ -13,7 +11,7 @@ export interface HoverMerged {
 }
 
 /** Create a merged hover from the given individual hovers. */
-export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
+export function fromHoverMerged(values: (Badged<Hover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     const aggregatedBadges = new Map<string, AggregableBadge>()
     let range: PlainRange | undefined

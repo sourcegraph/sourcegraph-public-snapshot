@@ -12,7 +12,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlayProps } from './HoverOverlay'
 
 const history = createMemoryHistory()
-const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
 const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'settings'> = {
     settings: of({ final: {}, subjects: [] }),
 }
@@ -20,7 +19,6 @@ const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'settings'> = {
 export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     platformContext: NOOP_PLATFORM_CONTEXT,
     overlayPosition: { top: 16, left: 16 },
     settingsCascade: EMPTY_SETTINGS_CASCADE,

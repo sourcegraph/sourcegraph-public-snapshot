@@ -84,6 +84,7 @@ export class CodeIntelTooltip implements Tooltip {
             viewState: 'references',
         })
         const noDefinitionFound = definition.locations.length === 0
+        // TODO(sqs): XXXXXXXXXXXXXXXXXXXX
         const actions: ActionItemAction[] = [
             {
                 active: true,

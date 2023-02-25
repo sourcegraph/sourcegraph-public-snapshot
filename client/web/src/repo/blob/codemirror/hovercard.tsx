@@ -118,10 +118,8 @@ export class HovercardView implements TooltipView {
                         // Blob props
                         location={props.location}
                         onHoverShown={props.onHoverShown}
-                        platformContext={props.platformContext}
                         settingsCascade={props.settingsCascade}
                         telemetryService={props.telemetryService}
-                        extensionsController={props.extensionsController}
                         // Hover props
                         actionsOrError={actionsOrError}
                         hoverOrError={hoverOrError}

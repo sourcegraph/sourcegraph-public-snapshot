@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
@@ -57,32 +56,3 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
 }
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
-
-/**
- * Returns the URL and type to perform the "go to ..." navigation.
- */
-export const getGoToURL = (
-    actionsOrError: WebHoverOverlayProps['actionsOrError'],
-    location: Location
-): {
-    url: string
-    actionType: 'definition' | 'reference'
-} | null => {
-    const definitionAction =
-        Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'goToDefinition' && !a.disabledWhen)
-
-    const referenceAction =
-        Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
-
-    const action = definitionAction || referenceAction
-    if (!action) {
-        return null
-    }
-
-    const url = urlForClientCommandOpen(action.action, location.hash)
-    if (!url) {
-        return null
-    }
-
-    return { url, actionType: action === definitionAction ? 'definition' : 'reference' }
-}

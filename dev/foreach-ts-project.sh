@@ -18,7 +18,6 @@ DIRS=(
   client/client-api
   client/codeintellify
   client/common
-  client/extension-api
   client/extension-api-types
   client/http-client
   client/jetbrains

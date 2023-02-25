@@ -11,7 +11,6 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@sourcegraph/extension-api-types": "workspace:*",
-    "sourcegraph": "workspace:*"
+    "@sourcegraph/extension-api-types": "workspace:*"
   }
 }

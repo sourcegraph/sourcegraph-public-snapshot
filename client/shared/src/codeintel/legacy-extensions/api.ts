@@ -1,18 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Observable, Unsubscribable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
+import { Location } from '@sourcegraph/extension-api-types'
 import type { GraphQLResult } from '@sourcegraph/http-client'
 
 import type { PlatformContext } from '../../platform/context'
 import type { Settings, SettingsCascade } from '../../settings/settings'
 
-/**
- * Represents a location inside a resource, such as a line
- * inside a text file.
- */
-export class Location {
-    constructor(public readonly uri: URL, public readonly range?: Range) {}
-}
+export type { Location }
 
 /**
  * A text document, such as a file in a repository.
@@ -77,79 +72,6 @@ export interface DocumentFilter {
  * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
  */
 export type DocumentSelector = (string | DocumentFilter)[]
-
-export interface Directory {
-    /**
-     * The URI of the directory.
-     *
-     * @todo The format of this URI will be changed in the future. It must not be relied on.
-     */
-    readonly uri: URL
-}
-
-/**
- * A viewer for directories.
- *
- * This API is experimental and subject to change.
- */
-export interface DirectoryViewer {
-    readonly type: 'DirectoryViewer'
-
-    /**
-     * The directory shown in the directory viewer.
-     * This currently only exposes the URI of the directory.
-     */
-    readonly directory: Directory
-}
-
-/**
- * A workspace root is a directory that has been added to a workspace. A workspace can have zero or more roots.
- * Often, each root is the root directory of a repository.
- */
-export interface WorkspaceRoot {
-    /**
-     * The URI of the root.
-     *
-     * @todo The format of this URI will be changed in the future. It must not be relied on.
-     *
-     * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
-     */
-    readonly uri: URL
-}
-
-/**
- * The full configuration value, containing all settings for the current subject.
- *
- * @template C The configuration schema.
- */
-export interface Configuration<C extends object> {
-    /**
-     * Returns a value at a specific key in the configuration.
-     *
-     * @template C The configuration schema.
-     * @template K Valid key on the configuration object.
-     * @param key The name of the configuration property to get.
-     * @returns The configuration value, or `undefined`.
-     */
-    get<K extends keyof C>(key: K): Readonly<C[K]> | undefined
-
-    /**
-     * Updates the configuration value for the given key. The updated configuration value is persisted by the
-     * client.
-     *
-     * @template C The configuration schema.
-     * @template K Valid key on the configuration object.
-     * @param key The name of the configuration property to update.
-     * @param value The new value, or undefined to remove it.
-     * @returns A promise that resolves when the client acknowledges the update.
-     */
-    update<K extends keyof C>(key: K, value: C[K] | undefined): Promise<void>
-
-    /**
-     * The configuration value as a plain object.
-     */
-    readonly value: Readonly<C>
-}
 
 /**
  * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The
@@ -382,7 +304,6 @@ export interface DocumentHighlightProvider {
 }
 
 export interface Position {
-    isEqual(position: Position): boolean
     readonly line: number
     readonly character: number
 }
@@ -390,7 +311,6 @@ export interface Position {
 export interface Range {
     readonly start: Position
     readonly end: Position
-    contains(position: Position | Range): boolean
 }
 
 // NOTE(2022-09-08) We store global state at the module level because that was
@@ -437,31 +357,6 @@ export type SettingsGetter = <T>(setting: string) => T | undefined
 export function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): SettingsGetter {
     return <T>(setting: string): T | undefined =>
         settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
-}
-
-export interface ExtensionContext {
-    /**
-     * An object that maintains subscriptions to resources that should be freed when the extension is
-     * deactivated.
-     *
-     * When an extension is deactivated, first its exported `deactivate` function is called (if one exists).
-     * The `deactivate` function may be async, in which case deactivation blocks on it finishing. Next,
-     * regardless of whether the `deactivate` function finished successfully or rejected with an error, all
-     * unsubscribables passed to {@link ExtensionContext#subscriptions#add} are unsubscribed from.
-     *
-     * (An extension is deactivated when the user disables it, or after an arbitrary time period if its
-     * activationEvents no longer evaluate to true.)
-     */
-    subscriptions: {
-        /**
-         * Mark a resource's teardown function to be called when the extension is deactivated.
-         *
-         * @param unsubscribable An {@link Unsubscribable} that frees (unsubscribes from) a resource, or a
-         * plain function that does the same. Async functions are not supported. (If deactivation requires
-         * async operations, make the `deactivate` function async; that is supported.)
-         */
-        add: (unsubscribable: Unsubscribable | (() => void)) => void
-    }
 }
 
 export function logTelemetryEvent(

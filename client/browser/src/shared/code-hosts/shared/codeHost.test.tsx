@@ -2,23 +2,17 @@ import { nextTick } from 'process'
 import { promisify } from 'util'
 
 import { RenderResult } from '@testing-library/react'
-import { Remote } from 'comlink'
-import { uniqueId, noop, pick } from 'lodash'
+import { uniqueId, pick } from 'lodash'
 import { BehaviorSubject, NEVER, of, Subscription } from 'rxjs'
 import { take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import * as sourcegraph from 'sourcegraph'
 
 import { resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
 import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { integrationTestContext } from '@sourcegraph/shared/src/testing/testHelpers'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ResolveRepoResult } from '../../../graphql-operations'
@@ -55,13 +49,6 @@ const createTestElement = (): HTMLElement => {
 jest.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
-
-const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): Controller => ({
-    executeCommand: () => Promise.resolve(),
-    registerCommand: () => new Subscription(),
-    unsubscribe: noop,
-    extHostAPI: Promise.resolve(extensionHostAPI),
-})
 
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
@@ -130,7 +117,6 @@ describe('codeHost', () => {
         })
 
         test('renders the hover overlay mount', async () => {
-            const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 await handleCodeHost({
                     ...commonArguments(),
@@ -140,7 +126,6 @@ describe('codeHost', () => {
                         check: () => true,
                         codeViewResolvers: [],
                     },
-                    extensionsController: createMockController(extensionHostAPI),
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -151,10 +136,6 @@ describe('codeHost', () => {
         })
 
         test('detects code views based on selectors', async () => {
-            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
-                roots: [],
-                viewers: [],
-            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
@@ -186,7 +167,6 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(extensionHostAPI),
                     platformContext: createMockPlatformContext({
                         // Simulate an instance with repositoryPathPattern
                         requestGraphQL: mockRequestGraphQL({
@@ -271,7 +251,6 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(extensionHostAPI),
                     platformContext: createMockPlatformContext(),
                 })
             )
@@ -316,10 +295,6 @@ describe('codeHost', () => {
         })
 
         test('Hoverifies a view', async () => {
-            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
-                roots: [],
-                viewers: [],
-            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -352,7 +327,6 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(extensionHostAPI),
                 })
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
