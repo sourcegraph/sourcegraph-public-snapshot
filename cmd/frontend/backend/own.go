@@ -217,6 +217,13 @@ func resolveWithContext(
 		if err != nil {
 			return nil, err
 		}
+		// email cannot match team, so can return a person early.
+		if user == nil {
+			return &codeowners.Person{
+				Handle:  handle,
+				Context: contextStr,
+			}, nil
+		}
 	} else if repo != nil {
 		for _, ea := range eas {
 			data, err := p.ExternalAccountInfo(ctx, *ea)
