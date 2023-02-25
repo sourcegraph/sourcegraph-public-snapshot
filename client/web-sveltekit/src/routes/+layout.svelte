@@ -10,8 +10,9 @@
 
     import Header from './Header.svelte'
     import './styles.scss'
-    import type { LayoutData } from './$types'
+    import type { LayoutData, Snapshot } from './$types'
     import { setExperimentalFeaturesFromSettings } from '$lib/web'
+    import { beforeNavigate } from '$app/navigation'
 
     export let data: LayoutData
 
@@ -66,6 +67,35 @@
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
+
+    let main: HTMLElement | null = null
+    let scrollTop = 0
+    beforeNavigate(() => {
+        // It looks like `snapshot.capture` is called "too late", i.e. after the
+        // content has been updated. beforeNavigate is used to capture the correct
+        // scroll offset
+        scrollTop = main?.scrollTop ?? 0
+    })
+    export const snapshot: Snapshot<{ x: number }> = {
+        capture() {
+            return { x: scrollTop }
+        },
+        restore(value) {
+            restoreScrollPosition(value.x)
+        },
+    }
+
+    function restoreScrollPosition(y: number) {
+        const start = Date.now()
+        requestAnimationFrame(function scroll() {
+            if (main) {
+                main.scrollTo(0, y)
+            }
+            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
+                requestAnimationFrame(scroll)
+            }
+        })
+    }
 </script>
 
 <svelte:head>
@@ -76,7 +106,7 @@
 <div class="app">
     <Header authenticatedUser={$user} />
 
-    <main>
+    <main bind:this={main}>
         <slot />
     </main>
 </div>
