@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graphql-go/graphql/gqlerrors"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,13 +112,15 @@ type gqlChangesetResponse struct {
 	Errors []gqlerrors.FormattedError
 }
 
-func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
-	q := queryInfo{}
-	q.query = gqlChangesetQuery
-	q.variables = map[string]any{"id": id}
+func marshalChangeset(ctx context.Context, client httpcli.Doer, id graphql.ID) ([]byte, error) {
+	q := queryInfo{
+		Name:      "Changeset",
+		Query:     gqlChangesetQuery,
+		Variables: map[string]any{"id": id},
+	}
 
 	var res gqlChangesetResponse
-	if err := makeRequest(ctx, q, "Changeset", &res); err != nil {
+	if err := makeRequest(ctx, q, client, &res); err != nil {
 		return nil, err
 	}
 

@@ -26,13 +26,13 @@ func nullableMap[T, U any](value T, mapper func(T) U) *U {
 	return &mapped
 }
 
-func makeRequest[T any](ctx context.Context, q queryInfo, name string, res T) error {
+func makeRequest[T any](ctx context.Context, q queryInfo, client httpcli.Doer, res T) error {
 	reqBody, err := json.Marshal(q)
 	if err != nil {
 		return errors.Wrap(err, "marshal request body")
 	}
 
-	url, err := gqlURL(name)
+	url, err := gqlURL(q.Name)
 	if err != nil {
 		return errors.Wrap(err, "construct frontend URL")
 	}
@@ -43,7 +43,7 @@ func makeRequest[T any](ctx context.Context, q queryInfo, name string, res T) er
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		return errors.Wrap(err, "do request")
 	}

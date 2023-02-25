@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 )
 
@@ -34,8 +35,9 @@ func getService(db basestore.ShareableStore) outbound.OutboundWebhookService {
 func Enqueue(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string,
-	marshaller func(context.Context, graphql.ID) ([]byte, error),
+	marshaller func(context.Context, httpcli.Doer, graphql.ID) ([]byte, error),
 	id graphql.ID,
+	client httpcli.Doer,
 ) {
 	svc := getService(db)
 
@@ -46,7 +48,7 @@ func Enqueue(
 		log.String("event_type", eventType),
 	)
 
-	payload, err := marshaller(ctx, id)
+	payload, err := marshaller(ctx, client, id)
 	if err != nil {
 		logger.Error("error marshalling webhook payload", log.Error(err))
 		return
@@ -62,12 +64,12 @@ func EnqueueBatchChange(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, marshalBatchChange, id)
+	Enqueue(ctx, logger, db, eventType, marshalBatchChange, id, httpcli.InternalDoer)
 }
 
 func EnqueueChangeset(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, marshalChangeset, id)
+	Enqueue(ctx, logger, db, eventType, marshalChangeset, id, httpcli.InternalDoer)
 }
