@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
@@ -26,6 +28,7 @@ Examples:
 	}
 	var (
 		usernameFlag = flagSet.String("username", "", `Look up user by username. (e.g. "alice")`)
+		emailFlag    = flagSet.String("email", "", `Look up user by email. (e.g. "alice@sourcegraph.com")`)
 		formatFlag   = flagSet.String("f", "{{.|json}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})")`)
 		apiFlags     = api.NewFlags(flagSet)
 	)
@@ -37,16 +40,22 @@ Examples:
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
+		if usernameFlag != nil && *usernameFlag != "" && emailFlag != nil && *emailFlag != "" {
+			return errors.New("cannot specify both email and username")
+		}
+
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {
 			return err
 		}
 
 		query := `query User(
-  $username: String!,
+  $username: String,
+  $email: String,
 ) {
   user(
-    username: $username
+    username: $username,
+    email: $email,
   ) {
     ...UserFields
   }
@@ -56,7 +65,8 @@ Examples:
 			User *User
 		}
 		if ok, err := client.NewRequest(query, map[string]interface{}{
-			"username": *usernameFlag,
+			"username": api.NullString(*usernameFlag),
+			"email":    api.NullString(*emailFlag),
 		}).Do(context.Background(), &result); err != nil || !ok {
 			return err
 		}

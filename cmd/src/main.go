@@ -41,6 +41,7 @@ The commands are:
 	login           authenticate to a Sourcegraph instance with your user credentials
 	lsif            manages LSIF data (deprecated: use 'code-intel')
 	orgs,org        manages organizations
+	teams,team      manages teams
 	repos,repo      manages repositories
 	search          search for results on Sourcegraph
 	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
