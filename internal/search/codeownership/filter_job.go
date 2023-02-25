@@ -33,6 +33,12 @@ type codeownershipJob struct {
 	excludeOwners []string
 }
 
+var (
+	ownService  backend.OwnService
+	cache       *Cache
+	serviceOnce sync.Once
+)
+
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
@@ -42,8 +48,11 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		errs error
 	)
 
-	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
-	cache := NewCache(ownService)
+	// TODO: Very dirty hack to keep a warm cache between searches.
+	serviceOnce.Do(func() {
+		ownService = backend.NewOwnService(clients.Gitserver, clients.DB)
+		cache = NewCache(ownService)
+	})
 
 	tr.AddEvent("StartEvaluateInput")
 	// Resolve input strings to ResolvedOwners so we can match them.
