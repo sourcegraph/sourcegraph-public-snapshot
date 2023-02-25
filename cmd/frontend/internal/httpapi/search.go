@@ -26,7 +26,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
+	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -53,19 +53,19 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 
 type searchIndexerGRPCServer struct {
 	server *searchIndexerServer
-	v1.UnimplementedIndexedSearchConfigurationServiceServer
+	proto.UnimplementedIndexedSearchConfigurationServiceServer
 }
 
-func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *v1.SearchConfigurationRequest) (*v1.SearchConfigurationResponse, error) {
+func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *proto.SearchConfigurationRequest) (*proto.SearchConfigurationResponse, error) {
+
+}
+
+func (s *searchIndexerGRPCServer) List(ctx context.Context, request *proto.ListRequest) (*proto.ListResponse, error) {
 	return nil, errors.New("unimplemented")
-}
-
-func (s *searchIndexerGRPCServer) List(ctx context.Context, request *v1.ListRequest) (*v1.ListResponse, error) {
-	return nil, errors.New("unimplemented")
 
 }
 
-func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *v1.RepositoryRankRequest) (*v1.RepositoryRankResponse, error) {
+func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *proto.RepositoryRankRequest) (*proto.RepositoryRankResponse, error) {
 	ranks, err := s.server.Ranking.GetRepoRank(ctx, api.RepoName(request.Repository))
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -75,12 +75,12 @@ func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *v
 		return nil, err
 	}
 
-	return &v1.RepositoryRankResponse{
+	return &proto.RepositoryRankResponse{
 		Rank: ranks,
 	}, nil
 }
 
-func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *v1.DocumentRanksRequest) (*v1.DocumentRanksResponse, error) {
+func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *proto.DocumentRanksRequest) (*proto.DocumentRanksResponse, error) {
 	ranks, err := s.server.Ranking.GetDocumentRanks(ctx, api.RepoName(request.Repository))
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -90,17 +90,17 @@ func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *v1
 		return nil, err
 	}
 
-	protoRanks := make(map[string]*v1.DocumentRanksResponse_DocumentRank, len(ranks))
+	protoRanks := make(map[string]*proto.DocumentRanksResponse_DocumentRank, len(ranks))
 	for name, rank := range ranks {
-		protoRanks[name] = &v1.DocumentRanksResponse_DocumentRank{
+		protoRanks[name] = &proto.DocumentRanksResponse_DocumentRank{
 			Ranks: rank,
 		}
 	}
 
-	return &v1.DocumentRanksResponse{Ranks: protoRanks}, nil
+	return &proto.DocumentRanksResponse{Ranks: protoRanks}, nil
 }
 
-func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1.UpdateIndexStatusRequest) (*v1.UpdateIndexStatusResponse, error) {
+func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *proto.UpdateIndexStatusRequest) (*proto.UpdateIndexStatusResponse, error) {
 	var request indexStatusUpdateArgs
 	request.FromProto(req)
 
@@ -109,10 +109,10 @@ func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1
 		return nil, err
 	}
 
-	return &v1.UpdateIndexStatusResponse{}, nil
+	return &proto.UpdateIndexStatusResponse{}, nil
 }
 
-var _ v1.IndexedSearchConfigurationServiceServer = &searchIndexerGRPCServer{}
+var _ proto.IndexedSearchConfigurationServiceServer = &searchIndexerGRPCServer{}
 
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
@@ -164,8 +164,6 @@ type searchIndexerServer struct {
 // this endpoint concurrently leading to socket starvation.
 func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	siteConfig := conf.Get().SiteConfiguration
-
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
@@ -180,23 +178,70 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		indexedIDs = append(indexedIDs, api.RepoID(id))
 	}
 
-	if len(indexedIDs) == 0 {
-		http.Error(w, "at least one repoID required", http.StatusBadRequest)
+	var clientFingerprint searchbackend.ConfigFingerprint
+	err := clientFingerprint.FromHeaders(r.Header)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid fingerprint: %s", err), http.StatusBadRequest)
 		return nil
 	}
 
+	response, err := h.doSearchConfiguration(ctx, searchConfigurationParameters{
+		repoIDs:     indexedIDs,
+		fingerprint: clientFingerprint,
+	})
+
+	if err != nil {
+		var parameterErr *parameterError
+		code := http.StatusInternalServerError
+
+		if errors.As(err, &parameterErr) {
+			code = http.StatusBadRequest
+		}
+
+		http.Error(w, err.Error(), code)
+		return nil
+	}
+
+	response.fingerprint.ToHeaders(w.Header())
+
+	jsonOptions := make([][]byte, 0, len(response.options))
+	for _, opt := range response.options {
+		marshalled, err := json.Marshal(opt)
+		if err != nil {
+			_, _ = w.Write([]byte(err.Error()))
+		}
+
+		jsonOptions = append(jsonOptions, marshalled)
+	}
+
+	_, _ = w.Write(bytes.Join(jsonOptions, []byte("\n")))
+
+	return nil
+}
+
+func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, parameters searchConfigurationParameters) (*searchConfigurationResponse, error) {
+	siteConfig := conf.Get().SiteConfiguration
+
+	if len(parameters.repoIDs) == 0 {
+		return nil, &parameterError{err: "at least one repoID required"}
+	}
+
 	var minLastChanged time.Time
+	nextFingerPrint := parameters.fingerprint
 	if !h.MinLastChangedDisabled {
 		var err error
-		minLastChanged, err = searchbackend.ParseAndSetConfigFingerprint(w, r, &siteConfig)
+		fp, err := searchbackend.NewConfigFingerprint(&siteConfig)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		minLastChanged = parameters.fingerprint.ChangesSince(fp)
+		nextFingerPrint = *fp
 	}
 
 	// Preload repos to support fast lookups by repo ID.
 	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
-		IDs: indexedIDs,
+		IDs: parameters.repoIDs,
 		// When minLastChanged is non-zero we will only return the
 		// repositories that have changed since minLastChanged. This takes
 		// into account repo metadata, repo content and search context
@@ -213,19 +258,19 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	// If we used MinLastChanged, we should only return information for the
 	// repositories that we found from List.
 	if !minLastChanged.IsZero() {
-		filtered := indexedIDs[:0]
-		for _, id := range indexedIDs {
+		filtered := parameters.repoIDs[:0]
+		for _, id := range parameters.repoIDs {
 			if _, ok := reposMap[id]; ok {
 				filtered = append(filtered, id)
 			}
 		}
-		indexedIDs = filtered
+		parameters.repoIDs = filtered
 	}
 
-	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, indexedIDs)
+	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, parameters.repoIDs)
 	if err != nil {
 		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no ranking",
-			log.Int("repos", len(indexedIDs)),
+			log.Int("repos", len(parameters.repoIDs)),
 			log.Error(err),
 		)
 		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
@@ -275,7 +320,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		}, nil
 	}
 
-	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, indexedIDs)
+	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, parameters.repoIDs)
 	getSearchContextRevisions := func(repoID int32) ([]string, error) {
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
@@ -285,9 +330,9 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 
 	// searchbackend uses int32 instead of api.RepoID currently, so build
 	// up a slice of that.
-	repoIDs := make([]int32, len(indexedIDs))
-	for i := range indexedIDs {
-		repoIDs[i] = int32(indexedIDs[i])
+	repoIDs := make([]int32, len(parameters.repoIDs))
+	for i := range parameters.repoIDs {
+		repoIDs[i] = int32(parameters.repoIDs[i])
 	}
 
 	indexOptions := searchbackend.GetIndexOptions(
@@ -297,20 +342,26 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		repoIDs...,
 	)
 
-	jsonOptions := make([][]byte, 0, len(indexOptions))
+	return &searchConfigurationResponse{
+		options:     indexOptions,
+		fingerprint: nextFingerPrint,
+	}, nil
+}
 
-	for _, opt := range indexOptions {
-		marshalled, err := json.Marshal(opt)
-		if err != nil {
-			_, _ = w.Write([]byte(err.Error()))
-		}
+type parameterError struct {
+	err string
+}
 
-		jsonOptions = append(jsonOptions, marshalled)
-	}
+func (e *parameterError) Error() string { return e.err }
 
-	_, _ = w.Write(bytes.Join(jsonOptions, []byte("\n")))
+type searchConfigurationParameters struct {
+	repoIDs     []api.RepoID
+	fingerprint searchbackend.ConfigFingerprint
+}
 
-	return nil
+type searchConfigurationResponse struct {
+	options     []searchbackend.ZoektIndexOptions
+	fingerprint searchbackend.ConfigFingerprint
 }
 
 // serveList is used by zoekt to get the list of repositories for it to index.
@@ -442,7 +493,7 @@ type indexStatusUpdateRepository struct {
 	Branches []zoekt.RepositoryBranch
 }
 
-func (a *indexStatusUpdateArgs) FromProto(req *v1.UpdateIndexStatusRequest) {
+func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
 	a.Repositories = make([]indexStatusUpdateRepository, 0, len(req.Repositories))
 
 	for _, repo := range req.Repositories {
@@ -464,25 +515,25 @@ func (a *indexStatusUpdateArgs) FromProto(req *v1.UpdateIndexStatusRequest) {
 	}
 }
 
-func (a *indexStatusUpdateArgs) ToProto() *v1.UpdateIndexStatusRequest {
-	repos := make([]*v1.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
+func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
+	repos := make([]*proto.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
 
 	for _, repo := range a.Repositories {
-		branches := make([]*v1.ZoektRepositoryBranch, 0, len(repo.Branches))
+		branches := make([]*proto.ZoektRepositoryBranch, 0, len(repo.Branches))
 		for _, b := range repo.Branches {
-			branches = append(branches, &v1.ZoektRepositoryBranch{
+			branches = append(branches, &proto.ZoektRepositoryBranch{
 				Name:    b.Name,
 				Version: b.Version,
 			})
 		}
 
-		repos = append(repos, &v1.UpdateIndexStatusRequest_Repository{
+		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
 			RepoId:   repo.RepoID,
 			Branches: branches,
 		})
 	}
 
-	return &v1.UpdateIndexStatusRequest{
+	return &proto.UpdateIndexStatusRequest{
 		Repositories: repos,
 	}
 }

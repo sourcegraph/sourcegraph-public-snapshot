@@ -56,7 +56,8 @@ message Fingerprint {
 
   // identifier is an opaque identifier that represents the state of the
   // configuration at the time it was generated.
-  bytes identifier = 2;
+  // TODO: @ggilmore
+  uint64 identifier = 2;
 }
 
 // ZoektIndexOptions are options which change what we index for a
