@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup } from '@testing-library/react'
 import { EMPTY, NEVER } from 'rxjs'
 import sinon from 'sinon'
 
@@ -78,9 +78,8 @@ describe('TreePage', () => {
             const repo = repoDefaults()
             repo.isFork = true
             const props = treePagePropsDefaults(repo)
-            renderWithBrandedContext(<TreePage {...props} />)
-            screen.debug()
-            expect(screen.queryByTestId('repo-fork-badge')).toBeInTheDocument()
+            const result = renderWithBrandedContext(<TreePage {...props} />)
+            expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
         })
     })
 })
