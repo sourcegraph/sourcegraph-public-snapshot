@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -166,69 +165,75 @@ type globPattern []patternPart
 // The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
 func (glob globPattern) match(filePath string) bool {
-	currentState := big.NewInt(0)
-	glob.markEmptyMatches(currentState)
+	currentState := 0
+	glob.markEmptyMatches(&currentState)
 	filePathParts := strings.Split(strings.Trim(filePath, separator), separator)
-	nextState := big.NewInt(0)
+	nextState := 0
 	for _, part := range filePathParts {
-		nextState.SetInt64(0)
-		glob.consume(part, currentState, nextState)
+		nextState = 0
+		glob.consume(part, &currentState, &nextState)
 		currentState, nextState = nextState, currentState
 	}
-	return glob.matchesWhole(currentState)
+	return glob.matchesWhole(&currentState)
 }
 
 // markEmptyMatches initializes a matching state with positions that are
 // matches for an empty input (`/`). This is most often just bit 0, but in case
 // there are subpath wildcard **, it is expanded to all indices past the
 // wildcards, since they match empty path.
-func (glob globPattern) markEmptyMatches(state *big.Int) {
-	state.SetBit(state, 0, 1)
+func (glob globPattern) markEmptyMatches(state *int) {
+	*state = *state | 1<<0
 	for i, globPart := range glob {
 		if _, ok := globPart.(anySubPath); !ok {
 			break
 		}
-		state.SetBit(state, i+1, 1)
+		*state = *state | 1<<(i+1)
 	}
 }
 
 // matchesWhole returns true if given state indicates whole glob being matched.
-func (glob globPattern) matchesWhole(state *big.Int) bool {
-	return state.Bit(len(glob)) == 1
+func (glob globPattern) matchesWhole(state *int) bool {
+	return (*state>>len(glob))&1 == 1
 }
 
 // consume advances matching algorithm by a single part of a file path.
 // The `current` bit vector is the matching state for up until, but excluding
 // given `part` of the file path. The result - next set of states - is written
 // to bit vector `next`, which is assumed to be zero when passed in.
-func (glob globPattern) consume(part string, current, next *big.Int) {
+func (glob globPattern) consume(part string, current, next *int) {
 	// Since `**` or `anySubPath` can match any number of times, we hold
 	// an invariant: If a bit vector has 1 at the state preceding `**`,
 	// then that bit vector also has 1 at the state following `**`.
 	for i := 0; i < len(glob); i++ {
-		if current.Bit(i) == 0 {
+		if (*current>>i)&1 == 0 {
 			continue
 		}
 		// Case 1: `current` matches before i-th part of the pattern,
 		// so set the i+1-th position of the `next` state to whether
 		// the i-th pattern matches (consumes) `part`.
-		bit := uint(0)
+		bit := 0
 		if glob[i].Match(part) {
-			bit = uint(1)
+			bit = 1
+			*next = *next | 1<<(i+1)
+		} else {
+			*next = *next &^ (1 << (i + 1))
 		}
-		next.SetBit(next, i+1, bit)
 		// Keep the invariant: if there is `**` afterwards, set it
 		// to the same bit. This will not be overridden in the next
 		// loop turns as `**` always matches.
 		if i+1 < len(glob) {
 			if _, ok := glob[i+1].(anySubPath); ok {
-				next.SetBit(next, i+2, bit)
+				if bit == 1 {
+					*next = *next | 1<<(i+2)
+				} else {
+					*next = *next &^ (1 << (i + 2))
+				}
 			}
 		}
 		// Case 2: To allow `**` to consume subsequent parts of the file path,
 		// we keep the i-th bit - which precedes `**` - set.
 		if _, ok := glob[i].(anySubPath); ok {
-			next.SetBit(next, i, 1)
+			*next = *next | 1<<i
 		}
 	}
 }

@@ -230,3 +230,38 @@ func TestFileOwnersOrder(t *testing.T) {
 	got := file.FindOwners("/top-level-directory/some/path/main.go")
 	assert.Equal(t, wantOwner, got)
 }
+
+func BenchmarkOwnersMatch(b *testing.B) {
+	pattern := "/main/src/**/README.md"
+	paths := []string{
+		"/main/src/README.md",
+		"/main/src/foo/bar/README.md",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	file := &codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	}
+	for _, path := range paths {
+		// Warm cache.
+		got := file.FindOwners(path)
+		if !reflect.DeepEqual(got, owner) {
+			b.Errorf("want %q to match %q", pattern, path)
+		}
+	}
+
+	for i := 0; i < b.N; i++ {
+		for _, path := range paths {
+			got := file.FindOwners(path)
+			if len(got) != 1 {
+				b.Error("invalid result")
+			}
+			if got[0].Handle != owner[0].Handle {
+				b.Error("invalid result")
+			}
+		}
+	}
+}
