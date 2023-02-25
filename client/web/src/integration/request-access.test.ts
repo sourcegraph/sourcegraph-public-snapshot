@@ -30,7 +30,10 @@ describe('RequestAccess', () => {
                 currentUser: null,
             }),
         })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/request-access')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
+        const selector = await driver.page.waitForSelector('a[href="/request-access"]')
+        await selector?.click()
+
         await driver.page.waitForSelector('#name')
         await driver.page.waitForSelector('#email')
         await driver.page.waitForSelector('#additionalInfo')
@@ -46,7 +49,12 @@ describe('RequestAccess', () => {
                 currentUser: null,
             }),
         })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/request-access/done')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
+        // TODO: replace with driver.page.goto(driver.sourcegraphBaseUrl + '/request-access/done') once PR is merged and dogfood is updated
+        // This is a workaround for the fact that we can't navigate to a page because integration tests uses dogfood backend instead of local backend
+        await driver.page.evaluate(() => {
+            window.history.replaceState({}, '', '/request-access/done')
+        })
         await driver.page.waitForSelector('[data-testid="request-access-post-submit"]')
 
         await percySnapshotWithVariants(driver.page, 'Request access page post-submit')
