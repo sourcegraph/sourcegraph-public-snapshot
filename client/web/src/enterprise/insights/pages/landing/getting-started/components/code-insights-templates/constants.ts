@@ -33,7 +33,7 @@ const TERRAFORM_VERSIONS: Template = {
     description: 'Detect and track which Terraform versions are present or most popular in your codebase',
     templateValues: {
         title: 'Terraform versions',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.tf$)',
         series: [
             {
                 name: '1.1.0',
@@ -77,7 +77,7 @@ const LOG4J_FIXED_VERSIONS: Template = {
     description: 'Confirm that vulnerable versions of log4j are removed and only fixed versions appear',
     templateValues: {
         title: 'Vulnerable and fixed Log4j versions',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.gradle$)',
         series: [
             {
                 name: 'Vulnerable',
@@ -100,7 +100,7 @@ const YARN_ADOPTION: Template = {
         'Are more repos increasingly using yarn? Track yarn adoption across teams and groups in your organization',
     templateValues: {
         title: 'Yarn adoption',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:yarn\\.lock$)',
         series: [
             {
                 name: 'Yarn',
@@ -117,7 +117,7 @@ const JAVA_VERSIONS: Template = {
     description: 'Detect and track which Java versions are most popular in your codebase',
     templateValues: {
         title: 'Java versions',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:pom\\.xml$)',
         groupSearchQuery: 'file:pom\\.xml$ <java\\.version>(.*)</java\\.version>',
     },
 }
@@ -128,7 +128,7 @@ const LINTER_OVERRIDE_RULES: Template = {
     description: 'A code health indicator for how many linter override rules exist',
     templateValues: {
         title: 'Linter override rules',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.eslintignore$)',
         series: [
             {
                 name: 'Rule overrides',
@@ -145,7 +145,7 @@ const TS_JS_USAGE: Template = {
     description: 'Track the growth of certain languages by file count',
     templateValues: {
         title: 'Language use over time',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.ts$) or repo:has.file(path:\\.js$)',
         series: [
             {
                 name: 'TypeScript',
@@ -206,7 +206,7 @@ const PYTHON_2_3: Template = {
     description: 'How far along is the Python major version migration',
     templateValues: {
         title: 'Python 2 to Python 3',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.py$)',
         series: [
             {
                 name: 'Python 3',
@@ -321,11 +321,11 @@ const CI_TOOLING: Template = {
     description: 'How many repos are using our CI system',
     templateValues: {
         title: 'CI tooling adoption',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.circleci/config\\.yml)',
         series: [
             {
                 name: 'Repo with CircleCI config',
-                query: 'file:\\.circleci/config.yml select:repo',
+                query: 'file:\\.circleci/config\\.yml select:repo',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -373,7 +373,7 @@ const STRUCTURAL_CODE_PATTERN: Template = {
         "Deprecating a structural code pattern in favor of a safer pattern, like how many tries don't have catches",
     templateValues: {
         title: 'Structural code pattern',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.java$)',
         series: [
             {
                 name: 'Try catch',
@@ -407,7 +407,7 @@ const VAR_KEYWORDS: Template = {
     description: 'Number of var keywords in the code basee (ES5 depreciation)',
     templateValues: {
         title: 'Var keywords',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.ts$) or repo:has.file(path:\\.js$)',
         series: [
             {
                 name: 'var statements',
@@ -432,7 +432,7 @@ const TESTING_LIBRARIES: Template = {
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
-                name: 'enzume',
+                name: 'enzyme',
                 query: "from 'enzyme'",
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
@@ -446,7 +446,7 @@ const LICENSE_TYPES: Template = {
     description: 'See the breakdown of licenses from package.json files',
     templateValues: {
         title: 'License types in the codebase',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:package\\.json$)',
         groupSearchQuery: 'file:package.json "license":\\s"(.*)"',
     },
 }
@@ -457,7 +457,7 @@ const ALL_LOG4J_VERSIONS: Template = {
     description: 'Which log4j versions are present, including vulnerable versions',
     templateValues: {
         title: 'All log4j versions',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.gradle$)',
         groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\.',
     },
 }
@@ -546,7 +546,7 @@ const DEPRECATED_CALLS: Template = {
     description: 'How many times deprecated calls are used',
     templateValues: {
         title: 'Deprecated calls',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.java$)',
         series: [
             {
                 name: '@deprecated',
@@ -605,12 +605,12 @@ const OWNERSHIP_TRACKING: Template = {
         repoQuery: 'repo:.*',
         series: [
             {
-                name: 'with readme',
+                name: 'with CODEOWNERS',
                 query: 'repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.LIME,
             },
             {
-                name: 'without readme',
+                name: 'without CODEOWNERS',
                 query: '-repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
@@ -676,7 +676,7 @@ const TEST_AMOUNT_AND_TYPES: Template = {
     description: 'See what types of tests are most common and total counts',
     templateValues: {
         title: 'Tests amount and types',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.ts$)',
         series: [
             {
                 name: 'e2e tests',
@@ -703,7 +703,7 @@ const TS_VS_GO: Template = {
     description: 'Are there more Typescript or more Go files',
     templateValues: {
         title: 'Typescript vs. Go',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.ts$) or repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'TypeScript',
@@ -725,7 +725,7 @@ const IOS_APP_SCREENS: Template = {
     description: 'What number of iOS app screens are in the entire app',
     templateValues: {
         title: 'iOS app screens',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.swift$)',
         series: [
             {
                 name: 'Screens',
@@ -813,7 +813,7 @@ const GO_STATIC_CHECK_SA6005: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'SA6005',
@@ -835,7 +835,7 @@ const GO_STATIC_CHECK_S1002: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Omit comparison with boolean constant',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1002',
@@ -852,7 +852,7 @@ const GO_STATIC_CHECK_S1003: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Replace call to strings.Index with strings.Contains',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1003',
@@ -874,7 +874,7 @@ const GO_STATIC_CHECK_S1004: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1004',
@@ -896,7 +896,7 @@ const GO_STATIC_CHECK_S1005: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Drop unnecessary use of the blank identifier',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1005',
@@ -918,7 +918,7 @@ const GO_STATIC_CHECK_S1006: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Use for { ... } for infinite loops',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1006',
@@ -940,7 +940,7 @@ const GO_STATIC_CHECK_S1010: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Omit default slice index',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S10010',
@@ -962,7 +962,7 @@ const GO_STATIC_CHECK_S1012: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S10012',
@@ -987,7 +987,7 @@ const GO_STATIC_CHECK_S1019: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Simplify make call by omitting redundant arguments',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S10019',
@@ -1009,7 +1009,7 @@ const GO_STATIC_CHECK_S1020: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Omit redundant nil check in type assertion',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1020',
@@ -1031,7 +1031,7 @@ const GO_STATIC_CHECK_S1023: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Omit redundant control flow',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1023',
@@ -1053,7 +1053,7 @@ const GO_STATIC_CHECK_S1024: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1024',
@@ -1075,7 +1075,7 @@ const GO_STATIC_CHECK_S1025: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1025',
@@ -1097,7 +1097,7 @@ const GO_STATIC_CHECK_S1028: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Simplify error construction with fmt.Errorf',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1028',
@@ -1119,7 +1119,7 @@ const GO_STATIC_CHECK_S1029: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Range over the string directly',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1029',
@@ -1141,7 +1141,7 @@ const GO_STATIC_CHECK_S1032: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1032',
@@ -1158,7 +1158,7 @@ const GO_STATIC_CHECK_S1035: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1035',
@@ -1182,7 +1182,7 @@ const GO_STATIC_CHECK_S1037: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1035',
@@ -1204,7 +1204,7 @@ const GO_STATIC_CHECK_S1038: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] - Unnecessarily complex way of printing formatted string',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1038',
@@ -1226,7 +1226,7 @@ const GO_STATIC_CHECK_S1039: Template = {
     description: 'Code search turned code checker',
     templateValues: {
         title: '[quickfix] Unnecessary use of fmt.Sprint',
-        repoQuery: 'repo:.*',
+        repoQuery: 'repo:has.file(path:\\.go$)',
         series: [
             {
                 name: 'S1039',

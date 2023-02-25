@@ -5,13 +5,6 @@ import { TypedTypePolicies } from '../graphql-operations'
 // Defines how the Apollo cache interacts with our GraphQL schema.
 // See https://www.apollographql.com/docs/react/caching/cache-configuration/#typepolicy-fields
 const typePolicies: TypedTypePolicies = {
-    ExtensionRegistry: {
-        // Replace existing `ExtensionRegistry` with the incoming value.
-        // Required because of the missing `id` on the `ExtensionRegistry` field.
-        merge(existing, incoming) {
-            return incoming
-        },
-    },
     Person: {
         // Replace existing `Person` with the incoming value.
         // Required because of the missing `id` on the `Person` field.

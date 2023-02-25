@@ -15,13 +15,13 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -215,14 +215,14 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 
 	var (
 		m sync.Mutex
-		g = group.New().WithContext(ctx).WithMaxConcurrency(runtime.GOMAXPROCS(0))
+		p = pool.New().WithContext(ctx).WithMaxGoroutines(runtime.GOMAXPROCS(0))
 	)
 
 	for _, pkgPath := range pkgPaths {
 		// Do not capture loop variable in goroutine below
 		pkgPath := pkgPath
 
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			file := filepath.Base(pkgPath) // *.go
 			directory := filepath.Dir(pkgPath)
 			if verbosity == VerboseOutput {
@@ -249,7 +249,7 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 		})
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func runGoImports(ctx context.Context, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) error {
