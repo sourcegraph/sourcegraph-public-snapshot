@@ -37,7 +37,12 @@ export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequests
     }
 
     return (
-        <ButtonLink variant="success" size="sm" to="/site-admin/access-requests" className="d-flex align-items-center py-1">
+        <ButtonLink
+            variant="success"
+            size="sm"
+            to="/site-admin/access-requests"
+            className="d-flex align-items-center py-1"
+        >
             <Icon svgPath={mdiAccountPlus} size="md" aria-label="Account requests icons" color="var(--success-2)" />
             <Text className="mx-1" weight="bold" as="span">
                 {data?.accessRequests.totalCount}

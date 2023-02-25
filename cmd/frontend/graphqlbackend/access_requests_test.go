@@ -209,7 +209,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 				},
 			},
 			Variables: map[string]any{
-				"id":    string(marshalAccessRequestID(1)),
+				"id":     string(marshalAccessRequestID(1)),
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})
@@ -225,12 +225,12 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query:   setAccessRequestStatusMutation,
+			Schema:         mustParseGraphQLSchema(t, db),
+			Context:        ctx,
+			Query:          setAccessRequestStatusMutation,
 			ExpectedResult: `{"setAccessRequestStatus": { "alwaysNil": null } }`,
 			Variables: map[string]any{
-				"id":    string(marshalAccessRequestID(1)),
+				"id":     string(marshalAccessRequestID(1)),
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})
@@ -256,7 +256,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 				},
 			},
 			Variables: map[string]any{
-				"id":    string(marshalAccessRequestID(1)),
+				"id":     string(marshalAccessRequestID(1)),
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})

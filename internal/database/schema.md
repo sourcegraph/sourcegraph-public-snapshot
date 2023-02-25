@@ -1,3 +1,20 @@
+# Table "public.access_requests"
+```
+     Column      |           Type           | Collation | Nullable |                   Default                   
+-----------------+--------------------------+-----------+----------+---------------------------------------------
+ id              | integer                  |           | not null | nextval('access_requests_id_seq'::regclass)
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+ name            | text                     |           | not null | 
+ email           | text                     |           | not null | 
+ additional_info | text                     |           |          | 
+ status          | text                     |           | not null | 
+Indexes:
+    "access_requests_pkey" PRIMARY KEY, btree (id)
+    "access_requests_email_key" UNIQUE CONSTRAINT, btree (email)
+
+```
+
 # Table "public.access_tokens"
 ```
      Column      |           Type           | Collation | Nullable |                  Default                  
