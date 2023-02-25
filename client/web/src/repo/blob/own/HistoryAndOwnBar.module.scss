@@ -47,16 +47,19 @@
 .own-icon {
     font-size: 0.875rem;
     color: var(--purple);
+    margin-bottom: 0.0625rem; // Optically-align with text
 }
 
 .own-items {
     padding: 0.125rem 0.25rem;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     overflow: hidden;
 }
 
 .own-item {
+    display: flex;
+    align-items: baseline;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
