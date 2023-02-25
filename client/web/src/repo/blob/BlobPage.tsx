@@ -363,38 +363,33 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!window.context.enableLegacyExtensions ? (
-                <>
-                    {window.context.isAuthenticatedUser && (
-                        <RepoHeaderContributionPortal
-                            position="right"
-                            priority={112}
-                            id="open-in-editor-action"
-                            repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                        >
-                            {({ actionType }) => (
-                                <OpenInEditorActionItem
-                                    platformContext={props.platformContext}
-                                    externalServiceType={props.repoServiceType}
-                                    actionType={actionType}
-                                    source="repoHeader"
-                                />
-                            )}
-                        </RepoHeaderContributionPortal>
+            {window.context.isAuthenticatedUser && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={112}
+                    id="open-in-editor-action"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <OpenInEditorActionItem
+                            platformContext={props.platformContext}
+                            externalServiceType={props.repoServiceType}
+                            actionType={actionType}
+                            source="repoHeader"
+                        />
                     )}
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={111}
-                        id="toggle-blame-action"
-                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                    >
-                        {({ actionType }) => (
-                            <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
-                        )}
-                    </RepoHeaderContributionPortal>
-                </>
-            ) : null}
-
+                </RepoHeaderContributionPortal>
+            )}
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={111}
+                id="toggle-blame-action"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                )}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}

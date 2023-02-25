@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Users partially implements database.UserStore using in-memory storage.
@@ -58,4 +59,20 @@ func (users *Users) GetByUsername(ctx context.Context, username string) (*types.
 // the fake implementation does not support emails.
 func (users *Users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
 	return nil, nil
+}
+
+func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+	if len(opts.UserIDs) == 0 {
+		return nil, errors.New("not implemented")
+	}
+	ret := []*types.User{}
+	for _, wantID := range opts.UserIDs {
+		for _, u := range users.list {
+			u := u
+			if u.ID == wantID {
+				ret = append(ret, &u)
+			}
+		}
+	}
+	return ret, nil
 }
