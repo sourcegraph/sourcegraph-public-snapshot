@@ -60,7 +60,6 @@ export const TeamAvatar = React.forwardRef(
                 src: url,
                 id: targetID,
                 role: 'presentation',
-                alt: '',
                 ...otherProps,
             }
 
@@ -70,6 +69,7 @@ export const TeamAvatar = React.forwardRef(
                         ref={reference as React.ForwardedRef<SVGSVGElement>}
                         as="img"
                         aria-hidden={true}
+                        alt=""
                         {...imgProps}
                     />
                 )
