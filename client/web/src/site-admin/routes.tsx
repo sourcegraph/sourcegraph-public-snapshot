@@ -1,6 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
@@ -155,10 +155,10 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/access-requests',
         render: () => <AccessRequestsPage />,
         condition: context =>
-            checkIsRequestAccessAllowed(
+            checkRequestAccessAllowed(
                 context.isSourcegraphDotCom,
                 window.context.allowSignup,
-                window.context.experimentalFeatures['accessRequests.enabled']
+                window.context.experimentalFeatures
             ),
     },
     {

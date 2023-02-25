@@ -10,7 +10,7 @@ import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
-import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
@@ -135,11 +135,7 @@ export const RequestAccessPage: React.FunctionComponent<{}> = () => {
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
     const { sourcegraphDotComMode, allowSignup, experimentalFeatures, isAuthenticatedUser, xhrHeaders } = window.context
-    const isRequestAccessAllowed = checkIsRequestAccessAllowed(
-        sourcegraphDotComMode,
-        allowSignup,
-        experimentalFeatures['accessRequests.enabled']
-    )
+    const isRequestAccessAllowed = checkRequestAccessAllowed(sourcegraphDotComMode, allowSignup, experimentalFeatures)
 
     if (isAuthenticatedUser) {
         const returnTo = getReturnTo(location)

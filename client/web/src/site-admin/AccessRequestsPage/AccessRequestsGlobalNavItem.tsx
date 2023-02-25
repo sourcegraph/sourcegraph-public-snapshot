@@ -7,7 +7,7 @@ import { ButtonLink, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AccessRequestsCountResult, AccessRequestsCountVariables } from '../../graphql-operations'
 import { SourcegraphContext } from '../../jscontext'
-import { checkIsRequestAccessAllowed } from '../../util/checkIsRequestAccessAllowed'
+import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 
 import { ACCESS_REQUESTS_COUNT } from './queries'
 
@@ -20,11 +20,14 @@ interface AccessRequestsGlobalNavItemProps {
  * A link to the access requests page that the number of pending requests.
  * Does not render anything if request access is not allowed or there are no pending requests.
  */
-export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequestsGlobalNavItemProps> = props => {
-    const isRequestAccessAllowed = checkIsRequestAccessAllowed(
-        props.isSourcegraphDotCom,
-        props.context.allowSignup,
-        props.context.experimentalFeatures['accessRequests.enabled']
+export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequestsGlobalNavItemProps> = ({
+    isSourcegraphDotCom,
+    context,
+}) => {
+    const isRequestAccessAllowed = checkRequestAccessAllowed(
+        isSourcegraphDotCom,
+        context.allowSignup,
+        context.experimentalFeatures
     )
 
     const { data } = useQuery<AccessRequestsCountResult, AccessRequestsCountVariables>(ACCESS_REQUESTS_COUNT, {

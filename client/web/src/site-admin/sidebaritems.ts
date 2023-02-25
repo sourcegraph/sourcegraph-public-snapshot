@@ -5,7 +5,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
@@ -113,10 +113,10 @@ export const usersGroup: SiteAdminSideBarGroup = {
             label: 'Access requests',
             to: '/site-admin/access-requests',
             condition: context =>
-                checkIsRequestAccessAllowed(
+                checkRequestAccessAllowed(
                     context.isSourcegraphDotCom,
                     window.context.allowSignup,
-                    window.context.experimentalFeatures['accessRequests.enabled']
+                    window.context.experimentalFeatures
                 ),
         },
         {
