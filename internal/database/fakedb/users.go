@@ -55,12 +55,6 @@ func (users *Users) GetByUsername(ctx context.Context, username string) (*types.
 	return nil, nil
 }
 
-// GetByVerifiedEmail returns nothing as at this point,
-// the fake implementation does not support emails.
-func (users *Users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
-	return nil, nil
-}
-
 func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
 	if len(opts.UserIDs) == 0 {
 		return nil, errors.New("not implemented")
@@ -75,4 +69,10 @@ func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) (
 		}
 	}
 	return ret, nil
+}
+
+// GetByVerifiedEmail returns nothing as at this point,
+// the fake implementation does not support emails.
+func (users *Users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
+	return nil, nil
 }

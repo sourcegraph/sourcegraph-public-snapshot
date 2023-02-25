@@ -19,16 +19,8 @@ import (
 // OwnService gives access to code ownership data.
 // At this point only data from CODEOWNERS file is presented, if available.
 type OwnService interface {
-	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
-	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	//
-	// Deprecated: Please use Ownership method and query the resulting graph, and not the codeowners.File.
-	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
-
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
-	//
-	// Deprecated: Please use Ownership method and query the graph for codeowners.Ownership instead.
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
 
 	// Ownership produces an OwnershipGraph which allows querying ownership
@@ -75,9 +67,9 @@ var codeownersLocations = []string{
 	"docs/CODEOWNERS",
 }
 
-// OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
+// ownersFile makes a best effort attempt to return a CODEOWNERS file from one of
 // the possible codeownersLocations. It returns nil if no match is found.
-func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (s *ownService) ownersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,
@@ -129,37 +121,12 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 	return resolved, nil
 }
 
-type ownershipRule struct {
-	compiledPattern codeownerspb.GlobPattern
-	protoRule       *codeownerspb.Rule
-}
-
-type ownershipGraph struct {
-	rules   []ownershipRule
-	service *ownService
-}
-
-func (g ownershipGraph) FindOwners(ctx context.Context, filePath string) ([]codeowners.Ownership, error) {
-	var ownership []codeowners.Ownership
-	for _, r := range g.rules {
-		if r.compiledPattern.Match(filePath) {
-			resolvedOwners, err := g.service.ResolveOwnersWithType(ctx, r.protoRule.GetOwner())
-			if err != nil {
-				return nil, err
-			}
-			for _, owner := range resolvedOwners {
-				ownership = append(ownership, codeowners.Ownership{
-					Owner: owner,
-					Rule:  r.protoRule,
-				})
-			}
-		}
-	}
-	return ownership, nil
-}
-
+// Ownership returns a codeowners graph that is compiled off a CODEOWNERS file.
+// The implementation processes the file once, so each subsequent query issued
+// against the graph can be fast. The graph can be therefore cached for better
+// efficiency.
 func (s *ownService) Ownership(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (codeowners.Graph, error) {
-	file, err := s.OwnersFile(ctx, repoName, commitID)
+	file, err := s.ownersFile(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -226,4 +193,33 @@ func personOrError(handle, email string, err error) (*codeowners.Person, error) 
 		return &codeowners.Person{Handle: handle, Email: email}, nil
 	}
 	return nil, err
+}
+
+type ownershipRule struct {
+	compiledPattern codeownerspb.GlobPattern
+	protoRule       *codeownerspb.Rule
+}
+
+type ownershipGraph struct {
+	rules   []ownershipRule
+	service *ownService
+}
+
+func (g ownershipGraph) FindOwners(ctx context.Context, filePath string) ([]codeowners.Ownership, error) {
+	var ownership []codeowners.Ownership
+	for _, r := range g.rules {
+		if r.compiledPattern.Match(filePath) {
+			resolvedOwners, err := g.service.ResolveOwnersWithType(ctx, r.protoRule.GetOwner())
+			if err != nil {
+				return nil, err
+			}
+			for _, owner := range resolvedOwners {
+				ownership = append(ownership, codeowners.Ownership{
+					Owner: owner,
+					Rule:  r.protoRule,
+				})
+			}
+		}
+	}
+	return ownership, nil
 }

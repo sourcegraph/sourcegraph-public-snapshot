@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
@@ -54,9 +55,17 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+			ctx := context.Background()
+			db := database.NewMockDB()
+			fs := fakedb.New()
+			fs.Wire(db)
+			graph, err := backend.NewOwnService(git, db).Ownership(ctx, "repo", "SHA")
 			require.NoError(t, err)
-			assert.Equal(t, codeownersText, got.Repr())
+			ownership, err := graph.FindOwners(ctx, "README.md")
+			require.NoError(t, err)
+			if got, want := ownership[0].Owner.Identifier(), "owner@example.com"; got != want {
+				t.Errorf("owner, got %q want %q", got, want)
+			}
 		})
 	}
 }
@@ -75,9 +84,17 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+	ctx := context.Background()
+	db := database.NewMockDB()
+	fs := fakedb.New()
+	fs.Wire(db)
+	graph, err := backend.NewOwnService(git, db).Ownership(ctx, "repo", "SHA")
 	require.NoError(t, err)
-	assert.Nil(t, got)
+	ownership, err := graph.FindOwners(ctx, "README.md")
+	require.NoError(t, err)
+	if len(ownership) != 0 {
+		t.Errorf("ownerships, want none, got %v", ownership)
+	}
 }
 
 func TestResolveOwnersWithType(t *testing.T) {
