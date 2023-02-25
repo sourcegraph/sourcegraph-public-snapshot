@@ -1,4 +1,4 @@
-package mutablelimiter
+package limiter
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestLimiter(t *testing.T) {
+func TestMutableLimiter(t *testing.T) {
 	// cancels created by helpers
 	var cancels []context.CancelFunc
 	defer func() {
@@ -21,7 +21,7 @@ func TestLimiter(t *testing.T) {
 		return ctx
 	}
 
-	l := New(2)
+	l := NewMutable(2)
 
 	// Should not block
 	ctx1, cancel1, err := l.Acquire(context.Background())

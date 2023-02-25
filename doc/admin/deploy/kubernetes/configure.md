@@ -587,16 +587,12 @@ To use an **existing** storage class provided by other cloud providers:
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
   ```yaml
-  # instances/$INSTANCE_NAME/kustomization.yaml
-  components:
-    # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/name-update
-  # ...
-  configMapGenerator:
-    - name: sourcegraph-kustomize-env
-      behavior: merge
-      literals:
-        - STORAGECLASS_NAME=sourcegraph # [ACTION] Set storage class name here
+  # instances/$INSTANCE_NAME/buildConfig.yaml
+  kind: SourcegraphBuildConfig
+  metadata:
+    name: sourcegraph-kustomize-config
+  data:
+    STORAGECLASS_NAME: sourcegraph # [ACTION] Set storage class name here
   ```
 
   The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
