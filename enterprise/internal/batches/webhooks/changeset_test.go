@@ -48,10 +48,10 @@ func TestMarshalChangeset(t *testing.T) {
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
 
 	repoOne := repos[0]
-	repoOneID := gql.MarshalRepositoryID(api.RepoID(repoOne.ID))
+	repoOneID := gql.MarshalRepositoryID(repoOne.ID)
 
 	repoTwo := repos[1]
-	repoTwoID := gql.MarshalRepositoryID(api.RepoID(repoTwo.ID))
+	repoTwoID := gql.MarshalRepositoryID(repoTwo.ID)
 
 	uc := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               repoOne.ID,
