@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useEffect, useMemo } from 'react'
-=======
 import React, { useMemo, useEffect, FC } from 'react'
->>>>>>> main
 
 import {
     mdiBrain,
@@ -28,11 +24,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-<<<<<<< HEAD
-import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-=======
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
->>>>>>> main
 import {
     Badge,
     Button,

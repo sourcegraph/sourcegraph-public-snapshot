@@ -55,7 +55,6 @@ describe('TreePage', () => {
             sourcegraphURL: 'https://sourcegraph.com',
             clientApplication: 'sourcegraph',
         },
-        isLightTheme: false,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         codeIntelligenceEnabled: false,
         batchChangesExecutionEnabled: false,
@@ -71,8 +70,8 @@ describe('TreePage', () => {
             const repo = repoDefaults()
             repo.isFork = false
             const props = treePagePropsDefaults(repo)
-            renderWithBrandedContext(<TreePage {...props} />)
-            expect(screen.queryByTestId('repo-fork-badge')).not.toBeInTheDocument()
+            const result = renderWithBrandedContext(<TreePage {...props} />)
+            expect(result.queryByTestId('repo-fork-badge')).not.toBeInTheDocument()
         })
 
         it('displays a page that is a fork', () => {
