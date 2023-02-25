@@ -2,11 +2,11 @@
 # Build syntect_server statically #
 ###################################
 
-FROM rust:1.61.0-alpine3.14@sha256:2e07fc0d66b00d6acc4b243f65f292aa21afc8a1df99196a3f1904cab140298d as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
+FROM rust:1.67.1-alpine3.17@sha256:8269a16b3eaf33893cc00ea0650b4a4e8323f9a459ce0b527b630310dafbf6ee as ss
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base clang
 COPY . /repo
 WORKDIR /repo
-ENV CFLAGS=-fno-outline-atomics
+ENV CC="clang"
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
