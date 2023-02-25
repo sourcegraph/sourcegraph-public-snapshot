@@ -8,7 +8,6 @@ import {
     ComboboxOptionText,
     Combobox,
     ComboboxInput,
-    ComboboxPopover,
     ComboboxList,
     ComboboxOption,
     Flipping,

@@ -3,17 +3,17 @@ import * as React from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { NotFoundPage } from '../components/HeroPage'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import type { TeamAreaProps } from './area/TeamArea'
 import type { TeamListPageProps } from './list/TeamListPage'
 import type { NewTeamPageProps } from './new/NewTeamPage'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { ErrorBoundary } from '../components/ErrorBoundary'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 const TeamArea = lazyComponent<TeamAreaProps, 'TeamArea'>(() => import('./area/TeamArea'), 'TeamArea')
 const TeamListPage = lazyComponent<TeamListPageProps, 'TeamListPage'>(

@@ -75,7 +75,7 @@ export const TeamAvatar = React.forwardRef(
                 )
             }
 
-            return <img ref={reference} {...imgProps} />
+            return <img ref={reference} alt="" {...imgProps} />
         }
 
         const name = team.displayName || team.name || ''

@@ -25,11 +25,11 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useExperimentalFeatures } from '../stores'
 
 import styles from './UserNavItem.module.scss'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const MAX_VISIBLE_ORGS = 5
 

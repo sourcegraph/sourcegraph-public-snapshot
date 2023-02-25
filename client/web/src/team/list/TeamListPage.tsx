@@ -22,7 +22,6 @@ import { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../
 
 import { useChildTeams, useTeams } from './backend'
 import { TeamNode } from './TeamNode'
-import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 
 export interface TeamListPageProps {}
 

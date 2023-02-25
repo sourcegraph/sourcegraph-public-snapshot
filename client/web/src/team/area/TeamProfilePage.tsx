@@ -9,10 +9,10 @@ import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
 import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
+import { TeamAvatar } from '../TeamAvatar'
 
 import { useChangeTeamDisplayName } from './backend'
 import { TeamHeader } from './TeamHeader'
-import { TeamAvatar } from '../TeamAvatar'
 
 export interface TeamProfilePageProps {
     /** The team that is the subject of the page. */
