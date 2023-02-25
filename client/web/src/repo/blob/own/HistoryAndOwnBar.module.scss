@@ -1,2 +1,70 @@
-.commit {
+@import 'wildcard/src/global-styles/breakpoints';
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    min-height: 2.625rem;
+}
+
+.history {
+    min-width: 0;
+    font-size: 0.75rem;
+    flex-shrink: 1000000; // Very high value to shink this before shrinking the ownership side.
+
+    // Hide on small screen sizes
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.own {
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    background-color: var(--color-bg-1);
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: normal;
+    font-size: 0.75rem;
+    overflow: hidden;
+}
+
+.own-branding {
+    text-transform: uppercase;
+    background-color: var(--color-bg-2);
+    display: flex;
+    align-items: center;
+    padding: 0 0.25rem;
+}
+
+.own-icon {
+    font-size: 0.875rem;
+    color: var(--purple);
+}
+
+.own-items {
+    padding: 0.125rem 0.25rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.own-item {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.own-more {
+    color: var(--link-color);
+    margin-left: 0.5rem;
+    white-space: nowrap;
+
+    .own:hover & {
+        text-decoration: underline;
+    }
 }

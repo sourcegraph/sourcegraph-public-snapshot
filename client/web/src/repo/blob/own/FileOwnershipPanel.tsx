@@ -39,7 +39,12 @@ export const FileOwnershipPanel: React.FunctionComponent<{
         )
     }
 
-    if (data?.node && data.node.__typename === 'Repository' && data.node.commit) {
+    if (
+        data?.node &&
+        data.node.__typename === 'Repository' &&
+        data.node.commit?.blob &&
+        data.node.commit.blob.ownership.nodes.length > 0
+    ) {
         return (
             <Accordion
                 as="table"
@@ -63,6 +68,7 @@ export const FileOwnershipPanel: React.FunctionComponent<{
                             reasons={ownership.reasons.filter(reason => reason.__typename === 'CodeownersFileEntry')}
                         />
                     ) : (
+                        // TODO: Add support for teams.
                         <></>
                     )
                 )}

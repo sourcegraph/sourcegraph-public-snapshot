@@ -54,7 +54,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
             ... on Repository {
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
-                        ownership(first: 1) {
+                        ownership(first: 2) {
                             nodes {
                                 owner {
                                     ...OwnerFields
