@@ -3,7 +3,7 @@ package v1
 import (
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/becheran/wildmatch-go"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -67,24 +67,16 @@ func (p anyMatch) Match(_ string) bool { return true }
 // asteriskPattern is a pattern that may contain * glob wildcard.
 type asteriskPattern struct {
 	glob     string
-	compiled *regexp.Regexp
+	compiled *wildmatch.WildMatch
 }
 
 func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
-	quoted := regexp.QuoteMeta(pattern)
-	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
-	compiled, err := regexp.Compile("^" + regular + "$")
-	if err != nil {
-		return asteriskPattern{}, err
-	}
+	compiled := wildmatch.NewWildMatch(pattern)
 	return asteriskPattern{glob: pattern, compiled: compiled}, nil
 }
 func (p asteriskPattern) String() string { return p.glob }
 func (p asteriskPattern) Match(part string) bool {
-	if p.compiled == nil {
-		return false
-	}
-	return p.compiled.FindString(part) != ""
+	return p.compiled.IsMatch(part)
 }
 
 // compile translates a text representation of a glob pattern

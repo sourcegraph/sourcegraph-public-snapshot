@@ -232,7 +232,7 @@ func TestFileOwnersOrder(t *testing.T) {
 }
 
 func BenchmarkOwnersMatch(b *testing.B) {
-	pattern := "/main/src/**/README.md"
+	pattern := "/main/src/**/*REA*DM*E.md"
 	paths := []string{
 		"/main/src/README.md",
 		"/main/src/foo/bar/README.md",
