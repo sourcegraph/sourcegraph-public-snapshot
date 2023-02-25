@@ -30,6 +30,7 @@ export const generateCache = (): InMemoryCache =>
             BatchSpecWorkspace: ['VisibleBatchSpecWorkspace', 'HiddenBatchSpecWorkspace'],
             ChangesetSpec: ['VisibleChangesetSpec', 'HiddenChangesetSpec'],
             Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
+            TeamMember: ['User'],
         },
     })
 

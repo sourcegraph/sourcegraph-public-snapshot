@@ -31,6 +31,7 @@ const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
 const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
+const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 
 export interface LayoutRouteProps {
     path: string
@@ -106,6 +107,10 @@ export const routes: readonly LayoutRouteProps[] = (
         {
             path: PageRoutes.User,
             element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
+        },
+        {
+            path: PageRoutes.Teams,
+            element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
         },
         {
             path: PageRoutes.Organizations,

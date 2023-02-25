@@ -27,7 +27,8 @@ export const LoaderButton = forwardRef<HTMLButtonElement, LoaderButtonProps>((pr
                 </>
             ) : icon ? (
                 <>
-                    {icon}&nbsp;{label}
+                    {icon}
+                    {label && <>&nbsp;{label}</>}
                 </>
             ) : (
                 label
