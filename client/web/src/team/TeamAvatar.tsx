@@ -60,6 +60,7 @@ export const TeamAvatar = React.forwardRef(
                 src: url,
                 id: targetID,
                 role: 'presentation',
+                alt: '',
                 ...otherProps,
             }
 
@@ -74,12 +75,16 @@ export const TeamAvatar = React.forwardRef(
                 )
             }
 
-            return <img ref={reference} alt="" {...imgProps} />
+            return <img ref={reference} {...imgProps} />
         }
 
         const name = team.displayName || team.name || ''
         const getInitials = (fullName: string): string => {
-            const names = fullName.split(' ')
+            const names = fullName.includes(' ')
+                ? fullName.split(' ')
+                : fullName.includes('-')
+                ? fullName.split('-')
+                : fullName.split('.')
             const initials = names.map(name => name.charAt(0).toLowerCase())
             if (initials.length > 1) {
                 return `${initials[0]}${initials[initials.length - 1]}`

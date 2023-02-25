@@ -110,7 +110,7 @@ export const routes: readonly LayoutRouteProps[] = (
         },
         {
             path: PageRoutes.Teams,
-            render: props => <TeamsArea {...props} />,
+            element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
         },
         {
             path: PageRoutes.Organizations,

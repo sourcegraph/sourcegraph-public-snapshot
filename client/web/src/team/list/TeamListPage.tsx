@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 
-import { mdiPlus } from '@mdi/js'
+import { mdiAccountMultiple, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Link, Icon, PageHeader, Container, useDebounce } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, PageHeader, Container, useDebounce, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -22,6 +22,7 @@ import { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../
 
 import { useChildTeams, useTeams } from './backend'
 import { TeamNode } from './TeamNode'
+import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 
 export interface TeamListPageProps {}
 
@@ -38,7 +39,6 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
         <Page className="mb-3">
             <PageTitle title="Teams" />
             <PageHeader
-                path={[{ text: 'Teams' }]}
                 actions={
                     <>
                         <Button to="/teams/new" variant="primary" as={Link}>
@@ -53,7 +53,13 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
                     </>
                 }
                 className="mb-3"
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={mdiAccountMultiple}>
+                        Teams <ProductStatusBadge status="prototype" />
+                    </PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
 
             <Container className="mb-3">
                 <TeamList searchValue={searchValue} setSearchValue={setSearchValue} query={query} {...connection} />

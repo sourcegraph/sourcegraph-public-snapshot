@@ -1,10 +1,12 @@
 import React from 'react'
 
+import { mdiAccountMultiple } from '@mdi/js'
 import { NavLink } from 'react-router-dom'
 
-import { Alert, Badge, PageHeader } from '@sourcegraph/wildcard'
+import { Alert, Badge, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { TeamAreaRouteContext } from './TeamArea'
+import { TeamAvatar } from '../TeamAvatar'
 
 interface Props extends Pick<TeamAreaRouteContext, 'team'> {
     className?: string
@@ -21,25 +23,23 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             <div className="container">
                 {team && (
                     <>
-                        <PageHeader
-                            path={[
-                                { to: '/teams', text: 'Teams' },
-                                {
-                                    text: (
+                        <PageHeader className="mb-3">
+                            <PageHeader.Heading as="h2" styleAs="h1">
+                                <PageHeader.Breadcrumb to="/teams" icon={mdiAccountMultiple}>
+                                    Teams
+                                </PageHeader.Breadcrumb>
+                                <PageHeader.Breadcrumb>
+                                    {team.displayName ? (
                                         <>
-                                            {team.displayName ? (
-                                                <>
-                                                    {team.displayName} ({team.name})
-                                                </>
-                                            ) : (
-                                                team.name
-                                            )}
+                                            {team.displayName} ({team.name})
                                         </>
-                                    ),
-                                },
-                            ]}
-                            className="mb-3"
-                        />
+                                    ) : (
+                                        team.name
+                                    )}
+                                    <ProductStatusBadge className="ml-2" status="prototype" />
+                                </PageHeader.Breadcrumb>
+                            </PageHeader.Heading>
+                        </PageHeader>
 
                         {team.readonly && (
                             <Alert variant="info" className="mb-3">

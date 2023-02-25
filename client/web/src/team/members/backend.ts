@@ -78,7 +78,7 @@ export function useTeamMembers(
 }
 
 const REMOVE_TEAM_MEMBERS = gql`
-    mutation RemoveTeamMembers($team: ID!, $members: [ID!]!) {
+    mutation RemoveTeamMembers($team: ID!, $members: [TeamMemberInput!]!) {
         removeTeamMembers(team: $team, members: $members) {
             id
         }
@@ -90,7 +90,7 @@ export function useRemoveTeamMembers(): MutationTuple<RemoveTeamMembersResult, R
 }
 
 const ADD_TEAM_MEMBERS = gql`
-    mutation AddTeamMembers($team: ID!, $members: [ID!]!) {
+    mutation AddTeamMembers($team: ID!, $members: [TeamMemberInput!]!) {
         addTeamMembers(team: $team, members: $members) {
             id
         }

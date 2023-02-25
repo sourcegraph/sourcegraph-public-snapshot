@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { mdiPencil } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
-import { Button, ErrorAlert, Form, H2, H3, Icon, Input, Label, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Modal, Text } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -12,6 +12,7 @@ import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
 
 import { useChangeTeamDisplayName } from './backend'
 import { TeamHeader } from './TeamHeader'
+import { TeamAvatar } from '../TeamAvatar'
 
 export interface TeamProfilePageProps {
     /** The team that is the subject of the page. */
@@ -40,17 +41,20 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
 
     return (
         <>
-            <Page>
+            <Page className="mb-3">
                 <TeamHeader team={team} className="mb-3" />
                 <div className="container">
-                    <H2>Team name</H2>
-                    <Text>{team.name}</Text>
-                    <H2>Display Name</H2>
+                    <H3>Team name</H3>
                     <Text>
-                        {team.displayName}
+                        <TeamAvatar team={team} className="mr-1" />
+                        {team.name}
+                    </Text>
+                    <H3>Display Name</H3>
+                    <Text className="d-flex align-items-center">
+                        {team.displayName && <span>{team.displayName}</span>}
                         {!team.displayName && <span className="text-muted">No display name set</span>}{' '}
                         {team.viewerCanAdminister && (
-                            <Button variant="link" onClick={onEditDisplayName}>
+                            <Button variant="link" onClick={onEditDisplayName} className="ml-2" size="sm">
                                 <Icon inline={true} aria-label="Edit team display name" svgPath={mdiPencil} />
                             </Button>
                         )}

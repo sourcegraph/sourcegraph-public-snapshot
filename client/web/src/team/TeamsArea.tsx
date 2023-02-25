@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -11,6 +11,9 @@ import { NotFoundPage } from '../components/HeroPage'
 import type { TeamAreaProps } from './area/TeamArea'
 import type { TeamListPageProps } from './list/TeamListPage'
 import type { NewTeamPageProps } from './new/NewTeamPage'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { ErrorBoundary } from '../components/ErrorBoundary'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 const TeamArea = lazyComponent<TeamAreaProps, 'TeamArea'>(() => import('./area/TeamArea'), 'TeamArea')
 const TeamListPage = lazyComponent<TeamListPageProps, 'TeamListPage'>(
@@ -28,19 +31,24 @@ export interface Props {
  * Renders a layout of a sidebar and a content area to display team-related pages.
  */
 const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const [enableTeams] = useFeatureFlag('search-ownership')
+    const location = useLocation()
+
     // No teams on sourcegraph.com
-    if (props.isSourcegraphDotCom) {
+    if (!enableTeams || props.isSourcegraphDotCom) {
         return <NotFoundPage pageType="team" />
     }
     return (
-        <>
-            <Routes>
-                <Route path="new" element={<NewTeamPage />} />
-                <Route path="" element={<TeamListPage {...props} />} />
-                <Route path=":teamName/*" element={<TeamArea {...props} />} />
-                <Route element={<NotFoundPage pageType="team" />} />
-            </Routes>
-        </>
+        <ErrorBoundary location={location}>
+            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                <Routes>
+                    <Route path="new" element={<NewTeamPage />} />
+                    <Route path="" element={<TeamListPage {...props} />} />
+                    <Route path=":teamName/*" element={<TeamArea {...props} />} />
+                    <Route element={<NotFoundPage pageType="team" />} />
+                </Routes>
+            </React.Suspense>
+        </ErrorBoundary>
     )
 }
 

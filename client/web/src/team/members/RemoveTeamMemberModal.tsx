@@ -33,7 +33,7 @@ export const RemoveTeamMemberModal: React.FunctionComponent<React.PropsWithChild
             event.preventDefault()
 
             try {
-                await removeMembers({ variables: { team: teamID, members: [member.id] } })
+                await removeMembers({ variables: { team: teamID, members: [{ userID: member.id }] } })
 
                 afterRemove()
             } catch (error) {

@@ -92,21 +92,9 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
         <ErrorBoundary location={location}>
             <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                 <Routes>
-                    <Route
-                        path=""
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        element={<TeamProfilePage {...context} />}
-                    />
-                    <Route
-                        path="members"
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        element={<TeamMembersPage {...context} />}
-                    />
-                    <Route
-                        path="child-teams"
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        element={<TeamChildTeamsPage {...context} />}
-                    />
+                    <Route path="" element={<TeamProfilePage {...context} />} />
+                    <Route path="members" element={<TeamMembersPage {...context} />} />
+                    <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} />
                     <Route element={<NotFoundPage />} />
                 </Routes>
             </React.Suspense>

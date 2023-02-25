@@ -38,7 +38,9 @@ export const AddTeamMemberModal: React.FunctionComponent<React.PropsWithChildren
             }
 
             try {
-                await addMembers({ variables: { team: teamID, members: selectedMembers } })
+                await addMembers({
+                    variables: { team: teamID, members: selectedMembers.map(member => ({ userID: member })) },
+                })
 
                 afterAdd()
             } catch (error) {

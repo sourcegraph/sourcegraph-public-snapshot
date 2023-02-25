@@ -29,6 +29,7 @@ import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useExperimentalFeatures } from '../stores'
 
 import styles from './UserNavItem.module.scss'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const MAX_VISIBLE_ORGS = 5
 
@@ -62,6 +63,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
+    const [enableTeams] = useFeatureFlag('search-ownership')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -120,9 +122,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to="/teams">
-                                Teams
-                            </MenuLink>
+                            {enableTeams && !isSourcegraphDotCom && (
+                                <MenuLink as={Link} to="/teams">
+                                    Teams
+                                </MenuLink>
+                            )}
                             <MenuDivider />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">
