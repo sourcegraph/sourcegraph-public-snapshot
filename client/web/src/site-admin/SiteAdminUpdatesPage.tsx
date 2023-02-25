@@ -144,6 +144,8 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
                             <CollapseHeader
                                 as={Button}
+                                variant="secondary"
+                                outline={true}
                                 className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
                                 <span>
