@@ -189,7 +189,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
