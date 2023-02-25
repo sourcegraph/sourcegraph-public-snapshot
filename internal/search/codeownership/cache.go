@@ -35,6 +35,42 @@ func (r *ResolvedOwnersFile) FindOwners(path string) (ret []codeowners.ResolvedO
 	return ret
 }
 
+const RULESET_FAST_BYPASS_THRESHOLD = 10
+
+func (r *ResolvedOwnersFile) FindOwnersFiltered(path string, candidates []codeowners.ResolvedOwner) (ret []codeowners.ResolvedOwner) {
+	// If the ruleset is large, do a precheck.
+	if len(r.file.GetRule()) > RULESET_FAST_BYPASS_THRESHOLD {
+		// If any of the rules match a defined owner in this file, it could potentially match for a given path,
+		// so we actually do the costly comparisons of path globs.
+		if len(candidates) > 0 {
+			canMatch := false
+			for _, want := range candidates {
+				if _, ok := want.(*codeowners.Any); ok {
+					// Any can always match, don't need to recheck all owners.
+					canMatch = true
+					break
+				}
+				for _, have := range r.resolvedOwners {
+					// TODO: If we could still match by identifier this would be a static
+					// lookup and not a nested loop.
+					if have.Equals(want) {
+						canMatch = true
+						break
+					}
+				}
+				if canMatch {
+					break
+				}
+			}
+			if !canMatch {
+				return nil
+			}
+		}
+	}
+
+	return r.FindOwners(path)
+}
+
 type Cache struct {
 	entries    map[cacheKey]*ResolvedOwnersFile
 	ownService backend.OwnService

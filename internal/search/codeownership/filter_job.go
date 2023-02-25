@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
@@ -160,6 +161,10 @@ func applyCodeOwnershipFiltering(
 
 	filtered := matches[:0]
 
+	candidates := make([]codeowners.ResolvedOwner, 0, len(includeOwners)+len(excludeOwners))
+	candidates = append(candidates, includeOwners...)
+	candidates = append(candidates, excludeOwners...)
+
 matchesLoop:
 	for _, m := range matches {
 		// Code ownership is currently only implemented for files.
@@ -167,6 +172,8 @@ matchesLoop:
 		if !ok {
 			continue
 		}
+
+		tr.AddEvent("Match", attribute.String("repo", string(mm.Repo.Name)))
 
 		// Load ownership data for the file in question.
 		file, err := cache.GetFromCacheOrFetch(ctx, mm.Repo.ID, mm.Repo.Name, mm.CommitID)
@@ -177,7 +184,7 @@ matchesLoop:
 
 		// Find the owners for the file in question and resolve the owners to
 		// ResolvedOwners.
-		resolvedOwners := file.FindOwners(mm.File.Path)
+		resolvedOwners := file.FindOwnersFiltered(mm.File.Path, candidates)
 
 		// Matching time!
 		for _, owner := range includeOwners {
@@ -201,10 +208,6 @@ matchesLoop:
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
 func containsOwner(owners []codeowners.ResolvedOwner, owner codeowners.ResolvedOwner) bool {
-	if len(owners) == 0 {
-		_, ok := owner.(*codeowners.Any)
-		return ok
-	}
 	for _, want := range owners {
 		if want.Equals(owner) {
 			return true
