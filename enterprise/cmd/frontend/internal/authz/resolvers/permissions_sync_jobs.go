@@ -114,7 +114,7 @@ func (p *permissionsSyncJobResolver) FailureMessage() *string {
 
 func (p *permissionsSyncJobResolver) Reason() graphqlbackend.PermissionsSyncJobReasonResolver {
 	reason := p.job.Reason
-	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), message: string(reason)}
+	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), reason: reason}
 }
 
 func (p *permissionsSyncJobResolver) CancellationReason() *string {
@@ -231,15 +231,15 @@ func (c codeHostStateResolver) Message() string {
 }
 
 type permissionSyncJobReasonResolver struct {
-	group   database.PermissionsSyncJobReasonGroup
-	message string
+	group  database.PermissionsSyncJobReasonGroup
+	reason database.PermissionsSyncJobReason
 }
 
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
-func (p permissionSyncJobReasonResolver) Message() string {
-	return p.message
+func (p permissionSyncJobReasonResolver) Reason() string {
+	return string(p.reason)
 }
 
 type subject struct {

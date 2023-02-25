@@ -3,7 +3,11 @@ import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { PermissionSyncJobReasonGroup, PermissionSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    PermissionsSyncJobReason,
+    PermissionsSyncJobReasonGroup,
+    PermissionsSyncJobState,
+} from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -37,66 +41,66 @@ export const FiveSyncJobsFound: Story = () => (
                             },
                             result: {
                                 data: {
-                                    permissionSyncJobs: {
+                                    permissionsSyncJobs: {
                                         nodes: [
                                             createSyncJobMock(
                                                 '1',
-                                                PermissionSyncJobState.COMPLETED,
+                                                PermissionsSyncJobState.COMPLETED,
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/sourcegraph',
                                                 },
                                                 {
-                                                    group: PermissionSyncJobReasonGroup.WEBHOOK,
-                                                    message: 'REASON_GITHUB_REPO_EVENT',
+                                                    group: PermissionsSyncJobReasonGroup.WEBHOOK,
+                                                    reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
                                                 }
                                             ),
                                             createSyncJobMock(
                                                 '2',
-                                                PermissionSyncJobState.ERRORED,
+                                                PermissionsSyncJobState.ERRORED,
                                                 {
                                                     __typename: 'User',
                                                     username: 'abdul',
                                                 },
                                                 {
-                                                    group: PermissionSyncJobReasonGroup.SOURCEGRAPH,
-                                                    message: 'REASON_USER_EMAIL_VERIFIED',
+                                                    group: PermissionsSyncJobReasonGroup.SOURCEGRAPH,
+                                                    reason: PermissionsSyncJobReason.REASON_USER_EMAIL_VERIFIED,
                                                 }
                                             ),
                                             createSyncJobMock(
                                                 '3',
-                                                PermissionSyncJobState.FAILED,
+                                                PermissionsSyncJobState.FAILED,
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/hoursegraph',
                                                 },
                                                 {
-                                                    group: PermissionSyncJobReasonGroup.SCHEDULE,
-                                                    message: 'REASON_REPO_OUTDATED_PERMS',
+                                                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
+                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
                                                 }
                                             ),
                                             createSyncJobMock(
                                                 '4',
-                                                PermissionSyncJobState.PROCESSING,
+                                                PermissionsSyncJobState.PROCESSING,
                                                 {
                                                     __typename: 'User',
                                                     username: 'omar',
                                                 },
                                                 {
-                                                    group: PermissionSyncJobReasonGroup.MANUAL,
-                                                    message: 'REASON_MANUAL_USER_SYNC',
+                                                    group: PermissionsSyncJobReasonGroup.MANUAL,
+                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_USER_SYNC,
                                                 }
                                             ),
                                             createSyncJobMock(
                                                 '5',
-                                                PermissionSyncJobState.QUEUED,
+                                                PermissionsSyncJobState.QUEUED,
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/stillfunny',
                                                 },
                                                 {
-                                                    group: PermissionSyncJobReasonGroup.MANUAL,
-                                                    message: 'REASON_MANUAL_REPO_SYNC',
+                                                    group: PermissionsSyncJobReasonGroup.MANUAL,
+                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
                                                 }
                                             ),
                                         ],
@@ -136,19 +140,19 @@ interface user {
 type subject = repo | user
 
 interface reason {
-    __typename?: 'PermissionSyncJobReason'
-    group: PermissionSyncJobReasonGroup
-    message: string
+    __typename?: 'PermissionsSyncJobReasonWithGroup'
+    group: PermissionsSyncJobReasonGroup
+    reason: PermissionsSyncJobReason
 }
 
 function createSyncJobMock(
     id: string,
-    state: PermissionSyncJobState,
+    state: PermissionsSyncJobState,
     subject: subject,
     reason: reason
 ): PermissionsSyncJob {
     return {
-        __typename: 'PermissionSyncJob',
+        __typename: 'PermissionsSyncJob',
         id,
         state,
         subject,
@@ -157,9 +161,9 @@ function createSyncJobMock(
             username: 'super-site-admin',
         },
         queuedAt: formatRFC3339(TIMESTAMP_MOCK),
-        startedAt: state !== PermissionSyncJobState.QUEUED ? formatRFC3339(addMinutes(TIMESTAMP_MOCK, 1)) : null,
+        startedAt: state !== PermissionsSyncJobState.QUEUED ? formatRFC3339(addMinutes(TIMESTAMP_MOCK, 1)) : null,
         finishedAt:
-            state !== PermissionSyncJobState.QUEUED && state !== PermissionSyncJobState.PROCESSING
+            state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
                 ? formatRFC3339(addMinutes(TIMESTAMP_MOCK, 2))
                 : null,
         processAfter: null,

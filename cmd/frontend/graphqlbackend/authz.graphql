@@ -354,22 +354,51 @@ enum PermissionsSyncJobState {
 
 """
 Compound type for a permission sync job trigger reason.
-Consists of a reason group (PermissionSyncJobReasonGroup) and a message, providing details
+Consists of a reason group (PermissionSyncJobReasonGroup) and a reason itself, providing details
 about why/how the sync was triggered.
 """
-type PermissionsSyncJobReason {
+type PermissionsSyncJobReasonWithGroup {
     """
     PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
     """
     group: PermissionsSyncJobReasonGroup!
     """
-    Message with details about why/how the sync was triggered.
+    Reason with details about why/how the sync was triggered.
     """
-    message: String!
+    reason: PermissionsSyncJobReason!
 }
 
 """
 State types of permission sync jobs.
+"""
+enum PermissionsSyncJobReason {
+    REASON_USER_OUTDATED_PERMS
+    REASON_USER_NO_PERMS
+    REASON_REPO_OUTDATED_PERMS
+    REASON_REPO_NO_PERMS
+    REASON_REPO_UPDATED_FROM_CODE_HOST
+    REASON_USER_EMAIL_REMOVED
+    REASON_USER_EMAIL_VERIFIED
+    REASON_USER_ADDED_TO_ORG
+    REASON_USER_REMOVED_FROM_ORG
+    REASON_USER_ACCEPTED_ORG_INVITE
+    REASON_GITHUB_USER_EVENT
+    REASON_GITHUB_USER_ADDED_EVENT
+    REASON_GITHUB_USER_REMOVED_EVENT
+    REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT
+    REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT
+    REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT
+    REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT
+    REASON_GITHUB_ORG_MEMBER_ADDED_EVENT
+    REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT
+    REASON_GITHUB_REPO_EVENT
+    REASON_GITHUB_REPO_MADE_PRIVATE_EVENT
+    REASON_MANUAL_REPO_SYNC
+    REASON_MANUAL_USER_SYNC
+}
+
+"""
+Sync reason groups of permission sync jobs.
 """
 enum PermissionsSyncJobReasonGroup {
     MANUAL
@@ -433,7 +462,7 @@ type PermissionsSyncJob implements Node {
     """
     Reason for triggering a permission sync job.
     """
-    reason: PermissionsSyncJobReason!
+    reason: PermissionsSyncJobReasonWithGroup!
     """
     Reason for cancellation of a given permission sync job.
     """

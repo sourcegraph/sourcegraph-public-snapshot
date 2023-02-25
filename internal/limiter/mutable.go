@@ -1,20 +1,18 @@
-// Package mutablelimiter provides a Limiter (Semaphore) which supports having
-// its limit (capacity) adjusted and is integrated with context.Context.
-package mutablelimiter
+package limiter
 
 import (
 	"container/list"
 	"context"
 )
 
-// Limiter is a semaphore which supports having its limit (capacity)
+// MutableLimiter is a semaphore which supports having its limit (capacity)
 // adjusted. It integrates with context.Context to handle adjusting the limit
 // down.
 //
-// Note: Each Limiter has an associated goroutine managing the semaphore
+// Note: Each MutableLimiter has an associated goroutine managing the semaphore
 // state. We do not expose a way to stop this goroutine, so ensure the number
 // of Limiters created is bounded.
-type Limiter struct {
+type MutableLimiter struct {
 	adjustLimit chan int
 	acquire     chan acquireRequest
 	getLimit    chan struct{ cap, len int }
@@ -30,9 +28,9 @@ type acquireRequest struct {
 	resp chan<- acquireResponse
 }
 
-// New returns a new Limiter (Semaphore).
-func New(limit int) *Limiter {
-	l := &Limiter{
+// NewMutable returns a new Limiter (Semaphore).
+func NewMutable(limit int) *MutableLimiter {
+	l := &MutableLimiter{
 		adjustLimit: make(chan int),
 		getLimit:    make(chan struct{ cap, len int }),
 		acquire:     make(chan acquireRequest),
@@ -44,13 +42,13 @@ func New(limit int) *Limiter {
 // SetLimit adjusts the limit. If we currently have more than limit context
 // acquired, then contexts are canceled until we are within limit. Contexts
 // are canceled such that the older contexts are canceled.
-func (l *Limiter) SetLimit(limit int) {
+func (l *MutableLimiter) SetLimit(limit int) {
 	l.adjustLimit <- limit
 }
 
 // GetLimit reports the current state of the limiter, returning the
 // capacity and length (maximum and currently-in-use).
-func (l Limiter) GetLimit() (cap, len int) {
+func (l MutableLimiter) GetLimit() (cap, len int) {
 	s := <-l.getLimit
 	return s.cap, s.len
 }
@@ -61,7 +59,7 @@ func (l Limiter) GetLimit() (cap, len int) {
 // than once (idempotent).
 //
 // If ctx is Done before we can acquire, then the context error is returned.
-func (l *Limiter) Acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
+func (l *MutableLimiter) Acquire(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	respC := make(chan acquireResponse)
 	req := acquireRequest{
 		ctx:  ctx,
@@ -80,7 +78,7 @@ func (l *Limiter) Acquire(ctx context.Context) (context.Context, context.CancelF
 	return resp.ctx, resp.cancel, nil
 }
 
-func (l *Limiter) do(limit int) {
+func (l *MutableLimiter) do(limit int) {
 	cancelFuncs := list.New()
 	release := make(chan *list.Element)
 	hidden := make(chan acquireRequest)
