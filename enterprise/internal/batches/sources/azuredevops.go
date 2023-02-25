@@ -103,33 +103,17 @@ func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) err
 // exists, *Changeset will be populated and the return value will be true.
 func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
-	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
-	org, err := repo.GetOrganization()
-	if err != nil {
-		return false, errors.Wrap(err, "getting Azure DevOps organization from project")
-	}
-	args := azuredevops.OrgProjectRepoArgs{
-		Org:          org,
-		Project:      repo.Project.Name,
-		RepoNameOrID: repo.Name,
-	}
-
-	pr, err := s.client.CreatePullRequest(ctx, args, input)
-	if err != nil {
-		return false, errors.Wrap(err, "creating pull request")
-	}
-
-	if err := s.setChangesetMetadata(ctx, repo, &pr, cs); err != nil {
-		return false, errors.Wrap(err, "setting Azure DevOps changeset metadata")
-	}
-
-	return true, nil
+	return s.createChangeset(ctx, cs, input)
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 func (s AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
 	input.IsDraft = true
+	return s.createChangeset(ctx, cs, input)
+}
+
+func (s AzureDevOpsSource) createChangeset(ctx context.Context, cs *Changeset, input azuredevops.CreatePullRequestInput) (bool, error) {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	org, err := repo.GetOrganization()
 	if err != nil {
@@ -183,7 +167,7 @@ func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) er
 
 	updated, err := s.client.AbandonPullRequest(ctx, args)
 	if err != nil {
-		return errors.Wrap(err, "declining pull request")
+		return errors.Wrap(err, "abandoning pull request")
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
@@ -198,7 +182,7 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 	}
 
 	// ADO does not support updating the target branch alongside other fields, so we have
-	// to check it separately, and make 2 calls id there is a change.
+	// to check it separately, and make 2 calls if there is a change.
 	pr, err := s.client.GetPullRequest(ctx, args)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -366,7 +350,7 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 	return s.checkAndCopy(targetRepo, &fork)
 }
 
-// checkAndCopy creatse a types.Repo representation of the forked repository useing the original repo (targetRepo).
+// checkAndCopy creates a types.Repo representation of the forked repository useing the original repo (targetRepo).
 func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
 	if !fork.IsFork {
 		return nil, errors.New("repo is not a fork")

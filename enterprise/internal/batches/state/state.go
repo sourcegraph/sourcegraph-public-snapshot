@@ -263,7 +263,7 @@ func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.
 
 	// States from last sync.
 	for _, status := range apr.Statuses {
-		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsdBuildState(status.State)
+		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsBuildState(status.State)
 	}
 
 	// TODO: @varsanojidan handle events.
@@ -275,7 +275,7 @@ func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.
 	return combineCheckStates(states)
 }
 
-func parseAzureDevOpsdBuildState(s adobatches.PullRequestStatusState) btypes.ChangesetCheckState {
+func parseAzureDevOpsBuildState(s adobatches.PullRequestStatusState) btypes.ChangesetCheckState {
 	switch s {
 	case adobatches.PullRequestBuildStatusStateError, adobatches.PullRequestBuildStatusStateFailed:
 		return btypes.ChangesetCheckStateFailed
@@ -637,6 +637,13 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 		}
 	case *azuredevops.AnnotatedPullRequest:
 		for _, reviewer := range m.Reviewers {
+			// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+			//
+			//   10: approved
+			//   5 : approved with suggestions
+			//   0 : no vote
+			//  -5 : waiting for author
+			//  -10: rejected
 			switch reviewer.Vote {
 			case 10:
 				states[btypes.ChangesetReviewStateApproved] = true
