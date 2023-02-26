@@ -365,10 +365,9 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Url:   "https://github.com",
 				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 				Repos: []string{
-					//"sourcegraph/about",
-					//"sourcegraph/sourcegraph",
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
 				},
-				RepositoryQuery: []string{"sourcegraph sourcegraph"},
 			},
 			err: "<nil>",
 		},
@@ -787,7 +786,7 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 }
 
 func TestGithubSource_SearchRepositories(t *testing.T) {
-	assertAllReposListed := func(want []string) typestest.ReposAssertion {
+	assertReposSearched := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
@@ -812,21 +811,124 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 		err          string
 	}{
 		{
-			name:         "found",
+			name:         "query string found",
 			query:        "sourcegraph sourcegraph",
-			first:        2,
+			first:        5,
 			excludeRepos: []string{},
-			assert: assertAllReposListed([]string{
+			assert: assertReposSearched([]string{
 				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+				"github.com/sourcegraph/src-cli",
+				"github.com/sourcegraph/deploy-sourcegraph-docker",
+				"github.com/sourcegraph/deploy-sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string found reduced first",
+			query:        "sourcegraph sourcegraph",
+			first:        1,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
 				"github.com/sourcegraph/sourcegraph",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
 				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-				Repos: []string{
-					"sourcegraph/about",
-					"sourcegraph/sourcegraph",
-				},
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string empty results",
+			query:        "horsegraph",
+			first:        5,
+			excludeRepos: []string{},
+			assert:       assertReposSearched([]string{}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string exclude one positive match",
+			query:        "sourcegraph sourcegraph",
+			first:        5,
+			excludeRepos: []string{"sourcegraph/about"},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/sourcegraph",
+				"github.com/sourcegraph/src-cli",
+				"github.com/sourcegraph/deploy-sourcegraph-docker",
+				"github.com/sourcegraph/deploy-sourcegraph",
+				"github.com/sourcegraph/handbook",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "empty query string found",
+			query:        "",
+			first:        5,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/vulnerable-js-test",
+				"github.com/sourcegraph/scip-excel",
+				"github.com/sourcegraph/controller-cdktf",
+				"github.com/sourcegraph/deploy-sourcegraph-k8s",
+				"github.com/sourcegraph/embedded-postgres",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "empty query string found reduced first",
+			query:        "",
+			first:        1,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/vulnerable-js-test",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:  "empty query string exclude two positive match",
+			query: "",
+			first: 5,
+			excludeRepos: []string{
+				"sourcegraph/vulnerable-js-test",
+				"sourcegraph/scip-excel",
+			},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/controller-cdktf",
+				"github.com/sourcegraph/deploy-sourcegraph-k8s",
+				"github.com/sourcegraph/embedded-postgres",
+				"github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1",
+				"github.com/sourcegraph/tf-dag",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
 			},
 			err: "<nil>",
 		},
@@ -834,7 +936,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GITHUB-LIST-REPOS/" + tc.name
+		tc.name = "GITHUB-SEARCH-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
 			setUpRcache(t)
 

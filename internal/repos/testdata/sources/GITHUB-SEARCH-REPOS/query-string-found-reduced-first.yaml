@@ -1,0 +1,61 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":1,"query":"sourcegraph sourcegraph","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":465,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
+      Intelligence Platform","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"WRITE","stargazerCount":7390,"forkCount":895}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Sun, 26 Feb 2023 05:12:45 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - F793:1C63:49056A4:4BD0F59:63FAEA4C
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "24"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
