@@ -509,8 +509,13 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 
 	results := make(chan repos.SourceResult)
 
+	first := int(req.First)
+	if first > 100 {
+		first = 100
+	}
+
 	go func() {
-		discoverableSrc.SearchRepositories(ctx, req.Query, int(req.First), req.ExcludeRepos, results)
+		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.ExcludeRepos, results)
 		close(results)
 	}()
 
