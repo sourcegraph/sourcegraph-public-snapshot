@@ -651,7 +651,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 	})
 }
 
-func TestRepositoryQuery_Do(t *testing.T) {
+func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -794,8 +794,8 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 			sort.Strings(have)
 			sort.Strings(want)
 
-			if !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Error(diff)
 			}
 		}
 	}
