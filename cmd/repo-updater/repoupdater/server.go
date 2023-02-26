@@ -429,7 +429,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 	var result *protocol.ExternalServiceNamespacesResult
 	if err = genericSrc.CheckConnection(ctx); err != nil {
 		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
-		s.respond(w, http.StatusUnauthorized, result)
+		s.respond(w, http.StatusServiceUnavailable, result)
 		return
 	}
 
@@ -495,7 +495,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
 		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
-		s.respond(w, http.StatusUnauthorized, result)
+		s.respond(w, http.StatusServiceUnavailable, result)
 		return
 	}
 

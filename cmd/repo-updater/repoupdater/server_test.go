@@ -936,7 +936,7 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			mockNewGenericSourcer = func() repos.Sourcer {
 				return repos.NewFakeSourcer(nil, tc.src)
 			}
-			defer func() { mockNewGenericSourcer = nil }()
+			t.Cleanup(func() { mockNewGenericSourcer = nil })
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -1105,7 +1105,7 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			mockNewGenericSourcer = func() repos.Sourcer {
 				return repos.NewFakeSourcer(nil, tc.src)
 			}
-			defer func() { mockNewGenericSourcer = nil }()
+			t.Cleanup(func() { mockNewGenericSourcer = nil })
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()

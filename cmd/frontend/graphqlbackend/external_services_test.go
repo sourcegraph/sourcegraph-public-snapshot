@@ -1249,19 +1249,24 @@ func TestExternalServiceRepositories(t *testing.T) {
 
 	graphqlID1 := relay.MarshalID("ExternalServiceRepository", types.ExternalServiceRepository{ID: repo1.ID, Name: repo1.Name, ExternalID: repo1.ExternalRepo.ID})
 	graphqlID2 := relay.MarshalID("ExternalServiceRepository", types.ExternalServiceRepository{ID: repo2.ID, Name: repo2.Name, ExternalID: repo2.ExternalRepo.ID})
-
-	query := func(kind, query string, first int, excludeRepos []string) string {
-		excludeReposStr := `"` + strings.Join(excludeRepos, `","`) + `"`
-
-		return fmt.Sprintf(
-			`query { externalServiceRepositories(kind: %s, url: "%s", token: "%s", query: "%s", first: %d, excludeRepos:[%s]) {
-							nodes{
-								id
-								name
-								externalID
-							} } } `,
-			kind, "https://remote.com", "mytoken", query, first, excludeReposStr)
+	queryFn := func(excludeReposStr string) string {
+		return fmt.Sprintf(`query ExternalServiceRepositories(
+								$kind:ExternalServiceKind!,
+								$url:String!,
+								$token:String!,
+								$query:String!,
+								$first:Int)
+						{
+							externalServiceRepositories(kind: $kind, url: $url, token: $token, query: $query, first: $first, excludeRepos: %s) {
+								nodes{
+									id
+									name
+									externalID
+								} } }`, excludeReposStr)
 	}
+
+	query := queryFn(`[]`)
+	queryWithExcludeRepos := queryFn(`["owner/repo2", "owner/repo3"]`)
 
 	singleResult := func(id graphql.ID, repoName, externalID string) string {
 		return fmt.Sprintf(`
@@ -1291,19 +1296,22 @@ func TestExternalServiceRepositories(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
 
-		queryStr := ""
-		first := 2
-		var excludeRepos []string
-
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  query(extsvc.KindGitHub, queryStr, first, excludeRepos),
+			Query:  query,
 			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
 		})
 	})
 	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
@@ -1322,13 +1330,9 @@ func TestExternalServiceRepositories(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
 
-		queryStr := ""
-		first := 2
-		var excludeRepos []string
-
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindGitHub, queryStr, first, excludeRepos),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
@@ -1338,6 +1342,13 @@ func TestExternalServiceRepositories(t *testing.T) {
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
 		})
 	})
 	t.Run("as an admin with access to the external service - pass excludeRepos", func(t *testing.T) {
@@ -1356,19 +1367,22 @@ func TestExternalServiceRepositories(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
 
-		queryStr := ""
-		first := 2
-		excludeRepos := []string{"owner/repo2", "owner/repo3"}
-
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  query(extsvc.KindGitHub, queryStr, first, excludeRepos),
+			Query:  queryWithExcludeRepos,
 			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
 		})
 	})
 	t.Run("as an admin with access to the external service - pass non empty query string", func(t *testing.T) {
@@ -1387,19 +1401,22 @@ func TestExternalServiceRepositories(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
 
-		queryStr := "myquerystring"
-		first := 2
-		var excludeRepos []string
-
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  query(extsvc.KindGitHub, queryStr, first, excludeRepos),
+			Query:  query,
 			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "myquerystring",
+				"first": 2,
+			},
 		})
 	})
 	t.Run("repoupdater returns an error", func(t *testing.T) {
@@ -1418,13 +1435,9 @@ func TestExternalServiceRepositories(t *testing.T) {
 
 		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
-		queryStr := ""
-		first := 2
-		var excludeRepos []string
-
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindGitHub, queryStr, first, excludeRepos),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
@@ -1433,6 +1446,13 @@ func TestExternalServiceRepositories(t *testing.T) {
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
 		})
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
@@ -1452,13 +1472,9 @@ func TestExternalServiceRepositories(t *testing.T) {
 
 		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
-		queryStr := ""
-		first := 2
-		var excludeRepos []string
-
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindBitbucketServer, queryStr, first, excludeRepos),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
@@ -1467,6 +1483,13 @@ func TestExternalServiceRepositories(t *testing.T) {
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindBitbucketServer,
+				"url":   "remote.com",
+				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
 		})
 	})
 }

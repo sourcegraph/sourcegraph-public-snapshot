@@ -301,19 +301,19 @@ func (s *GitHubSource) SearchRepositories(ctx context.Context, query string, fir
 	if query == "" {
 		s.fetchReposAffiliated(ctx, first, excludedRepos, results)
 	} else {
-		s.fetchReposQuery(ctx, query, first, excludedRepos, results)
+		s.searchReposSinglePage(ctx, query, first, excludedRepos, results)
 	}
 }
 
-func (s *GitHubSource) fetchReposQuery(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+func (s *GitHubSource) searchReposSinglePage(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
 	unfiltered := make(chan *githubResult)
-	var buildExcludeClause strings.Builder
-	buildExcludeClause.WriteString(query)
+	var queryWithExcludeBuilder strings.Builder
+	queryWithExcludeBuilder.WriteString(query)
 	for _, repo := range excludedRepos {
-		fmt.Fprintf(&buildExcludeClause, " -repo:%s", repo)
+		fmt.Fprintf(&queryWithExcludeBuilder, " -repo:%s", repo)
 	}
 
-	queryWithExclude := buildExcludeClause.String()
+	queryWithExclude := queryWithExcludeBuilder.String()
 	repoQuery := repositoryQuery{Query: queryWithExclude, First: first, Searcher: s.v4Client, Logger: s.logger}
 
 	go func() {
