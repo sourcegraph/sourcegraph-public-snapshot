@@ -126,8 +126,7 @@ func (s *FakeDiscoverableSource) SearchRepositories(ctx context.Context, query s
 // FakeDiscoverableSource is a fake implementation of DiscoverableSource to be used in tests.
 type FakeDiscoverableSource struct {
 	*FakeSource
-	namespaces   []*types.ExternalServiceNamespace
-	repositories []*types.Repo
+	namespaces []*types.ExternalServiceNamespace
 }
 
 // NewFakeDiscoverableSource returns an instance of FakeDiscoverableSource with the given namespaces.
