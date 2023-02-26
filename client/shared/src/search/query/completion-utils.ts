@@ -6,7 +6,7 @@ import { escapeRegExp } from 'lodash'
 
 import { RepositoryMatch } from '../stream'
 
-import { escapeSpaces, FILTERS, FilterType, isNegatableFilter } from './filters'
+import { escapeSpaces, filters, FilterType, isNegatableFilter } from './filters'
 
 export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
@@ -34,7 +34,8 @@ export const repositoryInsertText = (
  * entries for negateable filters.
  */
 export const createFilterSuggestions = (
-    filter: FilterType[]
+    filter: FilterType[],
+    enableOwnershipSearch: boolean
 ): { label: string; insertText: string; filterText: string; detail: string }[] =>
     filter.flatMap(filterType => {
         const completionItem = {
@@ -47,21 +48,21 @@ export const createFilterSuggestions = (
             return [
                 {
                     ...completionItem,
-                    detail: FILTERS[filterType].description(false),
+                    detail: filters(enableOwnershipSearch)[filterType].description(false),
                 },
                 {
                     ...completionItem,
                     label: `-${filterType}`,
                     insertText: `-${filterType}:`,
                     filterText: `-${filterType}`,
-                    detail: FILTERS[filterType].description(true),
+                    detail: filters(enableOwnershipSearch)[filterType].description(true),
                 },
             ]
         }
         return [
             {
                 ...completionItem,
-                detail: FILTERS[filterType].description,
+                detail: filters(enableOwnershipSearch)[filterType].description,
             },
         ]
     })

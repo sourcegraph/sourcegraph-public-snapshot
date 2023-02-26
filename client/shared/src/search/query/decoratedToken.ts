@@ -908,8 +908,12 @@ const validContainsFileBody = (tokens: Token[]): boolean => {
  * the body contains unsupported syntax. This function takes care to
  * decorate `path:` and `content:` values as regular expression syntax.
  */
-const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[] | undefined => {
-    const result = scanSearchQuery(body, false, SearchPatternType.regexp)
+const decorateContainsFileBody = (
+    body: string,
+    offset: number,
+    enableOwnershipSearch: boolean
+): DecoratedToken[] | undefined => {
+    const result = scanSearchQuery(body, false, SearchPatternType.regexp, enableOwnershipSearch)
     if (result.type === 'error') {
         return undefined
     }
@@ -919,7 +923,7 @@ const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[
     }
     const decorated: DecoratedToken[] = result.term.flatMap(token => {
         if (token.type === 'filter' && token.field.value === 'path') {
-            return decorate(mapOffset(token, offset))
+            return decorate(mapOffset(token, offset), enableOwnershipSearch)
         }
         if (token.type === 'filter' && token.field.value === 'content') {
             return [
@@ -977,12 +981,17 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
 /**
  * Decorates the body part of predicate syntax `name(body)`.
  */
-const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
+const decoratePredicateBody = (
+    path: string[],
+    body: string,
+    offset: number,
+    enableOwnershipSearch: boolean
+): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
         case 'contains.file':
         case 'has.file': {
-            const result = decorateContainsFileBody(body, offset)
+            const result = decorateContainsFileBody(body, offset, enableOwnershipSearch)
             if (result !== undefined) {
                 return result
             }
@@ -1007,7 +1016,6 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'has.tag':
-        case 'has.owner':
         case 'has.key':
             return [
                 {
@@ -1017,6 +1025,17 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                     quoted: false,
                 },
             ]
+        case 'has.owner':
+            if (enableOwnershipSearch) {
+                return [
+                    {
+                        type: 'literal',
+                        range: { start: offset, end: offset + body.length },
+                        value: body,
+                        quoted: false,
+                    },
+                ]
+            }
     }
     decorated.push({
         type: 'literal',
@@ -1027,7 +1046,11 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
     return decorated
 }
 
-const decoratePredicate = (predicate: Predicate, range: CharacterRange): DecoratedToken[] => {
+const decoratePredicate = (
+    predicate: Predicate,
+    range: CharacterRange,
+    enableOwnershipSearch: boolean
+): DecoratedToken[] => {
     let offset = range.start
     const decorated: DecoratedToken[] = []
     for (const nameAccess of predicate.path) {
@@ -1059,7 +1082,7 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
         value: predicate,
     })
     offset = offset + 1
-    decorated.push(...decoratePredicateBody(predicate.path, body, offset))
+    decorated.push(...decoratePredicateBody(predicate.path, body, offset, enableOwnershipSearch))
     offset = offset + body.length
     decorated.push({
         type: 'metaPredicate',
@@ -1071,7 +1094,7 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
     return decorated
 }
 
-export const decorate = (token: Token): DecoratedToken[] => {
+export const decorate = (token: Token, enableOwnershipSearch: boolean): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
         case 'pattern':
@@ -1098,9 +1121,9 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 range: { start: token.field.range.end, end: token.field.range.end + 1 },
                 value: ':',
             })
-            const predicate = scanPredicate(token.field.value, token.value?.value || '')
+            const predicate = scanPredicate(token.field.value, token.value?.value || '', enableOwnershipSearch)
             if (predicate && token.value) {
-                decorated.push(...decoratePredicate(predicate, token.value.range))
+                decorated.push(...decoratePredicate(predicate, token.value.range, enableOwnershipSearch))
                 break
             }
             if (
@@ -1315,5 +1338,5 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
 /**
  * Decorates tokens for contextual highlighting (e.g. for regexp metasyntax) and returns the tokens converted to Monaco token types.
  */
-export const getMonacoTokens = (tokens: Token[]): Monaco.languages.IToken[] =>
-    tokens.flatMap(token => decorate(token).map(decoratedToMonaco))
+export const getMonacoTokens = (tokens: Token[], enableOwnershipSearch: boolean): Monaco.languages.IToken[] =>
+    tokens.flatMap(token => decorate(token, enableOwnershipSearch).map(decoratedToMonaco))

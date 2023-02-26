@@ -133,16 +133,16 @@ export type QueryUpdate =
           value: string
       }
 
-export function updateQuery(query: string, updates: QueryUpdate[]): string {
+export function updateQuery(query: string, updates: QueryUpdate[], enableOwnershipSearch: boolean): string {
     return updates.reduce((query, update) => {
         switch (update.type) {
             case 'appendFilter':
-                if (!update.unique || !filterExists(query, update.field)) {
+                if (!update.unique || !filterExists(query, update.field, false, enableOwnershipSearch)) {
                     return appendFilter(query, update.field, update.value)
                 }
                 break
             case 'updateOrAppendFilter':
-                return updateFilter(query, update.field, update.value)
+                return updateFilter(query, update.field, update.value, enableOwnershipSearch)
             case 'toggleSubquery':
                 return toggleSubquery(query, update.value)
             case 'replaceQuery':

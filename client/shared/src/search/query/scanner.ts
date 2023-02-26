@@ -288,8 +288,13 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
  * Scan predicate syntax like repo:contains.file(path:README.md). Predicate scanning
  * takes precedence over other value scanners like scanBalancedLiteral.
  */
-export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
-    const result = scanPredicate(field.value, input.slice(start))
+export const scanPredicateValue = (
+    input: string,
+    start: number,
+    field: Literal,
+    enableOwnershipSearch: boolean
+): ScanResult<Literal> => {
+    const result = scanPredicate(field.value, input.slice(start), enableOwnershipSearch)
     if (!result) {
         return {
             type: 'error',
@@ -389,36 +394,37 @@ const followedBy =
  * (consisting a of a filter type and a filter value, separated by a colon)
  * in a search query.
  */
-const filter: Scanner<Filter> = (input, start) => {
-    const scanPrefix = followedBy(filterField, filterSeparator)
-    const result = scanPrefix(input, start)
-    if (result.type === 'error') {
-        return result
-    }
-    const [field, separator] = result.term as [Literal, Separator]
-    let value: ScanResult<Literal> | undefined
-    if (input[separator.range.end] === undefined) {
-        value = undefined
-    } else {
-        value = scanPredicateValue(input, separator.range.end, field)
-        if (value.type === 'error') {
-            value = filterValue(input, separator.range.end)
+const newFilter: (enableOwnershipSearch: boolean) => Scanner<Filter> =
+    (enableOwnershipSearch: boolean) => (input, start) => {
+        const scanPrefix = followedBy(filterField, filterSeparator)
+        const result = scanPrefix(input, start)
+        if (result.type === 'error') {
+            return result
+        }
+        const [field, separator] = result.term as [Literal, Separator]
+        let value: ScanResult<Literal> | undefined
+        if (input[separator.range.end] === undefined) {
+            value = undefined
+        } else {
+            value = scanPredicateValue(input, separator.range.end, field, enableOwnershipSearch)
+            if (value.type === 'error') {
+                value = filterValue(input, separator.range.end)
+            }
+        }
+        if (value && value.type === 'error') {
+            return value
+        }
+        return {
+            type: 'success',
+            term: {
+                type: 'filter',
+                range: { start, end: value ? value.term.range.end : separator.range.end },
+                field,
+                value: value?.term,
+                negated: field.value.startsWith('-'),
+            },
         }
     }
-    if (value && value.type === 'error') {
-        return value
-    }
-    return {
-        type: 'success',
-        term: {
-            type: 'filter',
-            range: { start, end: value ? value.term.range.end : separator.range.end },
-            field,
-            value: value?.term,
-            negated: field.value.startsWith('-'),
-        },
-    }
-}
 
 const createPattern = (
     value: string,
@@ -465,11 +471,15 @@ const whitespaceOrClosingParen = oneOf<Whitespace | ClosingParen>(whitespace, cl
  *
  * @param interpretComments Interpets C-style line comments for multiline queries.
  */
-const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<Token[]> => {
+const createScanner = (
+    kind: PatternKind,
+    interpretComments: boolean = false,
+    enableOwnershipSearch: boolean
+): Scanner<Token[]> => {
     const quotedPatternScanner: Scanner<Literal>[] =
         kind === PatternKind.Regexp ? [quoted('"'), quoted("'"), quoted('/')] : []
 
-    const baseScanner = [keyword, filter, ...quotedPatternScanner, scanPattern(kind)]
+    const baseScanner = [keyword, newFilter(enableOwnershipSearch), ...quotedPatternScanner, scanPattern(kind)]
     const tokenScanner: Scanner<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
 
     const baseEarlyPatternScanner = [...quotedPatternScanner, toPatternResult(scanBalancedLiteral, kind)]
@@ -486,10 +496,10 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     )
 }
 
-const scanStandard = (query: string): ScanResult<Token[]> => {
+const scanStandard = (query: string, enableOwnershipSearch: boolean): ScanResult<Token[]> => {
     const tokenScanner = [
         keyword,
-        filter,
+        newFilter(enableOwnershipSearch),
         toPatternResult(quoted('/'), PatternKind.Regexp),
         scanPattern(PatternKind.Literal),
     ]
@@ -511,8 +521,8 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
-function detectPatternType(query: string): SearchPatternType | undefined {
-    const result = scanStandard(query)
+function detectPatternType(query: string, enableOwnershipSearch: boolean): SearchPatternType | undefined {
+    const result = scanStandard(query, enableOwnershipSearch)
     const tokens =
         result.type === 'success'
             ? result.term.filter(
@@ -530,16 +540,17 @@ function detectPatternType(query: string): SearchPatternType | undefined {
  */
 export const scanSearchQuery = (
     query: string,
-    interpretComments?: boolean,
-    searchPatternType = SearchPatternType.literal
+    interpretComments: boolean = false,
+    searchPatternType = SearchPatternType.literal,
+    enableOwnershipSearch: boolean
 ): ScanResult<Token[]> => {
-    const patternType = detectPatternType(query) || searchPatternType
+    const patternType = detectPatternType(query, enableOwnershipSearch) || searchPatternType
     let patternKind
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
         case SearchPatternType.keyword:
-            return scanStandard(query)
+            return scanStandard(query, enableOwnershipSearch)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal
             break
@@ -550,6 +561,6 @@ export const scanSearchQuery = (
             patternKind = PatternKind.Structural
             break
     }
-    const scanner = createScanner(patternKind, interpretComments)
+    const scanner = createScanner(patternKind, interpretComments, enableOwnershipSearch)
     return scanner(query, 0)
 }

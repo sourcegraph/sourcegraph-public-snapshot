@@ -50,12 +50,12 @@ function createDiagnostic(
     }
 }
 
-export function validFilterValue(filter: Filter): Diagnostic[] {
+export function validFilterValue(filter: Filter, enableOwnershipSearch: boolean): Diagnostic[] {
     if (!filter.value) {
         return []
     }
 
-    const validationResult = validateFilter(filter.field.value, filter.value)
+    const validationResult = validateFilter(filter.field.value, filter.value, enableOwnershipSearch)
     if (validationResult.valid) {
         return []
     }
@@ -78,8 +78,8 @@ export function emptyFilterValue(filter: Filter): Diagnostic[] {
 // Returns the first nonempty diagnostic for a filter, or nothing otherwise. We return
 // the only the first so that we don't overwhelm the the user with multiple diagnostics
 // for a single filter.
-export function checkFilter(filter: Filter): Diagnostic[] {
-    const checks: FilterCheck[] = [validFilterValue, emptyFilterValue]
+export function checkFilter(filter: Filter, enableOwnershipSearch: boolean): Diagnostic[] {
+    const checks: FilterCheck[] = [(f: Filter) => validFilterValue(f, enableOwnershipSearch), emptyFilterValue]
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }
 
@@ -119,7 +119,9 @@ const rules: PatternOf<Token[], PatternData>[] = [
     each({
         type: 'filter',
         $data: (token: Token, context: MatchContext<PatternData>) => {
-            context.data.diagnostics.push(...checkFilter(token as Filter))
+            // TODO
+            const enableOwnershipSearch = true
+            context.data.diagnostics.push(...checkFilter(token as Filter, enableOwnershipSearch))
         },
     }),
 

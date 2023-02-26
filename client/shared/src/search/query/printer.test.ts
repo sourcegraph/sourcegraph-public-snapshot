@@ -1,3 +1,4 @@
+import { SearchPatternType } from '../../graphql-operations'
 import { stringHuman } from './printer'
 import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
@@ -12,7 +13,12 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 describe('stringHuman', () => {
     test('complex query', () => {
         const tokens = toSuccess(
-            scanSearchQuery('(a or b) (-repo:foo    AND file:bar) content:"count:5000" /yowza/ "a\'b" \\d+')
+            scanSearchQuery(
+                '(a or b) (-repo:foo    AND file:bar) content:"count:5000" /yowza/ "a\'b" \\d+',
+                false,
+                SearchPatternType.literal,
+                true
+            )
         )
         expect(stringHuman(tokens)).toMatchInlineSnapshot(
             '(a or b) (-repo:foo AND file:bar) content:"count:5000" /yowza/ "a\'b" \\d+'
@@ -20,7 +26,9 @@ describe('stringHuman', () => {
     })
 
     test('render delimited syntax', () => {
-        const tokens = toSuccess(scanSearchQuery('patterntype:standard /test\\ .*me/ "and me"'))
+        const tokens = toSuccess(
+            scanSearchQuery('patterntype:standard /test\\ .*me/ "and me"', false, SearchPatternType.literal, true)
+        )
         expect(stringHuman(tokens)).toMatchInlineSnapshot('patterntype:standard /test\\ .*me/ "and me"')
     })
 })

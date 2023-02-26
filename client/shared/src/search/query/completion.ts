@@ -6,7 +6,7 @@ import { SymbolKind } from '../../graphql-operations'
 import { SearchMatch } from '../stream'
 
 import { createFilterSuggestions, PREDICATE_REGEX, regexInsertText, repositoryInsertText } from './completion-utils'
-import { FilterType, resolveFilter, FILTERS, ResolvedFilter } from './filters'
+import { FilterType, resolveFilter, ResolvedFilter, filters } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
 import { CharacterRange, Filter, Pattern, Token, Whitespace } from './token'
 
@@ -27,16 +27,15 @@ export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
 /**
  * Default filter completions for all filters.
  */
-const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = createFilterSuggestions(
-    Object.keys(FILTERS) as FilterType[]
-)
-    // Set a sortText so that filter type suggestions
-    // are shown before dynamic suggestions.
-    .map((completionItem, index) => ({
-        ...completionItem,
-        kind: filterCompletionItemKind,
-        sortText: `0${index}`,
-    }))
+const filterTypeCompletions = (enableOwnershipSearch: boolean): Omit<Monaco.languages.CompletionItem, 'range'>[] =>
+    createFilterSuggestions(Object.keys(filters(enableOwnershipSearch)) as FilterType[], enableOwnershipSearch)
+        // Set a sortText so that filter type suggestions
+        // are shown before dynamic suggestions.
+        .map((completionItem, index) => ({
+            ...completionItem,
+            kind: filterCompletionItemKind,
+            sortText: `0${index}`,
+        }))
 
 /**
  * Maps Sourcegraph SymbolKinds to Monaco CompletionItemKinds.
@@ -129,10 +128,11 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
 async function completeDefault(
     tokenAtPosition: Whitespace | Pattern | null,
     serverSuggestions: (token: Token, type: SearchMatch['type']) => Promise<PartialCompletionItem[]>,
-    disablePatternSuggestions = false
+    disablePatternSuggestions = false,
+    enableOwnershipSearch: boolean
 ): Promise<Monaco.languages.CompletionList> {
     // Default filter suggestions
-    let suggestions = FILTER_TYPE_COMPLETIONS.map(
+    let suggestions = filterTypeCompletions(enableOwnershipSearch).map(
         (suggestion): Monaco.languages.CompletionItem => ({
             ...suggestion,
             range: toMonacoSingleLineRange(tokenAtPosition?.range || startRange),
@@ -256,7 +256,8 @@ export async function getCompletionItems(
         globbing = false,
         isSourcegraphDotCom = false,
         disablePatternSuggestions = false,
-    }: { globbing?: boolean; isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean }
+    }: { globbing?: boolean; isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean },
+    enableOwnershipSearch: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     let suggestions: Monaco.languages.CompletionItem[] = []
 
@@ -271,7 +272,8 @@ export async function getCompletionItems(
                 (await fetchDynamicSuggestions(token, type)).flatMap(suggestion =>
                     suggestionToCompletionItems(suggestion, { globbing })
                 ),
-            disablePatternSuggestions
+            disablePatternSuggestions,
+            enableOwnershipSearch
         )
     }
 
@@ -281,7 +283,7 @@ export async function getCompletionItems(
             return null
         }
 
-        const resolvedFilter = resolveFilter(tokenAtPosition.field.value)
+        const resolvedFilter = resolveFilter(tokenAtPosition.field.value, enableOwnershipSearch)
         if (!resolvedFilter) {
             return null
         }

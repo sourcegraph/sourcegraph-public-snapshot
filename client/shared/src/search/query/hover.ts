@@ -140,14 +140,17 @@ const toRevisionHover = (token: MetaRevision): string => {
     }
 }
 
-const toSelectorHover = (token: MetaSelector): string => {
+const toSelectorHover = (token: MetaSelector, enableOwnershipSearch: boolean): string => {
     switch (token.kind) {
         case MetaSelectorKind.Repo:
             return 'Select and display distinct repository paths from search results.'
         case MetaSelectorKind.File:
             return 'Select and display distinct file paths from search results.'
         case MetaSelectorKind.FileOwners:
-            return 'Select and display distinct code owners from search results.'
+            if (enableOwnershipSearch) {
+                return 'Select and display distinct code owners from search results.'
+            }
+            return ''
         case MetaSelectorKind.Content:
             return 'Select and display only results matching content inside files.'
         case MetaSelectorKind.Commit:
@@ -157,7 +160,7 @@ const toSelectorHover = (token: MetaSelector): string => {
     }
 }
 
-const toPredicateHover = (token: MetaPredicate): string => {
+const toPredicateHover = (token: MetaPredicate, enableOwnershipSearch: boolean): string => {
     const parameters = token.value.parameters.slice(1, -1)
     switch (token.value.path.join('.')) {
         case 'contains.file':
@@ -181,12 +184,14 @@ const toPredicateHover = (token: MetaPredicate): string => {
         case 'has.key':
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
         case 'has.owner':
-            return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
+            if (enableOwnershipSearch) {
+                return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
+            }
     }
     return ''
 }
 
-export const toHover = (token: DecoratedToken): string => {
+export const toHover = (token: DecoratedToken, enableOwnershipSearch: boolean): string => {
     switch (token.type) {
         case 'pattern': {
             const quantity = token.value.length > 1 ? 'string' : 'character'
@@ -199,11 +204,11 @@ export const toHover = (token: DecoratedToken): string => {
         case 'metaRepoRevisionSeparator':
             return '**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
         case 'metaSelector':
-            return toSelectorHover(token)
+            return toSelectorHover(token, enableOwnershipSearch)
         case 'metaStructural':
             return toStructuralHover(token)
         case 'metaPredicate': {
-            return toPredicateHover(token)
+            return toPredicateHover(token, enableOwnershipSearch)
         }
     }
     return ''
@@ -220,9 +225,12 @@ const inside =
 export const getHoverResult = (
     tokens: Token[],
     position: Monaco.Position,
-    textModel: Monaco.editor.ITextModel
+    textModel: Monaco.editor.ITextModel,
+    enableOwnershipSearch: boolean
 ): Monaco.languages.Hover | null => {
-    const tokensAtCursor = tokens.flatMap(decorate).filter(inside(textModel.getOffsetAt(position)))
+    const tokensAtCursor = tokens
+        .flatMap(token => decorate(token, enableOwnershipSearch))
+        .filter(inside(textModel.getOffsetAt(position)))
     if (tokensAtCursor.length === 0) {
         return null
     }
@@ -231,7 +239,7 @@ export const getHoverResult = (
     tokensAtCursor.map(token => {
         switch (token.type) {
             case 'field': {
-                const resolvedFilter = resolveFilter(token.value)
+                const resolvedFilter = resolveFilter(token.value, enableOwnershipSearch)
                 if (resolvedFilter) {
                     values.push(
                         'negated' in resolvedFilter
@@ -247,13 +255,13 @@ export const getHoverResult = (
             case 'metaRevision':
             case 'metaRepoRevisionSeparator':
             case 'metaSelector':
-                values.push(toHover(token))
+                values.push(toHover(token, enableOwnershipSearch))
                 range = toMonacoRange(token.range, textModel)
                 break
             case 'metaRegexp':
             case 'metaStructural':
             case 'metaPredicate':
-                values.push(toHover(token))
+                values.push(toHover(token, enableOwnershipSearch))
                 range = toMonacoRange(token.groupRange ? token.groupRange : token.range, textModel)
                 break
         }

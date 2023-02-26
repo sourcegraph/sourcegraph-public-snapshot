@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -57,7 +58,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (stri
 	case ParseTree:
 		return outputParseTree(searchType, args)
 	case JobTree:
-		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+		return outputJobTree(ctx, searchType, args, r.db, r.logger, r.enterpriseSearchJobs)
 	}
 	return "", nil
 }
@@ -84,6 +85,7 @@ func outputJobTree(
 	args *args,
 	db database.DB,
 	logger log.Logger,
+	ej jobutil.EnterpriseJobs,
 ) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
@@ -102,7 +104,7 @@ func outputJobTree(
 		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
 	}
-	j, err := jobutil.NewPlanJob(inputs, plan)
+	j, err := jobutil.NewPlanJob(inputs, plan, ej)
 	if err != nil {
 		return "", err
 	}

@@ -180,8 +180,10 @@ const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     },
 ]
 
-export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
-    Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
+export const filters = (
+    enableOwnershipSearch: boolean
+): Record<NegatableFilter, NegatableFilterDefinition> &
+    Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> => ({
     [FilterType.after]: {
         alias: 'since',
         description: 'Commits made after a certain date (in UTC)',
@@ -236,7 +238,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
-        discreteValues: () => [...predicateCompletion('file')],
+        discreteValues: () => [...predicateCompletion('file', enableOwnershipSearch)],
         placeholder: 'regex',
         suggestions: 'path',
     },
@@ -281,7 +283,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         discreteValues: (_value, isSourcegraphDotCom) => [
             ...(isSourcegraphDotCom === true ? SOURCEGRAPH_DOT_COM_REPO_COMPLETION : []),
-            ...predicateCompletion('repo'),
+            ...predicateCompletion('repo', enableOwnershipSearch),
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
@@ -347,7 +349,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Include results from repositories with the matching visibility (private, public, any).',
         singular: true,
     },
-}
+})
 
 export const discreteValueAliases: { [key: string]: string[] } = {
     yes: ['yes', 'y', 'Y', 'YES', 'Yes', '1', 't', 'T', 'true', 'TRUE', 'True'],
@@ -363,8 +365,10 @@ export type ResolvedFilter =
 /**
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
-export const resolveFilter = (filterType: string): ResolvedFilter => {
+export const resolveFilter = (filterType: string, enableOwnershipSearch: boolean): ResolvedFilter => {
     filterType = filterType.toLowerCase()
+
+    const FILTERS = filters(enableOwnershipSearch)
 
     if (isAliasedFilterType(filterType)) {
         const aliasKey = filterType as keyof typeof AliasedFilterType
@@ -441,9 +445,10 @@ const isValidDiscreteValue = (
  */
 export const validateFilter = (
     field: string,
-    value: Filter['value']
+    value: Filter['value'],
+    enableOwnershipSearch: boolean
 ): { valid: true } | { valid: false; reason: string } => {
-    const typeAndDefinition = resolveFilter(field)
+    const typeAndDefinition = resolveFilter(field, enableOwnershipSearch)
     if (!typeAndDefinition) {
         return { valid: false, reason: 'Invalid filter type.' }
     }

@@ -1,3 +1,4 @@
+import { SearchPatternType } from '../../graphql-operations'
 import { getSuggestionQuery } from './providers-utils'
 import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
@@ -5,7 +6,7 @@ import { Token } from './token'
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 function getTokens(query: string, tokenIndex: number): [Token[], Token] {
-    const tokens = toSuccess(scanSearchQuery(query))
+    const tokens = toSuccess(scanSearchQuery(query, true, SearchPatternType.literal, true))
     return [tokens, tokens[tokenIndex]]
 }
 

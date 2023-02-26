@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -29,7 +30,7 @@ const (
 	eventRetentionInDays int = 30
 )
 
-func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.TriggerJob] {
+func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics, ej jobutil.EnterpriseJobs) *workerutil.Worker[*edb.TriggerJob] {
 	options := workerutil.WorkerOptions{
 		Name:                 "code_monitors_trigger_jobs_worker",
 		Description:          "runs trigger queries for code monitors",
@@ -42,7 +43,7 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 
 	store := createDBWorkerStoreForTriggerJobs(observationCtx, db)
 
-	worker := dbworker.NewWorker[*edb.TriggerJob](ctx, store, &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker[*edb.TriggerJob](ctx, store, &queryRunner{db: db, enterpriseSearchJobs: ej}, options)
 	return worker
 }
 
@@ -144,7 +145,8 @@ func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s edb
 }
 
 type queryRunner struct {
-	db edb.EnterpriseDB
+	db                   edb.EnterpriseDB
+	enterpriseSearchJobs jobutil.EnterpriseJobs
 }
 
 func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob *edb.TriggerJob) (err error) {
@@ -186,7 +188,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := codemonitors.Search(ctx, logger, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, query, m.ID, settings, r.enterpriseSearchJobs)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)

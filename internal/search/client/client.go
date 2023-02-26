@@ -44,6 +44,7 @@ type SearchClient interface {
 		ctx context.Context,
 		stream streaming.Sender,
 		inputs *search.Inputs,
+		ej jobutil.EnterpriseJobs,
 	) (_ *search.Alert, err error)
 
 	JobClients() job.RuntimeClients
@@ -134,6 +135,7 @@ func (s *searchClient) Execute(
 	ctx context.Context,
 	stream streaming.Sender,
 	inputs *search.Inputs,
+	ej jobutil.EnterpriseJobs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
 	defer func() {
@@ -141,7 +143,7 @@ func (s *searchClient) Execute(
 		tr.Finish()
 	}()
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, ej)
 	if err != nil {
 		return nil, err
 	}

@@ -30,10 +30,10 @@ import (
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
-func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
+func NewPlanJob(inputs *search.Inputs, plan query.Plan, ej EnterpriseJobs) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
+		child, err := NewBasicJob(inputs, q, ej)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 	jobTree := NewOrJob(children...)
 	newJob := func(b query.Basic) (job.Job, error) {
-		return NewBasicJob(inputs, b)
+		return NewBasicJob(inputs, b, ej)
 	}
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
 		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
@@ -61,8 +61,13 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	return logJob, nil
 }
 
+type EnterpriseJobs interface {
+	FileHasOwnerJob() job.Job
+	SelectFileOwnersJob() job.Job
+}
+
 // NewBasicJob converts a query.Basic into its job tree representation.
-func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
+func NewBasicJob(inputs *search.Inputs, b query.Basic, ej EnterpriseJobs) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)

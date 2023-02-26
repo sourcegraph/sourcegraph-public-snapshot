@@ -66,7 +66,13 @@ describe('example helpers', () => {
         describe('repeatable filters', () => {
             it('appends placeholder filter and selects placeholder', () => {
                 expect(
-                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'))
+                    updateQueryWithFilterAndExample(
+                        'foo',
+                        FilterType.after,
+                        createQueryExampleFromString('({test})'),
+                        {},
+                        true
+                    )
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -84,9 +90,15 @@ describe('example helpers', () => {
 
             it('appends filter with empty value', () => {
                 expect(
-                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
-                        emptyValue: true,
-                    })
+                    updateQueryWithFilterAndExample(
+                        'foo',
+                        FilterType.after,
+                        createQueryExampleFromString('({test})'),
+                        {
+                            emptyValue: true,
+                        },
+                        true
+                    )
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -104,9 +116,15 @@ describe('example helpers', () => {
 
             it('appends negated filter', () => {
                 expect(
-                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
-                        negate: true,
-                    })
+                    updateQueryWithFilterAndExample(
+                        'foo',
+                        FilterType.after,
+                        createQueryExampleFromString('({test})'),
+                        {
+                            negate: true,
+                        },
+                        true
+                    )
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -126,9 +144,15 @@ describe('example helpers', () => {
         describe('unique filters', () => {
             it('appends placeholder filter and selects placeholder', () => {
                 expect(
-                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
-                        singular: true,
-                    })
+                    updateQueryWithFilterAndExample(
+                        'foo',
+                        FilterType.after,
+                        createQueryExampleFromString('({test})'),
+                        {
+                            singular: true,
+                        },
+                        true
+                    )
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -150,7 +174,8 @@ describe('example helpers', () => {
                         'after:value foo',
                         FilterType.after,
                         createQueryExampleFromString('({test})'),
-                        { singular: true }
+                        { singular: true },
+                        true
                     )
                 ).toMatchInlineSnapshot(`
                     Object {
@@ -173,7 +198,8 @@ describe('example helpers', () => {
                         'after:value foo',
                         FilterType.after,
                         createQueryExampleFromString('({test})'),
-                        { singular: true, emptyValue: true }
+                        { singular: true, emptyValue: true },
+                        true
                     )
                 ).toMatchInlineSnapshot(`
                     Object {
@@ -196,7 +222,8 @@ describe('example helpers', () => {
                         'after: foo',
                         FilterType.after,
                         createQueryExampleFromString('({test})'),
-                        { singular: true, emptyValue: true }
+                        { singular: true, emptyValue: true },
+                        true
                     )
                 ).toMatchInlineSnapshot(`
                     Object {
@@ -219,7 +246,8 @@ describe('example helpers', () => {
                         '-after:value foo',
                         FilterType.after,
                         createQueryExampleFromString('({test})'),
-                        { singular: true, negate: true }
+                        { singular: true, negate: true },
+                        true
                     )
                 ).toMatchInlineSnapshot(`
                     Object {
@@ -242,7 +270,8 @@ describe('example helpers', () => {
                         '-after:value foo',
                         FilterType.after,
                         createQueryExampleFromString('({test})'),
-                        { singular: true, negate: true, emptyValue: true }
+                        { singular: true, negate: true, emptyValue: true },
+                        true
                     )
                 ).toMatchInlineSnapshot(`
                     Object {

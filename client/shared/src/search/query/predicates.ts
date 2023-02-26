@@ -11,7 +11,7 @@ interface Access {
  * data structure is a tree, where nodes are lists to preserve ordering
  * for autocomplete suggestions.
  */
-export const PREDICATES: Access[] = [
+export const predicates = (enableOwnershipSearch: boolean): Access[] => [
     {
         name: 'repo',
         fields: [
@@ -53,7 +53,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'content' }, { name: 'owner' }],
+                fields: [{ name: 'content' }, ...(enableOwnershipSearch ? [{ name: 'owner' }] : [])],
             },
         ],
     },
@@ -143,7 +143,7 @@ export const scanBalancedParens = (input: string): string | undefined => {
  * (1) The (field, name) pair is a recognized predicate.
  * (2) The parameters value is well-balanced.
  */
-export const scanPredicate = (field: string, value: string): Predicate | undefined => {
+export const scanPredicate = (field: string, value: string, enableOwnershipSearch: boolean): Predicate | undefined => {
     const match = value.match(/^[.a-z]+/i)
     if (!match) {
         return undefined
@@ -155,7 +155,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
         field = field.slice(1)
     }
     field = resolveFieldAlias(field)
-    const access = resolveAccess([field, ...path], PREDICATES)
+    const access = resolveAccess([field, ...path], predicates(enableOwnershipSearch))
     if (!access) {
         return undefined
     }
@@ -171,7 +171,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     return { path, parameters }
 }
 
-export const predicateCompletion = (field: string): Completion[] => {
+export const predicateCompletion = (field: string, enableOwnershipSearch: boolean): Completion[] => {
     if (field === 'repo') {
         return [
             {
@@ -232,12 +232,16 @@ export const predicateCompletion = (field: string): Completion[] => {
                 asSnippet: true,
                 description: 'Search only inside files whose contents match a pattern',
             },
-            {
-                label: 'has.owner(...)',
-                insertText: 'has.owner(${1})',
-                asSnippet: true,
-                description: 'Search only inside files that have a specific owner',
-            },
+            ...(enableOwnershipSearch
+                ? [
+                      {
+                          label: 'has.owner(...)',
+                          insertText: 'has.owner(${1})',
+                          asSnippet: true,
+                          description: 'Search only inside files that have a specific owner',
+                      },
+                  ]
+                : []),
         ]
     }
     return []

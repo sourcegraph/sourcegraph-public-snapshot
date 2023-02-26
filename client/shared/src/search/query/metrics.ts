@@ -1,3 +1,4 @@
+import { SearchPatternType } from '../../graphql-operations'
 import { resolveFieldAlias } from './filters'
 import { scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
@@ -26,8 +27,8 @@ interface Metrics {
     count_only_patterns_three_or_more?: number
 }
 
-export const collectMetrics = (query: string): Metrics | undefined => {
-    const tokens = scanSearchQuery(query)
+export const collectMetrics = (query: string, enableOwnershipSearch: boolean): Metrics | undefined => {
+    const tokens = scanSearchQuery(query, false, SearchPatternType.literal, enableOwnershipSearch)
     if (tokens.type !== 'success') {
         return undefined
     }
@@ -116,7 +117,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                                 break
                         }
                     case 'repo': {
-                        const predicate = scanPredicate('repo', token.value.value)
+                        const predicate = scanPredicate('repo', token.value.value, enableOwnershipSearch)
                         if (!predicate) {
                             continue
                         }

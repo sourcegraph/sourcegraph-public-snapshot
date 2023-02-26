@@ -522,21 +522,22 @@ export function buildSearchURLQuery(
     patternType: SearchPatternType,
     caseSensitive: boolean,
 
-    searchContextSpec?: string,
-    searchMode?: SearchMode
+    searchContextSpec: string | undefined,
+    searchMode: SearchMode | undefined,
+    enableOwnershipSearch: boolean
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
     let patternTypeParameter: string = patternType
     let caseParameter: string = caseSensitive ? 'yes' : 'no'
 
-    const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
+    const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global, enableOwnershipSearch)
     if (globalPatternType?.value) {
         patternTypeParameter = globalPatternType.value.value
         queryParameter = omitFilter(queryParameter, globalPatternType)
     }
 
-    const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
+    const globalCase = findFilter(queryParameter, 'case', FilterKind.Global, enableOwnershipSearch)
     if (globalCase?.value) {
         // When case:value is explicit in the query, override any previous value of caseParameter.
         const globalCaseParameterValue = globalCase.value.value
@@ -545,7 +546,7 @@ export function buildSearchURLQuery(
     }
 
     if (searchContextSpec) {
-        queryParameter = appendContextFilter(queryParameter, searchContextSpec)
+        queryParameter = appendContextFilter(queryParameter, searchContextSpec, enableOwnershipSearch)
     }
 
     searchParameters.set('q', queryParameter)

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -17,17 +18,19 @@ type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)
 }
 
-func NewInsightsSearchClient(db database.DB) SearchClient {
+func NewInsightsSearchClient(db database.DB, ej jobutil.EnterpriseJobs) SearchClient {
 	logger := log.Scoped("insightsSearchClient", "")
 	return &insightsSearchClient{
-		db:           db,
-		searchClient: client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		db:                   db,
+		searchClient:         client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		enterpriseSearchJobs: ej,
 	}
 }
 
 type insightsSearchClient struct {
-	db           database.DB
-	searchClient client.SearchClient
+	db                   database.DB
+	searchClient         client.SearchClient
+	enterpriseSearchJobs jobutil.EnterpriseJobs
 }
 
 func (r *insightsSearchClient) Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error) {
@@ -48,5 +51,5 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 	if err != nil {
 		return nil, err
 	}
-	return r.searchClient.Execute(ctx, sender, inputs)
+	return r.searchClient.Execute(ctx, sender, inputs, r.enterpriseSearchJobs)
 }

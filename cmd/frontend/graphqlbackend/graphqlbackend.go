@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -380,39 +381,39 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil, nil)
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil, nil)
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own, nil)
 }
 
 func NewSchema(
@@ -432,8 +433,9 @@ func NewSchema(
 	webhooksResolver WebhooksResolver,
 	rbacResolver RBACResolver,
 	ownResolver OwnResolver,
+	ej jobutil.EnterpriseJobs,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient)
+	resolver := newSchemaResolver(db, gitserverClient, ej)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	if batchChanges != nil {
@@ -574,11 +576,12 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger            log.Logger
-	db                database.DB
-	gitserverClient   gitserver.Client
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
+	logger               log.Logger
+	db                   database.DB
+	gitserverClient      gitserver.Client
+	repoupdaterClient    *repoupdater.Client
+	nodeByIDFns          map[string]NodeByIDFunc
+	enterpriseSearchJobs jobutil.EnterpriseJobs
 
 	// SubResolvers are assigned using the Schema constructor.
 
@@ -600,12 +603,13 @@ type schemaResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
+func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, ej jobutil.EnterpriseJobs) *schemaResolver {
 	r := &schemaResolver{
-		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
-		db:                db,
-		gitserverClient:   gitserverClient,
-		repoupdaterClient: repoupdater.DefaultClient,
+		logger:               log.Scoped("schemaResolver", "GraphQL schema resolver"),
+		db:                   db,
+		gitserverClient:      gitserverClient,
+		repoupdaterClient:    repoupdater.DefaultClient,
+		enterpriseSearchJobs: ej,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -701,7 +705,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient)
+	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

@@ -107,7 +107,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings, ej jobutil.EnterpriseJobs) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(
 		ctx,
@@ -125,7 +125,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, ej)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -187,7 +187,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
+func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings, ej jobutil.EnterpriseJobs) error {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(
 		ctx,
@@ -204,7 +204,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 	}
 
 	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, ej)
 	if err != nil {
 		return err
 	}

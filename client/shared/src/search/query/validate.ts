@@ -2,7 +2,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import {
     AliasedFilterType,
-    FILTERS,
+    filters,
     FilterType,
     isNegatedFilter,
     resolveFieldAlias,
@@ -12,16 +12,20 @@ import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 
 /** Returns true if the query contains operators. */
-export const operatorExists = (query: string): boolean => {
-    const result = scanSearchQuery(query)
+export const operatorExists = (query: string, enableOwnershipSearch: boolean): boolean => {
+    const result = scanSearchQuery(query, false, SearchPatternType.literal, enableOwnershipSearch)
     return result.type === 'success' && result.term.some(term => term.type === 'keyword')
 }
 
 /**
  * Returns true if the query contains a pattern.
  */
-export const containsLiteralOrPattern = (query: string, searchPatternType?: SearchPatternType): boolean => {
-    const result = scanSearchQuery(query, undefined, searchPatternType)
+export const containsLiteralOrPattern = (
+    query: string,
+    searchPatternType: SearchPatternType | undefined,
+    enableOwnershipSearch: boolean
+): boolean => {
+    const result = scanSearchQuery(query, undefined, searchPatternType, enableOwnershipSearch)
     return result.type === 'success' && result.term.some(term => term.type === 'literal' || term.type === 'pattern')
 }
 
@@ -32,7 +36,7 @@ export const containsLiteralOrPattern = (query: string, searchPatternType?: Sear
  */
 export const isRepoFilter = (token: Token): token is Filter =>
     token.type === 'filter' &&
-    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
+    (token.field.value === FilterType.repo || token.field.value === filters(true)[FilterType.repo].alias)
 
 /**
  * Type guard for arbitrary filter type. Also handles aliased and negated filters.
@@ -48,9 +52,10 @@ export const isFilterType = (token: Token, filterType: FilterType): token is Fil
 export function filterExists(
     query: string,
     filter: FilterType | keyof typeof AliasedFilterType,
-    negated: boolean = false
+    negated: boolean = false,
+    enableOwnershipSearch: boolean
 ): boolean {
-    const scannedQuery = scanSearchQuery(query)
+    const scannedQuery = scanSearchQuery(query, false, SearchPatternType.literal, enableOwnershipSearch)
     return (
         scannedQuery.type === 'success' &&
         scannedQuery.term.some(

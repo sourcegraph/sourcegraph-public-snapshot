@@ -1,3 +1,4 @@
+import { SearchPatternType } from '../../graphql-operations'
 import { ScanResult, scanSearchQuery } from './scanner'
 import { PatternKind, Token, KeywordKind, CharacterRange } from './token'
 
@@ -296,8 +297,11 @@ export const parseOr = (tokens: Token[]): State => {
 /**
  * Produces a parse tree from a search query.
  */
-export const parseSearchQuery = (input: string | ScanResult<Token[]>): ParseResult => {
-    const result = typeof input === 'string' ? scanSearchQuery(input) : input
+export const parseSearchQuery = (input: string | ScanResult<Token[]>, enableOwnershipSearch: boolean): ParseResult => {
+    const result =
+        typeof input === 'string'
+            ? scanSearchQuery(input, false, SearchPatternType.literal, enableOwnershipSearch)
+            : input
     if (result.type === 'error') {
         return {
             type: 'error',

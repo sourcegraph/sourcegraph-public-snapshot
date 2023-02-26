@@ -45,6 +45,7 @@ export function getProviders(
         disablePatternSuggestions?: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
+        enableOwnershipSearch: boolean
     }
 ): SearchFieldProviders {
     const cancelableFetch = createCancelableFetchSuggestions(fetchSuggestions)
@@ -53,10 +54,15 @@ export function getProviders(
         tokens: {
             getInitialState: () => SCANNER_STATE,
             tokenize: line => {
-                const result = scanSearchQuery(line, options.interpretComments ?? false, options.patternType)
+                const result = scanSearchQuery(
+                    line,
+                    options.interpretComments ?? false,
+                    options.patternType,
+                    options.enableOwnershipSearch
+                )
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.term),
+                        tokens: getMonacoTokens(result.term, options.enableOwnershipSearch),
                         endState: SCANNER_STATE,
                     }
                 }
@@ -67,9 +73,18 @@ export function getProviders(
             provideHover: (textModel, position, token) =>
                 of(textModel.getValue())
                     .pipe(
-                        map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),
+                        map(value =>
+                            scanSearchQuery(
+                                value,
+                                options.interpretComments ?? false,
+                                options.patternType,
+                                options.enableOwnershipSearch
+                            )
+                        ),
                         map(scanned =>
-                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position, textModel)
+                            scanned.type === 'error'
+                                ? null
+                                : getHoverResult(scanned.term, position, textModel, options.enableOwnershipSearch)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
@@ -82,7 +97,8 @@ export function getProviders(
                 const scanned = scanSearchQuery(
                     textModel.getValue(),
                     options.interpretComments ?? false,
-                    options.patternType
+                    options.patternType,
+                    options.enableOwnershipSearch
                 )
                 if (scanned.type === 'error') {
                     return null
@@ -96,7 +112,8 @@ export function getProviders(
                         cancelableFetch(getSuggestionQuery(scanned.term, token, type), listener =>
                             cancellationToken.onCancellationRequested(listener)
                         ).then(matches => matches.filter(isSearchMatchOfType(type))),
-                    options
+                    options,
+                    options.enableOwnershipSearch
                 )
             },
         },

@@ -404,7 +404,7 @@ func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResul
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
+	alert, err := r.client.Execute(ctx, agg, r.SearchInputs, r.enterpriseSearchJobs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.SearchInputs, srr, err)
@@ -488,7 +488,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b, r.enterpriseSearchJobs)
 		if err != nil {
 			return nil, err
 		}

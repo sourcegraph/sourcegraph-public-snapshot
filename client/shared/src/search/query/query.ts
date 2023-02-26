@@ -1,3 +1,4 @@
+import { SearchPatternType } from '../../graphql-operations'
 import { FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
@@ -25,8 +26,13 @@ export enum FilterKind {
  * @param field the field of the filter to find
  * @param kind the kind of filter to find
  */
-export const findFilter = (query: string, field: string, kind: FilterKind): Filter | undefined => {
-    const result = scanSearchQuery(query)
+export const findFilter = (
+    query: string,
+    field: string,
+    kind: FilterKind,
+    enableOwnershipSearch: boolean
+): Filter | undefined => {
+    const result = scanSearchQuery(query, false, SearchPatternType.literal, enableOwnershipSearch)
     let filter: Filter | undefined
     if (result.type === 'success') {
         let depth = 0
@@ -64,8 +70,11 @@ export const findFilters = (tokens: Token[], field: string): Filter[] =>
 /**
  * Helper function to extract context filter info.
  */
-export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
-    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+export function getGlobalSearchContextFilter(
+    query: string,
+    enableOwnershipSearch: boolean
+): { filter: Filter; spec: string } | null {
+    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global, enableOwnershipSearch)
     if (!globalContextFilter) {
         return null
     }

@@ -39,7 +39,8 @@ export function updateQueryWithFilterAndExample(
     query: string,
     filter: FilterType,
     example: QueryExample,
-    { singular = false, negate = false, emptyValue = false } = {}
+    { singular = false, negate = false, emptyValue = false } = {},
+    enableOwnershipSearch: boolean
 ): { query: string; filterRange: CharacterRange; placeholderRange: CharacterRange } {
     let placeholderRange: CharacterRange | undefined
     let filterRange: CharacterRange
@@ -49,13 +50,13 @@ export function updateQueryWithFilterAndExample(
         field = '-' + field
     }
 
-    const existingFilter = findFilter(query, field, FilterKind.Global)
+    const existingFilter = findFilter(query, field, FilterKind.Global, enableOwnershipSearch)
 
     if (existingFilter && singular) {
         // The filter should only appear once. Clear the existing value if
         // necessary.
         if (emptyValue) {
-            query = updateFilter(query, field, '')
+            query = updateFilter(query, field, '', enableOwnershipSearch)
         }
 
         const placeholderRangeStart = existingFilter.value?.range.start || existingFilter.field.range.end + 1 // +1 to account for the ":" after the field

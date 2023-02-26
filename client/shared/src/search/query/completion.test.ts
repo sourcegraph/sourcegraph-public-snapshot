@@ -1,4 +1,4 @@
-import { SymbolKind } from '../../graphql-operations'
+import { SearchPatternType, SymbolKind } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
 import { FetchSuggestions, getCompletionItems } from './completion'
@@ -13,7 +13,8 @@ expect.addSnapshotSerializer({
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
-const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
+const getToken = (query: string, tokenIndex: number): Token =>
+    toSuccess(scanSearchQuery(query, false, SearchPatternType.literal, true))[tokenIndex]
 
 const createFetcher =
     (matches: SearchMatch[]): FetchSuggestions =>
@@ -49,7 +50,8 @@ describe('getCompletionItems()', () => {
                             ],
                         },
                     ]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -112,7 +114,8 @@ describe('getCompletionItems()', () => {
                             ],
                         },
                     ]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -152,7 +155,7 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions for an empty query', async () => {
         expect(
-            (await getCompletionItems(getToken('', 0), { column: 1 }, createFetcher([]), {}))?.suggestions.map(
+            (await getCompletionItems(getToken('', 0), { column: 1 }, createFetcher([]), {}, true))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -191,7 +194,7 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions on whitespace', async () => {
         expect(
-            (await getCompletionItems(getToken('a ', 1), { column: 3 }, createFetcher([]), {}))?.suggestions.map(
+            (await getCompletionItems(getToken('a ', 1), { column: 3 }, createFetcher([]), {}, true))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -230,7 +233,7 @@ describe('getCompletionItems()', () => {
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
-            (await getCompletionItems(getToken('rE', 0), { column: 3 }, createFetcher([]), {}))?.suggestions.map(
+            (await getCompletionItems(getToken('rE', 0), { column: 3 }, createFetcher([]), {}, true))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -269,9 +272,9 @@ describe('getCompletionItems()', () => {
 
     test('returns completions for filters with discrete values', async () => {
         expect(
-            (await getCompletionItems(getToken('case:y', 0), { column: 7 }, createFetcher([]), {}))?.suggestions.map(
-                ({ label }) => label
-            )
+            (
+                await getCompletionItems(getToken('case:y', 0), { column: 7 }, createFetcher([]), {}, true)
+            )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['yes', 'no'])
     })
 
@@ -284,7 +287,8 @@ describe('getCompletionItems()', () => {
                         column: 6,
                     },
                     createFetcher([]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(POPULAR_LANGUAGES)
@@ -299,7 +303,8 @@ describe('getCompletionItems()', () => {
                         column: 8,
                     },
                     createFetcher([]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['repo', 'file', 'content', 'symbol', 'commit'])
@@ -318,7 +323,8 @@ describe('getCompletionItems()', () => {
                             repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                     ]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
         ).toStrictEqual([
@@ -352,7 +358,8 @@ describe('getCompletionItems()', () => {
                             repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                     ]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ filterText }) => filterText)
         ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
@@ -371,7 +378,8 @@ describe('getCompletionItems()', () => {
                             repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                     ]),
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toStrictEqual([
@@ -395,8 +403,8 @@ describe('getCompletionItems()', () => {
                             repository: 'repo/with a space',
                         },
                     ]),
-
-                    {}
+                    {},
+                    true
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
@@ -417,9 +425,15 @@ describe('getCompletionItems()', () => {
     test('Sourcegraph.com GH repo completions', async () => {
         expect(
             (
-                await getCompletionItems(getToken('repo:', 0), { column: 5 }, createFetcher([]), {
-                    isSourcegraphDotCom: true,
-                })
+                await getCompletionItems(
+                    getToken('repo:', 0),
+                    { column: 5 },
+                    createFetcher([]),
+                    {
+                        isSourcegraphDotCom: true,
+                    },
+                    true
+                )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
             [

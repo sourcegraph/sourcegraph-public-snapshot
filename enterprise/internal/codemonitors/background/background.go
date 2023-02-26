@@ -6,6 +6,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
@@ -16,13 +17,15 @@ func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB)
 	triggerMetrics := newMetricsForTriggerQueries(observationCtx)
 	actionMetrics := newActionMetrics(observationCtx)
 
+	ej := jobutil.EnterpriseJobs(nil)
+
 	// Create a new context. Each background routine will wrap this with
 	// a cancellable context that is canceled when Stop() is called.
 	ctx := context.Background()
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics),
+		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics, ej),
 		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observationCtx), codeMonitorsStore, triggerMetrics),
 		newActionRunner(ctx, scopedContext("ActionRunner", observationCtx), codeMonitorsStore, actionMetrics),
 		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observationCtx), codeMonitorsStore, actionMetrics),

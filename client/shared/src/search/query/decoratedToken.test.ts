@@ -1714,7 +1714,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight regex delimited pattern for standard search', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('/f.*/ x', false, SearchPatternType.standard))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('/f.*/ x', false, SearchPatternType.standard, true)), true))
             .toMatchInlineSnapshot(`
             [
               {

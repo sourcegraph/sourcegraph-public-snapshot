@@ -12,6 +12,6 @@ export function getTokenLength(token: Token): number {
 
 export const resolveFilterMemoized = memoize(resolveFilter)
 
-export function isFilterOfType(filter: Filter, filterType: FilterType): boolean {
-    return resolveFilterMemoized(filter.field.value)?.type === filterType
+export function isFilterOfType(filter: Filter, filterType: FilterType, enableOwnershipSearch: boolean): boolean {
+    return resolveFilterMemoized(filter.field.value, enableOwnershipSearch)?.type === filterType
 }

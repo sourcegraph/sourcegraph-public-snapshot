@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -28,7 +29,7 @@ type SearchImplementer interface {
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, ej jobutil.EnterpriseJobs, args *SearchArgs) (_ SearchImplementer, err error) {
 	settings, err := DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		return nil, err
@@ -54,23 +55,25 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
-		client:       cli,
-		db:           db,
-		SearchInputs: inputs,
+		logger:               logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
+		client:               cli,
+		db:                   db,
+		SearchInputs:         inputs,
+		enterpriseSearchJobs: ej,
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.db, r.enterpriseSearchJobs, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	logger       log.Logger
-	client       client.SearchClient
-	SearchInputs *search.Inputs
-	db           database.DB
+	logger               log.Logger
+	client               client.SearchClient
+	SearchInputs         *search.Inputs
+	db                   database.DB
+	enterpriseSearchJobs jobutil.EnterpriseJobs
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings
@@ -86,7 +89,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db, gitserver.NewClient()).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, gitserver.NewClient(), nil).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -174,7 +174,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
 		defer batchedStream.Done()
 
-		return h.searchClient.Execute(ctx, batchedStream, inputs)
+		return h.searchClient.Execute(ctx, batchedStream, inputs, ej)
 	}()
 	if alert != nil {
 		eventWriter.Alert(alert)
