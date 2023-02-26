@@ -21,7 +21,7 @@ interface CompletionCallbacks {
 }
 
 export class WSCompletionsClient {
-	static async new(addr: string, accessToken: string): Promise<WSCompletionsClient | null> {
+	public static async new(addr: string, accessToken: string): Promise<WSCompletionsClient | null> {
 		const wsclient = await WSClient.new<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>(
 			addr,
 			accessToken
@@ -34,7 +34,7 @@ export class WSCompletionsClient {
 
 	private constructor(private wsclient: WSClient<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>) {}
 
-	async getCompletions(args: CompletionsArgs, callbacks: CompletionCallbacks): Promise<void> {
+	public async getCompletions(args: CompletionsArgs, callbacks: CompletionCallbacks): Promise<void> {
 		await this.wsclient.sendRequest(
 			{
 				kind: 'getCompletions',
@@ -88,7 +88,7 @@ export async function fetchAndShowCompletions(
 	wsclientPromise: Promise<WSCompletionsClient | null>,
 	documentProvider: CompletionsDocumentProvider,
 	history: History
-) {
+): Promise<void> {
 	const wsclient = await wsclientPromise
 	if (!wsclient) {
 		return
@@ -102,11 +102,10 @@ export async function fetchAndShowCompletions(
 	const ext = filename.split('.').pop() || ''
 	const completionsUri = vscode.Uri.parse('codegen:Completions.md')
 	documentProvider.clearCompletions(completionsUri)
-	vscode.workspace.openTextDocument(completionsUri).then(doc => {
-		vscode.window.showTextDocument(doc, {
-			preview: false,
-			viewColumn: 2,
-		})
+	const doc = await vscode.workspace.openTextDocument(completionsUri)
+	await vscode.window.showTextDocument(doc, {
+		preview: false,
+		viewColumn: 2,
 	})
 
 	try {
@@ -117,17 +116,17 @@ export async function fetchAndShowCompletions(
 		await wsclient.getCompletions(
 			await getCompletionsArgs(history, currentEditor.document, currentEditor.selection.active),
 			{
-				onCompletions (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+				onCompletions(completions: Completion[], debug?: LLMDebugInfo | undefined): void {
 					documentProvider.addCompletions(completionsUri, ext, completions, debug)
 				},
-				onMetadata (metadata: any): void {
+				onMetadata(metadata: any): void {
 					console.log(`received metadata ${metadata}`)
 				},
-				onDone (): void {
+				onDone(): void {
 					console.log('received done')
 					documentProvider.setCompletionsDone(completionsUri)
 				},
-				onError (err: string): void {
+				onError(err: string): void {
 					console.error(`received error ${err}`)
 				},
 			}
@@ -140,10 +139,10 @@ export async function fetchAndShowCompletions(
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
 	constructor(private wsclient: WSCompletionsClient, private history: History) {}
 
-	async provideInlineCompletionItems(
+	public async provideInlineCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
-		context: vscode.InlineCompletionContext,
+		_context: vscode.InlineCompletionContext,
 		token: vscode.CancellationToken
 	): Promise<vscode.InlineCompletionItem[]> {
 		// debounce
@@ -156,7 +155,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 		return new Promise<vscode.InlineCompletionItem[]>(async (resolve, reject) => {
 			const allCompletions: Completion[] = []
 			await this.wsclient.getCompletions(await getCompletionsArgs(this.history, document, position), {
-				onCompletions (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+				onCompletions(completions: Completion[], debug?: LLMDebugInfo | undefined): void {
 					allCompletions.push(
 						...completions.map(c => ({
 							// Limit inline completions to one line for now
@@ -165,13 +164,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 						}))
 					)
 				},
-				onMetadata (metadata: any): void {
+				onMetadata(metadata: any): void {
 					console.log(`received metadata ${metadata}`)
 				},
-				onDone (): void {
+				onDone(): void {
 					resolve(allCompletions.map(c => new vscode.InlineCompletionItem(c.insertText)))
 				},
-				onError (err: string): void {
+				onError(err: string): void {
 					reject(`CodyComplemtionItemProvider: error fetching completions: ${err}`)
 				},
 			})

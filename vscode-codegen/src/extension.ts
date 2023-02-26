@@ -10,7 +10,7 @@ import { History } from './history'
 const CODY_ENDPOINT = 'cody.sgdev.org'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('Cody extension activated')
 	const isDevelopment = process.env.NODE_ENV === 'development'
 
