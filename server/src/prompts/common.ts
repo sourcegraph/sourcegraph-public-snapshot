@@ -13,7 +13,7 @@ export function getCondensedText(s: InflatedSymbol): string {
 	if (lines.length < 10) {
 		return s.text
 	}
-	return [...lines.slice(0, 5), '// (omitted code)', ...lines.slice(- 5, lines.length)].join('\n')
+	return [...lines.slice(0, 5), '// (omitted code)', ...lines.slice(-5, lines.length)].join('\n')
 }
 
 export const charsPerTokenOpenAI = 3

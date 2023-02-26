@@ -168,6 +168,8 @@ function isFunctionLike(s: DocumentSymbol): boolean {
 
 function isClose(s: DocumentSymbol): boolean {
 	const curPoint = vscode.window.activeTextEditor?.selection.end
-	if (!curPoint) {return false}
+	if (!curPoint) {
+		return false
+	}
 	return s.range.contains(curPoint)
 }

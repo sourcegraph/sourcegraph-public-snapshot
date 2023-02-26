@@ -1,4 +1,3 @@
- 
 export const languageMarkdownID: { [name: string]: string } = {
 	Python: 'python',
 	Java: 'java',

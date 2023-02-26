@@ -180,9 +180,7 @@ export async function fetchKeywordFiles(
 	query: string
 ): Promise<{ filename: string; score: number }[]> {
 	const terms = query.split(/\W+/)
-	const stemmedTerms = terms
-		.map(term => natural.PorterStemmer.stem(term))
-		.map(term => escapeRegex(term))
+	const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
 	// unique stemmed keywords, our representation of the user query
 	const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
 

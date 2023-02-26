@@ -30,9 +30,9 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 		this.completionsByUri[uri.toString()].groups.push({
 			lang,
 			completions: completions.map(c => ({
-					...c,
-					insertText: `${c.prefixText}🡆${c.insertText}`,
-				})),
+				...c,
+				insertText: `${c.prefixText}🡆${c.insertText}`,
+			})),
 			debug,
 		})
 		this.fireDocumentChanged(uri)
