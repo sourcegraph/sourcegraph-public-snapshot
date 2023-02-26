@@ -4,7 +4,7 @@
   "description": "Sourcegraph Cody",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/codebot"
+    "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
     "node": "^16.18.1",
