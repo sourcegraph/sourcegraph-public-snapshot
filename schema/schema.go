@@ -2323,7 +2323,7 @@ type SiteConfiguration struct {
 	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
-	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
+	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
 	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
