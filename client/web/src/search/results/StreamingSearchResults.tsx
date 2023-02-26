@@ -73,6 +73,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -455,6 +456,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableOwnershipSearch={enableOwnershipSearch}
                             results={results}
                             allExpanded={allExpanded}
                             assetsRoot={window.context?.assetsRoot || ''}

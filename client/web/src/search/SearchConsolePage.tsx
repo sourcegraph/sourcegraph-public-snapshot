@@ -28,6 +28,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
 import styles from './SearchConsolePage.module.scss'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
@@ -49,6 +50,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     )
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
@@ -134,6 +136,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <StreamingSearchResultsList
                                 {...props}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
                                 assetsRoot={window.context?.assetsRoot || ''}

@@ -32,6 +32,7 @@ import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookQueryBlock.module.scss'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 
 interface NotebookQueryBlockProps
     extends BlockProps<QueryBlock>,
@@ -77,6 +78,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+        const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -192,6 +194,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}

@@ -20,6 +20,7 @@ export interface QueryExamplesProps extends TelemetryProps {
     queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
+    enableOwnershipSearch?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -46,13 +47,18 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
+    enableOwnershipSearch = false,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
     const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
     const navigate = useNavigate()
 
-    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(
+        selectedSearchContextSpec ?? 'global',
+        isSourcegraphDotCom,
+        enableOwnershipSearch
+    )
 
     const handleTabChange = (selectedTab: number): void => {
         setQueryExampleTabActive(!!selectedTab)

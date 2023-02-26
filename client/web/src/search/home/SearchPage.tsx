@@ -25,6 +25,7 @@ import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
 import styles from './SearchPage.module.scss'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -48,6 +49,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const isLightTheme = useIsLightTheme()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
     const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -123,6 +125,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         queryState={queryState}
                         setQueryState={setQueryState}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        enableOwnershipSearch={enableOwnershipSearch}
                     />
                 )}
             </div>
