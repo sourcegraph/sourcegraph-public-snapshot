@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import { WSResponse } from '@sourcegraph/cody-common'
 import { WebSocket } from 'ws'
+
+import { WSResponse } from '@sourcegraph/cody-common'
 
 export class WSClient<TRequest, TResponse extends WSResponse> {
 	static async new<T1, T2 extends WSResponse>(addr: string, accessToken: string): Promise<WSClient<T1, T2> | null> {

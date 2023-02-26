@@ -1,4 +1,4 @@
-import { InflatedSymbol, LLMDebugInfo, CompletionsArgs, Completion, CompletionLogProbs } from '@sourcegraph/cody-common'
+import { InflatedSymbol, LLMDebugInfo, CompletionsArgs, CompletionLogProbs } from '@sourcegraph/cody-common'
 
 export interface CompletionsBackend {
 	expectedResponses: number
@@ -13,7 +13,7 @@ export function getCondensedText(s: InflatedSymbol): string {
 	if (lines.length < 10) {
 		return s.text
 	}
-	return [...lines.slice(0, 5), '// (omitted code)', ...lines.slice(lines.length - 5, lines.length)].join('\n')
+	return [...lines.slice(0, 5), '// (omitted code)', ...lines.slice(- 5, lines.length)].join('\n')
 }
 
 export const charsPerTokenOpenAI = 3
@@ -26,7 +26,7 @@ export function tokenCountToChars(tokenCount: number): number {
 	return Math.floor(tokenCount * charsPerTokenOpenAI)
 }
 
-const indentWithContentRegex = /^(\s*)[^\s]/
+const indentWithContentRegex = /^(\s*)\S/
 const maxPrefixLines = 5
 
 export function enhanceCompletion(
@@ -97,7 +97,7 @@ function dontRamble(s: string, stopPatterns: RegExp[]): string {
 			completionEndIndex = match.index
 		}
 	}
-	return s.substring(0, completionEndIndex)
+	return s.slice(0, Math.max(0, completionEndIndex))
 }
 
 export function truncateByProbability(

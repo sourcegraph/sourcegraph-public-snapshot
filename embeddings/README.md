@@ -1,34 +1,43 @@
 # Embeddings
 
-Provides natural language code search capabilities using embeddings.
+Provides natural-language code search capabilities using embeddings.
 
-## Dependencies
+## Development
 
-```
-pip3 install "fastapi[all]" faiss-cpu tenacity numpy openai
-```
+### Setup
 
-## Environment variables
+See the [top-level README.md](../README.md#setup):
 
-To access the OpenAI embeddings API:
+- You must install Python and the Python library dependencies.
+- You must set the following environment variables: `OPENAI_API_KEY`, `EMBEDDINGS_DIR`, and `CODY_USERS_PATH`.
 
-- `export OPENAI_API_KEY=sk-`
-- `export EMBEDDINGS_DIR=/path/to/embeddings`
+### Usage
 
-## Embedding a codebase
+#### Embedding a codebase on disk
 
-```
-python3 embed.py --codebase-id=codebase-id-1 --codebase-path=/path/to/repo --output-dir=/path/to/embeddings
+```shell
+python3 embed_codebase.py --codebase-id=CODEBASE-ID-1 --codebase-path=PATH-TO-REPO --output-dir=$EMBEDDINGS_DIR
 ```
 
-## Embedding context dataset
+- `CODEBASE-ID-1`: Some identifier for the codebase, such as `github.com/sourcegraph/conc`.
+- `PATH-TO-REPO`: The file path to an existing codebase (e.g., a Git checkout) on disk, such as `$HOME/src/github.com/sourcegraph/conc`.
 
-```
-python3 embed_context_dataset.py --output-dir=/path/to/embeddings
+#### Embedding a codebase by Git repository URL
+
+```shell
+python3 embed_repos.py --repos GIT-CLONE-URL --output-dir=$EMBEDDINGS_DIR
 ```
 
-## Running the API (in development)
+- `GIT-CLONE-URL`: One or more Git clone URLs (separated by whitespace), such as `https://github.com/sourcegraph/conc`.
 
+#### Embedding context dataset
+
+```shell
+python3 embed_context_dataset.py --output-dir=$EMBEDDINGS_DIR
 ```
-uvicorn api:app --reload
+
+#### Running the API (in development)
+
+```shell
+asdf env python uvicorn api:app --reload --port 9301
 ```

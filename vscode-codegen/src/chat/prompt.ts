@@ -1,13 +1,15 @@
 import path from 'path'
+
+import fetch from 'node-fetch'
 import * as vscode from 'vscode'
 
 import { Message, QueryInfo } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
+
+import { getKeywordContextMessages } from './context'
 import { ContextSearchOptions } from './context-search-options'
 import { getRecipe } from './recipes/index'
-import { getKeywordContextMessages } from './context'
-import fetch from 'node-fetch'
 
 const PROMPT_PREAMBLE_LENGTH = 230
 const MAX_PROMPT_TOKEN_LENGTH = 7000 - PROMPT_PREAMBLE_LENGTH
@@ -155,12 +157,12 @@ export class Transcript {
 					? populateMarkdownContextTemplate
 					: populateCodeContextTemplate
 
-				return groupedResults.results.flatMap<Message>(text => {
-					return getContextMessageWithResponse(
+				return groupedResults.results.flatMap<Message>(text =>
+					getContextMessageWithResponse(
 						contextTemplateFn(text, groupedResults.filePath),
 						groupedResults.filePath
 					)
-				})
+				)
 			})
 	}
 
@@ -211,7 +213,7 @@ export class Transcript {
 	//   - Note: this means we only include context messages of the most recent chunk that has them
 	// - Visit the next chunk. Repeat until you run out of token budget.
 	// - At the end, incorporate the botResponsePrefix (which controls the first part of the bot response if you wish to constrain that).
-	getPrompt(botResponsePrefix: string = ''): Message[] {
+	getPrompt(botResponsePrefix = ''): Message[] {
 		const reversePrompt: Message[] = []
 		const reverseTranscript = [...this.transcript].reverse()
 		let tokenBudget = MAX_AVAILABLE_PROMPT_LENGTH
@@ -315,7 +317,7 @@ function estimateTokensUsage(message: Message): number {
 function groupResultsByFile(results: EmbeddingSearchResult[]): { filePath: string; results: string[] }[] {
 	const originalFileOrder: string[] = []
 	for (const result of results) {
-		if (originalFileOrder.indexOf(result.filePath) === -1) {
+		if (!originalFileOrder.includes(result.filePath)) {
 			originalFileOrder.push(result.filePath)
 		}
 	}
@@ -337,7 +339,7 @@ function groupResultsByFile(results: EmbeddingSearchResult[]): { filePath: strin
 }
 
 function mergeConsecutiveResults(results: EmbeddingSearchResult[]): string[] {
-	const sortedResults = results.sort((a, b) => a['start'] - b['start'])
+	const sortedResults = results.sort((a, b) => a.start - b.start)
 	const mergedResults = [results[0].text]
 
 	for (let i = 1; i < sortedResults.length; i++) {
@@ -371,7 +373,7 @@ export function populateCodeContextTemplate(code: string, filePath: string): str
 	return CODE_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{language}', language).replace('{text}', code)
 }
 
-const MARKDOWN_CONTEXT_TEMPLATE = `Use the following text from file \`{filePath}\`:\n{text}`
+const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
 
 export function populateMarkdownContextTemplate(md: string, filePath: string): string {
 	return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
@@ -379,7 +381,7 @@ export function populateMarkdownContextTemplate(md: string, filePath: string): s
 
 export function getContextMessageWithResponse(text: string, filename?: string): ContextMessage[] {
 	return [
-		{ speaker: 'you', text: text, filename },
+		{ speaker: 'you', text, filename },
 		{ speaker: 'bot', text: 'Ok.' },
 	]
 }

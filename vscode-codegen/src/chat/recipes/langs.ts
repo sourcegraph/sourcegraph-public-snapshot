@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+ 
 export const languageMarkdownID: { [name: string]: string } = {
 	Python: 'python',
 	Java: 'java',

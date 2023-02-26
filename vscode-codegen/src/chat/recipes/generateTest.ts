@@ -1,7 +1,10 @@
 import path from 'path'
+
 import { Message } from '@sourcegraph/cody-common'
-import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
+
 import { ContextSearchOptions } from '../context-search-options'
+import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
+
 import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName, getActiveEditorSelection } from './helpers'
 import { Recipe, RecipePrompt } from './recipe'
 

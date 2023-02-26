@@ -1,5 +1,6 @@
-import { ClaudeBackend } from './prompts/claude'
 import { QueryInfo } from '@sourcegraph/cody-common'
+
+import { ClaudeBackend } from './prompts/claude'
 
 export async function getInfo(backend: ClaudeBackend, query: string): Promise<QueryInfo> {
 	const needsCodebaseContext = await new Promise<boolean>((resolve, reject) => {

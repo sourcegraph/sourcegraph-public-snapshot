@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
-import { Completion, LLMDebugInfo, CompletionLogProbs } from '@sourcegraph/cody-common'
+
+import { Completion, LLMDebugInfo } from '@sourcegraph/cody-common'
 
 export class CompletionsDocumentProvider implements vscode.TextDocumentContentProvider, vscode.HoverProvider {
 	completionsByUri: {
@@ -28,12 +29,10 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 		}
 		this.completionsByUri[uri.toString()].groups.push({
 			lang,
-			completions: completions.map(c => {
-				return {
+			completions: completions.map(c => ({
 					...c,
 					insertText: `${c.prefixText}🡆${c.insertText}`,
-				}
-			}),
+				})),
 			debug,
 		})
 		this.fireDocumentChanged(uri)
@@ -71,9 +70,9 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 							sectionText += '\n```' + lang + '\n' + `${completion.insertText}` + '\n```'
 							return sectionText
 						})
-						.join(`\n\n`)
+						.join('\n\n')
 				)
-				.join(`\n\n`)
+				.join('\n\n')
 		)
 	}
 
@@ -83,7 +82,7 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 			return null
 		}
 
-		const wordRange = document.getWordRangeAtPosition(position, /[\w\-:]+/)
+		const wordRange = document.getWordRangeAtPosition(position, /[\w:\-]+/)
 		if (!wordRange) {
 			return null
 		}

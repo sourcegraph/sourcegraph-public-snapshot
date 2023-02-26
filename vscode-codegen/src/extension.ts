@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
-import { CompletionsDocumentProvider } from './docprovider'
-import { History } from './history'
+
 import { ChatViewProvider } from './chat/view'
 import { WSChatClient } from './chat/ws'
 import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
+import { CompletionsDocumentProvider } from './docprovider'
 import { EmbeddingsClient } from './embeddings-client'
-import fetch from 'node-fetch'
+import { History } from './history'
 
 const CODY_ENDPOINT = 'cody.sgdev.org'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'

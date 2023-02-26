@@ -1,6 +1,7 @@
 import * as path from 'path'
-import Mocha from 'mocha'
+
 import glob from 'glob'
+import Mocha from 'mocha'
 
 export function run(): Promise<void> {
 	// Create the mocha test
@@ -29,9 +30,9 @@ export function run(): Promise<void> {
 						c()
 					}
 				})
-			} catch (err) {
-				console.error(err)
-				e(err)
+			} catch (error) {
+				console.error(error)
+				e(error)
 			}
 		})
 	})

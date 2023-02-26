@@ -1,33 +1,14 @@
 {
   "name": "@sourcegraph/cody-common",
-  "version": "0.0.1",
-  "main": "out/index.js",
-  "scripts": {
-    "build": "tsc --declaration",
-    "dev": "concurrently \"tsc --declaration -w\" \"nodemon out/index.js\"",
-    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@types/vscode": "^1.74.0",
-    "nodemon": "^2.0.20",
-    "typescript": "^4.9.4"
-  },
-  "types": "./out/index.d.ts",
+  "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sourcegraph/codebot.git"
+    "url": "https://github.com/sourcegraph/codebot",
+    "directory": "common"
   },
-  "bugs": {
-    "url": "https://github.com/sourcegraph/codebot/issues"
-  },
-  "homepage": "https://github.com/sourcegraph/codebot#readme",
-  "description": "",
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
   "devDependencies": {
-    "@sourcegraph/prettierrc": "^3.0.3",
-    "concurrently": "^7.6.0",
-    "prettier": "^2.8.3"
+    "@types/vscode": "^1.74.0"
   }
 }

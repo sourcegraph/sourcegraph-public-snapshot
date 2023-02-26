@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+
 import { enhanceCompletion } from '../../prompts/common'
 
 suite('postprocessing', () => {

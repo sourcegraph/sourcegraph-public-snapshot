@@ -1,8 +1,12 @@
-import { Configuration, CreateCompletionRequest, OpenAIApi } from 'openai'
+import { performance } from 'perf_hooks'
+
+import { AxiosResponse } from 'axios'
+import { Configuration, CreateCompletionRequest, CreateCompletionResponse, OpenAIApi } from 'openai'
+
 import { Completion, CompletionsArgs, InflatedHistoryItem, LLMDebugInfo, ReferenceInfo } from '@sourcegraph/cody-common'
+
 import { getCharCountLimitedPrefixAtLineBreak, tokenCost, tokenCountToChars } from './common'
 import { createCompletion } from './openai-ratelimit'
-import { performance } from 'perf_hooks'
 
 type RawCompletion = Omit<Completion, 'prefixText'>
 export class OpenAIBackend {
@@ -49,7 +53,7 @@ export class OpenAIBackend {
 			stop: this.stopStrings(uri),
 		}
 
-		let response
+		let response: Pick<AxiosResponse<CreateCompletionResponse, any>, 'data'> | undefined
 		try {
 			// using createCompletion instead of this.oa.createCompletion to ensure openai requests happen serial (see function docs)
 			response = await createCompletion(this.oa, {

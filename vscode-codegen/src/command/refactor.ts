@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-empty-file */
 // import * as vscode from "vscode";
 // import { ClaudeBackend } from "../prompts/claude";
 

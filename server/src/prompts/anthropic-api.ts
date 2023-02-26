@@ -80,9 +80,9 @@ export class AnthropicAPIClient {
 			if (buffer.length > 0) {
 				iterateLines(buffer, onResponseLine)
 			}
-		} catch (err: any) {
-			console.error(err)
-			callbacks.onError(err)
+		} catch (error: any) {
+			console.error(error)
+			callbacks.onError(error)
 		}
 	}
 }

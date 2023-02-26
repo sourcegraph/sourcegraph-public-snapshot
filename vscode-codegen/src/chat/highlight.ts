@@ -9,7 +9,7 @@ export const highlightCode = (code: string, language?: string): string => {
 			return highlight.highlight(code, { language, ignoreIllegals: true }).value
 		}
 		return highlight.highlightAuto(code).value
-	} catch (error) {
+	} catch {
 		return code
 	}
 }

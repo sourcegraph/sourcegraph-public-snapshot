@@ -7,22 +7,7 @@
 
 ## Install
 
-1. Set the following in your VS Code user settings JSON:
-
-   ```json
-   "cody.serverEndpoint": "",
-   "cody.embeddingsEndpoint": "",
-   ```
-
-1. Set the following in your workspace settings JSON:
-
-   ```json
-   "cody.codebase": "github.com/example/repo",
-   ```
-
-1. [Install the extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) from the [latest VSIX file](https://github.com/sourcegraph/codebot/releases).
-
-1. Run the "Cody: Set access token" command to set the access token and reload the editor.
+See the [#announce-cody Slack channel](https://app.slack.com/client/T02FSM7DL/C04MZPE4JKD) for instructions.
 
 ## Development
 
@@ -33,29 +18,62 @@ There are four separate components:
 - `embeddings`: generates the embeddings and serves the embeddings endpoint
 - `common`: a library shared by the extension and server with common types
 
-Set the following environment variables:
+## Development
 
-```
-export OPENAI_API_KEY=sk-...
-export ANTHROPIC_API_KEY=...
-export EMBEDDINGS_DIR=/path/to/embedings/dir
-export CODY_USERS_PATH=/path/to/users.json
-```
+### Setup
 
-To run the server:
+1. Install [asdf](https://asdf-vm.com/)
+1. Run `asdf install` (if needed, run `asdf plugin add NAME` for any missing plugins)
+1. Set the following environment variables:
 
-- `cd server && npm run dev`
+   ```
+   export OPENAI_API_KEY=sk-...
+   export ANTHROPIC_API_KEY=...
+   export EMBEDDINGS_DIR=/path/to/embeddings/dir
+   export CODY_USERS_PATH=/path/to/users.json
+   ```
 
-To run the embeddings API:
+   See [Cody secrets](https://docs.google.com/document/d/1b5oqnE0kSUrgrb4Z2Alnhfods5e4Y5gx_oaIcQH4TZM/edit) (internal Google Doc) for these secret values.
 
-- `cd embeddings && uvicorn api:app --reload`
+1. Install dependencies:
 
-To build the common library:
+   ```shell
+   pnpm install
+   (cd embeddings && pip3 install -r requirements.txt)
+   ```
 
-- `cd common && npm run dev`
+### Build and run
 
-To build the extension:
+Run the server:
 
-- `cd vscode-codegen && npm run watch`
-- `cd vscode-codegen && npm run watch:copy-static`
-- Launch the extension by opening VS Code to the `vscode-codegen` directory (`code vscode-codegen`) and selecting the "Run Extension" target.
+1. `cd server && CODY_PORT=9300 pnpm run dev`
+
+Run the embeddings API:
+
+1. Generate embeddings, including for at least 1 codebase. See [embeddings/README.md](embeddings/README.md).
+
+   For example:
+
+   ```shell
+   cd embeddings
+   python3 embed_repos.py --repos https://github.com/sourcegraph/conc --output-dir=$EMBEDDINGS_DIR
+   python3 embed_context_dataset.py --output-dir=$EMBEDDINGS_DIR
+   ```
+
+   If you do this, ensure your `CODY_USERS_PATH` file has `github.com/sourcegraph/conc` in the `accessibleCodebaseIDs`.
+
+1. `cd embeddings && asdf env python uvicorn api:app --reload --port 9301`
+
+Run the VS Code extension:
+
+1. Open this repository's root directory in VS Code.
+1. In VS Code, run the `Debug: Start Debugging` command and select the `Run VS Code Extension` target.
+1. Change your VS Code user settings to use your local dev servers:
+
+   ```json
+   "cody.serverEndpoint": "localhost:9300",
+   "cody.embeddingsEndpoint": "localhost:9301",
+   "cody.debug": true,
+   ```
+
+   - Note: You may find it more convenient to use a separate user profile for VS Code (or the Insiders build) so that you can continue using the released version of Cody in your usual editing workflow.

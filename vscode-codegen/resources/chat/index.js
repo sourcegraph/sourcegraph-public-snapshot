@@ -1,8 +1,9 @@
+/* eslint-disable no-undef */
 const MAX_HEIGHT = 192
 
 let tabsController = null
 let askController = null
-let debugLog = []
+const debugLog = []
 
 class ChatController {
 	constructor(containerId, recipeContainerId, vscode, gettingStartedHTML) {
@@ -169,7 +170,7 @@ function toggleContextFilesExpand(event) {
 	}
 	const contextFiles = JSON.parse(contextFilesStr)
 
-	const isExpanded = JSON.parse(event.target.dataset.isexpanded || "false")
+	const isExpanded = JSON.parse(event.target.dataset.isexpanded || 'false')
 	const willExpand = !isExpanded
 	if (willExpand) {
 		event.target.innerHTML = getContextFilesString(contextFiles, true)
@@ -182,7 +183,7 @@ function toggleContextFilesExpand(event) {
 function getContextFilesString(contextFiles, expand) {
 	contextFiles = contextFiles.map(f => f.replace(/^\.\//, ''))
 	if (expand) {
-		return `Cody read:\n<ul>${contextFiles.map(f => "<li>" + f + "</li>").join("\n")}</ul>`
+		return `Cody read:\n<ul>${contextFiles.map(f => '<li>' + f + '</li>').join('\n')}</ul>`
 	}
 	return `Cody read ${contextFiles[0]} and ${contextFiles.length - 1} other files`
 }
@@ -194,7 +195,10 @@ function getContextFilesHTML(contextFiles, expand) {
 	if (contextFiles.length === 1) {
 		return `<span style="font-style: italic;">Cody read ${contextFiles[0]}</span>`
 	}
-	return `<p data-contextfiles='${JSON.stringify(contextFiles)}' style="font-style: italic;">${getContextFilesString(contextFiles, expand)}</p>`
+	return `<p data-contextfiles='${JSON.stringify(contextFiles)}' style="font-style: italic;">${getContextFilesString(
+		contextFiles,
+		expand
+	)}</p>`
 }
 
 function getMessageBubble(author, text, timestamp, contextFiles) {

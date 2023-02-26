@@ -1,0 +1,27 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Run VS Code Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": ["--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen"],
+			"outFiles": ["${workspaceFolder}/vscode-codegen/out/**/*.js"],
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"NODE_ENV": "development"
+			}
+		},
+		{
+			"name": "Run VS Code Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen",
+				"--extensionTestsPath=${workspaceFolder}/vscode-codegen/out/test/suite/index"
+			],
+			"outFiles": ["${workspaceFolder}/vscode-codegen/out/test/**/*.js"],
+			"preLaunchTask": "${defaultBuildTask}"
+		}
+	]
+}

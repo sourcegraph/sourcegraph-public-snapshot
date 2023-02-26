@@ -1,13 +1,15 @@
-import path from 'path'
-import * as vscode from 'vscode'
 import { readFileSync } from 'fs'
+import path from 'path'
+
+import * as vscode from 'vscode'
 
 import { Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient } from '../embeddings-client'
-import { WSChatClient } from './ws'
+
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
+import { WSChatClient } from './ws'
 
 export interface ChatMessage extends Omit<Message, 'text'> {
 	displayText: string
@@ -20,7 +22,7 @@ export interface ChatMessage extends Omit<Message, 'text'> {
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-	private readonly staticDir = ['out', 'static', 'chat']
+	private readonly staticDir = path.join('resources', 'chat')
 	private readonly staticFiles = {
 		css: ['tabs.css', 'style.css', 'highlight.css'],
 		js: ['tabs.js', 'index.js'],
@@ -53,7 +55,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		webviewView.webview.html = this.renderView(webviewView.webview)
 		webviewView.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, ...this.staticDir))],
+			localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, this.staticDir))],
 		}
 
 		webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
@@ -103,8 +105,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private async logSendPrompt(promptMessages: Message[]): Promise<void> {
-		let promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
-		let debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
+		const promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
+		const debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
 		this.webview?.postMessage({ type: 'debug', message: debugMessage })
 	}
 
@@ -159,7 +161,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
 		const messageInfo = await this.prompt.resetToRecipe(recipeID)
 		if (!messageInfo) {
-			console.error('unrecognized recipe prompt: ', recipeID)
+			console.error('unrecognized recipe prompt:', recipeID)
 			return
 		}
 		const { display, prompt, botResponsePrefix } = messageInfo
@@ -227,7 +229,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	renderView(webview: vscode.Webview): string {
-		const html = readFileSync(path.join(this.extensionPath, ...this.staticDir, 'index.html')).toString()
+		const html = readFileSync(path.join(this.extensionPath, this.staticDir, 'index.html')).toString()
 
 		const nonce = getNonce()
 		return html
@@ -238,12 +240,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private getScriptTag(webview: vscode.Webview, filePath: string, nonce: string): string {
-		const src = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, ...this.staticDir, filePath)))
+		const src = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, this.staticDir, filePath)))
 		return `<script nonce="${nonce}" src="${src}"></script>`
 	}
 
 	private getStyleTag(webview: vscode.Webview, filePath: string): string {
-		const href = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, ...this.staticDir, filePath)))
+		const href = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, this.staticDir, filePath)))
 		return `<link rel="stylesheet" href="${href}">`
 	}
 }

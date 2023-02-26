@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 import { DocumentSymbol, SymbolKind } from 'vscode'
-import * as openai from 'openai'
-import { CompletionsDocumentProvider } from '../docprovider'
 import { Utils } from 'vscode-uri'
+
+import { CompletionsDocumentProvider } from '../docprovider'
 import { getSymbols } from '../vscode-utils'
 
 export async function explainCode(): Promise<string | null> {
@@ -96,7 +96,7 @@ export async function generateTest(documentProvider: CompletionsDocumentProvider
 				)
 			})
 		)
-	).flatMap(arr => arr)
+	).flat()
 	testSymbols.sort(({ symbol: a }, { symbol: b }) => {
 		let diff = 0
 		diff += 4 * ((isFunctionLike(a) ? 0 : 1) - (isFunctionLike(b) ? 0 : 1))
@@ -149,11 +149,11 @@ Write the unit test:
 }
 
 function isProbablyTestFile(filename: string): boolean {
-	return filename.toLowerCase().indexOf('test') !== -1
+	return filename.toLowerCase().includes('test')
 }
 
 function isProbablyTestSymbol(s: DocumentSymbol): boolean {
-	if (s.name.toLowerCase().indexOf('test') !== -1) {
+	if (s.name.toLowerCase().includes('test')) {
 		return true
 	}
 	if (s.name === 'describe') {
@@ -163,11 +163,11 @@ function isProbablyTestSymbol(s: DocumentSymbol): boolean {
 }
 
 function isFunctionLike(s: DocumentSymbol): boolean {
-	return [SymbolKind.Function, SymbolKind.Method].indexOf(s.kind) !== -1
+	return [SymbolKind.Function, SymbolKind.Method].includes(s.kind)
 }
 
 function isClose(s: DocumentSymbol): boolean {
 	const curPoint = vscode.window.activeTextEditor?.selection.end
-	if (!curPoint) return false
+	if (!curPoint) {return false}
 	return s.range.contains(curPoint)
 }

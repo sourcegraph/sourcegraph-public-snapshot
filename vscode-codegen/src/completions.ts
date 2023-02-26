@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
-import { CompletionsDocumentProvider } from './docprovider'
-import { History } from './history'
-import { getReferences } from './autocomplete/completion-provider'
+
 import {
 	Completion,
 	CompletionsArgs,
@@ -9,6 +7,10 @@ import {
 	WSCompletionResponse,
 	WSCompletionsRequest,
 } from '@sourcegraph/cody-common'
+
+import { getReferences } from './autocomplete/completion-provider'
+import { CompletionsDocumentProvider } from './docprovider'
+import { History } from './history'
 import { WSClient } from './wsclient'
 
 interface CompletionCallbacks {
@@ -98,7 +100,7 @@ export async function fetchAndShowCompletions(
 	}
 	const filename = currentEditor.document.fileName
 	const ext = filename.split('.').pop() || ''
-	const completionsUri = vscode.Uri.parse(`codegen:Completions.md`)
+	const completionsUri = vscode.Uri.parse('codegen:Completions.md')
 	documentProvider.clearCompletions(completionsUri)
 	vscode.workspace.openTextDocument(completionsUri).then(doc => {
 		vscode.window.showTextDocument(doc, {
@@ -115,17 +117,17 @@ export async function fetchAndShowCompletions(
 		await wsclient.getCompletions(
 			await getCompletionsArgs(history, currentEditor.document, currentEditor.selection.active),
 			{
-				onCompletions: function (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+				onCompletions (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
 					documentProvider.addCompletions(completionsUri, ext, completions, debug)
 				},
-				onMetadata: function (metadata: any): void {
+				onMetadata (metadata: any): void {
 					console.log(`received metadata ${metadata}`)
 				},
-				onDone: function (): void {
+				onDone (): void {
 					console.log('received done')
 					documentProvider.setCompletionsDone(completionsUri)
 				},
-				onError: function (err: string): void {
+				onError (err: string): void {
 					console.error(`received error ${err}`)
 				},
 			}
@@ -154,22 +156,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 		return new Promise<vscode.InlineCompletionItem[]>(async (resolve, reject) => {
 			const allCompletions: Completion[] = []
 			await this.wsclient.getCompletions(await getCompletionsArgs(this.history, document, position), {
-				onCompletions: function (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+				onCompletions (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
 					allCompletions.push(
 						...completions.map(c => ({
 							// Limit inline completions to one line for now
 							...c,
-							insertText: c.insertText.substring(0, c.insertText.indexOf('\n')),
+							insertText: c.insertText.slice(0, Math.max(0, c.insertText.indexOf('\n'))),
 						}))
 					)
 				},
-				onMetadata: function (metadata: any): void {
+				onMetadata (metadata: any): void {
 					console.log(`received metadata ${metadata}`)
 				},
-				onDone: function (): void {
+				onDone (): void {
 					resolve(allCompletions.map(c => new vscode.InlineCompletionItem(c.insertText)))
 				},
-				onError: function (err: string): void {
+				onError (err: string): void {
 					reject(`CodyComplemtionItemProvider: error fetching completions: ${err}`)
 				},
 			})

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 class TabsController {
 	constructor(model) {
 		this.model = model

@@ -1,9 +1,12 @@
-import * as vscode from 'vscode'
 import path from 'path'
+
+import * as vscode from 'vscode'
+
 import { Message } from '@sourcegraph/cody-common'
+
 import { getActiveEditorSelection } from './helpers'
-import { Recipe, RecipePrompt } from './recipe'
 import { languageMarkdownID, languageNames } from './langs'
+import { Recipe, RecipePrompt } from './recipe'
 export class TranslateToLanguage implements Recipe {
 	getID(): string {
 		return 'translateToLanguage'
@@ -25,7 +28,7 @@ export class TranslateToLanguage implements Recipe {
 		qp.show()
 		const toLanguage = await new Promise<string | undefined>(async resolve => {
 			qp.onDidChangeValue(() => {
-				if (languageNames.map(lang => lang.toLocaleLowerCase()).indexOf(qp.value) === -1) {
+				if (!languageNames.map(lang => lang.toLocaleLowerCase()).includes(qp.value)) {
 					qp.items = [{ label: qp.value }, ...origItems]
 				} else {
 					qp.items = origItems

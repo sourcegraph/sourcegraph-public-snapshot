@@ -169,4 +169,4 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", dest="output_dir")
     args = parser.parse_args()
 
-    embed_codebase(args.codebase_id, args.codebase_path, args.output_dir)
+    embed_codebase(args.codebase_id, os.path.expanduser(args.codebase_path), args.output_dir)

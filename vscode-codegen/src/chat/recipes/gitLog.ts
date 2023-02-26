@@ -1,16 +1,19 @@
-import * as vscode from 'vscode'
-import * as path from 'path'
-import { Recipe, RecipePrompt } from './recipe'
 import { execFile } from 'child_process'
+import * as path from 'path'
+
+import * as vscode from 'vscode'
+
 import { truncateText } from '../prompt'
+
+import { Recipe, RecipePrompt } from './recipe'
 
 export class GitHistory implements Recipe {
 	getID(): string {
 		return 'gitHistory'
 	}
 	async getPrompt(maxTokens: number): Promise<RecipePrompt | null> {
-		let stdout: Buffer = Buffer.from('')
-		let stderr: Buffer = Buffer.from('')
+		const stdout: Buffer = Buffer.from('')
+		const stderr: Buffer = Buffer.from('')
 
 		const fsPath = vscode.window.activeTextEditor?.document.uri.fsPath
 		if (!fsPath) {

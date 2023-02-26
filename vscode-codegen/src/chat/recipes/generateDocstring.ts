@@ -1,7 +1,10 @@
 import path from 'path'
+
 import { Message } from '@sourcegraph/cody-common'
-import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
+
 import { ContextSearchOptions } from '../context-search-options'
+import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
+
 import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName, getActiveEditorSelection } from './helpers'
 import { Recipe, RecipePrompt } from './recipe'
 
@@ -44,9 +47,9 @@ export class GenerateDocstring implements Recipe {
 		const promptPrefix = `Generate a comment documenting the parameters and functionality of the following ${languageName} code:`
 		let additionalInstructions = `Use the ${languageName} documentation style to generate a ${languageName} comment.`
 		if (extension === 'java') {
-			additionalInstructions = `Use the JavaDoc documentation style to generate a Java comment.`
+			additionalInstructions = 'Use the JavaDoc documentation style to generate a Java comment.'
 		} else if (extension === 'py') {
-			additionalInstructions = `Use a Python docstring to generate a Python multi-line string.`
+			additionalInstructions = 'Use a Python docstring to generate a Python multi-line string.'
 		}
 		const promptMessage: Message = {
 			speaker: 'you',

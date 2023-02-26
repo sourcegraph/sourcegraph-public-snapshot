@@ -1,4 +1,5 @@
 import { Message } from '@sourcegraph/cody-common'
+
 import { ContextSearchOptions } from '../context-search-options'
 
 export interface RecipePrompt {

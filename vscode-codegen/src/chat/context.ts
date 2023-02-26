@@ -1,10 +1,13 @@
-import StreamValues from 'stream-json/streamers/StreamValues'
-import * as path from 'path'
-import * as vscode from 'vscode'
 import { execFile, spawn } from 'child_process'
+import * as path from 'path'
+
 import * as natural from 'natural'
 import { removeStopwords } from 'stopword'
+import StreamValues from 'stream-json/streamers/StreamValues'
+import * as vscode from 'vscode'
+
 import { Message } from '@sourcegraph/cody-common'
+
 import { getContextMessageWithResponse, populateCodeContextTemplate } from './prompt'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
@@ -25,7 +28,7 @@ export async function getKeywordContextMessages(query: string): Promise<Message[
 			return getContextMessageWithResponse(messageText, filename)
 		})
 	)
-	return messagePairs.reverse().flatMap(p => p)
+	return messagePairs.reverse().flat()
 }
 
 function getRootPath(): string | null {
@@ -60,7 +63,7 @@ async function fetchFileStats(
 	} = {}
 	await new Promise<void>((resolve, reject) => {
 		try {
-			let fp: string = ''
+			const fp = ''
 			proc.stdout
 				.pipe(StreamValues.withParser())
 				.on('data', data => {
@@ -121,11 +124,11 @@ async function fetchFileMatches(
 				for (const line of lines) {
 					const terms = line.split(':')
 					if (terms.length !== 2) {
-						const matches = /^([0-9]+) files searched$/.exec(line)
+						const matches = /^(\d+) files searched$/.exec(line)
 						if (matches && matches.length === 2) {
 							try {
 								filesSearched = parseInt(matches[1])
-							} catch (error) {
+							} catch {
 								console.error(`failed to parse number of files matched from string: ${matches[1]}`)
 							}
 						}
@@ -134,7 +137,7 @@ async function fetchFileMatches(
 					try {
 						const count = parseInt(terms[1])
 						fileCounts[terms[0]] = count
-					} catch (error) {
+					} catch {
 						console.error(`could not parse count from ${terms[1]}`)
 					}
 				}
@@ -176,14 +179,10 @@ export async function fetchKeywordFiles(
 	rootPath: string,
 	query: string
 ): Promise<{ filename: string; score: number }[]> {
-	const terms = query.split(/[^\w]+/)
+	const terms = query.split(/\W+/)
 	const stemmedTerms = terms
-		.map(term => {
-			return natural.PorterStemmer.stem(term)
-		})
-		.map(term => {
-			return escapeRegex(term)
-		})
+		.map(term => natural.PorterStemmer.stem(term))
+		.map(term => escapeRegex(term))
 	// unique stemmed keywords, our representation of the user query
 	const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
 
@@ -280,19 +279,15 @@ function tfidf(terms: string[], tf: number[], idf: { [term: string]: number }): 
 }
 
 function tf(terms: string[], termCounts: { [term: string]: number }, fileSize: number): number[] {
-	return terms.map(term => {
-		return (termCounts[term] || 0) / fileSize
-	})
+	return terms.map(term => (termCounts[term] || 0) / fileSize)
 }
 
 function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { [term: string]: number } {
 	const logTotal = Math.log(totalFiles)
-	const e = Object.entries(termTotalFiles).map(([term, count]) => {
-		return [term, logTotal - Math.log(count)]
-	})
+	const e = Object.entries(termTotalFiles).map(([term, count]) => [term, logTotal - Math.log(count)])
 	return Object.fromEntries(e)
 }
 
 function escapeRegex(s: string) {
-	return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&')
+	return s.replace(/[$()*+./?[\\\]^{|}\-]/g, '\\$&')
 }

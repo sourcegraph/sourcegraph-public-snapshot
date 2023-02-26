@@ -16,12 +16,12 @@ export async function getReferences(
 	const searchText = document.getText(range)
 	const matches = [...searchText.matchAll(/\w+/g)]
 	const refPositions: Position[] = []
-	const ignoreWords = ['string', 'Promise', 'console', 'log'] // TODO(beyang): formalize
+	const ignoreWords = new Set(['string', 'Promise', 'console', 'log']) // TODO(beyang): formalize
 	for (const match of matches) {
 		if (match.index === undefined) {
 			continue
 		}
-		if (ignoreWords.indexOf(match[0]) !== -1) {
+		if (ignoreWords.has(match[0])) {
 			continue
 		}
 		refPositions.push(document.positionAt(startOffset + match.index))
@@ -35,7 +35,7 @@ export async function getReferences(
 						document.uri,
 						pos
 					)
-					let locations = res as vscode.Location[]
+					const locations = res as vscode.Location[]
 					return locations.length > 3 ? locations.slice(0, 3) : locations
 				} catch (error) {
 					console.error(`failed to fetch references: ${error}`)
@@ -43,7 +43,7 @@ export async function getReferences(
 				}
 			})
 		)
-	).flatMap(d => d)
+	).flat()
 	const filteredLocations = refLocations.filter(
 		location => !excludeRanges.map(er => er.uri === location.uri && er.range.contains(location.range)).some(c => c)
 	)
@@ -58,7 +58,7 @@ export async function getReferences(
 	)
 }
 
-function surroundingLine(doc: TextDocument, range: vscode.Range, numContextLines: number = 0): vscode.Range {
+function surroundingLine(doc: TextDocument, range: vscode.Range, numContextLines = 0): vscode.Range {
 	const r = new vscode.Range(
 		Math.max(0, range.start.line - numContextLines),
 		0,

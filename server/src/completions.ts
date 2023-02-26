@@ -1,13 +1,15 @@
-import { OpenAIBackend, langKeywordStopStrings, promptPrefixOnly } from './prompts/openai'
-import { WebSocket } from 'ws'
 import * as openai from 'openai'
+import { WebSocket } from 'ws'
+
 import {
 	Completion,
 	WSCompletionResponse,
 	WSCompletionResponseCompletion,
 	WSCompletionsRequest,
 } from '@sourcegraph/cody-common'
+
 import { enhanceCompletion, tokenCountToChars, truncateByProbability } from './prompts/common'
+import { OpenAIBackend, langKeywordStopStrings, promptPrefixOnly } from './prompts/openai'
 
 const openaiKey = process.env.OPENAI_API_KEY
 const openaiConfig = new openai.Configuration({ apiKey: openaiKey })
@@ -83,7 +85,7 @@ export async function wsHandleGetCompletions(ws: WebSocket, req: WSCompletionsRe
 					})
 				})
 				.catch(error => {
-					console.error('uncaught error: ', error)
+					console.error('uncaught error:', error)
 				})
 		)
 		await Promise.allSettled(completed)
@@ -94,6 +96,6 @@ export async function wsHandleGetCompletions(ws: WebSocket, req: WSCompletionsRe
 		ws.send(JSON.stringify(doneMsg))
 	} catch (error: any) {
 		const errMsg: WSCompletionResponse = { requestId: req.requestId, kind: 'error', error: error.toString() }
-		ws.send(errMsg)
+		ws.send(JSON.stringify(errMsg))
 	}
 }

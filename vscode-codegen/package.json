@@ -1,18 +1,36 @@
 {
   "name": "kodj",
   "displayName": "Kodj",
-  "publisher": "hpargecruos",
   "version": "0.0.2",
-  "engines": {
-    "vscode": "^1.74.0"
-  },
+  "publisher": "hpargecruos",
+  "description": "",
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/codebot.git",
+    "directory": "vscode-codegen"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/codebot/issues"
+  },
+  "homepage": "https://github.com/sourcegraph/codebot#readme",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js",
+    "unittest": "mocha ./out/test/unittest"
+  },
+  "main": "./out/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -136,47 +154,22 @@
       }
     }
   },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "npm run copy-static && tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "unittest": "mocha ./out/test/unittest",
-    "copy-static": "mkdir -p ./out/static && rsync -r ./src/static/ ./out/static",
-    "watch:copy-static": "nodemon --watch ./src/static/ -e js,css,html -x \"npm run copy-static\"",
-    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write"
-  },
   "devDependencies": {
-    "@sourcegraph/prettierrc": "^3.0.3",
-    "@types/chai": "^4.3.4",
+    "@types/escape-html": "^1.0.2",
     "@types/glob": "^8.0.0",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "16.x",
+    "@types/marked": "^4.0.8",
+    "@types/node": "^16.18.1",
+    "@types/node-fetch": "^2.6.2",
+    "@types/sanitize-html": "^2.8.0",
     "@types/stopword": "^2.0.0",
     "@types/stream-json": "^1.7.3",
     "@types/vscode": "^1.74.0",
-    "@types/ws": "^8.5.4",
-    "@typescript-eslint/eslint-plugin": "^5.42.0",
-    "@typescript-eslint/parser": "^5.42.0",
+    "@types/ws": "^8.5.3",
     "@vscode/test-electron": "^2.2.0",
-    "eslint": "^8.26.0",
-    "glob": "^8.0.3",
-    "mocha": "^10.1.0",
-    "nodemon": "^2.0.20",
-    "prettier": "^2.8.3",
-    "typescript": "^4.8.4"
+    "glob": "^8.0.3"
   },
   "dependencies": {
-    "@completion/sampling": "^0.1.1",
-    "@sourcegraph/cody-common": "^0.0.1",
-    "@types/escape-html": "^1.0.2",
-    "@types/highlight.js": "^10.1.0",
-    "@types/marked": "^4.0.8",
-    "@types/node-fetch": "^2.6.2",
-    "@types/sanitize-html": "^2.8.0",
-    "chai": "^4.3.7",
+    "@sourcegraph/cody-common": "workspace:*",
     "escape-html": "^1.0.3",
     "highlight.js": "^11.7.0",
     "isomorphic-ws": "^5.0.0",
@@ -189,17 +182,5 @@
     "stream-json": "^1.7.5",
     "vscode-uri": "^3.0.7",
     "ws": "^8.11.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sourcegraph/codebot.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sourcegraph/codebot/issues"
-  },
-  "homepage": "https://github.com/sourcegraph/codebot#readme",
-  "description": ""
+  }
 }

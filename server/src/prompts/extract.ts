@@ -19,5 +19,5 @@ export function extractUntilTripleBacktick(text: string): string {
 	if (found === -1) {
 		return text
 	}
-	return text.substring(0, found)
+	return text.slice(0, Math.max(0, found))
 }

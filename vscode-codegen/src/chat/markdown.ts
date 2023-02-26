@@ -1,5 +1,5 @@
-import sanitize from 'sanitize-html'
 import { marked } from 'marked'
+import sanitize from 'sanitize-html'
 
 import { highlightCode, registerHighlightContributions } from './highlight'
 

@@ -1,9 +1,10 @@
 import { createServer } from 'http'
 import { parse } from 'url'
-import { WebSocketServer } from 'ws'
-import express from 'express'
 
 import * as bodyParser from 'body-parser'
+import express from 'express'
+import { WebSocketServer } from 'ws'
+
 import {
 	Message,
 	WSChatRequest,
@@ -11,10 +12,11 @@ import {
 	WSChatResponseComplete,
 	WSChatResponseError,
 } from '@sourcegraph/cody-common'
-import { ClaudeBackend } from './prompts/claude'
-import { wsHandleGetCompletions } from './completions'
+
 import { authenticate, getUsers } from './auth'
+import { wsHandleGetCompletions } from './completions'
 import { getInfo } from './info'
+import { ClaudeBackend } from './prompts/claude'
 
 const anthropicApiKey = process.env.ANTHROPIC_API_KEY
 if (!anthropicApiKey) {
@@ -68,7 +70,7 @@ const shortAnswerBackend = new ClaudeBackend(
 	anthropicApiKey,
 	{
 		model: 'claude-v1',
-		temperature: 0.0,
+		temperature: 0,
 		stop_sequences: ['\n\nHuman:'],
 		max_tokens_to_sample: 1,
 		top_p: -1,
@@ -165,7 +167,7 @@ httpServer.on('upgrade', (request, socket, head) => {
 	const { pathname, search } = parse(request.url)
 
 	const user = authenticate(
-		request.headers['authorization'],
+		request.headers.authorization,
 		new URLSearchParams(search || '').get('access_token'),
 		getUsers(usersPath)
 	)

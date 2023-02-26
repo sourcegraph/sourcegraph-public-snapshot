@@ -2,7 +2,7 @@ import { Message } from '@sourcegraph/cody-common'
 
 import { AnthropicAPIClient, AnthropicCompletionCallbacks, AnthropicCompletionParams } from './anthropic-api'
 
-const logRequests = ['true', '1'].indexOf(process.env.LOG_CLAUDE?.toLocaleLowerCase() || '') >= 0
+const logRequests = ['true', '1'].includes(process.env.LOG_CLAUDE?.toLocaleLowerCase() || '')
 
 export class ClaudeBackend {
 	private client: AnthropicAPIClient

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-export const MARKDOWN_FORMAT_PROMPT = `Enclose code snippets with three backticks like so: \`\`\`.`
+export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
 export interface RecipeInput {
 	fileName: string

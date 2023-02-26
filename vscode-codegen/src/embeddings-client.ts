@@ -1,5 +1,4 @@
-import fetch from 'node-fetch'
-import { Response } from 'node-fetch'
+import fetch, { Response } from 'node-fetch'
 
 export interface EmbeddingSearchResult {
 	filePath: string
