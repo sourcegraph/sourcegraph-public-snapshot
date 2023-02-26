@@ -526,10 +526,6 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
 
-func (r *UserResolver) Teams(_ context.Context, _ *ListTeamsArgs) (*teamConnectionResolver, error) {
-	return &teamConnectionResolver{}, nil
-}
-
 func (r *UserResolver) ToUser() (*UserResolver, bool) {
 	return r, true
 }
