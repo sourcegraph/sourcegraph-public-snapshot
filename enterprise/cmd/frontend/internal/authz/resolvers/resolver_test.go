@@ -1971,6 +1971,194 @@ query {
 	})
 }
 
+func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
+	// Mocking users database queries.
+	users := database.NewStrictMockUserStore()
+	returnedUser := &types.User{ID: 1, SiteAdmin: true}
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
+	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	// Mocking permission jobs database queries.
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+
+	// One job has a user who triggered it, another doesn't.
+	jobs := []*database.PermissionSyncJob{
+		{
+			ID:     5,
+			State:  "QUEUED",
+			Reason: database.ReasonGitHubUserAddedEvent,
+		},
+		{
+			ID:     6,
+			State:  "QUEUED",
+			Reason: database.ReasonUserEmailRemoved,
+		},
+		{
+			ID:     7,
+			State:  "QUEUED",
+			Reason: database.ReasonGitHubUserMembershipAddedEvent,
+		},
+		{
+			ID:     8,
+			State:  "COMPLETED",
+			Reason: database.ReasonUserEmailVerified,
+		},
+		{
+			ID:     9,
+			State:  "COMPLETED",
+			Reason: database.ReasonGitHubUserMembershipAddedEvent,
+		},
+		{
+			ID:     10,
+			State:  "COMPLETED",
+			Reason: database.ReasonGitHubUserAddedEvent,
+		},
+	}
+
+	doFilter := func(jobs []*database.PermissionSyncJob, opts database.ListPermissionSyncJobOpts) []*database.PermissionSyncJob {
+		filtered := make([]*database.PermissionSyncJob, 0, len(jobs))
+		for _, job := range jobs {
+			if opts.ReasonGroup != "" {
+				if job.Reason.ResolveGroup() != opts.ReasonGroup {
+					continue
+				}
+			}
+			if opts.State != "" {
+				if job.State != opts.State {
+					continue
+				}
+			}
+			filtered = append(filtered, job)
+		}
+		return filtered
+	}
+
+	permissionSyncJobStore.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) ([]*database.PermissionSyncJob, error) {
+		filtered := doFilter(jobs, opts)
+
+		if opts.PaginationArgs.First != nil && len(filtered) > *opts.PaginationArgs.First {
+			filtered = filtered[:*opts.PaginationArgs.First+1]
+		}
+		return filtered, nil
+	})
+	permissionSyncJobStore.CountFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) (int, error) {
+		return len(doFilter(jobs, opts)), nil
+	})
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	// Mocking repository database queries.
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
+	db.ReposFunc.SetDefaultReturn(repoStore)
+
+	// Creating a resolver and validating GraphQL schema.
+	r := &Resolver{db: db}
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("filter by reason group", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, reasonGroup: SOURCEGRAPH) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 2,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjY="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjg="
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("filter by state", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, state:COMPLETED) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 3,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjg="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjk="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjEw"
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("filter by reason group and state", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, reasonGroup: WEBHOOK, state: COMPLETED) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 2,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjk="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjEw"
+			}
+		]
+	}
+}`,
+		}})
+	})
+}
+
 func mustParseTime(v string) time.Time {
 	t, err := time.Parse("2006-01-02", v)
 	if err != nil {

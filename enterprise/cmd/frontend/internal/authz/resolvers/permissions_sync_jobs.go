@@ -28,7 +28,7 @@ type permissionsSyncJobConnectionStore struct {
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.PermissionSyncJobs().Count(ctx)
+	count, err := s.db.PermissionSyncJobs().Count(ctx, s.getListArgs(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
-	jobs, err := s.db.PermissionSyncJobs().List(ctx, database.ListPermissionSyncJobOpts{PaginationArgs: args})
+	jobs, err := s.db.PermissionSyncJobs().List(ctx, s.getListArgs(args))
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +92,20 @@ func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.Pe
 
 func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
 	return &cursor, nil
+}
+
+func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {
+	opts := database.ListPermissionSyncJobOpts{}
+	if pageArgs != nil {
+		opts.PaginationArgs = pageArgs
+	}
+	if s.args.ReasonGroup != nil {
+		opts.ReasonGroup = *s.args.ReasonGroup
+	}
+	if s.args.State != nil {
+		opts.State = *s.args.State
+	}
+	return opts
 }
 
 type permissionsSyncJobResolver struct {
