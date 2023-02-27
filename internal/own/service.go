@@ -21,7 +21,7 @@ import (
 type Service interface {
 	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
+	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeowners.File, error)
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
@@ -67,7 +67,7 @@ var codeownersLocations = []string{
 
 // OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
 // the possible codeownersLocations. It returns nil if no match is found.
-func (s *service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (s *service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.File, error) {
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,

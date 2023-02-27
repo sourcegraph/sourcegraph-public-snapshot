@@ -38,14 +38,14 @@ func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := (&codeownerspb.File{
+	codeownersText := codeowners.NewFile((&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	}).Repr()
+	})).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -62,14 +62,14 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 }
 
 func TestOwnersCannotFindFile(t *testing.T) {
-	codeownersFile := &codeownerspb.File{
+	codeownersFile := codeowners.NewFile(&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	}
+	})
 	repo := repoFiles{
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}

@@ -31,10 +31,10 @@ func userCtx(userID int32) context.Context {
 
 // fakeOwnService returns given owners file and resolves owners to UnknownOwner.
 type fakeOwnService struct {
-	File *codeownerspb.File
+	File *codeowners.File
 }
 
-func (s fakeOwnService) OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error) {
+func (s fakeOwnService) OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeowners.File, error) {
 	return s.File, nil
 }
 
@@ -71,7 +71,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	db := database.NewMockDB()
 	fs.Wire(db)
 	own := fakeOwnService{
-		File: &codeownerspb.File{
+		File: codeowners.NewFile(&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
 					Pattern: "*.js",
@@ -80,7 +80,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	}
 	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	repos := database.NewMockRepoStore()

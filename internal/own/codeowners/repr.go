@@ -1,4 +1,4 @@
-package v1
+package codeowners
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 func (f *File) Repr() string {
 	w := new(strings.Builder)
 	var lastSeenSection string
-	for _, r := range f.GetRule() {
+	for _, r := range f.proto.GetRule() {
 		if s := r.SectionName; s != lastSeenSection {
 			fmt.Fprintf(w, "[%s]\n", s)
 			lastSeenSection = s
