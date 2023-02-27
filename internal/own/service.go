@@ -1,4 +1,4 @@
-package backend
+package own
 
 import (
 	"context"
@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// OwnService gives access to code ownership data.
+// Service gives access to code ownership data.
 // At this point only data from CODEOWNERS file is presented, if available.
-type OwnService interface {
+type Service interface {
 	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
 	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
@@ -27,10 +27,10 @@ type OwnService interface {
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
 }
 
-var _ OwnService = &ownService{}
+var _ Service = &service{}
 
-func NewOwnService(g gitserver.Client, db database.DB) OwnService {
-	return &ownService{
+func NewService(g gitserver.Client, db database.DB) Service {
+	return &service{
 		gitserverClient: g,
 		userStore:       db.Users(),
 		teamStore:       db.Teams(),
@@ -38,7 +38,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 	}
 }
 
-type ownService struct {
+type service struct {
 	gitserverClient gitserver.Client
 	userStore       database.UserStore
 	teamStore       database.TeamStore
@@ -66,7 +66,7 @@ var codeownersLocations = []string{
 
 // OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
 // the possible codeownersLocations. It returns nil if no match is found.
-func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (s *service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	for _, path := range codeownersLocations {
 		r, err := s.gitserverClient.NewFileReader(
 			ctx,
@@ -87,7 +87,7 @@ func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, comm
 	return nil, nil
 }
 
-func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
+func (s *service) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
 
 	// We have to look up owner by owner because of the branching conditions:
@@ -120,7 +120,7 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 	return resolved, nil
 }
 
-func (s *ownService) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
+func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
 	var resolvedOwner codeowners.ResolvedOwner
 	var err error
 	if handle != "" {
