@@ -4,18 +4,27 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func getMockDB() *database.MockDB {
 	users := []*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "external1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: ""},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}},
-		{User: types.User{ID: 4, Username: "user4"}},
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
+		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, SCIMExternalID: "id3"},
+		{User: types.User{ID: 4, Username: "user4"}, SCIMAccountData: "{\"externalUsername\":\"user4@company.com\"}", SCIMExternalID: "id4"},
 	}
 
 	userStore := database.NewMockUserStore()
+	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		for _, user := range users {
+			if user.ID == id {
+				return &user.User, nil
+			}
+		}
+		return nil, database.NewUserNotFoundErr()
+	})
 	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	userStore.ListForSCIMFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.UserForSCIM, error) {
 		// Return the users with the given IDs
@@ -45,8 +54,38 @@ func getMockDB() *database.MockDB {
 		}
 		return nil, database.NewUserNotFoundErr()
 	})
+	userStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, userID int32, update database.UserUpdate) error {
+		for _, u := range users {
+			if u.ID == userID {
+				if update.Username != "" {
+					u.Username = update.Username
+				}
+				if update.DisplayName != nil {
+					u.DisplayName = *update.DisplayName
+				}
+
+				return nil
+			}
+		}
+		return database.NewUserNotFoundErr()
+	})
 	userStore.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.UserStore, error) {
 		return userStore, nil
+	})
+
+	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+	userExternalAccountsStore.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
+		for _, user := range users {
+			if user.SCIMExternalID == spec.AccountID {
+				decrypted, err := data.Data.Decrypt(ctx)
+				if err != nil {
+					return 0, err
+				}
+				user.SCIMExternalID = decrypted.(map[string]interface{})["externalUsername"].(string)
+				return user.ID, nil
+			}
+		}
+		return 0, nil
 	})
 
 	// Create DB
@@ -55,6 +94,7 @@ func getMockDB() *database.MockDB {
 		return tx(db)
 	})
 	db.UsersFunc.SetDefaultReturn(userStore)
+	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 	return db
 }
 

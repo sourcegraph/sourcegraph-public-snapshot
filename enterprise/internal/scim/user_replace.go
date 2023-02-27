@@ -6,6 +6,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Replace replaces ALL existing attributes of the resource with given identifier. Given attributes that are empty
@@ -15,41 +16,39 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		return scim.Resource{}, err
 	}
 
+	userRes := scim.Resource{}
+
 	// Start transaction
-	tx, err := h.db.Users().Transact(r.Context())
-	defer func() { err = tx.Done(err) }()
-	if err != nil {
-		return scim.Resource{}, err
-	}
+	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
+		// Load user
+		user, err := getUserFromDB(r.Context(), tx.Users(), id)
+		if err != nil {
+			return err
+		}
 
-	// Load user
-	user, err := getUserFromDB(r.Context(), tx, id)
-	if err != nil {
-		return scim.Resource{}, err
-	}
+		// Only use the ID and external ID, drop the attributes
+		externalIDOptional := optional.String{}
+		if user.SCIMExternalID != "" {
+			externalIDOptional = optional.NewString(user.SCIMExternalID)
+		}
+		userRes = scim.Resource{
+			ID:         strconv.FormatInt(int64(user.ID), 10),
+			ExternalID: externalIDOptional,
+			Attributes: scim.ResourceAttributes{},
+		}
 
-	// Only use the ID and external ID, drop the attributes
-	externalIDOptional := optional.String{}
-	if user.SCIMExternalID != "" {
-		externalIDOptional = optional.NewString(user.SCIMExternalID)
-	}
-	userRes := scim.Resource{
-		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional,
-		Attributes: scim.ResourceAttributes{},
-	}
+		// Set attributes
+		changed := false
+		for k, v := range attributes {
+			changed = changed || applyChangeToResource(userRes, k, v)
+		}
+		if !changed {
+			return nil
+		}
 
-	// Set attributes
-	changed := false
-	for k, v := range attributes {
-		changed = changed || applyChangeToResource(userRes, k, v)
-	}
-	if !changed {
-		return userRes, nil
-	}
-
-	// Save user
-	err = updateUser(r.Context(), tx, user, userRes)
+		// Save user
+		return updateUser(r.Context(), tx, user, userRes)
+	})
 	if err != nil {
 		return scim.Resource{}, err
 	}

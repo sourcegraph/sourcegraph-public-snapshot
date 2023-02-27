@@ -117,12 +117,9 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 		emailMap = append(emailMap, map[string]interface{}{"value": email})
 	}
 
-	// Convert account data
+	// Convert account data – if it doesn't exist, never mind
 	var accountData AccountData
-	err := json.Unmarshal([]byte(user.SCIMAccountData), &accountData)
-	if err != nil {
-		return scim.Resource{}
-	}
+	_ = json.Unmarshal([]byte(user.SCIMAccountData), &accountData)
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),

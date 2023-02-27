@@ -2,6 +2,7 @@ package scim
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,6 +27,11 @@ type UserResourceHandler struct {
 	db               database.DB
 	coreSchema       schema.Schema
 	schemaExtensions []scim.SchemaExtension
+}
+
+// AccountData stores information about a user that we don't have fields for in the schema.
+type AccountData struct {
+	ExternalUsername string `json:"externalUsername"`
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
@@ -136,11 +143,11 @@ func createCoreSchema() schema.Schema {
 }
 
 // updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
+func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
 	usernameUpdate := ""
 	requestedUsername := extractUsername(newUser.Attributes)
 	if requestedUsername != oldUser.Username {
-		usernameUpdate, err = getUniqueUsername(ctx, tx, requestedUsername)
+		usernameUpdate, err = getUniqueUsername(ctx, db.Users(), requestedUsername)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
 		}
@@ -152,12 +159,32 @@ func updateUser(ctx context.Context, tx database.UserStore, oldUser *types.UserF
 		DisplayName: displayNameUpdate,
 		AvatarURL:   avatarURLUpdate,
 	}
-	err = tx.Update(ctx, oldUser.ID, userUpdate)
+	err = db.Users().Update(ctx, oldUser.ID, userUpdate)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
 
 	// TODO: Save verified emails and additional fields here
+	// Add account data
+	data := AccountData{
+		ExternalUsername: requestedUsername,
+	}
+	serializedAccountData, err := json.Marshal(data)
+	if err != nil {
+		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
+	_, err = db.UserExternalAccounts().LookupUserAndSave(ctx, extsvc.AccountSpec{
+		ServiceType: "scim",
+		ServiceID:   "TODO", // TODO: Start using service IDs
+		ClientID:    "",
+		AccountID:   oldUser.SCIMExternalID,
+	}, extsvc.AccountData{
+		AuthData: nil,
+		Data:     extsvc.NewUnencryptedData(serializedAccountData),
+	})
+	if err != nil {
+		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+	}
 
 	return
 }

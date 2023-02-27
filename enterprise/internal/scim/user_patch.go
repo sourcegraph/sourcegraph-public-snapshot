@@ -5,6 +5,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Patch update one or more attributes of a SCIM resource using a sequence of
@@ -19,81 +20,81 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		return scim.Resource{}, err
 	}
 
+	userRes := scim.Resource{}
+
 	// Start transaction
-	tx, err := h.db.Users().Transact(r.Context())
-	defer func() { err = tx.Done(err) }()
-	if err != nil {
-		return scim.Resource{}, err
-	}
-
-	// Load user from DB
-	user, err := getUserFromDB(r.Context(), tx, id)
-	if err != nil {
-		return scim.Resource{}, err
-	}
-	userRes := h.convertUserToSCIMResource(user)
-
-	// Perform changes on the user resource
-	var changed bool
-	for _, op := range operations {
-		// Handle multiple operations in one value
-		if op.Path == nil {
-			for rawPath, value := range op.Value.(map[string]interface{}) {
-				changed = changed || applyChangeToResource(userRes, rawPath, value)
-			}
-			continue
+	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
+		// Load user from DB
+		user, err := getUserFromDB(r.Context(), tx.Users(), id)
+		if err != nil {
+			return err
 		}
+		userRes = h.convertUserToSCIMResource(user)
 
-		var (
-			attrName    = op.Path.AttributePath.AttributeName
-			subAttrName = op.Path.AttributePath.SubAttributeName()
-			valueExpr   = op.Path.ValueExpression
-		)
-
-		// Attribute does not exist yet → add it
-		old, ok := userRes.Attributes[attrName]
-		if !ok {
-			switch {
-			case subAttrName != "":
-				userRes.Attributes[attrName] = map[string]interface{}{
-					subAttrName: op.Value,
+		// Perform changes on the user resource
+		var changed bool
+		for _, op := range operations {
+			// Handle multiple operations in one value
+			if op.Path == nil {
+				for rawPath, value := range op.Value.(map[string]interface{}) {
+					changed = changed || applyChangeToResource(userRes, rawPath, value)
 				}
-				changed = true
-			case valueExpr != nil:
-				// TODO: Implement value expression handling
-			default:
-				userRes.Attributes[attrName] = op.Value
-				changed = true
+				continue
 			}
-			continue
-		}
 
-		// Attribute exists
-		switch op.Op {
-		case "add", "replace":
-			switch v := op.Value.(type) {
-			case []interface{}:
-				changed = true
-				if op.Op == "add" {
-					userRes.Attributes[attrName] = append(old.([]interface{}), v...)
-				} else { // replace
-					userRes.Attributes[attrName] = v
+			var (
+				attrName    = op.Path.AttributePath.AttributeName
+				subAttrName = op.Path.AttributePath.SubAttributeName()
+				valueExpr   = op.Path.ValueExpression
+			)
+
+			// Attribute does not exist yet → add it
+			old, ok := userRes.Attributes[attrName]
+			if !ok {
+				switch {
+				case subAttrName != "":
+					userRes.Attributes[attrName] = map[string]interface{}{
+						subAttrName: op.Value,
+					}
+					changed = true
+				case valueExpr != nil:
+					// TODO: Implement value expression handling
+				default:
+					userRes.Attributes[attrName] = op.Value
+					changed = true
 				}
-			default:
-				if subAttrName != "" {
-					changed = changed || applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
-				} else {
-					changed = changed || applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+				continue
+			}
+
+			// Attribute exists
+			switch op.Op {
+			case "add", "replace":
+				switch v := op.Value.(type) {
+				case []interface{}:
+					changed = true
+					if op.Op == "add" {
+						userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+					} else { // replace
+						userRes.Attributes[attrName] = v
+					}
+				default:
+					if subAttrName != "" {
+						changed = changed || applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+					} else {
+						changed = changed || applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+					}
 				}
 			}
 		}
-	}
-	if !changed {
-		return scim.Resource{}, nil // StatusNoContent
-	}
+		if !changed {
+			// StatusNoContent
+			userRes = scim.Resource{}
+			return nil
+		}
 
-	// Update user
-	err = updateUser(r.Context(), tx, user, userRes)
+		// Update user
+		return updateUser(r.Context(), tx, user, userRes)
+	})
 	if err != nil {
 		return scim.Resource{}, err
 	}

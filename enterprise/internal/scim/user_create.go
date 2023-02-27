@@ -14,11 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// AccountData stores information of a Perforce Server account.
-type AccountData struct {
-	ExternalUsername string `json:"externalUsername"`
-}
-
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
 	// Extract external ID, primary email, username, and display name from attributes to variables
