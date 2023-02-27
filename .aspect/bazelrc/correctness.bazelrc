@@ -54,11 +54,6 @@ build --experimental_allow_tags_propagation
 fetch --experimental_allow_tags_propagation
 query --experimental_allow_tags_propagation
 
-# Checking the ctime of input files of an action before uploading it to a remote cache. Prevents
-# concurrent local file modification from poisoning the build cache.
-# Docs: https://bazel.build/reference/command-line-reference#flag--experimental_guard_against_concurrent_changes
-build --experimental_guard_against_concurrent_changes
-
 # Do not automatically create `__init__.py` files in the runfiles of Python targets. Fixes the wrong
 # default that comes from Google's internal monorepo by using `__init__.py` to delimit a Python
 # package. Precisely, when a `py_binary` or `py_test` target has `legacy_create_init` set to `auto (the

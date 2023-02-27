@@ -35,6 +35,7 @@
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
+    - AccessRequestStore
     - AccessTokenStore
     - AuthzStore
     - BitbucketProjectPermissionsStore

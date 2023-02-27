@@ -8,7 +8,7 @@ import { PageTitle } from '../components/PageTitle'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
 
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
-import { SetupStepsRoot, StepConfiguration } from './components/setup-steps'
+import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
 
 import styles from './Setup.module.scss'
 
@@ -50,15 +50,21 @@ export const SetupWizard: FC = () => {
     return (
         <div className={styles.root}>
             <PageTitle title="Setup" />
-            <header className={styles.header}>
-                <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
+            <SetupStepsRoot initialStepId={activeStepId} steps={SETUP_STEPS} onStepChange={handleStepChange}>
+                <div className={styles.content}>
+                    <header className={styles.header}>
+                        <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
-                <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
-                    Welcome to Sourcegraph! Let's get started.
-                </H2>
-            </header>
+                        <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
+                            Welcome to Sourcegraph! Let's get started.
+                        </H2>
+                    </header>
 
-            <SetupStepsRoot initialStepId={activeStepId} steps={SETUP_STEPS} onStepChange={handleStepChange} />
+                    <SetupStepsContent />
+                </div>
+
+                <SetupStepsFooter className={styles.footer} />
+            </SetupStepsRoot>
         </div>
     )
 }

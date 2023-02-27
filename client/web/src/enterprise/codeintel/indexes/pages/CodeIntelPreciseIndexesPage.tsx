@@ -459,10 +459,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({
                 />
             </div>
         </span>
-        <Link
-            to={`./indexes/${node.id}`}
-            className="d-flex justify-content-end align-items-center align-self-stretch p-0"
-        >
+        <Link to={`./${node.id}`} className="d-flex justify-content-end align-items-center align-self-stretch p-0">
             <Icon svgPath={mdiChevronRight} inline={false} aria-label="View details" />
         </Link>
     </div>

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
@@ -117,11 +116,6 @@ func TestListPackageRepoRefs(t *testing.T) {
 		if _, _, err := store.InsertPackageRepoRefs(ctx, insertBatch); err != nil {
 			t.Fatal(err)
 		}
-	}
-
-	// want to mimic data that might exist because of the 2-step migration
-	if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES ('npm','foo','4.2.0')`)); err != nil {
-		t.Fatal(err)
 	}
 
 	var lastID int

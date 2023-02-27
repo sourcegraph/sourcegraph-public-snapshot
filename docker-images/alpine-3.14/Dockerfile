@@ -27,7 +27,7 @@ RUN apk update && apk add --no-cache \
     'bind-tools>=9.16.33-r0' \
     busybox \
     ca-certificates \
-    'curl>=7.79.1-r4' \
+    'curl>=7.88.1-r1' --repository='https://dl-cdn.alpinelinux.org/alpine/edge/main' \
     mailcap \
     tini \
     wget

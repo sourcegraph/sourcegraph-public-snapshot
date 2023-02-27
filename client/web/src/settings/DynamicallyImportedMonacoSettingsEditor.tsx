@@ -79,7 +79,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     }
 
     private get effectiveValue(): string {
-        return this.props.value
+        return this.state.value === undefined ? this.props.value : this.state.value
     }
 
     private get isDirty(): boolean {
