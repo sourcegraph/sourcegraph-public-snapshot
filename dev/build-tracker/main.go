@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,7 +34,7 @@ var BuildExpiryWindow = 4 * time.Hour
 // with the use of a BuildStore. Once a build is finished and has failed, the server sends a notification.
 type Server struct {
 	logger       log.Logger
-	store        *BuildStore
+	store        *build.Store
 	config       *config.Config
 	notifyClient *notify.Client
 	http         *http.Server
@@ -44,7 +45,7 @@ func NewServer(logger log.Logger, c config.Config) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	server := &Server{
 		logger:       logger,
-		store:        NewBuildStore(logger),
+		store:        build.NewBuildStore(logger),
 		config:       &c,
 		notifyClient: notify.NewClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
@@ -146,7 +147,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var event Event
+	var event build.Event
 	err = json.Unmarshal(data, &event)
 	if err != nil {
 		s.logger.Error("failed to unmarshall request body", log.Error(err))
@@ -164,19 +165,19 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 }
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
-func (s *Server) notifyIfFailed(build *Build) error {
-	info := ToBuildNotification(build)
-	if info.BuildStatus == string(BuildFailed) || info.BuildStatus == string(BuildFixed) {
-		s.logger.Info("sending notification for build", log.Int("buildNumber", intp(build.Number)), log.String("status", string(info.BuildStatus)))
+func (s *Server) notifyIfFailed(b *build.Build) error {
+	info := toBuildNotification(b)
+	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
+		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
 		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
 		// we're about to send.
-		build.Lock()
-		defer build.Unlock()
+		b.Lock()
+		defer b.Unlock()
 		err := s.notifyClient.Send(info)
 		return err
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number)))
+	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()))
 	return nil
 }
 
@@ -217,25 +218,49 @@ func (s *Server) startCleaner(every, window time.Duration) func() {
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
-func (s *Server) processEvent(event *Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
+func (s *Server) processEvent(event *build.Event) {
+	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.BuildNumber()), log.String("jobName", event.JobName()))
 	s.store.Add(event)
-	build := s.store.GetByBuildNumber(event.buildNumber())
-	if s.shouldNotify(build, event) {
-		if err := s.notifyIfFailed(build); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.buildNumber()), log.Error(err))
+	b := s.store.GetByBuildNumber(event.BuildNumber())
+	shouldNotify := event.IsBuildFinished() || (b.HasFailed() && event.IsJobFinished())
+	if shouldNotify {
+		if err := s.notifyIfFailed(b); err != nil {
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.BuildNumber()), log.Error(err))
 		}
 	}
 }
 
-func (s *Server) shouldNotify(build *Build, event *Event) bool {
-	// If this is a build.finished event = notify!
-	//
-	// OR
-	//
-	// This might not be a build finished event, but it could be a failed job event
-	// for a Build that has failed!
-	return event.isBuildFinished() || (build.hasFailed() && event.isJobFinished())
+func toBuildNotification(b *build.Build) *notify.BuildNotification {
+	info := notify.BuildNotification{
+		BuildNumber:        b.GetNumber(),
+		ConsecutiveFailure: b.ConsecutiveFailure,
+		PipelineName:       b.Pipeline.GetName(),
+		AuthorEmail:        b.GetAuthorEmail(),
+		Message:            b.GetMessage(),
+		Commit:             b.GetCommit(),
+		BuildStatus:        "",
+		BuildURL:           *b.URL,
+		Fixed:              []notify.JobLine{},
+		Failed:             []notify.JobLine{},
+	}
+
+	groups := build.GroupByStatus(b.Steps)
+	for _, j := range groups[build.JobFixed] {
+		info.Fixed = append(info.Fixed, j)
+	}
+	for _, j := range groups[build.JobFailed] {
+		info.Failed = append(info.Fixed, j)
+	}
+
+	if len(groups[build.JobFailed]) > 0 {
+		info.BuildStatus = string(build.BuildFailed)
+	} else if len(groups[build.JobFixed]) > 0 {
+		info.BuildStatus = string(build.BuildFixed)
+	} else {
+		info.BuildStatus = string(build.BuildPassed)
+	}
+
+	return &info
 }
 
 // Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"

@@ -109,9 +109,8 @@ func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Clie
 }
 
 func (c *Client) Send(info *BuildNotification) error {
-	previous, ok := c.history[info.BuildNumber]
-	if ok {
-		if sent, err := c.sendUpdatedMessage(info, previous); err == nil {
+	if prev := c.GetNotification(info.BuildNumber); prev != nil {
+		if sent, err := c.sendUpdatedMessage(info, prev); err == nil {
 			c.history[info.BuildNumber] = sent
 		} else {
 			return err
@@ -123,6 +122,14 @@ func (c *Client) Send(info *BuildNotification) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetNotification(buildNumber int) *SlackNotification {
+	notification, ok := c.history[buildNumber]
+	if !ok {
+		return nil
+	}
+	return notification
 }
 
 func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNotification) (*SlackNotification, error) {
@@ -180,7 +187,7 @@ func commitLink(msg, commit string) string {
 	return fmt.Sprintf("<%s|%s>", sgURL, msg)
 }
 
-func slackMention(teammate *team.Teammate) string {
+func SlackMention(teammate *team.Teammate) string {
 	if teammate.SlackID == "" {
 		return fmt.Sprintf("%s (%s) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", teammate.Name, teammate.Email)
 	}
@@ -210,7 +217,7 @@ func createStepsSection(status string, items []JobLine, showLimit int) string {
 	return section
 }
 
-func (c *Client) getTeammateForBuild(commit string) (*team.Teammate, error) {
+func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", commit)
 	if err != nil {
 		return nil, err
@@ -231,7 +238,7 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification)
 
 	section += jobSection
 
-	teammate, err := c.getTeammateForBuild(info.Commit)
+	teammate, err := c.GetTeammateForCommit(info.Commit)
 	author := ""
 	if err != nil {
 		c.logger.Error("failed to find teammate", log.Error(err))
@@ -247,7 +254,7 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification)
 			log.String("slackName", teammate.SlackName),
 			log.String("github", teammate.GitHub),
 		))
-		author = slackMention(teammate)
+		author = SlackMention(teammate)
 	}
 
 	blocks := []slack.Block{
