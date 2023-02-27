@@ -35,11 +35,8 @@ interface SignInPageProps {
     isSourcegraphDotCom: boolean
 }
 
-export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = ({
-    isSourcegraphDotCom,
-    context,
-    authenticatedUser,
-}) => {
+export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
+    const { isSourcegraphDotCom, context, authenticatedUser } = props
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     const location = useLocation()
