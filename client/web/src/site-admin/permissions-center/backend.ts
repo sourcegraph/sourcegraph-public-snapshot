@@ -8,6 +8,9 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             ... on Repository {
                 __typename
                 name
+                externalRepository {
+                    serviceType
+                }
             }
             ... on User {
                 __typename
@@ -28,6 +31,20 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         permissionsAdded
         permissionsRemoved
         permissionsFound
+        failureMessage
+        cancellationReason
+        ranForMs
+        numResets
+        numFailures
+        lastHeartbeatAt
+        workerHostname
+        cancel
+        priority
+        noPerms
+        invalidateCaches
+        codeHostStates {
+            providerID
+        }
     }
 
     query PermissionsSyncJobs($first: Int, $last: Int, $after: String, $before: String) {
@@ -41,20 +58,6 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             }
             nodes {
                 ...PermissionsSyncJob
-                failureMessage
-                cancellationReason
-                ranForMs
-                numResets
-                numFailures
-                lastHeartbeatAt
-                workerHostname
-                cancel
-                priority
-                noPerms
-                invalidateCaches
-                codeHostStates {
-                    providerID
-                }
             }
         }
     }

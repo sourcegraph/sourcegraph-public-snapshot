@@ -8,7 +8,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalServiceKind, GitCommitFields } from '../../graphql-operations'
+import { GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
@@ -58,8 +58,6 @@ export interface GitCommitNodeProps {
      * Tracking issue to migrate away from this component: https://github.com/sourcegraph/sourcegraph/issues/23157
      * */
     wrapperElement?: 'div' | 'li'
-
-    externalURLs?: { url: string; serviceKind: ExternalServiceKind | null }[] | undefined
 }
 
 /** Displays a Git commit. */
@@ -76,7 +74,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     diffMode,
     onHandleDiffMode,
     wrapperElement: WrapperElement = 'div',
-    externalURLs,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -107,7 +104,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     to={node.canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
                     message={node.subject}
-                    externalURLs={externalURLs}
+                    externalURLs={node.externalURLs}
                 />
             </span>
 

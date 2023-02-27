@@ -164,6 +164,36 @@ CREATE FUNCTION delete_repo_ref_on_external_service_repos() RETURNS trigger
     END;
 $$;
 
+CREATE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+    	DELETE FROM user_repo_permissions WHERE user_id = OLD.user_id AND user_external_account_id = OLD.id;
+    END IF;
+    RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION delete_user_repo_permissions_on_repo_soft_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+    	DELETE FROM user_repo_permissions WHERE repo_id = NEW.id;
+    END IF;
+    RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION delete_user_repo_permissions_on_user_soft_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+    	DELETE FROM user_repo_permissions WHERE user_id = OLD.id;
+    END IF;
+    RETURN NULL;
+  END
+$$;
+
 CREATE FUNCTION func_configuration_policies_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -794,6 +824,26 @@ CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     STYPE = hstore,
     INITCOND = ''
 );
+
+CREATE TABLE access_requests (
+    id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    email text NOT NULL,
+    additional_info text,
+    status text NOT NULL
+);
+
+CREATE SEQUENCE access_requests_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE access_requests_id_seq OWNED BY access_requests.id;
 
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
@@ -4169,6 +4219,8 @@ CREATE TABLE zoekt_repos (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -4356,6 +4408,12 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY webhooks ALTER COLUMN id SET DEFAULT nextval('webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_email_key UNIQUE (email);
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_pkey PRIMARY KEY (id);
@@ -5243,6 +5301,12 @@ CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EA
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 
 CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos();
+
+CREATE TRIGGER trig_delete_user_repo_permissions_on_external_account_soft_dele AFTER UPDATE ON user_external_accounts FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete();
+
+CREATE TRIGGER trig_delete_user_repo_permissions_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_repo_soft_delete();
+
+CREATE TRIGGER trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete();
 
 CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change();
 
