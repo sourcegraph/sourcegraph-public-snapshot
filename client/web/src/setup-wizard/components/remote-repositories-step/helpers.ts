@@ -2,6 +2,8 @@ import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws, mdiGit } from '@mdi/js'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
+import { GetCodeHostsResult } from '../../../graphql-operations';
+
 export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): string => {
     switch (codeHostType) {
         case ExternalServiceKind.GITHUB:
@@ -45,4 +47,12 @@ export const getCodeHostKindFromURLParam = (possibleCodeHostType: string): Exter
     const possibleKind = ExternalServiceKind[possibleCodeHostType.toUpperCase() as ExternalServiceKind]
 
     return possibleKind ?? null
+}
+
+export const isAnyConnectedCodeHosts = (data?: GetCodeHostsResult): boolean => {
+    if (!data) {
+        return false
+    }
+
+    return data.externalServices.nodes.length > 0
 }
