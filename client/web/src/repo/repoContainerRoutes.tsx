@@ -1,5 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 
@@ -15,6 +17,10 @@ const RepositoryReleasesArea = lazyComponent(
 )
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
+const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
+    () => import('../extensions/components/ActionItemsBar'),
+    'ActionItemsBar'
+)
 
 export const compareSpecPath = '/-/compare/*'
 
@@ -24,6 +30,15 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryCommitPage {...context} />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        telemetryService={context.telemetryService}
+                        source="commit"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
@@ -40,6 +55,15 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryCompareArea {...context} />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        telemetryService={context.telemetryService}
+                        source="compare"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },

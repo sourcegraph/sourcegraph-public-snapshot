@@ -5,7 +5,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -15,6 +15,7 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
+    extensionsController,
     isSourcegraphDotCom: false,
     isSourcegraphApp: false,
     platformContext: {} as any,
@@ -40,6 +41,16 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            enableLegacyExtensions: false,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     test('default', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>

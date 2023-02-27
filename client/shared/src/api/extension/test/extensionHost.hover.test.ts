@@ -16,6 +16,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     // integration(ish) tests for scenarios not covered by providers tests
     const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => pretendProxySubscribable(of([])),
+        getScriptURLForExtension: () => undefined,
     })
     const initialSettings: SettingsCascade<object> = {
         subjects: [],

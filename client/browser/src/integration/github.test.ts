@@ -102,6 +102,11 @@ describe('GitHub', () => {
                     siteAdmin: false,
                 },
             }),
+            EnableLegacyExtensions: () => ({
+                site: {
+                    enableLegacyExtensions: true,
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
@@ -150,7 +155,10 @@ describe('GitHub', () => {
     // it('shows hover tooltips when hovering a token and respects "Enable single click to go to definition" setting', async () => {
     //     mockUrls(['https://github.com/*path/find-definition'])
 
-    //     const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking()
+    //     const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+    //         pollyServer: testContext.server,
+    //         sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
+    //     })
 
     //     const userSettings: Settings = {
     //         extensions: extensionSettings,
@@ -308,14 +316,16 @@ describe('GitHub', () => {
     // })
 
     describe('Pull request pages', () => {
-        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
-        describe.skip('Files Changed view', () => {
+        describe('Files Changed view', () => {
             // For each pull request test, set up a mock extension that verifies that the correct
             // file and revision info reach extensions.
             beforeEach(() => {
                 mockUrls(['https://github.com/*path/find-definition'])
 
-                const { mockExtension, extensionSettings } = setupExtensionMocking()
+                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+                    pollyServer: testContext.server,
+                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
+                })
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -340,6 +350,7 @@ describe('GitHub', () => {
                             merged: { contents: JSON.stringify(userSettings), messages: [] },
                         },
                     }),
+                    Extensions,
                     ResolveRev: ({ revision }) => ({
                         repository: {
                             mirrorInfo: { cloned: true },
@@ -628,8 +639,7 @@ describe('GitHub', () => {
             })
         })
 
-        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
-        describe.skip('Commit view', () => {
+        describe('Commit view', () => {
             beforeEach(() => {
                 mockUrls([
                     'https://github.com/*path/find-definition',
@@ -637,7 +647,10 @@ describe('GitHub', () => {
                     'https://github.com/commits/badges',
                 ])
 
-                const { mockExtension, extensionSettings } = setupExtensionMocking()
+                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+                    pollyServer: testContext.server,
+                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
+                })
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -678,6 +691,7 @@ describe('GitHub', () => {
                             },
                         },
                     }),
+                    Extensions,
                 })
 
                 // Serve a mock extension with a simple hover provider

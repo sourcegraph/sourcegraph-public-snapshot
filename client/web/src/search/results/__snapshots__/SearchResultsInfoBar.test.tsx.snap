@@ -19,6 +19,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         class="nav align-items-center"
       >
         <li
+          aria-hidden="true"
+          class="divider"
+        />
+        <li
           class="mr-2 navItem"
         >
           <button
@@ -92,6 +96,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       <ul
         class="nav align-items-center"
       >
+        <li
+          aria-hidden="true"
+          class="divider"
+        />
         <li
           class="mr-2 navItem"
         >
@@ -167,6 +175,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         class="nav align-items-center"
       >
         <li
+          aria-hidden="true"
+          class="divider"
+        />
+        <li
           class="mr-2 navItem"
         >
           <button
@@ -241,6 +253,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         class="nav align-items-center"
       >
         <li
+          aria-hidden="true"
+          class="divider"
+        />
+        <li
           class="mr-2 navItem"
         >
           <button
@@ -314,6 +330,10 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       <ul
         class="nav align-items-center"
       >
+        <li
+          aria-hidden="true"
+          class="divider"
+        />
         <li
           class="mr-2 navItem"
         >

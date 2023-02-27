@@ -13,6 +13,7 @@ import { proxySubscribable } from '../extension/api/common'
 import { NotificationType, PlainNotification } from '../extension/extensionHostApi'
 
 import { ProxySubscription } from './api/common'
+import { getEnabledExtensions } from './enabledExtensions'
 import { updateSettings } from './services/settings'
 
 /** A registered command in the command registry. */
@@ -64,6 +65,7 @@ export const initMainThreadAPI = (
         | 'requestGraphQL'
         | 'showMessage'
         | 'showInputBox'
+        | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
         | 'clientApplication'
@@ -147,6 +149,14 @@ export const initMainThreadAPI = (
         showInputBox: options =>
             platformContext.showInputBox ? platformContext.showInputBox(options) : defaultShowInputBox(options),
 
+        getScriptURLForExtension: () => {
+            const getScriptURL = platformContext.getScriptURLForExtension()
+            if (!getScriptURL) {
+                return undefined
+            }
+
+            return proxy(getScriptURL)
+        },
         getEnabledExtensions: () => {
             if (platformContext.getStaticExtensions) {
                 return proxySubscribable(
@@ -154,13 +164,15 @@ export const initMainThreadAPI = (
                         .getStaticExtensions()
                         .pipe(
                             switchMap(staticExtensions =>
-                                staticExtensions ? of(staticExtensions).pipe(publishReplay(1), refCount()) : of([])
+                                staticExtensions
+                                    ? of(staticExtensions).pipe(publishReplay(1), refCount())
+                                    : getEnabledExtensions(platformContext)
                             )
                         )
                 )
             }
 
-            return proxySubscribable(of([]))
+            return proxySubscribable(getEnabledExtensions(platformContext))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
         logExtensionMessage: (...data) => logger.log(...data),

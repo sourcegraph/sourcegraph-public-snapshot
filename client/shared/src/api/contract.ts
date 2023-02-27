@@ -4,7 +4,7 @@ import { DocumentHighlight } from 'sourcegraph'
 
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { DeepReplace } from '@sourcegraph/common'
+import { DeepReplace, ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
@@ -195,6 +195,10 @@ export interface MainThreadAPI {
     // User interaction methods
     showMessage: (message: string) => Promise<void>
     showInputBox: (options?: InputBoxOptions) => Promise<string | undefined>
+
+    getScriptURLForExtension: () =>
+        | undefined
+        | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
 

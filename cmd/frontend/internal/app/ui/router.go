@@ -273,10 +273,12 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
-	if envvar.SourcegraphDotComMode() {
+	if ShouldRedirectLegacyExtensionEndpoints() {
 		router.Get(routeExtensions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusMovedPermanently)
 		})
+	} else {
+		router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
 	}
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))

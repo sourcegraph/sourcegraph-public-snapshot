@@ -1,10 +1,10 @@
 import { Remote } from 'comlink'
-import { BehaviorSubject, combineLatest, from, Observable, of, Subscription } from 'rxjs'
+import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { asError, isErrorLike, hashCode, logger } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable, logger } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
@@ -62,7 +62,7 @@ const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'so
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
-    mainAPI: Remote<Pick<MainThreadAPI, 'logEvent'>>,
+    mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
     mainThreadAPIInitializations: Observable<boolean>,
     /**
@@ -76,12 +76,31 @@ export function activateExtensions(
      * */
     deactivate = deactivateExtension
 ): Subscription {
+    const getScriptURLs = memoizeObservable(
+        () =>
+            mainThreadAPIInitializations.pipe(
+                first(initialized => initialized),
+                switchMap(() =>
+                    from(mainAPI.getScriptURLForExtension()).pipe(
+                        map(getScriptURL => {
+                            function getBundleURLs(urls: string[]): Promise<(string | ErrorLike)[]> {
+                                return getScriptURL ? getScriptURL(urls) : Promise.resolve(urls)
+                            }
+
+                            return getBundleURLs
+                        })
+                    )
+                )
+            ),
+        () => 'getScriptURL'
+    )
+
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = combineLatest([state.activeExtensions])
+    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
         .pipe(
-            concatMap(([activeExtensions]) => {
+            concatMap(([activeExtensions, getScriptURLs]) => {
                 const toDeactivate = new Set<string>()
                 const toActivate = new Map<string, ConfiguredExtension | ExecutableExtension>()
                 const activeExtensionIDs = new Set<string>()
@@ -107,24 +126,32 @@ export function activateExtensions(
                     }
                 }
 
-                const scriptURLs = [...toActivate.values()].map(extension => {
-                    if ('scriptURL' in extension) {
-                        // This is already an executable extension (inline extension)
-                        return extension.scriptURL
-                    }
+                return from(
+                    getScriptURLs(
+                        [...toActivate.values()].map(extension => {
+                            if ('scriptURL' in extension) {
+                                // This is already an executable extension (inline extension)
+                                return extension.scriptURL
+                            }
 
-                    return getScriptURLFromExtensionManifest(extension)
-                })
+                            return getScriptURLFromExtensionManifest(extension)
+                        })
+                    ).then(scriptURLs => {
+                        // TODO: (not urgent) add scriptURL cache
 
-                const executableExtensionsToActivate: ExecutableExtension[] = [...toActivate.values()]
-                    .map((extension, index) => ({
-                        id: extension.id,
-                        manifest: extension.manifest,
-                        scriptURL: scriptURLs[index],
-                    }))
-                    .filter((extension): extension is ExecutableExtension => typeof extension.scriptURL === 'string')
+                        const executableExtensionsToActivate: ExecutableExtension[] = [...toActivate.values()]
+                            .map((extension, index) => ({
+                                id: extension.id,
+                                manifest: extension.manifest,
+                                scriptURL: scriptURLs[index],
+                            }))
+                            .filter(
+                                (extension): extension is ExecutableExtension => typeof extension.scriptURL === 'string'
+                            )
 
-                return of({ toActivate: executableExtensionsToActivate, toDeactivate }).pipe(
+                        return { toActivate: executableExtensionsToActivate, toDeactivate }
+                    })
+                ).pipe(
                     tap(({ toActivate }) => {
                         for (const extension of toActivate) {
                             if (

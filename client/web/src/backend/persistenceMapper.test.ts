@@ -25,6 +25,7 @@ describe('persistenceMapper', () => {
         const persistedString = await persistenceMapper(
             createStringifiedCache({
                 viewerSettings: { empty: null, data: true },
+                extensionRegistry: { data: true },
                 shouldNotBePersisted: {},
             })
         )

@@ -5,6 +5,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
@@ -17,6 +18,7 @@ const defaultProps: SearchPageProps = {
         final: null,
         subjects: null,
     },
+    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     authenticatedUser: null,
     globbing: false,

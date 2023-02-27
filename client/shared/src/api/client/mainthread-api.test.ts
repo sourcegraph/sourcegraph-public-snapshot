@@ -22,12 +22,18 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'clientApplication'
             > = {
                 settings: EMPTY,
                 getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
+                getScriptURLForExtension: () => undefined,
                 clientApplication: 'other',
             }
 
@@ -55,12 +61,18 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'clientApplication'
             > = {
                 settings: EMPTY,
                 getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
+                getScriptURLForExtension: () => undefined,
                 clientApplication: 'other',
             }
 
@@ -81,7 +93,12 @@ describe('MainThreadAPI', () => {
             }
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getGraphQLClient' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'requestGraphQL'
+                | 'getGraphQLClient'
+                | 'getScriptURLForExtension'
+                | 'clientApplication'
             > = {
                 settings: of({
                     subjects: [
@@ -114,6 +131,7 @@ describe('MainThreadAPI', () => {
                 updateSettings,
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
+                getScriptURLForExtension: () => undefined,
                 clientApplication: 'other',
             }
 
@@ -143,12 +161,18 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'clientApplication'
             > = {
                 getGraphQLClient,
                 settings: of(...values),
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL: () => EMPTY,
+                getScriptURLForExtension: () => undefined,
                 clientApplication: 'other',
             }
 
@@ -169,12 +193,18 @@ describe('MainThreadAPI', () => {
             const values = new Subject<SettingsCascade<{ a: string }>>()
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'clientApplication'
             > = {
                 settings: values.asObservable(),
                 updateSettings: () => Promise.resolve(),
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
+                getScriptURLForExtension: () => undefined,
                 clientApplication: 'other',
             }
             const passedToExtensionHost: SettingsCascade<object>[] = []

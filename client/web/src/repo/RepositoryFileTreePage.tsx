@@ -116,6 +116,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 globbing={globbing}
                                 repo={repo}
                                 repoName={repoName}
+                                useActionItemsBar={context.useActionItemsBar}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}
                             />
