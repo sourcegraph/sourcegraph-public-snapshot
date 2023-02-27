@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
+import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
@@ -15,7 +16,6 @@ import { GitCommitNode } from '../../commits/GitCommitNode'
 import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 
 import styles from './HistoryAndOwnBar.module.scss'
-import classNames from 'classnames'
 
 export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
