@@ -339,7 +339,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 }
             }
         }
-    }, [blobInfo, extensions, enableSelectionDrivenCodeNavigation, locationRef])
+    }, [blobInfo, extensions, locationRef])
 
     // Propagate props changes to extensions
     useEffect(() => {
