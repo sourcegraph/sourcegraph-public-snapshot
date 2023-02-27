@@ -3,7 +3,13 @@ import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { PermissionsSyncJobReasonGroup, PermissionsSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    ExternalServiceKind,
+    PermissionsSyncJobPriority,
+    PermissionsSyncJobReason,
+    PermissionsSyncJobReasonGroup,
+    PermissionsSyncJobState,
+} from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -45,10 +51,13 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/sourcegraph',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.GITHUB,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.WEBHOOK,
-                                                    message: 'REASON_GITHUB_REPO_EVENT',
+                                                    reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
                                                 }
                                             ),
                                             createSyncJobMock(
@@ -60,7 +69,7 @@ export const FiveSyncJobsFound: Story = () => (
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.SOURCEGRAPH,
-                                                    message: 'REASON_USER_EMAIL_VERIFIED',
+                                                    reason: PermissionsSyncJobReason.REASON_USER_EMAIL_VERIFIED,
                                                 }
                                             ),
                                             createSyncJobMock(
@@ -69,10 +78,13 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/hoursegraph',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.BITBUCKETSERVER,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.SCHEDULE,
-                                                    message: 'REASON_REPO_OUTDATED_PERMS',
+                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
                                                 }
                                             ),
                                             createSyncJobMock(
@@ -84,7 +96,7 @@ export const FiveSyncJobsFound: Story = () => (
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.MANUAL,
-                                                    message: 'REASON_MANUAL_USER_SYNC',
+                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_USER_SYNC,
                                                 }
                                             ),
                                             createSyncJobMock(
@@ -93,14 +105,32 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/stillfunny',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.GITLAB,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.MANUAL,
-                                                    message: 'REASON_MANUAL_REPO_SYNC',
+                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
+                                                }
+                                            ),
+                                            createSyncJobMock(
+                                                '6',
+                                                PermissionsSyncJobState.CANCELED,
+                                                {
+                                                    __typename: 'Repository',
+                                                    name: 'sourcegraph/dont-sync-me',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.AWSCODECOMMIT,
+                                                    },
+                                                },
+                                                {
+                                                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
+                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
                                                 }
                                             ),
                                         ],
-                                        totalCount: 5,
+                                        totalCount: 6,
                                         pageInfo: {
                                             hasNextPage: true,
                                             hasPreviousPage: false,
@@ -126,6 +156,9 @@ FiveSyncJobsFound.storyName = 'Five sync jobs'
 interface repo {
     __typename: 'Repository'
     name: string
+    externalRepository: {
+        serviceType: ExternalServiceKind
+    }
 }
 
 interface user {
@@ -136,9 +169,9 @@ interface user {
 type subject = repo | user
 
 interface reason {
-    __typename?: 'PermissionsSyncJobReason'
+    __typename?: 'PermissionsSyncJobReasonWithGroup'
     group: PermissionsSyncJobReasonGroup
-    message: string
+    reason: PermissionsSyncJobReason
 }
 
 function createSyncJobMock(
@@ -166,5 +199,17 @@ function createSyncJobMock(
         permissionsAdded: 1337,
         permissionsRemoved: 42,
         permissionsFound: 1337 + 42,
+        failureMessage: null,
+        cancellationReason: null,
+        ranForMs: null,
+        numResets: null,
+        numFailures: null,
+        lastHeartbeatAt: null,
+        workerHostname: 'worker-hostname',
+        cancel: false,
+        priority: PermissionsSyncJobPriority.LOW,
+        noPerms: false,
+        invalidateCaches: false,
+        codeHostStates: [],
     }
 }

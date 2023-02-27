@@ -36,7 +36,7 @@ $ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/
 Monitor the deployment status to make sure everything is up and running:
 
 ```bash
-kubectl get pods -o wide --watch
+kubectl get pods -n ns-sourcegraph -o wide --watch
 ```
 
 ### Step 2: Access Sourcegraph in Browser
@@ -44,7 +44,7 @@ kubectl get pods -o wide --watch
 To check the status of the load balancer and obtain its IP:
 
 ```bash
-$ kubectl describe ingress sourcegraph-frontend
+$ kubectl describe ingress sourcegraph-frontend -n ns-sourcegraph
 ```
 
 From you output, look for the IP address of the load balancer, which is listed under `Address`.
@@ -65,7 +65,7 @@ It might take about 10 minutes for the load balancer to be fully ready. In the m
 Forward the remote port so that you can access Sourcegraph without network configuration temporarily.
 
 ```bash
-kubectl port-forward svc/sourcegraph-frontend 3080:30080
+kubectl port-forward svc/sourcegraph-frontend 3080:30080 -n ns-sourcegraph
 ```
 
 You should now be able to access your new Sourcegraph instance at http://localhost:3080  🎉
@@ -74,29 +74,25 @@ You should now be able to access your new Sourcegraph instance at http://localho
 
 The steps above have guided you to deploy Sourcegraph using the [examples/gke](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/gke) overlay preconfigured by us.
 
-If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
+If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add cAdvisor.
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: default
+namespace: ns-sourcegraph
 resources:
-# Deploy Sourcegraph main stack
-- ../../base/sourcegraph
-# Deploy Sourcegraph monitoring stack
-- ../../base/monitoring
+  # Deploy Sourcegraph main stack
+  - ../../base/sourcegraph
+  # Deploy Sourcegraph monitoring stack
+  - ../../base/monitoring
 components:
-# Use resources for a size-XS instance
-- ../../components/sizes/xs
-# Apply configurations for GKE
-- ../../components/gke/configure
-```
-
-You can also build the kustomization file remotely and build on top of it:
-
-```yaml
-kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke
+  # Create a namespace for ns-sourcegraph
+  - ../../components/resources/namespace
+  # Use resources for a size-XS instance
+  - ../../components/sizes/xs
+  # Apply configurations for GKE
+  - ../../components/clusters/gke/configure
 ```
 
 #### Enable TLS
@@ -114,31 +110,50 @@ In order to use [Google-managed SSL certificates](https://cloud.google.com/kuber
 Step 1: Add the `gke mange-cert` component to your overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: default
+namespace: ns-sourcegraph
 resources:
-# Deploy Sourcegraph main stack
-- ../../base/sourcegraph
-# Deploy Sourcegraph monitoring stack
-- ../../base/monitoring
+  - ../../base/sourcegraph
+  - ../../base/monitoring
 components:
-- ../../components/sizes/xs
-- ../../components/clusters/gke/configure
-- ../../components/clusters/gke/mange-cert
+  - ../../components/resources/namespace
+  - ../../components/sizes/xs
+  - ../../components/clusters/gke/configure
+  - ../../components/clusters/gke/managed-cert
 ```
 
 Step 2: Set the `GKE_MANAGED_CERT_NAME` variable with your Google-managed certificate name under the [BUILD CONFIGURATIONS](index.md#buildconfig-yaml) section:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
-# BUILD CONFIGURATIONS
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      - GKE_MANAGED_CERT_NAME=your-managed-cert-name
+# instances/$INSTANCE_NAME/buildConfig.yaml
+kind: SourcegraphBuildConfig
+metadata:
+  name: sourcegraph-kustomize-config
+data:
+  GKE_MANAGED_CERT_NAME: your-managed-cert-name
+```
+
+### Remote Build
+
+You can also make a copy of this remote kustomization file locally and build on top of it.
+
+```bash
+$ kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke
+```
+
+You can also add remote components, but not components that required additional input in buildConfig.yaml.
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ns-sourcegraph
+resources:
+  - https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke
+components:
+  # Add components here
+  - https://github.com/sourcegraph/deploy-sourcegraph-k8s/components/monitoring/cadvisor
+  - https://github.com/sourcegraph/deploy-sourcegraph-k8s/components/monitoring/tracing
+
 ```

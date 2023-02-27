@@ -13,6 +13,7 @@ import { getExperimentalFeatures } from './stores'
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
@@ -31,6 +32,7 @@ const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
 const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
+const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 
 export interface LayoutRouteProps {
     path: string
@@ -83,6 +85,10 @@ export const routes: readonly LayoutRouteProps[] = (
             element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
         },
         {
+            path: PageRoutes.RequestAccess,
+            element: <RequestAccessPage />,
+        },
+        {
             path: PageRoutes.SignUp,
             element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
         },
@@ -106,6 +112,10 @@ export const routes: readonly LayoutRouteProps[] = (
         {
             path: PageRoutes.User,
             element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
+        },
+        {
+            path: PageRoutes.Teams,
+            element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
         },
         {
             path: PageRoutes.Organizations,

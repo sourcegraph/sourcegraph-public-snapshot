@@ -5,7 +5,7 @@ import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
 import { Container, Text } from '@sourcegraph/wildcard'
 
-import { CustomNextButton } from '../setup-steps'
+import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
@@ -53,6 +53,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 </Container>
             </section>
 
+            <FooterWidget>Hello custom content in the footer</FooterWidget>
             <CustomNextButton label="Custom next step label" disabled={true} />
 
             {codeHostToDelete && (
