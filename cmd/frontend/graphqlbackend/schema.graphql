@@ -1313,6 +1313,35 @@ type Query {
         url: String!
     ): ExternalServiceNamespaceConnection!
     """
+    Lists all repositories for a given external service connection.
+    """
+    externalServiceRepositories(
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+        """
+        Repository query string.
+        """
+        query: String!
+        """
+        A list of repository names to exclude from results (in the form of owner/name).
+        """
+        excludeRepos: [String!]!
+        """
+        Returns the first n repositories matching the query and excludeRepos criteria.
+        """
+        first: Int
+    ): ExternalServiceRepositoryConnection!
+    """
     List all repositories.
     """
     repositories(
@@ -3174,6 +3203,36 @@ type ExternalServiceNamespace {
     """
     The Namespace's ID on the external service.
     Example: For GitHub, this is the GitHub GraphQL API's node ID for the organization.
+    """
+    externalID: String!
+}
+
+"""
+A list of repositories available to an external service configuration.
+"""
+type ExternalServiceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceRepository!]!
+}
+
+"""
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceRepository {
+    """
+    The unique identifier of the external service repository.
+    """
+    id: ID!
+    """
+    The name of the external service repository.
+    """
+    name: String!
+    """
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
     """
     externalID: String!
 }

@@ -936,7 +936,7 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			mockNewGenericSourcer = func() repos.Sourcer {
 				return repos.NewFakeSourcer(nil, tc.src)
 			}
-			defer func() { mockNewGenericSourcer = nil }()
+			t.Cleanup(func() { mockNewGenericSourcer = nil })
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -953,6 +953,178 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			}
 
 			res, err := cli.ExternalServiceNamespaces(ctx, args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have err: %q, want: %q", have, want)
+			}
+
+			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
+				t.Fatalf("response mismatch(-have, +want): %s", diff)
+			}
+		})
+	}
+}
+
+func TestServer_ExternalServiceRepositories(t *testing.T) {
+	githubConnection := `
+{
+	"url": "https://github.com",
+	"token": "secret-token",
+}`
+
+	githubSource := types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(githubConnection),
+	}
+
+	gitlabConnection := `
+	{
+	   "url": "https://gitlab.com",
+	   "token": "abc",
+	}`
+
+	gitlabSource := types.ExternalService{
+		Kind:         extsvc.KindGitLab,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+	}
+
+	githubRepository := &types.Repo{
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Archived:    false,
+		Fork:        false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			githubSource.URN(): {
+				ID:       githubSource.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+
+	gitlabRepository := &types.Repo{
+		Name:        "gitlab.com/gitlab-org/gitaly",
+		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+		URI:         "gitlab.com/gitlab-org/gitaly",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "2009901",
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			gitlabSource.URN(): {
+				ID:       gitlabSource.URN(),
+				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+			},
+		},
+	}
+
+	testCases := []struct {
+		name         string
+		kind         string
+		config       string
+		query        string
+		first        int32
+		excludeRepos []string
+		result       *protocol.ExternalServiceRepositoriesResult
+		src          repos.Source
+		err          string
+	}{
+		{
+			name:         "discoverable source - github",
+			kind:         extsvc.KindGitHub,
+			config:       githubConnection,
+			query:        "",
+			first:        5,
+			excludeRepos: []string{},
+			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+		},
+		{
+			name:         "discoverable source - github - non empty query string",
+			kind:         extsvc.KindGitHub,
+			config:       githubConnection,
+			query:        "myquerystring",
+			first:        5,
+			excludeRepos: []string{},
+			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+		},
+		{
+			name:         "discoverable source - github - non empty excludeRepos",
+			kind:         extsvc.KindGitHub,
+			config:       githubConnection,
+			query:        "",
+			first:        5,
+			excludeRepos: []string{"org1/repo1", "owner2/repo2"},
+			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+		},
+		{
+			name:   "unavailable - github.com",
+			kind:   extsvc.KindGitHub,
+			config: githubConnection,
+			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), true),
+			result: &protocol.ExternalServiceRepositoriesResult{Error: "fake source unavailable"},
+			err:    "fake source unavailable",
+		},
+		{
+			name:   "discoverable source - github - empty repositories result",
+			kind:   extsvc.KindGitHub,
+			config: githubConnection,
+			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil), false),
+			result: &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{}, Error: ""},
+		},
+		{
+			name:   "source does not implement discoverable source",
+			kind:   extsvc.KindGitLab,
+			config: gitlabConnection,
+			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
+			result: &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
+			err:    repos.UnimplementedDiscoverySource,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			logger := logtest.Scoped(t)
+
+			s := &Server{
+				Logger: logger,
+			}
+
+			mockNewGenericSourcer = func() repos.Sourcer {
+				return repos.NewFakeSourcer(nil, tc.src)
+			}
+			t.Cleanup(func() { mockNewGenericSourcer = nil })
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+
+			cli := repoupdater.NewClient(srv.URL)
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			args := protocol.ExternalServiceRepositoriesArgs{
+				Kind:         tc.kind,
+				Config:       tc.config,
+				Query:        tc.query,
+				First:        tc.first,
+				ExcludeRepos: tc.excludeRepos,
+			}
+
+			res, err := cli.ExternalServiceRepositories(ctx, args)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Fatalf("have err: %q, want: %q", have, want)
 			}
