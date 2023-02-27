@@ -18,6 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type processRepoType string
+
+const (
+	repoFromOrg     processRepoType = "org"
+	repoFromProject processRepoType = "project"
+)
+
 // A AzureDevOpsSource yields repositories from a single Azure DevOps connection configured
 // in Sourcegraph via the external services configuration.
 type AzureDevOpsSource struct {
@@ -100,7 +107,7 @@ func (s *AzureDevOpsSource) ListRepos(ctx context.Context, results chan SourceRe
 	}
 }
 
-func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult, callType string) {
+func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult, callType processRepoType) {
 	repos, err := s.cli.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 		ProjectOrOrgName: name,
 	})
@@ -109,12 +116,21 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 		return
 	}
 
-	for _, repo := range repos {
-		if s.exclude(fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)) {
+	for _, azureRepo := range repos {
+		if s.exclude(fmt.Sprintf("%s/%s", azureRepo.Project.Name, azureRepo.Name)) {
 			continue
 		}
 
-		repo, err := s.makeRepo(repo, callType, name)
+		var repo *types.Repo
+		var err error
+		if callType == repoFromOrg {
+			repo, err = s.makeRepoFromOrg(azureRepo, name)
+		} else if callType == repoFromProject {
+			repo, err = s.makeRepoFromProject(azureRepo, name)
+		} else {
+			panic("processReposFromProjectOrg called with unsupported callType, must be org or project")
+		}
+
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
@@ -142,28 +158,20 @@ func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, err
 	return &sc, nil
 }
 
-func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository, callType, name string) (*types.Repo, error) {
-	var relativeName string
-	if callType == "org" {
-		// When we're listing org repositories, we can use the provided "name" as the org name along
-		// with the Project.Name from the API response to generate the full name of the repo.
-		relativeName = path.Join(name, p.Project.Name, p.Name)
-	} else if callType == "project" {
-		// When we're listing project repositories, the argument "name" is already in the format
-		// orgname/projectname, so we can use it directly to generate the full name of the repo.
-		relativeName = path.Join(name, p.Name)
-	} else {
-		// This internal method should never be called with anything apart from "org" or "project".
-		// So we can panic here if ever this changes during future dev work.
-		//
-		// We could return a nil repo and an error here, but then it would bubble up to the end user
-		// and would not really make sense or useful to them if this scenario ever happened.
-		panic("this cannot be called without org or project")
-	}
+func (s *AzureDevOpsSource) makeRepoFromOrg(p azuredevops.Repository, org string) (*types.Repo, error) {
+	relativeName := path.Join(org, p.Project.Name, p.Name)
+	return s.makeRepo(p, relativeName)
+}
 
+func (s *AzureDevOpsSource) makeRepoFromProject(p azuredevops.Repository, project string) (*types.Repo, error) {
+	relativeName := path.Join(project, p.Name)
+	return s.makeRepo(p, relativeName)
+}
+
+func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository, relativeRepoName string) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + relativeName)
+	fullURL, err := urlx.Parse(s.cli.URL.String() + relativeRepoName)
 	if err != nil {
 		return nil, err
 	}
