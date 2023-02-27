@@ -10,11 +10,9 @@ import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../component
 import { NavGroupDescriptor } from '../util/contributions'
 
 import styles from './SiteAdminSidebar.module.scss'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
-    isRbacEnabled: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
@@ -25,6 +23,7 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
+    isRbacEnabled: boolean
     className?: string
 }
 
@@ -38,7 +37,6 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
 }) => {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
     const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
-    const [isRbacEnabled] = useFeatureFlag('enable-rbac', false)
 
     return (
         <>
@@ -50,7 +48,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                 <ul className="list-group">
                     {groups.map(
                         ({ header, items, condition = () => true }, index) =>
-                            condition({ ...props, isRbacEnabled }) &&
+                            condition(props) &&
                             (items.length > 1 ? (
                                 <li className="p-0 list-group-item" key={index}>
                                     <SidebarCollapseItems
