@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail, mdiMicrosoftAzureDevops } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEyeLockOutline, mdiMicrosoftAzureDevops } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
@@ -72,7 +72,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
-    const showBuiltInAuthForm = searchParams.has('email') || thirdPartyAuthProviders.length === 0
+    const showBuiltInAuthForm = searchParams.has('builtin') || thirdPartyAuthProviders.length === 0
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
@@ -125,12 +125,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     {builtInAuthProvider && !showBuiltInAuthForm && (
                         <div className="mb-2">
                             <Button
-                                to={`${location.pathname}?email=1&${searchParams.toString()}`}
+                                to={`${location.pathname}?builtin=1&${searchParams.toString()}`}
                                 display="block"
                                 variant="secondary"
                                 as={Link}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiEmail} /> Continue with Email
+                                <Icon aria-hidden={true} svgPath={mdiEyeLockOutline} /> Continue with Password
                             </Button>
                         </div>
                     )}

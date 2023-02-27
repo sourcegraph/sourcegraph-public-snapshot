@@ -64,9 +64,9 @@ describe('SignInPage', () => {
         const rendered = render('/sign-in', {})
         expect(
             within(rendered.baseElement)
-                .queryByText(txt => txt.includes('Continue with Email'))
+                .queryByText(txt => txt.includes('Continue with Password'))
                 ?.closest('a')
-        ).toHaveAttribute('href', '/sign-in?email=1&')
+        ).toHaveAttribute('href', '/sign-in?builtin=1&')
         expect(
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Sign up'))
@@ -76,10 +76,10 @@ describe('SignInPage', () => {
         expect(rendered.asFragment()).toMatchSnapshot()
     })
 
-    it('renders sign in page (server) with email form expanded', () => {
-        const rendered = render('/sign-in?email=1', {})
+    it('renders sign in page (server) with builtin form expanded', () => {
+        const rendered = render('/sign-in?builtin=1', {})
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Password'))
         ).not.toBeInTheDocument()
         expect(rendered.asFragment()).toMatchSnapshot()
     })
@@ -100,7 +100,7 @@ describe('SignInPage', () => {
             authProviders: authProviders.filter(authProvider => authProvider.serviceType === 'builtin'),
         })
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Password'))
         ).not.toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()

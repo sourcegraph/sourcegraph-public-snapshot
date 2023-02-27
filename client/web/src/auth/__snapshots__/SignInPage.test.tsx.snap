@@ -82,7 +82,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
+              href="/sign-in?builtin=1&"
             >
               <svg
                 aria-hidden="true"
@@ -94,10 +94,10 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
@@ -193,7 +193,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
+              href="/sign-in?builtin=1&"
             >
               <svg
                 aria-hidden="true"
@@ -205,10 +205,10 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
@@ -230,7 +230,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with email form expanded 1`] = `
+exports[`SignInPage renders sign in page (server) with builtin form expanded 1`] = `
 <DocumentFragment>
   <div
     class="signinSignupPage"
@@ -622,7 +622,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
+              href="/sign-in?builtin=1&"
             >
               <svg
                 aria-hidden="true"
@@ -634,10 +634,10 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
@@ -733,7 +733,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
+              href="/sign-in?builtin=1&"
             >
               <svg
                 aria-hidden="true"
@@ -745,10 +745,10 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
@@ -844,7 +844,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
+              href="/sign-in?builtin=1&"
             >
               <svg
                 aria-hidden="true"
@@ -856,10 +856,10 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
@@ -965,7 +965,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&sourcegraph-operator="
+              href="/sign-in?builtin=1&sourcegraph-operator="
             >
               <svg
                 aria-hidden="true"
@@ -977,10 +977,10 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
                 width="24"
               >
                 <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
+                  d="M20.8 17V15.5C20.8 14.1 19.4 13 18 13S15.2 14.1 15.2 15.5V17C14.6 17 14 17.6 14 18.2V21.7C14 22.4 14.6 23 15.2 23H20.7C21.4 23 22 22.4 22 21.8V18.3C22 17.6 21.4 17 20.8 17M19.5 17H16.5V15.5C16.5 14.7 17.2 14.2 18 14.2S19.5 14.7 19.5 15.5V17M15 12C14.1 12.7 13.5 13.6 13.3 14.7C12.9 14.9 12.5 15 12 15C10.3 15 9 13.7 9 12S10.3 9 12 9 15 10.3 15 12M12 19.5C7 19.5 2.7 16.4 1 12C2.7 7.6 7 4.5 12 4.5S21.3 7.6 23 12C22.8 12.5 22.5 13 22.3 13.5C21.9 12.8 21.4 12.2 20.7 11.8C19 8.5 15.7 6.5 12 6.5C8.2 6.5 4.8 8.6 3.2 12C4.9 15.4 8.3 17.5 12 17.5H12.1C12 17.7 12 18 12 18.2V19.5Z"
                 />
               </svg>
-               Continue with Email
+               Continue with Password
             </a>
           </div>
         </div>
