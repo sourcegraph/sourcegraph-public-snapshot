@@ -6,7 +6,9 @@
 	--bubble-text-color: white;
 	--code-background: var(--vscode-textCodeBlock-background);
 }
-body[data-vscode-theme-kind="vscode-light"], body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+
+body[data-vscode-theme-kind="vscode-light"],
+body[data-vscode-theme-kind="vscode-high-contrast-light"] {
 	--human-bubble-color: #c2c7fb;
 	--bot-bubble-color: #dce2f9;
 	--bubble-text-color: black;
@@ -132,11 +134,14 @@ body {
 	overflow-x: auto;
 }
 
-.bubble-content pre, .bubble-content p > code {
+.bubble-content pre,
+.bubble-content p>code {
 	/* Our syntax highlighter emits colors intended for dark backgrounds only. */
 	background-color: var(--code-background);
 }
-.bubble-content pre, .bubble-content code {
+
+.bubble-content pre,
+.bubble-content code {
 	color: white;
 }
 
@@ -271,4 +276,5 @@ textarea.chat-input {
 	background-color: transparent;
 	font-weight: normal;
 	cursor: pointer;
+	width: inherit;
 }
