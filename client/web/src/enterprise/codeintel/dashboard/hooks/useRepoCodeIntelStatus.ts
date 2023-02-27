@@ -7,6 +7,8 @@ import {
     RepoCodeIntelStatusVariables,
     InferredAvailableIndexersFields,
     PreciseIndexFields,
+    RepoCodeIntelStatusSummaryFields,
+    RepoCodeIntelStatusCommitGraphFields,
 } from '../../../../graphql-operations'
 import { repoCodeIntelStatusQuery } from '../backend'
 
@@ -17,30 +19,25 @@ export interface UseRepoCodeIntelStatusPayload {
     recentActivity: PreciseIndexFields[]
 }
 
-interface UseRepoCodeIntelStatusParameters {
-    variables: RepoCodeIntelStatusVariables
-}
-
 interface UseRepoCodeIntelStatusResult {
-    data?: UseRepoCodeIntelStatusPayload
+    data?: {
+        summary: RepoCodeIntelStatusSummaryFields
+        commitGraph: RepoCodeIntelStatusCommitGraphFields
+    }
     error?: ApolloError
     loading: boolean
 }
 
-export const useRepoCodeIntelStatus = ({
-    variables,
-}: UseRepoCodeIntelStatusParameters): UseRepoCodeIntelStatusResult => {
-    const {
-        data: rawData,
-        error,
-        loading,
-    } = useQuery<RepoCodeIntelStatusResult, RepoCodeIntelStatusVariables>(repoCodeIntelStatusQuery, {
-        variables,
-        notifyOnNetworkStatusChange: false,
-        fetchPolicy: 'cache-and-network', // TODO: Think about invalidation, especially after fixing
-    })
+export const useRepoCodeIntelStatus = (variables: RepoCodeIntelStatusVariables): UseRepoCodeIntelStatusResult => {
+    const { data, error, loading } = useQuery<RepoCodeIntelStatusResult, RepoCodeIntelStatusVariables>(
+        repoCodeIntelStatusQuery,
+        {
+            variables,
+            fetchPolicy: 'cache-first', // TODO: Think about invalidation, especially after fixing
+        }
+    )
 
-    const repo = rawData?.repository
+    const repo = data?.repository
 
     if (!repo) {
         return { loading, error }
@@ -48,10 +45,8 @@ export const useRepoCodeIntelStatus = ({
 
     return {
         data: {
-            availableIndexers: repo.codeIntelSummary.availableIndexers,
-            lastIndexScan: repo.codeIntelSummary.lastIndexScan || undefined,
-            lastUploadRetentionScan: repo.codeIntelSummary.lastUploadRetentionScan || undefined,
-            recentActivity: repo.codeIntelSummary.recentActivity,
+            summary: repo.codeIntelSummary,
+            commitGraph: repo.codeIntelligenceCommitGraph,
         },
         error,
         loading,

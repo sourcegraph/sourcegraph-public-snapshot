@@ -14,10 +14,10 @@ import {
 } from '../../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { globalCodeIntelStatusQuery } from '../backend'
-
 import { DataSummary, DataSummaryItem } from '../components/DataSummary'
 
 import { buildParamsFromFilterState } from './RepoDashboardPage'
+
 import styles from './GlobalDashboardPage.module.scss'
 
 type DashboardNodeProps =

@@ -4,16 +4,14 @@ import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight, mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { of, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
-    Alert,
     Button,
     Checkbox,
     Container,
@@ -25,7 +23,6 @@ import {
     PageHeader,
     Text,
     Tooltip,
-    useObservable,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -41,7 +38,6 @@ import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { EnqueueForm } from '../components/EnqueueForm'
 import { ProjectDescription } from '../components/ProjectDescription'
-import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
 import { queryPreciseIndexes as defaultQueryPreciseIndexes, statesFromString } from '../hooks/queryPreciseIndexes'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
@@ -49,12 +45,11 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 
 export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
-    now?: () => Date
-    queryCommitGraph?: typeof defaultQueryCommitGraph
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
@@ -112,8 +107,6 @@ const filters: FilteredConnectionFilter[] = [
 export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseIndexesPageProps> = ({
     authenticatedUser,
     repo,
-    now,
-    queryCommitGraph = defaultQueryCommitGraph,
     queryPreciseIndexes = defaultQueryPreciseIndexes,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useDeletePreciseIndexes = defaultUseDeletePreciseIndexes,
@@ -129,12 +122,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const { handleReindexPreciseIndexes, reindexesError } = useReindexPreciseIndexes()
-    const commitGraphMetadata = useObservable(
-        useMemo(
-            () => (repo ? queryCommitGraph(repo?.id, apolloClient) : of(undefined)),
-            [repo, queryCommitGraph, apolloClient]
-        )
-    )
 
     // Poke filtered connection to refresh
     const refresh = useMemo(() => new Subject<undefined>(), [])
@@ -254,30 +241,28 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             <PageTitle title="Precise indexes" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Precise indexes' }]}
+                path={[
+                    {
+                        text: repo ? (
+                            <>
+                                Precise indexes for <RepoLink repoName={repo.name} to={null} />
+                            </>
+                        ) : (
+                            'Precise indexes'
+                        ),
+                    },
+                ]}
                 description="Precise code intelligence index data and auto-indexing jobs."
+                actions={
+                    repo &&
+                    authenticatedUser?.siteAdmin && (
+                        <Link to="/site-admin/code-graph/indexes">View indexes across all repositories</Link>
+                    )
+                }
                 className="mb-3"
             />
 
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
-
-            {repo && commitGraphMetadata && (
-                <Alert variant={commitGraphMetadata.stale ? 'primary' : 'success'} aria-live="off">
-                    {commitGraphMetadata.stale ? (
-                        <>
-                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
-                            commit graph updates which uploads are visible from which commits.
-                        </>
-                    ) : (
-                        <>Repository commit graph is currently up to date.</>
-                    )}{' '}
-                    {commitGraphMetadata.updatedAt && (
-                        <>
-                            Last refreshed <Timestamp date={commitGraphMetadata.updatedAt} now={now} />.
-                        </>
-                    )}
-                </Alert>
-            )}
 
             {repo && authenticatedUser?.siteAdmin && (
                 <Container className="mb-2">
@@ -433,11 +418,11 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({
             )}
 
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block">
                     <ProjectDescription index={node} />
                 </span>
 
-                <small className="text-mute">
+                <small className="text-muted">
                     <PreciseIndexLastUpdated index={node} />{' '}
                     {node.shouldReindex && (
                         <Tooltip content="This index has been marked as replaceable by auto-indexing.">

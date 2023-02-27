@@ -1,14 +1,16 @@
 import { FunctionComponent } from 'react'
 
-import { mdiAlert, mdiCheck, mdiClose, mdiTimerSand } from '@mdi/js'
+import { mdiAlert, mdiCheck, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
+import { formatDistance, parseISO } from 'date-fns'
 
-import { Badge, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Icon, Link, LoadingSpinner, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { INDEX_TERMINAL_STATES } from '../constants'
 
 import { getIndexerKey } from './tree/util'
+
 import styles from './IndexStateBadge.module.scss'
 
 export interface IndexStateBadgeProps {
@@ -17,6 +19,8 @@ export interface IndexStateBadgeProps {
 }
 
 export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes, className }) => {
+    const [ref, truncated, checkTruncation] = useIsTruncated<HTMLAnchorElement>()
+
     const mostRecentNonTerminalIndex = indexes
         .filter(index => !INDEX_TERMINAL_STATES.has(index.state))
         // sort by descending uploaded at
@@ -31,56 +35,92 @@ export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ index
         return null
     }
 
+    const indexerKey = getIndexerKey(preferredIndex)
+
     return (
-        <Badge as={Link} to={`../indexes/${preferredIndex.id}`} variant="outlineSecondary" className={className}>
-            {mostRecentTerminalIndex && (
-                <IndexStateBadgeIcon state={mostRecentTerminalIndex.state} className={styles.icon} />
-            )}
-            {mostRecentNonTerminalIndex && (
-                <IndexStateBadgeIcon state={mostRecentNonTerminalIndex.state} className={styles.icon} />
-            )}
-            {getIndexerKey(preferredIndex)}
-        </Badge>
+        <Tooltip content={truncated ? indexerKey : null}>
+            <Badge
+                as={Link}
+                to={`../indexes/${preferredIndex.id}`}
+                variant="outlineSecondary"
+                className={className}
+                ref={ref}
+                onFocus={checkTruncation}
+                onMouseEnter={checkTruncation}
+            >
+                {mostRecentTerminalIndex && (
+                    <IndexStateBadgeIcon index={mostRecentTerminalIndex} className={styles.icon} />
+                )}
+                {mostRecentNonTerminalIndex && (
+                    <IndexStateBadgeIcon index={mostRecentNonTerminalIndex} className={styles.icon} />
+                )}
+                {indexerKey}
+            </Badge>
+        </Tooltip>
     )
 }
 
-const preciseIndexStateTooltips: Partial<Record<PreciseIndexState, string>> = {
-    [PreciseIndexState.COMPLETED]: 'Indexing completed successfully',
+const formatDate = (date: string | null): string => {
+    if (!date) {
+        return ''
+    }
 
-    [PreciseIndexState.INDEXING]: 'Currently indexing',
-    [PreciseIndexState.PROCESSING]: 'Processing index',
-    [PreciseIndexState.UPLOADING_INDEX]: 'Uploading index',
+    return ` ${formatDistance(parseISO(date), Date.now(), { addSuffix: true })}`
+}
 
-    [PreciseIndexState.QUEUED_FOR_INDEXING]: 'Queued for indexing',
-    [PreciseIndexState.QUEUED_FOR_PROCESSING]: 'Queued for processing',
-
-    [PreciseIndexState.INDEXING_ERRORED]: 'Indexing failed',
-    [PreciseIndexState.PROCESSING_ERRORED]: 'Processing failed',
+const getIndexStateTooltip = (index: PreciseIndexFields): string => {
+    switch (index.state) {
+        case PreciseIndexState.COMPLETED:
+            return `Indexing completed${formatDate(index.processingFinishedAt)}`
+        case PreciseIndexState.DELETED:
+            return 'Index deleted'
+        case PreciseIndexState.DELETING:
+            return 'Deleting index'
+        case PreciseIndexState.INDEXING:
+            return `Started indexing${formatDate(index.indexingStartedAt)}`
+        case PreciseIndexState.INDEXING_COMPLETED:
+            return `Finished indexing${formatDate(index.indexingFinishedAt)}`
+        case PreciseIndexState.INDEXING_ERRORED:
+            return `Indexing failed${formatDate(index.indexingFinishedAt)}`
+        case PreciseIndexState.PROCESSING:
+            return `Started processing index${formatDate(index.processingStartedAt)}`
+        case PreciseIndexState.PROCESSING_ERRORED:
+            return `Processing failed${formatDate(index.processingFinishedAt)}`
+        case PreciseIndexState.QUEUED_FOR_INDEXING:
+            return `Queued for indexing${formatDate(index.queuedAt)}`
+        case PreciseIndexState.QUEUED_FOR_PROCESSING:
+            return 'Queued for processing'
+        case PreciseIndexState.UPLOADING_INDEX:
+            return 'Uploading index'
+    }
 }
 
 interface IndexStateBadgeIconProps {
-    state: PreciseIndexState
+    index: PreciseIndexFields
     className?: string
 }
 
-const IndexStateBadgeIcon: FunctionComponent<IndexStateBadgeIconProps> = ({ state, className }) => {
-    const label = preciseIndexStateTooltips[state]
+const IndexStateBadgeIcon: FunctionComponent<IndexStateBadgeIconProps> = ({ index, className }) => {
+    const label = getIndexStateTooltip(index)
     const ariaProps = label ? { 'aria-label': label } : ({ 'aria-hidden': true } as const)
 
     return (
         <Tooltip content={label}>
-            {state === PreciseIndexState.COMPLETED ? (
+            {index.state === PreciseIndexState.COMPLETED ? (
                 <Icon {...ariaProps} svgPath={mdiCheck} className={classNames('text-success', className)} />
-            ) : state === PreciseIndexState.INDEXING ||
-              state === PreciseIndexState.PROCESSING ||
-              state === PreciseIndexState.UPLOADING_INDEX ? (
+            ) : index.state === PreciseIndexState.INDEXING ||
+              index.state === PreciseIndexState.DELETING ||
+              index.state === PreciseIndexState.PROCESSING ||
+              index.state === PreciseIndexState.UPLOADING_INDEX ? (
                 <LoadingSpinner {...ariaProps} className={className} />
-            ) : state === PreciseIndexState.QUEUED_FOR_INDEXING || state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
+            ) : index.state === PreciseIndexState.QUEUED_FOR_INDEXING ||
+              index.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
                 <Icon {...ariaProps} svgPath={mdiTimerSand} className={className} />
-            ) : state === PreciseIndexState.INDEXING_ERRORED || state === PreciseIndexState.PROCESSING_ERRORED ? (
+            ) : index.state === PreciseIndexState.INDEXING_ERRORED ||
+              index.state === PreciseIndexState.PROCESSING_ERRORED ? (
                 <Icon {...ariaProps} svgPath={mdiAlert} className={classNames('text-danger', className)} />
             ) : (
-                <Icon {...ariaProps} svgPath={mdiClose} className={classNames('text-muted', className)} />
+                <></>
             )}
         </Tooltip>
     )

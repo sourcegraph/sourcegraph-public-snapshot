@@ -1,46 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiClose, mdiFolderOpenOutline, mdiFolderOutline, mdiWrench } from '@mdi/js'
-import classNames from 'classnames'
 import { Location, useLocation, useNavigate } from 'react-router-dom'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Badge,
-    Checkbox,
+    Alert,
     Container,
     ErrorAlert,
-    H3,
-    Icon,
     Label,
     Link,
     LoadingSpinner,
     PageHeader,
     RadioButton,
     Select,
-    Text,
-    Tooltip,
-    Tree,
 } from '@sourcegraph/wildcard'
 
-import { CodeIntelIndexerFields, PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { DataSummary, DataSummaryItem } from '../components/DataSummary'
+import { DashboardTree } from '../components/tree/DashboardTree'
+import { getIndexerKey, sanitizePath, getIndexRoot } from '../components/tree/util'
+import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
 import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
 
-import { buildTreeData, descendentNames } from '../components/tree/tree'
-import { IndexStateBadge, IndexStateBadgeIcon } from '../components/IndexStateBadge'
-import { ConfigurationStateBadge, IndexerDescription } from '../components/ConfigurationStateBadge'
-import { byKey, getIndexerKey, groupBy, sanitizePath, getIndexRoot } from '../components/tree/util'
-
 import styles from './RepoDashboardPage.module.scss'
-import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
 
 export interface RepoDashboardPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo: { id: string; name: string }
     now?: () => Date
-    // TODO: Query commit graph?
 }
 
 type ShowFilter = 'all' | 'indexes' | 'suggestions'
@@ -55,7 +44,7 @@ interface SuggestionFilterState {
     show: Extract<ShowFilter, 'suggestions'>
     language: LanguageFilter
 }
-type FilterState = SuggestionFilterState | DefaultFilterState
+export type FilterState = SuggestionFilterState | DefaultFilterState
 
 /**
  * Build a valid FilterState
@@ -103,7 +92,12 @@ const buildFilterStateFromParams = ({ search }: Location): FilterState => {
     }
 }
 
-export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({ telemetryService, repo }) => {
+export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({
+    telemetryService,
+    repo,
+    authenticatedUser,
+    now,
+}) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelRepoDashboard')
     }, [telemetryService])
@@ -111,7 +105,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
     const location = useLocation()
     const navigate = useNavigate()
 
-    const { data, loading, error } = useRepoCodeIntelStatus({ variables: { repository: repo.name } })
+    const { data, loading, error } = useRepoCodeIntelStatus({ repository: repo.name })
 
     const [filterState, setFilterState] = useState<FilterState>(buildFilterStateFromParams(location))
 
@@ -128,33 +122,11 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         [location.search, navigate]
     )
 
-    const shouldDisplayIndex = useCallback(
-        (index: PreciseIndexFields): boolean =>
-            // Valid show filter
-            (filterState.show === 'all' || filterState.show === 'indexes') &&
-            // Valid language filter
-            (filterState.language === 'all' || filterState.language === getIndexerKey(index)) &&
-            // Valid indexState filter
-            (filterState.indexState === 'all' ||
-                (filterState.indexState === 'error' && INDEX_FAILURE_STATES.has(index.state)) ||
-                (filterState.indexState === 'success' && INDEX_COMPLETED_STATES.has(index.state))),
-        [filterState]
-    )
-
-    const shouldDisplayIndexerSuggestion = useCallback(
-        (indexer: CodeIntelIndexerFields): boolean =>
-            // Valid show filter
-            (filterState.show === 'all' || filterState.show === 'suggestions') &&
-            // Valid language filter
-            (filterState.language === 'all' || filterState.language === indexer.key),
-        [filterState]
-    )
-
     const indexes = useMemo(() => {
         if (!data) {
             return []
         }
-        return data.recentActivity
+        return data.summary.recentActivity
     }, [data])
 
     const suggestedIndexers = useMemo(() => {
@@ -162,13 +134,15 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             return []
         }
 
-        return data.availableIndexers
+        return data.summary.availableIndexers
             .flatMap(({ roots, indexer }) => roots.map(root => ({ root, ...indexer })))
             .filter(
                 ({ root, key }) =>
                     !indexes.some(index => getIndexRoot(index) === sanitizePath(root) && getIndexerKey(index) === key)
             )
     }, [data, indexes])
+
+    const languageKeys = new Set([...indexes.map(getIndexerKey), ...suggestedIndexers.map(indexer => indexer.key)])
 
     const summaryItems = useMemo((): DataSummaryItem[] => {
         if (!indexes || !suggestedIndexers) {
@@ -213,16 +187,6 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         ]
     }, [indexes, suggestedIndexers])
 
-    const filteredIndexes = indexes.filter(shouldDisplayIndex)
-    const filteredSuggestedIndexers = suggestedIndexers.filter(shouldDisplayIndexerSuggestion)
-    const languageKeys = new Set([...indexes.map(getIndexerKey), ...suggestedIndexers.map(indexer => indexer.key)])
-    const filteredRoots = new Set([
-        ...filteredIndexes.map(getIndexRoot),
-        ...filteredSuggestedIndexers.map(indexer => indexer.root),
-    ])
-
-    const filteredTreeData = buildTreeData(filteredRoots)
-
     if (loading || !data) {
         return <LoadingSpinner />
     }
@@ -237,13 +201,61 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                 headingElement="h2"
                 path={[
                     {
-                        text: <>Code intelligence summary for {repo.name}</>,
+                        text: (
+                            <>
+                                Code intelligence summary for <RepoLink repoName={repo.name} to={null} />
+                            </>
+                        ),
                     },
                 ]}
+                description="View the latest indexes and suggestions for this repository."
                 className="mb-3"
+                actions={
+                    authenticatedUser?.siteAdmin && (
+                        <Link to="/site-admin/code-graph/dashboard">View global dashboard</Link>
+                    )
+                }
             />
             <Container>
                 <DataSummary items={summaryItems} className="pb-3" />
+                <div className="text-muted">
+                    <small>
+                        {data.summary.lastIndexScan ? (
+                            <>
+                                This repository was scanned for auto-indexing{' '}
+                                <Timestamp date={data.summary.lastIndexScan} />.
+                            </>
+                        ) : (
+                            <>This repository has never been scanned for auto-indexing.</>
+                        )}
+                    </small>
+                    <small className="d-block">
+                        {data.summary.lastIndexScan ? (
+                            <>
+                                The indexes of this repository were last considered for expiration{' '}
+                                <Timestamp date={data.summary.lastIndexScan} />.
+                            </>
+                        ) : (
+                            <> The indexes of this repository have never been considered for expiration.</>
+                        )}
+                    </small>
+                </div>
+
+                <Alert variant={data.commitGraph.stale ? 'primary' : 'success'} aria-live="off">
+                    {data.commitGraph.stale ? (
+                        <>
+                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
+                            commit graph updates which uploads are visible from which commits.
+                        </>
+                    ) : (
+                        <>Repository commit graph is currently up to date.</>
+                    )}{' '}
+                    {data.commitGraph.updatedAt && (
+                        <>
+                            Last refreshed <Timestamp date={data.commitGraph.updatedAt} now={now} />.
+                        </>
+                    )}
+                </Alert>
             </Container>
             <Container className="mt-3">
                 <div className="d-flex justify-content-end">
@@ -317,123 +329,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                     </div>
                 </div>
 
-                {filteredTreeData.length > 1 ? (
-                    <Tree
-                        data={filteredTreeData}
-                        defaultExpandedIds={filteredTreeData.map(element => element.id)}
-                        propagateCollapse={true}
-                        renderNode={({ element: { id, name: treeRoot, displayName }, handleExpand, ...props }) => {
-                            const descendentRoots = new Set(descendentNames(filteredTreeData, id).map(sanitizePath))
-                            const filteredIndexesForRoot = filteredIndexes.filter(
-                                index => getIndexRoot(index) === treeRoot
-                            )
-                            const filteredIndexesForDescendents = filteredIndexes.filter(index =>
-                                descendentRoots.has(getIndexRoot(index))
-                            )
-                            const filteredSuggestedIndexersForRoot = filteredSuggestedIndexers.filter(
-                                ({ root }) => sanitizePath(root) === treeRoot
-                            )
-                            const filteredSuggestedIndexersForDescendents = filteredSuggestedIndexers.filter(
-                                ({ root }) => descendentRoots.has(sanitizePath(root))
-                            )
-
-                            return (
-                                <TreeNode
-                                    onClick={handleExpand}
-                                    displayName={displayName}
-                                    indexesByIndexerNameForRoot={groupBy(filteredIndexesForRoot, getIndexerKey)}
-                                    availableIndexersForRoot={filteredSuggestedIndexersForRoot}
-                                    numDescendentErrors={
-                                        filteredIndexesForDescendents.filter(index =>
-                                            INDEX_FAILURE_STATES.has(index.state)
-                                        ).length
-                                    }
-                                    numDescendentConfigurable={
-                                        filterState.show === 'all' || filterState.show === 'suggestions'
-                                            ? filteredSuggestedIndexersForDescendents.length
-                                            : 0
-                                    }
-                                    {...props}
-                                />
-                            )
-                        }}
-                    />
-                ) : (
-                    <Text className="text-muted">No data to display.</Text>
-                )}
+                <DashboardTree indexes={indexes} suggestedIndexers={suggestedIndexers} filter={filterState} />
             </Container>
         </>
     )
 }
-
-interface TreeNodeProps {
-    displayName: string
-    isBranch: boolean
-    isExpanded: boolean
-    indexesByIndexerNameForRoot: Map<string, PreciseIndexFields[]>
-    availableIndexersForRoot: IndexerDescription[]
-    numDescendentErrors: number
-    numDescendentConfigurable: number
-    onClick: (event: React.MouseEvent) => {}
-}
-
-const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
-    displayName,
-    isBranch,
-    isExpanded,
-    indexesByIndexerNameForRoot,
-    availableIndexersForRoot,
-    numDescendentErrors,
-    numDescendentConfigurable,
-    onClick,
-}) => (
-    // We already handle accessibility events for expansion in the <TreeView />
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div className={styles.treeNode} onClick={onClick}>
-        <div className={classNames('d-inline', !isBranch ? styles.spacer : '')}>
-            <Icon
-                svgPath={isBranch && isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
-                className={classNames('mr-1', styles.icon)}
-                aria-hidden={true}
-            />
-            {displayName}
-            {isBranch && !isExpanded && (numDescendentConfigurable > 0 || numDescendentErrors > 0) && (
-                <>
-                    {numDescendentConfigurable > 0 && (
-                        <Badge variant="primary" className="ml-2" pill={true} small={true}>
-                            {numDescendentConfigurable}
-                        </Badge>
-                    )}
-                    {numDescendentErrors > 0 && (
-                        <Badge variant="danger" className="ml-2" pill={true} small={true}>
-                            {numDescendentErrors}
-                        </Badge>
-                    )}
-                </>
-            )}
-        </div>
-
-        <div className="d-flex align-items-center">
-            {[...indexesByIndexerNameForRoot?.entries()].sort(byKey).map(([indexerName, indexes]) => (
-                <IndexStateBadge
-                    key={indexerName}
-                    indexes={indexes}
-                    className={classNames('text-muted', styles.badge)}
-                />
-            ))}
-
-            {availableIndexersForRoot.map(indexer => (
-                <Badge
-                    as={Link}
-                    to="../index-configuration"
-                    variant="outlineSecondary"
-                    key={indexer.key}
-                    className={classNames('text-muted', styles.badge)}
-                >
-                    <Icon svgPath={mdiWrench} aria-hidden={true} className="mr-1 text-primary" />
-                    Configure {indexer.key}
-                </Badge>
-            ))}
-        </div>
-    </div>
-)

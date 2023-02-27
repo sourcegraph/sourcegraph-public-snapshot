@@ -98,23 +98,55 @@ export const searchBasedCodeIntelSupportFragment = gql`
     }
 `
 
-// todo: recent uploads?
-export const repoCodeIntelStatusQuery = gql`
-    query RepoCodeIntelStatus($repository: String!) {
-        repository(name: $repository) {
-            codeIntelSummary {
-                lastIndexScan
-                lastUploadRetentionScan
-                recentActivity {
-                    ...PreciseIndexFields
-                }
-                availableIndexers {
-                    ...InferredAvailableIndexersFields
-                }
-            }
+export const repoCodeIntelStatusCommitGraphFragment = gql`
+    fragment RepoCodeIntelStatusCommitGraphFields on CodeIntelligenceCommitGraph {
+        stale
+        updatedAt
+    }
+`
+
+export const repoCodeIntelStatusSummaryFragment = gql`
+    fragment RepoCodeIntelStatusSummaryFields on CodeIntelRepositorySummary {
+        lastIndexScan
+        lastUploadRetentionScan
+        recentActivity {
+            ...PreciseIndexFields
+        }
+        availableIndexers {
+            ...InferredAvailableIndexersFields
         }
     }
 
     ${preciseIndexFieldsFragment}
     ${inferredAvailableIndexersFieldsFragment}
+`
+
+export const repoCodeIntelStatusQuery = gql`
+    query RepoCodeIntelStatus($repository: String!) {
+        repository(name: $repository) {
+            codeIntelSummary {
+                ...RepoCodeIntelStatusSummaryFields
+            }
+            codeIntelligenceCommitGraph {
+                ...RepoCodeIntelStatusCommitGraphFields
+            }
+        }
+    }
+
+    ${repoCodeIntelStatusSummaryFragment}
+    ${repoCodeIntelStatusCommitGraphFragment}
+`
+
+export const graphMetadataQue = gql`
+    query CodeIntelligenceCommitGraphMetadata($repository: ID!) {
+        node(id: $repository) {
+            __typename
+            ... on Repository {
+                codeIntelligenceCommitGraph {
+                    stale
+                    updatedAt
+                }
+            }
+        }
+    }
 `
