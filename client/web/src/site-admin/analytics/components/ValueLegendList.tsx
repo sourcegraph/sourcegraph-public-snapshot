@@ -30,7 +30,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     onClick,
 }) => {
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
-    const unformattedNumber = `${value}`
+    const unformattedNumber = typeof value === 'object' ? '' : `${value}`
     const location = useLocation()
 
     const searchParams = useMemo(() => {
