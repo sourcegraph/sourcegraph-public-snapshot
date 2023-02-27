@@ -7,10 +7,16 @@ RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
 RUN cargo fetch
-ENV RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"
-ENV CFLAGS="-mno-outline-atomics"
-RUN cargo test --release --workspace
-RUN cargo rustc --release
+
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = 'arm64' ]; then \
+    export CFLAGS="-mno-outline-atomics"; export RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"; \
+    fi; \
+    cargo test --release --workspace
+RUN if [ "$TARGETARCH" = 'arm64' ]; then \
+    export CFLAGS="-mno-outline-atomics"; export RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"; \
+    fi; \
+    cargo rustc --release
 RUN ls ./target
 
 RUN cp ./target/release/syntect_server /syntax_highlighter

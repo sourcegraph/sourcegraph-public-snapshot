@@ -151,6 +151,7 @@ lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
         create_configurations!(
             c,
+            cpp,
             c_sharp,
             go,
             java,
