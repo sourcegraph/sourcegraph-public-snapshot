@@ -244,11 +244,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
-    useEffect(() => {
-        if (selectedSearchContextSpec) {
+    useOnValueChanged(selectedSearchContextSpec, () => {
+        if (selectedSearchContextSpec && selectedSearchContextSpec) {
             editorReference.current?.focus()
         }
-    }, [selectedSearchContextSpec])
+    })
 
     // Focus the editor if the autoFocus prop is truthy
     useEffect(() => {
@@ -282,6 +282,21 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             ))}
         </>
     )
+}
+
+/**
+ * Helper hook to run the function whenever the provided changes
+ * (but only after the initial render)
+ */
+function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
+    const previousValue = useRef(value)
+
+    useEffect(() => {
+        if (previousValue.current !== value) {
+            func()
+            previousValue.current = value
+        }
+    }, [value, func])
 }
 
 const EMPTY: any[] = []
@@ -411,7 +426,11 @@ export function useUpdateEditorFromQueryState(
         }
 
         editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: queryState.query },
+            // Update value if it's different
+            changes:
+                editor.state.sliceDoc() !== queryState.query
+                    ? { from: 0, to: editor.state.doc.length, insert: queryState.query }
+                    : undefined,
             selection: queryState.selectionRange
                 ? // Select the specified range (most of the time this will be a
                   // placeholder filter value).
