@@ -117,11 +117,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 )}
             </div>
             <div className={styles.container}>
-                {props.communitySearchContextMetadata.lowProfile ? (
-                    <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} />
-                ) : (
-                    <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} />
-                )}
+                <SearchPageInput
+                    {...props}
+                    queryState={queryState}
+                    setQueryState={setQueryState}
+                    hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
+                />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">

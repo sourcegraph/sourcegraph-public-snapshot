@@ -48,10 +48,11 @@ const queryStateSelector = (
 interface SearchPageInputProps {
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
+    hardCodedSearchContextSpec?: string
 }
 
 export const SearchPageInput: FC<SearchPageInputProps> = props => {
-    const { queryState, setQueryState } = props
+    const { queryState, setQueryState, hardCodedSearchContextSpec } = props
 
     const {
         authenticatedUser,
@@ -61,10 +62,12 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         platformContext,
         searchContextsEnabled,
         settingsCascade,
-        selectedSearchContextSpec,
+        selectedSearchContextSpec: dynamicSearchContextSpec,
         fetchSearchContexts,
         setSelectedSearchContextSpec,
     } = useLegacyRouteContext()
+
+    const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
 
     const location = useLocation()
     const navigate = useNavigate()
