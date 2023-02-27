@@ -198,6 +198,18 @@ func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+  // Scan map[string]int32
+  horseNameToID, err := scanHorseNameToID(s.Query(ctx, sqlf.Sprintf("SELECT id, name FROM horses"))) {
+  	if err != nil {
+		return err
+	}
+
+  // Scan map[string]horse
+  horseMap, err := scanMapHorses(s.Query(ctx, sqlf.Sprintf("SELECT id, age, name, nicknames, passportName FROM horses")))
+  if err != nil {
+    return err
+  }
 }
 
 // scanHorses can scan a row of `horse`s into `[]*horse`
@@ -211,6 +223,16 @@ func scanHorse(s dbutil.Scanner) (*horse, error) {
 	}
 	return &h, nil
 }
+
+var scanHorseNameToID = basestore.NewMapScanner(func(s dbutil.Scanner) (name string, id int32, err error) {
+	err = s.Scan(&id, &name)
+	return name, id, err
+})
+
+var scanMapHorses = basestore.NewMapScanner(func(s dbutil.Scanner) (_ string, h *horse, err error) {
+	h, err = scanHorse(s)
+	return h.name, h, err
+})
 
 type horse struct {
 	id           int32
