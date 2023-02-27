@@ -1,6 +1,6 @@
-import { MutationTuple } from '@apollo/client'
+import { MutationTuple, QueryResult } from '@apollo/client'
 
-import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     DeleteRoleVariables,
@@ -10,7 +10,19 @@ import {
     RoleFields,
     CreateRoleResult,
     CreateRoleVariables,
+    AllPermissionsResult,
+    AllPermissionsVariables
 } from '../../graphql-operations'
+
+const permissionFragment = gql`
+    fragment PermissionFields on Permission {
+        __typename
+        id
+        namespace
+        action
+        displayName
+    }
+`
 
 const roleFragment = gql`
     fragment RoleFields on Role {
@@ -18,7 +30,14 @@ const roleFragment = gql`
         id
         name
         system
+        permissions {
+            nodes {
+                ...PermissionFields
+            }
+        }
     }
+
+    ${permissionFragment}
 `
 
 export const ROLES_QUERY = gql`
@@ -57,7 +76,17 @@ export const DELETE_ROLE = gql`
     }
 `
 
-export const GET_PERMISSIONS = gql``
+export const ALL_PERMISSIONS = gql`
+    query AllPermissions {
+        permissions {
+            nodes {
+                ... PermissionFields
+            }
+        }
+    }
+
+    ${permissionFragment}
+`
 
 export const useRolesConnection = () =>
     useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
@@ -73,6 +102,11 @@ export const useRolesConnection = () =>
             const { roles } = dataOrThrowErrors(result)
             return roles
         },
+    })
+
+export const usePermissions = (): QueryResult<AllPermissionsResult, AllPermissionsVariables> =>
+    useQuery<AllPermissionsResult, AllPermissionsVariables>(ALL_PERMISSIONS, {
+        fetchPolicy: 'cache-and-network',
     })
 
 export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)

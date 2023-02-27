@@ -1,4 +1,4 @@
-import React, { useEffect, FC, useCallback, useState } from 'react'
+import React, { useEffect, FC, useCallback, useState, useMemo } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { mdiPlus, mdiChevronUp, mdiChevronDown, mdiMapSearch, mdiDelete } from '@mdi/js'
@@ -17,12 +17,15 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 
-import { useRolesConnection, useDeleteRole } from './backend'
+import { PermissionNamespace, PermissionFields } from '../../graphql-operations'
+import { useRolesConnection, useDeleteRole, usePermissions } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
 import styles from './SiteAdminRolesPage.module.scss'
 
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
+
+type PermissionsMap = Record<PermissionNamespace, string[]>
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
@@ -31,7 +34,31 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
-    const { connection, error, loading, fetchMore, hasNextPage, refetchAll } = useRolesConnection()
+    const { connection, error: rolesError, loading: rolesLoading, fetchMore, hasNextPage, refetchAll } = useRolesConnection()
+    const { data, error: permissionsError, loading: permissionsLoading } = usePermissions()
+
+    const loading = rolesLoading || permissionsLoading
+    const error = rolesError || permissionsError
+
+    const permissions: PermissionsMap | null = useMemo(() => {
+        if (permissionsLoading || permissionsError) {
+            return null
+        }
+
+        const nodes = data?.permissions.nodes
+        if (nodes && nodes.length > 0) {
+            return nodes.reduce<PermissionsMap>((result, node) => {
+                const { id, namespace } = node
+                const namespaceGroupItems = result[namespace] || []
+                return {
+                    ...result,
+                    [namespace]: [...namespaceGroupItems, id]
+                }
+            }, {})
+        }
+
+        return null
+    }, [data, permissionsLoading])
 
     return (
         <div className="site-admin-roles-page">
@@ -106,6 +133,8 @@ const RoleNode: FC<{
         },
         [deleteRole, name, afterDelete]
     )
+
+    console.log(node.permissions)
 
     return (
         <li className={styles.roleNode}>
