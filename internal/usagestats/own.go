@@ -25,6 +25,9 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 	}
 	featureFlagOn := featureflag.FromContext(ctx).GetBoolOr("search-ownership", false)
 	stats.FeatureFlagOn = &featureFlagOn
+	// At this poing we do not compute ReposCount.WithOwnership as this is really
+	// computationally intensive (get all repos and query gitserver for each).
+	// This will become very easy once we have versioned CODEOWNERS in the database.
 	var reposCount types.OwnershipUsageReposCounts
 	if err := db.QueryRowContext(ctx, ownUsageStatsQuery).Scan(
 		&reposCount.Total,
@@ -32,7 +35,6 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 	); err != nil {
 		return nil, err
 	}
-	// TODO: Need to fill in ReposCount.WithOwnership
 	stats.ReposCount = &reposCount
 	return &stats, nil
 }
