@@ -142,7 +142,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
 			defer save()
 
-			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, test.affiliations...)
+			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, 100, test.affiliations...)
 			if err != nil {
 				t.Fatal(err)
 			}

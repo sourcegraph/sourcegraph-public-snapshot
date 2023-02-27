@@ -617,11 +617,11 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	}, nil
 }
 
-func (r *Resolver) PermissionSyncJobs(ctx context.Context, args graphqlbackend.ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionSyncJobResolver], error) {
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	// 🚨 SECURITY: Only site admins can query sync jobs records.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	return NewPermissionSyncJobsResolver(r.db, args)
+	return NewPermissionsSyncJobsResolver(r.db, args)
 }

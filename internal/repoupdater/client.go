@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -22,9 +23,21 @@ import (
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
-var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
+var DefaultClient = NewClient(repoUpdaterURLDefault())
 
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
+
+func repoUpdaterURLDefault() string {
+	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
+		return u
+	}
+
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		return "http://127.0.0.1:3182"
+	}
+
+	return "http://repo-updater:3182"
+}
 
 // Client is a repoupdater client.
 type Client struct {
@@ -286,6 +299,29 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
+}
+
+// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
+var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
+
+// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+	if MockExternalServiceRepositories != nil {
+		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	resp, err := c.httpPost(ctx, "external-service-repositories", args)
+
 	if err != nil {
 		return nil, err
 	}

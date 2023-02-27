@@ -6,7 +6,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 import { GET_CODE_HOSTS } from '../../queries'
 
@@ -16,10 +16,11 @@ interface CodeHostsNavigationProps {
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
     className?: string
+    onCodeHostDelete: (codeHost: CodeHost) => void
 }
 
 export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
-    const { activeConnectionId, createConnectionType, className } = props
+    const { activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
 
     const { data, loading, error, refetch } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
@@ -94,7 +95,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     </Button>
 
                     <Tooltip content="Delete code host connection" placement="right" debounce={0}>
-                        <Button className={styles.deleteButton}>
+                        <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
                             <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
                         </Button>
                     </Tooltip>

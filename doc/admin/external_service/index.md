@@ -140,9 +140,9 @@ A code host status is:
 - 🔴 _Not available:_ This functionality is not available within Sourcegraph
 
 ## Tier 2: Code Hosts
-We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and many more. Today, we do not offer native integrations with these code hosts and customers are advised to leverage [Src-srv-git](./non-git.md) and the [explicit permissions API](../repo/permissions.md#explicit-permissions-api) as a way to ingest code and permissions respectively into Sourcegraph. 
+We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and many more. Today, we do not offer native integrations with these code hosts and customers are advised to leverage [Src-srv-git](./non-git.md) and the [explicit permissions API](../permissions/api.md) as a way to ingest code and permissions respectively into Sourcegraph. 
 
-[Src-srv-git](./non-git.md) and the [explicit permissions API](../repo/permissions.md#explicit-permissions-api) follow the same scale guidance shared above (up to 100k repos and 10k users). 
+[Src-srv-git](./non-git.md) and the [explicit permissions API](../permissions/api.md) follow the same scale guidance shared above (up to 100k repos and 10k users). 
 
 
 ## Full Code Host Docs
@@ -209,7 +209,7 @@ Sourcegraph can leverage.
 
 Please contact support@sourcegraph.com if you encounter rate limits.
 
-### Temporarily disabling requests to code hosts
+## Temporarily disabling requests to code hosts
 
 It may be the case that you'd like to temporarily disable all `git` and API requests from Sourcegraph to a code host. Adding the following to your site configuration will stop Sourcegraph from sending requests to the configured code host connections:
 
@@ -222,7 +222,7 @@ It may be the case that you'd like to temporarily disable all `git` and API requ
 "gitMaxConcurrentClones": 0
 ```
 
-### Testing Code Host Connections
+## Testing Code Host Connections
 
 > WARNING: Sourcegraph 4.4.0 customers are reporting a bug where the connection test is failing when Sourcegraph is running behind proxies where TCP dial cannot be used with ports 80/443. This causes repositories to stop syncing. If you're experiencing this issue, please upgrade to 4.4.1 where normal HTTP requests are used instead.
 

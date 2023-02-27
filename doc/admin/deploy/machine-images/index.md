@@ -98,6 +98,7 @@ Please refer to the official [CIS hardening guide](https://docs.k3s.io/security/
 
 > NOTE: See [Sourcegraph Vulnerability Management Policy](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements) to learn more about our vulnerability and patching policy as well as the current [vulnerability service level agreements](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements). 
 
+
 ## Additional resources
 
 - [sourcegraph/deploy](https://sourcegraph.com/github.com/sourcegraph/deploy)

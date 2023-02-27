@@ -82,7 +82,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.queryState.query
+            const query = parameters.query ?? props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({

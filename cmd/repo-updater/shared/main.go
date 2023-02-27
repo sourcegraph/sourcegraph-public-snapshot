@@ -64,7 +64,7 @@ type EnterpriseInit func(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error)
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -157,7 +157,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
+	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionsSyncJobReason) error
 	if enterpriseInit != nil {
 		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
@@ -174,7 +174,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}()
 
-	go syncScheduler(ctx, logger, updateScheduler, store)
+	go manageUnclonedRepos(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
@@ -450,7 +450,7 @@ func watchSyncer(
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -506,11 +506,11 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the uncloned repositories on gitserver
+// manageUnclonedRepos will periodically list the uncloned repositories on gitserver
 // and update the scheduler with the list. It also ensures that if any of our
 // indexable repos are missing from the cloned list they will be added for
 // cloning ASAP.
-func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
+func manageUnclonedRepos(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(logger, store)
 
 	doSync := func() {

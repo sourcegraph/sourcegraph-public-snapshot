@@ -296,6 +296,12 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
+// IsAccessRequestsEnabled returns whether request access experimental feature is enabled or not.
+func IsAccessRequestsEnabled() bool {
+	experimentalFeatures := Get().ExperimentalFeatures
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestsEnabled == nil || *experimentalFeatures.AccessRequestsEnabled
+}
+
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {

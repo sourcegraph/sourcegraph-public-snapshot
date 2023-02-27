@@ -4,7 +4,6 @@ import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/search'
@@ -30,7 +29,6 @@ import styles from './SearchPage.module.scss'
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         TelemetryProps,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
         SearchContextInputProps,
         CodeInsightsProps {

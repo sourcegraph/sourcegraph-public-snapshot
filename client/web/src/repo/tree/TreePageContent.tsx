@@ -445,7 +445,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const externalURLs = node?.externalURLs
     const connection = node?.commit?.ancestors
 
     return (
@@ -461,7 +460,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 className={styles.gitCommitNode}
                                 messageSubjectClassName={styles.gitCommitNodeMessageSubject}
                                 compact={true}
-                                externalURLs={externalURLs}
                             />
                         ))}
                     </tbody>

@@ -630,6 +630,13 @@ type ExternalServiceNamespace struct {
 	ExternalID string `json:"external_id"`
 }
 
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -1563,6 +1570,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
@@ -1876,3 +1884,21 @@ type CodeownersFile struct {
 	Contents string
 	Proto    *codeownerspb.File
 }
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID             int32
+	Name           string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          string
+	AdditionalInfo string
+	Status         AccessRequestStatus
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

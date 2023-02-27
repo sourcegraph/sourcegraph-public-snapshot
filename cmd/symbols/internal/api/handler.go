@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -17,9 +18,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 const maxNumSymbolResults = 500
@@ -95,9 +93,7 @@ func NewHandler(
 	rootLogger := logger.Scoped("symbolsServer", "symbols RPC server")
 
 	// Initialize the gRPC server
-	grpcServer := grpc.NewServer(
-		defaults.ServerOptions(rootLogger)...,
-	)
+	grpcServer := defaults.NewServer(rootLogger)
 	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,

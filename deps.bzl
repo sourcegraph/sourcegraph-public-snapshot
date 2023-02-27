@@ -5428,13 +5428,6 @@ def go_dependencies():
         version = "v0.0.0-20160511093645-99348263ae86",
     )
     go_repository(
-        name = "com_github_neelance_parallel",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/neelance/parallel",
-        sum = "h1:NZOii9TDGRAfCS5VM16XnF4K7afoLQmIiZX8EkKnxtE=",
-        version = "v0.0.0-20160708114440-4de9ce63d14c",
-    )
-    go_repository(
         name = "com_github_neelance_sourcemap",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/neelance/sourcemap",
