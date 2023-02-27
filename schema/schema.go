@@ -709,6 +709,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
+	// AccessRequestsEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
+	AccessRequestsEnabled *bool `json:"accessRequests.enabled,omitempty"`
 	// AzureDevOps description: Allow adding Azure DevOps code host connections
 	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
@@ -803,6 +805,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
+	delete(m, "accessRequests.enabled")
 	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
