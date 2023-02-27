@@ -137,7 +137,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard />
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp}/>
             </Suspense>
         )
     }
