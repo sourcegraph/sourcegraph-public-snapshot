@@ -1,9 +1,11 @@
 import { FC, useState } from 'react'
 
+import { gql, useQuery } from '@apollo/client'
 import { mdiGithub } from '@mdi/js'
 import { identity } from 'lodash'
 
 import {
+    ErrorAlert,
     Icon,
     MultiCombobox,
     MultiComboboxInput,
@@ -12,24 +14,44 @@ import {
     MultiComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
-const DEMO_ORGS_SUGGESTIONS = [
-    'Sourcegraph org',
-    'My personal organization',
-    'Golang working group',
-    'University labs',
-    'React working group',
-]
+import { GetGitHubOrganizationsResult, GetGitHubOrganizationsVariables } from '../../../../../../graphql-operations'
+
+const GET_GITHUB_ORGANIZATIONS = gql`
+    query GetGitHubOrganizations($token: String!) {
+        externalServiceNamespaces(kind: GITHUB, url: "https://github.com", token: $token) {
+            nodes {
+                id
+                name
+            }
+        }
+    }
+`
 
 interface GithubOrganizationsPickerProps {
+    token: string
+    disabled: boolean
     organizations: string[]
     onChange: (orginaziations: string[]) => void
 }
 
 export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = props => {
-    const { organizations, onChange } = props
+    const { token, disabled, organizations, onChange } = props
     const [searchTerm, setSearchTerm] = useState('')
 
-    const suggestions = DEMO_ORGS_SUGGESTIONS.filter(item => !organizations.find(selectedItem => selectedItem === item))
+    const { data, loading, error } = useQuery<GetGitHubOrganizationsResult, GetGitHubOrganizationsVariables>(
+        GET_GITHUB_ORGANIZATIONS,
+        {
+            skip: disabled,
+            variables: { token },
+        }
+    )
+
+    const suggestions = (data?.externalServiceNamespaces?.nodes ?? []).map(item => item.name)
+
+    // Render only non-selected organizations and orgs that match search term value
+    const filteredSuggestions = suggestions.filter(
+        orgName => !organizations.includes(orgName) && orgName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <MultiCombobox
@@ -40,14 +62,16 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
         >
             <MultiComboboxInput
                 value={searchTerm}
+                disabled={disabled}
                 placeholder="Search orgnaization"
+                status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
             <small className="text-muted pl-2">
                 Pick at least one organization and we clone all repositories that this organzization has
             </small>
 
-            <MultiComboboxList items={suggestions} className="mt-2">
+            <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>
                     items.map((item, index) => (
                         <MultiComboboxOption key={item} value={item} index={index}>
@@ -56,6 +80,8 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
                     ))
                 }
             </MultiComboboxList>
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
         </MultiCombobox>
     )
 }

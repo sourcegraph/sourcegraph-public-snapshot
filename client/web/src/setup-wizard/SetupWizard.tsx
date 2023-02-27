@@ -34,7 +34,7 @@ const SOURCEGRAPH_STEPS = [
         path: '/setup/local-repositories',
         component: LocalRepositoriesStep,
     },
-    ...CORE_STEPS
+    ...CORE_STEPS,
 ]
 
 interface SetupWizardProps {
@@ -45,7 +45,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const { isSourcegraphApp } = props
 
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
-    const steps = useMemo(() => isSourcegraphApp ? SOURCEGRAPH_STEPS : CORE_STEPS, [isSourcegraphApp])
+    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
         (step: StepConfiguration): void => {

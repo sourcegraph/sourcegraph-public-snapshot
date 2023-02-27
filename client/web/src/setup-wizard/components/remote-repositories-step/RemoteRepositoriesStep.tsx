@@ -6,15 +6,15 @@ import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
 import { Container, Text } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult } from '../../../graphql-operations';
+import { GetCodeHostsResult } from '../../../graphql-operations'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
-import { isAnyConnectedCodeHosts } from './helpers';
-import { GET_CODE_HOSTS } from './queries';
+import { isAnyConnectedCodeHosts } from './helpers'
+import { GET_CODE_HOSTS } from './queries'
 
 import styles from './RemoteRepositoriesStep.module.scss'
 
@@ -33,7 +33,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
         fetchPolicy: 'cache-and-network',
         // Polling the most recent data about code host in order to track
         // the current progress of repositories syncing
-        pollInterval: 5000
+        pollInterval: 5000,
     })
 
     return (
@@ -69,9 +69,10 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
             <CustomNextButton
                 label="Next"
                 disabled={!isAnyConnectedCodeHosts(codeHostQueryResult.data)}
-                tooltip={isAnyConnectedCodeHosts(codeHostQueryResult.data)
-                    ? 'You can get back to this later'
-                    : 'You have to connect at least one code host'
+                tooltip={
+                    isAnyConnectedCodeHosts(codeHostQueryResult.data)
+                        ? 'You can get back to this later'
+                        : 'You have to connect at least one code host'
                 }
             />
 

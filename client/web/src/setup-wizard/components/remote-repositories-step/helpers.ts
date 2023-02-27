@@ -2,7 +2,7 @@ import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws, mdiGit } from '@mdi/js'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
-import { GetCodeHostsResult } from '../../../graphql-operations';
+import { GetCodeHostsResult } from '../../../graphql-operations'
 
 export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): string => {
     switch (codeHostType) {
