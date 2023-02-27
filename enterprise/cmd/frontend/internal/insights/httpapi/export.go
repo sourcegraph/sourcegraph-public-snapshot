@@ -94,13 +94,10 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	if err != nil {
 		return nil, authenticationError
 	}
-	if len(userID) != 1 {
-		return nil, authenticationError
-	}
 
 	if err := h.primaryDB.EventLogs().Insert(ctx, &database.Event{
 		Name:            pingName,
-		UserID:          uint32(userID[0]),
+		UserID:          uint32(currentActor.UID),
 		AnonymousUserID: "",
 		Argument:        nil,
 		Timestamp:       time.Now(),
