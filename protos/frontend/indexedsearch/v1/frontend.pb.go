@@ -154,6 +154,7 @@ type Fingerprint struct {
 	GeneratedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=generated_at,json=generatedAt,proto3" json:"generated_at,omitempty"`
 	// identifier is an opaque identifier that represents the state of the
 	// configuration at the time it was generated.
+	// TODO: @ggilmore
 	Identifier uint64 `protobuf:"varint,2,opt,name=identifier,proto3" json:"identifier,omitempty"`
 }
 

@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"testing"
+	"testing/quick"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/zoekt"
@@ -10,6 +11,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestZoektIndexOptions_RoundTrip(t *testing.T) {
+	var diff string
+	f := func(original ZoektIndexOptions) bool {
+
+		var converted ZoektIndexOptions
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("ZoektIndexOptions diff (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetIndexOptions(t *testing.T) {
 	const (

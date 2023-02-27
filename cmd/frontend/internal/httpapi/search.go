@@ -57,12 +57,62 @@ type searchIndexerGRPCServer struct {
 }
 
 func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *proto.SearchConfigurationRequest) (*proto.SearchConfigurationResponse, error) {
+	var parameters searchConfigurationParameters
 
+	repoIDs := make([]api.RepoID, 0, len(request.GetRepoIds()))
+	for _, repoID := range request.GetRepoIds() {
+		repoIDs = append(repoIDs, api.RepoID(repoID))
+	}
+
+	var fingerprint searchbackend.ConfigFingerprint
+	fingerprint.FromProto(request.GetFingerprint())
+
+	parameters.fingerprint = fingerprint
+	parameters.repoIDs = repoIDs
+
+	r, err := s.server.doSearchConfiguration(ctx, parameters)
+	if err != nil {
+		var parameterErr *parameterError
+		if errors.As(err, &parameterErr) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, err
+	}
+
+	options := make([]*proto.ZoektIndexOptions, 0, len(r.options))
+	for _, o := range r.options {
+		options = append(options, o.ToProto())
+	}
+
+	return &proto.SearchConfigurationResponse{
+		UpdatedOptions: options,
+		Fingerprint:    r.fingerprint.ToProto(),
+	}, nil
 }
 
-func (s *searchIndexerGRPCServer) List(ctx context.Context, request *proto.ListRequest) (*proto.ListResponse, error) {
-	return nil, errors.New("unimplemented")
+func (s *searchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest) (*proto.ListResponse, error) {
+	indexedIDs := make([]api.RepoID, 0, len(r.GetIndexedIds()))
+	for _, repoID := range r.GetIndexedIds() {
+		indexedIDs = append(indexedIDs, api.RepoID(repoID))
+	}
 
+	var parameters listParameters
+	parameters.IndexedIDs = indexedIDs
+	parameters.Hostname = r.GetHostname()
+
+	repoIDs, err := s.server.doList(ctx, &parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	var response proto.ListResponse
+	response.RepoIds = make([]int32, 0, len(repoIDs))
+	for _, repoID := range repoIDs {
+		response.RepoIds = append(response.RepoIds, int32(repoID))
+	}
+
+	return &response, nil
 }
 
 func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *proto.RepositoryRankRequest) (*proto.RepositoryRankResponse, error) {
@@ -366,37 +416,50 @@ type searchConfigurationResponse struct {
 
 // serveList is used by zoekt to get the list of repositories for it to index.
 func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
-	var opt struct {
-		// Hostname is used to determine the subset of repos to return
-		Hostname string
-		// IndexedIDs are the repository IDs of indexed repos by Hostname.
-		IndexedIDs []api.RepoID
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&opt)
+	var parameters listParameters
+	err := json.NewDecoder(r.Body).Decode(&parameters)
 	if err != nil {
 		return err
 	}
 
-	indexable, err := h.ListIndexable(r.Context())
+	repoIDs, err := h.doList(r.Context(), &parameters)
 	if err != nil {
 		return err
+	}
+
+	// TODO: Avoid batching up so much in memory by:
+	// 1. Changing the schema from object of arrays to array of objects.
+	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+
+	data := struct {
+		RepoIDs []api.RepoID
+	}{
+		RepoIDs: repoIDs,
+	}
+
+	return json.NewEncoder(w).Encode(&data)
+}
+
+func (h *searchIndexerServer) doList(ctx context.Context, parameters *listParameters) (repoIDS []api.RepoID, err error) {
+	indexable, err := h.ListIndexable(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(parameters.IndexedIDs))
 		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
-		if len(opt.IndexedIDs) > 0 {
-			opts := database.ReposListOptions{IDs: opt.IndexedIDs}
-			err = h.RepoStore.StreamMinimalRepos(r.Context(), opts, add)
+		if len(parameters.IndexedIDs) > 0 {
+			opts := database.ReposListOptions{IDs: parameters.IndexedIDs}
+			err = h.RepoStore.StreamMinimalRepos(ctx, opts, add)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 
-		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)
+		indexable, err = h.Indexers.ReposSubset(ctx, parameters.Hostname, indexed, indexable)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -405,18 +468,18 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 	// 2. Stream out each object marshalled rather than marshall the full list in memory.
 
 	ids := make([]api.RepoID, 0, len(indexable))
-
 	for _, r := range indexable {
 		ids = append(ids, r.ID)
 	}
 
-	data := struct {
-		RepoIDs []api.RepoID
-	}{
-		RepoIDs: ids,
-	}
+	return ids, nil
+}
 
-	return json.NewEncoder(w).Encode(&data)
+type listParameters struct {
+	// Hostname is used to determine the subset of repos to return
+	Hostname string
+	// IndexedIDs are the repository IDs of indexed repos by Hostname.
+	IndexedIDs []api.RepoID
 }
 
 var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
