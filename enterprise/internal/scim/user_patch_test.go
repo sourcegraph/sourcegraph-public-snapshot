@@ -2,9 +2,6 @@ package scim
 
 import (
 	"context"
-	"io"
-	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/elimity-com/scim"
@@ -74,11 +71,7 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 	}
 }
 
+// createPath creates a path for a given attribute and sub-attribute.
 func createPath(attr string, subAttr *string) *filter.Path {
 	return &filter.Path{AttributePath: filter.AttributePath{AttributeName: attr, SubAttribute: subAttr}}
-}
-
-// TODO: Replace_test also uses this, move it out of this file
-func createDummyRequest() *http.Request {
-	return &http.Request{Body: io.NopCloser(strings.NewReader("test"))}
 }

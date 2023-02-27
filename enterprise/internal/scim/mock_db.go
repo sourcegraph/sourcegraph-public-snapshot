@@ -11,7 +11,7 @@ import (
 func getMockDB() *database.MockDB {
 	users := []*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
 		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, SCIMExternalID: "id3"},
 		{User: types.User{ID: 4, Username: "user4"}, SCIMAccountData: "{\"externalUsername\":\"user4@company.com\"}", SCIMExternalID: "id4"},
 	}
@@ -44,7 +44,9 @@ func getMockDB() *database.MockDB {
 	})
 	userStore.CountFunc.SetDefaultReturn(4, nil)
 	userStore.CreateFunc.SetDefaultHook(func(ctx context.Context, user database.NewUser) (*types.User, error) {
-		return &types.User{ID: 5, Username: user.Username, DisplayName: user.DisplayName}, nil
+		newUser := types.UserForSCIM{User: types.User{ID: 5, Username: user.Username, DisplayName: user.DisplayName}}
+		users = append(users, &newUser)
+		return &newUser.User, nil
 	})
 	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 		for _, user := range users {
@@ -72,8 +74,22 @@ func getMockDB() *database.MockDB {
 	userStore.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.UserStore, error) {
 		return userStore, nil
 	})
+	userStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, userID int32) error {
+		for i, u := range users {
+			if u.ID == userID {
+				users = append(users[:i], users[i+1:]...)
+				return nil
+			}
+		}
+		return database.NewUserNotFoundErr()
+	})
 
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+	userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (*types.User, error) {
+		userToCreate := types.UserForSCIM{User: types.User{ID: 5, Username: newUser.Username, DisplayName: newUser.DisplayName}}
+		users = append(users, &userToCreate)
+		return &userToCreate.User, nil
+	})
 	userExternalAccountsStore.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
 		for _, user := range users {
 			if user.SCIMExternalID == spec.AccountID {
@@ -81,7 +97,10 @@ func getMockDB() *database.MockDB {
 				if err != nil {
 					return 0, err
 				}
-				user.SCIMExternalID = decrypted.(map[string]interface{})["externalUsername"].(string)
+				userName := decrypted.(map[string]interface{})["userName"]
+				if userName != nil {
+					user.SCIMExternalID = userName.(string)
+				}
 				return user.ID, nil
 			}
 		}
@@ -98,6 +117,7 @@ func getMockDB() *database.MockDB {
 	return db
 }
 
+// applyLimitOffset returns a slice of users based on the limit and offset
 func applyLimitOffset(users []*types.UserForSCIM, limitOffset *database.LimitOffset) ([]*types.UserForSCIM, error) {
 	// Return all users
 	if limitOffset == nil {

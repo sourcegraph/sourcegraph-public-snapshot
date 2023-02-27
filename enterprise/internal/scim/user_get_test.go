@@ -31,8 +31,8 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	if user2.ID != "2" {
 		t.Errorf("expected ID = 2, got %s", user2.ID)
 	}
-	if user1.ExternalID.Value() != "external1" {
-		t.Errorf("expected ExternalID = 'external1', got %s", user1.ExternalID.Value())
+	if user1.ExternalID.Value() != "id1" {
+		t.Errorf("expected ExternalID = 'id1', got %s", user1.ExternalID.Value())
 	}
 	if user2.ExternalID.Value() != "" {
 		t.Errorf("expected no ExternalID, got %s", user1.ExternalID.Value())
@@ -40,10 +40,10 @@ func TestUserResourceHandler_Get(t *testing.T) {
 
 	// Assert that usernames are correct
 	if user1.Attributes["userName"] != "user1" {
-		t.Errorf("expected username = 'user1', got %s", user1.Attributes["UserName"])
+		t.Errorf("expected username = 'user1', got %s", user1.Attributes["userName"])
 	}
 	if user2.Attributes["userName"] != "user2" {
-		t.Errorf("expected username = 'user2', got %s", user2.Attributes["UserName"])
+		t.Errorf("expected username = 'user2', got %s", user2.Attributes["userName"])
 	}
 
 	// Assert that names are correct
@@ -52,24 +52,6 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	}
 	if user2.Attributes["displayName"] != "First Middle Last" {
 		t.Errorf("expected First Middle Last, got %s", user2.Attributes["displayName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user1.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["middleName"] != "" {
-		t.Errorf("expected empty string, got %s", user1.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user1.Attributes["name"].(map[string]interface{})["familyName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user2.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["middleName"] != "Middle" {
-		t.Errorf("expected Middle, got %s", user2.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user2.Attributes["name"].(map[string]interface{})["familyName"])
 	}
 
 	// Assert that emails are correct

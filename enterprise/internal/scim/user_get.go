@@ -8,7 +8,6 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -110,16 +109,29 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 	// Convert account data – if it doesn't exist, never mind
 	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
-		log15.Error("Failed to convert account data to SCIM resource attributes", "error", err)
-
-		resourceAttributes = scim.ResourceAttributes{
-			"name": map[string]interface{}{},
-		}
+		// TODO: Failed to convert account data to SCIM resource attributes. Maybe log this?
+		resourceAttributes = scim.ResourceAttributes{}
+	}
+	if resourceAttributes["name"] == nil {
+		resourceAttributes["name"] = map[string]interface{}{}
 	}
 	resourceAttributes["externalId"] = user.SCIMExternalID
 	resourceAttributes["name"].(map[string]interface{})["formatted"] = user.DisplayName
 	resourceAttributes["displayName"] = user.DisplayName
 	resourceAttributes["active"] = true
+
+	// Fall back to username and primary email in the user object if not set in account data
+	if resourceAttributes["userName"] == nil || resourceAttributes["userName"].(string) == "" {
+		resourceAttributes["userName"] = user.Username
+	}
+	if (resourceAttributes["emails"] == nil || len(resourceAttributes["emails"].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+		resourceAttributes["emails"] = []interface{}{
+			map[string]interface{}{
+				"value":   user.Emails[0],
+				"primary": true,
+			},
+		}
+	}
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),

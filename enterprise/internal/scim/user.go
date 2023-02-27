@@ -2,8 +2,7 @@ package scim
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -505,14 +504,15 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 	return normalizedUsername, nil
 }
 
+// checkBodyNotEmpty checks whether the request body is empty. If it is, it returns a SCIM error.
 func checkBodyNotEmpty(r *http.Request) error {
 	// Check whether the request body is empty.
-	data, err := ioutil.ReadAll(r.Body) // TODO: Deprecated feature use
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
 	if len(data) == 0 {
-		return fmt.Errorf("passed body is empty")
+		return scimerrors.ScimErrorBadParams([]string{"request body is empty"})
 	}
 	return nil
 }
