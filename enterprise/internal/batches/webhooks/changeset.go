@@ -17,7 +17,6 @@ type changeset struct {
 	ID                 graphql.ID   `json:"id"`
 	ExternalID         string       `json:"external_id"`
 	BatchChangeIDs     []graphql.ID `json:"batch_change_ids"`
-	OwnedByBatchChange *graphql.ID  `json:"owning_batch_change_id"`
 	RepositoryID       graphql.ID   `json:"repository_id"`
 	CreatedAt          time.Time    `json:"created_at"`
 	UpdatedAt          time.Time    `json:"updated_at"`
@@ -27,12 +26,13 @@ type changeset struct {
 	State              string       `json:"state"`
 	Labels             []string     `json:"labels"`
 	ExternalURL        *string      `json:"external_url"`
-	ForkName           *string      `json:"fork_name"`
 	ForkNamespace      *string      `json:"fork_namespace"`
 	ReviewState        *string      `json:"review_state"`
 	CheckState         *string      `json:"check_state"`
 	Error              *string      `json:"error"`
 	SyncerError        *string      `json:"syncer_error"`
+	ForkName           *string      `json:"fork_name"`
+	OwnedByBatchChange *graphql.ID  `json:"owning_batch_change_id"`
 }
 
 const gqlChangesetQuery = `query Changeset($id: ID!) {
@@ -167,12 +167,12 @@ func marshalChangeset(ctx context.Context, client httpcli.Doer, id graphql.ID) (
 		State:              node.State,
 		Labels:             labels,
 		ExternalURL:        externalURL,
-		ForkName:           node.ForkName,
-		OwnedByBatchChange: node.OwnedByBatchChange,
 		ForkNamespace:      node.ForkNamespace,
 		ReviewState:        node.ReviewState,
 		CheckState:         node.CheckState,
 		Error:              node.Error,
 		SyncerError:        node.SyncerError,
+		ForkName:           node.ForkName,
+		OwnedByBatchChange: node.OwnedByBatchChange,
 	})
 }
