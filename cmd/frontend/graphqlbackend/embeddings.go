@@ -8,7 +8,7 @@ import (
 
 type EmbeddingsResolver interface {
 	EmbeddingsSearch(ctx context.Context, args EmbeddingsSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
-	IsContextRequiredForQuery(ctx context.Context, args IsContextRequiredForQueryInputArgs) (bool, error)
+	IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryInputArgs) (bool, error)
 
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 	ScheduleContextDetectionForEmbedding(ctx context.Context) (*EmptyResponse, error)
@@ -18,7 +18,7 @@ type ScheduleRepositoriesForEmbeddingArgs struct {
 	RepoNames []string
 }
 
-type IsContextRequiredForQueryInputArgs struct {
+type IsContextRequiredForChatQueryInputArgs struct {
 	Query string
 }
 

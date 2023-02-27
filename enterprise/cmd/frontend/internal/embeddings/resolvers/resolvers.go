@@ -63,8 +63,8 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 	return &embeddingsSearchResultsResolver{results}, nil
 }
 
-func (r *Resolver) IsContextRequiredForQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForQueryInputArgs) (bool, error) {
-	return r.embeddingsClient.IsContextRequiredForQuery(ctx, embeddings.IsContextRequiredForQueryParameters{Query: args.Query})
+func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
+	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }
 
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (_ *graphqlbackend.EmptyResponse, err error) {
