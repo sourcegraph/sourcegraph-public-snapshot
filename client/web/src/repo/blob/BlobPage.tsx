@@ -76,6 +76,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import { isPackageRepoName } from '../packages/isPackageRepoName'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -127,6 +128,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
         enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
     }))
+    const isPackage = useMemo(() => isPackageRepoName(repoName), [repoName])
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const lineOrRange = useMemo(
@@ -307,9 +309,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         return `${repoString}`
     }
 
-    const [isBlameVisible] = useBlameVisibility()
+    const [isBlameVisible] = useBlameVisibility(isPackage)
     const blameHunks = useBlameHunks(
-        { repoName, revision, filePath, enableCodeMirror },
+        { isPackage, repoName, revision, filePath, enableCodeMirror },
         props.platformContext.sourcegraphURL
     )
 
@@ -367,7 +369,12 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {({ actionType }) => (
-                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                    <ToggleBlameAction
+                        actionType={actionType}
+                        source="repoHeader"
+                        renderMode={renderMode}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
