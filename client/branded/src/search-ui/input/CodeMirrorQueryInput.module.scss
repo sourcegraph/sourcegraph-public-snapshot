@@ -140,8 +140,7 @@
     // .placeholder needs to explicilty have the same background color because it
     // appears to be placed outside of .focusedFilter rather than within it.
     .placeholder,
-    .focusedFilter,
-    :global(.sg-token-hover) {
+    .focusedFilter {
         background-color: var(--gray-02);
 
         :global(.theme-dark) & {

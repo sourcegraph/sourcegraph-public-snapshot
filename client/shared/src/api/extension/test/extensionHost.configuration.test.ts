@@ -1,4 +1,3 @@
-import { proxy } from 'comlink'
 import { BehaviorSubject } from 'rxjs'
 
 import { SettingsCascade } from '../../../settings/settings'
@@ -24,7 +23,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -44,7 +42,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -62,7 +59,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -82,7 +78,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -105,7 +100,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                     applySettingsEdit: edit =>
                         Promise.resolve().then(() => {

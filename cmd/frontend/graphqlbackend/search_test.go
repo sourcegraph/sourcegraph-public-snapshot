@@ -330,9 +330,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, zoektRepos := generateRepos(500_000)
 	zoektFileMatches := generateZoektMatches(1000)
 
-	z := zoektRPC(b, &searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := zoektRPC(b, &searchbackend.FakeStreamer{
+		Repos:   zoektRepos,
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	})
 
 	ctx := context.Background()

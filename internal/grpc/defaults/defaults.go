@@ -5,6 +5,7 @@
 package defaults
 
 import (
+	"context"
 	"strings"
 	"sync"
 
@@ -21,6 +22,16 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
+
+// Dial creates a client connection to the given target with the default options.
+func Dial(addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return DialContext(context.Background(), addr, additionalOpts...)
+}
+
+// DialContext creates a client connection to the given target with the default options.
+func DialContext(ctx context.Context, addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return grpc.DialContext(ctx, addr, append(DialOptions(), additionalOpts...)...)
+}
 
 // DialOptions is a set of default dial options that should be used for all
 // gRPC clients in Sourcegraph. The options can be extended with
@@ -47,6 +58,11 @@ func DialOptions() []grpc.DialOption {
 			otelgrpc.UnaryClientInterceptor(),
 		),
 	}
+}
+
+// NewServer creates a new *grpc.Server with the default options
+func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Server {
+	return grpc.NewServer(append(ServerOptions(logger), additionalOpts...)...)
 }
 
 // ServerOptions is a set of default server options that should be used for all

@@ -6813,6 +6813,9 @@ func (c CodeMonitorStoreUpsertLastSearchedFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/database) used for
 // unit testing.
 type MockEnterpriseDB struct {
+	// AccessRequestsFunc is an instance of a mock function object
+	// controlling the behavior of the method AccessRequests.
+	AccessRequestsFunc *EnterpriseDBAccessRequestsFunc
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *EnterpriseDBAccessTokensFunc
@@ -6826,6 +6829,9 @@ type MockEnterpriseDB struct {
 	// CodeMonitorsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeMonitors.
 	CodeMonitorsFunc *EnterpriseDBCodeMonitorsFunc
+	// CodeownersFunc is an instance of a mock function object controlling
+	// the behavior of the method Codeowners.
+	CodeownersFunc *EnterpriseDBCodeownersFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *EnterpriseDBConfFunc
@@ -6976,6 +6982,11 @@ type MockEnterpriseDB struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockEnterpriseDB() *MockEnterpriseDB {
 	return &MockEnterpriseDB{
+		AccessRequestsFunc: &EnterpriseDBAccessRequestsFunc{
+			defaultHook: func() (r0 database.AccessRequestStore) {
+				return
+			},
+		},
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: func() (r0 database.AccessTokenStore) {
 				return
@@ -6993,6 +7004,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: func() (r0 CodeMonitorStore) {
+				return
+			},
+		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: func() (r0 CodeownersStore) {
 				return
 			},
 		},
@@ -7243,6 +7259,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 	return &MockEnterpriseDB{
+		AccessRequestsFunc: &EnterpriseDBAccessRequestsFunc{
+			defaultHook: func() database.AccessRequestStore {
+				panic("unexpected invocation of MockEnterpriseDB.AccessRequests")
+			},
+		},
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: func() database.AccessTokenStore {
 				panic("unexpected invocation of MockEnterpriseDB.AccessTokens")
@@ -7261,6 +7282,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: func() CodeMonitorStore {
 				panic("unexpected invocation of MockEnterpriseDB.CodeMonitors")
+			},
+		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: func() CodeownersStore {
+				panic("unexpected invocation of MockEnterpriseDB.Codeowners")
 			},
 		},
 		ConfFunc: &EnterpriseDBConfFunc{
@@ -7511,6 +7537,9 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 // overwritten.
 func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 	return &MockEnterpriseDB{
+		AccessRequestsFunc: &EnterpriseDBAccessRequestsFunc{
+			defaultHook: i.AccessRequests,
+		},
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
 		},
@@ -7522,6 +7551,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: i.CodeMonitors,
+		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: i.Codeowners,
 		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: i.Conf,
@@ -7668,6 +7700,105 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 			defaultHook: i.ZoektRepos,
 		},
 	}
+}
+
+// EnterpriseDBAccessRequestsFunc describes the behavior when the
+// AccessRequests method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBAccessRequestsFunc struct {
+	defaultHook func() database.AccessRequestStore
+	hooks       []func() database.AccessRequestStore
+	history     []EnterpriseDBAccessRequestsFuncCall
+	mutex       sync.Mutex
+}
+
+// AccessRequests delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) AccessRequests() database.AccessRequestStore {
+	r0 := m.AccessRequestsFunc.nextHook()()
+	m.AccessRequestsFunc.appendCall(EnterpriseDBAccessRequestsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AccessRequests
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBAccessRequestsFunc) SetDefaultHook(hook func() database.AccessRequestStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AccessRequests method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBAccessRequestsFunc) PushHook(hook func() database.AccessRequestStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBAccessRequestsFunc) SetDefaultReturn(r0 database.AccessRequestStore) {
+	f.SetDefaultHook(func() database.AccessRequestStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBAccessRequestsFunc) PushReturn(r0 database.AccessRequestStore) {
+	f.PushHook(func() database.AccessRequestStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBAccessRequestsFunc) nextHook() func() database.AccessRequestStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBAccessRequestsFunc) appendCall(r0 EnterpriseDBAccessRequestsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBAccessRequestsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBAccessRequestsFunc) History() []EnterpriseDBAccessRequestsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBAccessRequestsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBAccessRequestsFuncCall is an object that describes an
+// invocation of method AccessRequests on an instance of MockEnterpriseDB.
+type EnterpriseDBAccessRequestsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.AccessRequestStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBAccessRequestsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBAccessRequestsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // EnterpriseDBAccessTokensFunc describes the behavior when the AccessTokens
@@ -8066,6 +8197,105 @@ func (c EnterpriseDBCodeMonitorsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBCodeMonitorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBCodeownersFunc describes the behavior when the Codeowners
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBCodeownersFunc struct {
+	defaultHook func() CodeownersStore
+	hooks       []func() CodeownersStore
+	history     []EnterpriseDBCodeownersFuncCall
+	mutex       sync.Mutex
+}
+
+// Codeowners delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Codeowners() CodeownersStore {
+	r0 := m.CodeownersFunc.nextHook()()
+	m.CodeownersFunc.appendCall(EnterpriseDBCodeownersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Codeowners method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBCodeownersFunc) SetDefaultHook(hook func() CodeownersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Codeowners method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBCodeownersFunc) PushHook(hook func() CodeownersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBCodeownersFunc) SetDefaultReturn(r0 CodeownersStore) {
+	f.SetDefaultHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBCodeownersFunc) PushReturn(r0 CodeownersStore) {
+	f.PushHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBCodeownersFunc) nextHook() func() CodeownersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBCodeownersFunc) appendCall(r0 EnterpriseDBCodeownersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBCodeownersFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBCodeownersFunc) History() []EnterpriseDBCodeownersFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBCodeownersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBCodeownersFuncCall is an object that describes an invocation
+// of method Codeowners on an instance of MockEnterpriseDB.
+type EnterpriseDBCodeownersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeownersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBCodeownersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBCodeownersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

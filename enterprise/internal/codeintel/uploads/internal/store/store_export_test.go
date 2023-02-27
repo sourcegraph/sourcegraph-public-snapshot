@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,7 +47,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads := []ExportedUpload{
+	expectedUploads := []shared.ExportedUpload{
 		{ID: 102, Repo: "bar", ObjectPrefix: "ranking/test/102"},
 		{ID: 103, Repo: "baz", ObjectPrefix: "ranking/test/103"},
 	}
@@ -59,7 +60,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads = []ExportedUpload{
+	expectedUploads = []shared.ExportedUpload{
 		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
@@ -99,7 +100,7 @@ func TestProcessStaleExportedUploads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads := []ExportedUpload{
+	expectedUploads := []shared.ExportedUpload{
 		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"}, // shadowed by upload 102
 		{ID: 103, Repo: "bar", ObjectPrefix: "ranking/test/103"}, // repo gets deleted
 		{ID: 105, Repo: "baz", ObjectPrefix: "ranking/test/105"}, // upload gets deleted

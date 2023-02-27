@@ -3,6 +3,8 @@ import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
@@ -19,10 +21,13 @@ import {
     AnchorLink,
     Select,
     Icon,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { UserAvatar } from '../user/UserAvatar'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
+import { useExperimentalFeatures } from '../stores'
 
 import styles from './UserNavItem.module.scss'
 
@@ -58,6 +63,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
+    const [enableTeams] = useFeatureFlag('search-ownership')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -76,6 +82,8 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     }, [setThemeSetting, themeSetting])
 
     const organizations = authenticatedUser.organizations.nodes
+    const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
+    const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
 
     return (
         <>
@@ -114,6 +122,14 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                Saved searches
+                            </MenuLink>
+                            {enableTeams && !isSourcegraphDotCom && (
+                                <MenuLink as={Link} to="/teams">
+                                    Teams
+                                </MenuLink>
+                            )}
                             <MenuDivider />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">
@@ -147,6 +163,21 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
+                            {searchQueryInputFeature === 'experimental' && (
+                                <div className="px-2 py-1">
+                                    <div className="d-flex align-items-center justify-content-between">
+                                        <div className="mr-2">
+                                            New Search Input{' '}
+                                            <ProductStatusBadge status="experimental" className="ml-1" />
+                                        </div>
+                                        <Toggle
+                                            value={experimentalQueryInputEnabled}
+                                            onToggle={setExperimentalQueryInputEnabled}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {organizations.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />

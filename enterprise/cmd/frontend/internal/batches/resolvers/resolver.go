@@ -1212,6 +1212,11 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
+	} else if externalServiceType == extsvc.TypeAzureDevOps {
+		a = &extsvcauth.BasicAuth{
+			Username: *username,
+			Password: credential,
+		}
 	} else {
 		a = &extsvcauth.OAuthBearerTokenWithSSH{
 			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},

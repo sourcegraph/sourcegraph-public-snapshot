@@ -11,6 +11,5 @@
   - Search for repositories, symbols and files using the [Fuzzy finder](features.md#fuzzy-search).
   - Curate [saved searches](features.md#saved-searches) for yourself or your org.
   - Use [code monitoring](../../code_monitoring/index.md) to set up notifications for code changes that match a query.
-  - View [language statistics](features.md#statistics) for search results.
 - [Search details](search_details.md)
 - [Search tips](tips.md)

@@ -16,6 +16,7 @@ import { Form } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from './lazy'
 import { useRecentSearches } from './useRecentSearches'
@@ -55,9 +56,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     const { recentSearches } = useRecentSearches()
     const recentSearchesRef = useRef(recentSearches)
@@ -112,6 +113,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     if (experimentalQueryInput) {
         return (
             <Form

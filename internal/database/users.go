@@ -938,6 +938,8 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Usernames specifies a list of usernames to include.
+	Usernames []string
 	// Only show users inside this org
 	OrgID int32
 
@@ -1104,6 +1106,10 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			}
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
+	}
+
+	if len(opt.Usernames) > 0 {
+		conds = append(conds, sqlf.Sprintf("u.username = ANY(%s)", pq.Array(opt.Usernames)))
 	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
