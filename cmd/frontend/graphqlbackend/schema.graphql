@@ -245,7 +245,6 @@ type Mutation {
 
     - All user data (access tokens, email addresses, external account info, survey responses, etc)
     - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    - Sourcegraph extensions published by the user.
     - User, Organization, or Global settings authored by the user.
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
@@ -1598,10 +1597,6 @@ type Query {
         """
         first: Int
     ): SurveyResponseConnection!
-    """
-    The extension registry.
-    """
-    extensionRegistry: ExtensionRegistry!
     """
     FOR INTERNAL USE ONLY: Lists all status messages
     """
@@ -6910,11 +6905,6 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
-    """
-    Whether to enable the extension registry and the use of extensions.
-    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
-    """
-    enableLegacyExtensions: Boolean!
 
     """
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
@@ -8023,75 +8013,6 @@ type ProductLicenseInfo {
 }
 
 """
-An extension registry.
-"""
-type ExtensionRegistry {
-    """
-    A list of extensions published in the extension registry.
-    """
-    extensions(
-        """
-        Returns the first n extensions from the list.
-        """
-        first: Int
-        """
-        Returns only extensions with the given IDs.
-        """
-        extensionIDs: [String!]
-    ): RegistryExtensionConnection!
-}
-
-"""
-An extension's listing in the extension registry.
-"""
-type RegistryExtension implements Node {
-    """
-    The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
-    RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
-    """
-    id: ID!
-    """
-    The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
-    publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
-    """
-    extensionID: String!
-    """
-    The extension manifest, or null if none is set.
-    """
-    manifest: ExtensionManifest
-}
-
-"""
-A description of the extension, how to run or access it, and when to activate it.
-"""
-type ExtensionManifest {
-    """
-    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
-    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
-    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
-    using jsonFields instead.
-    """
-    raw: String!
-    """
-    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
-    specified fields. This is useful for callers that only need certain fields and want
-    to avoid fetching a large amount of data (because many manifests contain README
-    and icon data).
-    """
-    jsonFields(fields: [String!]!): JSONValue!
-}
-
-"""
-A list of registry extensions.
-"""
-type RegistryExtensionConnection {
-    """
-    A list of registry extensions.
-    """
-    nodes: [RegistryExtension!]!
-}
-
-"""
 Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
 """
 type CodeIntelligenceRangeConnection {
@@ -9180,6 +9101,11 @@ type Team implements Node {
     url: String!
 
     """
+    URL to an avatar of this team.
+    """
+    avatarURL: String
+
+    """
     A human readable name substitute for the name. Null, if not defined.
     """
     displayName: String
@@ -9407,8 +9333,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    addTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9420,8 +9353,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    setTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9432,6 +9372,164 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    removeTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+}
+
+"""
+Options to specify a user for team membership. Multiple options can be provided,
+with the following precedence order: (Other mismatches will be discarded)
+- UserID
+- Username
+- Email
+- External Account fields
+
+Examples:
+- If ID is set and no match, return.
+- If ID and username is set, and ID matches but username doesn't, match.
+"""
+input TeamMemberInput {
+    """
+    Explicitly define a user by ID.
+    """
+    userID: ID
+    """
+    Explicitly define a user by username in Sourcegraph.
+    """
+    username: String
+    """
+    If the email is associated to a user and verified, the user account will be matched.
+    """
+    email: String
+
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service ID for the GitHub OAuth provider, for example, is https://github.com/.
+    """
+    externalAccountServiceID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service Type for the GitHub OAuth provider, for example, is github.
+    """
+    externalAccountServiceType: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account ID is the unique identifier on the external account platform.
+    """
+    externalAccountAccountID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account Login is usually the username on the external account platform.
+    """
+    externalAccountLogin: String
+}
+
+"""
+A list of access requests
+"""
+type AccessRequestConnection {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+    """
+    A list of access requests
+    """
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
+}
+
+extend type Mutation {
+    """
+    Marks access_request as rejected
+    """
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
 }
