@@ -25,7 +25,7 @@
 
 # Configure Sourcegraph with Kustomize
 
-This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components, and does not work with non-Kustomize deployment types.
+This guide will demonstrate how to customize a Kubernetes deployment (**non-Helm**) using Kustomize components.
 
 <div class="getting-started">
   <a class="btn text-center" href="./index">Installation</a>
@@ -46,7 +46,7 @@ Following these guidelines will help you create a seamless deployment and avoid 
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services (tracing services and cAdvisor are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services ([tracing services](#tracing) and [cAdvisor](#deploy-cadvisor) are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
