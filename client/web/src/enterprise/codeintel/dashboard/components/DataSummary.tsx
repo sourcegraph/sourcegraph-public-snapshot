@@ -1,5 +1,6 @@
-import { LinkOrSpan } from '@sourcegraph/wildcard'
 import classNames from 'classnames'
+
+import { LinkOrSpan } from '@sourcegraph/wildcard'
 
 import styles from './DataSummary.module.scss'
 

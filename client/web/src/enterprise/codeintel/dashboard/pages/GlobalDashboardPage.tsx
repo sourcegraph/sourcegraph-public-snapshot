@@ -51,7 +51,6 @@ const DashboardNode: React.FunctionComponent<DashboardNodeProps> = props => {
                 {props.repository.externalRepository && (
                     <ExternalRepositoryIcon
                         externalRepo={{
-                            serviceID: props.repository.externalRepository.serviceID,
                             serviceType: props.repository.externalRepository.serviceType,
                         }}
                     />

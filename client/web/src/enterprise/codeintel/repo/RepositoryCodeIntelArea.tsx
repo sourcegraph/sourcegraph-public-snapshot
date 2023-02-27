@@ -15,11 +15,11 @@ import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeInte
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
 import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
+import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
-import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 
 export interface CodeIntelAreaRouteContext extends TelemetryProps {
     repo: { id: string; name: string }

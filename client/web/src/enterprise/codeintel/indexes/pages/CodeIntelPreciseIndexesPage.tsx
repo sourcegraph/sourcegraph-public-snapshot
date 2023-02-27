@@ -48,7 +48,7 @@ import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
 export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
-    repo?: { id: string }
+    repo?: { id: string; name: string }
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
