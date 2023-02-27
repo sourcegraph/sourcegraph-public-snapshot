@@ -1,25 +1,25 @@
 .loading {
     min-width: 4rem;
-}
 
-.loading:after {
-    overflow: hidden;
-    display: inline-block;
-    vertical-align: bottom;
-    -webkit-animation: ellipsis steps(4, end) 900ms infinite;
-    animation: ellipsis steps(4, end) 2000ms infinite;
-    content: '\2026'; /* ascii code for the ellipsis character */
-    width: 0px;
+    &::after {
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: bottom;
+        -webkit-animation: ellipsis steps(4, end) 900ms infinite;
+        animation: ellipsis steps(4, end) 2000ms infinite;
+        content: '\2026'; /* ascii code for the ellipsis character */
+        width: 0rem;
+    }
 }
 
 @keyframes ellipsis {
     to {
-        width: 1em;
+        width: 0.75rem;
     }
 }
 
 @-webkit-keyframes ellipsis {
     to {
-        width: 1em;
+        width: 0.75rem;
     }
 }
