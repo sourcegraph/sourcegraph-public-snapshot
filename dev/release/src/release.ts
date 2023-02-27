@@ -495,7 +495,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             }
             const tags = getCandidateTags(localSourcegraphRepo, version)
             if (tags.length > 0) {
-                console.log(`Release candidate tags for version: ${version}\n${tags}`)
+                console.log(`Release candidate tags for version: ${chalk.blue(version)}`)
+                for (const tag of tags) {
+                    console.log(tag)
+                }
                 console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
             } else {
                 console.log(chalk.yellow('No candidates found!'))
