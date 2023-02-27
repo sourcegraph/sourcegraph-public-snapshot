@@ -11,6 +11,8 @@ import (
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
+	t.Parallel()
+
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	testCases := []struct {
@@ -73,6 +75,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 
 }
 
+// createUserResourceAttributes creates a scim.ResourceAttributes object with the given username.
 func createUserResourceAttributes(username string) scim.ResourceAttributes {
 	return scim.ResourceAttributes{
 		"userName": username,

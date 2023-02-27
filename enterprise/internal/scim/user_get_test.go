@@ -13,6 +13,8 @@ import (
 )
 
 func TestUserResourceHandler_Get(t *testing.T) {
+	t.Parallel()
+
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
@@ -59,7 +61,10 @@ func TestUserResourceHandler_Get(t *testing.T) {
 		t.Errorf("expected empty email, got %s", user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"])
 	}
 }
+
 func TestUserResourceHandler_GetAll(t *testing.T) {
+	t.Parallel()
+
 	db := getMockDB()
 
 	cases := []struct {
