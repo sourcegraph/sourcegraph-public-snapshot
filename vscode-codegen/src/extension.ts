@@ -84,23 +84,28 @@ function configure(
 		return NOOP_DISPOSABLE
 	}
 
+	// TODO(sqs): remove this check after devs have migrated (probably by 2023-03-01)
+	if (!config.serverEndpoint.startsWith('http') || !config.embeddingsEndpoint.startsWith('http')) {
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
+		vscode.window.showWarningMessage(
+			'The cody.{server,embeddings}Endpoint settings now expect URLs (eg http://localhost:9300 or https://cody.sgdev.org).'
+		)
+		setContextActivated(false)
+		return NOOP_DISPOSABLE
+	}
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const subscriptions: { dispose(): any }[] = []
-
-	const isDevelopment = process.env.NODE_ENV === 'development'
 
 	const documentProvider = new CompletionsDocumentProvider()
 	const history = new History()
 	subscriptions.push(history)
 
-	const wsUrl = `${isDevelopment ? 'ws' : 'wss'}://${config.serverEndpoint}`
-	const httpUrl = `${isDevelopment ? 'http' : 'https'}://${config.serverEndpoint}`
-
-	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${config.embeddingsEndpoint}`
-
-	const wsCompletionsClient = WSCompletionsClient.new(`${wsUrl}/completions`, accessToken)
-	const wsChatClient = WSChatClient.new(`${wsUrl}/chat`, accessToken)
-	const embeddingsClient = config.codebase ? new EmbeddingsClient(embeddingsUrl, accessToken, config.codebase) : null
+	const wsCompletionsClient = WSCompletionsClient.new(`${config.serverEndpoint}/completions`, accessToken)
+	const wsChatClient = WSChatClient.new(`${config.serverEndpoint}/chat`, accessToken)
+	const embeddingsClient = config.codebase
+		? new EmbeddingsClient(config.embeddingsEndpoint, accessToken, config.codebase)
+		: null
 
 	let useContext: ConfigurationUseContext = config.useContext
 	if (!embeddingsClient && config.useContext === 'embeddings') {
@@ -113,7 +118,7 @@ function configure(
 
 	const chatProvider = new ChatViewProvider(
 		context.extensionPath,
-		httpUrl,
+		config.serverEndpoint,
 		wsChatClient,
 		embeddingsClient,
 		useContext,

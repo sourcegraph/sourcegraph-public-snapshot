@@ -7,14 +7,15 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 	static async new<T1, T2 extends WSResponse>(addr: string, accessToken: string): Promise<WSClient<T1, T2> | null> {
 		try {
 			const options = { headers: { authorization: `Bearer ${accessToken}` } }
-			const ws = new WebSocket(addr, options)
+			const ws = new WebSocket(httpToWSURL(addr), options)
 			const c = new WSClient<T1, T2>(ws, options)
 			await c.waitForConnection(30 * 1000) // 30 seconds
 			return c
-		} catch {
+		} catch (error) {
 			vscode.window.showWarningMessage(
 				'Could not connect to the Cody backend. Check that you have set the correct access token.'
 			)
+			console.error(error)
 			return null
 		}
 	}
@@ -103,4 +104,13 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 			delete this.responseListeners[requestId]
 		}
 	}
+}
+
+function httpToWSURL(httpURL: string): string {
+	const url = new URL(httpURL)
+	if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+		throw new Error(`URL protocol must be either http: or https: (got ${url.protocol})`)
+	}
+	url.protocol = url.protocol === 'http:' ? 'ws:' : 'wss:'
+	return url.toString()
 }

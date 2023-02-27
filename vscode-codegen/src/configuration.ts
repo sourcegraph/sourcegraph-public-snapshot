@@ -17,8 +17,8 @@ export interface Configuration {
 export function getConfiguration(config: vscode.WorkspaceConfiguration): Configuration {
 	return {
 		enable: config.get('sourcegraph.cody.enable', true),
-		serverEndpoint: config.get('cody.serverEndpoint') || CODY_ENDPOINT,
-		embeddingsEndpoint: config.get('cody.embeddingsEndpoint') || CODY_ENDPOINT,
+		serverEndpoint: config.get('cody.serverEndpoint')!,
+		embeddingsEndpoint: config.get('cody.embeddingsEndpoint')!,
 		codebase: config.get('cody.codebase'),
 		debug: config.get('cody.debug', false),
 		useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',

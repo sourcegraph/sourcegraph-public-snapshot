@@ -71,8 +71,8 @@ Run the VS Code extension:
 1. Change your VS Code user settings to use your local dev servers:
 
    ```json
-   "cody.serverEndpoint": "localhost:9300",
-   "cody.embeddingsEndpoint": "localhost:9301",
+   "cody.serverEndpoint": "http://localhost:9300",
+   "cody.embeddingsEndpoint": "http://localhost:9301",
    "cody.debug": true,
    ```
 

@@ -183,10 +183,14 @@
           "description": "Enable Cody"
         },
         "cody.serverEndpoint": {
-          "type": "string"
+          "type": "string",
+          "default": "https://cody.sgdev.org",
+          "description": "URL to the Cody server"
         },
         "cody.embeddingsEndpoint": {
-          "type": "string"
+          "type": "string",
+          "default": "https://cody.sgdev.org",
+          "description": "URL to the Cody embeddings API"
         },
         "cody.codebase": {
           "type": "string"
