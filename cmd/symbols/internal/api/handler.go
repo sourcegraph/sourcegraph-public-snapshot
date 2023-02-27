@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -100,8 +99,6 @@ func NewHandler(
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
-
-	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
 
