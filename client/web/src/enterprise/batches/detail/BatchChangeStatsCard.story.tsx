@@ -32,9 +32,8 @@ const calculatePercentComplete = <T extends MockStatsArgs>(stats: T, total: numb
     return ((stats.closed + stats.merged) / (total - stats.deleted - stats.archived)) * 100
 }
 
-const calculateTotal = <T extends MockStatsArgs>(stats: T): number => {
-    return stats.closed + stats.deleted + stats.merged + stats.draft + stats.open + stats.archived + stats.unpublished
-}
+const calculateTotal = <T extends MockStatsArgs>(stats: T): number =>
+    stats.closed + stats.deleted + stats.merged + stats.draft + stats.open + stats.archived + stats.unpublished
 
 export const Draft: Story<MockStatsArgs> = args => {
     const total = calculateTotal(args)
