@@ -67,6 +67,10 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
     const [unit, value] = getStepInterval(step)
 
     const client = useApolloClient()
+    // Apollo refetch doesn't work properly with watchQuery when stream gets query error
+    // in order to recreate refetch we have here synthetic state which we update on every
+    // refetch request and this triggers watchQuery re-subscribtion, see use effect below.
+    const [counter, fourceUpdate] = useState(0)
     const [{ data, loading, error, refetch }, setResult] = useState<QueryResult>({
         data: undefined,
         loading: true,
@@ -110,14 +114,17 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
             },
         })
 
-        const refetch = (): Promise<unknown> => query.refetch()
+        const refetch = (): void => {
+            fourceUpdate(state => state + 1)
+        }
+
         const subscription = query.subscribe(
             event => setResult({ ...event, refetch }),
             error => setResult({ loading: false, data: undefined, error, refetch })
         )
 
         return () => subscription.unsubscribe()
-    }, [client, repoScope, series, skip, unit, value])
+    }, [client, repoScope, series, skip, unit, value, counter])
 
     const parsedSeries = useMemo(() => {
         if (data) {

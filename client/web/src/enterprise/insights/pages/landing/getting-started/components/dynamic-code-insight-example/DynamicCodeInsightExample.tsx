@@ -35,7 +35,7 @@ interface CodeInsightExampleFormValues {
 }
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
-    repositories: ['github.com/sourcegraph/sourcegraph'],
+    repositories: [],
     query: 'TODO',
 }
 
@@ -126,7 +126,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
                 </Label>
                 <RepositoriesField
                     id="repositories-id"
-                    description="Find and choose up to 1 repository to run insight"
+                    description="Find and choose at least 1 repository to run insight"
                     placeholder="Search repositories..."
                     {...getDefaultInputProps(repositories)}
                 />

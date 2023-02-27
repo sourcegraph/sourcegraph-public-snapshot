@@ -11,6 +11,7 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -37,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
@@ -285,14 +285,14 @@ func (r *Resolver) associateReposWithRevs(
 	associated []RepoRevSpecs,
 	missing []RepoRevSpecs,
 ) {
-	g := group.New().WithMaxConcurrency(8)
+	p := pool.New().WithMaxGoroutines(8)
 
 	associatedRevs := make([]RepoRevSpecs, len(repos))
 	revsAreMissing := make([]bool, len(repos))
 
 	for i, repo := range repos {
 		i, repo := i, repo
-		g.Go(func() {
+		p.Go(func() {
 			var (
 				revs      []query.RevisionSpecifier
 				isMissing bool
@@ -320,7 +320,7 @@ func (r *Resolver) associateReposWithRevs(
 		})
 	}
 
-	g.Wait()
+	p.Wait()
 
 	// Sort missing revs to the end, but maintain order otherwise.
 	sort.SliceStable(associatedRevs, func(i, j int) bool {
@@ -354,10 +354,10 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 		}
 	)
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 	for i, repoRev := range repoRevSpecs {
 		i, repoRev := i, repoRev
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			expanded, err := r.normalizeRepoRefs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
 			if err != nil {
 				return err
@@ -370,7 +370,7 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 		})
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, nil, err
 	}
 
@@ -459,7 +459,7 @@ func (r *Resolver) filterHasCommitAfter(
 		return repoRevs, nil
 	}
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev
@@ -471,7 +471,7 @@ func (r *Resolver) filterHasCommitAfter(
 
 		for _, rev := range allRevs {
 			rev := rev
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
@@ -494,7 +494,7 @@ func (r *Resolver) filterHasCommitAfter(
 		}
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -598,10 +598,10 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	)
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(16)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(16)
 
 	{ // Use zoekt for indexed revs
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			type repoAndRev struct {
 				id  api.RepoID
 				rev string
@@ -649,7 +649,7 @@ func (r *Resolver) filterRepoHasFileContent(
 			for _, rev := range repoRevs.Revs {
 				repo, rev := repoRevs.Repo, rev
 
-				g.Go(func(ctx context.Context) error {
+				p.Go(func(ctx context.Context) error {
 					for _, arg := range op.HasFileContent {
 						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 						if err != nil {
@@ -677,7 +677,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, nil, 0, err
 	}
 

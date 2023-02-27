@@ -1858,7 +1858,7 @@ query {
 		failureMessage
 		reason {
 			group
-			message
+			reason
 		}
 		cancellationReason
 		triggeredByUser {
@@ -1902,7 +1902,7 @@ query {
 				"failureMessage": null,
 				"reason": {
 					"group": "MANUAL",
-					"message": "REASON_MANUAL_USER_SYNC"
+					"reason": "REASON_MANUAL_USER_SYNC"
 				},
 				"cancellationReason": null,
 				"triggeredByUser": {
@@ -1935,7 +1935,7 @@ query {
 				"failureMessage": null,
 				"reason": {
 					"group": "SOURCEGRAPH",
-					"message": "REASON_USER_EMAIL_REMOVED"
+					"reason": "REASON_USER_EMAIL_REMOVED"
 				},
 				"cancellationReason": null,
 				"triggeredByUser": null,

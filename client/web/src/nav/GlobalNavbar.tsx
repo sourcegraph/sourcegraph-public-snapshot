@@ -6,9 +6,7 @@ import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { useLocation } from 'react-router-dom'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -27,7 +25,6 @@ import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -36,6 +33,7 @@ import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -50,7 +48,6 @@ import styles from './GlobalNavbar.module.scss'
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
-        ExtensionsControllerProps,
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
@@ -67,7 +64,6 @@ export interface GlobalNavbarProps
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
     showFeedbackModal: () => void
@@ -132,8 +128,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
-    extensionsController,
-    enableLegacyExtensions,
     showFeedbackModal,
     ...props
 }) => {
@@ -281,6 +275,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Cloud
                         </ButtonLink>
                     )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <AccessRequestsGlobalNavItem
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            context={window.context}
+                        />
+                    )}
                     {isSourcegraphDotCom && (
                         <NavAction>
                             <Link
@@ -293,16 +293,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                extensionsController={extensionsController}
-                                location={location}
-                                menu={ContributableMenu.CommandPalette}
-                            />
-                        </NavAction>
-                    )}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
                             <StatusMessagesNavItem />
@@ -325,7 +315,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     >
                                         Sign in
                                     </Button>
-                                    {!isSourcegraphDotCom && window.context.allowSignup && (
+                                    {!isSourcegraphDotCom && window.context?.allowSignup && (
                                         <ButtonLink to="/sign-up" variant="primary" size="sm">
                                             Sign up
                                         </ButtonLink>

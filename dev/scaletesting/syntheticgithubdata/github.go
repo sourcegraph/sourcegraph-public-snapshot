@@ -6,18 +6,17 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/conc/pool"
 )
 
 // getGitHubRepos fetches the current repos on the GitHub instance for the given org name.
 func getGitHubRepos(ctx context.Context, orgName string) []*github.Repository {
-	g := group.NewWithResults[[]*github.Repository]().WithMaxConcurrency(250)
+	p := pool.NewWithResults[[]*github.Repository]().WithMaxGoroutines(250)
 	// 200k repos + some buffer space returning empty pages
 	for i := 0; i < 2050; i++ {
 		writeInfo(out, "Fetching repo page %d", i)
 		page := i
-		g.Go(func() []*github.Repository {
+		p.Go(func() []*github.Repository {
 			var resp *github.Response
 			var reposPage []*github.Repository
 			var err error
@@ -41,7 +40,7 @@ func getGitHubRepos(ctx context.Context, orgName string) []*github.Repository {
 		})
 	}
 	var repos []*github.Repository
-	for _, rr := range g.Wait() {
+	for _, rr := range p.Wait() {
 		repos = append(repos, rr...)
 	}
 	return repos

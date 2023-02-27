@@ -1563,6 +1563,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
@@ -1876,3 +1877,21 @@ type CodeownersFile struct {
 	Contents string
 	Proto    *codeownerspb.File
 }
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID             int32
+	Name           string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          string
+	AdditionalInfo string
+	Status         AccessRequestStatus
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

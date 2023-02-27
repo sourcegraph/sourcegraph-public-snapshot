@@ -81,10 +81,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+        routeMatch &&
+        [
+            PageRoutes.SignIn,
+            PageRoutes.SignUp,
+            PageRoutes.PasswordReset,
+            PageRoutes.Welcome,
+            PageRoutes.RequestAccess,
+        ].includes(routeMatch as PageRoutes)
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -189,7 +193,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}

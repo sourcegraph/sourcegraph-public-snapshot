@@ -1786,8 +1786,6 @@ github.com/nats-io/nkeys v0.1.0/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxzi
 github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
 github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
-github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c h1:NZOii9TDGRAfCS5VM16XnF4K7afoLQmIiZX8EkKnxtE=
-github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c/go.mod h1:eTBvSIlRgLo+CNFFQRQTwUGTZOEdvXIKeZS/xG+D2yU=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nightlyone/lockfile v1.0.0 h1:RHep2cFKK4PonZJDdEl4GmkabuhbsRMgk/k3uAmxBiA=
 github.com/nightlyone/lockfile v1.0.0/go.mod h1:rywoIealpdNse2r832aiD9jRk8ErCatROs6LzC841CI=
@@ -2085,8 +2083,8 @@ github.com/snabb/sitemap v1.0.0/go.mod h1:Id8uz1+WYdiNmSjEi4BIvL5UwNPYLsTHzRbjmD
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b h1:Mlytsllyx6d1eaKXt8urXX0YjP5Tq4UGV+BfL6Yc1aQ=
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b/go.mod h1:0MLTrjQI8EuVmvykEhcfr/7X0xmaDAZrqMgxIq3OXHk=
-github.com/sourcegraph/conc v0.1.0 h1:9GeYVmWWa1jeOq3zGq17m10d9pjYZpiGTj/N4hQFl58=
-github.com/sourcegraph/conc v0.1.0/go.mod h1:sEXGtKMpRbfGhShfObhgMyxDpdu/5ABGrzSGYaigx5A=
+github.com/sourcegraph/conc v0.2.0 h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=
+github.com/sourcegraph/conc v0.2.0/go.mod h1:8lmPpTLA0hsWqw4lw7wS1e694U2tMjRrc1Asvupb4QM=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230222065424-1cc470c429e1 h1:ZK8uyI3diAyKDlmQx6OioXa0uEwyPMkiCXBVRRlX2uc=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230222065424-1cc470c429e1/go.mod h1:0B+3bPsMvcNgR9nN+bdM2x9YaNYDnf3ksUqYp1OAub0=
 github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71 h1:tsWE3F3StWvnwLnC4JWb0zX0UHY9GULQtu/aoQvLJvI=
