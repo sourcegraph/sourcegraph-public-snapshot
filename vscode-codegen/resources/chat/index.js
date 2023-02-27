@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/explicit-member-accessibility */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable no-undef */
 const MAX_HEIGHT = 192
 

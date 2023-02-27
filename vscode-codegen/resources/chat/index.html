@@ -18,25 +18,27 @@
 			<li id="tab-menu-item-recipes" class="tab-menu-item {debug-tab-class-hidden}" data-tab="debug">Debug</li>
 		</ul>
 		<div id="container-recipes" class="inner-container" data-tab-target="recipes">
-			<button class="btn-recipe" data-recipe="explainCode">Explain selected code (detailed)</button>
-			<button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain selected code (high level)</button>
-			<button class="btn-recipe" data-recipe="generateUnitTest">Generate a unit test</button>
-			<button class="btn-recipe" data-recipe="generateDocstring">Generate a docstring</button>
-			<button class="btn-recipe" data-recipe="translateToLanguage">Translate to different language</button>
-			<button class="btn-recipe" data-recipe="gitHistory">Recent history</button>
+			<form>
+			  <button class="btn-recipe" data-recipe="explainCode">Explain selected code (detailed)</button>
+			  <button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain selected code (high level)</button>
+			  <button class="btn-recipe" data-recipe="generateUnitTest">Generate a unit test</button>
+			  <button class="btn-recipe" data-recipe="generateDocstring">Generate a docstring</button>
+			  <button class="btn-recipe" data-recipe="translateToLanguage">Translate to different language</button>
+			  <button class="btn-recipe" data-recipe="gitHistory">Recent history</button>
+			</form>
 		</div>
 		<div id="container-ask" class="inner-container" data-tab-target="ask">
 			<div class="header-container">
 				<div class="header-container-left">
 					<div class="header-logo">
-						<div class="green-dot"></div><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+						<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
 							viewBox="0 0 24 24">
 							<path
 								d="M9 15a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1ZM15 15a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1ZM6 8a1 1 0 0 1-.71-.29l-3-3a1 1 0 0 1 1.42-1.42l3 3a1 1 0 0 1 0 1.42A1 1 0 0 1 6 8ZM18 8a1 1 0 0 1-.71-.29 1 1 0 0 1 0-1.42l3-3a1 1 0 1 1 1.42 1.42l-3 3A1 1 0 0 1 18 8Z"
-								fill="#fff" />
+								fill="var(--vscode-icon-foreground)" />
 							<path
 								d="M21 20H3a1 1 0 0 1-1-1v-4.5a10 10 0 0 1 20 0V19a1 1 0 0 1-1 1ZM4 18h16v-3.5a8 8 0 0 0-16 0Z"
-								fill="#fff" />
+								fill="var(--vscode-icon-foreground)" />
 						</svg>
 					</div>
 					<div class="header-title">Cody</div>
@@ -52,9 +54,7 @@
 			</div>
 			<div class="transcript-container"></div>
 			<div class="input-row">
-				<div class="input-container">
-					<textarea class="chat-input"></textarea>
-				</div>
+				<textarea class="chat-input" rows="1"></textarea>
 				<div class="submit-container">
 					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewbox="0 0 24 24"
 						style="fill:#fff">

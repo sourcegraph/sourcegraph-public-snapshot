@@ -1,12 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono&family=Nunito:wght@400;700&display=swap');
 
 :root {
-	--background-color-dark: #16171f;
-	--background-color: #282a37;
-	--human-bubble-color: #727acc;
-	--bot-bubble-color: #323644;
-	--muted-text: #d0d0d0;
-	--text: white;
+	--human-bubble-color: #565eb9;
+	--bot-bubble-color: #303443;
+	--bubble-text-color: white;
+	--code-background: var(--vscode-textCodeBlock-background);
+}
+body[data-vscode-theme-kind="vscode-light"], body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+	--human-bubble-color: #c2c7fb;
+	--bot-bubble-color: #dce2f9;
+	--bubble-text-color: black;
+	--code-background: #333333;
 }
 
 html,
@@ -17,37 +21,35 @@ body {
 }
 
 .outer-container {
-	background-color: var(--background-color);
+	background-color: var(--vscode-sideBar-background);
+	border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
 	width: 100%;
 	height: 100%;
 	display: flex;
 	flex-direction: column;
+	box-sizing: border-box;
 }
 
 .inner-container {
-	background-color: var(--background-color);
+	background-color: var(--vscode-sideBar-background);
 	width: 100%;
 	height: 100%;
 	min-height: 0;
 	display: none;
 	flex-direction: column;
 	overflow-x: scroll;
+	box-sizing: border-box;
 }
 
 .inner-container.show {
 	display: flex;
 }
 
-.tab-menu-item-selected {
-	color: var(--text);
-	background-color: var(--background-color);
-}
-
 .header-container {
 	display: flex;
 	justify-content: space-between;
 	font-family: var(--vscode-font-family), 'Nunito', sans-serif;
-	border-bottom: 1px solid var(--bot-bubble-color);
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
 	padding: 12px 16px 8px 16px;
 }
 
@@ -62,7 +64,7 @@ body {
 }
 
 .header-title {
-	color: white;
+	color: var(--vscode-sideBarTitle-foreground);
 	font-size: 24px;
 	margin-left: 8px;
 }
@@ -75,17 +77,6 @@ body {
 	width: 48px;
 	height: 48px;
 	border-radius: 24px;
-}
-
-.green-dot {
-	width: 12px;
-	height: 12px;
-	border-radius: 8px;
-	position: absolute;
-	top: -2px;
-	right: -2px;
-	background-color: #419f28;
-	border: 3px solid var(--background-color);
 }
 
 .transcript-container {
@@ -101,27 +92,14 @@ body {
 }
 
 .bubble {
-	color: white;
-	font-family: var(--vscode-font-family), 'Nunito', sans-serif;
 	min-width: 0;
-}
-
-.bubble pre,
-.bubble code {
-	color: white !important;
-	font-family: var(--vscode-editor-font-family), 'Azeret Mono', monospace;
-}
-
-.bubble pre {
-	margin: 0;
-	overflow: auto;
 }
 
 .bubble-footer {
 	display: flex;
 	margin-top: 4px;
 	font-size: 14px;
-	color: #aeafc4;
+	color: var(--vscode-descriptionForeground);
 }
 
 .human-bubble-footer {
@@ -137,6 +115,7 @@ body {
 	border-top-right-radius: 16px;
 	border-top-left-radius: 16px;
 	word-break: break-word;
+	color: var(--bubble-text-color);
 }
 
 .bubble-content *:first-child {
@@ -149,8 +128,16 @@ body {
 
 .bubble-content pre {
 	padding: 8px;
-	background-color: var(--background-color-dark);
 	border-radius: 8px;
+	overflow-x: auto;
+}
+
+.bubble-content pre, .bubble-content p > code {
+	/* Our syntax highlighter emits colors intended for dark backgrounds only. */
+	background-color: var(--code-background);
+}
+.bubble-content pre, .bubble-content code {
+	color: white;
 }
 
 .human-bubble-content {
@@ -198,7 +185,7 @@ body {
 	width: 12px;
 	height: 12px;
 	border-radius: 6px;
-	background-color: white;
+	background-color: var(--vscode-icon-foreground);
 }
 
 .bubble-loader-dot:nth-child(2) {
@@ -213,56 +200,38 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 56px;
-	height: 56px;
-	border-radius: 28px;
-	background-color: var(--human-bubble-color);
+	width: 50px;
+	height: 50px;
+	border-radius: 25px;
+	background-color: var(--vscode-button-background);
 	cursor: pointer;
 }
 
 .input-row {
 	display: flex;
+	align-items: flex-start;
+	gap: 16px;
 	padding: 16px;
-	border-top: 1px solid var(--bot-bubble-color);
-}
-
-.input-container {
-	display: flex;
-	align-items: center;
-	flex: 1;
-	margin-right: 16px;
-	padding: 16px;
-	border-radius: 16px;
-	background-color: var(--bot-bubble-color);
+	border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
 }
 
 .chat-input {
-	font-family: var(--vscode-font-family), 'Nunito', sans-serif;
-	width: 100%;
-	height: 100%;
+	flex: 1;
 	resize: none;
 	border: none;
-	color: white;
-	background-color: var(--bot-bubble-color);
 	font-size: 16px;
-	height: 24px;
+	padding: 16px;
+	border-radius: 14px;
+	box-sizing: border-box;
+	border: 1px solid var(--vscode-input-border);
 }
 
 textarea.chat-input {
 	outline: none;
 }
 
-.btn-recipe {
-	background-color: var(--human-bubble-color);
-	border-radius: 0.5rem;
-	border: 1px solid var(--bot-bubble-color);
-	padding: 1rem;
-	cursor: pointer;
-	color: white;
-	font-size: 1rem;
-	margin-top: 1rem;
-	margin-left: 1rem;
-	margin-right: 1rem;
+#container-recipes {
+	padding: calc(2 * var(--input-margin-vertical)) var(--container-padding);
 }
 
 .debug-container-placeholder {

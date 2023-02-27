@@ -24,7 +24,7 @@ const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 export class ChatViewProvider implements vscode.WebviewViewProvider {
 	private readonly staticDir = path.join('resources', 'chat')
 	private readonly staticFiles = {
-		css: ['tabs.css', 'style.css', 'highlight.css'],
+		css: ['vscode.css', 'tabs.css', 'style.css', 'highlight.css'],
 		js: ['tabs.js', 'index.js'],
 	}
 
