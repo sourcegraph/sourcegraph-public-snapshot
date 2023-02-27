@@ -76,6 +76,7 @@ type UserSession struct {
 }
 
 type CurrentUser struct {
+	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
 	DatabaseID          int32      `json:"databaseID"`
 	Username            string     `json:"username"`
@@ -346,6 +347,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	}
 
 	return &CurrentUser{
+		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
 		Session:             &UserSession{session.CanSignOut()},
 		DatabaseID:          userResolver.DatabaseID(),
