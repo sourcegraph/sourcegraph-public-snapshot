@@ -84,7 +84,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
 
                         <div className={styles.ownItems}>
                             {ownership.nodes.slice(0, 2).map((ownership, index) => (
-                                // There will only be 2 onwers max and they won't change, so
+                                // There will only be 2 owners max and they won't change, so
                                 // it's safe to use the index as a key.
                                 // eslint-disable-next-line react/no-array-index-key
                                 <div className={styles.ownItem} key={index}>
