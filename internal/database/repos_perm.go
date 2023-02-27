@@ -121,7 +121,6 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
-	// TODO: test this out
 	restrictedRepositoriesUnifiedSQL := sqlf.Sprintf("")
 	if unifiedPermsEnabled {
 		const format = `
