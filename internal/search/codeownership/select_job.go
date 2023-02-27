@@ -6,7 +6,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,7 +35,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	)
 	dedup := result.NewDeduper()
 
-	ownService := backend.NewOwnService(clients.Gitserver, clients.DB)
+	ownService := own.NewService(clients.Gitserver, clients.DB)
 	cache := NewCache(ownService)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
@@ -97,7 +97,7 @@ func (s *selectOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func getCodeOwnersFromMatches(
 	ctx context.Context,
 	cache *Cache,
-	ownService backend.OwnService,
+	ownService own.Service,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error

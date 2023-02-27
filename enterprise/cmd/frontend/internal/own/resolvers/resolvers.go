@@ -41,7 +41,7 @@ func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend
 		return nil, err
 	}
 
-	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, file.FindOwners(blob.Path()), backend.OwnerResolutionContext{
+	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, file.FindOwners(blob.Path()), own.OwnerResolutionContext{
 		RepoName: repoName,
 		RepoID:   blob.Repository().IDInt32(),
 	})

@@ -8,7 +8,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -35,7 +35,7 @@ type codeownershipJob struct {
 }
 
 var (
-	ownService  backend.OwnService
+	ownService  own.Service
 	cache       *Cache
 	serviceOnce sync.Once
 )
@@ -51,7 +51,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	// TODO: Very dirty hack to keep a warm cache between searches.
 	serviceOnce.Do(func() {
-		ownService = backend.NewOwnService(clients.Gitserver, clients.DB)
+		ownService = own.NewService(clients.Gitserver, clients.DB)
 		cache = NewCache(ownService)
 	})
 
@@ -70,7 +70,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 			}
 			pbOwners = append(pbOwners, codeowners.ParseOwner(strings.ToLower(o)))
 		}
-		owners, err := ownService.ResolveOwnersWithType(ctx, pbOwners, backend.OwnerResolutionContext{
+		owners, err := ownService.ResolveOwnersWithType(ctx, pbOwners, own.OwnerResolutionContext{
 			// No context, only resolve Sourcegraph users for the input.
 		})
 		if err != nil {
@@ -89,7 +89,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 			}
 			pbOwners = append(pbOwners, codeowners.ParseOwner(strings.ToLower(o)))
 		}
-		owners, err := ownService.ResolveOwnersWithType(ctx, pbOwners, backend.OwnerResolutionContext{
+		owners, err := ownService.ResolveOwnersWithType(ctx, pbOwners, own.OwnerResolutionContext{
 			// No context, only resolve Sourcegraph users for the input.
 		})
 		if err != nil {

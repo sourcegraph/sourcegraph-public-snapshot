@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
@@ -17,15 +17,15 @@ type cacheKey struct {
 }
 
 type ResolvedOwnersFile struct {
-	resCtx         backend.OwnerResolutionContext
+	resCtx         own.OwnerResolutionContext
 	file           *codeownerspb.File
-	resolvedOwners map[backend.OwnerKey]codeowners.ResolvedOwner
+	resolvedOwners map[own.OwnerKey]codeowners.ResolvedOwner
 }
 
 func (r *ResolvedOwnersFile) FindOwners(path string) (ret []codeowners.ResolvedOwner) {
 	owners := r.file.FindOwners(path)
 	for _, o := range owners {
-		ro, ok := r.resolvedOwners[backend.NewOwnerKey(o.Handle, o.Email, r.resCtx)]
+		ro, ok := r.resolvedOwners[own.NewOwnerKey(o.Handle, o.Email, r.resCtx)]
 		if !ok {
 			fmt.Printf("OH NO THIS OWNER DIDN'T EXIST\n")
 			continue
@@ -73,12 +73,12 @@ func (r *ResolvedOwnersFile) FindOwnersFiltered(path string, candidates []codeow
 
 type Cache struct {
 	entries    map[cacheKey]*ResolvedOwnersFile
-	ownService backend.OwnService
+	ownService own.Service
 
 	mu sync.RWMutex
 }
 
-func NewCache(ownService backend.OwnService) *Cache {
+func NewCache(ownService own.Service) *Cache {
 	return &Cache{
 		entries:    make(map[cacheKey]*ResolvedOwnersFile),
 		ownService: ownService,
@@ -86,7 +86,7 @@ func NewCache(ownService backend.OwnService) *Cache {
 }
 
 func (c *Cache) GetFromCacheOrFetch(ctx context.Context, repoID api.RepoID, repoName api.RepoName, commitID api.CommitID) (*ResolvedOwnersFile, error) {
-	resCtx := backend.OwnerResolutionContext{
+	resCtx := own.OwnerResolutionContext{
 		RepoID:   repoID,
 		RepoName: repoName,
 	}
@@ -107,7 +107,7 @@ func (c *Cache) GetFromCacheOrFetch(ctx context.Context, repoID api.RepoID, repo
 			emptyRuleset := &codeownerspb.File{}
 			r := &ResolvedOwnersFile{
 				file:           emptyRuleset,
-				resolvedOwners: make(map[backend.OwnerKey]codeowners.ResolvedOwner),
+				resolvedOwners: make(map[own.OwnerKey]codeowners.ResolvedOwner),
 			}
 			c.entries[key] = r
 			return r, err
