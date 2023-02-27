@@ -18,7 +18,7 @@ import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
@@ -262,6 +262,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                     <Route
                                         path={path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        errorElement={<RouteError />}
                                         element={
                                             fullPage ? (
                                                 render(context)

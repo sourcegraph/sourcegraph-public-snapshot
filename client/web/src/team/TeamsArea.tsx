@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from '../components/ErrorBoundary'
 import { NotFoundPage } from '../components/HeroPage'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
@@ -42,10 +42,10 @@ const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Pr
         <ErrorBoundary location={location}>
             <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                 <Routes>
-                    <Route path="new" element={<NewTeamPage />} />
-                    <Route path="" element={<TeamListPage {...props} />} />
-                    <Route path=":teamName/*" element={<TeamArea {...props} />} />
-                    <Route element={<NotFoundPage pageType="team" />} />
+                    <Route path="new" element={<NewTeamPage />} errorElement={<RouteError />} />
+                    <Route path="" element={<TeamListPage {...props} />} errorElement={<RouteError />} />
+                    <Route path=":teamName/*" element={<TeamArea {...props} />} errorElement={<RouteError />} />
+                    <Route element={<NotFoundPage pageType="team" />} errorElement={<RouteError />} />
                 </Routes>
             </React.Suspense>
         </ErrorBoundary>

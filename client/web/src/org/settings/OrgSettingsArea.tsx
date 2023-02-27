@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import {
     OrgAreaOrganizationFields,
@@ -75,6 +75,7 @@ export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
                                     condition(context) && (
                                         <Route
                                             element={render(context)}
+                                            errorElement={<RouteError />}
                                             path={path}
                                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         />

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { ErrorBoundary } from './ErrorBoundary'
+import { ErrorBoundary, RouteError } from './ErrorBoundary'
 
 jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')

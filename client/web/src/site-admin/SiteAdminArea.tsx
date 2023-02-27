@@ -13,7 +13,7 @@ import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
 import { RouteV6Descriptor } from '../util/contributions'
@@ -105,6 +105,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                                             <Route
                                                 // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 key="hardcoded-key"
+                                                errorElement={<RouteError />}
                                                 path={path}
                                                 element={render(context)}
                                             />

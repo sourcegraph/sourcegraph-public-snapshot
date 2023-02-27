@@ -92,9 +92,13 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
         <ErrorBoundary location={location}>
             <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                 <Routes>
-                    <Route path="" element={<TeamProfilePage {...context} />} />
-                    <Route path="members" element={<TeamMembersPage {...context} />} />
-                    <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} />
+                    <Route path="" element={<TeamProfilePage {...context} />} errorElement={<RouteError />} />
+                    <Route path="members" element={<TeamMembersPage {...context} />} errorElement={<RouteError />} />
+                    <Route
+                        path="child-teams"
+                        element={<TeamChildTeamsPage {...context} />}
+                        errorElement={<RouteError />}
+                    />
                     <Route element={<NotFoundPage />} />
                 </Routes>
             </React.Suspense>

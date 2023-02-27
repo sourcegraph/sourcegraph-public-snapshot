@@ -13,7 +13,7 @@ import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -211,6 +211,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     path={route.path}
                                     element={route.element}
+                                    errorElement={<RouteError />}
                                 />
                             ))}
                         </Routes>

@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from '../../components/ErrorBoundary'
 import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
@@ -187,6 +187,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
                         ({ path, render, condition = () => true, fullPage }) =>
                             condition(context) && (
                                 <Route
+                                    errorElement={<RouteError />}
                                     element={
                                         fullPage ? (
                                             render(context)
