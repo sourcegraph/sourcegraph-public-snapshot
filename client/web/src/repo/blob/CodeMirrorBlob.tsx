@@ -2,7 +2,7 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
@@ -197,7 +197,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
-    const [container, setContainer] = useState<HTMLDivElement | null>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
@@ -328,18 +328,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [onSelection, blobInfo, extensionsController]
     )
 
-    const editorRef = useRef<EditorView>()
-    const editor = useCodeMirror(container, blobInfo.content, extensions, {
-        updateValueOnChange: false,
-        updateOnExtensionChange: false,
-    })
-    editorRef.current = editor
-
-    // Sync editor store with global Zustand store API
-    useEffect(() => setBlobEditView(editor ?? null), [editor])
+    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
@@ -369,73 +362,72 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 }
             }
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [blobInfo, extensions])
+    }, [blobInfo, extensions, enableSelectionDrivenCodeNavigation, locationRef])
 
     // Propagate props changes to extensions
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             editor.dispatch({ effects: blobPropsCompartment.reconfigure(blobProps) })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
 
     // Update blame decorations
     useLayoutEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             const effects = [blameDecorationsCompartment.reconfigure(blameDecorations), ...lockFirstVisibleLine(editor)]
             editor.dispatch({ effects })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blameDecorations])
 
     // Update theme
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [themeSettings])
 
     // Update line wrapping
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings), ...lockFirstVisibleLine(editor)]
             editor.dispatch({ effects })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wrapCodeSettings])
 
     // Update selected lines when URL changes
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             selectLines(editor, position.line ? position : null)
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position])
 
     // Update pinned hovercard range
     useEffect(() => {
+        const editor = editorRef.current
         if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
             // Only update range if position is valid inside the document.
             updatePin(editor, hasPin ? position : null)
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
+
+    useCodeMirror(
+        editorRef,
+        containerRef,
+        // We update the value ourselves
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        useMemo(() => blobInfo.content, []),
+        // We update extensions ourselves
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        useMemo(() => extensions, [])
+    )
+
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editorRef.current ?? null), [])
 
     const openSearch = useCallback(() => {
         if (editorRef.current) {
@@ -446,7 +438,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     return (
         <>
             <div
-                ref={setContainer}
+                ref={containerRef}
                 aria-label={ariaLabel}
                 role={role}
                 data-testid={dataTestId}
