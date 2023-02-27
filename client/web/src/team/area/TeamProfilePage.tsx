@@ -46,7 +46,7 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                 <div className="container">
                     <H3>Team name</H3>
                     <Text>
-                        <TeamAvatar team={team} className="mr-1" />
+                        <TeamAvatar team={team} inline={true} className="mr-1" />
                         {team.name}
                     </Text>
                     <H3>Display Name</H3>
