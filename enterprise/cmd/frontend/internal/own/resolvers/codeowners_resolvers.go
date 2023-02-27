@@ -38,9 +38,30 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	if err != nil {
 		return nil, err
 	}
+	if err := parseRepoArgs(args.RepoID, args.RepoName); err != nil {
+		return nil, err
+	}
+
+	var repository *types.Repo
+	if args.RepoName != nil {
+		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*args.RepoName))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch repository for name %v", args.RepoName)
+		}
+		repository = repo
+	} else {
+		repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*args.RepoID))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch repository for ID %v", args.RepoID)
+		}
+		if len(repo) != 1 {
+			return nil, errors.New("could not fetch repository")
+		}
+		repository = repo[0]
+	}
 
 	codeownersFile := &types.CodeownersFile{
-		RepoID:   api.RepoID(args.RepoID),
+		RepoID:   repository.ID,
 		Contents: args.FileContents,
 		Proto:    proto,
 	}
@@ -61,9 +82,29 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
+	if err := parseRepoArgs(args.RepoID, args.RepoName); err != nil {
+		return nil, err
+	}
 
+	var repository *types.Repo
+	if args.RepoName != nil {
+		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*args.RepoName))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch repository for name %v", args.RepoName)
+		}
+		repository = repo
+	} else {
+		repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*args.RepoID))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch repository for ID %v", args.RepoID)
+		}
+		if len(repo) != 1 {
+			return nil, errors.New("could not fetch repository")
+		}
+		repository = repo[0]
+	}
 	codeownersFile := &types.CodeownersFile{
-		RepoID:   api.RepoID(args.RepoID),
+		RepoID:   repository.ID,
 		Contents: args.FileContents,
 		Proto:    proto,
 	}
@@ -83,6 +124,16 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 		return nil, errors.Wrap(err, "could not parse input")
 	}
 	return proto, nil
+}
+
+func parseRepoArgs(repoID *int32, repoName *string) error {
+	if repoID == nil && repoName == nil {
+		return errors.New("either RepoID or RepoName should be set")
+	}
+	if repoID != nil && repoName != nil {
+		return errors.New("both RepoID and RepoName cannot be set")
+	}
+	return nil
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {

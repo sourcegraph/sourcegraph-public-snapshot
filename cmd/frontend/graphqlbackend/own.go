@@ -66,7 +66,8 @@ type CodeownersFileEntryResolver interface {
 
 type CodeownersFileArgs struct {
 	FileContents string
-	RepoID       int32
+	RepoID       *int32
+	RepoName     *string
 }
 
 type DeleteCodeownersFileArgs struct {

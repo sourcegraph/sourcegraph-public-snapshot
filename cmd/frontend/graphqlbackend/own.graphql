@@ -140,15 +140,33 @@ extend type Mutation {
     """
     addCodeownersFile creates a new Codeowners file for the given repository and file contents.
     """
-    addCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
+    addCodeownersFile(input: codeownersArgs!): CodeownersIngestedFile!
     """
     updateCodeownersFile updates an existing Codeowners file for a repository.
     """
-    updateCodeownersFile(fileContents: String!, repoID: Int!): CodeownersIngestedFile!
+    updateCodeownersFile(input: codeownersArgs!): CodeownersIngestedFile!
     """
     deleteCodeownersFile deletes any existing Codeowners file for the given repositories.
     """
     deleteCodeownersFiles(repoIDs: [Int!]!): EmptyResponse
+}
+
+"""
+codeownersArgs represents the input for ingesting codeowners files
+"""
+type codeownersArgs {
+    """
+    fileContents is the text of the codeowners file
+    """
+    fileContents: String!
+    """
+    The repo ID to ingest the file for. Cannot be set with repoName.
+    """
+    repoID: Int
+    """
+    The repo name to ingest the file for. Cannot be set with repoID.
+    """
+    repoName: String
 }
 
 extend type Query {
