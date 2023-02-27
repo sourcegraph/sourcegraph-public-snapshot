@@ -86,6 +86,8 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
 			case "THIS_MONTH":
 				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
+			case "ROLLING_MONTH":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersRollingMonthly(ctx, r.db)
 			default:
 				err = errors.Errorf("unknown user active period %s", *r.activePeriod)
 			}
