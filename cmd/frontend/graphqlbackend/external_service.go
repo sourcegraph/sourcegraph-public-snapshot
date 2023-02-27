@@ -533,12 +533,12 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 }
 
 func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceRepositoryResolver, error) {
-	sourceRepos, totalCount, err := r.compute(ctx)
+	sourceRepos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*externalServiceRepositoryResolver, totalCount)
+	nodes := make([]*externalServiceRepositoryResolver, len(sourceRepos))
 	for i, j := range sourceRepos {
 		nodes[i] = &externalServiceRepositoryResolver{
 			repo: j,
