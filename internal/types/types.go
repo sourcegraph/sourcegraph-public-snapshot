@@ -1563,6 +1563,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
