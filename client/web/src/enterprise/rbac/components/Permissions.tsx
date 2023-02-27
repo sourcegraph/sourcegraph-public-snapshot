@@ -25,11 +25,17 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
     allPermissions,
 }) => {
     const rolePermissions = role.permissions.nodes
+    // We display EmptyPermissionList when the role has no permissions assigned to it.
     if (rolePermissions.length === 0) {
         return <EmptyPermissionList />
     }
 
+    // Permissions are grouped by their namespace in the UI. We do this to get all unique namespaces
+    // on the Sourcegraph instance.
     const allNamespaces = Object.values(PermissionNamespace)
+
+    // We create a map for the role permissions using their ID, so we can perform an easy lookup when rendering
+    // the list of all permissions.
     const rolePermissionsMap = useMemo(() => groupBy(rolePermissions, 'id'), [rolePermissions])
     return (
         <>
