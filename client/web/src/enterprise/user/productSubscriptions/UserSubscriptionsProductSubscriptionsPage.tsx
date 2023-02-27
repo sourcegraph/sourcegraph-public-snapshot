@@ -89,7 +89,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                         >
                             Sourcegraph Enterprise
                         </Link>
-                        . See
+                        . See{' '}
                         <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
