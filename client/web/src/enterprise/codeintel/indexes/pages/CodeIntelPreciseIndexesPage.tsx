@@ -9,6 +9,7 @@ import { tap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -45,7 +46,6 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
-import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 
 export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

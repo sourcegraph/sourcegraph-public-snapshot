@@ -18,17 +18,33 @@ export interface IndexStateBadgeProps {
     className?: string
 }
 
+const getIndexTerminalDate = (index: PreciseIndexFields): number => {
+    // If we have the expected finished at date, use that.
+    if (index.processingFinishedAt) {
+        return new Date(index.uploadedAt ?? '').getDate()
+    }
+
+    // If we hit an error before processing, use the indexing finished at date.
+    if (index.state === PreciseIndexState.INDEXING_ERRORED && index.indexingFinishedAt) {
+        return new Date(index.indexingFinishedAt).getDate()
+    }
+
+    // Otherwise return old date to ensure index does not always take priority (this should never happen)
+    return new Date(0).getDate()
+}
+
 export const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes, className }) => {
     const [ref, truncated, checkTruncation] = useIsTruncated<HTMLAnchorElement>()
 
     const mostRecentNonTerminalIndex = indexes
         .filter(index => !INDEX_TERMINAL_STATES.has(index.state))
-        // sort by descending uploaded at
         .sort((a, b) => new Date(a.uploadedAt ?? '').getDate() - new Date(b.uploadedAt ?? '').getDate())[0]
 
-    const mostRecentTerminalIndex = indexes.find(index => INDEX_TERMINAL_STATES.has(index.state))
+    const mostRecentTerminalIndex = indexes
+        .filter(index => INDEX_TERMINAL_STATES.has(index.state))
+        .sort((a, b) => getIndexTerminalDate(b) - getIndexTerminalDate(a))[0]
 
-    // Prefer linking out to the most recent non-terminal index, if one exists.
+    // Prefer linking out to the most recent terminal index, if one exists.
     const preferredIndex = mostRecentTerminalIndex || mostRecentNonTerminalIndex
 
     if (!preferredIndex) {
