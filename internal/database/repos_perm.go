@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -14,16 +13,6 @@ import (
 )
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
-
-const userRepoPermsFlagName = "unified-user-repo-perms"
-
-func UnifiedUserRepoPermsEnabled(ctx context.Context, db DB) bool {
-	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
-	if featureFlag == nil || err != nil {
-		return false
-	}
-	return featureFlag.Bool.Value
-}
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
@@ -60,25 +49,17 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 		authenticatedUserID = currentUser.ID
 		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
-	unifiedPermsEnabled := false
-	if !bypassAuthz {
-		// if we bypass authz, it does not make sense to check for the feature flag value
-		unifiedPermsEnabled = UnifiedUserRepoPermsEnabled(ctx, db)
-	}
-
-	fmt.Println("authzQuey conds", bypassAuthz, usePermissionsUserMapping, authenticatedUserID, unifiedPermsEnabled)
 
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
 		authz.Read, // Note: We currently only support read for repository permissions.
-		unifiedPermsEnabled,
 	)
 	return q, nil
 }
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms, unifiedPermsEnabled bool) *sqlf.Query {
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
 		return sqlf.Sprintf(`
@@ -88,6 +69,8 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 )
 `)
 	}
+
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	unrestrictedReposUnifiedSQL := sqlf.Sprintf("")
 	if unifiedPermsEnabled {
