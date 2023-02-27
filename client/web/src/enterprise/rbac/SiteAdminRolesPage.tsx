@@ -1,12 +1,11 @@
-import React, { useEffect, FC, useCallback, useState, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { RouteComponentProps } from 'react-router'
-import { mdiPlus, mdiChevronUp, mdiChevronDown, mdiMapSearch, mdiDelete } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
+import { groupBy } from 'lodash'
 
-import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, Text, Tooltip, LoadingSpinner } from '@sourcegraph/wildcard'
-import { RoleFields } from '../../graphql-operations'
+import { PageHeader, Button, Icon } from '@sourcegraph/wildcard'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -17,15 +16,11 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 
-import { PermissionNamespace, PermissionFields } from '../../graphql-operations'
-import { useRolesConnection, useDeleteRole, usePermissions } from './backend'
+import { RoleNode } from './components/Role'
+import { useRolesConnection, usePermissions } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
-import styles from './SiteAdminRolesPage.module.scss'
-
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
-
-type PermissionsMap = Record<PermissionNamespace, string[]>
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
@@ -34,30 +29,31 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
-    const { connection, error: rolesError, loading: rolesLoading, fetchMore, hasNextPage, refetchAll } = useRolesConnection()
+    const {
+        connection,
+        error: rolesError,
+        loading: rolesLoading,
+        fetchMore,
+        hasNextPage,
+        refetchAll,
+    } = useRolesConnection()
     const { data, error: permissionsError, loading: permissionsLoading } = usePermissions()
 
     const loading = rolesLoading || permissionsLoading
     const error = rolesError || permissionsError
 
-    const permissions: PermissionsMap | null = useMemo(() => {
+    const permissions = useMemo(() => {
+        let result = {} as PermissionsMap
         if (permissionsLoading || permissionsError) {
-            return null
+            return result
         }
 
         const nodes = data?.permissions.nodes
         if (nodes && nodes.length > 0) {
-            return nodes.reduce<PermissionsMap>((result, node) => {
-                const { id, namespace } = node
-                const namespaceGroupItems = result[namespace] || []
-                return {
-                    ...result,
-                    [namespace]: [...namespaceGroupItems, id]
-                }
-            }, {})
+            result = groupBy(nodes, 'namespace') as PermissionsMap
         }
 
-        return null
+        return result
     }, [data, permissionsLoading])
 
     return (
@@ -85,7 +81,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 {loading && !connection && <ConnectionLoading />}
                 <ConnectionList as="ul" className="list-group" aria-label="Roles">
                     {connection?.nodes?.map(node => (
-                        <RoleNode key={node.id} node={node} afterDelete={refetchAll} />
+                        <RoleNode key={node.id} node={node} afterDelete={refetchAll} allPermissions={permissions} />
                     ))}
                 </ConnectionList>
                 {connection && (
@@ -106,138 +102,3 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         </div>
     )
 }
-
-const RoleNode: FC<{
-    node: RoleFields
-    afterDelete: () => void
-}> = ({ node, afterDelete }) => {
-    const [isExpanded, setIsExpanded] = useState<boolean>(false)
-    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-        event => {
-            event.preventDefault()
-            setIsExpanded(!isExpanded)
-        },
-        [isExpanded]
-    )
-    const [deleteRole, { loading, error }] = useDeleteRole()
-    const onDelete = useCallback<React.FormEventHandler>(
-        async event => {
-            event.preventDefault()
-
-            try {
-                await deleteRole({ variables: { role: node.id } })
-                afterDelete()
-            } catch (error) {
-                logger.error(error)
-            }
-        },
-        [deleteRole, name, afterDelete]
-    )
-
-    console.log(node.permissions)
-
-    return (
-        <li className={styles.roleNode}>
-            <Button
-                variant="icon"
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                onClick={toggleIsExpanded}
-            >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
-            </Button>
-
-            <div className="d-flex align-items-center">
-                <Text className="font-weight-bold m-0">{node.name}</Text>
-
-                {node.system && (
-                    <Tooltip
-                        content="System roles are sourcegraph-seeded roles available on every instance."
-                        placement="topStart"
-                    >
-                        <Text className={styles.roleNodeSystemText}>System</Text>
-                    </Tooltip>
-                )}
-            </div>
-
-            {loading ? (
-                <LoadingSpinner />
-            ) : (
-                <Tooltip content={node.system ? 'System roles cannot be deleted.' : 'Delete this role.'}>
-                    <Button
-                        aria-label="Delete"
-                        onClick={onDelete}
-                        disabled={node.system || loading}
-                        variant="danger"
-                        size="sm"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
-                </Tooltip>
-            )}
-
-            {isExpanded ? (
-                <div className={styles.roleNodePermissions}>
-                    <EmptyPermissionList />
-                    {/* <PermissionList roleId={node.id} permissions={permissions} /> */}
-                </div>
-            ) : (
-                <span />
-            )}
-        </li>
-    )
-}
-
-const EmptyPermissionList: FC<React.PropsWithChildren<{}>> = () => (
-    <div className="text-muted text-center m-3 w-100">
-        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
-        <div className="pt-2">No permissions associated with this role.</div>
-    </div>
-)
-
-// const PermissionList: FC<React.PropsWithChildren<{ roleId: number; permissions: PermissionMap }>> = ({
-//     roleId,
-//     permissions,
-// }) => {
-//     const rolePermissions = getRolePermissions(roleId)
-
-//     if (rolePermissions.length === 0) {
-//         return <EmptyPermissionList />
-//     }
-
-//     // const allDisplayNames = rolePermissions.map(rp => rp.displayName)
-//     const permissionsDisplayMap: PermissionMap[keyof PermissionMap] = rolePermissions.reduce((acc, permission) => {
-//         const { displayName } = permission
-//         return { ...acc, [displayName]: true }
-//     }, {})
-
-//     const namespaces = Object.keys(permissions)
-//     console.log(permissionsDisplayMap)
-
-//     return (
-//         <>
-//             {namespaces.map(namespace => {
-//                 const namespacePerms = permissions[namespace]
-//                 const allNamespacePerms = Object.values(namespacePerms)
-//                 return (
-//                     <div key={namespace}>
-//                         <Text>{namespace}</Text>
-//                         <Grid columnCount={4}>
-//                             {allNamespacePerms.map((ap, index) => {
-//                                 const isChecked = Boolean(permissionsDisplayMap[ap.displayName])
-//                                 return (
-//                                     <Checkbox
-//                                         label={ap.action}
-//                                         id={ap.displayName}
-//                                         key={ap.displayName}
-//                                         defaultChecked={isChecked}
-//                                     />
-//                                 )
-//                             })}
-//                         </Grid>
-//                     </div>
-//                 )
-//             })}
-//             <Button variant="primary">Update</Button>
-//         </>
-//     )
-// }

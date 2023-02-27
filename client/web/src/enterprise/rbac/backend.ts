@@ -11,7 +11,9 @@ import {
     CreateRoleResult,
     CreateRoleVariables,
     AllPermissionsResult,
-    AllPermissionsVariables
+    AllPermissionsVariables,
+    PermissionNamespace,
+    PermissionFields,
 } from '../../graphql-operations'
 
 const permissionFragment = gql`
@@ -80,7 +82,7 @@ export const ALL_PERMISSIONS = gql`
     query AllPermissions {
         permissions {
             nodes {
-                ... PermissionFields
+                ...PermissionFields
             }
         }
     }
@@ -112,3 +114,5 @@ export const usePermissions = (): QueryResult<AllPermissionsResult, AllPermissio
 export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)
 
 export const useDeleteRole = (): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE)
+
+export type PermissionsMap = Record<PermissionNamespace, PermissionFields[]>
