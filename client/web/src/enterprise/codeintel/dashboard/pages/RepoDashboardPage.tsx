@@ -187,7 +187,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         ]
     }, [indexes, suggestedIndexers])
 
-    if (loading || !data) {
+    if (loading && !data) {
         return <LoadingSpinner />
     }
 
@@ -216,122 +216,128 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                     )
                 }
             />
-            <Alert variant={data.commitGraph.stale ? 'primary' : 'success'} aria-live="off">
-                {data.commitGraph.stale ? (
-                    <>
-                        Repository commit graph is currently stale and is queued to be refreshed. Refreshing the commit
-                        graph updates which uploads are visible from which commits.
-                    </>
-                ) : (
-                    <>Repository commit graph is currently up to date.</>
-                )}{' '}
-                {data.commitGraph.updatedAt && (
-                    <>
-                        Last refreshed <Timestamp date={data.commitGraph.updatedAt} now={now} />.
-                    </>
-                )}
-            </Alert>
-            <Container>
-                <DataSummary items={summaryItems} className={styles.summary} />
-                <div>
-                    <div className="text-muted">
-                        <small>
-                            {data.summary.lastIndexScan ? (
-                                <>
-                                    This repository was scanned for auto-indexing{' '}
-                                    <Timestamp date={data.summary.lastIndexScan} />.
-                                </>
-                            ) : (
-                                <>This repository has never been scanned for auto-indexing.</>
-                            )}
-                        </small>
-                        <small className="d-block">
-                            {data.summary.lastIndexScan ? (
-                                <>
-                                    The indexes of this repository were last considered for expiration{' '}
-                                    <Timestamp date={data.summary.lastIndexScan} />.
-                                </>
-                            ) : (
-                                <> The indexes of this repository have never been considered for expiration.</>
-                            )}
-                        </small>
-                    </div>
-                </div>
-            </Container>
-            <Container className="mt-3">
-                <div className="d-flex justify-content-end">
-                    <div className={styles.filterContainer}>
-                        <div>
-                            <Label className={styles.radioGroup}>
-                                Show:
-                                <RadioButton
-                                    name="show-filter"
-                                    id="show-all"
-                                    value="all"
-                                    checked={filterState.show === 'all'}
-                                    onChange={event => handleFilterChange(event.target.value, 'show')}
-                                    label="All"
-                                    wrapperClassName="ml-2 mr-3"
-                                />
-                                <RadioButton
-                                    name="show-filter"
-                                    id="show-indexes"
-                                    value="indexes"
-                                    checked={filterState.show === 'indexes'}
-                                    onChange={event => handleFilterChange(event.target.value, 'show')}
-                                    label="Indexes"
-                                    wrapperClassName="mr-3"
-                                />
-                                <RadioButton
-                                    name="show-filter"
-                                    id="show-suggestions"
-                                    value="suggestions"
-                                    checked={filterState.show === 'suggestions'}
-                                    onChange={event => handleFilterChange(event.target.value, 'show')}
-                                    label="Suggestions"
-                                />
-                            </Label>
-                        </div>
-                        <div className="d-flex">
-                            <Select
-                                id="language-filter"
-                                label="Language:"
-                                value={filterState.language}
-                                onChange={event => handleFilterChange(event.target.value, 'language')}
-                                className="d-flex align-items-center mb-0"
-                                selectClassName={styles.select}
-                                labelClassName="mb-0 mr-2"
-                                isCustomStyle={true}
-                            >
-                                <option value="all">All</option>
-                                {[...languageKeys].sort().map(key => (
-                                    <option key={key} value={key}>
-                                        {key}
-                                    </option>
-                                ))}
-                            </Select>
-                            {'indexState' in filterState && (
-                                <Select
-                                    id="index-filter"
-                                    label="Indexing:"
-                                    value={filterState.indexState}
-                                    onChange={event => handleFilterChange(event.target.value, 'indexState')}
-                                    className="d-flex align-items-center mb-0 ml-3"
-                                    selectClassName={styles.select}
-                                    labelClassName="mb-0 mr-2"
-                                    isCustomStyle={true}
-                                >
-                                    <option value="all">Most recent attempt</option>
-                                    <option value="success">Most recent success</option>
-                                    <option value="error">Most recent failure</option>
-                                </Select>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            {data && (
+                <>
+                    <Alert variant={data.commitGraph.stale ? 'primary' : 'success'} aria-live="off">
+                        {data.commitGraph.stale ? (
+                            <>
+                                Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
+                                commit graph updates which uploads are visible from which commits.
+                            </>
+                        ) : (
+                            <>Repository commit graph is currently up to date.</>
+                        )}{' '}
+                        {data.commitGraph.updatedAt && (
+                            <>
+                                Last refreshed <Timestamp date={data.commitGraph.updatedAt} now={now} />.
+                            </>
+                        )}
+                    </Alert>
 
-                <DashboardTree indexes={indexes} suggestedIndexers={suggestedIndexers} filter={filterState} />
-            </Container>
+                    <Container>
+                        <DataSummary items={summaryItems} className={styles.summary} />
+                        <div>
+                            <div className="text-muted">
+                                <small>
+                                    {data.summary.lastIndexScan ? (
+                                        <>
+                                            This repository was scanned for auto-indexing{' '}
+                                            <Timestamp date={data.summary.lastIndexScan} />.
+                                        </>
+                                    ) : (
+                                        <>This repository has never been scanned for auto-indexing.</>
+                                    )}
+                                </small>
+                                <small className="d-block">
+                                    {data.summary.lastIndexScan ? (
+                                        <>
+                                            The indexes of this repository were last considered for expiration{' '}
+                                            <Timestamp date={data.summary.lastIndexScan} />.
+                                        </>
+                                    ) : (
+                                        <> The indexes of this repository have never been considered for expiration.</>
+                                    )}
+                                </small>
+                            </div>
+                        </div>
+                    </Container>
+
+                    <Container className="mt-3">
+                        <div className="d-flex justify-content-end">
+                            <div className={styles.filterContainer}>
+                                <div>
+                                    <Label className={styles.radioGroup}>
+                                        Show:
+                                        <RadioButton
+                                            name="show-filter"
+                                            id="show-all"
+                                            value="all"
+                                            checked={filterState.show === 'all'}
+                                            onChange={event => handleFilterChange(event.target.value, 'show')}
+                                            label="All"
+                                            wrapperClassName="ml-2 mr-3"
+                                        />
+                                        <RadioButton
+                                            name="show-filter"
+                                            id="show-indexes"
+                                            value="indexes"
+                                            checked={filterState.show === 'indexes'}
+                                            onChange={event => handleFilterChange(event.target.value, 'show')}
+                                            label="Indexes"
+                                            wrapperClassName="mr-3"
+                                        />
+                                        <RadioButton
+                                            name="show-filter"
+                                            id="show-suggestions"
+                                            value="suggestions"
+                                            checked={filterState.show === 'suggestions'}
+                                            onChange={event => handleFilterChange(event.target.value, 'show')}
+                                            label="Suggestions"
+                                        />
+                                    </Label>
+                                </div>
+                                <div className="d-flex">
+                                    <Select
+                                        id="language-filter"
+                                        label="Language:"
+                                        value={filterState.language}
+                                        onChange={event => handleFilterChange(event.target.value, 'language')}
+                                        className="d-flex align-items-center mb-0"
+                                        selectClassName={styles.select}
+                                        labelClassName="mb-0 mr-2"
+                                        isCustomStyle={true}
+                                    >
+                                        <option value="all">All</option>
+                                        {[...languageKeys].sort().map(key => (
+                                            <option key={key} value={key}>
+                                                {key}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                    {'indexState' in filterState && (
+                                        <Select
+                                            id="index-filter"
+                                            label="Indexing:"
+                                            value={filterState.indexState}
+                                            onChange={event => handleFilterChange(event.target.value, 'indexState')}
+                                            className="d-flex align-items-center mb-0 ml-3"
+                                            selectClassName={styles.select}
+                                            labelClassName="mb-0 mr-2"
+                                            isCustomStyle={true}
+                                        >
+                                            <option value="all">Most recent attempt</option>
+                                            <option value="success">Most recent success</option>
+                                            <option value="error">Most recent failure</option>
+                                        </Select>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <DashboardTree indexes={indexes} suggestedIndexers={suggestedIndexers} filter={filterState} />
+                    </Container>
+                </>
+            )}
         </>
     )
 }

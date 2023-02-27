@@ -33,7 +33,7 @@ export const useRepoCodeIntelStatus = (variables: RepoCodeIntelStatusVariables):
         repoCodeIntelStatusQuery,
         {
             variables,
-            fetchPolicy: 'cache-first', // TODO: Think about invalidation, especially after fixing
+            fetchPolicy: 'cache-and-network',
         }
     )
 
