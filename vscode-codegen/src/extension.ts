@@ -3,48 +3,112 @@ import * as vscode from 'vscode'
 import { ChatViewProvider } from './chat/view'
 import { WSChatClient } from './chat/ws'
 import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
+import { Configuration, ConfigurationUseContext, getConfiguration } from './configuration'
 import { CompletionsDocumentProvider } from './docprovider'
 import { EmbeddingsClient } from './embeddings-client'
 import { History } from './history'
 
-const CODY_ENDPOINT = 'cody.sgdev.org'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('Cody extension activated')
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('sourcegraph.cody.toggleEnabled', async () => {
+			const config = vscode.workspace.getConfiguration()
+			await config.update(
+				'sourcegraph.cody.enable',
+				!config.get('sourcegraph.cody.enable'),
+				vscode.ConfigurationTarget.Global
+			)
+		}),
+		vscode.commands.registerCommand('cody.set-access-token', async () => {
+			const tokenInput = await vscode.window.showInputBox()
+			if (tokenInput === undefined || tokenInput === '') {
+				return
+			}
+			await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+		}),
+		vscode.commands.registerCommand('cody.delete-access-token', async () =>
+			context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
+		)
+	)
+
+	let disposable: vscode.Disposable | undefined
+	context.subscriptions.push({
+		dispose: () => disposable?.dispose(),
+	})
+	const doConfigure = async (): Promise<void> => {
+		disposable?.dispose()
+		const config = getConfiguration(vscode.workspace.getConfiguration())
+		const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) ?? null
+		disposable = configure(context, config, accessToken)
+	}
+
+	// Watch all relevant configuration and secrets for changes.
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(async event => {
+			if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
+				await doConfigure()
+			}
+		})
+	)
+	context.subscriptions.push(
+		context.secrets.onDidChange(async event => {
+			if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+				await doConfigure()
+			}
+		})
+	)
+
+	await doConfigure()
+}
+
+function configure(
+	context: Pick<vscode.ExtensionContext, 'extensionPath' | 'secrets'>,
+	config: Configuration,
+	accessToken: string | null
+): vscode.Disposable {
+	if (!config.enable || !accessToken) {
+		if (config.enable) {
+			const SET_ACCESS_TOKEN_ITEM = 'Set Access Token' as const
+			vscode.window
+				.showWarningMessage('Cody requires an access token.', SET_ACCESS_TOKEN_ITEM)
+				.then(async item => {
+					if (item === SET_ACCESS_TOKEN_ITEM) {
+						await vscode.commands.executeCommand('cody.set-access-token')
+					}
+				}, undefined)
+		}
+		setContextActivated(false)
+		return NOOP_DISPOSABLE
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const subscriptions: { dispose(): any }[] = []
+
 	const isDevelopment = process.env.NODE_ENV === 'development'
 
-	const settings = vscode.workspace.getConfiguration()
 	const documentProvider = new CompletionsDocumentProvider()
 	const history = new History()
-	history.register(context)
+	subscriptions.push(history)
 
-	const serverAddr = settings.get('cody.serverEndpoint') || CODY_ENDPOINT
-	const wsUrl = `${isDevelopment ? 'ws' : 'wss'}://${serverAddr}`
-	const httpUrl = `${isDevelopment ? 'http' : 'https'}://${serverAddr}`
+	const wsUrl = `${isDevelopment ? 'ws' : 'wss'}://${config.serverEndpoint}`
+	const httpUrl = `${isDevelopment ? 'http' : 'https'}://${config.serverEndpoint}`
 
-	const embeddingsAddr = settings.get('cody.embeddingsEndpoint') || CODY_ENDPOINT
-	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${embeddingsAddr}`
-
-	const codebaseId: string = settings.get('cody.codebase', '')
-
-	const accessToken = (await context.secrets.get('cody.access-token')) ?? ''
-	if (!accessToken) {
-		vscode.window.showWarningMessage(
-			'Cody needs an access token to work. Please set the token using the "Cody: Set access token" command and reload the editor.'
-		)
-	}
+	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${config.embeddingsEndpoint}`
 
 	const wsCompletionsClient = WSCompletionsClient.new(`${wsUrl}/completions`, accessToken)
 	const wsChatClient = WSChatClient.new(`${wsUrl}/chat`, accessToken)
-	const embeddingsClient = codebaseId ? new EmbeddingsClient(embeddingsUrl, accessToken, codebaseId) : null
+	const embeddingsClient = config.codebase ? new EmbeddingsClient(embeddingsUrl, accessToken, config.codebase) : null
 
-	let contextType: 'embeddings' | 'keyword' | 'none' = settings.get('cody.useContext') || 'embeddings'
-	if (!embeddingsClient && contextType === 'embeddings') {
+	let useContext: ConfigurationUseContext = config.useContext
+	if (!embeddingsClient && config.useContext === 'embeddings') {
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
 		vscode.window.showInformationMessage(
 			'Embeddings were not available (is `cody.codebase` set?), falling back to keyword context'
 		)
-		contextType = 'keyword'
+		useContext = 'keyword'
 	}
 
 	const chatProvider = new ChatViewProvider(
@@ -52,16 +116,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		httpUrl,
 		wsChatClient,
 		embeddingsClient,
-		contextType,
-		settings.get('cody.debug') || false
+		useContext,
+		config.debug
 	)
 
-	const executeRecipe = async (recipe: string) => {
+	const executeRecipe = async (recipe: string): Promise<void> => {
 		await vscode.commands.executeCommand('cody.chat.focus')
-		return chatProvider.executeRecipe(recipe)
+		await chatProvider.executeRecipe(recipe)
 	}
 
-	context.subscriptions.push(
+	subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider('codegen', documentProvider),
 		vscode.languages.registerHoverProvider({ scheme: 'codegen' }, documentProvider),
 
@@ -78,30 +142,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
 			executeRecipe('translateToLanguage')
 		),
-		vscode.commands.registerCommand('cody.recipe.git-history', async => executeRecipe('gitHistory')),
+		vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('gitHistory')),
 
-		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider),
-
-		vscode.commands.registerCommand('cody.set-access-token', async () => {
-			const tokenInput = await vscode.window.showInputBox()
-			if (tokenInput === undefined) {
-				return
-			}
-			return context.secrets.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
-		}),
-
-		vscode.commands.registerCommand('cody.delete-access-token', async () =>
-			context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
-		)
+		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
 	)
 
-	if (settings.get('cody.experimental.suggest')) {
-		context.subscriptions.push(
+	if (config.experimentalSuggest) {
+		subscriptions.push(
 			vscode.commands.registerCommand('cody.experimental.suggest', async () => {
 				await fetchAndShowCompletions(wsCompletionsClient, documentProvider, history)
 			})
 		)
 	}
+
+	setContextActivated(true)
+
+	return vscode.Disposable.from(...subscriptions)
 }
 
-export function deactivate() {}
+const NOOP_DISPOSABLE: vscode.Disposable = {
+	dispose: () => {
+		/* noop */
+	},
+}
+
+function setContextActivated(activated: boolean): void {
+	vscode.commands.executeCommand('setContext', 'sourcegraph.cody.activated', activated).then(undefined, undefined)
+}
