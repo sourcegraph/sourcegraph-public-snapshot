@@ -26,7 +26,7 @@ var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New("```"),
 }
 
-func isContextRequiredForQuery(
+func isContextRequiredForChatQuery(
 	ctx context.Context,
 	getQueryEmbedding getQueryEmbeddingFn,
 	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,

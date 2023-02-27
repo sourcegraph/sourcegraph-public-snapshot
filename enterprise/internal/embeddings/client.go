@@ -52,11 +52,11 @@ type EmbeddingsSearchParameters struct {
 	TextResultsCount int          `json:"textResultsCount"`
 }
 
-type IsContextRequiredForQueryParameters struct {
+type IsContextRequiredForChatQueryParameters struct {
 	Query string `json:"query"`
 }
 
-type IsContextRequiredForQueryResult struct {
+type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
@@ -85,8 +85,8 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	return &response, nil
 }
 
-func (c *Client) IsContextRequiredForQuery(ctx context.Context, args IsContextRequiredForQueryParameters) (bool, error) {
-	resp, err := c.httpPost(ctx, "isContextRequiredForQuery", "", args)
+func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
+	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", "", args)
 	if err != nil {
 		return false, err
 	}
@@ -96,13 +96,13 @@ func (c *Client) IsContextRequiredForQuery(ctx context.Context, args IsContextRe
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return false, errors.Errorf(
-			"Embeddings.IsContextRequiredForQuery http status %d: %s",
+			"Embeddings.IsContextRequiredForChatQuery http status %d: %s",
 			resp.StatusCode,
 			string(body),
 		)
 	}
 
-	var response IsContextRequiredForQueryResult
+	var response IsContextRequiredForChatQueryResult
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return false, err
