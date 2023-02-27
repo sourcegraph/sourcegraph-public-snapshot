@@ -419,14 +419,17 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
+	var result *protocol.ExternalServiceNamespacesResult
+
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
 		logger.Error("server.query-external-service-namespaces", log.Error(err))
+		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
+		s.respond(w, http.StatusBadRequest, result)
 		return
 	}
 
-	var result *protocol.ExternalServiceNamespacesResult
 	if err = genericSrc.CheckConnection(ctx); err != nil {
 		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 		s.respond(w, http.StatusServiceUnavailable, result)
@@ -484,14 +487,16 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
+	var result *protocol.ExternalServiceRepositoriesResult
+
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
 		logger.Error("server.query-external-service-repositories", log.Error(err))
+		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
+		s.respond(w, http.StatusBadRequest, result)
 		return
 	}
-
-	var result *protocol.ExternalServiceRepositoriesResult
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
 		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
@@ -500,7 +505,6 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
-
 	if !ok {
 		result = &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource}
 		s.respond(w, http.StatusNotImplemented, result)

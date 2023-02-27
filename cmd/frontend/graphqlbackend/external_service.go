@@ -499,7 +499,7 @@ func (r *externalServiceNamespaceResolver) ExternalID() string {
 	return r.namespace.ExternalID
 }
 
-func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceRepository, int32, error) {
+func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceRepository, error) {
 	r.once.Do(func() {
 		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
 		if err != nil {
@@ -527,10 +527,9 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 			}
 			r.nodes = append(r.nodes, node)
 		}
-		r.totalCount = int32(len(r.nodes))
 	})
 
-	return r.nodes, r.totalCount, r.err
+	return r.nodes, r.err
 }
 
 func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceRepositoryResolver, error) {
@@ -547,19 +546,6 @@ func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context)
 	}
 
 	return nodes, nil
-}
-
-func (r *externalServiceRepositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	return totalCount, err
-}
-
-func (r *externalServiceRepositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	jobs, totalCount, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
 }
 
 type externalServiceRepositoryResolver struct {

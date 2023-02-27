@@ -3220,11 +3220,6 @@ type ExternalServiceRepositoryConnection {
     A list of repositories available on the source.
     """
     nodes: [ExternalServiceRepository!]!
-
-    """
-    The total number of source repos in the connection.
-    """
-    totalCount: Int!
 }
 
 """

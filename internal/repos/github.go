@@ -847,7 +847,7 @@ type repositoryQuery struct {
 	Logger   log.Logger
 }
 
-// DoWithRefinedWindow attempts to retrieve all machine repositories by refining the window of acceptable Created dates
+// DoWithRefinedWindow attempts to retrieve all matching repositories by refining the window of acceptable Created dates
 // to smaller windows and re-running the search (down to a minimum window size)
 // and exiting once all repositories are returned.
 func (q *repositoryQuery) DoWithRefinedWindow(ctx context.Context, results chan *githubResult) {

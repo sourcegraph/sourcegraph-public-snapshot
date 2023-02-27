@@ -501,10 +501,9 @@ type externalServiceRepositoryConnectionResolver struct {
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
 
-	once       sync.Once
-	nodes      []*types.ExternalServiceRepository
-	totalCount int32
-	err        error
+	once  sync.Once
+	nodes []*types.ExternalServiceRepository
+	err   error
 }
 
 // NewSourceConfiguration returns a configuration string for defining a Source for discovery.
