@@ -1,28 +1,36 @@
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { CloudSyncIconRefresh } from '@sourcegraph/shared/src/components/icons'
+import {
+    CloudAlertIconRefresh,
+    CloudCheckIconRefresh,
+    CloudSyncIconRefresh,
+} from '@sourcegraph/shared/src/components/icons'
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-import { RepositoryStatsResult, RepositoryStatsVariables } from '../../graphql-operations'
+import { RepositoryStatsResult, RepositoryStatsVariables, StatusMessagesResult } from '../../graphql-operations'
 
 import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from '../../site-admin/backend'
+import { STATUS_MESSAGES } from '../../nav/StatusMessagesNavItemQueries'
 
-interface ProgressBarProps {}
-
-// TODO: loading/error?, d-none if no stats
 // TODO: Dynamic header title
 
-export const ProgressBar: FC<ProgressBarProps> = props => {
-    const { data, loading, error, startPolling, stopPolling } = useQuery<
-        RepositoryStatsResult,
-        RepositoryStatsVariables
-    >(REPOSITORY_STATS, {})
+import styles from './ProgressBar.module.scss'
+
+export const ProgressBar: FC<{}> = () => {
+    const { data, startPolling, stopPolling } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(
+        REPOSITORY_STATS,
+        {}
+    )
+
+    const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
+        fetchPolicy: 'no-cache',
+        pollInterval: 10000,
+    })
 
     useEffect(() => {
-        console.log(data)
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
             startPolling(REPO_PAGE_POLL_INTERVAL)
         } else {
@@ -30,35 +38,77 @@ export const ProgressBar: FC<ProgressBarProps> = props => {
         }
     }, [data, startPolling, stopPolling])
 
-    // TODO: Format #s, grid space items
-    return (
-        <section className={classNames(data?.repositoryStats.total === 0 ? 'd-none' : 'd-flex py-1')}>
-            <div className="d-flex align-items-center mr-3">
-                <Icon as={CloudSyncIconRefresh} size="sm" className="mr-1" />
-                <Text className="mb-0" size="small">
-                    Syncing...
+    const formatNumber = (num: string | number): string => {
+        return num.toLocaleString('en-US')
+    }
+
+    const statusMessage: JSX.Element = useMemo(() => {
+        let codeHostMessage
+        let iconProps
+
+        if (
+            !statusData ||
+            statusData.statusMessages?.some(
+                ({ __typename: type }) => type === 'CloningProgress' || type === 'IndexingProgress'
+            )
+        ) {
+            codeHostMessage = 'Syncing'
+            iconProps = { as: CloudSyncIconRefresh }
+        } else if (
+            statusData.statusMessages?.some(
+                ({ __typename: type }) =>
+                    type === 'GitUpdatesDisabled' || type === 'ExternalServiceSyncError' || type === 'SyncError'
+            )
+        ) {
+            // TODO: Error handle. What action do we allow if there's an error & no synced repos?
+            codeHostMessage = 'Error'
+            iconProps = { as: CloudAlertIconRefresh }
+        } else {
+            codeHostMessage = 'Synced'
+            iconProps = { as: CloudCheckIconRefresh }
+        }
+
+        return (
+            <div className="d-flex align-items-center mr-2">
+                <Icon {...iconProps} size="md" aria-label={codeHostMessage} className="mr-1" />
+                <Text className={classNames(codeHostMessage === 'Syncing' && styles.loading, 'mb-0')} size="small">
+                    {codeHostMessage}
                 </Text>
             </div>
+        )
+    }, [statusData])
+
+    if (data?.repositoryStats.total === 0) {
+        return null
+    }
+
+    return (
+        <section className="d-flex align-items-center py-1">
+            {statusMessage}
+
             <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold text-merged">
-                    {data?.repositoryStats.total.toLocaleString('en-US')}
-                </span>{' '}
+                <span className="font-weight-bold text-merged">{formatNumber(data?.repositoryStats.total ?? 0)}</span>{' '}
                 Repositories
             </Text>
             <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{data?.repositoryStats.notCloned}</span> Not cloned
+                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.notCloned ?? 0)}</span> Not
+                cloned
             </Text>
             <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{data?.repositoryStats.cloning}</span> Cloning
+                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.cloning ?? 0)}</span> Cloning
             </Text>
             <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold text-success">{data?.repositoryStats.cloned}</span> Cloned
+                <span className="font-weight-bold text-success">{formatNumber(data?.repositoryStats.cloned ?? 0)}</span>{' '}
+                Cloned
             </Text>
             <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{data?.repositoryStats.indexed}</span> Indexed
+                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.indexed ?? 0)}</span> Indexed
             </Text>
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold text-error">{data?.repositoryStats.failedFetch}</span> Failed
+            <Text className="mb-0" size="small">
+                <span className="font-weight-bold text-danger">
+                    {formatNumber(data?.repositoryStats.failedFetch ?? 0)}
+                </span>{' '}
+                Failed
             </Text>
         </section>
     )
