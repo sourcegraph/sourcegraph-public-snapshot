@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -28,10 +29,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -216,17 +220,21 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			sqlDB := dbtest.NewDB(logger, t)
 			store := tc.init(database.NewDB(logger, sqlDB))
-			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
-			srv := httptest.NewServer(s.Handler())
-			defer srv.Close()
-			cli := repoupdater.NewClient(srv.URL)
 
+			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
+			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
+			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+
+			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
+			defer srv.Close()
+
+			cli := repoupdater.NewClient(srv.URL)
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
 			res, err := cli.EnqueueRepoUpdate(ctx, tc.repo)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
+			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}
 
@@ -661,7 +669,10 @@ func TestServer_RepoLookup(t *testing.T) {
 				Scheduler: scheduler,
 			}
 
-			srv := httptest.NewServer(s.Handler())
+			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
+			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+
+			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
 			defer srv.Close()
 
 			cli := repoupdater.NewClient(srv.URL)
