@@ -89,6 +89,10 @@ export class ErrorBoundary extends React.PureComponent<React.PropsWithChildren<P
     }
 }
 
+/**
+ * A React component that can be used within a react router errorElement callback. It extracts the
+ * route error and displays it nicely on the page.
+ */
 export const RouteError: React.FC = () => {
     const routeError = useRouteError()
     const error = useMemo(() => {

@@ -13,7 +13,7 @@ import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
+import { RouteError } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -196,28 +196,26 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
-            <ErrorBoundary location={location}>
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1">
-                            <LoadingSpinner className="m-2" />
-                        </div>
-                    }
-                >
-                    <AppRouterContainer>
-                        <Routes>
-                            {props.routes.map(({ ...route }) => (
-                                <Route
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    path={route.path}
-                                    element={route.element}
-                                    errorElement={<RouteError />}
-                                />
-                            ))}
-                        </Routes>
-                    </AppRouterContainer>
-                </Suspense>
-            </ErrorBoundary>
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <AppRouterContainer>
+                    <Routes>
+                        {props.routes.map(({ ...route }) => (
+                            <Route
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                path={route.path}
+                                element={route.element}
+                                errorElement={<RouteError />}
+                            />
+                        ))}
+                    </Routes>
+                </AppRouterContainer>
+            </Suspense>
             {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
                 <Panel
                     className={styles.panel}
