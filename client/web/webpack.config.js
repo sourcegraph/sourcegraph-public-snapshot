@@ -73,8 +73,6 @@ const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace 
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
 
-const extensionHostWorker = /main\.worker\.ts$/
-
 // Used to ensure that we include all initial chunks into the Webpack manifest.
 const initialChunkNames = {
   react: 'react',
@@ -254,7 +252,6 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: hotLoadablePaths,
-        exclude: extensionHostWorker,
         use: [
           {
             loader: 'babel-loader',
@@ -267,7 +264,7 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: [...hotLoadablePaths, extensionHostWorker],
+        exclude: hotLoadablePaths,
         use: [getBabelLoader()],
       },
       {
@@ -283,10 +280,6 @@ const config = {
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
-      {
-        test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, getBabelLoader()],
-      },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
     ],
