@@ -96,7 +96,6 @@ nfpms:
       - rpm
     dependencies:
       - git
-      - redis
     vendor: "sourcegraph"
     homepage: "https://github.com/sourcegraph/sourcegraph"
     maintainer: "dev@sourcegraph.com"
@@ -121,7 +120,6 @@ brews:
       system "#{bin}/sourcegraph --help"
     dependencies:
       - name: git
-      - name: redis
       - name: sourcegraph/src-cli/src-cli
 
 announce:

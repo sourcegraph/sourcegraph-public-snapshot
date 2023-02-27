@@ -6,9 +6,7 @@ import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { useLocation } from 'react-router-dom'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -16,6 +14,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -26,7 +25,6 @@ import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -49,7 +47,6 @@ import styles from './GlobalNavbar.module.scss'
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
-        ExtensionsControllerProps,
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
@@ -58,6 +55,7 @@ export interface GlobalNavbarProps
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps[]
 
@@ -65,7 +63,6 @@ export interface GlobalNavbarProps
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
     showFeedbackModal: () => void
@@ -124,13 +121,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     branding,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
-    extensionsController,
-    enableLegacyExtensions,
     showFeedbackModal,
     ...props
 }) => {
@@ -265,6 +261,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
+                    {isSourcegraphApp && (
+                        <ButtonLink
+                            variant="secondary"
+                            outline={true}
+                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            size="sm"
+                            onClick={() =>
+                                eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
+                            }
+                        >
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
+                    )}
                     {isSourcegraphDotCom && (
                         <NavAction>
                             <Link
@@ -277,16 +286,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                extensionsController={extensionsController}
-                                location={location}
-                                menu={ContributableMenu.CommandPalette}
-                            />
-                        </NavAction>
-                    )}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
                             <StatusMessagesNavItem />
@@ -309,7 +308,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     >
                                         Sign in
                                     </Button>
-                                    {!isSourcegraphDotCom && window.context.allowSignup && (
+                                    {!isSourcegraphDotCom && window.context?.allowSignup && (
                                         <ButtonLink to="/sign-up" variant="primary" size="sm">
                                             Sign up
                                         </ButtonLink>

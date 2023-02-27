@@ -23,6 +23,8 @@ import {
 } from '@codemirror/view'
 import classNames from 'classnames'
 
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
 import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './utils'
 
 import { blobPropsFacet } from './index'
@@ -332,7 +334,7 @@ function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension 
                 const clickedLine = view.state.doc.lineAt(offset)
                 if (offset === clickedLine.to) {
                     // If the offset is the same value as the end position of
-                    // the line then click happend after the last charcater.
+                    // the line then click happened after the last character.
                     selectedLine = clickedLine.number
                 } else if (offset === clickedLine.from && preciseOffsetAtCoords(view, event) === null) {
                     // `preciseOffsetAtCoords(...) === null` allows us to recognize clicks before the actual text content
@@ -379,30 +381,47 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         selectedLines.init(() => config.initialSelection),
         lineNumbers({
             domEventHandlers: {
+                mouseup(view, block, event) {
+                    if (!config.navigateToLineOnAnyClick) {
+                        return false
+                    }
+
+                    const mouseEvent = event as MouseEvent
+                    if (mouseEvent.button !== MOUSE_MAIN_BUTTON) {
+                        return false
+                    }
+
+                    const { blobInfo, navigate } = view.state.facet(blobPropsFacet)
+                    const line = view.state.doc.lineAt(block.from).number
+                    const href = toPrettyBlobURL({
+                        ...blobInfo,
+                        position: { line, character: 0 },
+                    })
+                    navigate(href)
+
+                    return true
+                },
+
                 mousedown(view, block, event) {
-                    const mouseEvent = event as MouseEvent // make TypeScript happy
+                    if (config.navigateToLineOnAnyClick) {
+                        return false
+                    }
+
+                    const mouseEvent = event as MouseEvent
                     if (mouseEvent.button !== MOUSE_MAIN_BUTTON) {
                         return false
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
-                    if (config.navigateToLineOnAnyClick) {
-                        // Only support single line selection when navigateToLineOnAnyClick is true.
-                        view.dispatch({
-                            effects: setSelectedLines.of({ line }),
-                            annotations: lineSelectionSource.of('gutter'),
-                        })
-                    } else {
-                        const range = view.state.field(selectedLines)
-                        view.dispatch({
-                            effects: mouseEvent.shiftKey
-                                ? setEndLine.of(line)
-                                : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
-                            annotations: lineSelectionSource.of('gutter'),
-                            // Collapse/reset text selection
-                            selection: { anchor: view.state.selection.main.anchor },
-                        })
-                    }
+                    const range = view.state.field(selectedLines)
+                    view.dispatch({
+                        effects: mouseEvent.shiftKey
+                            ? setEndLine.of(line)
+                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        annotations: lineSelectionSource.of('gutter'),
+                        // Collapse/reset text selection
+                        selection: { anchor: view.state.selection.main.anchor },
+                    })
 
                     dragging = true
 

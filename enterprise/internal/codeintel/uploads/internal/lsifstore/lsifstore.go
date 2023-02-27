@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -27,6 +28,7 @@ type LsifStore interface {
 
 	// Stream
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
 }
 
 type SCIPWriter interface {

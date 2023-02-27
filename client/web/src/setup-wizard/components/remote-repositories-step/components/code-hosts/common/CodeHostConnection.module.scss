@@ -8,9 +8,7 @@
 .footer {
     margin: auto -1rem -1rem;
     position: sticky;
-    // Calculated value since we already have sticky footer element for
-    // the core wizard UI.
-    bottom: 51px;
+    bottom: 0;
 }
 
 .configuration-group {
