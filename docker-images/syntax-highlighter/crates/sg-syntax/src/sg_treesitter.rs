@@ -155,7 +155,6 @@ lazy_static::lazy_static! {
             java,
             javascript,
             jsonnet,
-            python,
             rust,
             scala,
             sql,
