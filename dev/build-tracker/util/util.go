@@ -1,6 +1,6 @@
-package main
+package util
 
-func strp(v *string) string {
+func Strp(v *string) string {
 	if v == nil {
 		return ""
 	}
@@ -8,7 +8,7 @@ func strp(v *string) string {
 	return *v
 }
 
-func intp(v *int) int {
+func Intp(v *int) int {
 	if v == nil {
 		return 0
 	}

@@ -1,8 +1,11 @@
-package main
+package build
 
 import (
-	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"strings"
+
+	"github.com/buildkite/go-buildkite/v3/buildkite"
+
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
 )
 
 type JobStatus string
@@ -21,16 +24,16 @@ type Job struct {
 	buildkite.Job
 }
 
-func (j *Job) id() string {
-	return strp(j.ID)
+func (j *Job) GetID() string {
+	return util.Strp(j.ID)
 }
 
-func (j *Job) name() string {
-	return strp(j.Name)
+func (j *Job) GetName() string {
+	return util.Strp(j.Name)
 }
 
 func (j *Job) exitStatus() int {
-	return intp(j.ExitStatus)
+	return util.Intp(j.ExitStatus)
 }
 
 func (j *Job) failed() bool {
@@ -38,7 +41,7 @@ func (j *Job) failed() bool {
 }
 
 func (j *Job) state() string {
-	return strings.ToTitle(strp(j.State))
+	return strings.ToTitle(util.Strp(j.State))
 }
 
 func (j *Job) status() JobStatus {
@@ -60,7 +63,7 @@ func NewStep(name string) *Step {
 }
 
 func NewStepFromJob(j *Job) *Step {
-	s := NewStep(j.name())
+	s := NewStep(j.GetName())
 	s.Add(j)
 	return s
 }

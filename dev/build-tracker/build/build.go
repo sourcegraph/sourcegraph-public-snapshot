@@ -1,4 +1,4 @@
-package main
+package build
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
 )
 
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
@@ -59,15 +59,15 @@ const (
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
 	b.Build = e.Build
-	b.Pipeline = e.pipeline()
+	b.Pipeline = e.WrappedPipeline()
 }
 
-func (b *Build) hasFailed() bool {
-	return b.state() == "failed"
+func (b *Build) HasFailed() bool {
+	return b.GetState() == "failed"
 }
 
-func (b *Build) isFinished() bool {
-	switch b.state() {
+func (b *Build) IsFinished() bool {
+	switch b.GetState() {
 	case "passed", "failed", "blocked", "canceled":
 		return true
 	default:
@@ -83,7 +83,7 @@ func (b *Build) authorName() string {
 	return b.Author.Name
 }
 
-func (b *Build) authorEmail() string {
+func (b *Build) GetAuthorEmail() string {
 	if b.Author == nil {
 		return ""
 	}
@@ -91,24 +91,24 @@ func (b *Build) authorEmail() string {
 	return b.Author.Email
 }
 
-func (b *Build) state() string {
-	return strp(b.State)
+func (b *Build) GetState() string {
+	return util.Strp(b.State)
 }
 
-func (b *Build) commit() string {
-	return strp(b.Commit)
+func (b *Build) GetCommit() string {
+	return util.Strp(b.Commit)
 }
 
-func (b *Build) number() int {
-	return intp(b.Number)
+func (b *Build) GetNumber() int {
+	return util.Intp(b.Number)
 }
 
-func (b *Build) branch() string {
-	return strp(b.Branch)
+func (b *Build) GetBranch() string {
+	return util.Strp(b.Branch)
 }
 
-func (b *Build) message() string {
-	return strp(b.Message)
+func (b *Build) GetMessage() string {
+	return util.Strp(b.Message)
 }
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
@@ -116,11 +116,11 @@ type Pipeline struct {
 	buildkite.Pipeline `json:"pipeline"`
 }
 
-func (p *Pipeline) name() string {
+func (p *Pipeline) GetName() string {
 	if p == nil {
 		return ""
 	}
-	return strp(p.Name)
+	return util.Strp(p.Name)
 }
 
 // Event contains information about a buildkite event. Each event contains the build, pipeline, and job. Note that when the event
@@ -136,77 +136,44 @@ type Event struct {
 	Job buildkite.Job `json:"job,omitempty"`
 }
 
-func (b *Event) build() *Build {
+func (b *Event) WrappedBuild() *Build {
 	return &Build{
 		Build:    b.Build,
-		Pipeline: b.pipeline(),
+		Pipeline: b.WrappedPipeline(),
 		Steps:    make(map[string]*Step),
 	}
 }
 
-func (b *Event) job() *Job {
+func (b *Event) WrappedJob() *Job {
 	return &Job{Job: b.Job}
 }
 
-func (b *Event) pipeline() *Pipeline {
+func (b *Event) WrappedPipeline() *Pipeline {
 	return &Pipeline{Pipeline: b.Pipeline}
 }
 
-func (b *Event) isBuildFinished() bool {
+func (b *Event) IsBuildFinished() bool {
 	return b.Name == "build.finished"
 }
 
-func (b *Event) isJobFinished() bool {
+func (b *Event) IsJobFinished() bool {
 	return b.Name == "job.finished"
 }
 
-func (b *Event) jobName() string {
-	return strp(b.Job.Name)
+func (b *Event) JobName() string {
+	return util.Strp(b.Job.Name)
 }
 
-func (b *Event) buildNumber() int {
-	return intp(b.Build.Number)
+func (b *Event) BuildNumber() int {
+	return util.Intp(b.Build.Number)
 }
 
-func ToBuildNotification(build *Build) *notify.BuildNotification {
-	info := notify.BuildNotification{
-		BuildNumber:        build.number(),
-		ConsecutiveFailure: build.ConsecutiveFailure,
-		PipelineName:       build.Pipeline.name(),
-		AuthorEmail:        build.authorEmail(),
-		Message:            build.message(),
-		Commit:             build.commit(),
-		BuildStatus:        "",
-		BuildURL:           *build.URL,
-		Fixed:              []notify.JobLine{},
-		Failed:             []notify.JobLine{},
-	}
-
-	groups := GroupByStatus(build.Steps)
-	for _, j := range groups[JobFixed] {
-		info.Fixed = append(info.Fixed, j)
-	}
-	for _, j := range groups[JobFailed] {
-		info.Failed = append(info.Fixed, j)
-	}
-
-	if len(groups[JobFailed]) > 0 {
-		info.BuildStatus = string(BuildFailed)
-	} else if len(groups[JobFixed]) > 0 {
-		info.BuildStatus = string(BuildFixed)
-	} else {
-		info.BuildStatus = string(BuildPassed)
-	}
-
-	return &info
-}
-
-// BuildStore is a thread safe store which keeps track of Builds described by buildkite build events.
+// Store is a thread safe store which keeps track of Builds described by buildkite build events.
 //
 // The store is backed by a map and the build number is used as the key.
 // When a build event is added the Buildkite Build, Pipeline and Job is extracted, if available. If the Build does not exist, Buildkite is wrapped
 // in a Build and added to the map. When the event contains a Job the corresponding job is retrieved from the map and added to the Job it is for.
-type BuildStore struct {
+type Store struct {
 	logger log.Logger
 
 	builds map[int]*Build
@@ -218,8 +185,8 @@ type BuildStore struct {
 	m sync.RWMutex
 }
 
-func NewBuildStore(logger log.Logger) *BuildStore {
-	return &BuildStore{
+func NewBuildStore(logger log.Logger) *Store {
+	return &Store{
 		logger: logger.Scoped("store", "stores all the buildkite builds"),
 
 		builds:              make(map[int]*Build),
@@ -229,15 +196,15 @@ func NewBuildStore(logger log.Logger) *BuildStore {
 	}
 }
 
-func (s *BuildStore) Add(event *Event) {
+func (s *Store) Add(event *Event) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	build, ok := s.builds[event.buildNumber()]
+	build, ok := s.builds[event.BuildNumber()]
 	// if we don't know about this build, convert it and add it to the store
 	if !ok {
-		build = event.build()
-		s.builds[event.buildNumber()] = build
+		build = event.WrappedBuild()
+		s.builds[event.BuildNumber()] = build
 	}
 
 	// Now that we have a build, lets make sure it isn't modified while we look and possibly update it
@@ -246,14 +213,14 @@ func (s *BuildStore) Add(event *Event) {
 
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data
-	if event.isBuildFinished() {
+	if event.IsBuildFinished() {
 		build.updateFromEvent(event)
 
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build
 		// if we get a pass, we reset the global count of consecutiveFailures
-		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
-		if build.hasFailed() {
+		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.GetName(), build.GetBranch())
+		if build.HasFailed() {
 			s.consecutiveFailures[failuresKey] += 1
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
@@ -263,8 +230,8 @@ func (s *BuildStore) Add(event *Event) {
 	}
 
 	// Keep track of the job, if there is one
-	newJob := event.job()
-	stepName := newJob.name()
+	newJob := event.WrappedJob()
+	stepName := newJob.GetName()
 	if stepName != "" {
 		step, ok := build.Steps[stepName]
 		// We don't know about this step, so it must be a new one
@@ -274,31 +241,37 @@ func (s *BuildStore) Add(event *Event) {
 		}
 		step.Jobs = append(step.Jobs, newJob)
 		s.logger.Debug("job added to step",
-			log.Int("buildNumber", event.buildNumber()),
+			log.Int("buildNumber", event.BuildNumber()),
 			log.Object("step", log.String("name", step.Name),
-				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.id())),
+				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
 				log.Int("totalJobs", len(step.Jobs)),
 			),
 			log.Int("totalSteps", len(step.Jobs)),
 		)
 	} else {
 		s.logger.Warn("job for step has no name - not added",
-			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
+			log.Int("buildNumber", event.BuildNumber()),
+			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
 	}
 
 }
 
-func (s *BuildStore) GetByBuildNumber(num int) *Build {
+func (s *Store) Set(build *Build) {
+	s.m.RLock()
+	defer s.m.RUnlock()
+	s.builds[build.GetNumber()] = build
+}
+
+func (s *Store) GetByBuildNumber(num int) *Build {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
 	return s.builds[num]
 }
 
-func (s *BuildStore) DelByBuildNumber(buildNumbers ...int) {
+func (s *Store) DelByBuildNumber(buildNumbers ...int) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -308,14 +281,14 @@ func (s *BuildStore) DelByBuildNumber(buildNumbers ...int) {
 	s.logger.Info("deleted builds", log.Int("totalBuilds", len(buildNumbers)))
 }
 
-func (s *BuildStore) FinishedBuilds() []*Build {
+func (s *Store) FinishedBuilds() []*Build {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
 	finished := make([]*Build, 0)
 	for _, b := range s.builds {
-		if b.isFinished() {
-			s.logger.Debug("build is finished", log.Int("buildNumber", b.number()), log.String("state", b.state()))
+		if b.IsFinished() {
+			s.logger.Debug("build is finished", log.Int("buildNumber", b.GetNumber()), log.String("state", b.GetState()))
 			finished = append(finished, b)
 		}
 	}

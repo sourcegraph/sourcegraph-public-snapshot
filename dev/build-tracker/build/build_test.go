@@ -1,4 +1,4 @@
-package main
+package build
 
 import (
 	"testing"
@@ -51,7 +51,7 @@ func TestUpdateFromEvent(t *testing.T) {
 	}
 
 	t.Run("build gets updated with new build", func(t *testing.T) {
-		build := event.build()
+		build := event.WrappedBuild()
 		otherEvent := event
 		num := 7777
 		otherEvent.Build.Number = &num
@@ -63,7 +63,7 @@ func TestUpdateFromEvent(t *testing.T) {
 	})
 
 	t.Run("build gets updated with new pipeline", func(t *testing.T) {
-		build := event.build()
+		build := event.WrappedBuild()
 		otherEvent := event
 		name := "the other one"
 		otherEvent.Pipeline.Name = &name
