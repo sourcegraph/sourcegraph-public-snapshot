@@ -300,14 +300,14 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	})
 
 	t.Run("Unified perms: Alice cannot see private repo, but can see unrestricted repo", func(t *testing.T) {
-		cfg := conf.Get()
-		cfg.ExperimentalFeatures.UnifiedPermissions = true
+		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: true,
+		}}}
 		conf.Mock(cfg)
 
 		// Always reset the configuration so that it doesn't interfere with other tests
 		defer func() {
-			cfg.ExperimentalFeatures.UnifiedPermissions = false
-			conf.Mock(cfg)
+			conf.Mock(nil)
 		}()
 
 		aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
@@ -538,14 +538,14 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	})
 
 	t.Run("Unified permissions table should be respected if feature flag is on", func(t *testing.T) {
-		cfg := conf.Get()
-		cfg.ExperimentalFeatures.UnifiedPermissions = true
+		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: true,
+		}}}
 		conf.Mock(cfg)
 
 		// Always reset the configuration so that it doesn't interfere with other tests
 		defer func() {
-			cfg.ExperimentalFeatures.UnifiedPermissions = false
-			conf.Mock(cfg)
+			conf.Mock(nil)
 		}()
 
 		runTests(t)
