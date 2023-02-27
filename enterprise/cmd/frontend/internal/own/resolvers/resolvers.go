@@ -11,14 +11,16 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
-func New(db database.DB, ownService backend.OwnService) graphqlbackend.OwnResolver {
+func New(db database.DB, gitserver gitserver.Client, ownService backend.OwnService) graphqlbackend.OwnResolver {
 	enterpriseDB := edb.NewEnterpriseDB(db)
 	return &ownResolver{
 		db:              enterpriseDB,
 		codeownersStore: enterpriseDB.Codeowners(),
+		gitserver:       gitserver,
 		ownService:      ownService,
 	}
 }
@@ -33,6 +35,7 @@ var (
 type ownResolver struct {
 	db              edb.EnterpriseDB
 	codeownersStore edb.CodeownersStore
+	gitserver       gitserver.Client
 	ownService      backend.OwnService
 }
 

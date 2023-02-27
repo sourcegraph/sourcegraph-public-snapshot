@@ -123,9 +123,9 @@ type CodeownersIngestedFile {
     """
     contents: String!
     """
-    The ID of the repository this codeowners file has been manually ingested for.
+    The repository this codeowners file has been manually ingested for.
     """
-    repoID: Int!
+    repository: Repository!
     """
     The creation date of this codeowners file.
     """
@@ -140,11 +140,11 @@ extend type Mutation {
     """
     addCodeownersFile creates a new Codeowners file for the given repository and file contents.
     """
-    addCodeownersFile(input: codeownersArgs!): CodeownersIngestedFile!
+    addCodeownersFile(input: CodeownersFileInput!): CodeownersIngestedFile!
     """
     updateCodeownersFile updates an existing Codeowners file for a repository.
     """
-    updateCodeownersFile(input: codeownersArgs!): CodeownersIngestedFile!
+    updateCodeownersFile(input: CodeownersFileInput!): CodeownersIngestedFile!
     """
     deleteCodeownersFile deletes any existing Codeowners file for the given repositories.
     """
@@ -154,7 +154,7 @@ extend type Mutation {
 """
 codeownersArgs represents the input for ingesting codeowners files
 """
-type codeownersArgs {
+input CodeownersFileInput {
     """
     fileContents is the text of the codeowners file
     """
@@ -195,3 +195,7 @@ type CodeownersIngestedFileConnection {
     """
     nodes: [CodeownersIngestedFile!]!
 }
+
+#extend type Repository {
+#    ingestedCodeowners: CodeownersIngestedFile
+#}

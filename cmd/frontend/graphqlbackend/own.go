@@ -65,6 +65,10 @@ type CodeownersFileEntryResolver interface {
 }
 
 type CodeownersFileArgs struct {
+	Input CodeownersFileInput
+}
+
+type CodeownersFileInput struct {
 	FileContents string
 	RepoID       *int32
 	RepoName     *string
@@ -82,7 +86,7 @@ type CodeownersIngestedFilesArgs struct {
 
 type CodeownersIngestedFileResolver interface {
 	Contents() string
-	RepoID() int32
+	Repository() *RepositoryResolver
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
@@ -34,43 +35,29 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	if err := r.ViewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
-	proto, err := parseInputString(args.FileContents)
+	proto, err := parseInputString(args.Input.FileContents)
 	if err != nil {
 		return nil, err
 	}
-	if err := parseRepoArgs(args.RepoID, args.RepoName); err != nil {
+	repo, err := r.getRepo(ctx, args.Input)
+	if err != nil {
 		return nil, err
 	}
-
-	var repository *types.Repo
-	if args.RepoName != nil {
-		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*args.RepoName))
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for name %v", args.RepoName)
-		}
-		repository = repo
-	} else {
-		repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*args.RepoID))
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for ID %v", args.RepoID)
-		}
-		if len(repo) != 1 {
-			return nil, errors.New("could not fetch repository")
-		}
-		repository = repo[0]
-	}
-
 	codeownersFile := &types.CodeownersFile{
-		RepoID:   repository.ID,
-		Contents: args.FileContents,
+		RepoID:   repo.ID,
+		Contents: args.Input.FileContents,
 		Proto:    proto,
 	}
+
 	if err := r.codeownersStore.CreateCodeownersFile(ctx, codeownersFile); err != nil {
 		return nil, errors.Wrap(err, "could not ingest codeowners file")
 	}
 
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
+		repository:     repo,
+		db:             r.db,
+		gitserver:      r.gitserver,
 	}, nil
 }
 
@@ -78,34 +65,17 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	if err := r.ViewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
-	proto, err := parseInputString(args.FileContents)
+	proto, err := parseInputString(args.Input.FileContents)
 	if err != nil {
 		return nil, err
 	}
-	if err := parseRepoArgs(args.RepoID, args.RepoName); err != nil {
+	repo, err := r.getRepo(ctx, args.Input)
+	if err != nil {
 		return nil, err
 	}
-
-	var repository *types.Repo
-	if args.RepoName != nil {
-		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*args.RepoName))
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for name %v", args.RepoName)
-		}
-		repository = repo
-	} else {
-		repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*args.RepoID))
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for ID %v", args.RepoID)
-		}
-		if len(repo) != 1 {
-			return nil, errors.New("could not fetch repository")
-		}
-		repository = repo[0]
-	}
 	codeownersFile := &types.CodeownersFile{
-		RepoID:   repository.ID,
-		Contents: args.FileContents,
+		RepoID:   repo.ID,
+		Contents: args.Input.FileContents,
 		Proto:    proto,
 	}
 	if err := r.codeownersStore.UpdateCodeownersFile(ctx, codeownersFile); err != nil {
@@ -114,6 +84,9 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
+		repository:     repo,
+		db:             r.db,
+		gitserver:      r.gitserver,
 	}, nil
 }
 
@@ -126,14 +99,28 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return proto, nil
 }
 
-func parseRepoArgs(repoID *int32, repoName *string) error {
-	if repoID == nil && repoName == nil {
-		return errors.New("either RepoID or RepoName should be set")
+func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*types.Repo, error) {
+	if input.RepoID == nil && input.RepoName == nil {
+		return nil, errors.New("either RepoID or RepoName should be set")
 	}
-	if repoID != nil && repoName != nil {
-		return errors.New("both RepoID and RepoName cannot be set")
+	if input.RepoID != nil && input.RepoName != nil {
+		return nil, errors.New("both RepoID and RepoName cannot be set")
 	}
-	return nil
+	if input.RepoName != nil {
+		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*input.RepoName))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch repository for name %v", input.RepoName)
+		}
+		return repo, nil
+	}
+	repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*input.RepoID))
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not fetch repository for ID %v", input.RepoID)
+	}
+	if len(repo) != 1 {
+		return nil, errors.New("could not fetch repository")
+	}
+	return repo[0], nil
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -170,23 +157,26 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 }
 
 type codeownersIngestedFileResolver struct {
+	gitserver      gitserver.Client
+	db             edb.EnterpriseDB
 	codeownersFile *types.CodeownersFile
+	repository     *types.Repo
 }
 
-func (c *codeownersIngestedFileResolver) Contents() string {
-	return c.codeownersFile.Contents
+func (r *codeownersIngestedFileResolver) Contents() string {
+	return r.codeownersFile.Contents
 }
 
-func (c *codeownersIngestedFileResolver) RepoID() int32 {
-	return int32(c.codeownersFile.RepoID)
+func (r *codeownersIngestedFileResolver) Repository() *graphqlbackend.RepositoryResolver {
+	return graphqlbackend.NewRepositoryResolver(r.db, r.gitserver, r.repository)
 }
 
-func (c *codeownersIngestedFileResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: c.codeownersFile.CreatedAt}
+func (r *codeownersIngestedFileResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.codeownersFile.CreatedAt}
 }
 
-func (c *codeownersIngestedFileResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: c.codeownersFile.UpdatedAt}
+func (r *codeownersIngestedFileResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.codeownersFile.UpdatedAt}
 }
 
 type codeownersIngestedFileConnectionResolver struct {
