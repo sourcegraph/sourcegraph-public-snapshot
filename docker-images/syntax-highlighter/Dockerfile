@@ -2,10 +2,13 @@
 # Build syntect_server statically #
 ###################################
 
-FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10
+FROM rust:1.67.1-alpine3.17@sha256:8269a16b3eaf33893cc00ea0650b4a4e8323f9a459ce0b527b630310dafbf6ee as ss
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
+RUN cargo fetch
+ENV RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"
+ENV CFLAGS="-mno-outline-atomics"
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
