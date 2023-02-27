@@ -181,7 +181,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	defer cancel()
 
 	grpcServer := defaults.NewServer(logger)
-	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
+	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
 		Service: sService,
 	})
 
