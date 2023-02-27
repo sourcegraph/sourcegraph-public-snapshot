@@ -909,6 +909,7 @@ type SiteUsageStatistics struct {
 	DAUs []*SiteActivityPeriod
 	WAUs []*SiteActivityPeriod
 	MAUs []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
