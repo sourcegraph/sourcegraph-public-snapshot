@@ -1,9 +1,7 @@
 package codeownership
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"io/fs"
 	"strings"
 	"testing"
@@ -271,12 +269,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			ctx := context.Background()
 
 			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) (io.ReadCloser, error) {
+			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
 					return nil, fs.ErrNotExist
 				}
-				return io.NopCloser(bytes.NewReader([]byte(content))), nil
+				return []byte(content), nil
 			})
 
 			rules := NewRulesCache(gitserverClient, database.NewMockDB())

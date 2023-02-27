@@ -1,6 +1,7 @@
 package own
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"sync"
@@ -68,21 +69,19 @@ var codeownersLocations = []string{
 // the possible codeownersLocations. It returns nil if no match is found.
 func (s *service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	for _, path := range codeownersLocations {
-		r, err := s.gitserverClient.NewFileReader(
+		content, err := s.gitserverClient.ReadFile(
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			repoName,
 			commitID,
 			path,
 		)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			return nil, err
+		if content != nil && err == nil {
+			return codeowners.Parse(bytes.NewReader(content))
+		} else if os.IsNotExist(err) {
+			continue
 		}
-		defer r.Close()
-		return codeowners.Parse(r)
+		return nil, err
 	}
 	return nil, nil
 }
