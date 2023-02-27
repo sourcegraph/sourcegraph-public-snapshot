@@ -3,7 +3,6 @@ import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -11,7 +10,6 @@ import { SearchPatternType } from '../../graphql-operations'
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
-    extensionsController,
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     authenticatedUser: {
         id: 'userID',
@@ -40,12 +38,6 @@ const renderSearchResultsInfoBar = (
     )
 
 describe('SearchResultsInfoBar', () => {
-    beforeAll(() => {
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
-    })
-
     test('code monitoring feature flag disabled', () => {
         expect(
             renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()

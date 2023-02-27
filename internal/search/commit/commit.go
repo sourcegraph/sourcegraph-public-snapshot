@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type SearchJob struct {
@@ -99,7 +99,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	it := repos.Iterator(ctx, j.RepoOpts)
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
 
 	for it.Next() {
 		page := it.Current()
@@ -107,13 +107,13 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				return searchRepoRev(ctx, repoRev)
 			})
 		}
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, err
 	}
 	return nil, it.Err()

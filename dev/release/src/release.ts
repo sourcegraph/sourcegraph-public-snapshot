@@ -334,9 +334,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 await execa('git', ['branch', release.branch])
                 await execa('git', ['push', 'origin', release.branch])
                 await postMessage(message, config.metadata.slackAnnounceChannel)
-                console.log(
-                    `To check the status of the branch, run:\nsg ci status -branch ${release.version.version} --wait\n`
-                )
+                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }

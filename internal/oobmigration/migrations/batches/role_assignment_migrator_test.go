@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -24,33 +25,49 @@ func TestUserRoleAssignmentMigrator(t *testing.T) {
 
 	migrator := NewUserRoleAssignmentMigrator(store, 5)
 	progress, err := migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if have, want := progress, 1.0; have != want {
 		t.Fatalf("got invalid progress with no DB entries, want=%f have=%f", want, have)
 	}
 
-	if err = store.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO users (username, display_name, created_at, site_admin)
-		VALUES
-			(%s, %s, NOW(), %s),
-			(%s, %s, NOW(), %s)
-	`,
-		"testuser-0",
-		"testuser",
-		true,
-		"testuser-1",
-		"testuser1",
-		false,
-	)); err != nil {
-		t.Fatal(err)
+	user1 := createTestUser(t, db, "testuser-1", true)
+	user2 := createTestUser(t, db, "testuser-2", false)
+	user3 := createTestUser(t, db, "testuser-3", true)
+
+	users := []*types.User{user1, user2, user3}
+
+	{
+		// We calculate the progress when none of the created users have roles assigned to them.
+		progress, err = migrator.Progress(ctx, false)
+		require.NoError(t, err)
+
+		// No user is assigned a role, so the progress should be 0.0.
+		if have, want := progress, 0.0; have != want {
+			t.Fatalf("got invalid progress with unmigrated entries, want=%f have=%f", want, have)
+		}
 	}
 
-	progress, err = migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	{
+		// We assign the USER role to `testuser-0` to simulate a bug in which not all permissions were assigned to a user during OOB.
+		// This most likely occurred because a restart happened while the OOB migration was in progress.
+		db.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
+			Role:   types.UserSystemRole,
+			UserID: user1.ID,
+		})
 
-	if have, want := progress, 0.0; have != want {
-		t.Fatalf("got invalid progress with one unmigrated entry, want=%f have=%f", want, have)
+		// We calculate the progress when none of the created users have roles assigned to them.
+		progress, err = migrator.Progress(ctx, false)
+		require.NoError(t, err)
+
+		// User1 is a site admin that has the USER role assigned to them, they need to have a SITE_ADMINISTRATOR role assigned to them also.
+		// While User2 requires the USER role assigned to them since they aren't a site admin.
+		// User3 requires both USER and SITE_ADMINISTRATOR role assigned to them.
+
+		// This means only one role out of 5 roles that should be assigned is assigned. That's 1/5 = 0.2
+		if have, want := progress, 0.2; have != want {
+			t.Fatalf("got invalid progress with unmigrated entries, want=%f have=%f", want, have)
+		}
 	}
 
 	if err := migrator.Up(ctx); err != nil {
@@ -58,37 +75,69 @@ func TestUserRoleAssignmentMigrator(t *testing.T) {
 	}
 
 	progress, err = migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if have, want := progress, 1.0; have != want {
 		t.Fatalf("got invalid progress after up migration, want=%f have=%f", want, have)
 	}
 
-	// Three records should be inserted into the user_roles table:
-	// 1. For testuser-0 with DEFAULT role
-	// 2. For testuser-0 WITH SITE_ADMINISTRATOR role
-	// 3. For testuser-1 WITH DEFAULT role
-	q := `SELECT role_id, user_id FROM user_roles ORDER BY user_id, role_id`
-	rows, err := db.QueryContext(ctx, q)
-	assert.NoError(t, err)
-	defer rows.Close()
-	var have []*types.UserRole
-	for rows.Next() {
-		var ur = types.UserRole{}
-		if err := rows.Scan(&ur.RoleID, &ur.UserID); err != nil {
-			t.Fatal(err, "error scanning user role")
-		}
-		have = append(have, &ur)
+	userRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
+		Name: string(types.UserSystemRole),
+	})
+	require.NoError(t, err)
+
+	siteAdminRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
+		Name: string(types.SiteAdministratorSystemRole),
+	})
+	require.NoError(t, err)
+
+	for _, user := range users {
+		assertRolesForUser(ctx, t, db, user, userRole, siteAdminRole)
+	}
+}
+
+func createTestUser(t *testing.T, db database.DB, username string, siteAdmin bool) *types.User {
+	t.Helper()
+
+	user := &types.User{
+		Username: username,
+	}
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id, site_admin", user.Username, siteAdmin)
+	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&user.ID, &user.SiteAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if user.SiteAdmin != siteAdmin {
+		t.Fatalf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
+	}
+
+	_, err = db.ExecContext(context.Background(), "INSERT INTO names(name, user_id) VALUES($1, $2)", user.Username, user.ID)
+	if err != nil {
+		t.Fatalf("failed to create name: %s", err)
+	}
+
+	return user
+}
+
+func assertRolesForUser(ctx context.Context, t *testing.T, db database.DB, user *types.User, userRole *types.Role, siteAdminRole *types.Role) {
+	// Get roles for user1
+	have, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{UserID: user.ID})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	want := []*types.UserRole{
-		{UserID: 1, RoleID: 1},
-		{UserID: 1, RoleID: 2},
-		{UserID: 2, RoleID: 1},
+		{UserID: user.ID, RoleID: userRole.ID},
 	}
 
-	assert.Len(t, have, 3)
-	if diff := cmp.Diff(have, want); diff != "" {
+	if user.SiteAdmin {
+		// if the user is a site admin, the site administrator role should be assigned to them.
+		want = append(want, &types.UserRole{UserID: user.ID, RoleID: siteAdminRole.ID})
+	}
+
+	if diff := cmp.Diff(have, want, cmpopts.IgnoreFields(types.UserRole{}, "CreatedAt")); diff != "" {
 		t.Error(diff)
 	}
 }

@@ -164,7 +164,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -466,9 +466,6 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
-		for kind, res := range authz.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
-		}
 	}
 
 	if codeMonitors != nil {
@@ -612,6 +609,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
+		"AccessRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return accessRequestByID(ctx, db, id)
+		},
 		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return accessTokenByID(ctx, db, id)
 		},
@@ -638,9 +638,6 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitCommitByID(ctx, id)
-		},
-		"RegistryExtension": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return RegistryExtensionByID(ctx, db, id)
 		},
 		"SavedSearch": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.savedSearchByID(ctx, id)

@@ -11,7 +11,6 @@ import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     Checkbox,
@@ -47,7 +46,7 @@ import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
-export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes

@@ -20,7 +20,6 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
                 {...props}
                 routes={props.orgSettingsAreaRoutes}
                 sideBarItems={props.orgSettingsSideBarItems}
-                isLightTheme={props.isLightTheme}
             />
         ),
     },

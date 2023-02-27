@@ -8,11 +8,11 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Card, CardHeader, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -41,7 +41,6 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { UserAvatar } from '../../user/UserAvatar'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
@@ -169,7 +168,7 @@ export const fetchDiffStats = (args: {
         })
     )
 
-interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     repo: TreePageRepositoryFields
@@ -182,7 +181,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
-            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+            const name = entry.name.toLocaleLowerCase()
+            if (!entry.isDirectory && (name === 'readme.md' || name === 'readme' || name === 'readme.txt')) {
                 return entry
             }
         }
@@ -445,7 +445,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const externalURLs = node?.externalURLs
     const connection = node?.commit?.ancestors
 
     return (
@@ -461,7 +460,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 className={styles.gitCommitNode}
                                 messageSubjectClassName={styles.gitCommitNodeMessageSubject}
                                 compact={true}
-                                externalURLs={externalURLs}
                             />
                         ))}
                     </tbody>

@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
-import { UserAvatar } from '../../../../user/UserAvatar'
 
 import styles from './GitBranchChangesetDescriptionInfo.module.scss'
 

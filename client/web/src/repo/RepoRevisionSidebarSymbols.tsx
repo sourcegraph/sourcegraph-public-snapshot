@@ -65,9 +65,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                 <NavLink
                     to={node.url}
                     onClick={onHandleClick}
-                    className={({ isActive }) =>
-                        classNames('test-symbol-link', styles.link, isActive && styles.linkActive)
-                    }
+                    className={classNames('test-symbol-link', styles.link, isActive && styles.linkActive)}
                 >
                     <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">

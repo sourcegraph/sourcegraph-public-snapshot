@@ -310,6 +310,13 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Errorf("got %+v, want %+v", users[0], user)
 	}
 
+	// By usernames.
+	if users, err := db.Users().List(ctx, &UsersListOptions{Usernames: []string{user.Username}}); err != nil {
+		t.Fatal(err)
+	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
+		t.Errorf("got %+v, want %+v", users[0], user)
+	}
+
 	if err := db.Users().Delete(ctx, user.ID); err != nil {
 		t.Fatal(err)
 	}

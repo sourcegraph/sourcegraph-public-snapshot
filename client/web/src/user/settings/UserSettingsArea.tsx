@@ -6,7 +6,6 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -30,7 +29,7 @@ import styles from './UserSettingsArea.module.scss'
 
 export interface UserSettingsAreaRoute extends RouteV6Descriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaProps extends UserAreaRouteContext, ThemeProps, TelemetryProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, TelemetryProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]

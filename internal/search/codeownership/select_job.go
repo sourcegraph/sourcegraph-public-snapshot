@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwnersSearch(child job.Job) job.Job {
+func NewSelectOwners(child job.Job) job.Job {
 	return &selectOwnersJob{
 		child: child,
 	}
@@ -111,7 +111,6 @@ matchesLoop:
 				InputRev:      mm.InputRev,
 				Repo:          mm.Repo,
 				CommitID:      mm.CommitID,
-				Path:          mm.Path,
 			}
 			ownerMatches = append(ownerMatches, ownerMatch)
 		}

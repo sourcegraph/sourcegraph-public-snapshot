@@ -24088,13 +24088,13 @@ Query: `sum by (op)(increase(src_codeintel_ranking_store_errors_total{job=~"^${s
 
 <br />
 
-### Code Intelligence > Ranking: Codeintel: Ranking > PageRank
+### Code Intelligence > Ranking: Codeintel: Ranking
 
-#### codeintel-ranking: codeintel_ranking_repositories_updated_total
+#### codeintel-ranking: codeintel_uploads_ranking_num_definitions_inserted_total
 
-<p class="subtitle">Repository path ranks updated repository path ranks updated every 5m</p>
+<p class="subtitle">Definition rows inserted every 5m</p>
 
-The number of updates to document scores of any repository.
+The number of definition rows inserted into Postgres.
 
 This panel has no related alerts.
 
@@ -24105,17 +24105,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_repositories_updated_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_num_definitions_inserted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_csv_files_processed_total
+#### codeintel-ranking: codeintel_uploads_ranking_num_references_inserted_total
 
-<p class="subtitle">Csv files read and processed files read from GCS every 5m</p>
+<p class="subtitle">Reference rows inserted every 5m</p>
 
-The number of input CSV records read from GCS.
+The number of reference rows inserted into Postgres.
 
 This panel has no related alerts.
 
@@ -24126,17 +24126,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_csv_files_processed_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_num_references_inserted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_input_rows_processed_total
+#### codeintel-ranking: codeintel_uploads_num_stale_definition_records_deleted_total
 
-<p class="subtitle">Csv result rows processed csv result rows processed every 5m</p>
+<p class="subtitle">Definition records removed every 5m</p>
 
-The number of input row records merged into document scores for
+The number of stale definition records removed from Postgres.
 
 This panel has no related alerts.
 
@@ -24147,17 +24147,38 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_input_rows_processed_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_num_stale_definition_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_ranking_uploads_read_total
+#### codeintel-ranking: codeintel_uploads_num_stale_reference_records_deleted_total
 
-<p class="subtitle">Uploads read uploads read for export every 5m</p>
+<p class="subtitle">Reference records removed every 5m</p>
 
-The number of upload records read.
+The number of stale reference records removed from Postgres.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100203` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_num_stale_reference_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_ranking_reference_records_processed_total
+
+<p class="subtitle">Reference rows processed every 5m</p>
+
+The number of reference rows processed.
 
 This panel has no related alerts.
 
@@ -24168,17 +24189,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_ranking_uploads_read_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_reference_records_processed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_ranking_stale_uploads_removed_total
+#### codeintel-ranking: codeintel_ranking_inputs_inserted_total
 
-<p class="subtitle">Uploads removed stale upload records removed every 5m</p>
+<p class="subtitle">Input rows inserted every 5m</p>
 
-The number of stale upload records removed from GCS.
+The number of input rows inserted.
 
 This panel has no related alerts.
 
@@ -24189,17 +24210,59 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_ranking_stale_uploads_removed_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_inputs_inserted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_csv_files_bytes_read_total
+#### codeintel-ranking: codeintel_ranking_path_count_inputs_rows_processed_total
 
-<p class="subtitle">Bytes read bytes read from GCS every 5m</p>
+<p class="subtitle">Input rows processed every 5m</p>
 
-The number of bytes read from GCS.
+The number of input rows processed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_path_count_inputs_rows_processed_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_ranking_path_ranks_inserted_total
+
+<p class="subtitle">Path ranks updated every 5m</p>
+
+The number of path ranks inserted.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100213` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_path_ranks_inserted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_uploads_num_metadata_records_deleted_total
+
+<p class="subtitle">Metadata records removed every 5m</p>
+
+The number of stale metadata records removed from Postgres.
 
 This panel has no related alerts.
 
@@ -24210,17 +24273,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_csv_files_bytes_read_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_num_metadata_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_ranking_bytes_uploaded_total
+#### codeintel-ranking: codeintel_uploads_num_input_records_deleted_total
 
-<p class="subtitle">Bytes uploaded bytes uploaded to GCS every 5m</p>
+<p class="subtitle">Input records removed every 5m</p>
 
-The number of bytes uploaded to GCS.
+The number of stale input records removed from Postgres.
 
 This panel has no related alerts.
 
@@ -24231,28 +24294,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_ranking_bytes_uploaded_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_uploads_ranking_bytes_deleted_total
-
-<p class="subtitle">Bytes deleted bytes deleted from GCS every 5m</p>
-
-The number of bytes deleted from GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100222` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_ranking_bytes_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_num_input_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 

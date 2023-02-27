@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -127,7 +127,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "code.go",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -135,7 +134,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "code.go",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -143,7 +141,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "README.md",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -151,7 +148,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "README.md",
 				LimitHit:      0,
 			},
 		}
@@ -161,10 +157,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		sort.Slice(want, func(x, y int) bool {
 			return want[x].Key().Less(want[y].Key())
 		})
-		autogold.Want("owner matches are as expected", want).Equal(t, matches)
-	})
-	t.Run("deduplicates owner matches", func(t *testing.T) {
-		// See result/owner.go:55 for comment.
+		autogold.Expect(want).Equal(t, matches)
 	})
 }
 

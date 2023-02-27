@@ -3,6 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
+import { flushSync } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
@@ -54,9 +55,20 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                 return
             }
 
-            navigate(element.url)
-            onClick()
-            setSelectedSymbolUrl(element.url)
+            // We use flushSync here to make sure both the selectedSymbolUrl and the React router
+            // navigation are applied at the same time. This fixed a race condition where one value
+            // is updated before the other that caused the symbol tree to try and recover, jumping
+            // between the two options indefinitely.
+            //
+            // Note: React errors when calling flushSync from lifecycle method, so we move this into
+            // an async timeout instead.
+            queueMicrotask(() =>
+                flushSync(() => {
+                    onClick()
+                    setSelectedSymbolUrl(element.url)
+                    navigate(element.url)
+                })
+            )
         },
         [navigate, onClick, selectedSymbolUrl, setSelectedSymbolUrl]
     )
@@ -69,7 +81,6 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     }, [treeData])
     useEffect(() => {
         const currentLocation = parseBrowserRepoURL(H.createPath(location))
-
         // Ignore effect updates that are caused by changes that we have made
         if (selectedSymbolUrl && isEqual(currentLocation, parseBrowserRepoURL(selectedSymbolUrl))) {
             return

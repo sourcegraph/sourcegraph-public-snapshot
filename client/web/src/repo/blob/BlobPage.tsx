@@ -24,7 +24,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -89,7 +88,6 @@ interface BlobPageProps
         PlatformContextProps,
         TelemetryProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
@@ -124,7 +122,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
-    const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
@@ -365,38 +363,33 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!window.context.enableLegacyExtensions ? (
-                <>
-                    {window.context.isAuthenticatedUser && (
-                        <RepoHeaderContributionPortal
-                            position="right"
-                            priority={112}
-                            id="open-in-editor-action"
-                            repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                        >
-                            {({ actionType }) => (
-                                <OpenInEditorActionItem
-                                    platformContext={props.platformContext}
-                                    externalServiceType={props.repoServiceType}
-                                    actionType={actionType}
-                                    source="repoHeader"
-                                />
-                            )}
-                        </RepoHeaderContributionPortal>
+            {window.context.isAuthenticatedUser && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={112}
+                    id="open-in-editor-action"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <OpenInEditorActionItem
+                            platformContext={props.platformContext}
+                            externalServiceType={props.repoServiceType}
+                            actionType={actionType}
+                            source="repoHeader"
+                        />
                     )}
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={111}
-                        id="toggle-blame-action"
-                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                    >
-                        {({ actionType }) => (
-                            <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
-                        )}
-                    </RepoHeaderContributionPortal>
-                </>
-            ) : null}
-
+                </RepoHeaderContributionPortal>
+            )}
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={111}
+                id="toggle-blame-action"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                )}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -587,7 +580,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         extensionsController={props.extensionsController}
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
-                        isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
                         role="region"
                         ariaLabel="File blob"
