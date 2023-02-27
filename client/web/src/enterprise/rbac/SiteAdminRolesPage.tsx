@@ -17,7 +17,7 @@ import {
 } from '../../components/FilteredConnection/ui'
 
 import { RoleNode } from './components/Role'
-import { useRolesConnection, usePermissions } from './backend'
+import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
@@ -29,6 +29,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
+    // Fetch paginated roles.
     const {
         connection,
         error: rolesError,
@@ -37,11 +38,14 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         hasNextPage,
         refetchAll,
     } = useRolesConnection()
+    // We need to query all permissions from the database, so site admins can update easily if they want to.
     const { data, error: permissionsError, loading: permissionsLoading } = usePermissions()
 
     const loading = rolesLoading || permissionsLoading
     const error = rolesError || permissionsError
 
+    // We group permissions by namespace because that's how they're displayed in the UI. This allows
+    // for quick lookup to know when a role is assigned a permission.
     const permissions = useMemo(() => {
         let result = {} as PermissionsMap
         if (permissionsLoading || permissionsError) {
@@ -64,8 +68,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 headingElement="h2"
                 description={
                     <>
-                        Roles represent a characteristic of a group of users, it can be used to define a function or
-                        attribute a group of users possess.
+                        Roles represent a set of permissions that are granted to a user.
                     </>
                 }
                 className="mb-3"
