@@ -32,6 +32,7 @@ import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enable
 import { NotebookProps } from '../notebooks'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -272,6 +273,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         >
                             Try Sourcegraph Cloud
                         </ButtonLink>
+                    )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <AccessRequestsGlobalNavItem
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            context={window.context}
+                        />
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>

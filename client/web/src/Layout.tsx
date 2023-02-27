@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { Outlet, useLocation, Navigate, useMatches } from 'react-router-dom'
+import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-router-dom'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -46,6 +46,14 @@ export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
+function useIsSignInOrSignUpPage(): boolean {
+    const isSignInPage = useMatch(PageRoutes.SignIn)
+    const isSignUpPage = useMatch(PageRoutes.SignUp)
+    const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
+    const isWelcomePage = useMatch(PageRoutes.Welcome)
+    const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+}
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
@@ -85,11 +93,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
-    const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+    const isSignInOrUp = useIsSignInOrSignUpPage()
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 

@@ -346,3 +346,8 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	n, ok := r.Node.(PermissionResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
