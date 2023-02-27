@@ -173,6 +173,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             globbing={globbing}
             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             fetchSearchContexts={fetchSearchContexts}
+            selectedSearchContextSpec={selectedSearchContextSpec}
             setSelectedSearchContextSpec={setSelectedSearchContextSpec}
             telemetryService={telemetryService}
             authenticatedUser={authenticatedUser}
