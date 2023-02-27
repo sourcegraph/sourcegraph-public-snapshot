@@ -539,11 +539,11 @@ type CodeIntelRepositoryBadge struct {
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
-	// AccessToken description: The access token used to authenticate with the completions API.
+	// AccessToken description: The access token used to authenticate with the external completions provider.
 	AccessToken string `json:"accessToken"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Provider description: The completions provider.
+	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
 
