@@ -24,7 +24,7 @@ func TestLogger(t *testing.T) {
 		key          string
 		command      []string
 		exitCode     int
-		mockFunc     func(wg *sync.WaitGroup, store *mockLogEntryStore)
+		mockFunc     func(lock *sync.Mutex, store *mockLogEntryStore)
 	}{
 		{
 			name:         "Log written",
@@ -33,17 +33,17 @@ func TestLogger(t *testing.T) {
 			key:          "some-key",
 			command:      []string{"echo", "hello world"},
 			exitCode:     0,
-			mockFunc: func(wg *sync.WaitGroup, store *mockLogEntryStore) {
-				wg.Add(1)
+			mockFunc: func(lock *sync.Mutex, store *mockLogEntryStore) {
+				lock.Lock()
 				store.On("AddExecutionLogEntry", mock.Anything, mock.Anything, mock.Anything).
 					Run(func(args mock.Arguments) {
-						wg.Done()
+						lock.Unlock()
 					}).
 					Return(1, nil)
-				wg.Add(1)
+				lock.Lock()
 				store.On("UpdateExecutionLogEntry", mock.Anything, mock.Anything, 1, mock.Anything).
 					Run(func(args mock.Arguments) {
-						wg.Done()
+						lock.Unlock()
 					}).
 					Return(nil)
 			},
@@ -52,15 +52,15 @@ func TestLogger(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			store := new(mockLogEntryStore)
-			var wg sync.WaitGroup
+			lock := &sync.Mutex{}
 
 			if test.mockFunc != nil {
-				test.mockFunc(&wg, store)
+				test.mockFunc(lock, store)
 			}
 
 			logger := command.NewLogger(internalLogger, store, test.job, test.replacements)
 
-			logEntry := logger.NewLogEntry(test.key, test.command)
+			logEntry := logger.LogEntry(test.key, test.command)
 
 			_, err := logEntry.Write([]byte("hello world"))
 			require.NoError(t, err)
@@ -70,7 +70,6 @@ func TestLogger(t *testing.T) {
 			logEntry.Finalize(test.exitCode)
 			logEntry.Close()
 
-			wg.Wait()
 			mock.AssertExpectationsForObjects(t, store)
 		})
 	}

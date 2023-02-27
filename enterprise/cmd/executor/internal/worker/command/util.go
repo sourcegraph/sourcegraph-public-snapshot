@@ -1,12 +1,5 @@
 package command
 
-import (
-	"fmt"
-	"strings"
-
-	"github.com/kballard/go-shellquote"
-)
-
 // Flatten combines string values and (non-recursive) string slice values
 // into a single string slice.
 func Flatten(values ...any) []string {
@@ -31,16 +24,4 @@ func Intersperse(flag string, values []string) []string {
 	}
 
 	return interspersed
-}
-
-// quoteEnv returns a slice of env vars in which the values are properly shell quoted.
-func quoteEnv(env []string) []string {
-	quotedEnv := make([]string, len(env))
-
-	for i, e := range env {
-		elems := strings.SplitN(e, "=", 2)
-		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
-	}
-
-	return quotedEnv
 }

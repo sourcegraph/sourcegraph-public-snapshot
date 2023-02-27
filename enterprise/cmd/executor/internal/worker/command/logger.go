@@ -22,8 +22,8 @@ type Logger interface {
 	// background goroutines that watch a log entry and possibly update it have
 	// exited.
 	Flush() error
-	// NewLogEntry creates a new log entry for the given key and command.
-	NewLogEntry(key string, command []string) LogEntry
+	// LogEntry creates a new log entry for the given key and command.
+	LogEntry(key string, command []string) LogEntry
 }
 
 // LogEntry is returned by Logger.Log and implements the io.WriteCloser
@@ -209,7 +209,7 @@ func (l *logger) Flush() error {
 	return l.errs
 }
 
-func (l *logger) NewLogEntry(key string, command []string) LogEntry {
+func (l *logger) LogEntry(key string, command []string) LogEntry {
 	handle := &entryHandle{
 		logEntry: internalexecutor.ExecutionLogEntry{
 			Key:       key,

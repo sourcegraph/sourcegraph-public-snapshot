@@ -5,25 +5,42 @@ import (
 	"strings"
 
 	"github.com/kballard/go-shellquote"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 )
 
 const (
-	FirecrackerContainerDir  = "/work"
+	// FirecrackerContainerDir is the directory where the container is mounted in the firecracker VM.
+	FirecrackerContainerDir = "/work"
+	// FirecrackerDockerConfDir is the directory where the docker config is mounted in the firecracker VM.
 	FirecrackerDockerConfDir = "/etc/docker/cli"
 )
 
-func NewFirecrackerCommand(logger Logger, cmdRunner util.CmdRunner, vmName string, options DockerOptions) Command {
-	dockerCommand := NewDockerCommand(logger, cmdRunner, FirecrackerContainerDir, options)
-	innerCommand := shellquote.Join(dockerCommand.Command...)
+// NewFirecrackerSpec returns a spec that will run the given command in a firecracker VM.
+func NewFirecrackerSpec(vmName string, image string, scriptPath string, spec Spec, options DockerOptions) Spec {
+	dockerSpec := NewDockerSpec(FirecrackerContainerDir, image, scriptPath, spec, options)
+	innerCommand := shellquote.Join(dockerSpec.Command...)
 
-	if options.Image == "" && len(dockerCommand.Env) > 0 {
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(dockerCommand.Env), " "), innerCommand)
+	// Note: src-cli run commands don't receive env vars in firecracker so we
+	// have to prepend them inline to the script.
+	// TODO: This branch should disappear when we make src-cli a non-special cased
+	// thing.
+	if image == "" && len(dockerSpec.Env) > 0 {
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(dockerSpec.Env), " "), innerCommand)
 	}
-	if dockerCommand.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(dockerCommand.Dir), innerCommand)
+	if dockerSpec.Dir != "" {
+		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(dockerSpec.Dir), innerCommand)
 	}
-	dockerCommand.Command = []string{"ignite", "exec", vmName, "--", "sh", "-c", innerCommand}
-	return dockerCommand
+	dockerSpec.Command = []string{"ignite", "exec", vmName, "--", "sh", "-c", innerCommand}
+	return dockerSpec
+}
+
+// quoteEnv returns a slice of env vars in which the values are properly shell quoted.
+func quoteEnv(env []string) []string {
+	quotedEnv := make([]string, len(env))
+
+	for i, e := range env {
+		elems := strings.SplitN(e, "=", 2)
+		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
+	}
+
+	return quotedEnv
 }

@@ -8,27 +8,32 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Command struct {
+type Command interface {
+	Run(ctx context.Context, cmdLogger Logger, spec Spec) error
+}
+
+type RealCommand struct {
+	CmdRunner util.CmdRunner
+	Logger    log.Logger
+}
+
+type Spec struct {
 	Key       string
 	Command   []string
 	Dir       string
 	Env       []string
-	CmdRunner util.CmdRunner
-	Logger    Logger
+	Operation *observation.Operation
 }
 
-func (c *Command) Run(ctx context.Context) error {
-	// Check if we can even run the command.
-	if err := validateCommand(c.Command); err != nil {
-		return err
-	}
-
+func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err error) {
 	// The context here is used below as a guard against the command finishing before we close
 	// the stdout and stderr pipes. This context may not cancel until after logs for the job
 	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a
@@ -36,7 +41,17 @@ func (c *Command) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cmd, stdout, stderr, err := c.prepCommand(ctx, c.CmdRunner)
+	ctx, _, endObservation := spec.Operation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	c.Logger.Info("Running command", log.Strings("command", spec.Command))
+
+	// Check if we can even run the command.
+	if err := validateCommand(spec.Command); err != nil {
+		return err
+	}
+
+	cmd, stdout, stderr, err := c.prepCommand(ctx, spec)
 	if err != nil {
 		return err
 	}
@@ -67,7 +82,7 @@ func (c *Command) Run(ctx context.Context) error {
 	}()
 
 	// Create the log entry that we will be writing stdout and stderr to.
-	logEntry := c.Logger.NewLogEntry(c.Key, c.Command)
+	logEntry := cmdLogger.LogEntry(spec.Key, spec.Command)
 	defer logEntry.Close()
 
 	// Starts writing the stdout and stderr of the command to the log entry.
@@ -115,11 +130,11 @@ var allowedBinaries = []string{
 	"src",
 }
 
-func (c *Command) prepCommand(ctx context.Context, cmdRunner util.CmdRunner) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
-	cmd = cmdRunner.CommandContext(ctx, c.Command[0], c.Command[1:]...)
-	cmd.Dir = c.Dir
+func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
+	cmd = c.CmdRunner.CommandContext(ctx, options.Command[0], options.Command[1:]...)
+	cmd.Dir = options.Dir
 
-	env := c.Env
+	env := options.Env
 	for _, k := range forwardedHostEnvVars {
 		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
 	}

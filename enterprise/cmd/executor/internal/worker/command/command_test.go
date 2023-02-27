@@ -8,16 +8,21 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestCommand_Run(t *testing.T) {
+	internalLogger := logtest.Scoped(t)
+	operations := command.NewOperations(&observation.TestContext)
+
 	tests := []struct {
 		name        string
 		command     []string
@@ -34,7 +39,7 @@ func TestCommand_Run(t *testing.T) {
 
 				logEntry := new(mockLogEntry)
 				logger.
-					On("NewLogEntry", "some-key", []string{"git", "pull"}).
+					On("LogEntry", "some-key", []string{"git", "pull"}).
 					Return(logEntry)
 				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 					// Use Run to see the actual output in the test output. Else we just get byte output.
@@ -60,7 +65,7 @@ func TestCommand_Run(t *testing.T) {
 
 				logEntry := new(mockLogEntry)
 				logger.
-					On("NewLogEntry", "some-key", []string{"git", "pull"}).
+					On("LogEntry", "some-key", []string{"git", "pull"}).
 					Return(logEntry)
 				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 					// Use Run to see the actual output in the test output. Else we just get byte output.
@@ -82,16 +87,17 @@ func TestCommand_Run(t *testing.T) {
 				test.mockFunc(t, cmdRunner, logger)
 			}
 
+			cmd := command.RealCommand{CmdRunner: cmdRunner, Logger: internalLogger}
+
 			dir := t.TempDir()
-			cmd := command.Command{
+			spec := command.Spec{
 				Key:       "some-key",
 				Command:   test.command,
 				Dir:       dir,
 				Env:       []string{"FOO=BAR"},
-				CmdRunner: cmdRunner,
-				Logger:    logger,
+				Operation: operations.Exec,
 			}
-			err := cmd.Run(context.Background())
+			err := cmd.Run(context.Background(), logger, spec)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -113,7 +119,7 @@ func (m *mockLogger) Flush() error {
 	return args.Error(0)
 }
 
-func (m *mockLogger) NewLogEntry(key string, cmd []string) command.LogEntry {
+func (m *mockLogger) LogEntry(key string, cmd []string) command.LogEntry {
 	args := m.Called(key, cmd)
 	return args.Get(0).(command.LogEntry)
 }

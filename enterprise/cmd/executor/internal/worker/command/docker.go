@@ -4,28 +4,20 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 // ScriptsPath is the location relative to the executor workspace where the executor
 // will write scripts required for the execution of the job.
 const ScriptsPath = ".sourcegraph-executor"
 
+// DockerOptions are the options that are specific to running a container.
 type DockerOptions struct {
-	Key              string
-	Image            string
-	Command          []string
-	Dir              string
-	Env              []string
-	ScriptPath       string
-	ConfigPath       string
-	DockerAuthConfig types.DockerAuthConfig
-	AddHostGateway   bool
-	Resources        ResourceOptions
+	ConfigPath     string
+	AddHostGateway bool
+	Resources      ResourceOptions
 }
 
+// ResourceOptions are the resource limits that can be applied to a container or VM.
 type ResourceOptions struct {
 	// NumCPUs is the number of virtual CPUs a container or VM can use.
 	NumCPUs int
@@ -47,22 +39,22 @@ type ResourceOptions struct {
 	DockerHostMountPath string
 }
 
-// NewDockerCommand constructs the command to run on the host in order to
+// NewDockerSpec constructs the command to run on the host in order to
 // invoke the given spec. If the spec does not specify an image, then the command
 // will be run _directly_ on the host. Otherwise, the command will be run inside
 // a one-shot docker container subject to the resource limits specified in the
 // given options.
-func NewDockerCommand(logger Logger, cmdRunner util.CmdRunner, workingDir string, options DockerOptions) Command {
+func NewDockerSpec(workingDir string, image string, scriptPath string, spec Spec, options DockerOptions) Spec {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
-	if options.Image == "" {
-		env := options.Env
+	if image == "" {
+		env := spec.Env
 		if options.ConfigPath != "" {
 			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", options.ConfigPath))
 		}
-		return Command{
-			Key:     options.Key,
-			Command: options.Command,
-			Dir:     filepath.Join(workingDir, options.Dir),
+		return Spec{
+			Key:     spec.Key,
+			Command: spec.Command,
+			Dir:     filepath.Join(workingDir, spec.Dir),
 			Env:     env,
 		}
 	}
@@ -72,15 +64,13 @@ func NewDockerCommand(logger Logger, cmdRunner util.CmdRunner, workingDir string
 		hostDir = filepath.Join(options.Resources.DockerHostMountPath, filepath.Base(workingDir))
 	}
 
-	return Command{
-		Key:       options.Key,
-		Command:   formatDockerCommand(hostDir, options),
-		CmdRunner: cmdRunner,
-		Logger:    logger,
+	return Spec{
+		Key:     spec.Key,
+		Command: formatDockerCommand(hostDir, image, scriptPath, spec, options),
 	}
 }
 
-func formatDockerCommand(hostDir string, options DockerOptions) []string {
+func formatDockerCommand(hostDir string, image string, scriptPath string, spec Spec, options DockerOptions) []string {
 	return Flatten(
 		"docker",
 		dockerConfigFlag(options.ConfigPath),
@@ -89,11 +79,11 @@ func formatDockerCommand(hostDir string, options DockerOptions) []string {
 		dockerHostGatewayFlag(options.AddHostGateway),
 		dockerResourceFlags(options.Resources),
 		dockerVolumeFlags(hostDir),
-		dockerWorkingDirectoryFlags(options.Dir),
-		dockerEnvFlags(options.Env),
+		dockerWorkingDirectoryFlags(spec.Dir),
+		dockerEnvFlags(spec.Env),
 		dockerEntrypointFlags,
-		options.Image,
-		filepath.Join("/data", ScriptsPath, options.ScriptPath),
+		image,
+		filepath.Join("/data", ScriptsPath, scriptPath),
 	)
 }
 
