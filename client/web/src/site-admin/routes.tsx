@@ -1,5 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
@@ -42,6 +44,8 @@ const SiteAdminRepositoriesPage = lazyComponent(
 )
 const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
 const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
+const AccessRequestsPage = lazyComponent(() => import('./AccessRequestsPage'), 'AccessRequestsPage')
+
 const SiteAdminCreateUserPage = lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
 const SiteAdminTokensPage = lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage')
 const SiteAdminUpdatesPage = lazyComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage')
@@ -146,6 +150,16 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         render: () => <UsersManagement />,
+    },
+    {
+        path: '/access-requests',
+        render: () => <AccessRequestsPage />,
+        condition: context =>
+            checkRequestAccessAllowed(
+                context.isSourcegraphDotCom,
+                window.context.allowSignup,
+                window.context.experimentalFeatures
+            ),
     },
     {
         path: '/users/new',

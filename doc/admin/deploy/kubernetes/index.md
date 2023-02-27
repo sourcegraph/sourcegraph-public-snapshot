@@ -195,9 +195,9 @@ Other common configurations include:
 
 See the [configuration guide for Kustomize](configure.md) for more configuration options.
 
-## Helm Chart
+## Helm Charts
 
-We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm chart](helm.md) instead.
+We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm Charts](helm.md) instead.
 
 ## Learn more
 

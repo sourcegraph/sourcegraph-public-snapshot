@@ -38,10 +38,10 @@ func TestClient_AbandonPullRequest(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "2",
+		PullRequestID: "40",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		RepoNameOrID:  "sgtestazure",
 	}
 
 	resp, err := cli.AbandonPullRequest(context.Background(), args)
@@ -58,10 +58,10 @@ func TestClient_GetPullRequest(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "2",
+		PullRequestID: "36",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		RepoNameOrID:  "sgtestazure",
 	}
 
 	resp, err := cli.GetPullRequest(context.Background(), args)
@@ -78,7 +78,7 @@ func TestClient_GetPullRequestStatuses(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "8",
+		PullRequestID: "49",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
 		RepoNameOrID:  "sgtestazure3",
@@ -100,10 +100,10 @@ func TestClient_UpdatePullRequest(t *testing.T) {
 	title := "new title"
 	description := "new description"
 	args := PullRequestCommonArgs{
-		PullRequestID: "5",
+		PullRequestID: "38",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		RepoNameOrID:  "sgtestazure",
 	}
 	input := PullRequestUpdateInput{
 		Title:       &title,
@@ -131,9 +131,9 @@ func TestClient_CreatePullRequestCommentThread(t *testing.T) {
 	}
 	input := PullRequestCommentInput{
 		Comments: []PullRequestCommentForInput{{
-			ParentCommitID: 0,
-			Content:        "new comment",
-			CommentType:    1,
+			ParentCommentID: 0,
+			Content:         "new comment",
+			CommentType:     1,
 		}},
 	}
 
@@ -151,13 +151,13 @@ func TestClient_CompletePullRequest(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "7",
+		PullRequestID: "40",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		RepoNameOrID:  "sgtestazure",
 	}
-	input := PullRequestCommitRef{
-		CommitID: "7867eee4f671d69f9a9be0fcacb6a7af764ec962",
+	input := PullRequestCompleteInput{
+		CommitID: "0c8e8dfe907c724f785cdc818e0400ec0d68cb0b",
 	}
 
 	resp, err := cli.CompletePullRequest(context.Background(), args, input)

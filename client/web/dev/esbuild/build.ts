@@ -9,7 +9,6 @@ import {
     STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
-    workerPlugin,
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
@@ -43,7 +42,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
-        workerPlugin,
         manifestPlugin,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),

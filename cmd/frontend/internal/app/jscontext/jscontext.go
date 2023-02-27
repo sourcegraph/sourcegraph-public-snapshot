@@ -76,6 +76,7 @@ type UserSession struct {
 }
 
 type CurrentUser struct {
+	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
 	DatabaseID          int32      `json:"databaseID"`
 	Username            string     `json:"username"`
@@ -163,8 +164,6 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
-
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
@@ -309,8 +308,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: conf.ExperimentalFeatures().EnableLegacyExtensions,
-
 		LicenseInfo: licenseInfo,
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
@@ -350,6 +347,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	}
 
 	return &CurrentUser{
+		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
 		Session:             &UserSession{session.CanSignOut()},
 		DatabaseID:          userResolver.DatabaseID(),

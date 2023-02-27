@@ -19,8 +19,10 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 	scanner := bufio.NewScanner(codeownersFile)
 	var rs []*codeownerspb.Rule
 	p := new(parsing)
+	lineNumber := int32(0)
 	for scanner.Scan() {
 		p.nextLine(scanner.Text())
+		lineNumber++
 		if p.isBlank() {
 			continue
 		}
@@ -36,6 +38,7 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 		r := codeownerspb.Rule{
 			Pattern:     unescape(pattern),
 			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
+			LineNumber:  lineNumber,
 		}
 		for _, ownerText := range owners {
 			o := ParseOwner(ownerText)

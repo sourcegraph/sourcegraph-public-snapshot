@@ -174,7 +174,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}()
 
-	go syncScheduler(ctx, logger, updateScheduler, store)
+	go manageUnclonedRepos(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
@@ -506,11 +506,11 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the uncloned repositories on gitserver
+// manageUnclonedRepos will periodically list the uncloned repositories on gitserver
 // and update the scheduler with the list. It also ensures that if any of our
 // indexable repos are missing from the cloned list they will be added for
 // cloning ASAP.
-func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
+func manageUnclonedRepos(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(logger, store)
 
 	doSync := func() {

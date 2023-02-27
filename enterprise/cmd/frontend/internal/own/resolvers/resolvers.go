@@ -5,15 +5,15 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
-func New(db database.DB, ownService backend.OwnService) *ownResolver {
+func New(db database.DB, ownService own.Service) *ownResolver {
 	return &ownResolver{
 		db:         db,
 		ownService: ownService,
@@ -29,7 +29,7 @@ var (
 // pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct {
 	db         database.DB
-	ownService backend.OwnService
+	ownService own.Service
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {

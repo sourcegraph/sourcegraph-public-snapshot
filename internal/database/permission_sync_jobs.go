@@ -72,6 +72,57 @@ const (
 	PermissionsSyncJobReasonGroupUnknown     PermissionsSyncJobReasonGroup = "UNKNOWN"
 )
 
+var ReasonGroupToReasons = map[PermissionsSyncJobReasonGroup][]PermissionsSyncJobReason{
+	PermissionsSyncJobReasonGroupManual: {
+		ReasonManualRepoSync,
+		ReasonManualUserSync,
+	},
+	PermissionsSyncJobReasonGroupWebhook: {
+		ReasonGitHubUserEvent,
+		ReasonGitHubUserAddedEvent,
+		ReasonGitHubUserRemovedEvent,
+		ReasonGitHubUserMembershipAddedEvent,
+		ReasonGitHubUserMembershipRemovedEvent,
+		ReasonGitHubTeamAddedToRepoEvent,
+		ReasonGitHubTeamRemovedFromRepoEvent,
+		ReasonGitHubOrgMemberAddedEvent,
+		ReasonGitHubOrgMemberRemovedEvent,
+		ReasonGitHubRepoEvent,
+		ReasonGitHubRepoMadePrivateEvent,
+	},
+	PermissionsSyncJobReasonGroupSchedule: {
+		ReasonUserOutdatedPermissions,
+		ReasonUserNoPermissions,
+		ReasonRepoOutdatedPermissions,
+		ReasonRepoNoPermissions,
+		ReasonRepoUpdatedFromCodeHost,
+	},
+	PermissionsSyncJobReasonGroupSourcegraph: {
+		ReasonUserEmailRemoved,
+		ReasonUserEmailVerified,
+		ReasonUserAddedToOrg,
+		ReasonUserRemovedFromOrg,
+		ReasonUserAcceptedOrgInvite,
+	},
+}
+
+// sqlConds returns SQL query conditions to filter by reasons which are included
+// into given PermissionsSyncJobReasonGroup.
+//
+// If provided PermissionsSyncJobReasonGroup doesn't contain any reasons
+// (currently it is only PermissionsSyncJobReasonGroupUnknown), then nil is
+// returned.
+func (g PermissionsSyncJobReasonGroup) sqlConds() (conditions *sqlf.Query) {
+	if reasons, ok := ReasonGroupToReasons[g]; ok {
+		reasonQueries := make([]*sqlf.Query, 0, len(reasons))
+		for _, reason := range reasons {
+			reasonQueries = append(reasonQueries, sqlf.Sprintf("%s", reason))
+		}
+		conditions = sqlf.Sprintf("reason IN (%s)", sqlf.Join(reasonQueries, ", "))
+	}
+	return
+}
+
 type PermissionsSyncJobReason string
 
 // ResolveGroup returns a PermissionsSyncJobReasonGroup for a given
@@ -168,7 +219,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -391,6 +442,7 @@ type ListPermissionSyncJobOpts struct {
 	UserID              int
 	RepoID              int
 	Reason              PermissionsSyncJobReason
+	ReasonGroup         PermissionsSyncJobReasonGroup
 	State               PermissionsSyncJobState
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
@@ -411,6 +463,13 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	}
 	if opts.RepoID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+	}
+	// If both reason group and reason are provided, we narrow down the filtering to
+	// just a reason.
+	if opts.ReasonGroup != "" && opts.Reason == "" {
+		if reasonConds := opts.ReasonGroup.sqlConds(); reasonConds != nil {
+			conds = append(conds, reasonConds)
+		}
 	}
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
@@ -449,11 +508,9 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		conds = append(conds, pagination.Where)
 	}
 
-	var whereClause *sqlf.Query
-	if len(conds) != 0 {
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
-	} else {
-		whereClause = sqlf.Sprintf("")
 	}
 
 	q := sqlf.Sprintf(
@@ -485,10 +542,18 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
+%s -- whereClause
 `
 
-func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery)
+func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error) {
+	conds := opts.sqlConds()
+
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	}
+
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err

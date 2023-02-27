@@ -4,8 +4,12 @@ import (
 	"context"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -112,6 +116,9 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 
 	case *bbcs.AnnotatedPullRequest:
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
+	case *azuredevops.AnnotatedPullRequest:
+		// TODO: @varsanojidan Not implemmented yet : return computeAzureDevOpsBuildState(c.UpdatedAt, m, events)
+		return computeAzureDevOpsBuildState(m)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -245,6 +252,36 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 	case bitbucketcloud.PullRequestStatusStateInProgress:
 		return btypes.ChangesetCheckStatePending
 	case bitbucketcloud.PullRequestStatusStateSuccessful:
+		return btypes.ChangesetCheckStatePassed
+	default:
+		return btypes.ChangesetCheckStateUnknown
+	}
+}
+
+func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.ChangesetCheckState {
+	stateMap := make(map[string]btypes.ChangesetCheckState)
+
+	// States from last sync.
+	for _, status := range apr.Statuses {
+		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsBuildState(status.State)
+	}
+
+	// TODO: @varsanojidan handle events.
+
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
+	return combineCheckStates(states)
+}
+
+func parseAzureDevOpsBuildState(s adobatches.PullRequestStatusState) btypes.ChangesetCheckState {
+	switch s {
+	case adobatches.PullRequestBuildStatusStateError, adobatches.PullRequestBuildStatusStateFailed:
+		return btypes.ChangesetCheckStateFailed
+	case adobatches.PullRequestBuildStatusStatePending:
+		return btypes.ChangesetCheckStatePending
+	case adobatches.PullRequestBuildStatusStateSucceeded:
 		return btypes.ChangesetCheckStatePassed
 	default:
 		return btypes.ChangesetCheckStateUnknown
@@ -515,6 +552,21 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.State)
 		}
+	case *azuredevops.AnnotatedPullRequest:
+		switch m.Status {
+		case adobatches.PullRequestStatusAbandoned:
+			s = btypes.ChangesetExternalStateClosed
+		case adobatches.PullRequestStatusCompleted:
+			s = btypes.ChangesetExternalStateMerged
+		case adobatches.PullRequestStatusActive:
+			if m.IsDraft {
+				s = btypes.ChangesetExternalStateDraft
+			} else {
+				s = btypes.ChangesetExternalStateOpen
+			}
+		default:
+			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -583,7 +635,24 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-
+	case *azuredevops.AnnotatedPullRequest:
+		for _, reviewer := range m.Reviewers {
+			// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+			//
+			//   10: approved
+			//   5 : approved with suggestions
+			//   0 : no vote
+			//  -5 : waiting for author
+			//  -10: rejected
+			switch reviewer.Vote {
+			case 10:
+				states[btypes.ChangesetReviewStateApproved] = true
+			case 5, -5:
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
