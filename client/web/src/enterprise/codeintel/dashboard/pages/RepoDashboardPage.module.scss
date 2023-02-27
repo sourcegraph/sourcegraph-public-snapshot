@@ -1,8 +1,12 @@
+.summary {
+    padding-bottom: 1.5rem;
+}
+
 .summary-item-thin {
     max-width: 6rem;
 }
 
-.summary-container {
+.filter-container {
     display: flex;
     flex-direction: column;
     width: 100%;

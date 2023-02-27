@@ -216,50 +216,51 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                     )
                 }
             />
+            <Alert variant={data.commitGraph.stale ? 'primary' : 'success'} aria-live="off">
+                {data.commitGraph.stale ? (
+                    <>
+                        Repository commit graph is currently stale and is queued to be refreshed. Refreshing the commit
+                        graph updates which uploads are visible from which commits.
+                    </>
+                ) : (
+                    <>Repository commit graph is currently up to date.</>
+                )}{' '}
+                {data.commitGraph.updatedAt && (
+                    <>
+                        Last refreshed <Timestamp date={data.commitGraph.updatedAt} now={now} />.
+                    </>
+                )}
+            </Alert>
             <Container>
-                <DataSummary items={summaryItems} className="pb-3" />
-                <div className="text-muted">
-                    <small>
-                        {data.summary.lastIndexScan ? (
-                            <>
-                                This repository was scanned for auto-indexing{' '}
-                                <Timestamp date={data.summary.lastIndexScan} />.
-                            </>
-                        ) : (
-                            <>This repository has never been scanned for auto-indexing.</>
-                        )}
-                    </small>
-                    <small className="d-block">
-                        {data.summary.lastIndexScan ? (
-                            <>
-                                The indexes of this repository were last considered for expiration{' '}
-                                <Timestamp date={data.summary.lastIndexScan} />.
-                            </>
-                        ) : (
-                            <> The indexes of this repository have never been considered for expiration.</>
-                        )}
-                    </small>
+                <DataSummary items={summaryItems} className={styles.summary} />
+                <div>
+                    <div className="text-muted">
+                        <small>
+                            {data.summary.lastIndexScan ? (
+                                <>
+                                    This repository was scanned for auto-indexing{' '}
+                                    <Timestamp date={data.summary.lastIndexScan} />.
+                                </>
+                            ) : (
+                                <>This repository has never been scanned for auto-indexing.</>
+                            )}
+                        </small>
+                        <small className="d-block">
+                            {data.summary.lastIndexScan ? (
+                                <>
+                                    The indexes of this repository were last considered for expiration{' '}
+                                    <Timestamp date={data.summary.lastIndexScan} />.
+                                </>
+                            ) : (
+                                <> The indexes of this repository have never been considered for expiration.</>
+                            )}
+                        </small>
+                    </div>
                 </div>
-
-                <Alert variant={data.commitGraph.stale ? 'primary' : 'success'} aria-live="off">
-                    {data.commitGraph.stale ? (
-                        <>
-                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
-                            commit graph updates which uploads are visible from which commits.
-                        </>
-                    ) : (
-                        <>Repository commit graph is currently up to date.</>
-                    )}{' '}
-                    {data.commitGraph.updatedAt && (
-                        <>
-                            Last refreshed <Timestamp date={data.commitGraph.updatedAt} now={now} />.
-                        </>
-                    )}
-                </Alert>
             </Container>
             <Container className="mt-3">
                 <div className="d-flex justify-content-end">
-                    <div className={styles.summaryContainer}>
+                    <div className={styles.filterContainer}>
                         <div>
                             <Label className={styles.radioGroup}>
                                 Show:
