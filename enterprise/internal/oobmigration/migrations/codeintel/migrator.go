@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
@@ -195,12 +195,12 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 // the selection of the upload holds a row lock associated with that upload for the duration of the method's
 // enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
-	g := group.New().WithErrors()
+	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
-		g.Go(func() error { return m.up(ctx) })
+		p.Go(func() error { return m.up(ctx) })
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *migrator) up(ctx context.Context) (err error) {
@@ -211,12 +211,12 @@ func (m *migrator) up(ctx context.Context) (err error) {
 //
 // For notes on parallelism, see the symmetric `Up` method on this migrator.
 func (m *migrator) Down(ctx context.Context) error {
-	g := group.New().WithErrors()
+	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
-		g.Go(func() error { return m.down(ctx) })
+		p.Go(func() error { return m.down(ctx) })
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *migrator) down(ctx context.Context) error {

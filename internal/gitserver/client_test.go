@@ -7,9 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-
-	"github.com/sourcegraph/log/logtest"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,18 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,6 +31,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -301,6 +294,12 @@ func TestClient_P4Exec(t *testing.T) {
 			password: "pa$$word",
 			args:     []string{"protects"},
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					t.Fatal(err)
@@ -320,6 +319,12 @@ func TestClient_P4Exec(t *testing.T) {
 		{
 			name: "error response",
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				w.WriteHeader(http.StatusBadRequest)
 				_, _ = w.Write([]byte("example error"))
 			},
@@ -407,7 +412,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB: db,
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
@@ -435,33 +440,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
-}
-
-func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := gitserver.NewClient()
-	setAddrs([]string{"gitserver1", "gitserver2"}, map[string]string{"repo1": "gitserver2"})
-
-	addr := client.AddrForRepo("repo1")
-	require.Equal(t, "gitserver2", addr)
-
-	// simulate config change - site admin manually changes the pinned repo config
-	setAddrs([]string{"gitserver1", "gitserver2"}, map[string]string{"repo1": "gitserver1"})
-
-	addr = client.AddrForRepo("repo1")
-	require.Equal(t, "gitserver1", addr)
-}
-
-func setAddrs(addrs []string, pinned map[string]string) {
-	conf.Mock(&conf.Unified{
-		ServiceConnectionConfig: conftypes.ServiceConnections{
-			GitServers: addrs,
-		},
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				GitServerPinnedRepos: pinned,
-			},
-		},
-	})
 }
 
 func TestClient_BatchLog(t *testing.T) {

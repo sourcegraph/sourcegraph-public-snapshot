@@ -38,6 +38,7 @@ import {
 import { submitSearch } from '../helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
 import { useRecentSearches } from '../input/useRecentSearches'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -71,7 +72,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -81,7 +82,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.queryState.query
+            const query = parameters.query ?? props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
@@ -154,6 +155,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}

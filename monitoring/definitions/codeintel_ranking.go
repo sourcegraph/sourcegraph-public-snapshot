@@ -26,7 +26,7 @@ func CodeIntelRanking() *monitoring.Dashboard {
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewRankingServiceGroup("${source:regex}"),
 			shared.CodeIntelligence.NewRankingStoreGroup("${source:regex}"),
-			shared.CodeIntelligence.NewRankingPageRankGroup("${source:regex}"),
+			shared.CodeIntelligence.NewRankingGroup("${source:regex}"),
 		},
 	}
 }

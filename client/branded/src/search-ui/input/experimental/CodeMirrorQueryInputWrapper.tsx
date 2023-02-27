@@ -181,7 +181,7 @@ function createEditor(
                 keymap.of(defaultKeymap),
                 codemirrorHistory(),
                 Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
-                EditorView.baseTheme({
+                EditorView.theme({
                     '&': {
                         flex: 1,
                         backgroundColor: 'var(--input-bg)',
@@ -211,12 +211,8 @@ function createEditor(
                     '.cm-line': {
                         padding: 0,
                     },
-                    '.sg-token-hover': {
-                        backgroundColor: 'var(--gray-02)',
+                    '.sg-decorated-token-hover': {
                         borderRadius: '3px',
-                    },
-                    '&dark .sg-token-hover': {
-                        backgroundColor: 'var(--gray-08)',
                     },
                 }),
                 querySettingsCompartment.of(queryExtensions),
