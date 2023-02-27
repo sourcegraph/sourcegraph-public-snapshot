@@ -23,7 +23,6 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -112,7 +111,7 @@ func TestMarshalChangeset(t *testing.T) {
 			want: &changeset{
 				ID:                  mucID,
 				ExternalID:          uc.ExternalID,
-				RepositoryID:        gql.MarshalRepositoryID(api.RepoID(uc.RepoID)),
+				RepositoryID:        gql.MarshalRepositoryID(uc.RepoID),
 				CreatedAt:           now,
 				UpdatedAt:           now,
 				BatchChangeIDs:      []graphql.ID{mbID},
@@ -144,7 +143,7 @@ func TestMarshalChangeset(t *testing.T) {
 			want: &changeset{
 				ID:                  micID,
 				ExternalID:          uc.ExternalID,
-				RepositoryID:        gql.MarshalRepositoryID(api.RepoID(ic.RepoID)),
+				RepositoryID:        gql.MarshalRepositoryID(ic.RepoID),
 				CreatedAt:           now,
 				UpdatedAt:           now,
 				BatchChangeIDs:      []graphql.ID{mbID},
