@@ -468,6 +468,6 @@ type ExternalServiceRepositoriesArgs struct {
 }
 
 type ExternalServiceRepositoriesResult struct {
-	Repos []*types.Repo
+	Repos []*types.ExternalServiceRepository
 	Error string
 }

@@ -524,14 +524,14 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	}()
 
 	var sourceErrs error
-	repositories := make([]*types.Repo, 0)
+	repositories := make([]*types.ExternalServiceRepository, 0)
 
 	for res := range results {
 		if res.Err != nil {
 			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
-		repositories = append(repositories, res.Repo)
+		repositories = append(repositories, res.Repo.ToExternalServiceRepository())
 	}
 
 	if sourceErrs != nil {
