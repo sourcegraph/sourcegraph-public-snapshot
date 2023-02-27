@@ -229,8 +229,8 @@ var scanHorseNameToID = basestore.NewMapScanner(func(s dbutil.Scanner) (name str
 	return name, id, err
 })
 
-var scanMapHorses = basestore.NewMapScanner(func(s dbutil.Scanner) (_ string, h *horse, err error) {
-	h, err = scanHorse(s)
+var scanMapHorses = basestore.NewMapScanner(func(s dbutil.Scanner) (string, *horse, error) {
+	h, err := scanHorse(s)
 	return h.name, h, err
 })
 
