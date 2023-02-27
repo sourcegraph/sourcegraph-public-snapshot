@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -236,79 +237,140 @@ func TestReposIndex(t *testing.T) {
 
 	indexableRepos := allRepos[:2]
 
-	cases := []struct {
-		name      string
-		indexable []types.MinimalRepo
-		body      string
-		want      []string
-	}{{
+	type parameters struct {
+		restBody    string
+		grpcRequest *proto.ListRequest
+	}
+
+	type testCase struct {
+		name       string
+		indexable  []types.MinimalRepo
+		parameters parameters
+		want       []string
+	}
+
+	cases := []testCase{{
 		name:      "indexers",
 		indexable: allRepos,
-		body:      `{"Hostname": "foo"}`,
-		want:      []string{"github.com/popular/foo", "github.com/alice/foo"},
+		parameters: parameters{
+			restBody:    `{"Hostname": "foo"}`,
+			grpcRequest: &proto.ListRequest{Hostname: "foo"},
+		},
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
 		name:      "indexedids",
 		indexable: allRepos,
-		body:      `{"Hostname": "foo", "IndexedIDs": [4]}`,
-		want:      []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+		parameters: parameters{
+			restBody:    `{"Hostname": "foo", "IndexedIDs": [4]}`,
+			grpcRequest: &proto.ListRequest{Hostname: "foo", IndexedIds: []int32{4}},
+		},
+		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
 	}, {
 		name:      "dot-com indexers",
 		indexable: indexableRepos,
-		body:      `{"Hostname": "foo"}`,
-		want:      []string{"github.com/popular/foo"},
+		parameters: parameters{
+			restBody:    `{"Hostname": "foo"}`,
+			grpcRequest: &proto.ListRequest{Hostname: "foo"},
+		},
+		want: []string{"github.com/popular/foo"},
 	}, {
 		name:      "dot-com indexedids",
 		indexable: indexableRepos,
-		body:      `{"Hostname": "foo", "IndexedIDs": [2]}`,
-		want:      []string{"github.com/popular/foo", "github.com/popular/bar"},
+		parameters: parameters{
+			restBody:    `{"Hostname": "foo", "IndexedIDs": [2]}`,
+			grpcRequest: &proto.ListRequest{Hostname: "foo", IndexedIds: []int32{2}},
+		},
+		want: []string{"github.com/popular/foo", "github.com/popular/bar"},
 	}, {
 		name:      "none",
 		indexable: allRepos,
-		body:      `{"Hostname": "baz"}`,
-		want:      []string{},
+		parameters: parameters{
+			restBody:    `{"Hostname": "baz"}`,
+			grpcRequest: &proto.ListRequest{Hostname: "baz"},
+		},
+		want: []string{},
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			srv := &searchIndexerServer{
-				ListIndexable: fakeListIndexable(tc.indexable),
-				RepoStore: &fakeRepoStore{
-					Repos: allRepos,
-				},
-				Indexers: suffixIndexers(true),
-			}
+			t.Run("gRPC", func(t *testing.T) {
+				grpcServer := &searchIndexerGRPCServer{
+					server: &searchIndexerServer{
+						ListIndexable: fakeListIndexable(tc.indexable),
+						RepoStore: &fakeRepoStore{
+							Repos: allRepos,
+						},
+						Indexers: suffixIndexers(true),
+					},
+				}
 
-			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
-			w := httptest.NewRecorder()
-			if err := srv.serveList(w, req); err != nil {
-				t.Fatal(err)
-			}
+				resp, err := grpcServer.List(context.Background(), tc.parameters.grpcRequest)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			resp := w.Result()
-			body, _ := io.ReadAll(resp.Body)
-
-			if resp.StatusCode != http.StatusOK {
-				t.Errorf("got status %v", resp.StatusCode)
-			}
-
-			var data struct {
-				RepoIDs []api.RepoID
-			}
-			if err := json.Unmarshal(body, &data); err != nil {
-				t.Fatal(err)
-			}
-
-			wantIDs := make([]api.RepoID, len(tc.want))
-			for i, name := range tc.want {
-				for _, repo := range allRepos {
-					if string(repo.Name) == name {
-						wantIDs[i] = repo.ID
+				expectedRepoIDs := make([]api.RepoID, len(tc.want))
+				for i, name := range tc.want {
+					for _, repo := range allRepos {
+						if string(repo.Name) == name {
+							expectedRepoIDs[i] = repo.ID
+						}
 					}
 				}
-			}
-			if d := cmp.Diff(wantIDs, data.RepoIDs); d != "" {
-				t.Fatalf("ids mismatch (-want +got):\n%s", d)
-			}
+
+				var receivedRepoIDs []api.RepoID
+				for _, id := range resp.GetRepoIds() {
+					receivedRepoIDs = append(receivedRepoIDs, api.RepoID(id))
+				}
+
+				if d := cmp.Diff(expectedRepoIDs, receivedRepoIDs, cmpopts.EquateEmpty()); d != "" {
+					t.Fatalf("ids mismatch (-want +got):\n%s", d)
+				}
+
+			})
+
+			t.Run("REST", func(t *testing.T) {
+
+				srv := &searchIndexerServer{
+					ListIndexable: fakeListIndexable(tc.indexable),
+					RepoStore: &fakeRepoStore{
+						Repos: allRepos,
+					},
+					Indexers: suffixIndexers(true),
+				}
+
+				req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.parameters.restBody)))
+				w := httptest.NewRecorder()
+				if err := srv.serveList(w, req); err != nil {
+					t.Fatal(err)
+				}
+
+				resp := w.Result()
+				body, _ := io.ReadAll(resp.Body)
+
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("got status %v", resp.StatusCode)
+				}
+
+				var data struct {
+					RepoIDs []api.RepoID
+				}
+				if err := json.Unmarshal(body, &data); err != nil {
+					t.Fatal(err)
+				}
+
+				wantIDs := make([]api.RepoID, len(tc.want))
+				for i, name := range tc.want {
+					for _, repo := range allRepos {
+						if string(repo.Name) == name {
+							wantIDs[i] = repo.ID
+						}
+					}
+				}
+				if d := cmp.Diff(wantIDs, data.RepoIDs); d != "" {
+					t.Fatalf("ids mismatch (-want +got):\n%s", d)
+				}
+			})
 		})
 	}
 }
