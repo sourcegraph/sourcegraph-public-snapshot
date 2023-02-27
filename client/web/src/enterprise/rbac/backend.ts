@@ -2,7 +2,15 @@ import { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import { DeleteRoleVariables, DeleteRoleResult, AllRolesVariables, AllRolesResult, RoleFields, CreateRoleResult, CreateRoleVariables } from '../../graphql-operations'
+import {
+    DeleteRoleVariables,
+    DeleteRoleResult,
+    AllRolesVariables,
+    AllRolesResult,
+    RoleFields,
+    CreateRoleResult,
+    CreateRoleVariables,
+} from '../../graphql-operations'
 
 const roleFragment = gql`
     fragment RoleFields on Role {
@@ -49,27 +57,24 @@ export const DELETE_ROLE = gql`
     }
 `
 
-export const useRolesConnection = () => useShowMorePagination<
-    AllRolesResult,
-    AllRolesVariables,
-    RoleFields
->({
-    query: ROLES_QUERY,
-    variables: {
-        first: 15,
-        after: null,
-    },
-    options: {
-        fetchPolicy: 'no-cache'
-    },
-    getConnection: result => {
-        const { roles } = dataOrThrowErrors(result)
-        return roles
-    }
-})
+export const GET_PERMISSIONS = gql``
 
-export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> =>
-    useMutation(CREATE_ROLE)
+export const useRolesConnection = () =>
+    useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
+        query: ROLES_QUERY,
+        variables: {
+            first: 15,
+            after: null,
+        },
+        options: {
+            fetchPolicy: 'no-cache',
+        },
+        getConnection: result => {
+            const { roles } = dataOrThrowErrors(result)
+            return roles
+        },
+    })
 
-export const useDeleteRole = (): MutationTuple<DeleteRoleResult, DeleteRoleVariables> =>
-    useMutation(DELETE_ROLE)
+export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)
+
+export const useDeleteRole = (): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE)

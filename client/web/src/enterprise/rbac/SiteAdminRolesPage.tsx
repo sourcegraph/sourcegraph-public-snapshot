@@ -1,11 +1,11 @@
-import React, { useEffect, FC, useCallback, useState, useMemo, FormEventHandler } from 'react'
+import React, { useEffect, FC, useCallback, useState } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { mdiPlus, mdiChevronUp, mdiChevronDown, mdiMapSearch, mdiDelete } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, Text, Tooltip, Checkbox, Grid, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, Text, Tooltip, LoadingSpinner } from '@sourcegraph/wildcard'
 import { RoleFields } from '../../graphql-operations'
 import {
     ConnectionContainer,
@@ -21,7 +21,6 @@ import { useRolesConnection, useDeleteRole } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
 import styles from './SiteAdminRolesPage.module.scss'
-import { AddRoleModal } from './AddRoleModal'
 
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
 
@@ -34,47 +33,33 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 
     const { connection, error, loading, fetchMore, hasNextPage, refetchAll } = useRolesConnection()
 
-    const [showAddModal, setShowAddModal] = useState<boolean>(false)
-    const openModal = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setShowAddModal(true)
-    }, [])
-    const closeModal = useCallback(() => {
-        setShowAddModal(false)
-    }, [])
-
-    const afterAction = useCallback(() => {
-        setShowAddModal(false)
-        refetchAll()
-    }, [refetchAll])
-
     return (
         <div className="site-admin-roles-page">
             <PageTitle title="Roles - Admin" />
             <PageHeader
                 path={[{ text: 'Roles' }]}
                 headingElement="h2"
-                description={<>Roles represent a characteristic of a group of users, it can be used to define a function or attribute a group of users possess.</>}
+                description={
+                    <>
+                        Roles represent a characteristic of a group of users, it can be used to define a function or
+                        attribute a group of users possess.
+                    </>
+                }
                 className="mb-3"
                 actions={
-                    <Button variant="primary" onClick={openModal}>
+                    <Button variant="primary">
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
                     </Button>
                 }
             />
 
-            {showAddModal && (
-                <AddRoleModal
-                    onCancel={closeModal}
-                    afterCreate={afterAction}
-                />
-            )}
-
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
                 <ConnectionList as="ul" className="list-group" aria-label="Roles">
-                    {connection?.nodes?.map(node => <RoleNode key={node.id} node={node} afterDelete={refetchAll} />)}
+                    {connection?.nodes?.map(node => (
+                        <RoleNode key={node.id} node={node} afterDelete={refetchAll} />
+                    ))}
                 </ConnectionList>
                 {connection && (
                     <SummaryContainer className="mt-2">
@@ -96,7 +81,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 }
 
 const RoleNode: FC<{
-    node: RoleFields,
+    node: RoleFields
     afterDelete: () => void
 }> = ({ node, afterDelete }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
@@ -107,7 +92,7 @@ const RoleNode: FC<{
         },
         [isExpanded]
     )
-    const [ deleteRole, { loading, error } ] = useDeleteRole()
+    const [deleteRole, { loading, error }] = useDeleteRole()
     const onDelete = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
@@ -121,7 +106,6 @@ const RoleNode: FC<{
         },
         [deleteRole, name, afterDelete]
     )
-
 
     return (
         <li className={styles.roleNode}>
@@ -146,18 +130,20 @@ const RoleNode: FC<{
                 )}
             </div>
 
-            {loading ? <LoadingSpinner /> : (
-                <Tooltip content={node.system ? "System roles cannot be deleted." : "Delete this role."}>
-                <Button
-                    aria-label="Delete"
-                    onClick={onDelete}
-                    disabled={node.system || loading}
-                    variant="danger"
-                    size="sm"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiDelete} />
-                </Button>
-            </Tooltip>
+            {loading ? (
+                <LoadingSpinner />
+            ) : (
+                <Tooltip content={node.system ? 'System roles cannot be deleted.' : 'Delete this role.'}>
+                    <Button
+                        aria-label="Delete"
+                        onClick={onDelete}
+                        disabled={node.system || loading}
+                        variant="danger"
+                        size="sm"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                    </Button>
+                </Tooltip>
             )}
 
             {isExpanded ? (
