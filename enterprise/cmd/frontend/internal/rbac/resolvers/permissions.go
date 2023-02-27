@@ -82,6 +82,12 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 			OrderBy: database.OrderBy{
 				{Field: "permissions.id"},
 			},
+			// We want to be able to retrieve all permissions belonging to a user at once on startup,
+			// hence we are removing pagination from this resolver. Ideally, we shouldn't have performance
+			// issues since permissions aren't created by users, and it'd take a while before we start having
+			// thousands of permissions in a database, so we are able to get by with disabling pagination
+			// for the permissions resolver.
+			AllowNoLimit: true,
 		},
 	)
 }

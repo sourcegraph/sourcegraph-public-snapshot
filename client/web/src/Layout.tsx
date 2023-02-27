@@ -1,28 +1,16 @@
 import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { Outlet, useLocation, Navigate, useMatches } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-router-dom'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from './auth'
-import type { BatchChangesProps } from './batches'
-import type { CodeIntelligenceProps } from './codeintel'
-import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -33,11 +21,11 @@ import { useUserHistory } from './components/useUserHistory'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
+import { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { NotebookProps } from './notebooks'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
-import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
+import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { useExperimentalFeatures } from './stores'
@@ -48,39 +36,24 @@ import styles from './Layout.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
-export interface LegacyLayoutProps
-    extends SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        SearchContextProps,
-        SearchStreamingProps,
-        CodeIntelligenceProps,
-        BatchChangesProps,
-        NotebookProps,
-        CodeMonitoringProps,
-        SearchAggregationProps {
-    authenticatedUser: AuthenticatedUser | null
-
-    /**
-     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
-     * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
-     */
-    viewerSubject: SettingsSubjectCommonFields
-
-    // Search
-    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
-    globbing: boolean
-    isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
+    children?: never
 }
+
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
+function useIsSignInOrSignUpPage(): boolean {
+    const isSignInPage = useMatch(PageRoutes.SignIn)
+    const isSignUpPage = useMatch(PageRoutes.SignUp)
+    const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
+    const isWelcomePage = useMatch(PageRoutes.Welcome)
+    const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+}
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
@@ -120,11 +93,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
-    const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+    const isSignInOrUp = useIsSignInOrSignUpPage()
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -232,7 +201,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
