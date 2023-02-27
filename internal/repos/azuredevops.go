@@ -92,15 +92,15 @@ func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
 // ListRepos returns all Azure DevOps repositories configured with this AzureDevOpsSource's config.
 func (s *AzureDevOpsSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	for _, project := range s.config.Projects {
-		s.processReposFromProjectOrOrg(ctx, project, results)
+		s.processReposFromProjectOrOrg(ctx, project, results, "project")
 	}
 
 	for _, org := range s.config.Orgs {
-		s.processReposFromProjectOrOrg(ctx, org, results)
+		s.processReposFromProjectOrOrg(ctx, org, results, "org")
 	}
 }
 
-func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult) {
+func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult, callType string) {
 	repos, err := s.cli.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 		ProjectOrOrgName: name,
 	})
@@ -113,7 +113,8 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 		if s.exclude(fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)) {
 			continue
 		}
-		repo, err := s.makeRepo(repo)
+
+		repo, err := s.makeRepo(repo, callType, name)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
@@ -141,18 +142,36 @@ func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, err
 	return &sc, nil
 }
 
-func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, error) {
+func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository, callType, name string) (*types.Repo, error) {
+	var relativeName string
+	if callType == "org" {
+		// When we're listing org repositories, we can use the provided "name" as the org name along
+		// with the Project.Name from the API response to generate the full name of the repo.
+		relativeName = path.Join(name, p.Project.Name, p.Name)
+	} else if callType == "project" {
+		// When we're listing project repositories, the argument "name" is already in the format
+		// orgname/projectname, so we can use it directly to generate the full name of the repo.
+		relativeName = path.Join(name, p.Name)
+	} else {
+		// This internal method should never be called with anything apart from "org" or "project".
+		// So we can panic here if ever this changes during future dev work.
+		//
+		// We could return a nil repo and an error here, but then it would bubble up to the end user
+		// and would not really make sense or useful to them if this scenario ever happened.
+		panic("this cannot be called without org or project")
+	}
+
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + p.Name)
+	fullURL, err := urlx.Parse(s.cli.URL.String() + relativeName)
 	if err != nil {
 		return nil, err
 	}
 
-	name := path.Join(fullURL.Host, fullURL.Path)
+	absoluteName := path.Join(fullURL.Host, fullURL.Path)
 	return &types.Repo{
-		Name: api.RepoName(name),
-		URI:  name,
+		Name: api.RepoName(absoluteName),
+		URI:  absoluteName,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          p.ID,
 			ServiceType: extsvc.TypeAzureDevOps,
