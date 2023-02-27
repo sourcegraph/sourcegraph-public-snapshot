@@ -37,6 +37,13 @@ import {
 
 import styles from './SearchPageInput.module.scss'
 
+// We want to prevent autofocus by default on devices with touch as their only input method.
+// Touch only devices result in the onscreen keyboard not showing until the input loses focus and
+// gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
+// where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
+const isTouchOnlyDevice =
+    !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
+
 const queryStateSelector = (
     state: NavbarQueryState
 ): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
@@ -194,6 +201,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
+            autoFocus={!isTouchOnlyDevice}
             isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             applySuggestionsOnEnter={applySuggestionsOnEnter}
