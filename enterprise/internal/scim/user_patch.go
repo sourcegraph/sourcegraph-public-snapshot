@@ -37,7 +37,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			// Handle multiple operations in one value
 			if op.Path == nil {
 				for rawPath, value := range op.Value.(map[string]interface{}) {
-					changed = changed || applyChangeToResource(userRes, rawPath, value)
+					changed = changed || applyChangeToAttributes(userRes.Attributes, rawPath, value)
 				}
 				continue
 			}
@@ -102,8 +102,8 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	return userRes, nil
 }
 
-// applyChangeToResource applies a change to a resource (for example, sets its userName).
-func applyChangeToResource(res scim.Resource, rawPath string, value interface{}) (changed bool) {
+// applyChangeToAttributes applies a change to a resource (for example, sets its userName).
+func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string, value interface{}) (changed bool) {
 	// Ignore nil values
 	if value == nil {
 		return false
@@ -115,7 +115,7 @@ func applyChangeToResource(res scim.Resource, rawPath string, value interface{})
 	// Handle sub-attributes
 	if subAttrName := path.SubAttributeName(); subAttrName != "" {
 		// Update existing attribute if it exists
-		if old, ok := res.Attributes[path.AttributeName]; ok {
+		if old, ok := attributes[path.AttributeName]; ok {
 			m := old.(map[string]interface{})
 			if sub, ok := m[subAttrName]; ok {
 				if sub == value {
@@ -123,23 +123,23 @@ func applyChangeToResource(res scim.Resource, rawPath string, value interface{})
 				}
 			}
 			m[subAttrName] = value
-			res.Attributes[path.AttributeName] = m
+			attributes[path.AttributeName] = m
 			return true
 		}
 		// It doesn't exist → add new attribute
-		res.Attributes[path.AttributeName] = map[string]interface{}{subAttrName: value}
+		attributes[path.AttributeName] = map[string]interface{}{subAttrName: value}
 		return true
 	}
 
 	// Add new root attribute if it doesn't exist
-	_, ok := res.Attributes[rawPath]
+	_, ok := attributes[rawPath]
 	if !ok {
-		res.Attributes[rawPath] = value
+		attributes[rawPath] = value
 		return true
 	}
 
 	// Update existing sub-attribute or root attribute
-	return applyAttributeChange(res.Attributes, rawPath, value, "replace")
+	return applyAttributeChange(attributes, rawPath, value, "replace")
 }
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).

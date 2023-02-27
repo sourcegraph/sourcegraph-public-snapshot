@@ -1,15 +1,14 @@
 package scim
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -102,55 +101,29 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
 func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert names
-	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
-
 	// Convert external ID
 	externalIDOptional := optional.String{}
 	if user.SCIMExternalID != "" {
 		externalIDOptional = optional.NewString(user.SCIMExternalID)
 	}
 
-	// Convert emails
-	emailMap := make([]interface{}, 0, len(user.Emails))
-	for _, email := range user.Emails {
-		emailMap = append(emailMap, map[string]interface{}{"value": email})
-	}
-
 	// Convert account data – if it doesn't exist, never mind
-	var accountData AccountData
-	_ = json.Unmarshal([]byte(user.SCIMAccountData), &accountData)
+	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
+	if err != nil {
+		log15.Error("Failed to convert account data to SCIM resource attributes", "error", err)
+
+		resourceAttributes = scim.ResourceAttributes{
+			"name": map[string]interface{}{},
+		}
+	}
+	resourceAttributes["externalId"] = user.SCIMExternalID
+	resourceAttributes["name"].(map[string]interface{})["formatted"] = user.DisplayName
+	resourceAttributes["displayName"] = user.DisplayName
+	resourceAttributes["active"] = true
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional,
-		Attributes: scim.ResourceAttributes{
-			"userName":   accountData.ExternalUsername,
-			"externalId": user.SCIMExternalID,
-			"name": map[string]interface{}{
-				"givenName":  firstName,
-				"middleName": middleName,
-				"familyName": lastName,
-				"formatted":  user.DisplayName,
-			},
-			"displayName": user.DisplayName,
-			"emails":      emailMap,
-			"active":      true,
-		},
-	}
-}
-
-// displayNameToPieces splits a display name into first, middle, and last name.
-func displayNameToPieces(displayName string) (first, middle, last string) {
-	pieces := strings.Fields(displayName)
-	switch len(pieces) {
-	case 0:
-		return "", "", ""
-	case 1:
-		return pieces[0], "", ""
-	case 2:
-		return pieces[0], "", pieces[1]
-	default:
-		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
+		ExternalID: externalIDOptional, // TODO: Get this from account data instead
+		Attributes: resourceAttributes,
 	}
 }

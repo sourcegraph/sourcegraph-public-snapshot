@@ -34,13 +34,13 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		userRes = scim.Resource{
 			ID:         strconv.FormatInt(int64(user.ID), 10),
 			ExternalID: externalIDOptional,
-			Attributes: scim.ResourceAttributes{},
+			Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
 		}
 
 		// Set attributes
 		changed := false
 		for k, v := range attributes {
-			changed = changed || applyChangeToResource(userRes, k, v)
+			changed = changed || applyChangeToAttributes(userRes.Attributes, k, v)
 		}
 		if !changed {
 			return nil

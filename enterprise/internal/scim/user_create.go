@@ -1,7 +1,6 @@
 package scim
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,13 +21,12 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	if primaryEmail == "" {
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
 	}
-	requestedUsername := extractUsername(attributes)
 	displayName := extractDisplayName(attributes)
 
 	// Make sure the username is unique, then create user with/without an external account ID
 	var user *types.User
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
-		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), requestedUsername)
+		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), extractStringAttribute(attributes, "userName"))
 		if err != nil {
 			return err
 		}
@@ -45,6 +43,9 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		if optionalExternalID.Present() {
 			externalID = optionalExternalID.Value()
 		}
+		if externalID == "" {
+			externalID = "no-external-id-" + primaryEmail
+		}
 		accountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
 			// TODO: provide proper service ID
@@ -52,17 +53,11 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			AccountID: externalID,
 		}
 
-		// Add account data
-		data := AccountData{
-			ExternalUsername: requestedUsername,
-		}
-		serializedAccountData, err := json.Marshal(data)
+		accountData, err := toAccountData(attributes)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 		}
-		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{
-			Data: extsvc.NewUnencryptedData(serializedAccountData),
-		})
+		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, accountData)
 
 		if err != nil {
 			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
@@ -115,6 +110,8 @@ func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail strin
 // extractDisplayName extracts the user's display name from the given attributes.
 func extractDisplayName(attributes scim.ResourceAttributes) (displayName string) {
 	if attributes["displayName"] != nil {
+		displayName = attributes["displayName"].(string)
+	} else if attributes["formatted"] != nil {
 		displayName = attributes["displayName"].(string)
 	} else if attributes["name"] != nil {
 		name := attributes["name"].(map[string]interface{})
