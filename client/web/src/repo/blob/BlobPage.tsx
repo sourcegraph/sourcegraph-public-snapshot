@@ -76,6 +76,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import { isPackageRepoName } from '../packages/isPackageRepoName'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -123,6 +124,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
+    const isPackage = useMemo(() => isPackageRepoName(repoName), [repoName])
+    useEffect(() => {
+        console.log({ repoName, isPackage })
+    }, [repoName, isPackage])
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
@@ -327,9 +332,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         return `${repoString}`
     }
 
-    const [isBlameVisible] = useBlameVisibility()
+    const [isBlameVisible] = useBlameVisibility(isPackage)
     const blameHunks = useBlameHunks(
-        { repoName, revision, filePath, enableCodeMirror },
+        { isPackage, repoName, revision, filePath, enableCodeMirror },
         props.platformContext.sourcegraphURL
     )
 
@@ -387,7 +392,12 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {({ actionType }) => (
-                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                    <ToggleBlameAction
+                        actionType={actionType}
+                        source="repoHeader"
+                        renderMode={renderMode}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
