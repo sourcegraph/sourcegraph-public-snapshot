@@ -1043,7 +1043,7 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			first:        5,
 			excludeRepos: []string{},
 			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
 		},
 		{
 			name:         "discoverable source - github - non empty query string",
@@ -1053,7 +1053,7 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			first:        5,
 			excludeRepos: []string{},
 			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
 		},
 		{
 			name:         "discoverable source - github - non empty excludeRepos",
@@ -1063,7 +1063,7 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			first:        5,
 			excludeRepos: []string{"org1/repo1", "owner2/repo2"},
 			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{githubRepository}, Error: ""},
+			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
 		},
 		{
 			name:   "unavailable - github.com",
@@ -1078,7 +1078,7 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
 			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil), false),
-			result: &protocol.ExternalServiceRepositoriesResult{Repos: []*types.Repo{}, Error: ""},
+			result: &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{}, Error: ""},
 		},
 		{
 			name:   "source does not implement discoverable source",

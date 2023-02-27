@@ -519,14 +519,7 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 			return
 		}
 
-		for _, repo := range res.Repos {
-			node := &types.ExternalServiceRepository{
-				ID:         repo.ID,
-				Name:       repo.Name,
-				ExternalID: repo.ExternalRepo.ID,
-			}
-			r.nodes = append(r.nodes, node)
-		}
+		r.nodes = res.Repos
 	})
 
 	return r.nodes, r.err

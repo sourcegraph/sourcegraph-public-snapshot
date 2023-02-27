@@ -1280,7 +1280,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 	res1 := singleResult(graphqlID1, repoName1, externalID1)
 	res2 := singleResult(graphqlID2, repoName2, externalID2)
 
-	mockExternalServiceRepos := func(t *testing.T, repos []*types.Repo, err error) {
+	mockExternalServiceRepos := func(t *testing.T, repos []*types.ExternalServiceRepository, err error) {
 		t.Helper()
 
 		errStr := ""
@@ -1305,7 +1305,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1332,7 +1332,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
@@ -1362,7 +1362,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1389,7 +1389,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1445,7 +1445,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),

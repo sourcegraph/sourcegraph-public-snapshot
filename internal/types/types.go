@@ -137,6 +137,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 	return ids
 }
 
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
+}
+
 // BlockedRepoError is returned by a Repo IsBlocked method.
 type BlockedRepoError struct {
 	Name   api.RepoName
