@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -15,12 +16,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,63 +43,187 @@ func TestServeConfiguration(t *testing.T) {
 		return api.CommitID("!" + spec), nil
 	})
 
-	srv := &searchIndexerServer{
-		RepoStore:       &fakeRepoStore{Repos: repos},
-		gitserverClient: gsClient,
-		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
-			return map[api.RepoID][]string{6: {"a", "b"}}, nil
-		},
-		Ranking: &fakeRankingService{},
+	repoStore := &fakeRepoStore{Repos: repos}
+	searchContextRepoRevsFunc := func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+		return map[api.RepoID][]string{6: {"a", "b"}}, nil
 	}
+	rankingService := &fakeRankingService{}
 
-	data := url.Values{
-		"repoID": []string{"1", "5", "6"},
-	}
-	req := httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	w := httptest.NewRecorder()
-	if err := srv.serveConfiguration(w, req); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("gRPC", func(t *testing.T) {
 
-	resp := w.Result()
-	body, _ := io.ReadAll(resp.Body)
+		// Set up the GRPC server
+		grpcServer := searchIndexerGRPCServer{
+			server: &searchIndexerServer{
+				RepoStore:              repoStore,
+				gitserverClient:        gsClient,
+				Ranking:                rankingService,
+				SearchContextsRepoRevs: searchContextRepoRevsFunc,
+			},
+		}
 
-	// This is a very fragile test since it will depend on changes to
-	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
-	// more robust by shifting around responsibilities.
-	want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
+		// Setup: create a request for repos 5 and 6, and the non-existent repo 1
+		requestedRepoIDs := []int32{1, 5, 6}
+
+		// Execute the first request (no fingerprint)
+		var initialRequest proto.SearchConfigurationRequest
+		initialRequest.RepoIds = requestedRepoIDs
+		initialRequest.Fingerprint = nil
+
+		initialResponse, err := grpcServer.SearchConfiguration(context.Background(), &initialRequest)
+		if err != nil {
+			t.Fatalf("SearchConfiguration: %s", err)
+		}
+
+		// Verify: Check to see that the response contains an error
+		// for the non-existent repo 1
+		var responseRepo1 *proto.ZoektIndexOptions
+		foundRepo1 := false
+
+		var receivedRepositories []*proto.ZoektIndexOptions
+
+		for _, repo := range initialResponse.GetUpdatedOptions() {
+			if repo.RepoId == 1 {
+				responseRepo1 = repo
+				foundRepo1 = true
+				continue
+			}
+
+			receivedRepositories = append(receivedRepositories, repo)
+		}
+
+		if !foundRepo1 {
+			t.Errorf("expected to find repo ID 1 in response: %v", receivedRepositories)
+		}
+
+		if foundRepo1 && !strings.Contains(responseRepo1.Error, "repo not found") {
+			t.Errorf("expected to find repo not found error in repo 1: %v", responseRepo1)
+		}
+
+		// Verify: Check to see that the response the expected repos 5 and 6
+		expectedRepo5 := &proto.ZoektIndexOptions{
+			RepoId:   5,
+			Name:     "5",
+			Priority: 5,
+			Public:   true,
+			Symbols:  true,
+			Branches: []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
+		}
+
+		expectedRepo6 := &proto.ZoektIndexOptions{
+			RepoId:   6,
+			Name:     "6",
+			Priority: 6,
+			Public:   true,
+			Symbols:  true,
+			Branches: []*proto.ZoektRepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "a", Version: "!a"},
+				{Name: "b", Version: "!b"},
+			},
+		}
+
+		expectedRepos := []*proto.ZoektIndexOptions{
+			expectedRepo5,
+			expectedRepo6,
+		}
+
+		sort.Slice(receivedRepositories, func(i, j int) bool {
+			return receivedRepositories[i].RepoId < receivedRepositories[j].RepoId
+		})
+		sort.Slice(expectedRepos, func(i, j int) bool {
+			return expectedRepos[i].RepoId < expectedRepos[j].RepoId
+		})
+
+		if diff := cmp.Diff(expectedRepos, receivedRepositories, protocmp.Transform()); diff != "" {
+			t.Fatalf("mismatch in response repositories (-want, +got):\n%s", diff)
+		}
+
+		if initialResponse.GetFingerprint() == nil {
+			t.Fatalf("expected fingerprint to be set in initial response")
+		}
+
+		// Setup: run a second request with the fingerprint from the first response
+		// Note: when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
+		grpcServer.server.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+
+		var fingerprintedRequest proto.SearchConfigurationRequest
+		fingerprintedRequest.RepoIds = requestedRepoIDs
+		fingerprintedRequest.Fingerprint = initialResponse.GetFingerprint()
+
+		// Execute the seconds request
+		fingerprintedResponse, err := grpcServer.SearchConfiguration(context.Background(), &fingerprintedRequest)
+		if err != nil {
+			t.Fatalf("SearchConfiguration: %s", err)
+		}
+
+		// Verify that the response contains the expected repo 5
+		if diff := cmp.Diff(fingerprintedResponse.GetUpdatedOptions(), []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
+			t.Errorf("mismatch in fingerprinted repositories (-want, +got):\n%s", diff)
+		}
+
+		if fingerprintedResponse.GetFingerprint() == nil {
+			t.Fatalf("expected fingerprint to be set in fingerprinted response")
+		}
+	})
+
+	t.Run("REST", func(t *testing.T) {
+		srv := &searchIndexerServer{
+			RepoStore:              repoStore,
+			gitserverClient:        gsClient,
+			Ranking:                rankingService,
+			SearchContextsRepoRevs: searchContextRepoRevsFunc,
+		}
+
+		data := url.Values{
+			"repoID": []string{"1", "5", "6"},
+		}
+		req := httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		if err := srv.serveConfiguration(w, req); err != nil {
+			t.Fatal(err)
+		}
+
+		resp := w.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		// This is a very fragile test since it will depend on changes to
+		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+		// more robust by shifting around responsibilities.
+		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
 {"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}
 {"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6}`
 
-	if d := cmp.Diff(want, string(body)); d != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", d)
-	}
+		if d := cmp.Diff(want, string(body)); d != "" {
+			t.Fatalf("mismatch (-want, +got):\n%s", d)
+		}
 
-	// when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
-	srv.RepoStore = &fakeRepoStore{Repos: repos[:1]}
-	req = httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("X-Sourcegraph-Config-Fingerprint", resp.Header.Get("X-Sourcegraph-Config-Fingerprint"))
+		// when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
+		srv.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+		req = httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("X-Sourcegraph-Config-Fingerprint", resp.Header.Get("X-Sourcegraph-Config-Fingerprint"))
 
-	w = httptest.NewRecorder()
-	if err := srv.serveConfiguration(w, req); err != nil {
-		t.Fatal(err)
-	}
+		w = httptest.NewRecorder()
+		if err := srv.serveConfiguration(w, req); err != nil {
+			t.Fatal(err)
+		}
 
-	resp = w.Result()
-	body, _ = io.ReadAll(resp.Body)
+		resp = w.Result()
+		body, _ = io.ReadAll(resp.Body)
 
-	// We want the same as before, except we only want to get back 5.
-	//
-	// This is a very fragile test since it will depend on changes to
-	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
-	// more robust by shifting around responsibilities.
-	want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
+		// We want the same as before, except we only want to get back 5.
+		//
+		// This is a very fragile test since it will depend on changes to
+		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+		// more robust by shifting around responsibilities.
+		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
 
-	if d := cmp.Diff(want, string(body)); d != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", d)
-	}
+		if d := cmp.Diff(want, string(body)); d != "" {
+			t.Fatalf("mismatch (-want, +got):\n%s", d)
+		}
+	})
+
 }
 
 func TestReposIndex(t *testing.T) {
