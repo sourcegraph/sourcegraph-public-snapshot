@@ -63,7 +63,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                             totalCount
                         }
                     }
-                    ancestors(first: 1, query: "", path: $currentPath) {
+                    ancestors(first: 1, path: $currentPath) {
                         nodes {
                             ...GitCommitFields
                         }
