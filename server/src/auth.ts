@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 
-interface User {
+export interface User {
 	name: string
 	email: string
 	accessToken: string

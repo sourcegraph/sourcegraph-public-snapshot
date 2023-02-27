@@ -17,6 +17,23 @@ export interface Message {
 	text: string
 }
 
+export interface ContextMessage extends Message {
+	filename?: string
+}
+
+/**
+ * Each TranscriptChunk corresponds to a sequence of messages that should be considered as a unit during prompt construction.
+ * - Typically, `actual` has length 1 and represents the actual message incorporated into the prompt.
+ * - `context` is messages that include code snippets fetched as contextual knowledge.
+ *    These should not be displayed in the chat GUI.
+ * - `display` are messages that should replace `actual` in the chat GUI.
+ */
+export interface TranscriptChunk {
+	actual: Message[]
+	context: ContextMessage[]
+	display?: Message[]
+}
+
 export interface CompletionLogProbs {
 	tokens?: string[]
 	tokenLogprobs?: number[]
@@ -110,4 +127,24 @@ export interface WSChatResponseError extends WSChatMessage {
 export interface QueryInfo {
 	needsCodebaseContext: boolean
 	needsCurrentFileContext: boolean
+}
+
+export interface Feedback {
+	user: string
+	sentiment: 'good' | 'bad'
+	displayMessages: Message[]
+	transcript: TranscriptChunk[]
+	feedbackVersion: string
+}
+
+export function feedbackToSheetRow({ user, sentiment, displayMessages, transcript, feedbackVersion }: Feedback): {
+	[header: string]: string | boolean | number
+} {
+	return {
+		user,
+		sentiment,
+		displayMessages: JSON.stringify(displayMessages),
+		transcript: JSON.stringify(transcript),
+		feedbackVersion,
+	}
 }

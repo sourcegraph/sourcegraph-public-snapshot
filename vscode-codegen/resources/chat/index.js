@@ -62,6 +62,52 @@ class ChatController {
 			const recipeButtons = recipeContainer.querySelectorAll('.btn-recipe')
 			recipeButtons.forEach(button => button.addEventListener('click', onRecipeButtonClick))
 		}
+
+		// Transcript click listener
+		this.containerElement.addEventListener('click', event => {
+			if (event.target.dataset.contextfiles !== undefined) {
+				this.handleToggleContextFilesExpand(event)
+			} else if (event.target.dataset.feedbacksentiment !== undefined) {
+				this.handleFeedback(event)
+			}
+		})
+	}
+
+	handleToggleContextFilesExpand(event) {
+		const contextFilesStr = event.target.dataset.contextfiles
+		if (!contextFilesStr) {
+			return
+		}
+		const contextFiles = JSON.parse(contextFilesStr)
+
+		const isExpanded = JSON.parse(event.target.dataset.isexpanded || 'false')
+		const willExpand = !isExpanded
+		if (willExpand) {
+			event.target.innerHTML = getContextFilesString(contextFiles, true)
+		} else {
+			event.target.innerHTML = getContextFilesString(contextFiles, false)
+		}
+		event.target.dataset.isexpanded = `${willExpand}`
+	}
+
+	handleFeedback(event) {
+		const sentiment = event.target.dataset.feedbacksentiment
+
+		// Update UI
+		let node = event.target
+		while (node) {
+			if (node.classList.contains('feedback-container')) {
+				break
+			}
+			node = node.parentElement
+		}
+		node.innerHTML = 'Response recorded'
+		this.vscode.postMessage({
+			command: 'feedback',
+			feedback: {
+				sentiment,
+			},
+		})
 	}
 
 	resizeInput() {
@@ -72,9 +118,16 @@ class ChatController {
 	}
 
 	renderMessages(messages, messageInProgress) {
-		const messageElements = messages
-			.filter(message => !message.hidden)
-			.map(message => getMessageBubble(message.speaker, message.displayText, message.timestamp, message.contextFiles))
+		const visibleMessages = messages.filter(message => !message.hidden)
+		const messageElements = visibleMessages.map((message, idx) => {
+			return getMessageBubble(
+				message.speaker,
+				message.displayText,
+				message.timestamp,
+				message.contextFiles,
+				idx === visibleMessages.length - 1
+			)
+		})
 
 		const messageInProgressElement = messageInProgress
 			? getMessageInProgressBubble(
@@ -139,14 +192,16 @@ const gettingStartedHTML = `
 	<ul>
 		<li>What are the most popular Go CLI libraries?</li>
 		<li>Write a function that parses JSON in Python</li>
-		<li>What changed in my codebase in the last day?</li>
 		<li>Summarize the code in this file.</li>
-		<li>What's wrong with this code?</li>
+		<li>What's wrong with this code snippet?</li>
+		<li>Which files implement authentication in my codebase?</li>
 	</ul>
 
 	<p>Recommendations:</p>
 	<ul>
-		<li>Make your questions detailed and specific. The more context Cody has, the better Cody's responses will be.</li>
+		<li>Cody will try to read relevant files, but you might want to provide specific context or code snippets if Cody reads the wrong files.</li>
+		<li>Visit the "Recipes" tab for common templatized actions like "Write a unit test" or "Summarize code history".</li>
+		<li>Use the feedback buttons when Cody messes up. We will use your feedback to train Cody to become even smarter and better!</li>
 	</ul>
 </div>
 `
@@ -157,6 +212,7 @@ const messageBubbleTemplate = `
 		<div class="bubble-content {type}-bubble-content">
 			{contextFiles}
 			{text}
+			{feedback}
 		</div>
 		<div class="bubble-footer {type}-bubble-footer">
 			{footer}
@@ -164,23 +220,6 @@ const messageBubbleTemplate = `
 	</div>
 </div>
 `
-
-function toggleContextFilesExpand(event) {
-	const contextFilesStr = event.target.dataset.contextfiles
-	if (!contextFilesStr) {
-		return
-	}
-	const contextFiles = JSON.parse(contextFilesStr)
-
-	const isExpanded = JSON.parse(event.target.dataset.isexpanded || 'false')
-	const willExpand = !isExpanded
-	if (willExpand) {
-		event.target.innerHTML = getContextFilesString(contextFiles, true)
-	} else {
-		event.target.innerHTML = getContextFilesString(contextFiles, false)
-	}
-	event.target.dataset.isexpanded = `${willExpand}`
-}
 
 function getContextFilesString(contextFiles, expand) {
 	contextFiles = contextFiles.map(f => f.replace(/^\.\//, ''))
@@ -203,12 +242,18 @@ function getContextFilesHTML(contextFiles, expand) {
 	)}</p>`
 }
 
-function getMessageBubble(author, text, timestamp, contextFiles) {
+function getMessageBubble(author, text, timestamp, contextFiles, includeFeedback) {
 	const bubbleType = author === 'bot' ? 'bot' : 'human'
 	const authorName = author === 'bot' ? 'Cody' : 'Me'
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
 		.replace('{text}', text)
+		.replace(
+			'{feedback}',
+			includeFeedback && author === 'bot'
+				? '<div class="feedback-container" style="font-style: italic;">Was this response helpful? <button data-feedbacksentiment="good" class="btn-feedback">&#128077;</button> <button data-feedbacksentiment="bad" class="btn-feedback">&#128078;</button></div>'
+				: ''
+		)
 		.replace('{contextFiles}', getContextFilesHTML(contextFiles, false))
 		.replace('{footer}', timestamp ? `${authorName} &middot; ${timestamp}` : `<i>${authorName} is writing...</i>`)
 }
@@ -221,9 +266,9 @@ function getMessageInProgressBubble(author, text, contextFiles) {
 			<div class="bubble-loader-dot"></div>
 			<div class="bubble-loader-dot"></div>
 		</div>`
-		return getMessageBubble(author, loader, null)
+		return getMessageBubble(author, loader, null, null, false)
 	}
-	return getMessageBubble(author, text, null, contextFiles)
+	return getMessageBubble(author, text, null, contextFiles, false)
 }
 
 const debugMessageTemplate = `
@@ -248,4 +293,3 @@ function renderDebugLog(debugMessages) {
 
 window.addEventListener('message', onMessage)
 document.addEventListener('DOMContentLoaded', onInitialize)
-document.addEventListener('click', toggleContextFilesExpand)

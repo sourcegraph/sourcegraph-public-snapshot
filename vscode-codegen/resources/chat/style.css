@@ -265,3 +265,10 @@ textarea.chat-input {
 .container-getting-started li {
 	line-height: 1.5rem;
 }
+
+.btn-feedback {
+	border-radius: 0.5rem;
+	background-color: transparent;
+	font-weight: normal;
+	cursor: pointer;
+}

@@ -6,17 +6,20 @@ import express from 'express'
 import { WebSocketServer } from 'ws'
 
 import {
+	Feedback,
 	Message,
 	WSChatRequest,
 	WSChatResponseChange,
 	WSChatResponseComplete,
 	WSChatResponseError,
+	feedbackToSheetRow,
 } from '@sourcegraph/cody-common'
 
-import { authenticate, getUsers } from './auth'
+import { authenticate, getUsers, User } from './auth'
 import { wsHandleGetCompletions } from './completions'
 import { getInfo } from './info'
 import { ClaudeBackend } from './prompts/claude'
+import { GoogleSpreadsheet } from 'google-spreadsheet'
 
 const anthropicApiKey = process.env.ANTHROPIC_API_KEY
 if (!anthropicApiKey) {
@@ -29,6 +32,11 @@ if (!usersPath) {
 }
 
 const port = process.env.CODY_PORT || '8080'
+
+const feedbackServiceAccount = process.env.FEEDBACK_SERVICE_ACCOUNT
+const feedbackServiceAccountKey: string = (process.env.FEEDBACK_SERVICE_ACCOUNT_KEY || '').replace(/\\n/gm, '\n')
+const feedbackSheetID = process.env.FEEDBACK_SHEET_ID
+const feedbackSheetTitle = process.env.FEEDBACK_SHEET_TITLE
 
 // Character length of this preamble is 806 chars or ~230 tokens (at a conservative rate of 3.5 chars per token).
 // If this is modified, then `PROMPT_PREAMBLE_LENGTH` in prompt.ts should be updated.
@@ -111,15 +119,62 @@ wssCompletions.on('connection', ws => {
 })
 
 app.get('/info', (req, res) => {
+	const user = authenticate(req.headers.authorization, null, getUsers(usersPath))
+	if (!user) {
+		res.status(401).send({ error: 'unauthorized' })
+		return
+	}
+
 	const { q } = req.query
 	getInfo(shortAnswerBackend, q as string)
 		.then(info => {
 			res.send(JSON.stringify(info))
 		})
 		.catch(error => {
-			res.status(500).send(`error: ${error}`)
+			res.status(500).send({ error })
 		})
 })
+
+app.post('/feedback', (req, res) => {
+	const user = authenticate(req.headers.authorization, null, getUsers(usersPath))
+	if (!user) {
+		res.status(401).send({ error: 'unauthorized' })
+		return
+	}
+
+	const feedback = req.body as Feedback
+	try {
+		postFeedback(user, feedback).finally(() => {
+			res.send({ success: true })
+		})
+	} catch (error) {
+		res.status(500).send({ success: false, error })
+	}
+})
+
+async function postFeedback(user: User, feedback: Feedback): Promise<void> {
+	if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !feedbackSheetTitle) {
+		return
+	}
+	feedback.user = user.email
+
+	try {
+		const doc = new GoogleSpreadsheet(feedbackSheetID)
+		await doc.useServiceAccountAuth({
+			client_email: feedbackServiceAccount,
+			private_key: feedbackServiceAccountKey,
+		})
+
+		await doc.loadInfo()
+		const sheet = doc.sheetsByTitle[feedbackSheetTitle]
+		if (!sheet) {
+			throw new Error(`sheet title "${feedbackSheetTitle}" not found`)
+		}
+		await sheet.addRow(feedbackToSheetRow(feedback))
+	} catch (error) {
+		console.error('postFeedback error', error)
+	}
+}
 
 const wssChat = new WebSocketServer({ noServer: true })
 wssChat.on('connection', ws => {

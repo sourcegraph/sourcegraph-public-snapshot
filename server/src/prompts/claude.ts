@@ -36,13 +36,13 @@ export class ClaudeBackend {
 		}
 
 		const prompt = promptComponents.join('')
+		const anthropicReq = { ...this.modelParams, prompt }
 
 		if (logRequests) {
 			console.log(`REQUEST:\n${prompt}`)
+			console.log(`REQ: ${JSON.stringify(anthropicReq, null, '  ')}`)
 		}
 
-		const anthropicReq = { ...this.modelParams, prompt }
-		console.log(`REQ: ${JSON.stringify(anthropicReq, null, '  ')}`)
 		this.client.completion(anthropicReq, callbacks)
 	}
 }

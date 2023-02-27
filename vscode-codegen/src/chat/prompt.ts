@@ -3,7 +3,7 @@ import path from 'path'
 import fetch from 'node-fetch'
 import * as vscode from 'vscode'
 
-import { Message, QueryInfo } from '@sourcegraph/cody-common'
+import { ContextMessage, Message, QueryInfo, TranscriptChunk } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
 
@@ -21,29 +21,19 @@ const MAX_AVAILABLE_PROMPT_LENGTH = MAX_PROMPT_TOKEN_LENGTH - SOLUTION_TOKEN_LEN
 export const MAX_CURRENT_FILE_TOKENS = 4000
 const CHARS_PER_TOKEN = 4
 
-interface ContextMessage extends Message {
-	filename?: string
-}
-
-// Each TranscriptChunk corresponds to a sequence of messages that should be considered as a unit during prompt construction.
-// - Typically, `actual` has length 1 and represents the actual message incorporated into the prompt.
-// - `context` is messages that include code snippets fetched as contextual knowledge.
-//    These should not be displayed in the chat GUI.
-// - `display` are messages that should replace `actual` in the chat GUI.
-interface TranscriptChunk {
-	actual: Message[]
-	context: ContextMessage[]
-	display?: Message[]
-}
-
 export class Transcript {
 	private transcript: TranscriptChunk[] = []
 
 	constructor(
 		private embeddingsClient: EmbeddingsClient | null,
 		private contextType: 'embeddings' | 'keyword' | 'none',
-		private serverUrl: string
+		private serverUrl: string,
+		private accessToken: string
 	) {}
+
+	getTranscript(): TranscriptChunk[] {
+		return this.transcript
+	}
 
 	getDisplayMessages(): Message[] {
 		return this.transcript.flatMap(({ display, actual }) => display || actual)
@@ -67,9 +57,17 @@ export class Transcript {
 	}
 
 	private async detectIntent(text: string): Promise<QueryInfo> {
-		const resp = await fetch(`${this.serverUrl}/info?q=${encodeURIComponent(text)}`)
-		const respText = await resp.text()
-		return JSON.parse(respText) as QueryInfo
+		const resp = await fetch(`${this.serverUrl}/info?q=${encodeURIComponent(text)}`, {
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer ' + this.accessToken,
+			},
+		})
+		const respJSON = await resp.json()
+		if (!('needsCodebaseContext' in respJSON) || !('needsCurrentFileContext' in respJSON)) {
+			throw new Error(`malformed response from /info: ${JSON.stringify(respJSON)}`)
+		}
+		return respJSON as QueryInfo
 	}
 
 	private async getCodebaseContextMessages(query: string): Promise<ContextMessage[]> {

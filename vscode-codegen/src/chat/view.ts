@@ -3,13 +3,14 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { Message } from '@sourcegraph/cody-common'
+import { Feedback, Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient } from '../embeddings-client'
 
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
 import { WSChatClient } from './ws'
+import fetch from 'node-fetch'
 
 export interface ChatMessage extends Omit<Message, 'text'> {
 	displayText: string
@@ -38,12 +39,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	constructor(
 		private extensionPath: string,
 		private serverUrl: string,
+		private accessToken: string,
 		private wsclient: Promise<WSChatClient | null>,
 		private embeddingsClient: EmbeddingsClient | null,
 		private contextType: 'embeddings' | 'keyword' | 'none',
 		private debug: boolean
 	) {
-		this.prompt = new Transcript(this.embeddingsClient, this.contextType, this.serverUrl)
+		this.prompt = new Transcript(this.embeddingsClient, this.contextType, this.serverUrl, this.accessToken)
 	}
 
 	resolveWebviewView(
@@ -75,7 +77,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			case 'executeRecipe':
 				this.executeRecipe(message.recipe)
 				break
+			case 'feedback':
+				this.sendFeedback(message.feedback)
+				break
 		}
+	}
+
+	private async sendFeedback(feedback: Feedback): Promise<void> {
+		feedback.user = 'unknown'
+		feedback.displayMessages = this.prompt.getDisplayMessages()
+		feedback.transcript = this.prompt.getTranscript()
+		feedback.feedbackVersion = 'v0'
+		const resp = await fetch(`${this.serverUrl}/feedback`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + this.accessToken,
+			},
+			body: JSON.stringify(feedback),
+		})
+		await resp.json()
 	}
 
 	private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
