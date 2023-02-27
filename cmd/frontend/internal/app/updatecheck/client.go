@@ -573,6 +573,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.HasExtURL = conf.UsingExternalURL()
 		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
+		r.AccessRequestsEnabled = conf.IsAccessRequestsEnabled()
 		r.AuthProviders = authProviderTypes()
 
 		// The following methods are the most expensive to calculate, so we do them in

@@ -176,18 +176,19 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string `json:"site"`
-	LicenseKey           string
-	DeployType           string          `json:"deployType"`
-	ClientVersionString  string          `json:"version"`
-	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
-	AuthProviders        []string        `json:"auth"`
-	ExternalServices     []string        `json:"extsvcs"`
-	BuiltinSignupAllowed bool            `json:"signup"`
-	HasExtURL            bool            `json:"hasExtURL"`
-	UniqueUsers          int32           `json:"u"`
-	Activity             json.RawMessage `json:"act"`
-	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage"`
+	ClientSiteID          string `json:"site"`
+	LicenseKey            string
+	DeployType            string          `json:"deployType"`
+	ClientVersionString   string          `json:"version"`
+	DependencyVersions    json.RawMessage `json:"dependencyVersions"`
+	AuthProviders         []string        `json:"auth"`
+	ExternalServices      []string        `json:"extsvcs"`
+	BuiltinSignupAllowed  bool            `json:"signup"`
+	AccessRequestsEnabled bool            `json:"accessRequestsEnabled"`
+	HasExtURL             bool            `json:"hasExtURL"`
+	UniqueUsers           int32           `json:"u"`
+	Activity              json.RawMessage `json:"act"`
+	BatchChangesUsage     json.RawMessage `json:"batchChangesUsage"`
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
 	AutomationUsage               json.RawMessage `json:"automationUsage"`
 	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
@@ -240,20 +241,21 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		ClientSiteID: q.Get("site"),
 		// LicenseKey was added after the switch from query strings to POST data, so it's not
 		// available.
-		DeployType:           q.Get("deployType"),
-		ClientVersionString:  q.Get("version"),
-		AuthProviders:        strings.Split(q.Get("auth"), ","),
-		ExternalServices:     strings.Split(q.Get("extsvcs"), ","),
-		BuiltinSignupAllowed: toBool(q.Get("signup")),
-		HasExtURL:            toBool(q.Get("hasExtURL")),
-		UniqueUsers:          toInt(q.Get("u")),
-		Activity:             toRawMessage(q.Get("act")),
-		InitialAdminEmail:    q.Get("initAdmin"),
-		TotalUsers:           toInt(q.Get("totalUsers")),
-		HasRepos:             toBool(q.Get("repos")),
-		EverSearched:         toBool(q.Get("searched")),
-		EverFindRefs:         toBool(q.Get("refs")),
-		TosAccepted:          toBool(q.Get("tosAccepted")),
+		DeployType:            q.Get("deployType"),
+		ClientVersionString:   q.Get("version"),
+		AuthProviders:         strings.Split(q.Get("auth"), ","),
+		ExternalServices:      strings.Split(q.Get("extsvcs"), ","),
+		BuiltinSignupAllowed:  toBool(q.Get("signup")),
+		AccessRequestsEnabled: toBool(q.Get("accessRequestsEnabled")),
+		HasExtURL:             toBool(q.Get("hasExtURL")),
+		UniqueUsers:           toInt(q.Get("u")),
+		Activity:              toRawMessage(q.Get("act")),
+		InitialAdminEmail:     q.Get("initAdmin"),
+		TotalUsers:            toInt(q.Get("totalUsers")),
+		HasRepos:              toBool(q.Get("repos")),
+		EverSearched:          toBool(q.Get("searched")),
+		EverFindRefs:          toBool(q.Get("refs")),
+		TosAccepted:           toBool(q.Get("tosAccepted")),
 	}, nil
 }
 
@@ -325,6 +327,7 @@ type pingPayload struct {
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
 	BuiltinSignupAllowed          string          `json:"builtin_signup_allowed"`
+	AccessRequestsEnabled         string          `json:"access_requests_enabled"`
 	DeployType                    string          `json:"deploy_type"`
 	TotalUserAccounts             string          `json:"total_user_accounts"`
 	HasExternalURL                string          `json:"has_external_url"`
@@ -414,6 +417,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
 		ExtServices:                   strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),
+		AccessRequestsEnabled:         strconv.FormatBool(pr.AccessRequestsEnabled),
 		DeployType:                    pr.DeployType,
 		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
 		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),
