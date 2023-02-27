@@ -184,6 +184,14 @@ func ListRegisteredUsersThisMonth(ctx context.Context, db database.DB) ([]int32,
 	return db.EventLogs().ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
 }
 
+// ListRegisteredUsersRollingMonthly returns a list of the registered users that were active in the prior 30 days.
+func ListRegisteredUsersRollingMonthly(ctx context.Context, db database.DB) ([]int32, error) {
+	now := timeNow().UTC()
+	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	start := time.Now().UTC().AddDate(0, 0, -30)
+	return db.EventLogs().ListUniqueUsersAll(ctx, start, end)
+}
+
 // SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
 // which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
 // how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
@@ -191,6 +199,7 @@ type SiteUsageStatisticsOptions struct {
 	DayPeriods   *int
 	WeekPeriods  *int
 	MonthPeriods *int
+	RollingMonthPeriods *int
 }
 
 // GetSiteUsageStatistics returns the current site's SiteActivity.
@@ -199,6 +208,7 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 		dayPeriods   = defaultDays
 		weekPeriods  = defaultWeeks
 		monthPeriods = defaultMonths
+		rollingMonthPeriods = defaultRollingMonths
 	)
 
 	if opt != nil {
@@ -210,6 +220,9 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 		}
 		if opt.MonthPeriods != nil {
 			monthPeriods = minIntOrZero(maxStorageDays/31, *opt.MonthPeriods)
+		}
+		if opt.RollingMonthPeriods != nil {
+			rollingMonthPeriods = minIntOrZero(maxStorageDays/30, *opt.RollingMonthPeriods)
 		}
 	}
 
@@ -225,9 +238,10 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.SiteUsageStatistics, error) {
 	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
 		return &types.SiteUsageStatistics{
-			DAUs: []*types.SiteActivityPeriod{},
-			WAUs: []*types.SiteActivityPeriod{},
-			MAUs: []*types.SiteActivityPeriod{},
+			DAUs:  []*types.SiteActivityPeriod{},
+			WAUs:  []*types.SiteActivityPeriod{},
+			MAUs:  []*types.SiteActivityPeriod{},
+			RMAUs: []*types.SiteActivityPeriod{},
 		}, nil
 	}
 
