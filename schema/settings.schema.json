@@ -257,11 +257,6 @@
             "pointer": true
           }
         },
-        "preloadGoToDefinition": {
-          "description": "Preload definitions for available tokens in the visible viewport.",
-          "type": "boolean",
-          "default": false
-        },
         "symbolKindTags": {
           "description": "Show the initial letter of the symbol kind instead of icons.",
           "type": "boolean",
