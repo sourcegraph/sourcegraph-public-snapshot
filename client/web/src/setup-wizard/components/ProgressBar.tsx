@@ -11,11 +11,8 @@ import {
 import { Icon, Text } from '@sourcegraph/wildcard'
 
 import { RepositoryStatsResult, RepositoryStatsVariables, StatusMessagesResult } from '../../graphql-operations'
-
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from '../../site-admin/backend'
 import { STATUS_MESSAGES } from '../../nav/StatusMessagesNavItemQueries'
-
-// TODO: Dynamic header title
+import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from '../../site-admin/backend'
 
 import styles from './ProgressBar.module.scss'
 
@@ -38,9 +35,39 @@ export const ProgressBar: FC<{}> = () => {
         }
     }, [data, startPolling, stopPolling])
 
-    const formatNumber = (num: string | number): string => {
-        return num.toLocaleString('en-US')
-    }
+    const formatNumber = (num: string | number): string => num.toLocaleString('en-US')
+
+    const items = useMemo(() => {
+        return [
+            {
+                value: data?.repositoryStats.total,
+                description: 'Repositories',
+                color: 'text-merged',
+            },
+            {
+                value: data?.repositoryStats.notCloned,
+                description: 'Not cloned',
+            },
+            {
+                value: data?.repositoryStats.cloning,
+                description: 'Cloning',
+            },
+            {
+                value: data?.repositoryStats.cloned,
+                description: 'Cloned',
+                color: 'text-success',
+            },
+            {
+                value: data?.repositoryStats.indexed,
+                description: 'Indexed',
+            },
+            {
+                value: data?.repositoryStats.failedFetch,
+                description: 'Failed',
+                color: 'text-danger',
+            },
+        ]
+    }, [data])
 
     const statusMessage: JSX.Element = useMemo(() => {
         let codeHostMessage
@@ -86,30 +113,12 @@ export const ProgressBar: FC<{}> = () => {
         <section className="d-flex align-items-center py-1">
             {statusMessage}
 
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold text-merged">{formatNumber(data?.repositoryStats.total ?? 0)}</span>{' '}
-                Repositories
-            </Text>
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.notCloned ?? 0)}</span> Not
-                cloned
-            </Text>
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.cloning ?? 0)}</span> Cloning
-            </Text>
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold text-success">{formatNumber(data?.repositoryStats.cloned ?? 0)}</span>{' '}
-                Cloned
-            </Text>
-            <Text className="mb-0 mr-3" size="small">
-                <span className="font-weight-bold">{formatNumber(data?.repositoryStats.indexed ?? 0)}</span> Indexed
-            </Text>
-            <Text className="mb-0" size="small">
-                <span className="font-weight-bold text-danger">
-                    {formatNumber(data?.repositoryStats.failedFetch ?? 0)}
-                </span>{' '}
-                Failed
-            </Text>
+            {items.map(item => (
+                <Text className="mb-0 mr-3" size="small">
+                    <span className={classNames('font-weight-bold', item?.color)}>{formatNumber(item.value ?? 0)}</span>{' '}
+                    {item.description}
+                </Text>
+            ))}
         </section>
     )
 }

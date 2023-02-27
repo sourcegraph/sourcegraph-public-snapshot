@@ -5,9 +5,9 @@ import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
 import { Container, Text } from '@sourcegraph/wildcard'
 
+import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
-import { ProgressBar } from '../../components/ProgressBar'
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
