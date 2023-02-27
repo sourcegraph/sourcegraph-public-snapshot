@@ -13,7 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v1.2.3
-	github.com/XSAM/otelsql v0.18.0
+	github.com/XSAM/otelsql v0.19.0
 	github.com/agext/levenshtein v1.2.3
 	github.com/amit7itz/goset v1.0.1
 	github.com/aws/aws-sdk-go-v2 v1.17.4
@@ -136,7 +136,7 @@ require (
 	github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230124150142-7833ec00539f
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
 	github.com/tidwall/gjson v1.14.0
@@ -159,17 +159,17 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.39.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.14.0
 	go.opentelemetry.io/contrib/propagators/ot v1.14.0
-	go.opentelemetry.io/otel v1.13.0
-	go.opentelemetry.io/otel/bridge/opentracing v1.13.0
-	go.opentelemetry.io/otel/exporters/jaeger v1.13.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.13.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.13.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.36.0
-	go.opentelemetry.io/otel/metric v0.36.0
-	go.opentelemetry.io/otel/sdk v1.13.0
-	go.opentelemetry.io/otel/sdk/metric v0.36.0
-	go.opentelemetry.io/otel/trace v1.13.0
+	go.opentelemetry.io/otel v1.14.0
+	go.opentelemetry.io/otel/bridge/opentracing v1.14.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.14.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.14.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.14.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.37.0
+	go.opentelemetry.io/otel/metric v0.37.0
+	go.opentelemetry.io/otel/sdk v1.14.0
+	go.opentelemetry.io/otel/sdk/metric v0.37.0
+	go.opentelemetry.io/otel/trace v1.14.0
 	go.opentelemetry.io/proto/otlp v0.19.0
 	go.uber.org/atomic v1.10.0
 	go.uber.org/automaxprocs v1.5.1
@@ -236,7 +236,7 @@ require (
 	go.opentelemetry.io/collector/confmap v0.71.0 // indirect
 	go.opentelemetry.io/collector/consumer v0.71.0 // indirect
 	go.opentelemetry.io/collector/featuregate v0.71.0 // indirect
-	go.uber.org/goleak v1.2.0 // indirect
+	go.uber.org/goleak v1.2.1 // indirect
 )
 
 require (
@@ -470,7 +470,7 @@ require (
 	go.mongodb.org/mongo-driver v1.10.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.0.0-rc5 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/mod v0.8.0
 	golang.org/x/term v0.5.0 // indirect
