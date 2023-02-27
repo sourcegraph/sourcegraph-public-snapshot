@@ -1,7 +1,9 @@
 package codeownership
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"sort"
 	"testing"
@@ -23,7 +25,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) (io.ReadCloser, error) {
 			return nil, fs.ErrNotExist
 		})
 		db := database.NewMockDB()
@@ -46,9 +48,9 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) (io.ReadCloser, error) {
 			// return a codeowner path for no which doesn't match the path of the match below.
-			return []byte("NO.md @test\n"), nil
+			return io.NopCloser(bytes.NewReader([]byte("NO.md @test\n"))), nil
 		})
 		db := database.NewMockDB()
 		rules := NewRulesCache(gitserverClient, db)
@@ -70,10 +72,10 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) (io.ReadCloser, error) {
 			// README is owned by a user and a team.
 			// code.go is owner by another user and an unknown entity.
-			return []byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"), nil
+			return io.NopCloser(bytes.NewReader([]byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"))), nil
 		})
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
