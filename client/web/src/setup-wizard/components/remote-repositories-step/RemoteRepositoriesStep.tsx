@@ -7,6 +7,7 @@ import { Container, Text } from '@sourcegraph/wildcard'
 
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
+import { ProgressBar } from '../../components/ProgressBar'
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
@@ -53,7 +54,9 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 </Container>
             </section>
 
-            <FooterWidget>Hello custom content in the footer</FooterWidget>
+            <FooterWidget>
+                <ProgressBar />
+            </FooterWidget>
             <CustomNextButton label="Custom next step label" disabled={true} />
 
             {codeHostToDelete && (
