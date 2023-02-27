@@ -93,6 +93,18 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_repo_ref_on_external_service_repos()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        -- if a repo is soft-deleted, delete every row that references that repo\n        IF (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN\n        DELETE FROM\n            external_service_repos\n        WHERE\n            repo_id = OLD.id;\n        END IF;\n\n        RETURN OLD;\n    END;\n$function$\n"
     },
     {
+      "Name": "delete_user_repo_permissions_on_external_account_soft_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_external_account_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE user_id = OLD.user_id AND user_external_account_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "delete_user_repo_permissions_on_repo_soft_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_repo_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE repo_id = NEW.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "delete_user_repo_permissions_on_user_soft_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_user_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE user_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
+    },
+    {
       "Name": "func_configuration_policies_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE configuration_policies_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE policy_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -19627,6 +19639,10 @@
           "Definition": "CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()"
         },
         {
+          "Name": "trig_delete_user_repo_permissions_on_repo_soft_delete",
+          "Definition": "CREATE TRIGGER trig_delete_user_repo_permissions_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_repo_soft_delete()"
+        },
+        {
           "Name": "trig_recalc_repo_statistics_on_repo_delete",
           "Definition": "CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()"
         },
@@ -22274,7 +22290,12 @@
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id)"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "trig_delete_user_repo_permissions_on_external_account_soft_dele",
+          "Definition": "CREATE TRIGGER trig_delete_user_repo_permissions_on_external_account_soft_dele AFTER UPDATE ON user_external_accounts FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete()"
+        }
+      ]
     },
     {
       "Name": "user_pending_permissions",
@@ -23157,6 +23178,10 @@
         }
       ],
       "Triggers": [
+        {
+          "Name": "trig_delete_user_repo_permissions_on_user_soft_delete",
+          "Definition": "CREATE TRIGGER trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()"
+        },
         {
           "Name": "trig_invalidate_session_on_password_change",
           "Definition": "CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()"
