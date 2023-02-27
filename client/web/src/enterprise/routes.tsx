@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
+import { LegacyRoute } from '../LegacyRouteContext'
 import { LayoutRouteProps, routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
@@ -34,48 +35,56 @@ const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'Glo
 export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     {
         path: EnterprisePageRoutes.BatchChanges,
-        render: props => <GlobalBatchChangesArea {...props} />,
-        // We also render this route on sourcegraph.com as a precaution in case anyone
-        // follows an in-app link to /batch-changes from sourcegraph.com; the component
-        // will just redirect the visitor to the marketing page
-        condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalBatchChangesArea {...props} />}
+                // We also render this route on sourcegraph.com as a precaution in case anyone
+                // follows an in-app link to /batch-changes from sourcegraph.com; the component
+                // will just redirect the visitor to the marketing page
+                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.CodeMonitoring,
-        render: props => <GlobalCodeMonitoringArea {...props} />,
+        element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Insights,
-        render: props => <CodeInsightsRouter {...props} />,
-        condition: props => isCodeInsightsEnabled(props.settingsCascade),
+        element: (
+            <LegacyRoute
+                render={props => <CodeInsightsRouter {...props} />}
+                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Contexts,
-        render: props => <SearchContextsListPage {...props} />,
+        element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.CreateContext,
-        render: props => <CreateSearchContextPage {...props} />,
+        element: <LegacyRoute render={props => <CreateSearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.EditContext,
-        render: props => <EditSearchContextPage {...props} />,
+        element: <LegacyRoute render={props => <EditSearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Context,
-        render: props => <SearchContextPage {...props} />,
+        element: <LegacyRoute render={props => <SearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.SearchNotebook,
-        render: () => <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
+        element: <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
     {
         path: EnterprisePageRoutes.Notebooks + '/*',
-        render: props => <GlobalNotebooksArea {...props} />,
+        element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Cody,
-        render: props => <GlobalCodyArea {...props} />,
+        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
     },
     ...routes,
 ]

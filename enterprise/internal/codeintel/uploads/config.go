@@ -6,6 +6,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
+type rankingConfig struct {
+	env.BaseConfig
+
+	Interval time.Duration
+}
+
+var RankingConfigInst = &rankingConfig{}
+
+func (c *rankingConfig) Load() {
+	c.Interval = c.GetInterval("CODEINTEL_RANKING_RECALCULATION_INTERVAL", "72h", "The maximum age of document reference count values used for ranking before being considered stale.")
+}
+
 type backfillConfig struct {
 	env.BaseConfig
 

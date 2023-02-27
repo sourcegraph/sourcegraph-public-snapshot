@@ -37,7 +37,7 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 func newTestGitserverConns(addrs []string) *GitserverConns {
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
-		conn, err := grpc.Dial(addr, defaults.DialOptions()...)
+		conn, err := defaults.Dial(addr)
 		conns[addr] = connAndErr{conn: conn, err: err}
 	}
 	return &GitserverConns{
@@ -141,7 +141,7 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	// Open connections for each address
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
-		conn, err := grpc.Dial(addr, defaults.DialOptions()...)
+		conn, err := defaults.Dial(addr)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 

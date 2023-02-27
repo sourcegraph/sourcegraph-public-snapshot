@@ -196,13 +196,6 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
-	if NodeToRegistryExtension == nil {
-		return nil, false
-	}
-	return NodeToRegistryExtension(r.Node)
-}
-
 func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
@@ -329,8 +322,8 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 	return n, ok
 }
 
-func (r *NodeResolver) ToPermissionSyncJob() (PermissionSyncJobResolver, bool) {
-	n, ok := r.Node.(PermissionSyncJobResolver)
+func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionsSyncJobResolver)
 	return n, ok
 }
 
@@ -351,5 +344,10 @@ func (r *NodeResolver) ToRole() (RoleResolver, bool) {
 
 func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
 	return n, ok
 }

@@ -617,6 +617,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
+		"AccessRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return accessRequestByID(ctx, db, id)
+		},
 		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return accessTokenByID(ctx, db, id)
 		},
@@ -643,9 +646,6 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitCommitByID(ctx, id)
-		},
-		"RegistryExtension": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return RegistryExtensionByID(ctx, db, id)
 		},
 		"SavedSearch": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.savedSearchByID(ctx, id)

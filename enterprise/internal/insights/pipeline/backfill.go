@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type BackfillRequest struct {
@@ -165,10 +165,10 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
-		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchJobWorkerLimit).WithCancelOnError()
+		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchJobWorkerLimit).WithCancelOnError()
 		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
 			execution := searchPlan.Executions[i]
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       execution,
@@ -186,7 +186,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 				return err
 			})
 		}
-		err = g.Wait()
+		err = p.Wait()
 		if err != nil {
 			jobs = nil
 		}
@@ -293,10 +293,10 @@ func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.Ins
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
-		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchWorkerLimit).WithCancelOnError()
+		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchWorkerLimit).WithCancelOnError()
 		for i := 0; i < len(jobs); i++ {
 			job := jobs[i]
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				h := searchHandlers[series.GenerationMethod]
 				err := rateLimiter.Wait(ctx)
 				if err != nil {
@@ -312,7 +312,7 @@ func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.Ins
 				return nil
 			})
 		}
-		err := g.Wait()
+		err := p.Wait()
 		// don't return any points if they don't all succeed
 		if err != nil {
 			points = nil

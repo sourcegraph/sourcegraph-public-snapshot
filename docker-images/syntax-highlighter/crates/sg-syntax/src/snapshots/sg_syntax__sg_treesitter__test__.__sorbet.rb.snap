@@ -1,0 +1,255 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "dump_document(&document, &contents)"
+---
+  # Defining a typed method:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_say_hello(name: String)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                      ^^^^ IdentifierParameter 
+//                            ^^^^^^ Identifier 
+    "Hello #{name}"
+//  ^^^^^^^ StringLiteral 
+//           ^^^^ Identifier 
+//                ^ StringLiteral 
+  end
+//^^^ IdentifierKeyword 
+  # Using typed variables:
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  name: String = "John"
+//^^^^ IdentifierFunction 
+//      ^^^^^^ Identifier 
+//             ^ IdentifierOperator 
+//               ^^^^^^ StringLiteral 
+  # Utilizing union types:
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_example(x: (Integer | String))
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^ IdentifierFunction 
+//                    ^ IdentifierParameter 
+//                        ^^^^^^^ Identifier 
+//                                  ^^^^^^ Identifier 
+    x.length
+//  ^ Identifier 
+//    ^^^^^^ IdentifierFunction 
+  end
+//^^^ IdentifierKeyword 
+  clauge_example(x: 123)     # => 3
+//^^^^^^^^^^^^^^ IdentifierFunction 
+//               ^ CharacterLiteral 
+//                  ^^^ NumericLiteral 
+//                           ^^^^^^ Comment 
+  example_example(x: "abc")  # => 3
+//^^^^^^^^^^^^^^^ IdentifierFunction 
+//                ^ CharacterLiteral 
+//                   ^^^^^ StringLiteral 
+//                           ^^^^^^ Comment 
+  # Using optional/nullable parameters:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_optional(x: Integer?)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                     ^ IdentifierParameter 
+//                        ^^^^^^^^ IdentifierFunction 
+    x.to_s
+//  ^ Identifier 
+//    ^^^^ IdentifierFunction 
+  end
+//^^^ IdentifierKeyword 
+  clauge_optional             # => nil
+//^^^^^^^^^^^^^^^ Identifier 
+//                            ^^^^^^^^ Comment 
+  example_optional(x: 123)    # => "123"
+//^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                 ^ CharacterLiteral 
+//                    ^^^ NumericLiteral 
+//                            ^^^^^^^^^^ Comment 
+  
+  # Enum types:
+//^^^^^^^^^^^^^ Comment 
+  def example_enum(color: (Color::RED | Color::GREEN | Color::BLUE))
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^ IdentifierFunction 
+//                 ^^^^^ IdentifierParameter 
+//                         ^^^^^ Identifier 
+//                                ^^^ Identifier 
+//                                      ^^^^^ Identifier 
+//                                             ^^^^^ Identifier 
+//                                                     ^^^^^ Identifier 
+//                                                            ^^^^ Identifier 
+    color
+//  ^^^^^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  # Union types with inheritance:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_parent_child(x: (Parent | Child))
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                         ^ IdentifierParameter 
+//                             ^^^^^^ Identifier 
+//                                      ^^^^^ Identifier 
+    x.method
+//  ^ Identifier 
+//    ^^^^^^ IdentifierFunction 
+  end
+//^^^ IdentifierKeyword 
+  # Type aliases:
+//^^^^^^^^^^^^^^^ Comment 
+  Alias = Integer
+//^^^^^ Identifier 
+//      ^ IdentifierOperator 
+//        ^^^^^^^ Identifier 
+  def example_alias(x: Alias)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^ IdentifierFunction 
+//                  ^ IdentifierParameter 
+//                     ^^^^^ Identifier 
+    x
+//  ^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  # Generic types:
+//^^^^^^^^^^^^^^^^ Comment 
+  def example_generic(x: T)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^ IdentifierFunction 
+//                    ^ IdentifierParameter 
+//                       ^ Identifier 
+    x
+//  ^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  # Interfaces:
+//^^^^^^^^^^^^^ Comment 
+  def example_interface(x: Comparable)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                      ^ IdentifierParameter 
+//                         ^^^^^^^^^^ Identifier 
+    x.compare_to(1)
+//  ^ Identifier 
+//    ^^^^^^^^^^ IdentifierFunction 
+//               ^ NumericLiteral 
+  end
+//^^^ IdentifierKeyword 
+  
+  # Structural types:
+//^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_structural(x)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                       ^ IdentifierParameter 
+    x.length
+//  ^ Identifier 
+//    ^^^^^^ IdentifierFunction 
+  end
+//^^^ IdentifierKeyword 
+  example_structural("abc")      # => 3
+//^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                   ^^^^^ StringLiteral 
+//                               ^^^^^^ Comment 
+  example_structural([1, 2, 3]) # => 3
+//^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                    ^ NumericLiteral 
+//                       ^ NumericLiteral 
+//                          ^ NumericLiteral 
+//                              ^^^^^^ Comment 
+  # Type macros:
+//^^^^^^^^^^^^^^ Comment 
+  attr_accessor :name, type: String
+//^^^^^^^^^^^^^ IdentifierFunction 
+//              ^^^^^ CharacterLiteral 
+//                     ^^^^ CharacterLiteral 
+//                           ^^^^^^ Identifier 
+  def example_accessor
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^ IdentifierFunction 
+    self.name = 123 # Error!
+//  ^^^^ IdentifierBuiltin 
+//       ^^^^ IdentifierFunction 
+//            ^ IdentifierOperator 
+//              ^^^ NumericLiteral 
+//                  ^^^^^^^^ Comment 
+  end
+//^^^ IdentifierKeyword 
+  # Variance annotations:
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  def example_variance(x: +Integer)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                     ^ IdentifierParameter 
+//                         ^^^^^^^ Identifier 
+    x
+//  ^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  def example_variance(x: -Integer)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                     ^ IdentifierParameter 
+//                         ^^^^^^^ Identifier 
+    x
+//  ^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  # Enum types:
+//^^^^^^^^^^^^^ Comment 
+  Color = Enum.new(:RED, :GREEN, :BLUE)
+//^^^^^ Identifier 
+//      ^ IdentifierOperator 
+//        ^^^^ Identifier 
+//             ^^^ IdentifierFunction 
+//                 ^^^^ CharacterLiteral 
+//                       ^^^^^^ CharacterLiteral 
+//                               ^^^^^ CharacterLiteral 
+  def example_color(color: Color)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^ IdentifierFunction 
+//                  ^^^^^ IdentifierParameter 
+//                         ^^^^^ Identifier 
+    color
+//  ^^^^^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  # Generic types:
+//^^^^^^^^^^^^^^^^ Comment 
+  def example_generic(x: T)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^^^ IdentifierFunction 
+//                    ^ IdentifierParameter 
+//                       ^ Identifier 
+    x
+//  ^ Identifier 
+  end
+//^^^ IdentifierKeyword 
+  example_generic(x: 123) # => 123
+//^^^^^^^^^^^^^^^ IdentifierFunction 
+//                ^ CharacterLiteral 
+//                   ^^^ NumericLiteral 
+//                        ^^^^^^^^ Comment 
+  example_generic(x: "abc") # => "abc"
+//^^^^^^^^^^^^^^^ IdentifierFunction 
+//                ^ CharacterLiteral 
+//                   ^^^^^ StringLiteral 
+//                          ^^^^^^^^^^ Comment 
+  
+  sig { params(name: String).returns(String) }
+//^^^ IdentifierBuiltinType 
+//      ^^^^^^ IdentifierFunction 
+//             ^^^^ CharacterLiteral 
+//                   ^^^^^^ Identifier 
+//                           ^^^^^^^ IdentifierFunction 
+//                                   ^^^^^^ Identifier 
+  def example_sig(name:)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^ IdentifierFunction 
+//                ^^^^ IdentifierParameter 
+    "Hello #{name}"
+//  ^^^^^^^ StringLiteral 
+//           ^^^^ Identifier 
+//                ^ StringLiteral 
+  end
+//^^^ IdentifierKeyword 
+

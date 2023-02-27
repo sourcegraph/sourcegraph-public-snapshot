@@ -1,0 +1,8 @@
+DROP TRIGGER IF EXISTS trig_delete_user_repo_permissions_on_repo_soft_delete ON repo;
+DROP FUNCTION IF EXISTS delete_user_repo_permissions_on_repo_soft_delete;
+
+DROP TRIGGER IF EXISTS trig_delete_user_repo_permissions_on_external_account_soft_delete ON user_external_accounts;
+DROP FUNCTION IF EXISTS delete_user_repo_permissions_on_external_account_soft_delete;
+
+DROP TRIGGER IF EXISTS trig_delete_user_repo_permissions_on_user_soft_delete ON users;
+DROP FUNCTION IF EXISTS delete_user_repo_permissions_on_user_soft_delete;
