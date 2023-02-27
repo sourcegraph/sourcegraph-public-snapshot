@@ -8,7 +8,9 @@ import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
+import { legacyLayoutRouteContextMock } from '../__mocks__/legacyLayoutRouteContext'
 import { SourcegraphContext } from '../jscontext'
+import { LegacyLayoutRouteContext, LegacyRouteContext } from '../LegacyRouteContext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
@@ -32,6 +34,7 @@ export interface WebStoryProps
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: FC<WebStoryChildrenProps>
     path?: string
+    legacyLayoutContext?: Partial<LegacyLayoutRouteContext>
 }
 
 /**
@@ -45,6 +48,7 @@ export const WebStory: FC<WebStoryProps> = ({
     useStrictMocking,
     initialEntries = ['/'],
     initialIndex = 1,
+    legacyLayoutContext = {},
 }) => {
     const isLightTheme = useStorybookTheme()
     const breadcrumbSetters = useBreadcrumbs()
@@ -74,7 +78,9 @@ export const WebStory: FC<WebStoryProps> = ({
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <ThemeContext.Provider value={{ themeSetting: isLightTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
-                    <RouterProvider router={router} />
+                    <LegacyRouteContext.Provider value={{ ...legacyLayoutRouteContextMock, ...legacyLayoutContext }}>
+                        <RouterProvider router={router} />
+                    </LegacyRouteContext.Provider>
                 </ThemeContext.Provider>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>

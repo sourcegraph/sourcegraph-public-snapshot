@@ -2,12 +2,12 @@ import 'focus-visible'
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ApolloProvider } from '@apollo/client'
+import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
-import { isTruthy, logger } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
@@ -94,6 +94,8 @@ const WILDCARD_THEME: WildcardTheme = {
 }
 
 setLinkComponent(RouterLink)
+
+const suspenseCache = new SuspenseCache()
 
 /**
  * The synchronous and static value that creates the `platformContext.settings`
@@ -279,7 +281,7 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             createBrowserRouter([
                 {
                     element: <LegacyRoute render={props => <Layout {...props} />} />,
-                    children: props.routes.filter(isTruthy),
+                    children: props.routes,
                 },
             ]),
         [props.routes]
@@ -320,7 +322,7 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             components={[
                 // `ComponentsComposer` provides children via `React.cloneElement`.
                 /* eslint-disable react/no-children-prop, react/jsx-key */
-                <ApolloProvider client={graphqlClient} children={undefined} />,
+                <ApolloProvider client={graphqlClient} children={undefined} suspenseCache={suspenseCache} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,

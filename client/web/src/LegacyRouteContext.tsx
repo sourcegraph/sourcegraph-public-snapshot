@@ -159,15 +159,29 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
     } satisfies LegacyRouteComputedContext
 
     const legacyContext = {
-        ...context,
         ...injections,
         ...computedContextFields,
+        ...context,
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
 }
 
 export const LegacyRouteContext = createContext<LegacyLayoutRouteContext | null>(null)
+
+/**
+ * A convenience hook to return the LegacyRouteContext.
+ *
+ * @deprecated This should not be used for new code anymore, please use Apollo instead to make
+ * GraphQL requests and `useSettings` to access settings.
+ */
+export const useLegacyRouteContext = (): LegacyLayoutRouteContext => {
+    const context = useContext(LegacyRouteContext)
+    if (!context) {
+        throw new Error('LegacyRoute must be used inside a LegacyRouteContext.Provider')
+    }
+    return context
+}
 
 /**
  * A convenience hook to return the platform context.

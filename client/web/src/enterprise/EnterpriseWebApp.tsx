@@ -10,6 +10,7 @@ import {
     StaticInjectedAppConfig,
     windowContextConfig,
 } from '../staticAppConfig'
+import { routes } from '../storm/routes'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
@@ -82,7 +83,7 @@ export const EnterpriseWebApp: FC = () => {
         // eslint-disable-next-line no-console
         console.log('Storm 🌪️ is enabled for this page load.')
 
-        return <SourcegraphWebApp {...staticAppConfig} />
+        return <SourcegraphWebApp {...staticAppConfig} routes={routes} />
     }
 
     return <LegacySourcegraphWebApp {...staticAppConfig} />
