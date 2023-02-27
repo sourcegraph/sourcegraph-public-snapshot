@@ -12,8 +12,6 @@ import (
 )
 
 func Test_UserResourceHandler_Patch_Username(t *testing.T) {
-	t.Parallel()
-
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
