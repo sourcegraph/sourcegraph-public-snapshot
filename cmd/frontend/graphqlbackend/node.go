@@ -196,13 +196,6 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
-	if NodeToRegistryExtension == nil {
-		return nil, false
-	}
-	return NodeToRegistryExtension(r.Node)
-}
-
 func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok

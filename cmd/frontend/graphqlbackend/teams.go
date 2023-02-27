@@ -27,15 +27,16 @@ type ListTeamsArgs struct {
 }
 
 type teamConnectionResolver struct {
-	db       database.DB
-	parentID int32
-	search   string
-	cursor   int32
-	limit    int
-	once     sync.Once
-	teams    []*types.Team
-	pageInfo *graphqlutil.PageInfo
-	err      error
+	db            database.DB
+	parentID      int32
+	search        string
+	cursor        int32
+	limit         int
+	once          sync.Once
+	teams         []*types.Team
+	onlyRootTeams bool
+	pageInfo      *graphqlutil.PageInfo
+	err           error
 }
 
 // applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
@@ -71,6 +72,7 @@ func (r *teamConnectionResolver) compute(ctx context.Context) {
 			Cursor:       r.cursor,
 			WithParentID: r.parentID,
 			Search:       r.search,
+			RootOnly:     r.onlyRootTeams,
 		}
 		if r.limit != 0 {
 			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
@@ -94,6 +96,7 @@ func (r *teamConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	opts := database.ListTeamsOpts{
 		WithParentID: r.parentID,
 		Search:       r.search,
+		RootOnly:     r.onlyRootTeams,
 	}
 	return r.db.Teams().CountTeams(ctx, opts)
 }
@@ -135,6 +138,10 @@ func (r *TeamResolver) URL() string {
 	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
 	u := &url.URL{Path: absolutePath}
 	return u.String()
+}
+
+func (r *TeamResolver) AvatarURL() *string {
+	return nil
 }
 
 func (r *TeamResolver) DisplayName() *string {
@@ -702,6 +709,7 @@ func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamC
 	if err := c.applyArgs(args); err != nil {
 		return nil, err
 	}
+	c.onlyRootTeams = true
 	return c, nil
 }
 
