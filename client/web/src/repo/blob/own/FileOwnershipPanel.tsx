@@ -68,7 +68,7 @@ export const FileOwnershipPanel: React.FunctionComponent<{
                             reasons={ownership.reasons.filter(reason => reason.__typename === 'CodeownersFileEntry')}
                         />
                     ) : (
-                        // TODO: Add support for teams.
+                        // TODO #48303: Add support for teams.
                         <></>
                     )
                 )}

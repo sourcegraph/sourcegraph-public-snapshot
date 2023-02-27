@@ -1,11 +1,12 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
 import { formatPersonName } from '../../../person/PersonLink'
@@ -26,7 +27,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         navigate({ hash: '#tab=ownership' })
     }, [navigate])
 
-    const { data, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
+    const { data, error, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
         FETCH_OWNERS_AND_HISTORY,
         {
             variables: {
@@ -37,6 +38,12 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         }
     )
 
+    useEffect(() => {
+        if (error) {
+            logger.error(error)
+        }
+    }, [error])
+
     if (loading) {
         return (
             <div className={styles.wrapper}>
@@ -45,8 +52,14 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         )
     }
 
-    if (!(data?.node?.__typename === 'Repository' && data.node.commit)) {
-        return <div className={styles.wrapper}>Error getting details about this file.</div>
+    if (error || !(data?.node?.__typename === 'Repository' && data.node.commit)) {
+        return (
+            <div className={styles.wrapper}>
+                <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
+                    Error getting history and ownership details about this file.
+                </Alert>
+            </div>
+        )
     }
 
     const history = data?.node?.commit?.ancestors?.nodes?.[0]
@@ -81,7 +94,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                             {formatPersonName(ownership.owner)}
                                         </>
                                     ) : (
-                                        // TODO: Add support for teams.
+                                        // TODO #48303: Add support for teams.
                                         <></>
                                     )}
                                 </div>
