@@ -606,23 +606,31 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	_, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	count, err := store.Count(ctx)
+	count, err := store.Count(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 10, count)
 
 	// Create 10 more sync jobs.
 	createSyncJobs(t, ctx, user.ID, store)
-	count, err = store.Count(ctx)
+	// Now we will count only the ReasonManualUserSync jobs (which should be a half
+	// of all jobs).
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
-	require.Equal(t, 20, count)
+	require.Equal(t, 10, count)
 }
 
+// createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason
+// and half with the ReasonGitHubUserMembershipRemovedEvent reason.
 func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
 	t.Helper()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	for i := 0; i < 10; i++ {
 		processAfter := clock.Now().Add(5 * time.Minute)
-		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+		reason := ReasonManualUserSync
+		if i%2 == 0 {
+			reason = ReasonGitHubUserMembershipRemovedEvent
+		}
+		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: reason}
 		err := store.CreateUserSyncJob(ctx, userID, opts)
 		require.NoError(t, err)
 	}
