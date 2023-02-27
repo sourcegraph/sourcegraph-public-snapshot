@@ -1280,6 +1280,24 @@ func TestExternalServiceRepositories(t *testing.T) {
 	res1 := singleResult(graphqlID1, repoName1, externalID1)
 	res2 := singleResult(graphqlID2, repoName2, externalID2)
 
+	mockExternalServiceRepos := func(t *testing.T, repos []*types.Repo, err error) {
+		t.Helper()
+
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+
+		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
+			res := protocol.ExternalServiceRepositoriesResult{
+				Repos: repos,
+				Error: errStr,
+			}
+			return &res, err
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+	}
+
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -1287,14 +1305,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1321,14 +1332,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
@@ -1358,14 +1362,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1392,14 +1389,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -1425,15 +1415,8 @@ func TestExternalServiceRepositories(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials")
-		}
 
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		mockExternalServiceRepos(t, nil, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"))
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
@@ -1462,15 +1445,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: []*types.Repo{&repo1, &repo2},
-				Error: "",
-			}
-			return &res, nil
-		}
-
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		mockExternalServiceRepos(t, []*types.Repo{&repo1, &repo2}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
