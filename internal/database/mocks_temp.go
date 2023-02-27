@@ -37873,7 +37873,7 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		CountFunc: &PermissionSyncJobStoreCountFunc{
-			defaultHook: func(context.Context) (r0 int, r1 error) {
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -37931,7 +37931,7 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		CountFunc: &PermissionSyncJobStoreCountFunc{
-			defaultHook: func(context.Context) (int, error) {
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (int, error) {
 				panic("unexpected invocation of MockPermissionSyncJobStore.Count")
 			},
 		},
@@ -38131,24 +38131,24 @@ func (c PermissionSyncJobStoreCancelQueuedJobFuncCall) Results() []interface{} {
 // PermissionSyncJobStoreCountFunc describes the behavior when the Count
 // method of the parent MockPermissionSyncJobStore instance is invoked.
 type PermissionSyncJobStoreCountFunc struct {
-	defaultHook func(context.Context) (int, error)
-	hooks       []func(context.Context) (int, error)
+	defaultHook func(context.Context, ListPermissionSyncJobOpts) (int, error)
+	hooks       []func(context.Context, ListPermissionSyncJobOpts) (int, error)
 	history     []PermissionSyncJobStoreCountFuncCall
 	mutex       sync.Mutex
 }
 
 // Count delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) Count(v0 context.Context) (int, error) {
-	r0, r1 := m.CountFunc.nextHook()(v0)
-	m.CountFunc.appendCall(PermissionSyncJobStoreCountFuncCall{v0, r0, r1})
+func (m *MockPermissionSyncJobStore) Count(v0 context.Context, v1 ListPermissionSyncJobOpts) (int, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(PermissionSyncJobStoreCountFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Count method of the
 // parent MockPermissionSyncJobStore instance is invoked and the hook queue
 // is empty.
-func (f *PermissionSyncJobStoreCountFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+func (f *PermissionSyncJobStoreCountFunc) SetDefaultHook(hook func(context.Context, ListPermissionSyncJobOpts) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -38156,7 +38156,7 @@ func (f *PermissionSyncJobStoreCountFunc) SetDefaultHook(hook func(context.Conte
 // Count method of the parent MockPermissionSyncJobStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PermissionSyncJobStoreCountFunc) PushHook(hook func(context.Context) (int, error)) {
+func (f *PermissionSyncJobStoreCountFunc) PushHook(hook func(context.Context, ListPermissionSyncJobOpts) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38165,19 +38165,19 @@ func (f *PermissionSyncJobStoreCountFunc) PushHook(hook func(context.Context) (i
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermissionSyncJobStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int, error) {
+	f.SetDefaultHook(func(context.Context, ListPermissionSyncJobOpts) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermissionSyncJobStoreCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context) (int, error) {
+	f.PushHook(func(context.Context, ListPermissionSyncJobOpts) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *PermissionSyncJobStoreCountFunc) nextHook() func(context.Context) (int, error) {
+func (f *PermissionSyncJobStoreCountFunc) nextHook() func(context.Context, ListPermissionSyncJobOpts) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38213,6 +38213,9 @@ type PermissionSyncJobStoreCountFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListPermissionSyncJobOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -38224,7 +38227,7 @@ type PermissionSyncJobStoreCountFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermissionSyncJobStoreCountFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
