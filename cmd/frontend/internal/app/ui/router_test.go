@@ -26,7 +26,7 @@ func init() {
 }
 
 func TestRouter(t *testing.T) {
-	InitRouter(database.NewMockDB(), nil)
+	InitRouter(database.NewMockDB())
 	router := Router()
 	tests := []struct {
 		path      string
@@ -146,6 +146,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// request-access
+		{
+			path:      "/request-access",
+			wantRoute: uirouter.RouteRequestAccess,
+			wantVars:  map[string]string{},
+		},
+
 		// settings
 		{
 			path:      "/settings",
@@ -211,7 +218,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
-	InitRouter(database.NewMockDB(), nil)
+	InitRouter(database.NewMockDB())
 	router := Router()
 
 	tests := []struct {

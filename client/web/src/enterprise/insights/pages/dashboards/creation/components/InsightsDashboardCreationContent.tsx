@@ -1,28 +1,27 @@
-import React, { ReactNode, useContext } from 'react'
+import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Input } from '@sourcegraph/wildcard'
-
-import { FormGroup } from '../../../../components/form/form-group/FormGroup'
-import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
-import { getDefaultInputProps } from '../../../../components/form/getDefaultInputProps'
-import { useField } from '../../../../components/form/hooks/useField'
-import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../components/form/validators'
-import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
 import {
-    CodeInsightsBackendContext,
-    InsightsDashboardOwner,
-    isGlobalOwner,
-    isOrganizationOwner,
-    isPersonalOwner,
-} from '../../../../core'
+    Input,
+    ErrorAlert,
+    FormGroup,
+    useForm,
+    useField,
+    getDefaultInputProps,
+    createRequiredValidator,
+    FORM_ERROR,
+    FormAPI,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
+
+import { FormRadioInput, LimitedAccessLabel } from '../../../../components'
+import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 
 import styles from './InsightsDashboardCreationContent.module.scss'
 
-const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
+const DASHBOARD_TITLE_VALIDATORS = createRequiredValidator('Name is a required field.')
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -45,12 +44,11 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<InsightsDashboardCreationContentProps>
+    InsightsDashboardCreationContentProps
 > = props => {
     const { initialValues, owners, onSubmit, children } = props
 
-    const { UIFeatures } = useContext(CodeInsightsBackendContext)
-    const { licensed } = UIFeatures
+    const { licensed } = useUiFeatures()
 
     const userOwner = owners.find(isPersonalOwner)
     const personalOwners = owners.filter(isPersonalOwner)
@@ -68,7 +66,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<
     const name = useField({
         name: 'name',
         formApi: formAPI,
-        validators: { sync: dashboardTitleRequired },
+        validators: { sync: DASHBOARD_TITLE_VALIDATORS },
     })
 
     const visibility = useField({

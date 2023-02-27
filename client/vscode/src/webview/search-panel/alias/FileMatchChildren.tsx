@@ -1,32 +1,30 @@
-import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
-    isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import styles from '@sourcegraph/shared/src/components/FileMatchChildren.module.scss'
-import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
+import { Button, Code } from '@sourcegraph/wildcard'
 
+import { HighlightLineRange } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
@@ -35,8 +33,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
-    /* Called when the first result has fully loaded. */
-    onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -145,27 +141,12 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
-    // fetch (instead of the entire file.)
-    const optimizeHighlighting =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
-
-    const {
-        result,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-        extensionsController,
-    } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -173,33 +154,26 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? grouped.map(
-                              (group): IHighlightLineRange => ({
-                                  startLine: group.startLine,
-                                  endLine: group.endLine,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    ranges: grouped.map(
+                        (group): HighlightLineRange => ({
+                            startLine: group.startLine,
+                            endLine: group.endLine,
+                        })
+                    ),
                 },
                 false
             ).pipe(
                 map(lines => {
-                    if (isFirst && onFirstResultLoad) {
-                        onFirstResultLoad()
-                    }
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
                         { durationMs: Date.now() - startTime },
                         { durationMs: Date.now() - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, telemetryService]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -209,20 +183,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             positionOrRangeQueryParameter
         )
     }
-
-    const codeIntelViewerUpdatesProps = useMemo(
-        () =>
-            grouped && result.type === 'content' && extensionsController
-                ? {
-                      extensionsController,
-                      repositoryName: result.repository,
-                      filePath: result.path,
-                      revision: result.commit,
-                  }
-                : undefined,
-        [extensionsController, result, grouped]
-    )
-    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     /**
      * This handler implements the logic to simulate the click/keyboard
@@ -283,19 +243,25 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
             {/* Symbols */}
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                <button
-                    type="button"
-                    className={classNames('test-file-match-children-item', styles.item, 'btn btn-text-link')}
+                <Button
+                    className={classNames('test-file-match-children-item', styles.item, 'btn-text-link')}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
                     onClick={() => openSymbol(symbol.url)}
                 >
-                    <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <code>
+                    <SymbolKind
+                        kind={symbol.kind}
+                        className="mr-1"
+                        symbolKindTags={
+                            isSettingsValid(props.settingsCascade) &&
+                            props.settingsCascade.final.experimentalFeatures?.symbolKindTags
+                        }
+                    />
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </code>
-                </button>
+                    </Code>
+                </Button>
             ))}
 
             {/* Line matches */}
@@ -340,10 +306,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                    isFirst={index === 0}
                                     blobLines={group.blobLines}
-                                    viewerUpdates={viewerUpdates}
-                                    hoverifier={props.hoverifier}
                                 />
                             </div>
                         </div>

@@ -3,12 +3,10 @@ import React, { useMemo } from 'react'
 import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
@@ -18,17 +16,13 @@ import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
-        >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
+    authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     viewerCanManage: boolean
-    blocks: NotebookBlock[]
+    blocks: NotebookFields['blocks']
     exportedFileName: string
     isEmbedded?: boolean
     outlineContainerElement?: HTMLElement | null
@@ -45,16 +39,13 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         onUpdateBlocks,
         globbing,
         streamSearch,
-        isLightTheme,
         telemetryService,
         searchContextsEnabled,
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
-        showSearchContext,
         settingsCascade,
         platformContext,
-        extensionsController,
         outlineContainerElement,
         isEmbedded,
     }) => {
@@ -78,12 +69,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                                 type: 'symbol',
                                 input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                             }
-                        case 'ComputeBlock':
-                            return {
-                                id: block.id,
-                                type: 'compute',
-                                input: block.computeInput,
-                            }
                     }
                 }),
             [blocks]
@@ -93,16 +78,13 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             <NotebookComponent
                 globbing={globbing}
                 streamSearch={streamSearch}
-                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}
-                showSearchContext={showSearchContext}
                 settingsCascade={settingsCascade}
                 platformContext={platformContext}
-                extensionsController={extensionsController}
                 isReadOnly={!viewerCanManage}
                 blocks={initializerBlocks}
                 onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
@@ -114,3 +96,5 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         )
     }
 )
+
+NotebookContent.displayName = 'NotebookContent'

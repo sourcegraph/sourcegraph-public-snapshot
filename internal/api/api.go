@@ -65,22 +65,6 @@ func (rc RepoCommit) LogFields() []log.Field {
 	}
 }
 
-// Repo represents a source code repository.
-type Repo struct {
-	// ID is the unique numeric ID for this repository on Sourcegraph.
-	ID RepoID
-
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo *ExternalRepoSpec
-
-	// Name is the name of the repository (such as "github.com/user/repo").
-	Name RepoName
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
-}
-
 // ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
 type ExternalRepoSpec struct {
 	// ID is the repository's ID on the external service. Its value is opaque except to the repo-updater.
@@ -155,23 +139,6 @@ type Settings struct {
 	AuthorUserID *int32          // the ID of the user who authored this settings value
 	Contents     string          // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time       // the date when this settings value was created
-}
-
-// ExternalService represents a complete external service record.
-type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool
-	CloudDefault    bool
 }
 
 func cmp(a, b string) int {

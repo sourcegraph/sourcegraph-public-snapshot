@@ -1,4 +1,4 @@
-import { act } from '@testing-library/react-hooks'
+import { act } from '@testing-library/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -22,7 +22,7 @@ describe('notepad store', () => {
     const exampleEntryInput: NotepadEntryInput = {
         type: 'search',
         query: 'test',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         caseSensitive: false,
     }
 

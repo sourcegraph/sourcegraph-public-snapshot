@@ -5,47 +5,54 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func printConfigValidation() {
-	messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+func printConfigValidation(logger log.Logger) {
+	logger = logger.Scoped("configValidation", "")
+	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
+		logger.Warn("unable to validate Sourcegraph site configuration", log.Error(err))
 		return
 	}
 
 	if len(messages) > 0 {
-		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		log15.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
+		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
 		for _, verr := range messages {
-			log15.Warn(verr.String())
+			logger.Warn(verr.String())
 		}
-		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
 }
 
@@ -102,13 +109,13 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 	return []byte(formatted), nil
 }
 
-func overrideSiteConfig(ctx context.Context, db database.DB) error {
-	path := os.Getenv("SITE_CONFIG_FILE")
-	if path == "" {
+func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideSiteConfig", "")
+	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
+	if len(paths) == 0 {
 		return nil
 	}
-	cs := &configurationSource{db: db}
-	paths := filepath.SplitList(path)
+	cs := newConfigurationSource(logger, db)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
 		if err != nil {
@@ -120,7 +127,18 @@ func overrideSiteConfig(ctx context.Context, db database.DB) error {
 		}
 		raw.Site = string(site)
 
-		err = cs.Write(ctx, raw)
+		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
+		// never have a non nil actor available here to determine the user ID. This is consistent
+		// with the behaviour of global settings as well. See settings.CreateIfUpToDate in
+		// overrideGlobalSettings below.
+		//
+		// A value of 0 will be treated as null when writing to the the database for this column.
+		//
+		// Nevertheless, we still use actor.FromContext() because it makes this code future proof in
+		// case some how this gets used in a non-startup path as well where an actor is available.
+		// In which case we will start populating the authorUserID in the database which is a good
+		// thing.
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, actor.FromContext(ctx).UID, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -131,16 +149,17 @@ func overrideSiteConfig(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	go watchUpdate(ctx, path, updateFunc)
+	go watchUpdate(ctx, logger, updateFunc, paths...)
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, db database.DB) error {
+func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideGlobalSettings", "")
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
 	}
-	settings := database.Settings(db)
+	settings := db.Settings()
 	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
@@ -168,19 +187,19 @@ func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	if err := update(ctx); err != nil {
 		return err
 	}
-	go watchUpdate(ctx, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
-	log := log15.Root().New("svc", "config.file")
+func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideExtSvcConfig", "")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
-	extsvcs := database.ExternalServices(db)
-	cs := &configurationSource{db: db}
+	extsvcs := db.ExternalServices()
+	cs := newConfigurationSource(logger, db)
 
 	update := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
@@ -202,14 +221,10 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 			return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 		}
 		if len(rawConfigs) == 0 {
-			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
+			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
-			// NOTE: External services loaded from config file do not have namespace specified.
-			// Therefore, we only need to load those from database.
-			NoNamespace: true,
-		})
+		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return errors.Wrap(err, "ExternalServices.List")
 		}
@@ -258,25 +273,53 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 				toAdd[&types.ExternalService{
 					Kind:         key,
 					DisplayName:  fmt.Sprintf("%s #%d", key, i+1),
-					Config:       string(marshaledCfg),
+					Config:       extsvc.NewUnencryptedConfig(string(marshaledCfg)),
 					CloudDefault: cloudDefault,
 				}] = true
 			}
 		}
 		// Now eliminate operations from toAdd/toRemove where the config
 		// file and DB describe an equivalent external service.
-		isEquiv := func(a, b *types.ExternalService) bool {
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config == b.Config
+		isEquiv := func(a, b *types.ExternalService) (bool, error) {
+			aConfig, err := a.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			bConfig, err := b.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
 		}
-		shouldUpdate := func(a, b *types.ExternalService) bool {
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config != b.Config
+		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
+			aConfig, err := a.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			bConfig, err := b.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
 		}
 		for a := range toAdd {
 			for b := range toRemove {
-				if isEquiv(a, b) { // Nothing changed
+				if ok, err := isEquiv(a, b); err != nil {
+					return err
+				} else if ok {
+					// Nothing changed
 					delete(toAdd, a)
 					delete(toRemove, b)
-				} else if shouldUpdate(a, b) {
+					continue
+				}
+
+				if ok, err := shouldUpdate(a, b); err != nil {
+					return err
+				} else if ok {
 					delete(toAdd, a)
 					delete(toRemove, b)
 					toUpdate[b.ID] = a
@@ -286,14 +329,14 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 
 		// Apply the delta update.
 		for extSvc := range toRemove {
-			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
+			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
 			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
-			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
+			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
 			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
@@ -301,9 +344,14 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 
 		ps := confGet().AuthProviders
 		for id, extSvc := range toUpdate {
-			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
+			logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
 
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config, CloudDefault: &extSvc.CloudDefault}
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			if err != nil {
+				return err
+			}
+
+			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}
@@ -314,30 +362,30 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	go watchUpdate(ctx, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
 
-func watchUpdate(ctx context.Context, path string, update func(context.Context) error) {
-	log := log15.Root().New("svc", "config.file")
-	events, err := watchPaths(ctx, path)
+func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) error, paths ...string) {
+	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
+	events, err := watchPaths(ctx, paths...)
 	if err != nil {
-		log.Error("failed to watch config override files", "error", err)
+		logger.Error("failed to watch config override files", log.Error(err))
 		return
 	}
 	for err := range events {
 		if err != nil {
-			log.Warn("error while watching config override files", "error", err)
+			logger.Warn("error while watching config override files", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("watch_failed").Inc()
 			continue
 		}
 
 		if err := update(ctx); err != nil {
-			log.Error("failed to update configuration from modified config override file", "error", err, "file", path)
+			logger.Error("failed to update configuration from modified config override file", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
 		} else {
-			log.Info("updated configuration from modified config override files", "file", path)
+			logger.Info("updated configuration from modified config override files")
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		}
 	}
@@ -364,7 +412,7 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 			continue
 		}
 		if err := watcher.Add(p); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to add %s to watcher", p)
 		}
 	}
 
@@ -393,30 +441,46 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 	return out, nil
 }
 
-type configurationSource struct {
-	db database.DB
+func newConfigurationSource(logger log.Logger, db database.DB) *configurationSource {
+	return &configurationSource{
+		logger: logger.Scoped("configurationSource", ""),
+		db:     db,
+	}
 }
 
-func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
+type configurationSource struct {
+	logger log.Logger
+	db     database.DB
+}
+
+func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 
 	return conftypes.RawUnified{
+		ID:                 site.ID,
 		Site:               site.Contents,
-		ServiceConnections: serviceConnections(),
+		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
-	// TODO(slimsag): future: pass lastID through for race prevention
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, authorUserID, false)
+}
+
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	if site.ID != lastID {
+		return errors.New("site config has been modified by another request, write not allowed")
+	}
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
 	if err != nil {
+		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
@@ -426,21 +490,44 @@ var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
 
-	gitservers = endpoint.New(func() string {
-		v := os.Getenv("SRC_GIT_SERVERS")
-		if v == "" {
-			// Detect 'go test' and setup default addresses in that case.
-			p, err := os.Executable()
-			if err == nil && strings.HasSuffix(p, ".test") {
-				return "gitserver:3178"
-			}
-			return "k8s+rpc://gitserver:3178?kind=sts"
-		}
-		return v
-	}())
+	gitserversVal  *endpoint.Map
+	gitserversOnce sync.Once
 )
 
-func serviceConnections() conftypes.ServiceConnections {
+func gitservers() *endpoint.Map {
+	gitserversOnce.Do(func() {
+		addr, err := gitserverAddr(os.Environ())
+		if err != nil {
+			gitserversVal = endpoint.Empty(errors.Wrap(err, "failed to parse SRC_GIT_SERVERS"))
+		} else {
+			gitserversVal = endpoint.New(addr)
+		}
+	})
+	return gitserversVal
+}
+
+func gitserverAddr(environ []string) (string, error) {
+	const (
+		serviceName = "gitserver"
+		port        = "3178"
+	)
+
+	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Detect 'go test' and setup default addresses in that case.
+	p, err := os.Executable()
+	if err == nil && strings.HasSuffix(p, ".test") {
+		return "gitserver:3178", nil
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+rpc://gitserver:3178?kind=sts", nil
+}
+
+func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
 		dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 		if err != nil {
@@ -454,15 +541,201 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 	})
 
-	addrs, err := gitservers.Endpoints()
+	gitAddrs, err := gitservers().Endpoints()
 	if err != nil {
-		log15.Error("serviceConnections", "error", err)
+		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
+	}
+
+	searcherMap := computeSearcherEndpoints()
+	searcherAddrs, err := searcherMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
+	}
+
+	symbolsMap := computeSymbolsEndpoints()
+	symbolsAddrs, err := symbolsMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
+	}
+
+	zoektMap := computeIndexedEndpoints()
+	zoektAddrs, err := zoektMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
 	}
 
 	return conftypes.ServiceConnections{
-		GitServers:           addrs,
+		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
+		Searchers:            searcherAddrs,
+		Symbols:              symbolsAddrs,
+		Zoekts:               zoektAddrs,
+		ZoektListTTL:         indexedListTTL,
 	}
+}
+
+var (
+	searcherURLsOnce sync.Once
+	searcherURLs     *endpoint.Map
+
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
+
+	indexedEndpointsOnce sync.Once
+	indexedEndpoints     *endpoint.Map
+
+	indexedListTTL = func() time.Duration {
+		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+		if ttl == 0 {
+			if envvar.SourcegraphDotComMode() {
+				ttl = 30 * time.Second
+			} else {
+				ttl = 5 * time.Second
+			}
+		}
+		return ttl
+	}()
+)
+
+func computeSymbolsEndpoints() *endpoint.Map {
+	symbolsURLsOnce.Do(func() {
+		addr, err := symbolsAddr(os.Environ())
+		if err != nil {
+			symbolsURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SYMBOLS_URL"))
+		} else {
+			symbolsURLs = endpoint.New(addr)
+		}
+	})
+	return symbolsURLs
+}
+
+func symbolsAddr(environ []string) (string, error) {
+	const (
+		serviceName = "symbols"
+		port        = "3184"
+	)
+
+	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Not set, use the default (non-service discovery on symbols)
+	return "http://symbols:3184", nil
+}
+
+func LoadConfig() {
+	highlight.LoadConfig()
+	symbols.LoadConfig()
+}
+
+func computeSearcherEndpoints() *endpoint.Map {
+	searcherURLsOnce.Do(func() {
+		addr, err := searcherAddr(os.Environ())
+		if err != nil {
+			searcherURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SEARCHER_URL"))
+		} else {
+			searcherURLs = endpoint.New(addr)
+		}
+	})
+	return searcherURLs
+}
+
+func searcherAddr(environ []string) (string, error) {
+	const (
+		serviceName = "searcher"
+		port        = "3181"
+	)
+
+	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+http://searcher:3181", nil
+}
+
+func computeIndexedEndpoints() *endpoint.Map {
+	indexedEndpointsOnce.Do(func() {
+		addr, err := zoektAddr(os.Environ())
+		if err != nil {
+			indexedEndpoints = endpoint.Empty(errors.Wrap(err, "failed to parse INDEXED_SEARCH_SERVERS"))
+		} else {
+			if addr != "" {
+				indexedEndpoints = endpoint.New(addr)
+			} else {
+				// It is OK to have no indexed search endpoints.
+				indexedEndpoints = endpoint.Static()
+			}
+		}
+	})
+	return indexedEndpoints
+}
+
+func zoektAddr(environ []string) (string, error) {
+	deployType := deploy.Type()
+
+	const port = "6070"
+	var baseName = "indexed-search"
+	if deployType == deploy.DockerCompose {
+		baseName = "zoekt-webserver"
+	}
+
+	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		addrs, err := replicaAddrs(deployType, addr, baseName, port)
+		return addrs, err
+	}
+
+	// Backwards compatibility: We used to call this variable ZOEKT_HOST
+	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
+		return addr, nil
+	}
+
+	// Not set, use the default (service discovery on the indexed-search
+	// statefulset)
+	return "k8s+rpc://indexed-search:6070?kind=sts", nil
+}
+
+// Generate endpoints based on replica number when set
+func replicaAddrs(deployType, countStr, serviceName, port string) (string, error) {
+	count, err := strconv.Atoi(countStr)
+	// If countStr is not an int, return string without error
+	if err != nil {
+		return countStr, nil
+	}
+
+	fmtStrHead := ""
+	switch serviceName {
+	case "searcher", "symbols":
+		fmtStrHead = "http://"
+	}
+
+	var fmtStrTail string
+	switch deployType {
+	case deploy.Kubernetes, deploy.Helm, deploy.Kustomize:
+		fmtStrTail = fmt.Sprintf(".%s:%s", serviceName, port)
+	case deploy.DockerCompose:
+		fmtStrTail = fmt.Sprintf(":%s", port)
+	default:
+		return "", errors.New("Error: unsupported deployment type: " + deployType)
+	}
+
+	var addrs []string
+	for i := 0; i < count; i++ {
+		addrs = append(addrs, strings.Join([]string{fmtStrHead, serviceName, "-", strconv.Itoa(i), fmtStrTail}, ""))
+	}
+	return strings.Join(addrs, " "), nil
+}
+
+func getEnv(environ []string, key string) (string, bool) {
+	key = key + "="
+	for _, envVar := range environ {
+		if strings.HasPrefix(envVar, key) {
+			return envVar[len(key):], true
+		}
+	}
+	return "", false
 }

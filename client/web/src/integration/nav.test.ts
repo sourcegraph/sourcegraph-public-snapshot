@@ -3,8 +3,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -12,20 +12,19 @@ import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createBlobContentResult,
     createTreeEntriesResult,
     createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { createEditorAPI } from './utils'
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     FileNames: () => createFileNamesResult(),
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FileExternalLinks: ({ filePath, repoName, revision }) =>
         createFileExternalLinksResult(
             `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
@@ -39,6 +38,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
             { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
         ]),
+    }),
+    OverwriteSettings: () => ({
+        settingsMutation: {
+            overwriteSettings: {
+                empty: {
+                    alwaysNil: null,
+                },
+            },
+        },
     }),
 }
 
@@ -61,31 +69,49 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
 })
 
 describe('GlobalNavbar', () => {
+    let driver: Driver
+
+    before(async () => {
+        driver = await createDriverForTest()
+    })
+
+    after(() => driver?.close())
+
+    let testContext: WebIntegrationTestContext
+    beforeEach(async function () {
+        testContext = await createWebIntegrationTestContext({
+            driver,
+            currentTest: this.currentTest!,
+            directory: __dirname,
+        })
+
+        testContext.overrideGraphQL(commonSearchGraphQLResults)
+        testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+    })
+
+    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEach(() => testContext?.dispose())
+
+    describe('repo file page', () => {
+        // This test covers the case that the query state shouldn't be updated
+        // from the URL if it doesn't contain a query (it should not override
+        // the repo and file information in the query input).
+        // The initial load will work but updates to the URL that do not change
+        // the repo or file name should also preserve the input value.
+        test('query input contains repo and file name', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/blob/README.md')
+            await (await driver.page.waitForSelector('.test-breadcrumb-part-last'))?.click()
+
+            const input = await createEditorAPI(driver, '.test-query-input')
+            expect(await input.getValue()).toEqual('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
+        })
+    })
+
     describe('Code Search Dropdown', () => {
-        let driver: Driver
-
-        before(async () => {
-            driver = await createDriverForTest()
-        })
-
-        after(() => driver?.close())
-
-        let testContext: WebIntegrationTestContext
-        beforeEach(async function () {
-            testContext = await createWebIntegrationTestContext({
-                driver,
-                currentTest: this.currentTest!,
-                directory: __dirname,
-            })
-
-            testContext.overrideGraphQL(commonSearchGraphQLResults)
-        })
-
-        afterEachSaveScreenshotIfFailed(() => driver.page)
-        afterEach(() => testContext?.dispose())
-
         test('is highlighted on search page', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('[data-test-id="/search"]')
+            await driver.page.waitForSelector('[data-test-active="true"]')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
@@ -96,6 +122,8 @@ describe('GlobalNavbar', () => {
 
         test('is highlighted on repo page', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph')
+            await driver.page.waitForSelector('[data-test-id="/search"]')
+            await driver.page.waitForSelector('[data-test-active="true"]')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
@@ -106,6 +134,8 @@ describe('GlobalNavbar', () => {
 
         test('is highlighted on repo file page', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/blob/README.md')
+            await driver.page.waitForSelector('[data-test-id="/search"]')
+            await driver.page.waitForSelector('[data-test-active="true"]')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
@@ -116,6 +146,8 @@ describe('GlobalNavbar', () => {
 
         test('is not highlighted on notebook page', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/id')
+            await driver.page.waitForSelector('[data-test-id="/search"]')
+            await driver.page.waitForSelector('[data-test-active="false"]')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')

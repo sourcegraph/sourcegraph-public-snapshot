@@ -26,7 +26,7 @@ export const MONACO_LANGUAGES_AND_FEATURES: Required<
         'languages' | 'features' | 'customLanguages'
     >
 > = {
-    languages: ['json', 'yaml'],
+    languages: ['json', 'yaml', 'lua'],
     customLanguages: [
         {
             label: 'yaml',

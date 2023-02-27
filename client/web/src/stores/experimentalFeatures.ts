@@ -5,23 +5,24 @@ import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/set
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 const defaultSettings: SettingsExperimentalFeatures = {
-    apiDocs: true,
     codeMonitoring: true,
-    showEnterpriseHomePanels: true,
     /**
-     * Whether we show the mulitiline editor at /search/console
+     * Whether we show the multiline editor at /search/console
      */
     showMultilineSearchConsole: false,
-    showOnboardingTour: true,
-    showSearchContext: true,
-    showSearchContextManagement: true,
-    showSearchNotebook: true,
-    showComputeComponent: false,
-    codeMonitoringWebHooks: false,
+    codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
+    codeInsightsCompute: false,
+    editor: 'codemirror6',
+    codeInsightsRepoUI: 'search-query-or-strict-list',
+    applySearchQuerySuggestionOnEnter: false,
+    setupWizard: false,
+    isInitialized: true,
 }
 
-export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))
+export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({
+    isInitialized: false,
+}))
 
 export function setExperimentalFeaturesFromSettings(settingsCascade: SettingsCascadeOrError): void {
     const experimentalFeatures: SettingsExperimentalFeatures =
@@ -29,6 +30,11 @@ export function setExperimentalFeaturesFromSettings(settingsCascade: SettingsCas
         {}
 
     useExperimentalFeatures.setState({ ...defaultSettings, ...experimentalFeatures }, true)
+}
+
+// For testing purposes only. Initializes the feature flags with the default values.
+export function setExperimentalFeaturesForTesting(): void {
+    useExperimentalFeatures.setState(defaultSettings, true)
 }
 
 /**

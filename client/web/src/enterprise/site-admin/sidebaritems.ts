@@ -1,14 +1,14 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
+    analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    overviewGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -30,22 +30,26 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
     items: [
         ...ossMaintenanceGroup.items,
         {
-            to: '/site-admin/executors',
-            label: 'Executors',
-            condition: () => Boolean(window.context?.executorsEnabled),
+            label: 'Code Insights jobs',
+            to: '/site-admin/code-insights-jobs',
         },
     ],
 }
 
-const extensionsGroup: SiteAdminSideBarGroup = {
+const executorsGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Extensions',
-        icon: PuzzleOutlineIcon,
+        label: 'Executors',
+        icon: PackageVariantIcon,
     },
+    condition: () => Boolean(window.context?.executorsEnabled),
     items: [
         {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
+            to: '/site-admin/executors',
+            label: 'Instances',
+        },
+        {
+            to: '/site-admin/executors/secrets',
+            label: 'Secrets',
         },
     ],
 }
@@ -69,6 +73,10 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             label: 'Incoming webhooks',
             to: '/site-admin/batch-changes/webhook-logs',
             condition: props => props.batchChangesWebhookLogsEnabled,
+        },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/outbound-webhooks',
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
@@ -97,33 +105,43 @@ const businessGroup: SiteAdminSideBarGroup = {
 }
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Code intelligence', icon: BrainIcon },
+    header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-intelligence/uploads',
-            label: 'Uploads',
+            to: '/site-admin/code-graph/indexes',
+            label: 'Precise indexes',
         },
         {
-            to: '/site-admin/code-intelligence/indexes',
-            label: 'Auto-indexing',
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-        },
-        {
-            to: '/site-admin/code-intelligence/configuration',
+            to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
+        },
+        {
+            to: '/site-admin/code-graph/inference-configuration',
+            label: 'Inference',
+        },
+    ],
+}
+
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        ...ossRepositoriesGroup.items,
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/webhooks',
         },
     ],
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
     usersGroup,
+    executorsGroup,
     maintenanceGroup,
-    extensionsGroup,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,
-]
+].filter(Boolean) as SiteAdminSideBarGroups

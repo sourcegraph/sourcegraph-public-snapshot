@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -55,14 +54,13 @@ type AuthzStore interface {
 	// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user.
 	// It is a no-op in the OSS version.
 	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
+	// Bulk "RevokeUserPermissions" action.
+	RevokeUserPermissionsList(ctx context.Context, argsList []*RevokeUserPermissionsArgs) error
 }
 
-// Authz instantiates and returns a new AuthzStore. In the OSS version, this is a no-op AuthzStore, but
-// this constructor is overridden in enterprise versions.
-var Authz = func(db dbutil.DB) AuthzStore {
-	return &authzStore{}
-}
-
+// AuthzWith instantiates and returns a new AuthzStore using the other store
+// handle. In the OSS version, this is a no-op AuthzStore, but this constructor
+// is overridden in enterprise versions.
 var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
 	return &authzStore{}
 }
@@ -77,5 +75,8 @@ func (*authzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([
 	return []*types.Repo{}, nil
 }
 func (*authzStore) RevokeUserPermissions(_ context.Context, _ *RevokeUserPermissionsArgs) error {
+	return nil
+}
+func (*authzStore) RevokeUserPermissionsList(_ context.Context, _ []*RevokeUserPermissionsArgs) error {
 	return nil
 }

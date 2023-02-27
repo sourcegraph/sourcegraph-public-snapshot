@@ -1,7 +1,9 @@
 use std::path::Path;
 
+use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
+use sg_treesitter::jsonify_err;
 use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
@@ -11,15 +13,19 @@ use syntect::{
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
 pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as lsif_index;
-pub use sg_treesitter::index_language_with_config as lsif_index_with_config;
+pub use sg_treesitter::index_language as treesitter_index;
+pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
 pub use sg_treesitter::lsif_highlight;
 pub use sg_treesitter::make_highlight_config;
 pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
+use crate::sg_treesitter::treesitter_language;
 use sg_syntect::ClassedTableGenerator;
+use tree_sitter_highlight::Error;
+
+mod sg_sciptect;
 
 thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -32,7 +38,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Default, Debug)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -41,6 +47,9 @@ pub struct SourcegraphQuery {
     // version... so they can't be out of sync anymore, which is pretty cool
     #[serde(default)]
     pub extension: String,
+
+    // Contents of the file
+    pub code: String,
 
     // default empty string value for backwards compat with clients who do not specify this field.
     #[serde(default)]
@@ -60,8 +69,36 @@ pub struct SourcegraphQuery {
 
     // theme is ignored if css is true
     pub theme: String,
+}
 
+#[derive(Deserialize, Default, Debug)]
+pub enum SyntaxEngine {
+    #[default]
+    #[serde(rename = "syntect")]
+    Syntect,
+
+    #[serde(rename = "tree-sitter")]
+    TreeSitter,
+}
+
+#[derive(Deserialize, Default, Debug)]
+pub struct ScipHighlightQuery {
+    // Which highlighting engine to use.
+    pub engine: SyntaxEngine,
+
+    // Contents of the file
     pub code: String,
+
+    // filepath is only used if language is None.
+    pub filepath: String,
+
+    // The language defined by the server. Required to tree-sitter to use for the filetype name.
+    // default empty string value for backwards compat with clients who do not specify this field.
+    pub filetype: Option<String>,
+
+    // line_length_limit is used to limit syntect problems when
+    // parsing very long lines
+    pub line_length_limit: Option<usize>,
 }
 
 pub fn determine_filetype(q: &SourcegraphQuery) -> String {
@@ -70,15 +107,25 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Err(_) => "".to_owned(),
     });
 
-    // We normalize all the filenames here
+    // Normalize all the filenames here
     match filetype.as_str() {
+        "Rust Enhanced" => "rust",
+        "C++" => "cpp",
         "C#" => "c_sharp",
+        "JS Custom - React" => "javascript",
+        "TypeScriptReact" => {
+            if q.filepath.ends_with(".tsx") {
+                "tsx"
+            } else {
+                "typescript"
+            }
+        }
         filetype => filetype,
     }
     .to_lowercase()
 }
 
-fn determine_language<'a>(
+pub fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {
@@ -124,11 +171,18 @@ fn determine_language<'a>(
         prefix_langs: Vec<(&'static str, &'static str)>,
         default: &'static str,
     }
-    let overrides = vec![Override {
-        extension: "cls",
-        prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
-        default: "Apex",
-    }];
+    let overrides = vec![
+        Override {
+            extension: "cls",
+            prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+            default: "Apex",
+        },
+        Override {
+            extension: "xlsg",
+            prefix_langs: vec![],
+            default: "xlsg",
+        },
+    ];
 
     if let Some(Override {
         prefix_langs,
@@ -197,10 +251,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             )
             .generate();
 
-            json!({
-                "data": output,
-                "plaintext": syntax_def.name == "Plain Text",
-            })
+            json!({ "data": output, "plaintext": syntax_def.name == "Plain Text", })
         } else {
             // TODO(slimsag): return the theme's background color (and other info??) to caller?
             // https://github.com/trishume/syntect/blob/c8b47758a3872d478c7fc740782cd468b2c0a96b/examples/synhtml.rs#L24
@@ -220,6 +271,51 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             })
         }
     })
+}
+
+pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
+    match q.engine {
+        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+            let sg_query = SourcegraphQuery {
+                extension: "".to_string(),
+                filepath: q.filepath.clone(),
+                filetype: q.filetype.clone(),
+                css: true,
+                line_length_limit: None,
+                theme: Default::default(),
+                code: q.code.clone(),
+            };
+
+            let language = determine_language(&sg_query, ss).map_err(jsonify_err)?;
+            let document = sg_sciptect::DocumentGenerator::new(
+                ss,
+                language,
+                q.code.as_str(),
+                q.line_length_limit,
+            )
+            .generate();
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+        }),
+        crate::SyntaxEngine::TreeSitter => {
+            let language = q
+                .filetype
+                .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
+                .to_lowercase();
+
+            match treesitter_index(treesitter_language(&language), &q.code) {
+                Ok(document) => {
+                    let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+
+                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                }
+                Err(Error::InvalidLanguage) => Err(json!({
+                    "error": format!("{} is not a valid filetype for treesitter", language)
+                })),
+                Err(err) => Err(jsonify_err(err)),
+            }
+        }
+    }
 }
 
 #[cfg(test)]

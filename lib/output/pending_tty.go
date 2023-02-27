@@ -15,19 +15,19 @@ type pendingTTY struct {
 }
 
 func (p *pendingTTY) Verbose(s string) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.Write(s)
 	}
 }
 
 func (p *pendingTTY) Verbosef(format string, args ...any) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.Writef(format, args...)
 	}
 }
 
 func (p *pendingTTY) VerboseLine(line FancyLine) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.WriteLine(line)
 	}
 }

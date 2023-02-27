@@ -1,20 +1,22 @@
 package server
 
 import (
-	"context"
 	"os/exec"
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/mountinfo"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {
+func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -22,23 +24,27 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 		Help: "Duration of executing the echo command.",
 	})
 	prometheus.MustRegister(echoDuration)
-	go func() {
+	go func(server *Server) {
 		for {
 			time.Sleep(10 * time.Second)
 			s := time.Now()
 			if err := exec.Command("echo").Run(); err != nil {
-				log15.Warn("exec measurement failed", "error", err)
+				server.Logger.Warn("exec measurement failed", log.Error(err))
 				continue
 			}
 			echoDuration.Set(time.Since(s).Seconds())
 		}
-	}()
+	}(s)
 
 	// report the size of the repos dir
 	if s.ReposDir == "" {
-		log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
+		s.Logger.Error("ReposDir is not set, cannot export disk_space_available and gitserver_mount_info metric.")
 		return
 	}
+
+	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
+	m := mountinfo.NewCollector(s.Logger, opts, map[string]string{"reposDir": s.ReposDir})
+	observationCtx.Registerer.MustRegister(m)
 
 	metrics.MustRegisterDiskMonitor(s.ReposDir)
 
@@ -65,27 +71,6 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 	})
 	prometheus.MustRegister(c)
 
-	c = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_last_error_total",
-		Help: "Number of repositories whose last_error column is not empty.",
-	}, func() float64 {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		var count int64
-		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM gitserver_repos AS g
-			INNER JOIN repo AS r ON g.repo_id = r.id
-			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
-		`).Scan(&count)
-		if err != nil {
-			log15.Error("failed to count repository errors", "err", err)
-			return 0
-		}
-		return float64(count)
-	})
-	prometheus.MustRegister(c)
-
 	// Register uniform observability via internal/observation
-	s.operations = newOperations(observationContext)
+	s.operations = newOperations(observationCtx)
 }

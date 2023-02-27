@@ -1,7 +1,7 @@
 import React, { useMemo, useContext } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import { noop } from 'lodash'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
@@ -77,10 +77,10 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
     const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
     const allChangesetSpecIDs: string[] | undefined = useObservable(
-        useMemo(() => queryPublishableChangesetSpecIDs(queryArguments), [
-            queryArguments,
-            queryPublishableChangesetSpecIDs,
-        ])
+        useMemo(
+            () => queryPublishableChangesetSpecIDs(queryArguments),
+            [queryArguments, queryPublishableChangesetSpecIDs]
+        )
     )
 
     const actions = useMemo(
@@ -119,7 +119,7 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiInformationOutline} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (

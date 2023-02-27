@@ -19,6 +19,7 @@ export const PREDICATES: Access[] = [
                 name: 'contains',
                 fields: [
                     { name: 'file' },
+                    { name: 'path' },
                     { name: 'content' },
                     {
                         name: 'commit',
@@ -27,10 +28,19 @@ export const PREDICATES: Access[] = [
                 ],
             },
             {
-                name: 'dependencies',
-            },
-            {
-                name: 'deps',
+                name: 'has',
+                fields: [
+                    { name: 'file' },
+                    { name: 'path' },
+                    { name: 'content' },
+                    {
+                        name: 'commit',
+                        fields: [{ name: 'after' }],
+                    },
+                    { name: 'description' },
+                    { name: 'tag' },
+                    { name: 'key' },
+                ],
             },
         ],
     },
@@ -40,6 +50,10 @@ export const PREDICATES: Access[] = [
             {
                 name: 'contains',
                 fields: [{ name: 'content' }],
+            },
+            {
+                name: 'has',
+                fields: [{ name: 'content' }, { name: 'owner' }],
             },
         ],
     },
@@ -56,6 +70,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     if (path.length === 0) {
         return tree
     }
+
+    // repo:contains() and file:contains() are not supported
+    if (path.length === 1 && path[0] === 'contains') {
+        return undefined
+    }
+
     const subtree = tree.find(value => value.name === path[0])
     if (!subtree) {
         return undefined
@@ -130,6 +150,10 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    // Remove negation from the field for lookup
+    if (field.startsWith('-')) {
+        field = field.slice(1)
+    }
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {
@@ -151,34 +175,68 @@ export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'repo') {
         return [
             {
-                label: 'contains.file(...)',
-                insertText: 'contains.file(${1:CHANGELOG})',
+                label: 'has.path(...)',
+                insertText: 'has.path(${1:CHANGELOG})',
+                asSnippet: true,
+                description: 'Search only inside repositories that contain matching file paths',
+            },
+            {
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
+                asSnippet: true,
+                description: 'Search only inside repositories that contain matching file contents ',
+            },
+            {
+                label: 'has.file(...)',
+                insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
+                asSnippet: true,
+                description: 'Search only in repositories that contain matching file paths and contents',
+            },
+            {
+                label: 'has.commit.after(...)',
+                insertText: 'has.commit.after(${1:1 month ago})',
+                asSnippet: true,
+                description: 'Search only in repositories that have been committed to since then',
+            },
+            {
+                label: 'has.description(...)',
+                insertText: 'has.description(${1})',
+                asSnippet: true,
+                description: 'Search only inside repositories whose description matches',
+            },
+            {
+                label: 'has.tag(...)',
+                insertText: 'has.tag(${1})',
+                asSnippet: true,
+                description: 'Search only inside repositories tagged with a given tag',
+            },
+            {
+                label: 'has(...)',
+                insertText: 'has(${1:key}:${2:value})',
+                description: 'Search only inside repositories having a specified key:value pair',
                 asSnippet: true,
             },
             {
-                label: 'contains.content(...)',
-                insertText: 'contains.content(${1:TODO})',
+                label: 'has.key(...)',
+                insertText: 'has.key(${1})',
+                description: 'Search only inside repositories having a specifiec key with any value',
                 asSnippet: true,
             },
+        ]
+    }
+    if (field === 'file') {
+        return [
             {
-                label: 'contains(...)',
-                insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
+                description: 'Search only inside files whose contents match a pattern',
             },
             {
-                label: 'contains.commit.after(...)',
-                insertText: 'contains.commit.after(${1:1 month ago})',
+                label: 'has.owner(...)',
+                insertText: 'has.owner(${1})',
                 asSnippet: true,
-            },
-            {
-                label: 'deps(...)',
-                insertText: 'deps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependencies(...)',
-                insertText: 'dependencies(${1})',
-                asSnippet: true,
+                description: 'Search only inside files that have a specific owner',
             },
         ]
     }

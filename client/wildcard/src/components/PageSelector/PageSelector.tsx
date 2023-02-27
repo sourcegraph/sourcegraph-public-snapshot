@@ -1,9 +1,8 @@
 import React from 'react'
 
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { omit } from 'lodash'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import useResizeObserver from 'use-resize-observer'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -93,9 +92,9 @@ export const PageSelector: React.FunctionComponent<React.PropsWithChildren<PageS
                         return (
                             <li key={key}>
                                 <PageButton {...omit(page, 'type')}>
-                                    {page.type === 'previous' && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
+                                    {page.type === 'previous' && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
                                     <span className={classNames(shouldShrink && 'd-none')}>{page.content}</span>
-                                    {page.type === 'next' && <Icon as={ChevronRightIcon} aria-hidden={true} />}
+                                    {page.type === 'next' && <Icon aria-hidden={true} svgPath={mdiChevronRight} />}
                                 </PageButton>
                             </li>
                         )

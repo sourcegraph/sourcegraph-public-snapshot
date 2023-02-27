@@ -13,9 +13,9 @@ type operations struct {
 	downForMigration func(migrationID int) *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func newOperations(observationCtx *observation.Context) *operations {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		"oobmigration",
 		metrics.WithLabels("op", "migration"),
 		metrics.WithCountHelp("Total number of migrator invocations."),
@@ -23,10 +23,10 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	opForMigration := func(name string) func(migrationID int) *observation.Operation {
 		return func(migrationID int) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("oobmigration.%s", name),
 				MetricLabelValues: []string{name, strconv.Itoa(migrationID)},
-				Metrics:           metrics,
+				Metrics:           redMetrics,
 			})
 		}
 	}

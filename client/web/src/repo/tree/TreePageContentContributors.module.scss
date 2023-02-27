@@ -1,0 +1,60 @@
+.repository-contributor-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+
+    &:last-child {
+        border-bottom: 0;
+    }
+
+    :global(.badge) {
+        cursor: default;
+    }
+}
+
+.card {
+    margin-bottom: 1rem;
+}
+
+.row {
+    width: 100%;
+}
+
+.btn-no-left-rounded-corners {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    flex: 1 2 60%;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.person span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.commits {
+    flex: 1 5 30%;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.filtered-connection-loading {
+    padding: 1rem;
+}
+
+.filtered-connection-summary {
+    border-top: 1px solid var(--border-color);
+    padding: 0;
+}

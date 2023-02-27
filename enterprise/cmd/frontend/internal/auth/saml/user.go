@@ -3,6 +3,7 @@ package saml
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,6 +21,7 @@ type authnResponseInfo struct {
 	spec                 extsvc.AccountSpec
 	email, displayName   string
 	unnormalizedUsername string
+	groups               map[string]bool
 	accountData          any
 }
 
@@ -58,6 +61,10 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 	if pn := attr.Get("eduPersonPrincipalName"); email == "" && mightBeEmail(pn) {
 		email = pn
 	}
+	groupsAttr := "groups"
+	if p.config.GroupsAttributeName != "" {
+		groupsAttr = p.config.GroupsAttributeName
+	}
 	info := authnResponseInfo{
 		spec: extsvc.AccountSpec{
 			ServiceType: providerType,
@@ -68,6 +75,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email:                email,
 		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), attr.Get("username"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"), email),
 		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
+		groups:               attr.GetMap(groupsAttr),
 		accountData:          assertions,
 	}
 	if assertions.NameID == "" {
@@ -87,7 +95,9 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
 	var data extsvc.AccountData
-	data.SetAccountData(info.accountData)
+	if err := SetExternalAccountData(&data, info); err != nil {
+		return nil, "", err
+	}
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)
 	if err != nil {
@@ -125,4 +135,89 @@ func (v samlAssertionValues) Get(key string) string {
 		}
 	}
 	return ""
+}
+
+func (v samlAssertionValues) GetMap(key string) map[string]bool {
+	for _, a := range v {
+		if a.Name == key || a.FriendlyName == key {
+			output := make(map[string]bool)
+			for _, v := range a.Values {
+				output[v.Value] = true
+			}
+			return output
+		}
+	}
+	return nil
+}
+
+type SAMLValues struct {
+	Values map[string]SAMLAttribute `json:"Values,omitempty"`
+}
+
+type SAMLAttribute struct {
+	Values []SAMLValue `json:"Values"`
+}
+
+type SAMLValue struct {
+	Value string
+}
+
+// GetExternalAccountData returns the deserialized JSON blob from user external accounts table
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val *SAMLValues, err error) {
+	if data.Data != nil {
+		val, err = encryption.DecryptJSON[SAMLValues](ctx, data.Data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return val, nil
+}
+
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	data, err := GetExternalAccountData(ctx, accountData)
+	if err != nil {
+		return nil, err
+	}
+
+	values := data.Values
+	if values == nil {
+		return nil, nil
+	}
+
+	var displayName string
+	candidates := []string{
+		"nickname",
+		"login",
+		"username",
+		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+		"emailaddress",
+		"http://schemas.xmlsoap.org/claims/EmailAddress",
+		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+	}
+	for _, key := range candidates {
+		candidate, ok := values[key]
+		if ok && len(candidate.Values) > 0 && candidate.Values[0].Value != "" {
+			displayName = candidate.Values[0].Value
+			break
+		}
+	}
+	if displayName == "" {
+		return nil, nil
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: &displayName,
+	}, nil
+}
+
+// SetExternalAccountData sets the user and token into the external account data blob.
+func SetExternalAccountData(data *extsvc.AccountData, info *authnResponseInfo) error {
+	// TODO: leverage the whole info object instead of just storing JSON blob without any structure
+	serializedData, err := json.Marshal(info.accountData)
+	if err != nil {
+		return err
+	}
+
+	data.Data = extsvc.NewUnencryptedData(serializedData)
+	return nil
 }

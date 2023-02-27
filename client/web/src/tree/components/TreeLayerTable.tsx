@@ -2,7 +2,7 @@ import React, { HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './TreeLayerTable.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeLayerTableProps = HTMLAttributes<HTMLTableElement>
 

@@ -5,7 +5,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func buildGithubPR(now time.Time, externalState btypes.ChangesetExternalState) *github.PullRequest {
@@ -17,7 +17,7 @@ func buildGithubPR(now time.Time, externalState btypes.ChangesetExternalState) *
 		Title:       state + " GitHub PR",
 		Body:        state + " GitHub PR",
 		State:       state,
-		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
+		HeadRefName: gitdomain.AbbreviateRef("head-ref-on-github"),
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{

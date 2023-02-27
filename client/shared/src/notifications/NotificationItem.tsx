@@ -3,38 +3,29 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
+import { Alert } from '@sourcegraph/wildcard'
+
+import type { NotificationType, Progress } from '../codeintel/legacy-extensions/api'
 
 import { Notification } from './notification'
 
 import styles from './NotificationItem.module.scss'
 
 export interface UnbrandedNotificationItemStyleProps {
-    notificationItemClassNames: Record<sourcegraph.NotificationType, string>
+    notificationItemClassNames: Record<NotificationType, string>
 }
-
-export interface BrandedNotificationItemStyleProps {
-    notificationItemVariants: Record<sourcegraph.NotificationType, AlertProps['variant']>
-}
-
-/**
- * Note, we do not export this type because it is not intended to be used directly.
- * Consumers should use either `UnbrandedNotificationItemStyleProps` or `BrandedNotificationItemStyleProps` when configuring this component.
- */
-type NotificationItemStyleProps = UnbrandedNotificationItemStyleProps | BrandedNotificationItemStyleProps
 
 export interface NotificationItemProps {
     notification: Notification
     onDismiss: (notification: Notification) => void
     className?: string
-    notificationItemStyleProps: NotificationItemStyleProps
+    notificationItemStyleProps: UnbrandedNotificationItemStyleProps
 }
 
 interface NotificationItemState {
-    progress?: Required<sourcegraph.Progress>
+    progress?: Required<Progress>
 }
 
 /**
@@ -62,7 +53,7 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
                         from(progress || []).pipe(
                             // Hide progress bar and update message if error occurred
                             // Merge new progress updates with previous
-                            scan<sourcegraph.Progress, Required<sourcegraph.Progress>>(
+                            scan<Progress, Required<Progress>>(
                                 (current, { message = current.message, percentage = current.percentage }) => ({
                                     message,
                                     percentage,
@@ -92,18 +83,12 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
         const baseAlertClassName = classNames(styles.sourcegraphNotificationItem, this.props.className)
 
         const { notificationItemStyleProps } = this.props
-        const alertProps =
-            'notificationItemVariants' in notificationItemStyleProps
-                ? {
-                      variant: notificationItemStyleProps.notificationItemVariants[this.props.notification.type],
-                      className: baseAlertClassName,
-                  }
-                : {
-                      className: classNames(
-                          baseAlertClassName,
-                          notificationItemStyleProps.notificationItemClassNames[this.props.notification.type]
-                      ),
-                  }
+        const alertProps = {
+            className: classNames(
+                baseAlertClassName,
+                notificationItemStyleProps.notificationItemClassNames[this.props.notification.type]
+            ),
+        }
 
         return (
             <Alert {...alertProps}>

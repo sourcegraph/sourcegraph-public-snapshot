@@ -2,11 +2,10 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { pluralize, renderMarkdown } from '@sourcegraph/common'
+import { Badge, Link, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../components/time/Timestamp'
 import {
     BatchChangeState,
     BatchSpecState,
@@ -37,6 +36,9 @@ export interface BatchChangeNodeProps {
 const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: BatchChangeState }>> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
+        // DRAFT should only be possible if SSBC is enabled; if we do find a batch change
+        // in this state when it isn't, just treat it as OPEN
+        case BatchChangeState.DRAFT:
             return (
                 /*
                         a11y-ignore
@@ -56,13 +58,6 @@ const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: Batch
                     Closed
                 </Badge>
             )
-        case BatchChangeState.DRAFT:
-        default:
-            return (
-                <Badge variant="secondary" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                    Draft
-                </Badge>
-            )
     }
 }
 
@@ -75,9 +70,12 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     now = () => new Date(),
     displayNamespace,
 }) => {
-    const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(() => node.batchSpecs.nodes?.[0], [
-        node.batchSpecs.nodes,
-    ])
+    const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(
+        () => node.batchSpecs.nodes?.[0] || node.currentSpec,
+        [node.batchSpecs.nodes, node.currentSpec]
+    )
+
+    const latestExecutionState = latestExecution?.state
 
     // The URL to follow when a batch change is clicked on depends on the current state
     // and execution state.
@@ -87,8 +85,6 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
         if (!isExecutionEnabled || node.state === BatchChangeState.CLOSED) {
             return node.url
         }
-
-        const latestExecutionState = latestExecution?.state
 
         switch (latestExecutionState) {
             // If the latest spec hasn't been executed yet...
@@ -113,15 +109,15 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             default:
                 return node.url
         }
-    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
+    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution, latestExecutionState])
 
     return (
-        <>
+        <li className={styles.batchChangeNode}>
             <span className={styles.batchChangeNodeSeparator} />
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
                     state={node.state}
-                    latestExecutionState={node.batchSpecs.nodes[0]?.state}
+                    latestExecutionState={latestExecutionState}
                     currentSpecID={node.currentSpec.id}
                     latestSpecID={latestExecution?.id}
                     className={styles.batchChangeNodePill}
@@ -131,7 +127,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             )}
             <div className={styles.batchChangeNodeContent}>
                 <div className="m-0 d-md-flex d-block align-items-baseline">
-                    <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
+                    <H3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
                         {displayNamespace && (
                             <div className="d-md-inline-block d-block">
                                 <Link
@@ -146,7 +142,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         <Link className="test-batches-link mr-2" to={nodeLink}>
                             {node.name}
                         </Link>
-                    </h3>
+                    </H3>
                     <small className="text-muted d-sm-block">
                         created <Timestamp date={node.createdAt} now={now} />
                     </small>
@@ -165,42 +161,48 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                 <>
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-open-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-open-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.open} open`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.open} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.open
+                                )} open`}
+                            >
+                                {`${node.changesetsStats.open} open`}
+                            </H4>
                         }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        aria-labelledby={`changesets-closed-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                aria-hidden={true}
-                                id={`changesets-closed-label-${node.id}`}
-                            >{`${node.changesetsStats.closed} closed`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.closed} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.closed
+                                )} closed`}
+                            >
+                                {`${node.changesetsStats.closed} closed`}
+                            </H4>
                         }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-merged-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-merged-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.merged} merged`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.merged} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.merged
+                                )} merged`}
+                            >
+                                {`${node.changesetsStats.merged} merged`}
+                            </H4>
                         }
                     />
                 </>
             )}
-        </>
+        </li>
     )
 }

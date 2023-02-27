@@ -2,7 +2,7 @@
 
 This how-to assumes that you already have [created some search insights](../quickstart.md).
 
-> NOTE: filters are not yet available on language statistics insights or search-based insights running over an explicitly defined list of repositories. They are only avaialable on search-based insights running over all repositories. 
+> NOTE: filters are not yet available on language statistics insights.
 
 ### 1. Click the filter icon button for the insight you want to filter
 

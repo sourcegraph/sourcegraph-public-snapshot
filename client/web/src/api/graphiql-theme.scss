@@ -11,7 +11,9 @@
  * extensibility.
  **/
 
-@import 'graphiql/graphiql.css';
+@use 'wildcard/src/global-styles/forms';
+
+@import 'graphiql/graphiql';
 
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-property-unit-allowed-list */
@@ -73,13 +75,16 @@
         color: var(--text-muted) !important;
     }
     .variable-editor-title,
-    .result-window .CodeMirror-gutters,
     .historyPaneWrap,
     .history-contents,
     .doc-explorer,
     .doc-explorer-contents,
     .execute-options {
         background: var(--color-bg-2);
+    }
+
+    .result-window .CodeMirror-gutters {
+        background-color: var(--theme-bg-plain);
     }
 
     .doc-explorer-title-bar {
@@ -150,17 +155,11 @@
     .doc-explorer-rhs {
         display: flex;
         align-items: center;
-        .docExplorerHide {
-            @extend .btn;
-            @extend .btn-link;
-        }
     }
 
     .toolbar-button,
     .docExplorerShow,
     .doc-category .show-btn {
-        @extend .btn;
-        @extend .btn-secondary;
         background: var(--secondary);
         box-shadow: none;
         &:active {
@@ -171,8 +170,6 @@
         }
     }
     .execute-button {
-        @extend .btn;
-        @extend .btn-primary;
         background: var(--primary);
         fill: #ffffff;
         padding: 0;
@@ -180,6 +177,20 @@
         box-shadow: none;
         &:active {
             box-shadow: none;
+        }
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-box-shadow);
+        }
+    }
+
+    .variable-editor-title-text {
+        color: var(--text-muted);
+        font-weight: 400;
+
+        &.active {
+            color: var(--body-color);
+            font-weight: 600;
         }
     }
 
@@ -205,6 +216,12 @@
                 background-color: var(--color-bg-3);
             }
         }
+    }
+
+    .editor-drag-bar {
+        background: var(--color-bg-2);
+        border: none;
+        width: 0.35rem;
     }
 }
 

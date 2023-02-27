@@ -1,20 +1,26 @@
-import React from 'react'
+import { FC } from 'react'
 
 import '../SourcegraphWebApp.scss'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
+import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
+import {
+    StaticAppConfig,
+    StaticHardcodedAppConfig,
+    StaticInjectedAppConfig,
+    windowContextConfig,
+} from '../staticAppConfig'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
-import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
-import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
-import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
-import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
+import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
+import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
+import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
+import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
+import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 import { enterpriseRoutes } from './routes'
@@ -26,33 +32,58 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
-export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <SourcegraphWebApp
-        extensionAreaRoutes={enterpriseExtensionAreaRoutes}
-        extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={enterpriseExtensionsAreaHeaderActionButtons}
-        siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
-        siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
-        siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
-        userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
-        userAreaRoutes={enterpriseUserAreaRoutes}
-        userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
-        userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
-        orgAreaRoutes={enterpriseOrganizationAreaRoutes}
-        orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
-        repoContainerRoutes={enterpriseRepoContainerRoutes}
-        repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
-        repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
-        repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
-        repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
-        routes={enterpriseRoutes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
-        codeIntelligenceEnabled={true}
-        codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
-        codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
-        codeInsightsEnabled={true}
-        batchChangesEnabled={window.context.batchChangesEnabled}
-        searchContextsEnabled={true}
-    />
-)
+const injectedValuesConfig = {
+    /**
+     * Routes and nav links
+     */
+    siteAdminAreaRoutes: enterpriseSiteAdminAreaRoutes,
+    siteAdminSideBarGroups: enterpriseSiteAdminSidebarGroups,
+    siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
+    userAreaHeaderNavItems: enterpriseUserAreaHeaderNavItems,
+    userAreaRoutes: enterpriseUserAreaRoutes,
+    userSettingsSideBarItems: enterpriseUserSettingsSideBarItems,
+    userSettingsAreaRoutes: enterpriseUserSettingsAreaRoutes,
+    orgSettingsSideBarItems: enterpriseOrgSettingsSideBarItems,
+    orgSettingsAreaRoutes: enterpriseOrgSettingsAreaRoutes,
+    orgAreaRoutes: enterpriseOrganizationAreaRoutes,
+    orgAreaHeaderNavItems: enterpriseOrgAreaHeaderNavItems,
+    repoContainerRoutes: enterpriseRepoContainerRoutes,
+    repoRevisionContainerRoutes: enterpriseRepoRevisionContainerRoutes,
+    repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
+    repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
+    repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
+    routes: enterpriseRoutes,
+
+    /**
+     * Per feature injections
+     */
+    useCodeIntel,
+    codeIntelligenceBadgeMenu: CodeIntelligenceBadgeMenu,
+    codeIntelligenceBadgeContent: CodeIntelligenceBadgeContent,
+} satisfies StaticInjectedAppConfig
+
+const hardcodedConfig = {
+    codeIntelligenceEnabled: true,
+    codeInsightsEnabled: true,
+    searchContextsEnabled: true,
+    notebooksEnabled: true,
+    codeMonitoringEnabled: true,
+    searchAggregationEnabled: true,
+} satisfies StaticHardcodedAppConfig
+
+const staticAppConfig = {
+    ...injectedValuesConfig,
+    ...windowContextConfig,
+    ...hardcodedConfig,
+} satisfies StaticAppConfig
+
+export const EnterpriseWebApp: FC = () => {
+    if (window.context.experimentalFeatures.enableStorm) {
+        // eslint-disable-next-line no-console
+        console.log('Storm 🌪️ is enabled for this page load.')
+
+        return <SourcegraphWebApp {...staticAppConfig} />
+    }
+
+    return <LegacySourcegraphWebApp {...staticAppConfig} />
+}

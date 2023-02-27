@@ -1,0 +1,58 @@
+[
+  {
+   "id": 1,
+   "state": "succeeded",
+   "description": "Sample status succeeded",
+   "creationDate": "2023-02-22T21:45:25.6900614Z",
+   "updatedDate": "2023-02-22T21:45:25.6900614Z",
+   "createdBy": {
+    "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "displayName": "idan.varsano@sourcegraph.com",
+    "uniqueName": "idan.varsano@sourcegraph.com",
+    "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "imageUrl": "https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"
+   }
+  },
+  {
+   "id": 2,
+   "state": "succeeded",
+   "description": "Sample status succeeded 2",
+   "creationDate": "2023-02-22T21:45:49.6136279Z",
+   "updatedDate": "2023-02-22T21:45:49.6136279Z",
+   "createdBy": {
+    "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "displayName": "idan.varsano@sourcegraph.com",
+    "uniqueName": "idan.varsano@sourcegraph.com",
+    "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "imageUrl": "https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"
+   }
+  },
+  {
+   "id": 3,
+   "state": "failed",
+   "description": "Sample status failed",
+   "creationDate": "2023-02-22T21:46:04.2239328Z",
+   "updatedDate": "2023-02-22T21:46:04.2239328Z",
+   "createdBy": {
+    "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "displayName": "idan.varsano@sourcegraph.com",
+    "uniqueName": "idan.varsano@sourcegraph.com",
+    "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "imageUrl": "https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"
+   }
+  },
+  {
+   "id": 4,
+   "state": "failed",
+   "description": "Sample status failed",
+   "creationDate": "2023-02-22T21:47:04.6968315Z",
+   "updatedDate": "2023-02-22T21:47:04.6968315Z",
+   "createdBy": {
+    "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "displayName": "idan.varsano@sourcegraph.com",
+    "uniqueName": "idan.varsano@sourcegraph.com",
+    "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
+    "imageUrl": "https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"
+   }
+  }
+ ]

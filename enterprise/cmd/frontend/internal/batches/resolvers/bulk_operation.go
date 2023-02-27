@@ -5,11 +5,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,8 +28,9 @@ func unmarshalBulkOperationID(id graphql.ID) (bulkOperationID string, err error)
 }
 
 type bulkOperationResolver struct {
-	store         *store.Store
-	bulkOperation *btypes.BulkOperation
+	store           *store.Store
+	bulkOperation   *btypes.BulkOperation
+	gitserverClient gitserver.Client
 }
 
 var _ graphqlbackend.BulkOperationResolver = &bulkOperationResolver{}
@@ -49,12 +52,12 @@ func (r *bulkOperationResolver) Progress() float64 {
 }
 
 func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.ChangesetJobErrorResolver, error) {
-	errors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
+	boErrors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(errors)
+	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(boErrors)
 
 	changesetsByID := map[int64]*btypes.Changeset{}
 	reposByID := map[api.RepoID]*types.Repo{}
@@ -75,11 +78,11 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 		}
 	}
 
-	res := make([]graphqlbackend.ChangesetJobErrorResolver, 0, len(errors))
-	for _, e := range errors {
+	res := make([]graphqlbackend.ChangesetJobErrorResolver, 0, len(boErrors))
+	for _, e := range boErrors {
 		ch := changesetsByID[e.ChangesetID]
 		repo, accessible := reposByID[ch.RepoID]
-		resolver := &changesetJobErrorResolver{store: r.store, changeset: ch, repo: repo}
+		resolver := &changesetJobErrorResolver{store: r.store, gitserverClient: r.gitserverClient, changeset: ch, repo: repo}
 		if accessible {
 			resolver.error = e.Error
 		}
@@ -96,15 +99,15 @@ func (r *bulkOperationResolver) ChangesetCount() int32 {
 	return r.bulkOperation.ChangesetCount
 }
 
-func (r *bulkOperationResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.bulkOperation.CreatedAt}
+func (r *bulkOperationResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.bulkOperation.CreatedAt}
 }
 
-func (r *bulkOperationResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *bulkOperationResolver) FinishedAt() *gqlutil.DateTime {
 	if r.bulkOperation.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.bulkOperation.FinishedAt}
+	return &gqlutil.DateTime{Time: r.bulkOperation.FinishedAt}
 }
 
 func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, error) {

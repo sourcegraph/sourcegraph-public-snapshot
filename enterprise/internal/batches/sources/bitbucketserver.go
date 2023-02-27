@@ -3,17 +3,17 @@ package sources
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,9 +26,13 @@ type BitbucketServerSource struct {
 var _ ForkableChangesetSource = BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
@@ -54,8 +58,8 @@ func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (
 	}, nil
 }
 
-func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+func (s BitbucketServerSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -101,12 +105,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.ToRef.Repository.Slug = targetRepo.Slug
 	pr.ToRef.Repository.ID = targetRepo.ID
 	pr.ToRef.Repository.Project.Key = targetRepo.Project.Key
-	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
+	pr.ToRef.ID = gitdomain.EnsureRefPrefix(c.BaseRef)
 
 	pr.FromRef.Repository.Slug = remoteRepo.Slug
 	pr.FromRef.Repository.ID = remoteRepo.ID
 	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
-	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
+	pr.FromRef.ID = gitdomain.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
@@ -307,86 +311,70 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	return newestPR, nil
 }
 
-func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
-
-	// Ascertain the user name for the token we're using.
-	user, err := s.AuthenticatedUsername(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting username")
-	}
-
-	// See if we already have a fork. We have to prepend a tilde to the user
-	// name to make this a "user-centric URL" in Bitbucket Server parlance.
-	fork, err := s.getFork(ctx, parent, "~"+user)
-	if err != nil && !bitbucketserver.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "getting user fork for %q", user)
-	}
-
-	// If not, then we need to create a fork.
-	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
+// exists and creating it if it doesn't. If namespace is not provided, the fork will be in
+// the currently authenticated user's namespace. If name is not provided, the fork will be
+// named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
+func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+	var namespace string
+	if ns != nil {
+		namespace = *ns
+	} else {
+		// Ascertain the user name for the token we're using.
+		user, err := s.AuthenticatedUsername(ctx)
 		if err != nil {
-			return nil, errors.Wrapf(err, "creating user fork for %q", user)
+			return nil, errors.Wrap(err, "getting username")
 		}
+		// We have to prepend a tilde to the user name to make this compatible with
+		// Bitbucket Server API parlance.
+		namespace = "~" + user
 	}
 
-	return createRemoteRepo(targetRepo, fork), nil
-}
+	tr := targetRepo.Metadata.(*bitbucketserver.Repo)
 
-func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		// Strip the leading tilde from the project key, if present.
+		name = DefaultForkName(strings.TrimPrefix(tr.Project.Key, "~"), tr.Slug)
+	}
 
-	// See if we already have a fork.
-	fork, err := s.getFork(ctx, parent, namespace)
+	// Figure out if we already have a fork of the repo in the given namespace.
+	if fork, err := s.client.Repo(ctx, namespace, name); err == nil {
+		return s.checkAndCopy(targetRepo, fork, namespace)
+	} else if !bitbucketserver.IsNotFound(err) {
+		return nil, errors.Wrap(err, "checking for fork existence")
+	}
+
+	fork, err := s.client.Fork(ctx, tr.Project.Key, tr.Slug, bitbucketserver.CreateForkInput{
+		Name: &name,
+	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting fork in %q", namespace)
+		return nil, errors.Wrapf(err, "forking repository")
 	}
 
-	// If not, then we need to create a fork.
-	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
-			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating fork in %q", namespace)
-		}
+	return s.checkAndCopy(targetRepo, fork, namespace)
+}
+
+func (s BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*bitbucketserver.Repo)
+
+	if fork.Origin == nil {
+		return nil, errors.New("repo is not a fork")
+	} else if fork.Origin.ID != tr.ID {
+		return nil, errors.New("repo was not forked from the given parent")
 	}
 
-	return createRemoteRepo(targetRepo, fork), nil
-}
+	targetNameAndNamespace := tr.Project.Key + "/" + tr.Slug
+	forkNameAndNamespace := forkNamespace + "/" + fork.Slug
 
-func createRemoteRepo(targetRepo *types.Repo, fork *bitbucketserver.Repo) *types.Repo {
-	// We have to make a legitimate seeming *types.Repo.
-	// bitbucketServerCloneURL() ultimately only looks at the
-	// bitbucketserver.Repo in the Metadata field, so we'll replace that with
-	// the fork's metadata, and all should be well.
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
-
-	return &remoteRepo
-}
-
-var (
-	errNotAFork            = errors.New("repo is not a fork")
-	errNotForkedFromParent = errors.New("repo was not forked from the given parent")
-)
-
-func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
-	repo, err := s.client.Repo(ctx, namespace, parent.Slug)
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetNameAndNamespace, forkNameAndNamespace)
 	if err != nil {
-		if bitbucketserver.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
 
-	// Sanity check: is the returned repo _actually_ a fork of the original?
-	if repo.Origin == nil {
-		return nil, errNotAFork
-	} else if repo.Origin.ID != parent.ID {
-		return nil, errNotForkedFromParent
-	}
-
-	return repo, nil
+	return forkRepo, nil
 }

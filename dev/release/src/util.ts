@@ -1,9 +1,16 @@
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
-import { URL } from 'url'
 
+import chalk from 'chalk'
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
+import fetch from 'node-fetch'
+
+import { EditFunc } from './github'
+import * as update from './update'
+
+const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -54,22 +61,13 @@ async function readLineNoCache(prompt: string): Promise<string> {
     return userInput
 }
 
-export function getWeekNumber(date: Date): number {
-    const firstJan = new Date(date.getFullYear(), 0, 1)
-    const day = 86400000
-    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
-}
-
-export function hubSpotFeedbackFormStub(version: string): string {
-    const link = `[this feedback form](${hubSpotFeedbackFormURL(version)})`
-    return `*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out ${link}.*`
-}
-
-function hubSpotFeedbackFormURL(version: string): string {
-    const url = new URL('https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku')
-    url.searchParams.set('update_version', version)
-
-    return url.toString()
+export async function verifyWithInput(prompt: string): Promise<void> {
+    await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
+        if (val !== 'yes') {
+            console.log(chalk.red('Aborting!'))
+            process.exit(0)
+        }
+    })
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -81,8 +79,40 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
+function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean {
+    const [behind, ahead] = execa
+        .sync('git', ['rev-list', '--left-right', '--count', targetBranch + '...' + baseBranch])
+        .stdout.split('\t')
+
+    if (behind === '0' && ahead === '0') {
+        return true
+    }
+
+    const countCommits = function (numberOfCommits: string, aheadOrBehind: string): string {
+        return numberOfCommits === '1'
+            ? numberOfCommits + ' commit ' + aheadOrBehind
+            : numberOfCommits + ' commits ' + aheadOrBehind
+    }
+
+    if (behind !== '0' && ahead !== '0') {
+        console.log(
+            `Your branch is ${countCommits(ahead, 'ahead')} and ${countCommits(
+                behind,
+                'behind'
+            )} the branch ${targetBranch}.`
+        )
+    } else if (behind !== '0') {
+        console.log(`Your branch is ${countCommits(behind, 'behind')} the branch ${targetBranch}.`)
+    } else if (ahead !== '0') {
+        console.log(`Your branch is ${countCommits(ahead, 'ahead')} the branch ${targetBranch}.`)
+    }
+
+    return false
+}
+
 export function ensureMainBranchUpToDate(): void {
     const mainBranch = 'main'
+    const remoteMainBranch = 'origin/main'
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     if (currentBranch !== mainBranch) {
         console.log(
@@ -91,17 +121,63 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
     execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
-    const { stdout } = execa.sync('git', ['status', '-uno'])
-    if (stdout.includes('Your branch is behind')) {
-        console.log(
-            `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
-        )
-        process.exit(1)
-    } else if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${mainBranch} branch.`)
+    if (!ensureBranchUpToDate(mainBranch, remoteMainBranch)) {
         process.exit(1)
     }
 }
+
+export function ensureReleaseBranchUpToDate(branch: string): void {
+    const remoteBranch = 'origin/' + branch
+    if (!ensureBranchUpToDate(branch, remoteBranch)) {
+        process.exit(1)
+    }
+}
+
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json.tag_name)
+
+    let installedTag = execa.sync('src', ['version']).stdout.split('\n')
+    installedTag = installedTag[0].split(':')
+    const trimmedInstalledTag = installedTag[1].trim()
+
+    if (trimmedInstalledTag !== latestTag) {
+        try {
+            console.log('Uprading src-cli to the latest version.')
+            execa.sync('brew', ['upgrade', 'src-cli'])
+        } catch (error) {
+            console.log('Trouble upgrading src-cli:', error)
+            process.exit(1)
+        }
+    }
+}
+
+export function ensureSrcCliEndpoint(): void {
+    const srcEndpoint = process.env.SRC_ENDPOINT
+    if (srcEndpoint !== SOURCEGRAPH_RELEASE_INSTANCE_URL) {
+        throw new Error(`the $SRC_ENDPOINT provided doesn't match what is expected by the release tool.
+Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
+    }
+}
+
+export async function getLatestTag(owner: string, repo: string): Promise<string> {
+    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json[0].name)
+    return latestTag
+}
+
 interface ContainerRegistryCredential {
     username: string
     password: string
@@ -123,4 +199,92 @@ export async function getContainerRegistryCredential(registryHostname: string): 
         hostname: registryHostname,
     }
     return credential
+}
+
+export type ContentFunc = (previousVersion?: string, nextVersion?: string) => string
+
+const upgradeContentGenerators: { [s: string]: ContentFunc } = {
+    docker_compose: () => '',
+    kubernetes: () => '',
+    server: () => '',
+    pure_docker: (previousVersion?: string, nextVersion?: string) => {
+        const compare = `compare/v${previousVersion}...v${nextVersion}`
+        return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
+\nFor non-standard replica builds: 
+- [\`Customer Replica 1: ➔ v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/${compare})`
+    },
+}
+export const getUpgradeGuide = (mode: string): ContentFunc => upgradeContentGenerators[mode]
+
+export const getAllUpgradeGuides = (previous: string, next: string): string[] =>
+    Object.keys(upgradeContentGenerators).map(
+        key => `Guide for: ${key}\n\n${upgradeContentGenerators[key](previous, next)}`
+    )
+
+export const updateUpgradeGuides = (previous: string, next: string): EditFunc => {
+    let updateDirectory = '/doc/admin/updates'
+    const notPatchRelease = next.endsWith('.0')
+
+    return (directory: string): void => {
+        updateDirectory = directory + updateDirectory
+        for (const file of readdirSync(updateDirectory)) {
+            if (file === 'index.md') {
+                continue
+            }
+            const mode = file.replace('.md', '')
+            const updateFunc = getUpgradeGuide(mode)
+            if (updateFunc === undefined) {
+                console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+            }
+            const guide = getUpgradeGuide(mode)(previous, next)
+
+            const fullPath = path.join(updateDirectory, file)
+            console.log(`Updating upgrade guide: ${fullPath}`)
+            let updateContents = readFileSync(fullPath).toString()
+            const releaseHeader = `## v${previous} ➔ v${next}`
+            const notesHeader = '\n\n#### Notes:'
+
+            if (notPatchRelease) {
+                let content = `${update.releaseTemplate}\n\n${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader
+                updateContents = updateContents.replace(update.releaseTemplate, content)
+            } else {
+                const prevReleaseHeaderPattern = `##\\s+v\\d\\.\\d(?:\\.\\d)? ➔ v${previous}\\s*`
+                const matches = updateContents.match(new RegExp(prevReleaseHeaderPattern))
+                if (!matches || matches.length === 0) {
+                    console.log(`Unable to find header using pattern: ${prevReleaseHeaderPattern}. Skipping.`)
+                    continue
+                }
+                const prevReleaseHeader = matches[0]
+                let content = `${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader + `\n\n${prevReleaseHeader}`
+                updateContents = updateContents.replace(prevReleaseHeader, content)
+            }
+            writeFileSync(fullPath, updateContents)
+        }
+    }
+}
+
+export async function retryInput(
+    prompt: string,
+    delegate: (val: string) => boolean,
+    errorMessage?: string
+): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt).then(value => value)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
+        }
+    }
 }

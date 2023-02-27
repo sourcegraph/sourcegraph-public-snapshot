@@ -10,56 +10,71 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
+#### `codeintel-upload-backfiller`
+
+This job periodically checks for records with NULL attributes that need to be backfilled. Often these are values that require data from Git that wasn't (yet) resolvable at the time of a user upload.
+
 #### `codeintel-upload-janitor`
 
-This job will eventually (and partially) replace `codeintel-janitor`.
+This job periodically removes expired and unreachable code navigation data and reconciles data between the frontend and codeintel-db database instances.
 
 #### `codeintel-upload-expirer`
 
-This job will eventually (and partially) replace `codeintel-janitor`
+This job periodically matches code navigation data against data retention policies.
 
 #### `codeintel-commitgraph-updater`
 
-This job will eventually replace `codeintel-commitgraph`.
+This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
 
-#### `codeintel-documents-indexer`
-
-This job periodically indexes file contents at a syntactic level to build an index of search-based code intelligence.
+**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
 
 #### `codeintel-autoindexing-scheduler`
 
-This job will eventually replace `codeintel-auto-indexing`.
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
-#### `codeintel-dependencies-indexer`
+#### `codeintel-autoindexing-summary-builder`
 
-This job periodically indexes the lockfiles found in repositories to build an index of dependencies and dependents.
+This job periodically checks for auto-indexability on repositories in the background. This is used to populate the global code intelligence dashboard.
+
+#### `codeintel-autoindexing-dependency-scheduler`
+
+This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
+
+#### `codeintel-autoindexing-janitor`
+
+This job periodically removes stale autoindexing records.
+
+#### `codeintel-metrics-reporter`
+
+This job periodically emits metrics to be scraped by Prometheus about code intelligence background jobs.
 
 #### `codeintel-policies-repository-matcher`
 
 This job periodically updates an index of policy repository patterns to matching repository names.
 
-#### `codeintel-commitgraph`
+#### `codeintel-crates-syncer`
 
-This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.
-
-**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details
-
-#### `codeintel-janitor`
-
-This job periodically removes expired and unreachable code intelligence data and reconciles data between the frontend and codeintel-db database instances.
-
-#### `codeintel-auto-indexing`
-
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
+This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
 
 #### `insights-job`
 
-This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
-1. Commit indexer
-2. Background query executor
-3. Historical data recorder
-4. Data clean up jobs
-5. Settings file insight definition migrations
+This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+
+1. Insight enqueuer
+2. Insight backfiller
+3. Insight license checker
+4. Insight backfill checker
+5. Data clean up jobs
+6. Retention job enqueuer
+
+#### `insights-query-runner-job`
+
+This job is responsible for processing and running record and snapshot points for Code Insights. Such points are filled by running global searches. 
+This job was split from the other Code Insights background processes so that it could benefit from horizontal scaling. 
+
+#### `insights-data-retention-job`
+
+This job is responsible for periodically archiving code insights data points that are beyond the maximum sample size as specified by the site config setting `insights.maximumSampleSize`. It dequeues jobs which are enqueued from the `insights-job` worker in the retention job enqueuer routine. Data will only be archived if the experimental setting `insightsDataRetention` is enabled.
 
 #### `webhook-log-janitor`
 
@@ -103,9 +118,33 @@ This job executes the bulk operations in the background.
 
 This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
 
+#### `gitserver-metrics`
+
+This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
+#### `outbound-webhook-sender`
+
+This job dispatches HTTP requests for outbound webhooks and periodically removes old logs entries for them.
+
+#### `repo-statistics-compactor`
+
+This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
+
+#### `record-encrypter`
+
+This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
+
+#### `zoekt-repos-updater`
+
+This job periodically fetches the list of indexed repositories from Zoekt shards and updates the indexing status accordingly in the `zoekt_repos` table.
+
+#### `auth-sourcegraph-operator-cleaner`
+
+This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
+
 ## Deploying workers
 
-By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
+By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.
 
 There are several strategies for improving throughput and stability of the `worker` service:
 

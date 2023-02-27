@@ -2,7 +2,6 @@ package authz
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -29,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
 
 func update(name string) bool {
 	if updateRegex == nil || *updateRegex == "" {
@@ -49,6 +51,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")
 
 	spec := extsvc.AccountSpec{
@@ -59,7 +62,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: timeutil.Now(),
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
 	}
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
@@ -85,12 +88,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -127,22 +130,27 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -166,12 +174,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -208,22 +216,27 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -238,10 +251,17 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
+
 			err = permsStore.LoadUserPermissions(ctx, p)
 			if err != nil {
 				t.Fatal(err)
@@ -270,12 +290,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -313,24 +333,29 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: &authData,
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -354,12 +379,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -397,24 +422,29 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: &authData,
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -429,10 +459,17 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
+
 			err = permsStore.LoadUserPermissions(ctx, p)
 			if err != nil {
 				t.Fatal(err)

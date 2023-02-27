@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'
@@ -12,6 +13,16 @@ import { ActionProps } from '../FormActionArea'
 import { EmailAction, SEND_TEST_EMAIL } from './EmailAction'
 
 describe('EmailAction', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const props: ActionProps = {
         action: undefined,
         setAction: sinon.stub(),
@@ -160,7 +171,7 @@ describe('EmailAction', () => {
     })
 
     describe('Send test email', () => {
-        const mockedVars: SendTestEmailVariables = {
+        const mockedVariables: SendTestEmailVariables = {
             namespace: props.authenticatedUser.id,
             description: props.monitorName,
             email: {
@@ -180,14 +191,14 @@ describe('EmailAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-email'))
         })
 
         test('send test email, success', async () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 result: { data: { triggerTestEmailAction: { alwaysNil: null } } },
             }
@@ -207,7 +218,7 @@ describe('EmailAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Test email sent!')
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-email'))
 
             expect(queryByTestId('send-test-email-again')).toBeInTheDocument()
             expect(queryByTestId('test-email-error')).not.toBeInTheDocument()
@@ -217,7 +228,7 @@ describe('EmailAction', () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 error: new Error('An error occurred'),
             }
@@ -237,7 +248,7 @@ describe('EmailAction', () => {
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
-            expect(getByTestId('send-test-email')).toBeEnabled()
+            assertAriaEnabled(getByTestId('send-test-email'))
 
             expect(queryByTestId('send-test-email-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-email-error')).toBeInTheDocument()

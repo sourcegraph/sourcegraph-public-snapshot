@@ -1,5 +1,4 @@
 // @ts-check
-
 'use strict'
 const path = require('path')
 
@@ -10,11 +9,10 @@ const {
   getMonacoWebpackPlugin,
   getCSSModulesLoader,
   getBasicCSSLoader,
+  getBabelLoader,
   getMonacoCSSRule,
   getCSSLoaders,
 } = require('@sourcegraph/build-config')
-
-const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
 /**
  * The VS Code extension core needs to be built for two targets:
@@ -23,6 +21,9 @@ const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development
  *
  * @param {*} targetType See https://webpack.js.org/configuration/target/
  */
+// Node Envs
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+// Core Configuration
 function getExtensionCoreConfiguration(targetType) {
   if (typeof targetType !== 'string') {
     return
@@ -36,26 +37,37 @@ function getExtensionCoreConfiguration(targetType) {
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
-      filename: 'extension.js',
+      filename: '[name].js',
       library: {
         type: 'umd',
       },
       globalObject: 'globalThis',
       devtoolModuleFilenameTemplate: '../[resource-path]',
     },
-    devtool: 'source-map',
+    performance: {
+      hints: false,
+    },
+    optimization: {
+      splitChunks: {
+        minSize: 10000,
+        maxSize: 240000,
+      },
+    },
+    devtool: mode === 'development' ? 'source-map' : false,
     externals: {
       // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
       vscode: 'commonjs vscode',
     },
     resolve: {
-      // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       alias:
         targetType === 'webworker'
           ? {
+              'http-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'proxy-agent-fake-for-browser.ts'),
+              'https-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'proxy-agent-fake-for-browser.ts'),
+              'node-fetch': path.resolve(__dirname, 'src', 'backend', 'node-fetch-fake-for-browser.ts'),
               path: require.resolve('path-browserify'),
-              './browserActionsNode': path.resolve(__dirname, 'src', 'link-commands', 'browserActionsWeb'),
+              './browserActionsNode': path.resolve(__dirname, 'src', 'commands', 'browserActionsWeb'),
             }
           : {
               path: require.resolve('path-browserify'),
@@ -77,12 +89,7 @@ function getExtensionCoreConfiguration(targetType) {
         {
           test: /\.tsx?$/,
           exclude: /node_modules/,
-          use: [
-            {
-              // TODO(tj): esbuild-loader https://github.com/privatenumber/esbuild-loader
-              loader: 'ts-loader',
-            },
-          ],
+          use: [getBabelLoader()],
         },
       ],
     },
@@ -103,22 +110,23 @@ function getExtensionCoreConfiguration(targetType) {
     ],
   }
 }
-
+/**
+ * Configuration for Webviews
+ */
+// PATHS
 const rootPath = path.resolve(__dirname, '../../')
 const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
 const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
-
+// Webview Panels Paths
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
 const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'search')
 const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
-
+// Extension Host Worker Path
 const extensionHostWorker = /main\.worker\.ts$/
-
+// Monaco Editor Path
 const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
-
 /** @type {import('webpack').Configuration}*/
-
 const webviewConfig = {
   context: __dirname, // needed when running `gulp` from the root dir
   mode,
@@ -130,10 +138,19 @@ const webviewConfig = {
     helpSidebar: [path.resolve(helpSidebarWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
-  devtool: 'source-map',
+  devtool: mode === 'development' ? 'source-map' : false,
   output: {
     path: path.resolve(__dirname, 'dist/webview'),
     filename: '[name].js',
+  },
+  performance: {
+    hints: false,
+  },
+  optimization: {
+    splitChunks: {
+      minSize: 10000,
+      maxSize: 250000,
+    },
   },
   plugins: [
     new MiniCssExtractPlugin(),
@@ -150,14 +167,13 @@ const webviewConfig = {
   resolve: {
     alias: {
       path: require.resolve('path-browserify'),
-      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'), // Replace web app Link component from @sourcegraph/wildcard with the Link component built for VSCE
       './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
       './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
+      './SymbolSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'SymbolSearchResult'),
       './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
       './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
       '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),
     },
-    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
@@ -171,11 +187,7 @@ const webviewConfig = {
       {
         test: /\.tsx?$/,
         exclude: [/node_modules/, extensionHostWorker],
-        use: [
-          {
-            loader: 'ts-loader',
-          },
-        ],
+        use: [getBabelLoader()],
       },
       {
         test: extensionHostWorker,
@@ -184,7 +196,7 @@ const webviewConfig = {
             loader: 'worker-loader',
             options: { inline: 'no-fallback' },
           },
-          'ts-loader',
+          getBabelLoader(),
         ],
       },
       {
@@ -212,12 +224,10 @@ const webviewConfig = {
     ],
   },
 }
-
 module.exports = function () {
   if (process.env.TARGET_TYPE) {
     return Promise.all([getExtensionCoreConfiguration(process.env.TARGET_TYPE), webviewConfig])
   }
-
   // If target type isn't specified, build both.
   return Promise.all([getExtensionCoreConfiguration('node'), getExtensionCoreConfiguration('webworker'), webviewConfig])
 }

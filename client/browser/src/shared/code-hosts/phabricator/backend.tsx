@@ -6,10 +6,10 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, checkOk } from '@sourcegraph/http-client'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { storage } from '../../../browser-extension/web-extension-api/storage'
+import { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../graphql-operations'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
 
@@ -213,7 +213,7 @@ interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGra
 
 const createPhabricatorRepo = memoizeObservable(
     ({ requestGraphQL, ...variables }: CreatePhabricatorRepoOptions): Observable<void> =>
-        requestGraphQL<GQL.IMutation>({
+        requestGraphQL<addPhabricatorRepoResult>({
             request: gql`
                 mutation addPhabricatorRepo($callsign: String!, $repoName: String!, $phabricatorURL: String!) {
                     addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) {
@@ -414,7 +414,7 @@ const resolveStagingRevision = ({
     requestGraphQL,
     ...variables
 }: ResolveStagingOptions): Observable<ResolvedRevisionSpec> =>
-    requestGraphQL<GQL.IMutation>({
+    requestGraphQL<ResolveStagingRevResult>({
         request: gql`
             mutation ResolveStagingRev(
                 $repoName: String!

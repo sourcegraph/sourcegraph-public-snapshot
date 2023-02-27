@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
+	"strings"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,9 +26,10 @@ type Store struct {
 	operations *Operations
 }
 
-func NewWithDB(db dbutil.DB, migrationsTable string, operations *Operations) *Store {
+func NewWithDB(observationCtx *observation.Context, db *sql.DB, migrationsTable string) *Store {
+	operations := NewOperations(observationCtx)
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}
@@ -71,6 +75,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS backfilled boolean NOT NULL DEFAULT FALSE`),
 	}
 
 	tx, err := s.Transact(ctx)
@@ -87,6 +92,145 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 
 	return nil
 }
+
+// BackfillSchemaVersions adds "backfilled" rows into the migration_logs table to make instances
+// upgraded from older versions work uniformly with instances booted from a newer version.
+//
+// Backfilling mainly addresses issues during upgrades and interacting with migration graph defined
+// over multiple versions being stitched back together. The absence of a row in the migration_logs
+// table either represents a migration that needs to be applied, or a migration defined in a version
+// prior to the instance's first boot. Backfilling these records prevents the latter circumstance as
+// being interpreted as the former.
+//
+// DO NOT call this method from inside a transaction, otherwise the absence of optional relations
+// will cause a transaction rollback while this function returns a nil-valued error (hard to debug).
+func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
+	stitchedDefinitions := shared.StitchedMigationsBySchemaName[humanizeSchemaName(s.schemaName)].Definitions
+
+	applied, pending, failed, err := s.Versions(ctx)
+	if err != nil {
+		return err
+	}
+	if len(pending) != 0 || len(failed) != 0 {
+		// If we have a dirty database here don't overwrite in-progress/failed records with fake
+		// successful ones. This would end up masking a lot of drift conditions that would make
+		// upgrades painful and operation of the instance unstable.
+		return nil
+	}
+
+	// We have a small fork in behavior coming up. If we read from the migration_logs table, then
+	// we already had a migration log entry for the last version we applied. However, if we read
+	// from the old golang-migrate tables, we have an empty migration_log table and want to populate
+	// the log for the latest version as well. If we read from golang-migrate tables we'll set this
+	// flag and no-op
+	writeAppliedVersions := false
+
+	if len(applied) == 0 {
+		// Fallback to golang migrate, but only if there's no authoritative data. This reads
+		// the old .*schema_migrations table (if it exists) and sets the version number as the
+		// sole applied (faux) migration log record. This number still corresponds correctly to
+		// a node in the stitched migration graph.
+
+		version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(s.schemaName))))
+		if err != nil && !isMissingRelation(err) {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+
+		writeAppliedVersions = true
+		applied = append(applied, version)
+	}
+
+	// Make lookup map of applied migration identifiers
+	appliedMap := make(map[int]struct{}, len(applied))
+	filtered := applied[:0]
+	for _, id := range applied {
+		// Presence of an identifier in appliedMap will prevent a migration log for
+		// that definition to be omitted from the writes. In order to ensure that we
+		// write the applied versions (in the case of golang-migrate), we'll leave
+		// this map empty.
+		if !writeAppliedVersions {
+			appliedMap[id] = struct{}{}
+		}
+
+		// While we're iterating the applied versions, we also want to filter out any of the
+		// applied migrations which are not present in the stitched migration graph. The point
+		// here is to backfill _previous_ release migration definitions. If they don't exist in
+		// the stitched graph then they are on the newest (development) version.
+		if _, ok := stitchedDefinitions.GetByID(id); ok {
+			filtered = append(filtered, id)
+		}
+	}
+	applied = filtered
+
+	// Determine the set of migrations that needed to be applied to get to the current state.
+	// From the set of ancestor definitions, filter out the ones that have already been applied.
+	// The remaining values are definitions that have been applied, but in their squashed form,
+	// defined in a version prior to the instance's first boot.
+	ancestors, err := stitchedDefinitions.Up(nil, applied)
+	if err != nil {
+		return err
+	}
+	idToBackfillMap := make(map[int]struct{}, len(ancestors))
+	for _, ancestor := range ancestors {
+		if _, ok := appliedMap[ancestor.ID]; !ok {
+			idToBackfillMap[ancestor.ID] = struct{}{}
+		}
+	}
+	idsToBackfill := make([]int64, 0, len(idToBackfillMap))
+	for id := range idToBackfillMap {
+		idsToBackfill = append(idsToBackfill, int64(id))
+	}
+	sort.Slice(idsToBackfill, func(i, j int) bool { return idsToBackfill[i] < idsToBackfill[j] })
+
+	// Write backfilled versions into migration_logs table
+	if err := s.Exec(ctx, sqlf.Sprintf(
+		backfillSchemaVersionsQuery,
+		currentMigrationLogSchemaVersion,
+		s.schemaName,
+		pq.Int64Array(idsToBackfill),
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const inferBackfillTargetViaGolangMigrateQuery = `
+SELECT version::integer FROM %s WHERE NOT dirty
+`
+
+const backfillSchemaVersionsQuery = `
+WITH candidates AS (
+	SELECT
+		%s::integer AS migration_logs_schema_version,
+		%s AS schema,
+		version AS version,
+		true AS up,
+		NOW() AS started_at,
+		NOW() AS finished_at,
+		true AS success,
+		true AS backfilled
+	FROM (SELECT unnest(%s::integer[])) AS vs(version)
+)
+INSERT INTO migration_logs (
+	migration_logs_schema_version,
+	schema,
+	version,
+	up,
+	started_at,
+	finished_at,
+	success,
+	backfilled
+)
+SELECT c.* FROM candidates c
+WHERE NOT EXISTS (
+	SELECT 1 FROM migration_logs ml
+	WHERE ml.schema = c.schema AND ml.version = c.version
+)
+`
 
 // Versions returns three sets of migration versions that, together, describe the current schema
 // state. These states describe, respectively, the identifieers of all applied, pending, and failed
@@ -121,11 +265,10 @@ func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions,
 }
 
 const versionsQuery = `
--- source: internal/database/migration/store/store.go:Versions
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY started_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
 	WHERE schema = %s
 )
@@ -180,12 +323,43 @@ func (s *Store) lockKey() int32 {
 	return locker.StringKey(fmt.Sprintf("%s:migrations", s.schemaName))
 }
 
+type wrappedPgError struct {
+	*pgconn.PgError
+}
+
+func (w wrappedPgError) Error() string {
+	var s strings.Builder
+
+	s.WriteString(w.PgError.Error())
+
+	if w.Detail != "" {
+		s.WriteRune('\n')
+		s.WriteString("DETAIL: ")
+		s.WriteString(w.Detail)
+	}
+
+	if w.Hint != "" {
+		s.WriteRune('\n')
+		s.WriteString("HINT: ")
+		s.WriteString(w.Hint)
+	}
+
+	return s.String()
+}
+
 // Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
 	ctx, _, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.UpQuery)
+	err = s.Exec(ctx, definition.UpQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // Down runs the given definition's down query.
@@ -193,12 +367,19 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.DownQuery)
+	err = s.Exec(ctx, definition.DownQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
-func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
+func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ shared.IndexStatus, _ bool, err error) {
 	ctx, _, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -206,7 +387,6 @@ func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_
 }
 
 const indexStatusQuery = `
--- source: internal/database/migration/store/store.go:IndexStatus
 SELECT
 	pi.indisvalid,
 	pi.indisready,
@@ -311,27 +491,27 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 
 	var logs []migrationLog
 	for rows.Next() {
-		var log migrationLog
+		var mLog migrationLog
 
 		if err := rows.Scan(
-			&log.Schema,
-			&log.Version,
-			&log.Up,
-			&log.Success,
+			&mLog.Schema,
+			&mLog.Version,
+			&mLog.Up,
+			&mLog.Success,
 		); err != nil {
 			return nil, err
 		}
 
-		logs = append(logs, log)
+		logs = append(logs, mLog)
 	}
 
 	return logs, nil
 }
 
 // scanFirstIndexStatus scans a slice of index status objects from the return value of `*Store.query`.
-func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.IndexStatus, _ bool, err error) {
+func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexStatus, _ bool, err error) {
 	if queryErr != nil {
-		return storetypes.IndexStatus{}, false, queryErr
+		return shared.IndexStatus{}, false, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -348,11 +528,34 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.Ind
 			&status.TuplesDone,
 			&status.TuplesTotal,
 		); err != nil {
-			return storetypes.IndexStatus{}, false, err
+			return shared.IndexStatus{}, false, err
 		}
 
 		return status, true, nil
 	}
 
-	return storetypes.IndexStatus{}, false, nil
+	return shared.IndexStatus{}, false, nil
+}
+
+// humanizeSchemaName converts the golang-migrate/migration_logs.schema name into the name
+// defined by the definitions in the migrations/ directory. Hopefully we cna get rid of this
+// difference in the future, but that requires a bit of migratory work.
+func humanizeSchemaName(schemaName string) string {
+	if schemaName == "schema_migrations" {
+		return "frontend"
+	}
+
+	return strings.TrimSuffix(schemaName, "_schema_migrations")
+}
+
+var quote = sqlf.Sprintf
+
+// isMissingRelation returns true if the given error occurs due to a missing relation in Postgres.
+func isMissingRelation(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+
+	return pgErr.Code == "42P01"
 }

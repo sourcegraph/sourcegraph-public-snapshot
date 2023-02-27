@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiCancel } from '@mdi/js'
 import classNames from 'classnames'
-import CancelIcon from 'mdi-react/CancelIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -18,7 +18,7 @@ export const EmptyPanelView: React.FunctionComponent<React.PropsWithChildren<Emp
         <div className={classNames(styles.emptyPanel, className)}>
             {children || (
                 <>
-                    <Icon role="img" className="mr-2" as={CancelIcon} aria-hidden={true} /> Nothing to show here
+                    <Icon className="mr-2" aria-hidden={true} svgPath={mdiCancel} /> Nothing to show here
                 </>
             )}
         </div>

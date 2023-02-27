@@ -1,18 +1,13 @@
 import React from 'react'
 
-// eslint-disable-next-line no-restricted-imports
-import { CommitSearchResultMatch } from '@sourcegraph/search-ui/src/components/CommitSearchResultMatch'
-// eslint-disable-next-line no-restricted-imports
-import styles from '@sourcegraph/search-ui/src/components/SearchResult.module.scss'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import VisuallyHidden from '@reach/visually-hidden'
+
+import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
-// eslint-disable-next-line no-restricted-imports
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -22,16 +17,19 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     onSelect: () => void
     openInNewTab?: boolean
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
     result,
     icon,
-    repoName,
     platformContext,
     onSelect,
     openInNewTab,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -40,64 +38,46 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
      */
     const { openRepo, openCommit, instanceURL } = useOpenSearchResultsContext()
 
-    const renderTitle = (): JSX.Element => {
-        const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
-        return (
-            <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
-                    <>
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() =>
-                                openRepo({
-                                    repository: result.repository,
-                                    branches: [result.oid],
-                                })
-                            }
-                        >
-                            {displayRepoName(result.repository)}
-                        </button>
-                        {' › '}
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() => openCommit(getCommitMatchUrl(result))}
-                        >
-                            {result.authorName}
-                        </button>
-                        {': '}
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() => openCommit(getCommitMatchUrl(result))}
-                        >
-                            {result.message.split('\n', 1)[0]}
-                        </button>
-                    </>
-                </span>
-                <span className={styles.spacer} />
-                {result.type === 'commit' && (
-                    <button
-                        type="button"
-                        className="btn btn-text-link"
-                        onClick={() => openCommit(getCommitMatchUrl(result))}
+    const renderTitle = (): JSX.Element => (
+        <div className={styles.title}>
+            <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                <>
+                    <Button
+                        className="btn-text-link"
+                        onClick={() =>
+                            openRepo({
+                                repository: result.repository,
+                                branches: [result.oid],
+                            })
+                        }
                     >
-                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
-                        <Timestamp date={result.authorDate} noAbout={true} strict={true} />
-                    </button>
-                )}
-                {formattedRepositoryStarCount && (
-                    <>
-                        <div className={styles.divider} />
-                        <SearchResultStar />
-                        {formattedRepositoryStarCount}
-                    </>
-                )}
-            </div>
-        )
-    }
+                        {displayRepoName(result.repository)}
+                    </Button>
+                    {' › '}
+                    <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
+                        {result.authorName}
+                    </Button>
+                    <span aria-hidden={true}>{': '}</span>
+                    <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
+                        {result.message.split('\n', 1)[0]}
+                    </Button>
+                </>
+            </span>
+            <span className={styles.spacer} />
+            {result.type === 'commit' && (
+                <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
+                    <Code className={styles.commitOid}>
+                        <VisuallyHidden>Commit hash:</VisuallyHidden>
+                        {result.oid.slice(0, 7)}
+                        <VisuallyHidden>,</VisuallyHidden>
+                    </Code>{' '}
+                    <VisuallyHidden>Commited</VisuallyHidden>
+                    <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                </Button>
+            )}
+            {result.repoStars && <div className={styles.divider} />}
+        </div>
+    )
 
     const renderBody = (): JSX.Element => (
         <CommitSearchResultMatch
@@ -113,7 +93,9 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <ResultContainer
+        <LegacyResultContainer
+            as={as}
+            index={index}
             icon={icon}
             collapsible={false}
             defaultExpanded={true}
@@ -122,6 +104,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             onResultClicked={onSelect}
             expandedChildren={renderBody()}
             className={containerClassName}
+            repoName={result.repository}
+            repoStars={result.repoStars}
         />
     )
 }

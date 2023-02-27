@@ -4,11 +4,11 @@ There are a few reasons why chart data series' most recent datapoint may show yo
 
 ## If the chart data point shows *higher* counts than a manual search
 
-### Not including `fork:no` and `archived:no` in your insight query
+### [For versions pre-3.40] Not including `fork:no` and `archived:no` in your insight query
 
 Because code insights historical search defaults to `fork:yes` and `archived:yes`, but a Sourcegraph search via the web interface or CLI does not, it may be that your insight data series is including results from repositories that are excluded from a Sourcegraph search. Try running the same search again manually with `fork:yes` and `archived:yes` filters. 
 
-> NOTE: Future releases of Code Insights may instead default to `fork:no` and `archived:no`. If that change is made, we will remove the existing warning in the creation form that suggests you manually include `fork:no` and `archived:no`. 
+> NOTE: 3.40+ version defaults to `fork:no` and `archived:no`, the same way the search UI does.
 
 ### Manual search will not include unindexed repositories
 
@@ -28,32 +28,26 @@ Currently, a data series' most recent datapoint defaults to the end of the prior
 
 If your code insight is very large, it is possible that a few (\<1% in 100+ manual tests over 26,000 repositories) repositories failed to return match counts due to timing out while searching. To check this, you can run the following GraphQL query in the Sourcegraph GraphQL API: 
 ```graphql
-{
-  insights(ids: ["INSIGHT_ID"]) {
-    totalCount
+query debug {
+  insightViews(id: "INSIGHT_ID") {
     nodes {
-      id
-      title
-      description
-      series{
+      dataSeries {
         label
         status {
           pendingJobs
           completedJobs
           failedJobs
         }
-        dirtyMetadata {
-          time
-          count
-          reason
-        }
       }
-      id
     }
+  }
+  insightViewDebug(id: "INSIGHT_ID") {
+    raw
   }
 }
 ```
 
-where `INSIGHT_ID` can be found in the URL of the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. For example, `https://sourcegraph.yourdomain.com/insights/edit/searchInsights.insight.TestInsightTitleHere?dashboardId=all` contains the `INSIGHT_ID` of `searchInsights.insight.TestInsightTitleHere`. 
+where `INSIGHT_ID` can be found in the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. It will look like `https://yourdomain.sourcegraph.com/insights/edit/INSIGHT_ID?dashboardId=all`. The `INSIGHT_ID` can also be found in the url of the single insight view found by clicking on the title of the insight. The ID will be in the url, for example, `https://sourcegraph.yourdomain.com/insights/insight/{INSIGHT_ID}`
 
 If there are `failedJobs`, there may be timeouts or similar issues affecting your insight. 
+`insightViewDebug` was added in 4.2 to give you more raw information on your insight. 

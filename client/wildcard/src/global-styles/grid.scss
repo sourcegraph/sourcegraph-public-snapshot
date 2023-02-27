@@ -1,0 +1,181 @@
+$grid-row-columns: 6;
+$grid-columns: 12;
+
+:root {
+    --grid-gutter-width: 1.5rem;
+}
+
+// No max width except for xl.
+$container-max-widths: (
+    xl: 1140px,
+);
+
+// Single container class with breakpoint max-widths
+.container,
+  // 100% wide container at all breakpoints
+.container-fluid {
+    width: 100%;
+    padding-right: calc(var(--grid-gutter-width) / 2);
+    padding-left: calc(var(--grid-gutter-width) / 2);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+// Responsive containers that are 100% wide until a breakpoint
+// Extracted from `bootstrap/scss/mixins/_grid-framework.scss`
+@each $breakpoint, $container-max-width in $container-max-widths {
+    .container-#{$breakpoint} {
+        @extend .container-fluid;
+    }
+
+    @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
+        %responsive-container-#{$breakpoint} {
+            max-width: $container-max-width;
+        }
+
+        // Extend each breakpoint which is smaller or equal to the current breakpoint
+        $extend-breakpoint: true;
+
+        @each $name, $width in $grid-breakpoints {
+            @if $extend-breakpoint {
+                .container#{breakpoint-infix($name, $grid-breakpoints)} {
+                    @extend %responsive-container-#{$breakpoint};
+                }
+
+                // Once the current breakpoint is reached, stop extending
+                @if $breakpoint == $name {
+                    $extend-breakpoint: false;
+                }
+            }
+        }
+    }
+}
+
+// Row
+// Rows contain your columns.
+.row {
+    // Extracted from 'bootstrap/scss/mixins/_grid.scss'
+    // make-row() mixin
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: calc(-0.5 * var(--grid-gutter-width));
+    margin-left: calc(-0.5 * var(--grid-gutter-width));
+}
+
+// Remove the negative margin from default .row, then the horizontal padding
+// from all immediate children columns (to prevent runaway style inheritance).
+.no-gutters {
+    margin-right: 0;
+    margin-left: 0;
+
+    > .col,
+    > [class*='col-'] {
+        padding-right: 0;
+        padding-left: 0;
+    }
+}
+
+// Columns
+// Common styles for small and large grid columns
+//
+// Extracted from `bootstrap/scss/mixins/_grid-framework.scss`
+// make-grid-columns() mixin
+%grid-column {
+    position: relative;
+    width: 100%;
+    padding-right: calc(var(--grid-gutter-width) / 2);
+    padding-left: calc(var(--grid-gutter-width) / 2);
+}
+
+// Extracted from `bootstrap/scss/mixins/_grid-framework.scss`
+// make-grid-columns() mixin
+@each $breakpoint in map-keys($grid-breakpoints) {
+    $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+    @if $grid-columns > 0 {
+        // Allow columns to stretch full width below their breakpoints
+        @for $i from 1 through $grid-columns {
+            .col#{$infix}-#{$i} {
+                @extend %grid-column;
+            }
+        }
+    }
+
+    .col#{$infix},
+    .col#{$infix}-auto {
+        @extend %grid-column;
+    }
+
+    @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
+        // Provide basic `.col-{bp}` classes for equal-width flexbox columns
+        .col#{$infix} {
+            flex-basis: 0;
+            flex-grow: 1;
+            max-width: 100%;
+        }
+
+        @if $grid-row-columns > 0 {
+            @for $i from 1 through $grid-row-columns {
+                .row-cols#{$infix}-#{$i} {
+                    // Extracted from `bootstrap/scss/mixins/_grid.scss`
+                    // row-cols() mixin
+                    > * {
+                        flex: 0 0 100% / $i;
+                        max-width: 100% / $i;
+                    }
+                }
+            }
+        }
+
+        .col#{$infix}-auto {
+            // Extracted from `bootstrap/scss/mixins/_grid.scss`
+            // make-col-auto() mixin
+            flex: 0 0 auto;
+            width: auto;
+            max-width: 100%; // Reset earlier grid tiers
+        }
+
+        @if $grid-columns > 0 {
+            @for $i from 1 through $grid-columns {
+                .col#{$infix}-#{$i} {
+                    // Extracted from `bootstrap/scss/mixins/_grid.scss`
+                    // make-col() mixin
+                    flex: 0 0 percentage($i / $grid-columns);
+                    // Add a `max-width` to ensure content within each column does not blow out
+                    // the width of the column. Applies to IE10+ and Firefox. Chrome and Safari
+                    // do not appear to require this.
+                    max-width: percentage($i / $grid-columns);
+                }
+            }
+        }
+
+        .order#{$infix}-first {
+            order: -1;
+        }
+
+        .order#{$infix}-last {
+            order: $grid-columns + 1;
+        }
+
+        @for $i from 0 through $grid-columns {
+            .order#{$infix}-#{$i} {
+                order: $i;
+            }
+        }
+
+        @if $grid-columns > 0 {
+            // `$columns - 1` because offsetting by the width of an entire row isn't possible
+            @for $i from 0 through ($grid-columns - 1) {
+                @if not($infix == '' and $i == 0) {
+                    // Avoid emitting useless .offset-0
+                    .offset#{$infix}-#{$i} {
+                        // Extracted from `bootstrap/scss/mixins/_grid.scss`
+                        // make-col-offset() mixin
+                        $num: $i / $grid-columns;
+                        margin-left: if($num == 0, 0, percentage($num));
+                    }
+                }
+            }
+        }
+    }
+}

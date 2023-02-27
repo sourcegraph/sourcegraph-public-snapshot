@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,21 +20,40 @@ type operations struct {
 	requeue                 *observation.Operation
 	resetStalled            *observation.Operation
 	updateExecutionLogEntry *observation.Operation
+	canceledJobs            *observation.Operation
 }
 
-func newOperations(storeName string, observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		fmt.Sprintf("workerutil_dbworker_store_%s", storeName),
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+// as newOperations changes based on the store name passed in, and a dbworker store
+// for a given store can be created more than once (once for actual use and once for metrics),
+// we avoid a "panic: duplicate metrics collector registration attempted" this way.
+var (
+	metricsMap = map[string]*metrics.REDMetrics{}
+	metricsMu  sync.Mutex
+)
+
+func newOperations(observationCtx *observation.Context, storeName string) *operations {
+	metricsMu.Lock()
+
+	var red *metrics.REDMetrics
+	if m, ok := metricsMap[storeName]; ok {
+		red = m
+	} else {
+		red = metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			fmt.Sprintf("workerutil_dbworker_store_%s", storeName),
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+		metricsMap[storeName] = red
+	}
+
+	metricsMu.Unlock()
 
 	op := func(opName string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeName, opName),
 			MetricLabelValues: []string{opName},
-			Metrics:           metrics,
+			Metrics:           red,
 		})
 	}
 
@@ -49,5 +69,6 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		requeue:                 op("Requeue"),
 		resetStalled:            op("ResetStalled"),
 		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
+		canceledJobs:            op("CanceledJobs"),
 	}
 }

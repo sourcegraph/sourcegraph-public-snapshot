@@ -1,91 +1,196 @@
 package com.sourcegraph.find;
 
-import com.intellij.codeInsight.highlighting.HighlightManager;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.editor.*;
-import com.intellij.openapi.editor.colors.EditorColors;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.ide.CopyPasteManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
-import com.intellij.ui.components.JBPanel;
-import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.browser.SourcegraphJBCefBrowser;
+import com.intellij.util.ui.components.BorderLayoutPanel;
+import com.sourcegraph.Icons;
+import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
+import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
+import com.sourcegraph.find.browser.JavaToJSBridge;
+import com.sourcegraph.find.browser.SourcegraphJBCefBrowser;
+import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
+import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.util.Date;
 
 /**
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
-public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
+public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     private final SourcegraphJBCefBrowser browser;
+    private final PreviewPanel previewPanel;
+    private final BrowserAndLoadingPanel browserAndLoadingPanel;
+    private final SelectionMetadataPanel selectionMetadataPanel;
+    private final FooterPanel footerPanel;
+    private Date lastPreviewUpdate;
 
-    public FindPopupPanel(Project project) {
-        super(new BorderLayout());
+    public FindPopupPanel(@NotNull Project project, @NotNull FindService findService) {
+        super();
 
-        setPreferredSize(JBUI.size(1200, 800));
+        setPreferredSize(JBUI.size(1000, 700));
         setBorder(PopupBorder.Factory.create(true, true));
         setFocusCycleRoot(true);
 
-        // Create splitter
         Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
         add(splitter, BorderLayout.CENTER);
 
-        JBPanel<JBPanelWithEmptyText> jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser() : null;
-        if (browser != null) {
-            jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
+        selectionMetadataPanel = new SelectionMetadataPanel();
+        previewPanel = new PreviewPanel(project);
+        footerPanel = new FooterPanel();
+
+        BorderLayoutPanel bottomPanel = new BorderLayoutPanel();
+        bottomPanel.add(selectionMetadataPanel, BorderLayout.NORTH);
+        bottomPanel.add(previewPanel, BorderLayout.CENTER);
+        bottomPanel.add(footerPanel, BorderLayout.SOUTH);
+
+        browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
+        JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
+        if (browser == null) {
+            showNoBrowserErrorNotification();
+            Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
+            logger.warn("JCEF browser is not supported!");
+        } else {
+            browserAndLoadingPanel.setBrowser(browser);
         }
+        // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
+        // doesn't properly pass the mouse events to Swing.
+        // 4px is the minimum amount to make it work for the window resize, the splitter works without a padding.
+        JPanel browserContainerForOptionalBorder = new JPanel(new BorderLayout());
+        if (OS.isMacOSX()) {
+            browserContainerForOptionalBorder.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
+        }
+        browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
-        JBPanel<JBPanelWithEmptyText> previewPanel = createPreviewPanel(project);
+        HeaderPanel headerPanel = new HeaderPanel(project);
 
-        splitter.setFirstComponent(jcefPanel);
-        splitter.setSecondComponent(previewPanel);
+        BorderLayoutPanel topPanel = new BorderLayoutPanel();
+        topPanel.add(headerPanel, BorderLayout.NORTH);
+        topPanel.add(browserContainerForOptionalBorder, BorderLayout.CENTER);
+        topPanel.setMinimumSize(JBUI.size(750, 200));
+
+        splitter.setFirstComponent(topPanel);
+        splitter.setSecondComponent(bottomPanel);
+
+        lastPreviewUpdate = new Date();
+
+        UIManager.addPropertyChangeListener(propertyChangeEvent -> {
+            if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
+                SwingUtilities.updateComponentTreeUI(this);
+            }
+        });
+    }
+
+    private void showNoBrowserErrorNotification() {
+        Notification notification = new Notification("Sourcegraph errors", "Sourcegraph",
+            "Your IDE doesn't support JCEF. You won't be able to use \"Find with Sourcegraph\". If you believe this is an error, please raise this at support@sourcegraph.com, specifying your OS and IDE version.", NotificationType.ERROR);
+        AnAction copyEmailAddressAction = new DumbAwareAction("Copy Support Email Address") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                CopyPasteManager.getInstance().setContents(new StringSelection("support@sourcegraph.com"));
+                notification.expire();
+            }
+        };
+        AnAction dismissAction = new DumbAwareAction("Dismiss") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                notification.expire();
+            }
+        };
+        notification.setIcon(Icons.SourcegraphLogo);
+        notification.addAction(copyEmailAddressAction);
+        notification.addAction(dismissAction);
+        Notifications.Bus.notify(notification);
     }
 
     @Nullable
-    public SourcegraphJBCefBrowser getBrowser() {
-        return browser;
+    public PreviewPanel getPreviewPanel() {
+        return previewPanel;
     }
 
-    @NotNull
-    private JBPanel<JBPanelWithEmptyText> createPreviewPanel(Project project) {
-        EditorFactory editorFactory = EditorFactory.getInstance();
+    @Nullable
+    public JavaToJSBridge getJavaToJSBridge() {
+        return browser != null ? browser.getJavaToJSBridge() : null;
+    }
 
-        String contentTs = "let message: string = 'Hello, TypeScript!';\n" +
-            "\n" +
-            "let heading = document.createElement('h1');\n" +
-            "heading.textContent = message;\n" +
-            "\n" +
-            "document.body.appendChild(heading);";
-        VirtualFile virtualFile = new LightVirtualFile("helloWorld.ts", contentTs);
-        Document document = editorFactory.createDocument(contentTs);
+    public BrowserAndLoadingPanel.ConnectionAndAuthState getConnectionAndAuthState() {
+        return browserAndLoadingPanel.getConnectionAndAuthState();
+    }
 
-        Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+    public boolean browserHasSearchError() {
+        return browserAndLoadingPanel.hasSearchError();
+    }
 
-        EditorSettings settings = editor.getSettings();
-        settings.setLineMarkerAreaShown(true);
-        settings.setFoldingOutlineShown(false);
-        settings.setAdditionalColumnsCount(0);
-        settings.setAdditionalLinesCount(0);
-        settings.setAnimatedScrolling(false);
-        settings.setAutoCodeFoldingEnabled(false);
+    public void indicateAuthenticationStatus(boolean wasServerAccessSuccessful, boolean authenticated) {
+        browserAndLoadingPanel.setConnectionAndAuthState(wasServerAccessSuccessful
+            ? (authenticated ? BrowserAndLoadingPanel.ConnectionAndAuthState.AUTHENTICATED
+            : BrowserAndLoadingPanel.ConnectionAndAuthState.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
+            : BrowserAndLoadingPanel.ConnectionAndAuthState.COULD_NOT_CONNECT);
 
-        HighlightManager highlightManager = HighlightManager.getInstance(project);
-        highlightManager.addOccurrenceHighlight(editor, 23, 41, EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
+        if (wasServerAccessSuccessful) {
+            previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(previewPanel.getPreviewContent());
+        } else {
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
+    }
 
-        JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Type search query to find on Sourcegraph");
-        editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
-        editorPanel.invalidate();
-        editorPanel.validate();
+    public void indicateSearchError(@NotNull String errorMessage, @NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(errorMessage);
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
+    }
 
-        return editorPanel;
+    public void indicateLoadingIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.LOADING);
+            footerPanel.setPreviewContent(null);
+        }
+    }
+
+    public void setPreviewContentIfInTime(@NotNull PreviewContent previewContent) {
+        if (lastPreviewUpdate.before(previewContent.getReceivedDateTime())) {
+            this.lastPreviewUpdate = previewContent.getReceivedDateTime();
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(null);
+            selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
+            previewPanel.setContent(previewContent);
+            footerPanel.setPreviewContent(previewContent);
+        }
+    }
+
+    public void clearPreviewContentIfInTime(@NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(null);
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
     }
 
     @Override
@@ -93,5 +198,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (browser != null) {
             browser.dispose();
         }
+
+        previewPanel.dispose();
     }
 }

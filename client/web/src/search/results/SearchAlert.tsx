@@ -1,10 +1,9 @@
 import React, { ReactNode } from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -23,14 +22,23 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
     searchContextSpec,
     children,
 }) => (
-    <Alert className="my-2 mr-3" data-testid="alert-container" variant="info">
-        <h3>{alert.title}</h3>
+    <Alert className="my-2" data-testid="alert-container" variant="info">
+        <H3>{alert.title}</H3>
 
-        {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
+        {alert.description && (
+            <Markdown
+                className="mb-3"
+                dangerousInnerHTML={renderMarkdown(alert.description, {
+                    // Disable autolinks so revision specifications are not rendered as email links
+                    // (for example, "sourcegraph@4.0.1")
+                    disableAutolinks: true,
+                })}
+            />
+        )}
 
         {alert.proposedQueries && (
             <>
-                <h4>Did you mean:</h4>
+                <H4>Did you mean:</H4>
                 <ul className="list-unstyled">
                     {alert.proposedQueries.map(proposedQuery => (
                         <li key={proposedQuery.query}>
@@ -40,7 +48,7 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
                                     '/search?' +
                                     buildSearchURLQuery(
                                         proposedQuery.query,
-                                        patternType || SearchPatternType.literal,
+                                        patternType || SearchPatternType.standard,
                                         caseSensitive,
                                         searchContextSpec
                                     )

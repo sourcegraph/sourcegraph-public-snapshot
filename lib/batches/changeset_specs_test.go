@@ -26,8 +26,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Body:  "The body",
 		Commits: []GitCommitDescription{
 			{
+				Version:     2,
 				Message:     "git commit message",
-				Diff:        "cool diff",
+				Diff:        []byte("cool diff"),
 				AuthorName:  "Sourcegraph",
 				AuthorEmail: "batch-changes@sourcegraph.com",
 			},
@@ -70,9 +71,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			Published: parsePublishedFieldString(t, "false"),
 		},
 
-		Result: execution.Result{
-			Diff: "cool diff",
-			ChangedFiles: &git.Changes{
+		Result: execution.AfterStepResult{
+			Diff: []byte("cool diff"),
+			ChangedFiles: git.Changes{
 				Modified: []string{"README.md"},
 			},
 			Outputs: map[string]any{},
@@ -90,28 +91,18 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		return task
 	}
 
-	featuresAllEnabled := ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	}
-	featuresWithoutOptionalPublished := ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   false,
-	}
-
 	tests := []struct {
 		name string
 
-		input    *ChangesetSpecInput
-		features ChangesetSpecFeatureFlags
+		input  *ChangesetSpecInput
+		author *ChangesetSpecAuthor
 
 		want    []*ChangesetSpec
 		wantErr string
 	}{
 		{
-			name:     "success",
-			input:    defaultInput,
-			features: featuresAllEnabled,
+			name:  "success",
+			input: defaultInput,
 			want: []*ChangesetSpec{
 				defaultChangesetSpec,
 			},
@@ -123,7 +114,6 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@my-branch": true}]`
 				input.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: true}
@@ -137,7 +127,6 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
 				input.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: nil}
@@ -146,25 +135,10 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			wantErr: "",
 		},
 		{
-			name: "publish by branch not matching on an old Sourcegraph version",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
-				input.Template.Published = parsePublishedFieldString(t, published)
-			}),
-			features: featuresWithoutOptionalPublished,
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Published = PublishedValue{Val: false}
-				}),
-			},
-			wantErr: "",
-		},
-		{
-			name: "publish in UI on a supported version",
+			name: "publish in UI",
 			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
 				input.Template.Published = nil
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: nil}
@@ -173,19 +147,22 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			wantErr: "",
 		},
 		{
-			name: "publish in UI on an unsupported version",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				input.Template.Published = nil
-			}),
-			features: featuresWithoutOptionalPublished,
-			want:     nil,
-			wantErr:  errOptionalPublishedUnsupported.Error(),
+			name:   "publish with fallback author",
+			input:  defaultInput,
+			author: &ChangesetSpecAuthor{Name: "Sourcegrapher", Email: "sourcegrapher@sourcegraph.com"},
+			want: []*ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+					s.Commits[0].AuthorEmail = "sourcegrapher@sourcegraph.com"
+					s.Commits[0].AuthorName = "Sourcegrapher"
+				}),
+			},
+			wantErr: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input, tt.features)
+			have, err := BuildChangesetSpecs(tt.input, true, tt.author)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {
@@ -237,16 +214,16 @@ index 0000000..1bd79fb
 		diff          string
 		defaultBranch string
 		groups        []Group
-		want          map[string]string
+		want          map[string][]byte
 	}{
 		{
 			diff: allDiffs,
 			groups: []Group{
 				{Directory: "1/2/3", Branch: "everything-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2,
-				"everything-in-3":   diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2),
+				"everything-in-3":   []byte(diff3),
 			},
 		},
 		{
@@ -254,9 +231,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1/2", Branch: "everything-in-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":     diff1,
-				"everything-in-2-and-3": diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":     []byte(diff1),
+				"everything-in-2-and-3": []byte(diff2 + diff3),
 			},
 		},
 		{
@@ -264,9 +241,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":           "",
-				"everything-in-1-and-2-and-3": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":           nil,
+				"everything-in-1-and-2-and-3": []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -277,11 +254,11 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1/2/3", Branch: "only-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-3":         diff3,
-				"only-in-2":         diff2,
-				"only-in-1":         diff1,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-3":         []byte(diff3),
+				"only-in-2":         []byte(diff2),
+				"only-in-1":         []byte(diff1),
 			},
 		},
 		{
@@ -292,9 +269,9 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1", Branch: "only-in-1"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-1":         diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-1":         []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -302,14 +279,14 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "", Branch: "everything"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2 + diff3),
 			},
 		},
 	}
 
 	for _, tc := range tests {
-		have, err := groupFileDiffs(tc.diff, defaultBranch, tc.groups)
+		have, err := groupFileDiffs([]byte(tc.diff), defaultBranch, tc.groups)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

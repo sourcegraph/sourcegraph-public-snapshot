@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { FC, useCallback, useEffect } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from '../backend'
 
@@ -18,21 +18,22 @@ interface DeleteNotebookModalProps extends TelemetryProps {
 }
 
 const LOADING = 'loading' as const
+const deleteLabelId = 'deleteNotebookId'
 
-export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildren<DeleteNotebookModalProps>> = ({
+export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
     notebookId,
     deleteNotebook,
     isOpen,
     toggleDeleteModal,
     telemetryService,
 }) => {
+    const navigate = useNavigate()
+
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookDeleteModalOpened')
         }
     }, [isOpen, telemetryService])
-    const deleteLabelId = 'deleteNotebookId'
-    const history = useHistory()
 
     const [onDelete, deleteCompletedOrError] = useEventObservable(
         useCallback(
@@ -42,26 +43,26 @@ export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildre
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
-                                history.push('/notebooks')
+                                navigate('/notebooks')
                             }),
                             startWith(LOADING),
                             catchError(error => [asError(error)])
                         )
                     )
                 ),
-            [deleteNotebook, history, notebookId, telemetryService]
+            [deleteNotebook, navigate, notebookId, telemetryService]
         )
     )
 
     return (
         <Modal isOpen={isOpen} position="center" onDismiss={toggleDeleteModal} aria-labelledby={deleteLabelId}>
-            <h3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete the notebook?
-            </h3>
+            </H3>
 
-            <p>
+            <Text>
                 <strong>This action cannot be undone.</strong>
-            </p>
+            </Text>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
                     <Button className="mr-2" onClick={toggleDeleteModal} variant="secondary" outline={true}>

@@ -1,0 +1,24 @@
+//
+// Border-radius
+//
+
+:root {
+    --border-radius: 3px;
+    --popover-border-radius: 5px;
+}
+
+.rounded-sm {
+    border-radius: var(--border-radius) !important;
+}
+
+.rounded {
+    border-radius: var(--border-radius) !important;
+}
+
+.rounded-circle {
+    border-radius: 50% !important;
+}
+
+.rounded-0 {
+    border-radius: 0 !important;
+}

@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { asError, logger } from '@sourcegraph/common'
+import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,25 +12,23 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
-    location: H.Location
-    history: H.History
     onAuthError: (error: Error | null) => void
-    noThirdPartyProviders?: boolean
     context: Pick<
         SourcegraphContext,
         'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
+    className?: string
 }
 
 /**
  * The form for signing in with a username and password.
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    location,
     onAuthError,
-    noThirdPartyProviders,
+    className,
     context,
 }) => {
+    const location = useLocation()
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -83,7 +80,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     }
                 })
                 .catch(error => {
-                    console.error('Auth error:', error)
+                    logger.error('Auth error:', error)
                     setLoading(false)
                     onAuthError(asError(error))
                 })
@@ -93,31 +90,27 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
     return (
         <>
-            <Form onSubmit={handleSubmit}>
-                <div className="form-group d-flex flex-column align-content-start">
-                    <label htmlFor="username-or-email" className="align-self-start">
-                        Username or email
-                    </label>
-                    <input
-                        id="username-or-email"
-                        className="form-control"
-                        type="text"
-                        onChange={onUsernameOrEmailFieldChange}
-                        required={true}
-                        value={usernameOrEmail}
-                        disabled={loading}
-                        autoCapitalize="off"
-                        autoFocus={true}
-                        // There is no well supported way to declare username OR email here.
-                        // Using username seems to be the best approach and should still support this behaviour.
-                        // See: https://github.com/whatwg/html/issues/4445
-                        autoComplete="username"
-                    />
-                </div>
+            <Form onSubmit={handleSubmit} className={className}>
+                <Input
+                    id="username-or-email"
+                    label={<Text alignment="left">Username or email</Text>}
+                    onChange={onUsernameOrEmailFieldChange}
+                    required={true}
+                    value={usernameOrEmail}
+                    disabled={loading}
+                    autoCapitalize="off"
+                    autoFocus={true}
+                    className="form-group"
+                    // There is no well supported way to declare username OR email here.
+                    // Using username seems to be the best approach and should still support this behaviour.
+                    // See: https://github.com/whatwg/html/issues/4445
+                    autoComplete="username"
+                />
+
                 <div className="form-group d-flex flex-column align-content-start position-relative">
-                    <label htmlFor="password" className="align-self-start">
+                    <Label htmlFor="password" className="align-self-start">
                         Password
-                    </label>
+                    </Label>
                     <PasswordInput
                         onChange={onPasswordFieldChange}
                         value={password}
@@ -132,12 +125,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                         </small>
                     )}
                 </div>
-                <div
-                    className={classNames('form-group', {
-                        'mb-0': noThirdPartyProviders,
-                    })}
-                >
-                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
+
+                <div className={classNames('form-group', 'mb-0')}>
+                    <Button display="block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
                     </Button>
                 </div>

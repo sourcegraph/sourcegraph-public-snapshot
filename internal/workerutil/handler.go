@@ -3,20 +3,20 @@ package workerutil
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
 )
 
 // Handler is the configurable consumer within a worker. Types that conform to this
 // interface may also optionally conform to the PreDequeuer, PreHandler, and PostHandler
 // interfaces to further configure the behavior of the worker routine.
-type Handler interface {
+type Handler[T Record] interface {
 	// Handle processes a single record.
-	Handle(ctx context.Context, logger log.Logger, record Record) error
+	Handle(ctx context.Context, logger log.Logger, record T) error
 }
 
-type HandlerFunc func(ctx context.Context, logger log.Logger, record Record) error
+type HandlerFunc[T Record] func(ctx context.Context, logger log.Logger, record T) error
 
-func (f HandlerFunc) Handle(ctx context.Context, logger log.Logger, record Record) error {
+func (f HandlerFunc[T]) Handle(ctx context.Context, logger log.Logger, record T) error {
 	return f(ctx, logger, record)
 }
 
@@ -36,15 +36,15 @@ type WithPreDequeue interface {
 // the input size (atomically) from the budget and PostHandle will restore the input size back to the
 // budget. The PreDequeue hook is also implemented to supply additional SQL conditions that ensures no
 // record with a larger input sizes than the current budget will be dequeued by the worker process.
-type WithHooks interface {
+type WithHooks[T Record] interface {
 	// PreHandle is called, if implemented, directly before a invoking the handler with the given
 	// record. This method is invoked before starting a handler goroutine - therefore, any expensive
 	// operations in this method will block the dequeue loop from proceeding.
-	PreHandle(ctx context.Context, logger log.Logger, record Record)
+	PreHandle(ctx context.Context, logger log.Logger, record T)
 
 	// PostHandle is called, if implemented, directly after the handler for the given record has
 	// completed. This method is invoked inside the handler goroutine. Note that if PreHandle and
 	// PostHandle both operate on shared data, that they will be operating on the data from different
 	// goroutines and it is up to the caller to properly synchronize access to it.
-	PostHandle(ctx context.Context, logger log.Logger, record Record)
+	PostHandle(ctx context.Context, logger log.Logger, record T)
 }

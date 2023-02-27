@@ -8,10 +8,8 @@
 
     // Change the icon color on hover/focus state
     &:hover,
-    &:focus {
-        .filter-icon {
-            fill: var(--body-color);
-        }
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
     }
 
     // Change the icon and button state with opened filter panel
@@ -57,15 +55,10 @@
 .popover {
     width: 100%;
     border-radius: 0;
-    padding: 0.75rem 1rem;
-
-    hr {
-        margin-left: -1rem;
-        margin-right: -1rem;
-    }
+    padding: 0.75rem;
 
     &--with-filters {
-        max-width: 34.375rem;
+        max-width: 33.375rem;
         min-width: 15rem;
     }
 

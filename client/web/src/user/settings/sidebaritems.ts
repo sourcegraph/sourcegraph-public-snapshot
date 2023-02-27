@@ -1,4 +1,3 @@
-import { showAccountSecurityPage, showPasswordsPage, userExternalServicesEnabled } from './cloud-ga'
 import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = [
@@ -13,13 +12,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         exact: true,
     },
     {
-        label: 'Password',
-        to: '/password',
-        exact: true,
-        // Only the builtin auth provider has a password.
-        condition: showPasswordsPage,
-    },
-    {
         label: 'Emails',
         to: '/emails',
         exact: true,
@@ -29,33 +21,9 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         to: '/tokens',
         condition: () => window.context.accessTokensAllow !== 'none',
     },
-    //  future GA Cloud nav items
     {
         label: 'Account security',
         to: '/security',
-        exact: true,
-        condition: showAccountSecurityPage,
-    },
-    {
-        label: 'Code host connections',
-        to: '/code-hosts',
-        condition: userExternalServicesEnabled,
-    },
-    {
-        label: 'Your repositories',
-        to: '/repositories',
-        condition: userExternalServicesEnabled,
-    },
-    {
-        label: 'Your organizations',
-        to: '/organizations',
-        condition: context => context.openBetaEnabled,
-        status: 'new',
-        exact: true,
-    },
-    {
-        label: 'Privacy',
-        to: '/privacy',
         exact: true,
     },
     {

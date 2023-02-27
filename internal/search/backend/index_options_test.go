@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,6 +22,7 @@ func TestGetIndexOptions(t *testing.T) {
 		PUBLIC
 		FORK
 		ARCHIVED
+		RANKED
 	)
 
 	name := func(repo int32) string {
@@ -115,14 +116,14 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "largefiles",
 		conf: schema.SiteConfiguration{
-			SearchLargeFiles: []string{"**/*.jar", "*.bin"},
+			SearchLargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 		},
 		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:     1,
 			Name:       "repo-01",
 			Symbols:    true,
-			LargeFiles: []string{"**/*.jar", "*.bin"},
+			LargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
@@ -208,6 +209,19 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 			Priority: 10,
 		},
+	}, {
+		name: "with rank",
+		conf: schema.SiteConfiguration{},
+		repo: RANKED,
+		want: zoektIndexOptions{
+			RepoID:  8,
+			Name:    "repo-08",
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
+			DocumentRanksVersion: "ranked",
+		},
 	}}
 
 	{
@@ -241,6 +255,10 @@ func TestGetIndexOptions(t *testing.T) {
 		if repo == PRIORITY {
 			priority = 10
 		}
+		var documentRanksVersion string
+		if repo == RANKED {
+			documentRanksVersion = "ranked"
+		}
 		return &RepoIndexOptions{
 			RepoID:   repo,
 			Name:     name(repo),
@@ -251,6 +269,8 @@ func TestGetIndexOptions(t *testing.T) {
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
 			},
+
+			DocumentRanksVersion: documentRanksVersion,
 		}, nil
 	}
 

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "encryption",
+    srcs = [
+        "config.go",
+        "counter.go",
+        "encrypter.go",
+        "encrypter_job.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/database",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

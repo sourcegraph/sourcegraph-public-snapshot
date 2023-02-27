@@ -13,12 +13,12 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -116,7 +116,7 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) ([]*organizationInvitationResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -127,7 +127,7 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that we get the invitations for
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -160,7 +160,7 @@ func newExpiryTime() time.Time {
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -213,7 +213,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
@@ -291,7 +291,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -326,7 +326,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		}
 		if shouldMarkAsVerified && accept {
 			// ignore errors here as this is a best-effort action
-			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+			_ = r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
 		}
 	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
 		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
@@ -345,14 +345,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 			return nil, err
 		}
 
-		// Schedule permission sync for user that accepted the invite
-		err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
-		if err != nil {
-			log15.Warn("schemaResolver.RespondToOrganizationInvitation.SchedulePermsSync",
-				"userID", a.UID,
-				"error", err,
-			)
-		}
+		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
+		permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
 	}
 	return &EmptyResponse{}, nil
 }
@@ -371,7 +365,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -440,7 +434,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -513,7 +507,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
-		if _, senderEmailVerified, err := database.UserEmails(db).GetPrimaryEmail(ctx, sender.ID); err != nil {
+		if _, senderEmailVerified, err := db.UserEmails().GetPrimaryEmail(ctx, sender.ID); err != nil {
 			return err
 		} else if !senderEmailVerified {
 			return errors.New("must verify your email address to invite a user to an organization")
@@ -523,7 +517,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
+		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
 			return err
 		} else if !ok {
 			return errors.New("invite quota exceeded (contact support to increase the quota)")
@@ -544,7 +538,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "org_invite", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {

@@ -3,6 +3,7 @@ package github
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -50,6 +51,14 @@ func TestNewAppProvider(t *testing.T) {
 				}, nil
 			}
 
+			if r.Header.Get("Authorization") != "Bearer app-token" {
+				return &http.Response{
+					Status:     http.StatusText(http.StatusUnauthorized),
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`invalid access token`))),
+				}, nil
+			}
+
 			srvHit = true
 			assert.Equal(t, "Bearer app-token", r.Header.Get("Authorization"))
 			return &http.Response{
@@ -69,19 +78,23 @@ func TestNewAppProvider(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+	encodedBogusKey := `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+	bogusKey, err := base64.StdEncoding.DecodeString(encodedBogusKey)
+	require.NoError(t, err)
 
 	baseURL, err := url.Parse(schema.DefaultGitHubURL)
 	require.NoError(t, err)
 
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 	t.Run("with non-nil service", func(t *testing.T) {
 		svc := &types.ExternalService{
 			ID:     1,
 			Kind:   extsvc.KindGitHub,
-			Config: string(config),
+			Config: extsvc.NewUnencryptedConfig(string(config)),
 		}
 
-		provider, err := newAppProvider(database.NewMockExternalServiceStore(), svc, "", baseURL, "1234", bogusKey, 1234, doer)
+		provider, err := newAppProvider(db, svc, "", baseURL, "1234", bogusKey, 1234, doer)
 		require.NoError(t, err)
 
 		cli, err := provider.client()
@@ -98,7 +111,7 @@ func TestNewAppProvider(t *testing.T) {
 		var svc *types.ExternalService
 
 		// just validate that a new provider can be created for validation if svc is nil
-		_, err = newAppProvider(database.NewMockExternalServiceStore(), svc, "", baseURL, "1234", bogusKey, 1234, doer)
+		_, err = newAppProvider(db, svc, "", baseURL, "1234", bogusKey, 1234, doer)
 		require.NoError(t, err)
 	})
 

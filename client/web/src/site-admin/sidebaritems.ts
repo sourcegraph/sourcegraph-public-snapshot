@@ -1,26 +1,53 @@
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
+import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
-export const overviewGroup: SiteAdminSideBarGroup = {
+export const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Statistics',
-        icon: EarthIcon,
+        label: 'Analytics',
+        icon: ChartLineVariantIcon,
     },
     items: [
         {
             label: 'Overview',
-            to: '/site-admin',
+            to: '/site-admin/',
             exact: true,
         },
         {
-            label: 'Usage stats',
-            to: '/site-admin/usage-statistics',
+            label: 'Search',
+            to: '/site-admin/analytics/search',
+        },
+        {
+            label: 'Code navigation',
+            to: '/site-admin/analytics/code-intel',
+        },
+        {
+            label: 'Users',
+            to: '/site-admin/analytics/users',
+        },
+        {
+            label: 'Insights',
+            to: '/site-admin/analytics/code-insights',
+        },
+        {
+            label: 'Batch changes',
+            to: '/site-admin/analytics/batch-changes',
+        },
+        {
+            label: 'Notebooks',
+            to: '/site-admin/analytics/notebooks',
+        },
+        {
+            label: 'Extensions',
+            to: '/site-admin/analytics/extensions',
         },
         {
             label: 'Feedback survey',
@@ -61,8 +88,13 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/external-services',
         },
         {
-            label: 'Repository status',
+            label: 'Repositories',
             to: '/site-admin/repositories',
+        },
+        {
+            label: 'Packages',
+            to: '/site-admin/packages',
+            condition: isPackagesEnabled,
         },
     ],
 }
@@ -76,6 +108,16 @@ export const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Users',
             to: '/site-admin/users',
+        },
+        {
+            label: 'Access requests',
+            to: '/site-admin/access-requests',
+            condition: context =>
+                checkRequestAccessAllowed(
+                    context.isSourcegraphDotCom,
+                    window.context.allowSignup,
+                    window.context.experimentalFeatures
+                ),
         },
         {
             label: 'Organizations',
@@ -118,10 +160,6 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Instrumentation',
             to: '/-/debug/',
             source: 'server',
-            condition: () =>
-                window.context.deployType === 'kubernetes' ||
-                window.context.deployType === 'dev' ||
-                window.context.deployType === 'helm',
         },
         {
             label: 'Monitoring',
@@ -131,6 +169,21 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Tracing',
             to: '/-/debug/jaeger',
+            source: 'server',
+        },
+        {
+            label: 'Outbound requests',
+            to: '/site-admin/outbound-requests',
+            source: 'server',
+        },
+        {
+            label: 'Slow requests',
+            to: '/site-admin/slow-requests',
+            source: 'server',
+        },
+        {
+            label: 'Background jobs',
+            to: '/site-admin/background-jobs',
             source: 'server',
         },
     ],
@@ -150,7 +203,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     usersGroup,

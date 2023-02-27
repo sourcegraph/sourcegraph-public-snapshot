@@ -3,34 +3,34 @@ package worker
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
 	nameSet       *janitor.NameSet
-	store         workerutil.Store
+	logStore      command.ExecutionLogEntryStore
+	filesStore    workspace.FilesStore
 	options       Options
 	operations    *command.Operations
-	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
+	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
 var (
-	_ workerutil.Handler        = &handler{}
-	_ workerutil.WithPreDequeue = &handler{}
+	_ workerutil.Handler[executor.Job] = &handler{}
+	_ workerutil.WithPreDequeue        = &handler{}
 )
 
 // PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
@@ -61,8 +61,7 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueabl
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	job := record.(executor.Job)
+func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Job) (err error) {
 	logger = logger.With(
 		log.Int("jobID", job.ID),
 		log.String("repositoryName", job.RepositoryName),
@@ -81,15 +80,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(h.logStore, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
-		flushErr := commandLogger.Flush()
-		if flushErr != nil {
-			if err != nil {
-				err = errors.Append(err, flushErr)
-			} else {
-				err = flushErr
-			}
+		if flushErr := commandLogger.Flush(); flushErr != nil {
+			err = errors.Append(err, flushErr)
 		}
 	}()
 
@@ -99,13 +93,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	logger.Info("Creating workspace")
 
 	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
+	ws, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
-	defer func() {
-		_ = os.RemoveAll(workingDirectory)
-	}()
+	defer ws.Remove(ctx, h.options.KeepWorkspaces)
 
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
@@ -126,40 +118,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	options := command.Options{
 		ExecutorName:       name,
+		DockerOptions:      h.options.DockerOptions,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	runner := h.runnerFactory(workingDirectory, commandLogger, options, h.operations)
-
-	// Construct a map from filenames to file content that should be accessible to jobs
-	// within the workspace. This consists of files supplied within the job record itself,
-	// as well as file-version of each script step.
-	workspaceFileContentsByPath := map[string][]byte{}
-
-	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
-		if err != nil {
-			return err
-		}
-		if !strings.HasPrefix(path, workingDirectory) {
-			return errors.Errorf("refusing to write outside of working directory")
-		}
-
-		workspaceFileContentsByPath[path] = []byte(content)
+	// If the job has docker auth config set, prioritize that over the env var.
+	if len(job.DockerAuthConfig.Auths) > 0 {
+		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
 	}
-
-	scriptNames := make([]string, 0, len(job.DockerSteps))
-	for i, dockerStep := range job.DockerSteps {
-		scriptName := scriptNameFromJobStep(job, i)
-		scriptNames = append(scriptNames, scriptName)
-
-		path := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
-		workspaceFileContentsByPath[path] = buildScript(dockerStep)
-	}
-
-	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
-		return errors.Wrap(err, "failed to write virtual machine files")
-	}
+	runner := h.runnerFactory(ws.Path(), commandLogger, options, h.operations)
 
 	logger.Info("Setting up VM")
 
@@ -178,10 +145,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
+		var key string
+		if dockerStep.Key != "" {
+			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
+		} else {
+			key = fmt.Sprintf("step.docker.%d", i)
+		}
 		dockerStepCommand := command.CommandSpec{
-			Key:        fmt.Sprintf("step.docker.%d", i),
+			Key:        key,
 			Image:      dockerStep.Image,
-			ScriptPath: scriptNames[i],
+			ScriptPath: ws.ScriptFilenames()[i],
 			Dir:        dockerStep.Dir,
 			Env:        dockerStep.Env,
 			Operation:  h.operations.Exec,
@@ -196,15 +169,22 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
-		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
+		var key string
+		if cliStep.Key != "" {
+			key = fmt.Sprintf("step.src.%s", cliStep.Key)
+		} else {
+			key = fmt.Sprintf("step.src.%d", i)
+		}
 
 		cliStepCommand := command.CommandSpec{
-			Key:       fmt.Sprintf("step.src.%d", i),
+			Key:       key,
 			Command:   append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
 			Env:       cliStep.Env,
 			Operation: h.operations.Exec,
 		}
+
+		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform src-cli step")
@@ -212,14 +192,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	}
 
 	return nil
-}
-
-var scriptPreamble = `
-set -x
-`
-
-func buildScript(dockerStep executor.DockerStep) []byte {
-	return []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")
 }
 
 func union(a, b map[string]string) map[string]string {
@@ -233,32 +205,6 @@ func union(a, b map[string]string) map[string]string {
 	}
 
 	return c
-}
-
-func scriptNameFromJobStep(job executor.Job, i int) string {
-	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
-}
-
-// writeFiles writes to the filesystem the content in the given map.
-func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
-	handle := logger.Log("setup.fs", nil)
-	defer func() {
-		if err == nil {
-			handle.Finalize(0)
-		} else {
-			handle.Finalize(1)
-		}
-
-		handle.Close()
-	}()
-
-	for path, content := range workspaceFileContentsByPath {
-		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {

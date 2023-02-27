@@ -4,6 +4,13 @@ Batch changes are created by writing a [batch spec](../references/batch_spec_yam
 
 Batch changes can also be used on [multiple projects within a monorepo](./creating_changesets_per_project_in_monorepos.md) by using the `workspaces` key in your batch spec.
 
+There are two paths to creating a batch change:
+
+- On your local machine, with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)
+- Remotely, with [server-side execution](../explanations/server_side.md)
+
+Many concepts are shared between the two paths. However, this guide will walk you through creating a batch change the first way, on your local machine.
+
 ## Requirements
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
@@ -24,7 +31,7 @@ on:
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
@@ -91,3 +98,9 @@ By default, batch changes will use your username on Sourcegraph as your namespac
 ```
 src batch preview -f your_batch_spec.batch.yaml -namespace USERNAME_OR_ORG
 ```
+
+When creating a batch change server-side using the UI, you can select the namespace for the batch change to belong to at the time that you're creating it.
+
+### Administration
+
+Once a batch change is open, any Sourcegraph user can view it. However, the namespace determines who has the ability to administer it, such as editing or deleting it. When a batch change is created in a user namespace, only that user (and site admins) can administer it. When a batch change is created in an organization namespace, all members of that organization (and site admins) can administer it.

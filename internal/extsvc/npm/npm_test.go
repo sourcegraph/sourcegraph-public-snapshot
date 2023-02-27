@@ -1,12 +1,9 @@
 package npm
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -80,9 +78,9 @@ func TestCredentials(t *testing.T) {
 	ctx := context.Background()
 	client := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalDoer)
 
-	presentDep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
+	presentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
 	require.NoError(t, err)
-	absentDep, err := reposource.ParseNpmDependency("left-pad@1.3.1")
+	absentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.1")
 	require.NoError(t, err)
 
 	info, err := client.GetDependencyInfo(ctx, presentDep)
@@ -128,12 +126,12 @@ func TestGetDependencyInfo(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
+	dep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
 	require.NoError(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.NoError(t, err)
 	require.NotNil(t, info)
-	dep, err = reposource.ParseNpmDependency("left-pad@1.3.1")
+	dep, err = reposource.ParseNpmVersionedPackage("left-pad@1.3.1")
 	require.NoError(t, err)
 	info, err = client.GetDependencyInfo(ctx, dep)
 	require.Nil(t, info)
@@ -144,7 +142,7 @@ func TestFetchSources(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNpmDependency("is-sorted@1.0.0")
+	dep, err := reposource.ParseNpmVersionedPackage("is-sorted@1.0.0")
 	require.Nil(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.Nil(t, err)
@@ -152,19 +150,8 @@ func TestFetchSources(t *testing.T) {
 	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
 	defer readSeekCloser.Close()
-	gzipReader, err := gzip.NewReader(readSeekCloser)
+	tarFiles, err := unpack.ListTgzUnsorted(readSeekCloser)
 	require.Nil(t, err)
-	defer gzipReader.Close()
-	tarReader := tar.NewReader(gzipReader)
-	tarFiles := []string{}
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		require.Nil(t, err)
-		tarFiles = append(tarFiles, header.Name)
-	}
 	sort.Strings(tarFiles)
 	require.Equal(t, tarFiles, []string{
 		"package/.travis.yml",
@@ -182,7 +169,7 @@ func TestNoPanicOnNonexistentRegistry(t *testing.T) {
 	client, stop := newTestHTTPClient(t)
 	defer stop()
 	client.registryURL = "http://not-an-npm-registry.sourcegraph.com"
-	dep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
+	dep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
 	require.Nil(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.Error(t, err)

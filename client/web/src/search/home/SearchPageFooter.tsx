@@ -3,8 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { H3, H4, Link } from '@sourcegraph/wildcard'
+import { Link, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'
@@ -19,7 +18,6 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
                 name: 'Docs',
                 to: 'https://docs.sourcegraph.com/',
             },
-            { name: 'Learn', to: 'https://learn.sourcegraph.com/' },
             { name: 'Blog', to: 'https://about.sourcegraph.com/blog/' },
         ],
     },
@@ -44,34 +42,34 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
         links: [
             {
                 name: 'Browser extensions',
-                to: 'https://docs.sourcegraph.com/integration/browser_extension',
+                to: '/help/integration/browser_extension',
                 eventName: 'BrowserExtensions',
             },
             {
                 name: 'Editor plugins',
-                to: 'https://docs.sourcegraph.com/integration/editor',
+                to: '/help/integration/editor',
                 eventName: 'EditorPlugins',
-            },
-            {
-                name: 'Code host integrations',
-                to: 'https://docs.sourcegraph.com/admin/external_service',
-                eventName: 'CodeHostIntegrations',
             },
         ],
     },
 ]
 
-export const SearchPageFooter: React.FunctionComponent<
-    React.PropsWithChildren<ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }>
-> = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
-    const assetsRoot = window.context?.assetsRoot || ''
+interface SearchPageFooterProps extends TelemetryProps {
+    isLightTheme: boolean
+    isSourcegraphDotCom: boolean
+}
 
+export const SearchPageFooter: React.FC<SearchPageFooterProps> = ({
+    isLightTheme,
+    telemetryService,
+    isSourcegraphDotCom,
+}) => {
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }
 
-    const logDevelopmentToolTimeClicked = (): void => {
-        telemetryService.log('HomepageDevToolTimeClicked')
+    const logDiscordClicked = (): void => {
+        telemetryService.log('HomepageDiscordClicked')
     }
 
     return isSourcegraphDotCom ? (
@@ -83,7 +81,7 @@ export const SearchPageFooter: React.FunctionComponent<
             <ul className={classNames('d-flex flex-wrap list-unstyled', styles.mainList)}>
                 {footerLinkSections.map(section => (
                     <li key={section.name} className={styles.linkSection}>
-                        <h2 className={styles.linkSectionHeading}>{section.name}</h2>
+                        <H2 className={styles.linkSectionHeading}>{section.name}</H2>
                         <ul className="list-unstyled">
                             {section.links.map(link => (
                                 <li key={link.name}>
@@ -100,34 +98,26 @@ export const SearchPageFooter: React.FunctionComponent<
                     </li>
                 ))}
                 <li>
-                    <Link
-                        to="https://info.sourcegraph.com/dev-tool-time"
-                        className={styles.devToolTimeWrapper}
-                        onClick={logDevelopmentToolTimeClicked}
-                    >
-                        <img
-                            src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                            alt=""
-                            className={styles.devToolTimeImage}
-                        />
-                        <div className={styles.devToolTimeText}>
-                            <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
-                            <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
-                        </div>
-                    </Link>
+                    <div className={styles.discordText}>
+                        <Link
+                            to="https://srcgr.ph/discord-server"
+                            className={styles.discordWrapper}
+                            onClick={logDiscordClicked}
+                        >
+                            <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
+                        </Link>
+                        <div>If you need help or want to share something with the community, join us!</div>
+                    </div>
                 </li>
             </ul>
         </footer>
     ) : (
         <footer className={classNames(styles.serverFooter, 'd-flex flex-column flex-lg-row align-items-center')}>
-            <H4 as={H3} className="mb-2 mb-lg-0">
-                Explore and extend
-            </H4>
             <span className="d-flex flex-column flex-md-row align-items-center">
                 <span className="d-flex flex-row mb-2 mb-md-0">
                     <Link
                         className="px-3"
-                        to="https://docs.sourcegraph.com/integration/browser_extension"
+                        to="/help/integration/browser_extension"
                         rel="noopener noreferrer"
                         target="_blank"
                         onClick={() => logLinkClicked('BrowserExtensions')}
@@ -135,35 +125,16 @@ export const SearchPageFooter: React.FunctionComponent<
                         Browser extensions
                     </Link>
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
-                        className="px-3"
-                        to="/extensions"
-                        target="_blank"
-                        onClick={() => logLinkClicked('SourcegraphExtensions')}
-                    >
-                        Sourcegraph extensions
-                    </Link>
-                    <span aria-hidden="true" className="border-right d-none d-md-inline" />
                 </span>
                 <span className="d-flex flex-row">
                     <Link
                         className="px-3"
-                        to="https://docs.sourcegraph.com/integration/editor"
+                        to="/help/integration/editor"
                         rel="noopener noreferrer"
                         target="_blank"
                         onClick={() => logLinkClicked('EditorPlugins')}
                     >
                         Editor plugins
-                    </Link>
-                    <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
-                        className="pl-3"
-                        to="https://docs.sourcegraph.com/admin/external_service"
-                        rel="noopener noreferrer"
-                        target="_blank"
-                        onClick={() => logLinkClicked('CodeHostIntegrations')}
-                    >
-                        Code host integrations
                     </Link>
                 </span>
             </span>

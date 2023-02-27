@@ -2,23 +2,21 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { WebviewPageProps } from '../../platform/context'
-
 import styles from '../index.module.scss'
 
-export const BrandHeader: React.FunctionComponent<React.PropsWithChildren<Pick<WebviewPageProps, 'theme'>>> = ({
-    theme,
-}) => (
+interface BrandHeaderProps {
+    isLightTheme: boolean
+}
+
+export const BrandHeader: React.FunctionComponent<BrandHeaderProps> = ({ isLightTheme }) => (
     <>
         <img
             className={classNames(styles.logo)}
-            src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${
-                theme === 'theme-light' ? 'light' : 'dark'
-            }.svg`}
+            src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${isLightTheme ? 'light' : 'dark'}.svg`}
             alt="Sourcegraph logo"
         />
         <div data-testid="brand-header" className={classNames(styles.logoText)}>
-            Search your code and 2M+ open source repositories
+            Search millions of open source repositories
         </div>
     </>
 )

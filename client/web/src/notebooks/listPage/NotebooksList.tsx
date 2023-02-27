@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect } from 'react'
-
-import { useHistory, useLocation } from 'react-router'
+import { FC, useCallback, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { ListNotebooksResult, ListNotebooksVariables, NotebookFields, NotebooksOrderBy } from '../../graphql-operations'
@@ -12,34 +11,36 @@ import { NotebookNode, NotebookNodeProps } from './NotebookNode'
 
 import styles from './NotebooksList.module.scss'
 
-interface NotebooksListProps extends TelemetryProps {
+export interface NotebooksListProps extends TelemetryProps {
+    title: string
     logEventName: string
-    filters: FilteredConnectionFilter[]
+    orderOptions: FilteredConnectionFilter[]
     creatorUserID?: string
     starredByUserID?: string
     namespace?: string
     fetchNotebooks: typeof _fetchNotebooks
 }
 
-export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<NotebooksListProps>> = ({
+export const NotebooksList: FC<NotebooksListProps> = ({
+    title,
     logEventName,
-    filters,
+    orderOptions,
     creatorUserID,
     starredByUserID,
     namespace,
     fetchNotebooks,
     telemetryService,
 }) => {
-    useEffect(() => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`), [
-        logEventName,
-        telemetryService,
-    ])
+    useEffect(
+        () => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`),
+        [logEventName, telemetryService]
+    )
 
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
             const { orderBy, descending } = args as {
-                orderBy: NotebooksOrderBy
-                descending: boolean
+                orderBy: NotebooksOrderBy | undefined
+                descending: boolean | undefined
             }
 
             return fetchNotebooks({
@@ -56,30 +57,23 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
         [creatorUserID, starredByUserID, namespace, fetchNotebooks]
     )
 
-    const history = useHistory()
-    const location = useLocation()
-
     return (
         <div>
+            <H2 className="mb-3">{title}</H2>
             <FilteredConnection<NotebookFields, Omit<NotebookNodeProps, 'node'>, ListNotebooksResult['notebooks']>
-                history={history}
-                location={location}
                 defaultFirst={10}
                 compact={false}
                 queryConnection={queryConnection}
-                filters={filters}
+                filters={orderOptions}
                 hideSearch={false}
                 nodeComponent={NotebookNode}
-                nodeComponentProps={{
-                    location,
-                    history,
-                }}
                 noun="notebook"
                 pluralNoun="notebooks"
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}
                 inputClassName={styles.filterInput}
                 inputPlaceholder="Search notebooks by title and content"
+                useURLQuery={false}
             />
         </div>
     )

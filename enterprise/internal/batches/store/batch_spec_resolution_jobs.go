@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,9 +10,8 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // batchSpecResolutionJobInsertColumns is the list of changeset_jobs columns that are
@@ -80,7 +78,6 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 }
 
 var createBatchSpecResolutionJobQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_jobs.go:CreateBatchSpecResolutionJob
 INSERT INTO batch_spec_resolution_jobs (%s)
 VALUES ` + batchSpecResolutionJobInsertColsFmt + `
 RETURNING %s
@@ -143,7 +140,6 @@ func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpec
 }
 
 var getBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_job.go:GetBatchSpecResolutionJob
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 LIMIT 1
@@ -195,7 +191,6 @@ func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchS
 }
 
 var listBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolutionjob_job.go:ListBatchSpecResolutionJobs
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 ORDER BY id ASC
@@ -224,7 +219,7 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 }
 
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(
@@ -250,26 +245,7 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 		rj.FailureMessage = &failureMessage
 	}
 
-	for _, entry := range executionLogs {
-		rj.ExecutionLogs = append(rj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	rj.ExecutionLogs = append(rj.ExecutionLogs, executionLogs...)
 
 	return nil
-}
-
-func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecResolutionJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.BatchSpecResolutionJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecResolutionJob
-		if err = scanBatchSpecResolutionJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }

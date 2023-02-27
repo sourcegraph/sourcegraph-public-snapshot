@@ -25,10 +25,9 @@ func TestAppRun(t *testing.T) {
 	// Check app starts up correctly
 	assert.NoError(t, sg.Run([]string{
 		"help",
-		// We must disable the addition of analytics hooks here because that messes with
-		// other tests that assert that no other .After hooks have been added by default,
-		// since all commands are defined as pointers.
-		"--disable-analytics",
+		// Use a fixed output configuration for consistency, and to avoid issues with
+		// detection.
+		"--disable-output-detection",
 	}))
 	assert.Contains(t, out.String(), "The Sourcegraph developer tool!")
 	// We do not want errors anywhere

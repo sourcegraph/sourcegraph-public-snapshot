@@ -1,21 +1,11 @@
-@import '../../branded/src/global-styles/colors';
-
-// Bootstrap configuration before Bootstrap is imported
-$border-radius: var(--border-radius);
-$border-radius-sm: var(--border-radius);
-$border-radius-lg: var(--border-radius);
-
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
+@import 'wildcard/src/global-styles/colors';
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
     --mark-bg: var(--mark-bg-light);
-}
-
-.sg-icon .icon {
-    @extend .icon-inline;
-    display: flex;
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
 }
 
 // Note that we define this before selection highlights so that it will override
@@ -33,13 +23,11 @@ $line-height-base: (20/14);
     }
 }
 
-/* stylelint-disable @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities/text';
-@import 'bootstrap/scss/utilities/screenreaders';
-/* stylelint-enable @sourcegraph/no-restricted-imports */
-@import '../../shared/src/global-styles/icons';
+@import 'wildcard/src/global-styles/functions';
+@import 'wildcard/src/global-styles/variables';
+@import 'wildcard/src/global-styles/mixins';
+@import 'wildcard/src/global-styles/utilities/text';
+@import 'wildcard/src/global-styles/utilities/screenreaders';
+@import 'wildcard/src/global-styles/icons';
 @import './highlight';
 @import './shared';

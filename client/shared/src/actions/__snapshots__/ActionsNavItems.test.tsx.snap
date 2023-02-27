@@ -6,7 +6,6 @@ exports[`ActionItem Renders contributed action items 1`] = `
   <li>
     <span
       class="actionItem"
-      data-tooltip="This is Action A"
     >
        Action A
     </span>

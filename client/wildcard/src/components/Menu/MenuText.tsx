@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../types'
 
+import styles from './MenuItem.module.scss'
+
 export interface MenuTextProps {}
 
 /**
@@ -11,7 +13,7 @@ export interface MenuTextProps {}
  * in and/or outside the Menu context.
  */
 export const MenuText = React.forwardRef(({ children, as: Component = 'div', className, ...props }, reference) => (
-    <Component role="menuitem" ref={reference} {...props} className={classNames('dropdown-item', className)}>
+    <Component role="menuitem" ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
         {children}
     </Component>
 )) as ForwardReferenceComponent<'div', MenuTextProps>

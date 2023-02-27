@@ -16,6 +16,7 @@ import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from '../../gql/UpdateLineChartS
 
 import {
     getCaptureGroupInsightUpdateInput,
+    getComputeInsightUpdateInput,
     getLangStatsInsightUpdateInput,
     getSearchInsightUpdateInput,
 } from './serializators'
@@ -46,6 +47,16 @@ export const updateInsight = (
                 client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
                     mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
                     variables: { input: getCaptureGroupInsightUpdateInput(nextInsightData), id: insightId },
+                    update,
+                })
+            )
+        }
+
+        case InsightType.Compute: {
+            return from(
+                client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
+                    mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
+                    variables: { input: getComputeInsightUpdateInput(nextInsightData), id: insightId },
                     update,
                 })
             )

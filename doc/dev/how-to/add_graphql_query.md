@@ -10,7 +10,7 @@ Each GraphQL query usually retrieves data from a data store. In the case of Sour
 
 The data query functions are split across multiple files depending on their function, which can be found in [cmd/frontend/graphqlbackend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend/graphqlbackend). To use an existing function as an example, in [cmd/frontend/graphqlbackend/feature_flags.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/feature_flags.go) you'll find a function named [`OrganizationFeatureFlagValue`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/graphqlbackend/feature_flags%5C.go+OrganizationFeatureFlagValue&patternType=literal) that takes `OrgID` and `FlagName` as arguments and fetches the relevant data from the database.
 
-The `schemaResolver` struct each function is tied to is what allows GraphQL to link the GraphQL query to an actual operation. To create a new GraphQL query, create a function that's tied to the `schemaResolver` struct. It needs to be a public function, so in Go, it has to start with a capital letter. You can use an existing function as a guiding example (find functions by searching for [`schemaResolver`](https://sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/sourcegraph+schemaResolver&patternType=literal&case=yes)).
+The `schemaResolver` struct of each function is tied to is what allows GraphQL to link the GraphQL query to an actual operation. To create a new GraphQL query, create a function that's tied to the `schemaResolver` struct. It needs to be a public function, so in Go, it has to start with a capital letter. You can use an existing function as a guiding example (find functions by searching for [`schemaResolver`](https://sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/sourcegraph+schemaResolver&patternType=literal&case=yes)).
 
 ```go
 func (r *schemaResolver) NewQuery(ctx context.Context, args *struct {
@@ -24,6 +24,90 @@ The GraphQL schema also needs to know about this new function and what it return
 
 ```graphql
 newQuery(someArg: String!): Boolean!
+```
+
+### Resolvers hierarchy
+
+GraphQL queries can be deeply nested. This means that a GraphQL request text specifies which fields of the schema should be returned. On the back-end this is reflected by a hierarchy of resolvers that stem from `schemaResolver`. Each method represents a nesting layer and returns the resolver for the nested structure.
+
+```go
+// cmd/frontend/graphqlbackend/graphqlbackend.go
+func (r *schemaResolver) Repository(ctx context.Context, args *struct {
+		Name     *string
+		CloneURL *string
+	}) (*RepositoryResolver, error) { ... }
+
+// cmd/frontend/graphqlbackend/repository.go
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) { ... }
+
+// cmd/frontend/graphqlbackend/git_commit.go
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
+```
+
+The above hierarchy of resolvers can implement queries like the following:
+
+```graphql
+  {
+    repository(name: "github.com/gorilla/mux") {
+      commit(rev: "abc") {
+        oid
+      }
+    }
+  }
+```
+
+### Unions
+
+Some GraphQL queries dispatch on the type of the nested entity:
+
+```graphql
+  {
+    organizationFeatureFlagOverrides {
+      namespace {
+        id
+      },
+      targetFlag {
+        ... on FeatureFlagBoolean {
+          name
+        },
+        ... on FeatureFlagRollout {
+          name
+        }
+      },
+      value
+    }
+  }
+```
+
+In the case above `targetFlag` can be considered either as a `FeatureFlagBoolean` or a `FeatureFlagRollout`, and in both cases a `name` should be returned. This is the way this is implemented on the back end:
+
+```go
+// cmd/frontend/graphqlbackend/feature_flags.go
+func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) { ... }
+
+func (f *FeatureFlagResolver) ToFeatureFlagBoolean() (*FeatureFlagBooleanResolver, bool) { ... }
+func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolver, bool) { ... }
+```
+
+Each type that composes a union has a corresponding method on the resolver with the prefix `To` that returns a resolver and a `bool` indicating whether an instance of the type is being returned.
+
+The relevant bit of the GraphQL schema uses a `union`:
+
+```graphql
+"""
+A feature flag is either a static boolean feature flag or a rollout feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean { ... }
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout { ... }
 ```
 
 ## UI
@@ -42,7 +126,7 @@ const USE_NEW_QUERY = gql`
 `
 ```
 
-`yarn generate` or simply saving while your local instance of Sourcegraph is running will generate new `graphql-operations.ts` files with the appropriate functions and types defined.
+`pnpm generate` or simply saving while your local instance of Sourcegraph is running will generate new `graphql-operations.ts` files with the appropriate functions and types defined.
 
 You can now use this function in your TypeScript code. As an example of how to do this, you could perhaps look at [this](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/user/settings/codeHosts/UserAddCodeHostsPage%5C.tsx+GET_ORG_FEATURE_FLAG_VALUE&patternType=literal). Also, refer to [Working with GraphQL](../background-information/web/graphql.md)
 

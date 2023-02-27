@@ -33,6 +33,8 @@ var (
 	_ Match = (*FileMatch)(nil)
 	_ Match = (*RepoMatch)(nil)
 	_ Match = (*CommitMatch)(nil)
+	_ Match = (*CommitDiffMatch)(nil)
+	_ Match = (*OwnerMatch)(nil)
 )
 
 // Match ranks are used for sorting the different match types.
@@ -43,6 +45,7 @@ const (
 	rankCommitMatch = 1
 	rankDiffMatch   = 2
 	rankRepoMatch   = 3
+	rankOwnerMatch  = 4
 )
 
 // Key is a sorting or deduplicating key for a Match. It contains all the
@@ -73,6 +76,10 @@ type Key struct {
 	// Empty if there is no file associated with the match (e.g. RepoMatch or CommitMatch)
 	Path string
 
+	// OwnerMetadata gives uniquely identifying information about an owner.
+	// Empty if this is not a Key for an OwnerMatch.
+	OwnerMetadata string
+
 	// TypeRank is the sorting rank of the type this key belongs to.
 	TypeRank int
 }
@@ -97,6 +104,10 @@ func (k Key) Less(other Key) bool {
 
 	if k.Path != other.Path {
 		return k.Path < other.Path
+	}
+
+	if k.OwnerMetadata != other.OwnerMetadata {
+		return k.OwnerMetadata < other.OwnerMetadata
 	}
 
 	return k.TypeRank < other.TypeRank

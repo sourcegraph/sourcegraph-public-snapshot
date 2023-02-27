@@ -1,19 +1,28 @@
+import { writeFileSync } from 'fs'
 import path from 'path'
 
 import * as esbuild from 'esbuild'
-import signale from 'signale'
 
-import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
+import {
+    MONACO_LANGUAGES_AND_FEATURES,
+    ROOT_PATH,
+    STATIC_ASSETS_PATH,
+    stylePlugin,
+    packageResolutionPlugin,
+    monacoPlugin,
+    RXJS_RESOLUTIONS,
+    buildMonaco,
+    experimentalNoticePlugin,
+    buildTimerPlugin,
+} from '@sourcegraph/build-config'
+import { isDefined } from '@sourcegraph/common'
 
-import { ENVIRONMENT_CONFIG, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
+import { ENVIRONMENT_CONFIG } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
-import { monacoPlugin } from './monacoPlugin'
-import { packageResolutionPlugin } from './packageResolutionPlugin'
-import { stylePlugin } from './stylePlugin'
-import { workerPlugin } from './workerPlugin'
 
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
+const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
@@ -26,50 +35,45 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     bundle: true,
     format: 'esm',
     logLevel: 'error',
+    jsx: 'automatic',
+    jsxDev: true, // we're only using esbuild for dev server right now
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
-        workerPlugin,
         manifestPlugin,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
+            ...RXJS_RESOLUTIONS,
+            ...(omitSlowDeps
+                ? {
+                      // Monaco
+                      '@sourcegraph/shared/src/components/MonacoEditor':
+                          '@sourcegraph/shared/src/components/NoMonacoEditor',
+                      'monaco-editor': '/dev/null',
+                      'monaco-editor/esm/vs/editor/editor.api': '/dev/null',
+                      'monaco-yaml': '/dev/null',
 
-            // Needed because imports of rxjs/internal/... actually import a different variant of
-            // rxjs in the same package, which leads to observables from combineLatestOrDefault (and
-            // other places that use rxjs/internal/...) not being cross-compatible. See
-            // https://stackoverflow.com/questions/53758889/rxjs-subscribeto-js-observable-check-works-in-chrome-but-fails-in-chrome-incogn.
-            'rxjs/internal/OuterSubscriber': require.resolve('rxjs/_esm5/internal/OuterSubscriber'),
-            'rxjs/internal/util/subscribeToResult': require.resolve('rxjs/_esm5/internal/util/subscribeToResult'),
-            'rxjs/internal/util/subscribeToArray': require.resolve('rxjs/_esm5/internal/util/subscribeToArray'),
-            'rxjs/internal/Observable': require.resolve('rxjs/_esm5/internal/Observable'),
+                      // GraphiQL
+                      './api/ApiConsole': path.join(ROOT_PATH, 'client/web/src/api/NoApiConsole.tsx'),
+                      '@graphiql/react': '/dev/null',
+                      graphiql: '/dev/null',
+
+                      // Misc.
+                      recharts: '/dev/null',
+                  }
+                : null),
         }),
-        monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
-        {
-            name: 'buildTimer',
-            setup: (build: esbuild.PluginBuild): void => {
-                let buildStarted: number
-                build.onStart(() => {
-                    buildStarted = Date.now()
-                })
-                build.onEnd(() => console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`))
-            },
-        },
-        {
-            name: 'experimentalNotice',
-            setup: (): void => {
-                signale.info(
-                    'esbuild usage is experimental. See https://docs.sourcegraph.com/dev/background-information/web/build#esbuild.'
-                )
-            },
-        },
-    ],
+        omitSlowDeps ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
+        buildTimerPlugin,
+        experimentalNoticePlugin,
+    ].filter(isDefined),
     define: {
         ...Object.fromEntries(
             Object.entries({ ...ENVIRONMENT_CONFIG, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
                 `process.env.${key}`,
-                JSON.stringify(value),
+                JSON.stringify(value === undefined ? null : value),
             ])
         ),
         global: 'window',
@@ -79,40 +83,24 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.ttf': 'file',
         '.png': 'file',
     },
-    target: 'es2021',
+    target: 'esnext',
     sourcemap: true,
-
-    // TODO(sqs): When https://github.com/evanw/esbuild/pull/1458 is merged (or the issue is
-    // otherwise fixed), we can return to using tree shaking. Right now, esbuild's tree shaking has
-    // a bug where the NavBar CSS is not loaded because the @sourcegraph/wildcard uses `export *
-    // from` and has `"sideEffects": false` in its package.json.
-    ignoreAnnotations: true,
-    treeShaking: false,
-}
-
-// TODO(sqs): These Monaco Web Workers could be built as part of the main build if we switch to
-// using MonacoEnvironment#getWorker (from #getWorkerUrl), which would then let us use the worker
-// plugin (and in Webpack the worker-loader) to load these instead of needing to hardcode them as
-// build entrypoints.
-export const buildMonaco = async (): Promise<void> => {
-    await esbuild.build({
-        entryPoints: {
-            'scripts/editor.worker.bundle': 'monaco-editor/esm/vs/editor/editor.worker.js',
-            'scripts/json.worker.bundle': 'monaco-editor/esm/vs/language/json/json.worker.js',
-        },
-        format: 'iife',
-        target: 'es2021',
-        bundle: true,
-        outdir: STATIC_ASSETS_PATH,
-    })
 }
 
 export const build = async (): Promise<void> => {
-    await esbuild.build({
+    const metafile = process.env.ESBUILD_METAFILE
+    const result = await esbuild.build({
         ...BUILD_OPTIONS,
         outdir: STATIC_ASSETS_PATH,
+        metafile: Boolean(metafile),
     })
-    await buildMonaco()
+    if (metafile) {
+        writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
+    }
+    if (!omitSlowDeps) {
+        const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.dispose()
+    }
 }
 
 if (require.main === module) {

@@ -11,9 +11,9 @@ import (
 //
 // You can make any customization you want to a graph panel by using `ObservablePanel.With`:
 //
-//   Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-//     // modify 'p.GraphPanel' or 'p.HeatmapPanel' etc. with desired changes
-//   }),
+//	Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+//	  // modify 'p.GraphPanel' or 'p.HeatmapPanel' etc. with desired changes
+//	}),
 //
 // When writing a custom `ObservablePanelOption`, keep in mind that:
 //
@@ -33,7 +33,7 @@ import (
 // `panelOptionsLibrary` that returns a `ObservablePanelOption`. The function should be
 // It can then be used with the `ObservablePanel.With`:
 //
-//   Panel: monitoring.Panel().With(monitoring.PanelOptions.MyCustomization),
+//	Panel: monitoring.Panel().With(monitoring.PanelOptions.MyCustomization),
 //
 // Using a shared prefix helps with discoverability of available options.
 type ObservablePanelOption func(Observable, *sdk.Panel)
@@ -91,7 +91,7 @@ func (panelOptionsLibrary) basicPanel() ObservablePanelOption {
 				Expr: o.Query,
 			}}
 			h.Color.Mode = "spectrum"
-			h.Color.ColorScheme = "interpolateViridis"
+			h.Color.ColorScheme = "interpolateTurbo"
 			h.YAxis.LogBase = 2
 			h.Tooltip.Show = true
 			h.Tooltip.ShowHistogram = true

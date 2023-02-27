@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,7 +22,13 @@ const (
 
 var (
 	ErrSecretNotFound = errors.New("secret not found")
+
+	// externalSecretTTL declares how long external secrets are allowed to be persisted
+	// once fetched.
+	externalSecretTTL = 24 * time.Hour
 )
+
+type FallbackFunc func(context.Context) (string, error)
 
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
 type Store struct {
@@ -113,35 +120,65 @@ func (s *Store) Get(key string, target any) error {
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string, error) {
+func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
 	var value externalSecretValue
 
 	// Check if we already have this secret
 	if err := s.Get(secret.id(), &value); err == nil {
-		return value.Value, nil
+		if time.Since(value.Fetched) < externalSecretTTL {
+			return value.Value, nil
+		}
+
+		// If expired, remove the secret and fetch a new one.
+		_ = s.Remove(secret.id())
+		value = externalSecretValue{}
 	}
 
-	if secret.Provider != "gcloud" {
-		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
-	}
-
+	// Get secret from provider
 	client, err := s.getSecretmanagerClient(ctx)
 	if err != nil {
 		return "", err
 	}
-	result, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+	var result *secretmanagerpb.AccessSecretVersionResponse
+	result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
 		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
 	})
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to access secret %q from %q", secret.Name, secret.Project)
+	if err == nil {
+		value.Value = string(result.Payload.Data)
 	}
 
-	// cache value, but don't save - TBD if we want to persist these secrets
-	value.Fetched = time.Now()
-	value.Value = string(result.Payload.Data)
-	s.Put(secret.id(), &value)
+	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
+	if err != nil && len(fallbacks) > 0 {
 
-	return value.Value, nil
+		for _, fallback := range fallbacks {
+			val, fallbackErr := fallback(ctx)
+
+			if fallbackErr != nil {
+				err = errors.Wrap(err, fallbackErr.Error())
+			} else {
+				value.Value = val
+				// Since we were able to get a secret using the fallback, we set the error to nil
+				// this also ensures that the fallback value is also saved to the store
+				err = nil
+				break
+			}
+		}
+	}
+
+	if err != nil {
+		errMessage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
+			secret.Name, secret.Project)
+		// Some secret providers use their respective CLI, if not found the user might not
+		// have run 'sg setup' to set up the relevant tool.
+		if strings.Contains(err.Error(), "command not found") {
+			errMessage += "- you may need to run 'sg setup' again"
+		}
+		return "", errors.Wrap(err, errMessage)
+	}
+
+	// Return and persist the fetched secret
+	value.Fetched = time.Now()
+	return value.Value, s.PutAndSave(secret.id(), &value)
 }
 
 // Remove deletes a value from memory.
@@ -162,12 +199,19 @@ func (s *Store) Keys() []string {
 	return keys
 }
 
+// getSecretmanagerClient instantiates a Google Secrets Manager client once and returns it.
 func (s *Store) getSecretmanagerClient(ctx context.Context) (*secretmanager.Client, error) {
 	s.secretmanagerOnce.Do(func() {
 		var err error
 		s.secretmanager, err = secretmanager.NewClient(ctx)
 		if err != nil {
-			s.secretmanagerErr = errors.Errorf("failed to create secretmanager client: %v", err)
+			const defaultMessage = "failed to create Google Secrets Manager client"
+			if strings.Contains(err.Error(), "could not find default credentials") {
+				s.secretmanagerErr = errors.Errorf("%s: %v - you might need to run 'sg setup' again to set up 'gcloud'",
+					defaultMessage, err)
+			} else {
+				s.secretmanagerErr = errors.Wrap(err, defaultMessage)
+			}
 		}
 	})
 	return s.secretmanager, s.secretmanagerErr

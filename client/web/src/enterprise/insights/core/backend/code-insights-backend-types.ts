@@ -1,17 +1,13 @@
-import { Duration } from 'date-fns'
+import { Series } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../charts'
 import {
-    RuntimeInsight,
-    InsightDashboard,
-    SearchBasedInsightSeries,
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
-    SearchBackendBasedInsight,
-    SearchRuntimeBasedInsight,
+    SearchBasedInsight,
+    ComputeInsight,
 } from '../types'
-import { InsightContentType } from '../types/insight/common'
+import { InsightContentType, IncompleteDatapointAlert } from '../types/insight/common'
 
 export interface CategoricalChartContent<Datum> {
     data: Datum[]
@@ -19,10 +15,15 @@ export interface CategoricalChartContent<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
+    getCategory?: (datum: Datum) => string | undefined
+}
+
+export interface BackendInsightSeries<Datum> extends Series<Datum> {
+    alerts: IncompleteDatapointAlert[]
 }
 
 export interface SeriesChartContent<Datum> {
-    series: Series<Datum>[]
+    series: BackendInsightSeries<Datum>[]
 }
 
 export interface InsightCategoricalContent<Datum> {
@@ -32,7 +33,7 @@ export interface InsightCategoricalContent<Datum> {
 
 export interface InsightSeriesContent<Datum> {
     type: InsightContentType.Series
-    content: SeriesChartContent<Datum>
+    series: BackendInsightSeries<Datum>[]
 }
 
 export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
@@ -65,31 +66,20 @@ export interface DashboardDeleteInput {
     id: string
 }
 
-export interface FindInsightByNameInput {
-    name: string
-}
-
-export type MinimalSearchRuntimeBasedInsightData = Omit<
-    SearchRuntimeBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBackendBasedInsightData = Omit<
-    SearchBackendBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
-
+export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData
     | MinimalCaptureGroupInsightData
     | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
     insight: CreationInsightInput
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 }
 
 export interface InsightUpdateInput {
@@ -102,54 +92,14 @@ export interface RemoveInsightFromDashboardInput {
     dashboardId: string
 }
 
-export interface CaptureInsightSettings {
-    repositories: string[]
-    query: string
-    step: Duration
-}
-
-export interface AccessibleInsightInfo {
-    id: string
-    title: string
-}
-
 export interface BackendInsightDatum {
     dateTime: Date
-    value: number | null
+    value: number
     link?: string
 }
 
 export interface BackendInsightData {
-    content: SeriesChartContent<any>
+    data: InsightContent<any>
     isFetchingHistoricalData: boolean
-}
-
-export interface GetBuiltInsightInput {
-    insight: RuntimeInsight
-}
-
-export interface GetSearchInsightContentInput {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
-export interface GetLangStatsInsightContentInput {
-    repository: string
-    otherThreshold: number
-}
-
-export interface RepositorySuggestionData {
-    id: string
-    name: string
-}
-
-export interface UiFeaturesConfig {
-    licensed: boolean
-    insightsLimit: number | null
-}
-
-export interface HasInsightsInput {
-    first: number
-    isFrozen?: boolean
+    incompleteAlert: IncompleteDatapointAlert | null
 }

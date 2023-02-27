@@ -17,9 +17,8 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     checkState: ChangesetCheckState.PASSED,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 9,
-        deleted: 1,
+        added: 19,
+        deleted: 10,
     },
     externalID: '123',
     externalURL: {
@@ -61,9 +60,8 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     checkState: null,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 9,
-        deleted: 1,
+        added: 19,
+        deleted: 10,
     },
     externalID: null,
     externalURL: null,

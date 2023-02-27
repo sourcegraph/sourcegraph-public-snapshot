@@ -1,0 +1,46 @@
+.label {
+    pointer-events: inherit !important;
+
+    // Because @visx/annotation HTMLLabel doesn't have api for
+    // passing custom CSS class to the Label component container
+    // we have to get this element through CSS Cascade
+    div {
+        background-color: var(--body-bg);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+.label-title {
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--body-color);
+    background-color: var(--body-bg);
+    text-decoration: none;
+    max-width: 150px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.label-sub-title {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 0;
+}
+
+/* Arcs */
+.arc {
+    stroke: var(--body-bg);
+}
+
+.arc-path {
+    stroke-width: 1;
+    stroke: var(--body-bg);
+}
+
+.label-line,
+.label-circle {
+    stroke: var(--body-color);
+    fill: var(--body-color);
+}

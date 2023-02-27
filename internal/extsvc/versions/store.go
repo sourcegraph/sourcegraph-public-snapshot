@@ -4,38 +4,37 @@ import (
 	"encoding/json"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 var (
-	pool        = redispool.Store
+	store       = redispool.Store
 	versionsKey = "extsvcversions"
 )
 
 type Version struct {
 	ExternalServiceKind string `json:"external_service_kind"`
 	Version             string `json:"version"`
+	Key                 string `json:"-"`
 }
 
 func storeVersions(versions []*Version) error {
-	c := pool.Get()
-	defer c.Close()
-
 	payload, err := json.Marshal(versions)
 	if err != nil {
 		return err
 	}
 
-	return c.Send("SET", versionsKey, payload)
+	return store.Set(versionsKey, payload)
 }
 
 func GetVersions() ([]*Version, error) {
-	c := pool.Get()
-	defer c.Close()
-
+	if MockGetVersions != nil {
+		return MockGetVersions()
+	}
 	var versions []*Version
 
-	raw, err := redis.Bytes(c.Do("GET", versionsKey))
+	raw, err := store.Get(versionsKey).Bytes()
 	if err != nil && err != redis.ErrNil {
 		return versions, err
 	}

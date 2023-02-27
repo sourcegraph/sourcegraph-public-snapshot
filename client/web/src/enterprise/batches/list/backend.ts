@@ -31,7 +31,8 @@ const listBatchChangeFragment = gql`
             merged
         }
         currentSpec {
-            id
+            __typename
+            ...ListBatchChangeLatestSpecFields
         }
         batchSpecs(first: 1) {
             nodes {
@@ -92,6 +93,20 @@ export const GET_LICENSE_AND_USAGE_INFO = gql`
         batchChanges: enterpriseLicenseHasFeature(feature: "batch-changes")
         allBatchChanges: batchChanges(first: 1) {
             totalCount
+        }
+        maxUnlicensedChangesets
+    }
+`
+
+export const GLOBAL_CHANGESETS_STATS = gql`
+    query GlobalChangesetsStats {
+        batchChanges {
+            totalCount
+        }
+        globalChangesetsStats {
+            open
+            closed
+            merged
         }
     }
 `

@@ -2,14 +2,14 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import styles from './ConnectionError.module.scss'
 
 interface ConnectionErrorProps {
     errors: string[]
     compact?: boolean
+    className?: string
 }
 
 /**
@@ -18,8 +18,9 @@ interface ConnectionErrorProps {
 export const ConnectionError: React.FunctionComponent<React.PropsWithChildren<ConnectionErrorProps>> = ({
     errors,
     compact,
+    className,
 }) => (
-    <Alert className={classNames(compact && styles.compact)} variant="danger">
+    <Alert className={classNames(compact && styles.compact, className)} variant="danger">
         {errors.map((error, index) => (
             <React.Fragment key={index}>
                 <ErrorMessage error={error} />

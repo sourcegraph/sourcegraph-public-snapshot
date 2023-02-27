@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { H3 } from './H3'
+import { H3 } from '../..'
 
 describe('H3', () => {
     it('should render correctly', () => {

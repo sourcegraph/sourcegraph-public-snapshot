@@ -1,8 +1,6 @@
 import * as React from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { FileDecoration } from 'sourcegraph'
+import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -15,20 +13,21 @@ import {
     TreeRowLabelLink,
     TreeRow,
 } from './components'
-import { FileDecorator } from './FileDecorator'
-import { TreeLayerProps } from './TreeLayer'
-import { treePadding } from './util'
+import { MAX_TREE_ENTRIES } from './constants'
+import { TreeEntryInfo, getTreeItemOffset } from './util'
 
-interface TreeChildProps extends TreeLayerProps {
+import styles from './Tree.module.scss'
+
+interface DirectoryProps {
+    depth: number
+    index: number
     className?: string
-    maxEntries: number
+    entryInfo: TreeEntryInfo
+    isExpanded: boolean
     loading: boolean
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
-
-    fileDecorations?: FileDecoration[]
-
     isActive: boolean
     isSelected: boolean
 }
@@ -38,8 +37,8 @@ interface TreeChildProps extends TreeLayerProps {
  *
  * @param props
  */
-export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChildProps>> = (
-    props: TreeChildProps
+export const Directory: React.FunctionComponent<React.PropsWithChildren<DirectoryProps>> = (
+    props: DirectoryProps
 ): JSX.Element => (
     <TreeRow
         key={props.entryInfo.path}
@@ -48,19 +47,24 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
         isActive={props.isActive}
         isSelected={props.isSelected}
         isExpanded={props.isExpanded}
+        depth={props.depth}
     >
         <TreeLayerCell className="test-sidebar-file-decorable">
             <TreeLayerRowContents data-tree-is-directory="true" data-tree-path={props.entryInfo.path} isNew={true}>
                 <TreeLayerRowContentsText className="flex-1 justify-between">
                     <div className="d-flex">
                         <TreeRowIconLink
-                            style={treePadding(props.depth, true, true)}
+                            style={getTreeItemOffset(props.depth)}
                             className="test-tree-noop-link"
                             href={props.entryInfo.url}
                             onClick={props.noopRowClick}
                             tabIndex={-1}
                         >
-                            <Icon as={props.isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                            <Icon
+                                className={styles.treeIcon}
+                                svgPath={props.isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
+                                aria-hidden={true}
+                            />
                         </TreeRowIconLink>
                         <TreeRowLabelLink
                             to={props.entryInfo.url}
@@ -73,13 +77,6 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
                             {props.entryInfo.name}
                         </TreeRowLabelLink>
                     </div>
-                    <FileDecorator
-                        // If component is not specified, or it is 'sidebar', render it.
-                        fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-                        className="mr-3"
-                        isLightTheme={props.isLightTheme}
-                        isActive={props.isActive}
-                    />
                 </TreeLayerRowContentsText>
                 {props.loading && (
                     <div>
@@ -87,13 +84,32 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
                     </div>
                 )}
             </TreeLayerRowContents>
-            {props.index === props.maxEntries - 1 && (
+
+            {props.index === getIndexForMaxEntriesTest(props.entryInfo.path, props.depth) && (
                 <TreeRowAlert
-                    variant="warning"
-                    style={treePadding(props.depth, true, true)}
-                    error="Too many entries. Use search to find a specific file."
+                    variant="note"
+                    className="p-2"
+                    style={getTreeItemOffset(props.depth)}
+                    error="Full list of directories is too long to display. Use search to find specific directory."
                 />
             )}
         </TreeLayerCell>
     </TreeRow>
 )
+
+// We use the index to the MAX_TREE_ENTRIESth entry to render the "too many
+// directories" error.
+//
+// Subdirectories that are rendered at the root of the tree are rendered with
+// `..` as the first entry, so we need to account for this when calculating the
+// index.
+function getIndexForMaxEntriesTest(path: string, depth: number): number {
+    let rendersDotDot = false
+    if (depth > 0) {
+        rendersDotDot = false
+    } else {
+        rendersDotDot = path.split('/').length >= 2
+    }
+
+    return MAX_TREE_ENTRIES - (rendersDotDot ? 0 : 1)
+}

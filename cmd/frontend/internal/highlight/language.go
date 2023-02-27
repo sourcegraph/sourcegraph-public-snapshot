@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 )
 
 type EngineType int
@@ -19,6 +20,26 @@ const (
 	EngineTreeSitter
 	EngineSyntect
 )
+
+func (e EngineType) String() string {
+	switch e {
+	case EngineTreeSitter:
+		return "tree-sitter"
+	case EngineSyntect:
+		return "syntect"
+	default:
+		return "invalid"
+	}
+}
+
+// Converts an engine type to the corresponding parameter value for the syntax
+// highlighting request. Defaults to "syntec".
+func getEngineParameter(engine EngineType) string {
+	if engine == EngineTreeSitter {
+		return gosyntect.SyntaxEngineTreesitter
+	}
+	return gosyntect.SyntaxEngineSyntect
+}
 
 type SyntaxEngineQuery struct {
 	Engine           EngineType
@@ -47,6 +68,16 @@ var highlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{},
 	Patterns:   []languagePattern{},
 }
+var baseHighlightConfig = syntaxHighlightConfig{
+	Extensions: map[string]string{
+		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
+		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
+		"sbt":  "scala",
+		"sc":   "scala",
+		"xlsg": "xlsg",
+	},
+	Patterns: []languagePattern{},
+}
 
 type syntaxEngineConfig struct {
 	Default   EngineType
@@ -73,7 +104,21 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
-		"c#": EngineTreeSitter,
+		"javascript": EngineTreeSitter,
+		"jsx":        EngineTreeSitter,
+		"typescript": EngineTreeSitter,
+		"tsx":        EngineTreeSitter,
+		"python":     EngineTreeSitter,
+		"java":       EngineTreeSitter,
+		"c":          EngineTreeSitter,
+		"cpp":        EngineTreeSitter,
+		"c++":        EngineTreeSitter,
+		"scala":      EngineTreeSitter,
+		"rust":       EngineTreeSitter,
+		"ruby":       EngineTreeSitter,
+		"c#":         EngineTreeSitter,
+		"jsonnet":    EngineTreeSitter,
+		"xlsg":       EngineTreeSitter,
 	},
 }
 
@@ -107,9 +152,21 @@ func init() {
 	go func() {
 		conf.Watch(func() {
 			// Populate effective configuration with base configuration
+			//    We have to add here to make sure that even if there is no config,
+			//    we still update to use the defaults
 			engineConfig.Default = baseEngineConfig.Default
 			for name, engine := range baseEngineConfig.Overrides {
 				engineConfig.Overrides[name] = engine
+			}
+
+			engineConfig.Overrides = map[string]EngineType{}
+			for name, engine := range baseEngineConfig.Overrides {
+				engineConfig.Overrides[name] = engine
+			}
+
+			highlightConfig.Extensions = map[string]string{}
+			for extension, language := range baseHighlightConfig.Extensions {
+				highlightConfig.Extensions[extension] = language
 			}
 
 			config := conf.Get()
@@ -126,14 +183,21 @@ func init() {
 			}
 
 			// Set overrides from configuration
-			engineConfig.Overrides = map[string]EngineType{}
+			//
+			// We populate the confuration with base again, because we need to
+			// create a brand new map to not take any values that were
+			// previously in the table from the last configuration.
+			//
+			// After that, we set the values from the new configuration
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}
 
-			highlightConfig.Extensions = config.SyntaxHighlighting.Languages.Extensions
+			for extension, language := range config.SyntaxHighlighting.Languages.Extensions {
+				highlightConfig.Extensions[extension] = language
+			}
 			highlightConfig.Patterns = []languagePattern{}
 			for _, pattern := range config.SyntaxHighlighting.Languages.Patterns {
 				if re, err := regexp.Compile(pattern.Pattern); err == nil {
@@ -144,7 +208,7 @@ func init() {
 	}()
 }
 
-var engineToDisplay map[EngineType]string = map[EngineType]string{
+var engineToDisplay = map[EngineType]string{
 	EngineInvalid:    "invalid",
 	EngineSyntect:    "syntect",
 	EngineTreeSitter: "tree-sitter",
@@ -180,9 +244,9 @@ func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, b
 // getLanguage will return the name of the language and default back to enry if
 // no language could be found.
 func getLanguage(path string, contents string) (string, bool) {
-	ft, found := getLanguageFromConfig(highlightConfig, path)
+	lang, found := getLanguageFromConfig(highlightConfig, path)
 	if found {
-		return ft, true
+		return lang, true
 	}
 
 	return enry.GetLanguage(path, []byte(contents)), false

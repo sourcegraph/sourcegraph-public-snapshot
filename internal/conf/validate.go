@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -49,7 +51,7 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"useAlertManager":       {},
 }
 
-const RedactedSecret = "REDACTED"
+const redactedSecret = "REDACTED"
 
 // problemKind represents the kind of a configuration problem.
 type problemKind string
@@ -69,14 +71,6 @@ type Problem struct {
 func NewSiteProblem(msg string) *Problem {
 	return &Problem{
 		kind:        problemSite,
-		description: msg,
-	}
-}
-
-// NewExternalServiceProblem creates a new external service config problem with given message.
-func NewExternalServiceProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemExternalService,
 		description: msg,
 	}
 }
@@ -173,14 +167,16 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
+	siteJSON, err := jsonc.Parse(input.Site)
 	if err != nil {
 		return nil, err
 	}
+
+	siteProblems := doValidate(siteJSON, schema.SiteSchemaJSON)
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Site: string(jsonc.Normalize(input.Site)),
+		Site: string(siteJSON),
 	})
 	if err != nil {
 		return nil, err
@@ -212,12 +208,17 @@ var siteConfigSecrets = []struct {
 	editPaths []string
 }{
 	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+	{readPath: `email\.smtp.username`, editPaths: []string{"email.smtp", "username"}},
 	{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
 	{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+	{readPath: `gitHubApp.privateKey`, editPaths: []string{"gitHubApp", "privateKey"}},
+	{readPath: `gitHubApp.clientSecret`, editPaths: []string{"gitHubApp", "clientSecret"}},
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
+	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
+	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
@@ -241,6 +242,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		if ap.Gitlab != nil {
 			oldSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
 		}
+		if ap.Bitbucketcloud != nil {
+			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+		}
 	}
 
 	newCfg, err := ParseConfig(conftypes.RawUnified{
@@ -250,14 +254,17 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		return input, errors.Wrap(err, "parse new config")
 	}
 	for _, ap := range newCfg.AuthProviders {
-		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == RedactedSecret {
+		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == redactedSecret {
 			ap.Openidconnect.ClientSecret = oldSecrets[ap.Openidconnect.ClientID]
 		}
-		if ap.Github != nil && ap.Github.ClientSecret == RedactedSecret {
+		if ap.Github != nil && ap.Github.ClientSecret == redactedSecret {
 			ap.Github.ClientSecret = oldSecrets[ap.Github.ClientID]
 		}
-		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == RedactedSecret {
+		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == redactedSecret {
 			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
+		}
+		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
+			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
 		}
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
@@ -267,7 +274,7 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 
 	for _, secret := range siteConfigSecrets {
 		v := gjson.Get(unredactedSite, secret.readPath).String()
-		if v != RedactedSecret {
+		if v != redactedSecret {
 			continue
 		}
 
@@ -276,15 +283,38 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
-	return unredactedSite, err
+
+	formattedSite, err := jsonc.Format(unredactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return input, errors.Wrapf(err, "JSON formatting")
+	}
+
+	return formattedSite, err
 }
 
-// RedactSecrets redacts defined list of secrets from the given configuration. It
-// returns empty configuration if any error occurs during redacting process to
-// prevent accidental leak of secrets in the configuration.
-//
-// Updates to this function should also being reflected in the UnredactSecrets.
 func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, false)
+}
+
+func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, true)
+}
+
+// redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
+// configuration if any error occurs during redacting process to prevent accidental leak of secrets
+// in the configuration.
+//
+// Updates to this function should also be reflected in the UnredactSecrets.
+func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
+	getRedactedSecret := func(_ string) string { return redactedSecret }
+	if hashSecrets {
+		getRedactedSecret = func(secret string) string {
+			hash := hashutil.ToSHA256Bytes([]byte(secret))
+			digest := hex.EncodeToString(hash)
+			return "REDACTED-DATA-CHUNK" + "-" + digest[:10]
+		}
+	}
+
 	cfg, err := ParseConfig(raw)
 	if err != nil {
 		return empty, errors.Wrap(err, "parse config")
@@ -292,47 +322,65 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 
 	for _, ap := range cfg.AuthProviders {
 		if ap.Openidconnect != nil {
-			ap.Openidconnect.ClientSecret = RedactedSecret
+			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret)
 		}
 		if ap.Github != nil {
-			ap.Github.ClientSecret = RedactedSecret
+			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret)
 		}
 		if ap.Gitlab != nil {
-			ap.Gitlab.ClientSecret = RedactedSecret
+			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret)
+		}
+		if ap.Bitbucketcloud != nil {
+			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
 		}
 	}
-	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
-	if err != nil {
-		return empty, errors.Wrap(err, `redact "auth.providers"`)
+	redactedSite := raw.Site
+	if len(cfg.AuthProviders) > 0 {
+		redactedSite, err = jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+		if err != nil {
+			return empty, errors.Wrap(err, `redact "auth.providers"`)
+		}
 	}
 
 	for _, secret := range siteConfigSecrets {
-		v := gjson.Get(redactedSite, secret.readPath).String()
-		if v == "" {
+		val := gjson.Get(redactedSite, secret.readPath).String()
+		if val == "" {
 			continue
 		}
 
-		redactedSite, err = jsonc.Edit(redactedSite, RedactedSecret, secret.editPaths...)
+		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val), secret.editPaths...)
 		if err != nil {
 			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
 
+	formattedSite, err := jsonc.Format(redactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return empty, errors.Wrapf(err, "JSON formatting")
+	}
+
 	return conftypes.RawUnified{
-		Site: redactedSite,
+		Site: formattedSite,
 	}, err
 }
 
-func ValidateSetting(input string) (problems []string, err error) {
-	return doValidate(input, schema.SettingsSchemaJSON)
+// ValidateSettings validates the JSONC input against the settings JSON Schema, returning a list of
+// problems (if any).
+func ValidateSettings(jsoncInput string) (problems []string) {
+	jsonInput, err := jsonc.Parse(jsoncInput)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	return doValidate(jsonInput, schema.SettingsSchemaJSON)
 }
 
-func doValidate(inputStr, schema string) (messages []string, err error) {
-	input := jsonc.Normalize(inputStr)
-
+func doValidate(input []byte, schema string) (messages []string) {
 	res, err := validate([]byte(schema), input)
 	if err != nil {
-		return nil, err
+		// We can't return more detailed problems because the input completely failed to parse, so
+		// just return the parse error as the problem.
+		return []string{err.Error()}
 	}
 	messages = make([]string, 0, len(res.Errors()))
 	for _, e := range res.Errors() {
@@ -347,9 +395,17 @@ func doValidate(inputStr, schema string) (messages []string, err error) {
 			keyPath = e.Field()
 		}
 
+		// Use an easier-to-understand description for the common case when the root is not an
+		// object (which can happen when the input is derived from JSONC that is entirely commented
+		// out, for example).
+		if e, ok := e.(*gojsonschema.InvalidTypeError); ok && e.Field() == "(root)" && strings.HasPrefix(e.Description(), "Invalid type. Expected: object, given: ") {
+			messages = append(messages, "must be a JSON object (use {} for empty)")
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
-	return messages, nil
+	return messages
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {

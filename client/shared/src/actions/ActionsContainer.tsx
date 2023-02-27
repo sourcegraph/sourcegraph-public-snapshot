@@ -10,15 +10,15 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, ActionItemAction } from './ActionItem'
 
 export interface ActionsProps
-    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+    extends RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+        PlatformContextProps<'settings'>,
         ContributionOptions {
     menu: ContributableMenu
     listClass?: string
@@ -39,7 +39,7 @@ interface Props extends ActionsProps, TelemetryProps {
 }
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export const ActionsContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const ActionsContainer: React.FunctionComponent<Props> = props => {
     const { scope, extraContext, returnInactiveMenuItems, extensionsController, menu, empty } = props
 
     const contributions = useObservable(

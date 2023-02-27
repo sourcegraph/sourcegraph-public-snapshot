@@ -4,17 +4,10 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import {
-    SearchPatternType,
-    fetchAutoDefinedSearchContexts,
-    getUserSearchContextNamespaces,
-    QueryState,
-} from '@sourcegraph/search'
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -25,13 +18,12 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
@@ -48,7 +40,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     authenticatedUser,
     platformContext,
     settingsCascade,
-    theme,
     context,
     instanceURL,
 }) => {
@@ -58,27 +49,10 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         'repository' | 'branches' | 'description'
     > | null>(null)
 
-    // Check VS Code local storage to see if user has clicked dismiss button before
-    const [dismissSearchCta, setDismissSearchCta] = useState(false)
-    // Return empty string if not in vs code local storage or 'search' if it exists
-    const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_SEARCH_CTA_KEY), [extensionCoreAPI])
-    const onDismissCtaAlert = useCallback(async () => {
-        setDismissSearchCta(true)
-        await extensionCoreAPI.setLocalStorageItem(DISMISS_SEARCH_CTA_KEY, 'true')
-    }, [extensionCoreAPI])
-
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
     }, [instanceURL])
-
-    useEffect(() => {
-        showCtaAlert
-            .then(result => {
-                setDismissSearchCta(result.length > 0)
-            })
-            .catch(() => setDismissSearchCta(false))
-    }, [showCtaAlert])
 
     // Editor focus.
     const editorReference = useRef<IEditor>()
@@ -105,6 +79,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: newState,
                     searchCaseSensitivity: context.submittedSearchQueryState?.searchCaseSensitivity,
                     searchPatternType: context.submittedSearchQueryState?.searchPatternType,
+                    searchMode: context.submittedSearchQueryState?.searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -115,6 +90,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             extensionCoreAPI,
             context.submittedSearchQueryState.searchCaseSensitivity,
             context.submittedSearchQueryState.searchPatternType,
+            context.submittedSearchQueryState.searchMode,
         ]
     )
 
@@ -149,19 +125,27 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
+        (options?: {
+            caseSensitive?: boolean
+            patternType?: SearchPatternType
+            newQuery?: string
+            searchMode?: SearchMode
+        }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
 
             const query = options?.newQuery ?? userQueryState.query
             const caseSensitive = options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity
             const patternType = options?.patternType ?? previousSearchQueryState.searchPatternType
+            const searchMode = options?.searchMode ?? previousSearchQueryState.searchMode
 
             extensionCoreAPI
                 .streamSearch(query, {
                     caseSensitive,
                     patternType,
+                    searchMode,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
@@ -177,6 +161,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: { query },
                     searchCaseSensitivity: caseSensitive,
                     searchPatternType: patternType,
+                    searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -247,8 +232,14 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            console.log({ patternType })
             onSubmit({ patternType })
+        },
+        [onSubmit]
+    )
+
+    const setSearchMode = useCallback(
+        (searchMode: SearchMode) => {
+            onSubmit({ searchMode })
         },
         [onSubmit]
     )
@@ -259,7 +250,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const fetchStreamSuggestions = useCallback(
-        (query): Observable<SearchMatch[]> =>
+        (query: string): Observable<SearchMatch[]> =>
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
         [extensionCoreAPI, instanceURL]
     )
@@ -291,7 +282,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context.submittedSearchQueryState.queryState, platformContext, onSubmit]
     )
 
-    const onShareResultsClick = useCallback((): void => {
+    const onShareResultsClick = useCallback(async (): Promise<void> => {
         const queryState = context.submittedSearchQueryState
 
         const path = `/search?${buildSearchURLQuery(
@@ -300,9 +291,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             queryState.searchCaseSensitivity,
             context.selectedSearchContextSpec
         )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
-        extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
-            console.error('Error copying search link to clipboard:', error)
-        })
+        await extensionCoreAPI.copyLink(new URL(path, instanceURL).href)
         platformContext.telemetryService.log('VSCEShareLinkClick')
     }, [context, instanceURL, extensionCoreAPI, platformContext])
 
@@ -313,18 +302,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 context.selectedSearchContextSpec
             ),
         [context]
-    )
-
-    const onSignUpClick = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCECreateAccountBannerClick',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
-        },
-        [platformContext.telemetryService]
     )
 
     const matchHandlers = useMatchHandlers({
@@ -352,9 +329,9 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
+                    searchMode={context.submittedSearchQueryState?.searchMode}
+                    setSearchMode={setSearchMode}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    hasUserAddedExternalServices={false}
-                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
                     queryState={userQueryState}
                     onChange={onChange}
@@ -363,44 +340,24 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     searchContextsEnabled={true}
                     showSearchContext={true}
                     showSearchContextManagement={false}
-                    defaultSearchContextSpec="global"
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     selectedSearchContextSpec={context.selectedSearchContextSpec}
                     fetchSearchContexts={fetchSearchContexts}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     globbing={globbing}
-                    isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && !dismissSearchCta && (
-                        <CtaAlert
-                            title="Sign up to add your public and private repositories and unlock search flow"
-                            description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                            cta={{
-                                label: 'Get started',
-                                href:
-                                    'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
-                                onClick: onSignUpClick,
-                            }}
-                            icon={<SearchBetaIcon />}
-                            className={classNames('percy-display-none', styles.ctaContainer)}
-                            onClose={onDismissCtaAlert}
-                        />
-                    )}
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
                         showSavedSearchForm={showSavedSearchForm}
@@ -437,7 +394,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     )}
                     <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
-                            isLightTheme={theme === 'theme-light'}
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}
                             allExpanded={allExpanded}
@@ -445,16 +401,17 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // for search examples. Fix on VSCE.
                             isSourcegraphDotCom={false}
                             searchContextsEnabled={true}
-                            showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
-                            authenticatedUser={authenticatedUser}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"
                             // TODO "no results" video thumbnail assets
                             // In build, copy ui/assets/img folder to dist/
                             assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setUserQueryState}
+                            selectedSearchContextSpec={context.selectedSearchContextSpec}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

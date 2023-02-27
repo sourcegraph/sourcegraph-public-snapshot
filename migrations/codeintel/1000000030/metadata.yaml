@@ -1,5 +1,0 @@
-name: squashed migrations (unprivileged)
-parents:
-- 1000000029
-privileged: false
-nonIdempotent: true

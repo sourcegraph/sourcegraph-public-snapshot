@@ -1,16 +1,12 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/wildcard'
+import { SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
-import { useQueryParameters } from '../../../../hooks/use-query-parameters'
+import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
+import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface useHandleSubmitOutput {
@@ -23,50 +19,42 @@ export interface useHandleSubmitOutput {
  */
 export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
     const { id } = props
-    const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
-    const history = useHistory()
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const navigate = useNavigate()
 
-    const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
+    const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
+    const redirectUrl = getReturnToLink(insight, dashboardId)
 
     const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
         if (!id) {
             return
         }
 
-        try {
-            await updateInsight({
-                insightId: id,
-                nextInsightData: newInsight,
-            }).toPromise()
+        await updateInsight({
+            insightId: id,
+            nextInsightData: newInsight,
+        }).toPromise()
 
-            const insightType = getTrackingTypeByInsightType(newInsight.type)
-
-            eventLogger.log('InsightEdit', { insightType }, { insightType })
-
-            if (!dashboard) {
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
-
-                return
-            }
-
-            history.push(`/insights/dashboards/${dashboard.id}`)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        const insightType = getTrackingTypeByInsightType(newInsight.type)
+        eventLogger.log('InsightEdit', { insightType }, { insightType })
+        navigate(redirectUrl)
     }
 
     const handleCancel = (): void => {
-        if (!dashboard) {
-            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
-            return
-        }
-
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(redirectUrl)
     }
 
     return { handleSubmit, handleCancel }
+}
+
+function getReturnToLink(insightId: string | undefined, dashboardId: string | undefined): string {
+    if (insightId) {
+        return `/insights/insight/${insightId}`
+    }
+
+    if (dashboardId) {
+        return `/insights/dashboards/${dashboardId}`
+    }
+
+    return '/insights/all'
 }

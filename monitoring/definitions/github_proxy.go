@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func GitHubProxy() *monitoring.Container {
+func GitHubProxy() *monitoring.Dashboard {
 	const containerName = "github-proxy"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "github-proxy",
 		Title:       "GitHub Proxy",
 		Description: "Proxies all requests to github.com, keeping track of and managing rate limits.",
@@ -26,7 +26,7 @@ func GitHubProxy() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,
 						},

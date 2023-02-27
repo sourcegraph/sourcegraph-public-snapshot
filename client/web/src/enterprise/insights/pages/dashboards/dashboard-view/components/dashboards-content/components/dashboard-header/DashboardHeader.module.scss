@@ -1,0 +1,28 @@
+.header {
+    top: 0;
+    position: sticky;
+    padding: 0.5rem 0;
+    z-index: 1;
+    background-color: var(--body-bg);
+
+    &--stuck {
+        background-color: var(--body-bg);
+
+        &::after {
+            display: block;
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+
+            // For stretching the bottom border across the entire screen
+            // stylelint-disable-next-line declaration-property-unit-allowed-list
+            margin: 0 calc((100% - 100vw) / 2);
+            border-bottom: 1px solid var(--border-color-2);
+            background-color: var(--body-bg);
+            height: 100%;
+            z-index: -1;
+        }
+    }
+}

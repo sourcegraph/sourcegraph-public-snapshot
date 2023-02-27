@@ -1,8 +1,20 @@
-import React, { useMemo, useState } from 'react'
+/* eslint-disable @typescript-eslint/no-misused-promises */
+import React, { useEffect, useState } from 'react'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { Button, Text } from '@sourcegraph/wildcard'
+
 import { version } from '../../../../package.json'
+import {
+    VSCE_LINK_FEEDBACK,
+    VSCE_LINK_ISSUES,
+    VSCE_LINK_TROUBLESHOOT,
+    VSCE_SG_LOGOMARK_DARK,
+    VSCE_SG_LOGOMARK_LIGHT,
+    VSCE_LINK_SIGNUP,
+} from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
 
@@ -20,82 +32,81 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
     authenticatedUser,
     instanceURL,
 }) => {
-    const [hasAccount, setHasAccount] = useState(false)
+    const [openAuthPanel, setOpenAuthPanel] = useState(false)
+    const [isLightTheme, setIsLightTheme] = useState<boolean | undefined>(undefined)
 
-    const hostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
+    useEffect(() => {
+        if (isLightTheme === undefined) {
+            extensionCoreAPI.getEditorTheme
+                .then(theme => {
+                    setIsLightTheme(theme === 'Light')
+                })
+                .catch(error => {
+                    console.error(error)
+                    setIsLightTheme(false)
+                })
+        }
+    }, [extensionCoreAPI.getEditorTheme, isLightTheme])
 
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
         await extensionCoreAPI.openLink(url)
     }
 
+    const onLogoutClick = async (): Promise<void> => {
+        if (authenticatedUser) {
+            await extensionCoreAPI.removeAccessToken()
+        }
+    }
+
     return (
         <div className={classNames(styles.sidebarContainer)}>
-            <button
-                type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback',
-                        'Feedback'
-                    )
-                }
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+            <Button
+                as={VSCodeButton}
+                onClick={() => onHelpItemClick(VSCE_LINK_FEEDBACK, 'Feedback')}
+                className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-github" />
-                <span>Give feedback</span>
-            </button>
-            <button
-                type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board',
-                        'Issues'
-                    )
-                }
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                <i className="codicon codicon-github" slot="start" />
+                Give feedback
+            </Button>
+            <Button
+                as={VSCodeButton}
+                onClick={() => onHelpItemClick(VSCE_LINK_ISSUES, 'Issues')}
+                className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-bug" />
-                <span>Report issue</span>
-            </button>
-            <button
-                type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension',
-                        'Troubleshoot'
-                    )
-                }
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                <i className="codicon codicon-bug" slot="start" />
+                Report an issue
+            </Button>
+            <Button
+                as={VSCodeButton}
+                onClick={() => onHelpItemClick(VSCE_LINK_TROUBLESHOOT, 'Troubleshoot')}
+                className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-notebook" />
-                <span>Troubleshooting docs</span>
-            </button>
-            <button
-                type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
-                        'Authenticate'
-                    )
-                }
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                <i className="codicon codicon-notebook" slot="start" />
+                Troubleshooting docs
+            </Button>
+            <Button
+                as={VSCodeButton}
+                onClick={() => onHelpItemClick(VSCE_LINK_SIGNUP, 'Authenticate')}
+                className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
                 <img
                     alt="sg-logo"
-                    className="codicon"
-                    src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/fd431743e811ba756490e5e7bd88aa2362b6453e/client/vscode/images/logomark_light.svg"
+                    className={classNames(styles.icon, 'codicon')}
+                    slot="start"
+                    src={isLightTheme ? VSCE_SG_LOGOMARK_DARK : VSCE_SG_LOGOMARK_LIGHT}
                 />
-                <span>Create an account</span>
-            </button>
-            <button
-                type="button"
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
-                onClick={() => setHasAccount(previousHasAccount => !previousHasAccount)}
+                Create new account
+            </Button>
+            <Button
+                as={VSCodeButton}
+                onClick={() => setOpenAuthPanel(previousOpenAuthPanel => !previousOpenAuthPanel)}
+                className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-account" />
-                <span>Authenticate account</span>
-            </button>
-            {hasAccount && (
+                <i className="codicon codicon-account" slot="start" />
+                {authenticatedUser ? `User: ${authenticatedUser.username}` : 'Authenticate account'}
+            </Button>
+            {openAuthPanel && (
                 <div className="ml-3 mt-1">
                     {!authenticatedUser ? (
                         <AuthSidebarView
@@ -105,16 +116,27 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">
-                            Connected to {hostname} as {authenticatedUser.displayName}
-                        </p>
+                        <div className="mt-1">
+                            <Text className="ml-2 small">
+                                Click button below to sign out of {new URL(instanceURL).hostname}. VS Code will be
+                                reloaded upon sign out.
+                            </Text>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="font-weight-normal w-100 my-1 border-0 small"
+                                onClick={() => onLogoutClick()}
+                            >
+                                Sign out
+                            </Button>
+                        </div>
                     )}
                 </div>
             )}
-            <button type="button" className={classNames(styles.itemContainer, 'btn btn-text text-left')}>
-                <i className="codicon codicon-calendar" />
-                <span>Version v{version}</span>
-            </button>
+            <Button as={VSCodeButton} className={classNames('p-0 m-0', styles.sidebarViewButton)}>
+                <i className="codicon codicon-calendar" slot="start" />
+                Version v{version}
+            </Button>
         </div>
     )
 }

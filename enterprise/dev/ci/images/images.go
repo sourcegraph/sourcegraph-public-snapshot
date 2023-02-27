@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -67,11 +68,14 @@ var DeploySourcegraphDockerImages = []string{
 	"indexed-searcher",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	"minio",
+	"blobstore",
+	"blobstore2",
+	"node-exporter",
 	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
+	"prometheus-gcp",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -82,12 +86,37 @@ var DeploySourcegraphDockerImages = []string{
 	"syntax-highlighter",
 	"worker",
 	"migrator",
+	"executor",
+	"executor-vm",
+	"batcheshelper",
+	"opentelemetry-collector",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
 // Note that the availability of this image depends on whether a candidate gets built,
 // as determined in `addDockerImages()`.
-func CandidateImageTag(commit, buildNumber string) string {
-	return fmt.Sprintf("%s_%s_candidate", commit, buildNumber)
+func CandidateImageTag(commit string, buildNumber int) string {
+	return fmt.Sprintf("%s_%d_candidate", commit, buildNumber)
+}
+
+// BranchImageTag provides the tag for all commits built outside of a tagged release.
+//
+// Example: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe`
+//
+// Notes:
+// - latest tag omitted if empty
+// - branch name omitted when `main`
+func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	commitSuffix := fmt.Sprintf("%.12s", commit)
+	if latestTag != "" {
+		commitSuffix = latestTag + "-" + commitSuffix
+	}
+
+	tag := fmt.Sprintf("%05d_%10s_%s", buildNumber, now.Format("2006-01-02"), commitSuffix)
+	if branchName != "main" {
+		tag = branchName + "_" + tag
+	}
+
+	return tag
 }

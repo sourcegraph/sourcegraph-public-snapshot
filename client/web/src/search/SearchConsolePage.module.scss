@@ -1,3 +1,28 @@
 .results {
     overflow: auto;
 }
+
+.editor {
+    background-color: var(--input-bg);
+    padding: 0.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+
+    &:focus,
+    &:focus-within {
+        border-color: var(--border-active-color) !important;
+    }
+
+    :global(.cm-scroller) {
+        overflow: auto;
+    }
+
+    :global(.cm-editor) {
+        flex: 1;
+        max-height: 100%;
+    }
+}

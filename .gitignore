@@ -1,6 +1,9 @@
 # Temporary directory for whatever you want
 .tmp/
 
+# Bazel
+bazel-*
+
 # Vim
 *.swp
 
@@ -42,7 +45,8 @@ grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
 npm-debug.log
-yarn-error.log
+pnpm-error.log
+pnpm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
 
@@ -71,6 +75,7 @@ yarn-error.log
 /ui/assets/styles/
 /ui/assets/*.br
 /ui/assets/*.gz
+/ui/assets/stats-*
 
 *.json.actual
 
@@ -107,8 +112,7 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/schema.ts
-client/shared/src/schema/*
+client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
 /dist
@@ -117,13 +121,9 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
-elm-stuff
 
 # Extensions
 /client/extension-api/dist
-
-# Compute Component
-/client/web/src/notebooks/blocks/compute/component/public/dist
 
 # Direnv
 .envrc
@@ -167,12 +167,25 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+.buildevent_file
 
 # Buildkite analytics files
 test-reports/
 
+# CI linter cache (used only in CI)
+.golangci-lint-cache
+
 # go workspace files shouldn't be committed
 go.work
+go.work.sum
 
 # binary
 /sg
+
+# SCIP
+index.scip
+
+# Buildkite helper and cache files
+/an
+/tr
+/cache-*.tar

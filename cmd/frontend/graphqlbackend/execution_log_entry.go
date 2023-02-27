@@ -3,21 +3,21 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type ExecutionLogEntryResolver interface {
 	Key() string
 	Command() []string
-	StartTime() DateTime
+	StartTime() gqlutil.DateTime
 	ExitCode() *int32
-	Out(ctx context.Context) (string, error)
+	Out(ctx context.Context) string
 	DurationMilliseconds() *int32
 }
 
-func NewExecutionLogEntryResolver(db database.DB, entry workerutil.ExecutionLogEntry) *executionLogEntryResolver {
+func NewExecutionLogEntryResolver(db database.DB, entry executor.ExecutionLogEntry) *executionLogEntryResolver {
 	return &executionLogEntryResolver{
 		db:    db,
 		entry: entry,
@@ -26,7 +26,7 @@ func NewExecutionLogEntryResolver(db database.DB, entry workerutil.ExecutionLogE
 
 type executionLogEntryResolver struct {
 	db    database.DB
-	entry workerutil.ExecutionLogEntry
+	entry executor.ExecutionLogEntry
 }
 
 var _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
@@ -42,8 +42,8 @@ func (r *executionLogEntryResolver) ExitCode() *int32 {
 	return &val
 }
 
-func (r *executionLogEntryResolver) StartTime() DateTime {
-	return DateTime{Time: r.entry.StartTime}
+func (r *executionLogEntryResolver) StartTime() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.StartTime}
 }
 
 func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
@@ -54,15 +54,6 @@ func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
 	return &val
 }
 
-func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err != backend.ErrMustBeSiteAdmin {
-			return "", err
-		}
-
-		return "", nil
-	}
-
-	return r.entry.Out, nil
+func (r *executionLogEntryResolver) Out(ctx context.Context) string {
+	return r.entry.Out
 }

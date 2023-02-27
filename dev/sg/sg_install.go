@@ -66,23 +66,15 @@ func installAction(cmd *cli.Context) error {
 		}
 	}
 
-	var location string
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-
-	switch runtime.GOOS {
-	case "linux":
-		location = filepath.Join(homeDir, ".local", "bin", "sg")
-	case "darwin":
-		// We're using something in the home directory because on a fresh macOS
-		// installation the user doesn't have permission to create/open/write
-		// to /usr/local/bin. We're safe with ~/.sg/sg.
-		location = filepath.Join(homeDir, ".sg", "sg")
-	default:
-		return errors.Newf("unsupported platform: %s", runtime.GOOS)
+	locationDir, err := sgInstallDir(homeDir)
+	if err != nil {
+		return err
 	}
+	location := filepath.Join(locationDir, "sg")
 
 	var logoOut bytes.Buffer
 	printLogo(&logoOut)
@@ -94,7 +86,8 @@ func installAction(cmd *cli.Context) error {
 	// Do not prompt for installation if we are forcefully installing
 	if !cmd.Bool("force") {
 		std.Out.Write("")
-		std.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
+		std.Out.Promptf("We are going to install %ssg%s to %s%s%s. Okay?",
+			output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
 
 		locationOkay := getBool()
 		if !locationOkay {
@@ -210,4 +203,36 @@ func updateProfiles(homeDir, sgDir string) error {
 		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 	return nil
+}
+
+func getBool() bool {
+	var s string
+
+	fmt.Printf("(y/N): ")
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "y" || s == "yes" {
+		return true
+	}
+	return false
+}
+
+func sgInstallDir(homeDir string) (string, error) {
+	switch runtime.GOOS {
+	case "linux":
+		return filepath.Join(homeDir, ".local", "bin"), nil
+	case "darwin":
+		// We're using something in the home directory because on a fresh macOS
+		// installation the user doesn't have permission to create/open/write
+		// to /usr/local/bin. We're safe with ~/.sg/sg.
+		return filepath.Join(homeDir, ".sg"), nil
+	default:
+		return "", errors.Newf("unsupported platform: %s", runtime.GOOS)
+	}
 }

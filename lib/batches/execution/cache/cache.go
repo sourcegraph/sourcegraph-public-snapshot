@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -15,11 +16,8 @@ import (
 )
 
 type Cache interface {
-	Get(ctx context.Context, key Keyer) (result execution.Result, found bool, err error)
-	Set(ctx context.Context, key Keyer, result execution.Result) error
-
-	GetStepResult(ctx context.Context, key Keyer) (result execution.AfterStepResult, found bool, err error)
-	SetStepResult(ctx context.Context, key Keyer, result execution.AfterStepResult) error
+	Get(ctx context.Context, key Keyer) (result execution.AfterStepResult, found bool, err error)
+	Set(ctx context.Context, key Keyer, result execution.AfterStepResult) error
 
 	Clear(ctx context.Context, key Keyer) error
 }
@@ -29,57 +27,28 @@ type Keyer interface {
 	Slug() string
 }
 
-// ExecutionKey implements the Keyer interface for the execution of a batch
-// spec in a repository workspace and all its Steps.
-type ExecutionKey struct {
-	Repository batches.Repository
-
-	Path               string
-	OnlyFetchWorkspace bool
-	Steps              []batches.Step
-
-	BatchChangeAttributes *template.BatchChangeAttributes
+// MetadataRetriever retrieves mount metadata.
+type MetadataRetriever interface {
+	// Get returns the mount metadata from the provided steps.
+	Get([]batches.Step) ([]MountMetadata, error)
 }
 
-// Key converts the key into a string form that can be used to uniquely identify
-// the cache key in a more concise form than the entire Task.
-func (key *ExecutionKey) Key() (string, error) {
-	envs, err := resolveStepsEnvironment([]string{}, key.Steps)
-	if err != nil {
-		return "", err
+// MountMetadata is the metadata of a file that is mounted by a Step.
+type MountMetadata struct {
+	Path     string
+	Size     int64
+	Modified time.Time
+}
+
+func (key CacheKey) mountsMetadata() ([]MountMetadata, error) {
+	if key.MetadataRetriever != nil {
+		return key.MetadataRetriever.Get(key.Steps)
 	}
-
-	return marshalAndHash(key, envs)
+	return nil, nil
 }
 
-func (key ExecutionKey) Slug() string {
-	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
-}
-
-func (key *ExecutionKey) WithGlobalEnv(global []string) *ExecutionKeyWithGlobalEnv {
-	return &ExecutionKeyWithGlobalEnv{
-		ExecutionKey: key,
-		GlobalEnv:    global,
-	}
-}
-
-// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
-// ExecutionKey but adding a global environment in which the steps could be
-// resolved.
-type ExecutionKeyWithGlobalEnv struct {
-	*ExecutionKey
-	GlobalEnv []string
-}
-
-func (key *ExecutionKeyWithGlobalEnv) Key() (string, error) {
-	envs, err := resolveStepsEnvironment(key.GlobalEnv, key.Steps)
-	if err != nil {
-		return "", err
-	}
-
-	return marshalAndHash(key.ExecutionKey, envs)
-}
-
+// resolveStepsEnvironment returns a slice of environments for each of the steps,
+// containing only the env vars that are actually used.
 func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[string]string, error) {
 	// We have to resolve the step environments and include them in the cache
 	// key to ensure that the cache is properly invalidated when an environment
@@ -100,13 +69,16 @@ func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[st
 	return envs, nil
 }
 
-func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
+func marshalAndHash(key *CacheKey, envs []map[string]string, metadata []MountMetadata) (string, error) {
 	raw, err := json.Marshal(struct {
-		*ExecutionKey
+		*CacheKey
 		Environments []map[string]string
+		// Omit if empty to be backwards compatible.
+		MountsMetadata []MountMetadata `json:"MountsMetadata,omitempty"`
 	}{
-		ExecutionKey: key,
-		Environments: envs,
+		CacheKey:       key,
+		Environments:   envs,
+		MountsMetadata: metadata,
 	})
 	if err != nil {
 		return "", err
@@ -116,75 +88,71 @@ func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error)
 	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
 }
 
-// StepsCacheKey implements the Keyer interface for a batch spec execution in a
+// CacheKey implements the Keyer interface for a batch spec execution in a
 // repository workspace and a *subset* of its Steps, up to and including the
 // step with index StepIndex in Task.Steps.
-type StepsCacheKey struct {
-	*ExecutionKey
+type CacheKey struct {
+	Repository            batches.Repository
+	Path                  string
+	OnlyFetchWorkspace    bool
+	Steps                 []batches.Step
+	BatchChangeAttributes *template.BatchChangeAttributes
+
+	// Ignore from serialization.
+	MetadataRetriever MetadataRetriever `json:"-"`
+	// Ignore from serialization.
+	GlobalEnv []string `json:"-"`
+
 	StepIndex int
 }
 
 // Key converts the key into a string form that can be used to uniquely identify
 // the cache key in a more concise form than the entire Task.
-func (key StepsCacheKey) Key() (string, error) {
-	return marshalAndHashStepsCacheKey(key, []string{})
-}
-
-func (key StepsCacheKey) Slug() string {
-	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
-}
-
-// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
-// StepsCacheKey but adding a global environment in which the steps could be
-// resolved.
-type StepsCacheKeyWithGlobalEnv struct {
-	*StepsCacheKey
-	GlobalEnv []string
-}
-
-func (key *StepsCacheKeyWithGlobalEnv) Key() (string, error) {
-	return marshalAndHashStepsCacheKey(*key.StepsCacheKey, key.GlobalEnv)
-}
-
-func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string, error) {
-	// Setup a copy of the Task that only includes the Steps up to and
+func (key CacheKey) Key() (string, error) {
+	// Setup a copy of the cache key that only includes the Steps up to and
 	// including key.StepIndex.
-	clone := &ExecutionKey{
-		Repository:            key.ExecutionKey.Repository,
-		Path:                  key.ExecutionKey.Path,
-		OnlyFetchWorkspace:    key.ExecutionKey.OnlyFetchWorkspace,
-		Steps:                 key.ExecutionKey.Steps[0 : key.StepIndex+1],
-		BatchChangeAttributes: key.ExecutionKey.BatchChangeAttributes,
-	}
+	clone := key
+	clone.Steps = key.Steps[0 : key.StepIndex+1]
 
-	// Resolve environment only for the subset of Steps
-	envs, err := resolveStepsEnvironment(globalEnv, clone.Steps)
+	// Resolve environment only for the subset of Steps.
+	envs, err := resolveStepsEnvironment(key.GlobalEnv, clone.Steps)
+	if err != nil {
+		return "", err
+	}
+	metadata, err := key.mountsMetadata()
 	if err != nil {
 		return "", err
 	}
 
-	hash, err := marshalAndHash(clone, envs)
+	hash, err := marshalAndHash(&clone, envs, metadata)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step) ExecutionKey {
+func (key CacheKey) Slug() string {
+	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
+}
+
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, globalEnv []string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
 	sort.Strings(r.FileMatches)
 
-	executionKey := ExecutionKey{
+	return CacheKey{
 		Repository:            r,
 		Path:                  path,
 		OnlyFetchWorkspace:    onlyFetchWorkspace,
+		GlobalEnv:             globalEnv,
 		Steps:                 steps,
 		BatchChangeAttributes: batchChangeAttributes,
+		StepIndex:             stepIndex,
+		MetadataRetriever:     retriever,
 	}
-	return executionKey
 }
 
-func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.Result) ([]*batches.ChangesetSpec, error) {
-	if result.Diff == "" {
+// ChangesetSpecsFromCache takes the execution.Result and generates all changeset specs from it.
+func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string, binaryDiffs bool, fallbackAuthor *batches.ChangesetSpecAuthor) ([]*batches.ChangesetSpec, error) {
+	if len(result.Diff) == 0 {
 		return []*batches.ChangesetSpec{}, nil
 	}
 
@@ -199,10 +167,8 @@ func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, resu
 		Template:         spec.ChangesetTemplate,
 		TransformChanges: spec.TransformChanges,
 		Result:           result,
+		Path:             path,
 	}
 
-	return batches.BuildChangesetSpecs(input, batches.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	})
+	return batches.BuildChangesetSpecs(input, binaryDiffs, fallbackAuthor)
 }

@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
-import CloseIcon from 'mdi-react/CloseIcon'
-import { useHistory } from 'react-router'
-import { RouteComponentProps } from 'react-router-dom'
+import { mdiClose } from '@mdi/js'
+import { useNavigate } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal, Icon } from '@sourcegraph/wildcard'
+import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
-interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface DeleteOrgModalProps extends OrgAreaRouteContext {
     isOpen: boolean
     toggleDeleteModal: () => void
 }
@@ -23,12 +22,14 @@ const HARD_DELETE_ORG_MUTATION = gql`
     }
 `
 
+const deleteLabelId = 'deleteOrgId'
+
 export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<DeleteOrgModalProps>> = props => {
     const { org, isOpen, toggleDeleteModal } = props
-    const deleteLabelId = 'deleteOrgId'
+
+    const navigate = useNavigate()
     const [orgNameInput, setOrgNameInput] = useState('')
     const [orgNamesMatch, setOrgNamesMatch] = useState<boolean>()
-    const history = useHistory()
 
     useEffect(() => {
         setOrgNameInput(orgNameInput)
@@ -47,13 +48,13 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
     const deleteOrg = useCallback(async () => {
         try {
             await deleteOrganization({ variables: { organization: org.id, hard: true } })
-            history.push({
+            navigate({
                 pathname: '/settings',
             })
         } catch {
             eventLogger.log('OrgDeletionFailed')
         }
-    }, [org, deleteOrganization, history])
+    }, [org, deleteOrganization, navigate])
 
     return (
         <Modal
@@ -64,21 +65,22 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
             data-testid="delete-org-modal"
         >
             <div>
-                <h3 className="text-danger" id={deleteLabelId}>
+                <H3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
-                </h3>
+                </H3>
                 <Icon
                     className="position-absolute cursor-pointer"
                     style={{ top: '1rem', right: '1rem' }}
                     onClick={toggleDeleteModal}
-                    as={CloseIcon}
+                    aria-label="Close"
+                    svgPath={mdiClose}
                 />
-                <p className="pt-3">
+                <Text className="pt-3">
                     <strong>You are going to delete {org.name} from Sourcegraph.</strong>
                     This cannot be undone. Deleting an organization will remove all of its synced repositories from
                     Sourcegraph, along with the organization’s code insights, batch changes, code monitors and other
                     resources.
-                </p>
+                </Text>
                 <Input
                     label="Please type the organization’s name to continue"
                     autoFocus={true}

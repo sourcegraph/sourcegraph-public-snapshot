@@ -2,9 +2,10 @@ import { noop } from 'lodash'
 import { fromEvent, Observable, of, Subscriber, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { SearchPatternType, SearchVersion } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import {
     AggregateStreamingSearchResults,
+    LATEST_VERSION,
     messageHandlers,
     MessageHandlers,
     observeMessages,
@@ -45,8 +46,8 @@ function firstMatchStreamingSearch(
 
 export function fetchStreamSuggestions(query: string, sourcegraphURL?: string): Observable<SearchMatch[]> {
     return firstMatchStreamingSearch(of(query), {
-        version: SearchVersion.V2,
-        patternType: SearchPatternType.literal,
+        version: LATEST_VERSION,
+        patternType: SearchPatternType.standard,
         caseSensitive: false,
         trace: undefined,
         sourcegraphURL,

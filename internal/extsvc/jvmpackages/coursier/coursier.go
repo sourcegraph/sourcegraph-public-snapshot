@@ -12,6 +12,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -40,11 +41,11 @@ func init() {
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageManagerSyntax()),
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -80,7 +81,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.PackageManagerSyntax(),
+		"--intransitive", dependency.VersionedPackageSyntax(),
 		"--classifier", "sources",
 	)
 	if err != nil {
@@ -95,7 +96,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	return paths[0], nil
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (byteCodeJarPath string, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
@@ -110,7 +111,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.PackageManagerSyntax(),
+		"--intransitive", dependency.VersionedPackageSyntax(),
 	)
 	if err != nil {
 		return "", err
@@ -124,11 +125,11 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (err error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageManagerSyntax()),
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -140,7 +141,7 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 			config,
 			"resolve",
 			"--quiet", "--quiet",
-			"--intransitive", dependency.PackageManagerSyntax(),
+			"--intransitive", dependency.VersionedPackageSyntax(),
 		)
 	}
 	if err != nil {
@@ -187,7 +188,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.AddEvent("TODO Domain Owner", attribute.String("stdout", stdout.String()), attribute.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

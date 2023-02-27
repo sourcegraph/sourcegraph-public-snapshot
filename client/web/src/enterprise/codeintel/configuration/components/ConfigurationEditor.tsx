@@ -1,12 +1,10 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import * as H from 'history'
 import { editor } from 'monaco-editor'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
@@ -18,19 +16,17 @@ import allConfigSchema from '../schema.json'
 
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 
-export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
+export interface ConfigurationEditorProps extends TelemetryProps {
     repoId: string
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
 }
 
-export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<ConfigurationEditorProps>> = ({
+export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
     authenticatedUser,
-    isLightTheme,
     telemetryService,
-    history,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
     const { configuration, loadingRepository, repositoryError } = useRepositoryConfig(repoId)
     const { updateConfigForRepository, isUpdating, updatingError } = useUpdateConfigurationForRepository()
@@ -40,7 +36,10 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
             updateConfigForRepository({
                 variables: { id: repoId, content },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
-            }).then(() => setDirty(false)),
+            }).then(() => {
+                screenReaderAnnounce('Saved successfully')
+                setDirty(false)
+            }),
         [updateConfigForRepository, repoId]
     )
 
@@ -90,7 +89,6 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
-                    history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}

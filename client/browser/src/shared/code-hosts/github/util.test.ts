@@ -12,7 +12,7 @@ describe('util', () => {
         }[] = [
             {
                 name: 'tree page',
-                url: 'https://github.com/sourcegraph/sourcegraph/tree/master/client',
+                url: 'https://github.com/sourcegraph/sourcegraph/tree/main/client',
             },
             {
                 name: 'blob page',
@@ -28,21 +28,19 @@ describe('util', () => {
             },
             {
                 name: 'compare page',
-                url:
-                    'https://github.com/sourcegraph/sourcegraph-basic-code-intel/compare/new-extension-api-usage...fuzzy-locations',
+                url: 'https://github.com/sourcegraph/sourcegraph-basic-code-intel/compare/new-extension-api-usage...fuzzy-locations',
             },
             {
                 name: 'selections - single line',
-                url: 'https://github.com/sourcegraph/sourcegraph/blob/master/jest.config.base.js#L5',
+                url: 'https://github.com/sourcegraph/sourcegraph/blob/main/jest.config.base.js#L5',
             },
             {
                 name: 'selections - range',
-                url: 'https://github.com/sourcegraph/sourcegraph/blob/master/jest.config.base.js#L5-L12',
+                url: 'https://github.com/sourcegraph/sourcegraph/blob/main/jest.config.base.js#L5-L12',
             },
             {
                 name: 'snippet permalink',
-                url:
-                    'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx#L128-L151',
+                url: 'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx#L128-L151',
             },
             {
                 name: 'pull request list',

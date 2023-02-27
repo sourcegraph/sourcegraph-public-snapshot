@@ -18,6 +18,7 @@ type Command struct {
 	Name                string
 	Cmd                 string            `yaml:"cmd"`
 	Install             string            `yaml:"install"`
+	InstallFunc         string            `yaml:"install_func"`
 	CheckBinary         string            `yaml:"checkBinary"`
 	Env                 map[string]string `yaml:"env"`
 	Watch               []string          `yaml:"watch"`
@@ -29,6 +30,7 @@ type Command struct {
 	Preamble string `yaml:"preamble"`
 
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+	Description     string                            `yaml:"description"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
@@ -46,6 +48,9 @@ func (c Command) Merge(other Command) Command {
 	if other.Install != merged.Install && other.Install != "" {
 		merged.Install = other.Install
 	}
+	if other.InstallFunc != merged.InstallFunc && other.InstallFunc != "" {
+		merged.InstallFunc = other.InstallFunc
+	}
 	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
 		merged.IgnoreStdout = other.IgnoreStdout
 	}
@@ -58,13 +63,22 @@ func (c Command) Merge(other Command) Command {
 	if other.Preamble != merged.Preamble && other.Preamble != "" {
 		merged.Preamble = other.Preamble
 	}
+	if other.Description != merged.Description && other.Description != "" {
+		merged.Description = other.Description
+	}
 	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
 
 	for k, v := range other.Env {
+		if merged.Env == nil {
+			merged.Env = make(map[string]string)
+		}
 		merged.Env[k] = v
 	}
 
 	for k, v := range other.ExternalSecrets {
+		if merged.ExternalSecrets == nil {
+			merged.ExternalSecrets = make(map[string]secrets.ExternalSecret)
+		}
 		merged.ExternalSecrets[k] = v
 	}
 
@@ -132,7 +146,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 
 	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
+		return nil, errors.Errorf("failed to get secrets store: %v", err)
 	}
 
 	var errs error

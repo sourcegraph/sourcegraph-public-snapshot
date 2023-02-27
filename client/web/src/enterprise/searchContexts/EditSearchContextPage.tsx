@@ -1,21 +1,20 @@
 import React, { useCallback, useMemo } from 'react'
 
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { RouteComponentProps } from 'react-router'
+import { mdiMagnify } from '@mdi/js'
+import { useParams } from 'react-router-dom'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -26,9 +25,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface EditSearchContextPageProps
-    extends RouteComponentProps<{ spec: Scalars['ID'] }>,
-        ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
@@ -40,13 +37,16 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
 > = props => {
     const LOADING = 'loading' as const
 
-    const { match, updateSearchContext, fetchSearchContextBySpec, platformContext } = props
+    const params = useParams()
+    const spec: string = params.spec ? `${params.specOrOrg}/${params.spec}` : params.specOrOrg!
+
+    const { updateSearchContext, fetchSearchContextBySpec, platformContext } = props
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextEditInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => {
+        ): Observable<SearchContextFields> => {
             if (!id) {
                 return throwError(new Error('Cannot update search context with undefined ID'))
             }
@@ -58,7 +58,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
+                fetchSearchContextBySpec(spec!, platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))
@@ -68,20 +68,20 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec, platformContext]
+            [spec, fetchSearchContextBySpec, platformContext]
         )
     )
 
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Edit context" />
                     <PageHeader
                         className="mb-3"
                         path={[
                             {
-                                icon: MagnifyIcon,
+                                icon: mdiMagnify,
                                 to: '/search',
                                 ariaLabel: 'Code Search',
                             },

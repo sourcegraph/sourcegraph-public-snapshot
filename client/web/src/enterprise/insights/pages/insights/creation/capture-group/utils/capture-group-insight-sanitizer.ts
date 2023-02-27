@@ -2,8 +2,8 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
+import { InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { CaptureGroupFormFields } from '../types'
 
 export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
@@ -11,14 +11,24 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         title: values.title.trim(),
         query: getSanitizedCaptureQuery(values.groupSearchQuery.trim()),
         type: InsightType.CaptureGroup,
-        executionType: InsightExecutionType.Backend,
         step: { [values.step]: +values.stepValue },
-        repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
+        repoQuery: values.repoMode === 'search-query' ? values.repoQuery.query : '',
+        repositories: values.repoMode === 'urls-list' ? values.repositories : [],
+
         filters: {
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
             context: '',
+            seriesDisplayOptions: {
+                limit: null,
+                numSamples: null,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
         },
+        dashboards: [],
     }
 }
 

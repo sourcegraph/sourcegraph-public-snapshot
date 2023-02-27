@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -22,9 +23,21 @@ import (
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
-var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
+var DefaultClient = NewClient(repoUpdaterURLDefault())
 
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
+
+func repoUpdaterURLDefault() string {
+	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
+		return u
+	}
+
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		return "http://127.0.0.1:3182"
+	}
+
+	return "http://repo-updater:3182"
+}
 
 // Client is a repoupdater client.
 type Client struct {
@@ -74,7 +87,7 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -209,7 +222,14 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
+// MockSchedulePermsSync mocks (*Client).SchedulePermsSync for tests.
+var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+
 func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	if MockSchedulePermsSync != nil {
+		return MockSchedulePermsSync(ctx, args)
+	}
+
 	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
 	if err != nil {
 		return err
@@ -234,12 +254,15 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 	return errors.New(res.Error)
 }
 
+// MockSyncExternalService mocks (*Client).SyncExternalService for tests.
+var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
+
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(
-	ctx context.Context,
-	svc api.ExternalService,
-) (*protocol.ExternalServiceSyncResult, error) {
-	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
+func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
+	if MockSyncExternalService != nil {
+		return MockSyncExternalService(ctx, externalServiceID)
+	}
+	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
 		return nil, err
@@ -253,12 +276,8 @@ func (c *Client) SyncExternalService(
 
 	var result protocol.ExternalServiceSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// TODO(tsenart): Use response type for unmarshalling errors too.
-		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
-		// TODO(keegancsmith): Remove once repo-updater update is rolled out.
-		result.ExternalService = svc
 		return &result, nil
 	} else if err = json.Unmarshal(bs, &result); err != nil {
 		return nil, err
@@ -270,29 +289,49 @@ func (c *Client) SyncExternalService(
 	return &result, nil
 }
 
-// RepoExternalServices requests the external services associated with a
-// repository with the given id.
-func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api.ExternalService, error) {
-	req := protocol.RepoExternalServicesRequest{ID: id}
-	resp, err := c.httpPost(ctx, "repo-external-services", &req)
+// MockExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
+var MockExternalServiceNamespaces func(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error)
+
+// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
+func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (result *protocol.ExternalServiceNamespacesResult, err error) {
+	if MockExternalServiceNamespaces != nil {
+		return MockExternalServiceNamespaces(ctx, args)
+	}
+
+	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
+}
+
+// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
+var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
+
+// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+	if MockExternalServiceRepositories != nil {
+		return MockExternalServiceRepositories(ctx, args)
 	}
 
-	var res protocol.RepoExternalServicesResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
+	resp, err := c.httpPost(ctx, "external-service-repositories", args)
+
+	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	return res.ExternalServices, nil
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
@@ -310,7 +349,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

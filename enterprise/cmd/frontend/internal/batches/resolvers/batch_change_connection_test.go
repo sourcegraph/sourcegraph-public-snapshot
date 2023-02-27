@@ -8,10 +8,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,18 +23,19 @@ import (
 )
 
 func TestBatchChangeConnectionResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	bstore := bstore.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-change-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -42,14 +46,14 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec1); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
 	spec2 := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec2); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +65,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec1.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange1); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange1); err != nil {
 		t.Fatal(err)
 	}
 	batchChange2 := &btypes.BatchChange{
@@ -72,11 +76,11 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec2.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange2); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange2); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,10 +88,10 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	// Batch changes are returned in reverse order.
 	nodes := []apitest.BatchChange{
 		{
-			ID: string(marshalBatchChangeID(batchChange2.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)),
 		},
 		{
-			ID: string(marshalBatchChangeID(batchChange1.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange1.ID)),
 		},
 	}
 
@@ -172,22 +176,23 @@ query($first: Int, $after: String) {
 `
 
 func TestBatchChangesListing(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	orgID := ct.InsertTestOrg(t, db, "org")
+	orgID := bt.CreateTestOrg(t, db, "org").ID
 
-	store := store.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +240,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -263,8 +268,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID))},
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -274,7 +279,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminUserID := bt.CreateTestUser(t, db, true).ID
 		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -284,7 +289,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherUserID := bt.CreateTestUser(t, db, false).ID
 		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 
 		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -319,7 +324,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -347,8 +352,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID))},
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -358,7 +363,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminUserID := bt.CreateTestUser(t, db, true).ID
 		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -368,7 +373,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherUserID := bt.CreateTestUser(t, db, false).ID
 		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 
 		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)

@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { subDays } from 'date-fns'
+
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
@@ -10,6 +12,8 @@ import { UserSettingsAreaUserFields } from '../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
+
+const now = new Date()
 
 const USER: UserSettingsAreaUserFields = {
     __typename: 'User',
@@ -23,8 +27,8 @@ const USER: UserSettingsAreaUserFields = {
     viewerCanChangeUsername: true,
     siteAdmin: true,
     builtinAuth: true,
-    createdAt: '2020-04-10T21:11:42Z',
-    emails: [{ email: 'test@example.com', verified: true }],
+    createdAt: subDays(now, 732).toISOString(),
+    emails: [{ email: 'test@example.com', verified: true, isPrimary: true }],
     organizations: { nodes: [] },
     tags: [],
 }
@@ -57,11 +61,11 @@ describe('User profile page', () => {
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
+        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await percySnapshotWithVariants(driver.page, 'User Profile Settings Page')
         await accessibilityAudit(driver.page)
-        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
+            selector: '[data-testid="test-UserProfileFormFields__displayName"]',
             newText: 'Test2',
             selectMethod: 'selectall',
         })
@@ -121,9 +125,18 @@ describe('User Different Settings Page', () => {
         await accessibilityAudit(driver.page)
     })
 
-    it('display user password setting page', async () => {
+    it('display user account security page', async () => {
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
+            UserExternalAccountsWithAccountData: () => ({
+                user: {
+                    __typename: 'User',
+                    externalAccounts: {
+                        __typename: 'ExternalAccountConnection',
+                        nodes: [],
+                    },
+                },
+            }),
             UserAreaUserProfile: () => ({
                 user: {
                     __typename: 'User',
@@ -136,6 +149,7 @@ describe('User Different Settings Page', () => {
                     viewerCanAdminister: true,
                     builtinAuth: true,
                     tags: [],
+                    createdAt: '2020-03-02T11:52:15Z',
                 },
             }),
             UserSettingsAreaUserProfile: () => ({
@@ -152,16 +166,16 @@ describe('User Different Settings Page', () => {
                     siteAdmin: true,
                     builtinAuth: true,
                     createdAt: '2020-03-02T11:52:15Z',
-                    emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                    emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
                     tags: [],
                 },
             }),
         })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/user/settings/password')
-        await driver.page.waitForSelector('.user-settings-password-page')
-        await percySnapshotWithVariants(driver.page, 'User Password Settings Page')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/user/settings/security')
+        await driver.page.waitForSelector('.user-settings-account-security-page')
+        await percySnapshotWithVariants(driver.page, 'User Account Security Settings Page')
         await accessibilityAudit(driver.page)
     })
 })

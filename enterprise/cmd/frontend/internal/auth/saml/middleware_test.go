@@ -267,7 +267,7 @@ func TestMiddleware(t *testing.T) {
 		authnCookies    []*http.Cookie
 		authnRequestURL string
 	)
-	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -289,6 +289,14 @@ func TestMiddleware(t *testing.T) {
 		}
 		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
 			t.Fatal(err)
+		}
+	})
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false, nil)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
@@ -323,6 +331,7 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 		}
 	})
+
 	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
 		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
 		if err != nil {
@@ -335,7 +344,7 @@ func TestMiddleware(t *testing.T) {
 		if err := idpAuthnReq.Validate(); err != nil {
 			t.Fatal(err)
 		}
-		session := saml.Session{
+		samlSession := saml.Session{
 			ID:         "session-id",
 			CreateTime: time.Now(),
 			ExpireTime: time.Now().Add(24 * time.Hour),
@@ -345,7 +354,7 @@ func TestMiddleware(t *testing.T) {
 			UserName:  "testuser_username",
 			UserEmail: "testuser@email.com",
 		}
-		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &session); err != nil {
+		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &samlSession); err != nil {
 			t.Fatal(err)
 		}
 		if err := idpAuthnReq.MakeResponse(); err != nil {
@@ -402,6 +411,60 @@ func TestMiddleware(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.api/foo", "", loggedInCookies, true, nil)
 		if got, want := resp.StatusCode, http.StatusOK; got != want {
 			t.Errorf("wrong status code: got %v, want %v", got, want)
+		}
+	})
+}
+
+func TestAllowSignin(t *testing.T) {
+	allowedGroups := []string{"foo"}
+	providerConfig := schema.SAMLAuthProvider{
+		AllowGroups: allowedGroups,
+	}
+	mockProvider := &provider{
+		config: providerConfig,
+	}
+
+	t.Run("Sign in is allowed if allowGroups is not configured", func(t *testing.T) {
+		p := &provider{
+			config: schema.SAMLAuthProvider{},
+		}
+		result := allowSignin(p, make(map[string]bool))
+		if !result {
+			t.Errorf("Expected allowSigning to be true, got %v", result)
+		}
+	})
+	t.Run("Sign in is allowed if user belongs to a group", func(t *testing.T) {
+		groups := make(map[string]bool)
+		groups["foo"] = true
+		result := allowSignin(mockProvider, groups)
+		if !result {
+			t.Errorf("Expected allowSigning to be true, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if user does not belong to any group in allowGroups", func(t *testing.T) {
+		groups := make(map[string]bool)
+		groups["bar"] = true
+		groups["baz"] = true
+		result := allowSignin(mockProvider, groups)
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if allowGroups is empty", func(t *testing.T) {
+		p := &provider{
+			config: schema.SAMLAuthProvider{
+				AllowGroups: []string{},
+			},
+		}
+		result := allowSignin(p, make(map[string]bool))
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if user groups are empty", func(t *testing.T) {
+		result := allowSignin(mockProvider, make(map[string]bool))
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
 		}
 	})
 }

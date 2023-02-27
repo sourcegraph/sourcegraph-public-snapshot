@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TestKey is an encryption.Key that just base64 encodes the plaintext, to make
@@ -27,6 +28,31 @@ func (k TestKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 
 func (k TestKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
 	return encryption.KeyVersion{Type: "testkey"}, nil
+}
+
+// ByteaTestKey is an encryption.Key that wraps TestKey in a way that adds arbitrary
+// non-ascii characters. This ensures that we do not try to insert illegal text into
+// encrypted bytea columns.
+type ByteaTestKey struct{}
+
+var _ encryption.Key = TestKey{}
+
+func (k ByteaTestKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
+	return []byte("\\x20" + base64.StdEncoding.EncodeToString(plaintext)), nil
+}
+
+func (k ByteaTestKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
+	if len(ciphertext) < 4 || string(ciphertext[:4]) != "\\x20" {
+		return nil, errors.New("incorrect prefix")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext[4:]))
+	s := encryption.NewSecret(string(decoded))
+	return &s, err
+}
+
+func (k ByteaTestKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "byteatestkey"}, nil
 }
 
 // BadKey is an encryption.Key that always returns an error when any of its

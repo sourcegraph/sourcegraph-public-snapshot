@@ -23,13 +23,13 @@ The most common use-case for `src serve-git` is to create git repos that do not 
 - Using `git p4` to serve up Perforce repositories.
 - Serve up local repositories to Sourcegraph while trialling it.
 
-> WARNING: `src serve-git` is not intended to be used to serve repos from a code host which is already configured to be synced by a seperate code host config. For instance if you have a self managed Gitlab code host, it is not advised to use `src serve-git` to serve repos on the gitlab server. 
+> WARNING: `src serve-git` is not intended to be used to serve repos from a code host which is already configured to be synced by a seperate code host config. For instance if you have a self managed GitLab code host, it is not advised to use `src serve-git` to serve repos on the gitlab server. 
 
 ## Quickstart
 
 1. [Install Sourcegraph CLI](https://github.com/sourcegraph/src-cli#installation) (`src`).
 1. Run `src serve-git` in a directory with git repositories. Ensure the address is reachable by Sourcegraph.
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Sourcegraph CLI Serve-Git**.
 1. Configure the URL field to the address for `src serve-git`.
 1. Press **Add repositories**.

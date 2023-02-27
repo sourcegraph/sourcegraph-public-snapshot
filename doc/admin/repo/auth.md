@@ -2,13 +2,15 @@
 
 If authentication (HTTP(S) or SSH) is required to `git clone` a repository then you must provide credentials to the container.
 
-First, ensure your **Site admin > Manage repositories** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
+First, ensure your **Site admin > Manage code hosts** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
 
 Then, follow the directions below depending on your deployment type:
 
 - [Sourcegraph with Docker Compose](../deploy/docker-compose/index.md): See [the Docker Compose git configuration guide](../deploy/docker-compose/index.md#git-configuration).
-- [Sourcegraph with Kubernetes](../deploy/kubernetes/index.md): See [Configure repository cloning via SSH](../deploy/kubernetes/configure.md#configure-repository-cloning-via-ssh).
+- [Sourcegraph with Kubernetes](../deploy/kubernetes/index.md): See [Configure repository cloning via SSH](../deploy/kubernetes/configure.md#ssh-for-cloning).
 - [Single-container Sourcegraph](../deploy/docker-single-container/index.md): See [the single-container git configuration guide](../deploy/docker-single-container/index.md#git-configuration-and-authentication).
+
+>NOTE: Repository access over SSH is not yet supported on [Sourcegraph Cloud](../../cloud/index.md).
 
 ## Troubleshooting
 

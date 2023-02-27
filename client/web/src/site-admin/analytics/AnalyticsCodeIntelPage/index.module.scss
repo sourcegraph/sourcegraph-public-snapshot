@@ -1,0 +1,41 @@
+.border {
+    border-bottom: 1px solid var(--border-color-2);
+}
+
+.suggestion-box {
+    padding-left: 4rem;
+    padding-right: 4rem;
+    margin-top: 1.5rem;
+}
+
+.events {
+    display: flex;
+    flex-direction: row;
+}
+
+.chart {
+    width: 75%;
+}
+
+.percent-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.percent {
+    font-size: 2rem;
+}
+
+.repos {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
+    align-items: center;
+    padding-left: 2rem;
+}
+
+.precise-item:not(:last-child) {
+    padding-bottom: 0.2rem;
+}

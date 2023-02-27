@@ -10,7 +10,6 @@ import (
 
 type flagContextKey struct{}
 
-//go:generate ../../dev/mockgen.sh  github.com/sourcegraph/sourcegraph/internal/featureflag -i Store -o store_mock_test.go
 type Store interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
@@ -22,7 +21,16 @@ type Store interface {
 func Middleware(ffs Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
-		next.ServeHTTP(w, r.WithContext(WithFlags(r.Context(), ffs)))
+
+		store := ffs
+		if flags, ok := requestOverrides(r); ok {
+			store = &overrideStore{
+				store: ffs,
+				flags: flags,
+			}
+		}
+
+		next.ServeHTTP(w, r.WithContext(WithFlags(r.Context(), store)))
 	})
 }
 
@@ -37,10 +45,10 @@ type flagSetFetcher struct {
 	// Actor is the actor that was used to populate flagSet
 	actor *actor.Actor
 	// flagSet is the once-populated set of flags for the actor at the time of population
-	flagSet FlagSet
+	flagSet *FlagSet
 }
 
-func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
+func (f *flagSetFetcher) fetch(ctx context.Context) *FlagSet {
 	f.once.Do(func() {
 		f.actor = actor.FromContext(ctx)
 		f.flagSet = f.fetchForActor(ctx, f.actor)
@@ -56,11 +64,11 @@ func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
 	return f.fetchForActor(ctx, currentActor)
 }
 
-func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) FlagSet {
+func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) *FlagSet {
 	if a.IsAuthenticated() {
 		flags, err := f.ffs.GetUserFlags(ctx, a.UID)
 		if err == nil {
-			return FlagSet(flags)
+			return &FlagSet{flags: flags, actor: f.actor}
 		}
 		// Continue if err != nil
 	}
@@ -68,24 +76,31 @@ func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) Flag
 	if a.AnonymousUID != "" {
 		flags, err := f.ffs.GetAnonymousUserFlags(ctx, a.AnonymousUID)
 		if err == nil {
-			return FlagSet(flags)
+			return &FlagSet{flags: flags, actor: f.actor}
 		}
 		// Continue if err != nil
 	}
 
 	flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
 	if err == nil {
-		return FlagSet(flags)
+		return &FlagSet{flags: flags, actor: f.actor}
 	}
 
-	return FlagSet(make(map[string]bool))
+	return &FlagSet{actor: f.actor}
 }
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
-func FromContext(ctx context.Context) FlagSet {
+func FromContext(ctx context.Context) *FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
 		return flags.(*flagSetFetcher).fetch(ctx)
+	}
+	return nil
+}
+
+func GetEvaluatedFlagSet(ctx context.Context) EvaluatedFlagSet {
+	if flagSet := FromContext(ctx); flagSet != nil {
+		return getEvaluatedFlagSetFromCache(flagSet)
 	}
 	return nil
 }

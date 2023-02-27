@@ -1,0 +1,4 @@
+{
+  "Input": "repo:foo a and b",
+  "Result": "repo:foo (a AND b)"
+}

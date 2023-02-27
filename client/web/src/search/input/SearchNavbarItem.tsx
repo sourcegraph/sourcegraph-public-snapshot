@@ -1,40 +1,37 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useRef, useMemo } from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { SearchBox, Toggles } from '@sourcegraph/branded'
+// The experimental search input should be shown in the navbar
+// eslint-disable-next-line no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Form } from '@sourcegraph/wildcard'
 
-import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FuzzyFinder } from '../../components/fuzzyFinder/FuzzyFinder'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
-import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
-import { getExperimentalFeatures } from '../../util/get-experimental-features'
+import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
+
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from './lazy'
+import { useRecentSearches } from './useRecentSearches'
 
 interface Props
-    extends ActivationProps,
-        SettingsCascadeProps,
-        ThemeProps,
+    extends SettingsCascadeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    isLightTheme: boolean
 }
 
 const selectQueryState = ({
@@ -43,63 +40,110 @@ const selectQueryState = ({
     submitSearch,
     searchCaseSensitivity,
     searchPatternType,
+    searchMode,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType })
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode })
 
 /**
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const autoFocus = props.isSearchAutoFocusRequired ?? true
-    // This uses the same logic as in Layout.tsx until we have a better solution
-    // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
-        selectQueryState,
-        shallow
-    )
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
+        useNavbarQueryState(selectQueryState, shallow)
+
+    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
+    const { recentSearches } = useRecentSearches()
+    const recentSearchesRef = useRef(recentSearches)
+    recentSearchesRef.current = recentSearches
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
-                history: props.history,
+                historyOrNavigate: navigate,
+                location,
                 source: 'nav',
-                activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, navigate, location, props.selectedSearchContextSpec]
     )
+    const submitSearchOnChangeRef = useRef(submitSearchOnChange)
+    submitSearchOnChangeRef.current = submitSearchOnChange
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearchOnChange()
+            submitSearchOnChangeRef.current()
         },
-        [submitSearchOnChange]
+        [submitSearchOnChangeRef]
     )
 
-    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
-    useEffect(() => {
-        if (isSearchPage && isFuzzyFinderVisible) {
-            setIsFuzzyFinderVisible(false)
-        }
-    }, [isSearchPage, isFuzzyFinderVisible])
+    const suggestionSource = useLazyCreateSuggestions(
+        experimentalQueryInput,
+        useMemo(
+            () => ({
+                platformContext: props.platformContext,
+                authenticatedUser: props.authenticatedUser,
+                fetchSearchContexts: props.fetchSearchContexts,
+                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
+            }),
+            [
+                props.platformContext,
+                props.authenticatedUser,
+                props.fetchSearchContexts,
+                props.getUserSearchContextNamespaces,
+                props.isSourcegraphDotCom,
+            ]
+        )
+    )
 
-    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
-    if (fuzzyFinder === undefined) {
-        // Happens even when `"default": true` is defined in
-        // settings.schema.json.
-        fuzzyFinder = true
+    const experimentalExtensions = useLazyHistoryExtension(
+        experimentalQueryInput,
+        recentSearchesRef,
+        submitSearchOnChangeRef
+    )
+
+    // TODO (#48103): Remove/simplify when new search input is released
+    if (experimentalQueryInput) {
+        return (
+            <Form
+                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
+                onSubmit={onSubmit}
+            >
+                <LazyCodeMirrorQueryInput
+                    patternType={searchPatternType}
+                    interpretComments={false}
+                    queryState={queryState}
+                    onChange={setQueryState}
+                    onSubmit={onSubmit}
+                    isLightTheme={props.isLightTheme}
+                    placeholder="Search for code or files..."
+                    suggestionSource={suggestionSource}
+                    extensions={experimentalExtensions}
+                >
+                    <Toggles
+                        patternType={searchPatternType}
+                        caseSensitive={searchCaseSensitivity}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
+                        searchMode={searchMode}
+                        setSearchMode={setSearchMode}
+                        settingsCascade={props.settingsCascade}
+                        navbarSearchQuery={queryState.query}
+                    />
+                </LazyCodeMirrorQueryInput>
+            </Form>
+        )
     }
 
     return (
@@ -109,43 +153,27 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         >
             <SearchBox
                 {...props}
-                editorComponent={editorComponent}
-                showSearchContext={showSearchContext}
-                showSearchContextManagement={showSearchContextManagement}
+                autoFocus={false}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
+                showSearchContext={props.searchContextsEnabled}
+                showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}
                 setPatternType={setSearchPatternType}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                autoFocus={autoFocus}
-                hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={setIsFuzzyFinderVisible}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                hideHelpButton={false}
+                showSearchHistory={true}
+                recentSearches={recentSearches}
             />
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => {
-                    setIsFuzzyFinderVisible(true)
-                    setRetainFuzzyFinderCache(true)
-                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                    input?.focus()
-                    input?.select()
-                }}
-            />
-            {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
-                <FuzzyFinder
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    isVisible={isFuzzyFinderVisible}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
-                />
-            )}
         </Form>
     )
 }

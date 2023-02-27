@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -31,7 +32,7 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	ssoSignOutHandler = f
 }
 
-func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveSignOutHandler(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 
@@ -47,6 +48,8 @@ func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Req
 			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
 			log15.Error("serveSignOutHandler", "err", err)
 		}
+
+		auth.SetSignoutCookie(w)
 
 		if ssoSignOutHandler != nil {
 			ssoSignOutHandler(w, r)
@@ -86,5 +89,5 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	database.SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }

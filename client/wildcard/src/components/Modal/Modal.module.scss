@@ -1,4 +1,8 @@
-@import '@reach/dialog/styles.css';
+@import '@reach/dialog/styles';
+
+:root {
+    --modal-body-padding: 1.5rem;
+}
 
 [data-reach-dialog-overlay] {
     background-color: var(--modal-bg);
@@ -12,7 +16,7 @@
     background-color: var(--color-bg-1);
     width: 32rem;
     max-width: 100vw;
-    padding: 1.5rem;
+    padding: var(--modal-body-padding);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
 }

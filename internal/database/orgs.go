@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,7 +26,7 @@ func (e *OrgNotFoundError) NotFound() bool {
 	return true
 }
 
-var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
+var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user, team, or another organization)")
 
 type OrgStore interface {
 	AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (string, error)
@@ -39,7 +37,6 @@ type OrgStore interface {
 	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
-	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	HardDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
@@ -51,11 +48,6 @@ type OrgStore interface {
 
 type orgStore struct {
 	*basestore.Store
-}
-
-// Orgs instantiates and returns a new OrgStore with prepared statements.
-func Orgs(db dbutil.DB) OrgStore {
-	return &orgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // OrgsWith instantiates and returns a new OrgStore using the other store handle.
@@ -76,12 +68,6 @@ func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
 // returned if the user is not authenticated or is not a member of any org.
 func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
 	return o.getByUserID(ctx, userID, false)
-}
-
-// GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
-// An empty slice is returned if the user is not authenticated or is not a member of any org.
-func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	return o.getByUserID(ctx, userID, true)
 }
 
 // getByUserID returns a list of all organizations for the user. An empty slice is
@@ -105,7 +91,7 @@ func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRe
 				LIMIT 1
 			)`
 	}
-	rows, err := o.Handle().DB().QueryContext(ctx, queryString, userID)
+	rows, err := o.Handle().QueryContext(ctx, queryString, userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}
@@ -186,7 +172,7 @@ func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 }
 
 func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.Org, error) {
-	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
+	rows, err := o.Handle().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +209,7 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 	}
 	newOrg.CreatedAt = time.Now()
 	newOrg.UpdatedAt = newOrg.CreatedAt
-	err = tx.Handle().DB().QueryRowContext(
+	err = tx.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
 		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
@@ -243,8 +229,8 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 		return nil, err
 	}
 
-	// Reserve organization name in shared users+orgs namespace.
-	if _, err := tx.Handle().DB().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
+	// Reserve organization name in shared users+orgs+teams namespace.
+	if _, err := tx.Handle().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
 		return nil, errOrgNameAlreadyExists
 	}
 
@@ -263,12 +249,12 @@ func (o *orgStore) Update(ctx context.Context, id int32, displayName *string) (*
 
 	if displayName != nil {
 		org.DisplayName = displayName
-		if _, err := o.Handle().DB().ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
+		if _, err := o.Handle().ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
 			return nil, err
 		}
 	}
 	org.UpdatedAt = time.Now()
-	if _, err := o.Handle().DB().ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
+	if _, err := o.Handle().ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
 		return nil, err
 	}
 
@@ -285,7 +271,7 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 		err = tx.Done(err)
 	}()
 
-	res, err := tx.Handle().DB().ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := tx.Handle().ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -298,14 +284,14 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 	}
 
 	// Release the organization name so it can be used by another user or org.
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
+	if _, err := tx.Handle().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
 		return err
 	}
 
-	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
+	if _, err := tx.Handle().ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
+	if _, err := tx.Handle().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
 		return err
 	}
 
@@ -349,7 +335,7 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 	for _, t := range tables {
 		query := sqlf.Sprintf(fmt.Sprintf("DELETE FROM %s WHERE %s=%d", t, tablesAndKeys[t], id))
 
-		_, err := tx.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		_, err := tx.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 		if err != nil {
 			return err
 		}
@@ -361,13 +347,13 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 func (o *orgStore) AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (id string, err error) {
 	query := sqlf.Sprintf("INSERT INTO orgs_open_beta_stats(user_id, data) VALUES(%d, %s) RETURNING id;", userID, data)
 
-	err = o.Handle().DB().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&id)
+	err = o.Handle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&id)
 	return id, err
 }
 
 func (o *orgStore) UpdateOrgsOpenBetaStats(ctx context.Context, id string, orgID int32) error {
 	query := sqlf.Sprintf("UPDATE orgs_open_beta_stats SET org_id=%d WHERE id=%s;", orgID, id)
 
-	_, err := o.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := o.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return err
 }

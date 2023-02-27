@@ -2,25 +2,26 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func QueueOptions(db database.DB, accessToken func() string, observationContext *observation.Context) handler.QueueOptions {
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
-		return transformRecord(record.(store.Index), accessToken())
+func QueueOptions(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueOptions[types.Index] {
+	recordTransformer := func(ctx context.Context, _ string, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
+		return transformRecord(ctx, db, record, resourceMetadata, accessToken())
 	}
 
-	return handler.QueueOptions{
+	store := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
+
+	return handler.QueueOptions[types.Index]{
 		Name:              "codeintel",
-		Store:             store.WorkerutilIndexStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
+		Store:             store,
 		RecordTransformer: recordTransformer,
 	}
 }

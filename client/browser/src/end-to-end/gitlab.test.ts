@@ -23,7 +23,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.setExtensionSourcegraphUrl()
             await driver.ensureHasExternalService({
@@ -48,7 +48,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     const url = new URL(
-        '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
+        '/sourcegraph/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
         GITLAB_BASE_URL
     )
     testSingleFilePage({
@@ -57,7 +57,8 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
         // Other than GitHub, the URL must not include the column in the hash.
         goToDefinitionURL: new URL('#L5', url.href).href,
         repoName: `${REPO_PATH_PREFIX}/sourcegraph/jsonrpc2`,
+        commitID: 'dbf20885e7ff39b0d5b64878148113e8433571f1',
         sourcegraphBaseUrl,
-        lineSelector: '.line',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
     })
 })

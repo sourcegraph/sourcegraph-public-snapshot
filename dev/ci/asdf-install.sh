@@ -34,10 +34,10 @@ else
   echo -e "ASDF 🔍 Locating cache: $cache_key"
   if aws s3api head-object --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" --key "$cache_key"; then
     echo -e "ASDF 🔥 Cache hit: $cache_key"
-    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
+    aws s3 cp --profile buildkite --no-progress --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
     pushd "$HOME" || exit
     rm -rf .asdf
-    tar xzf "$cache_file"
+    bsdtar xzf "$cache_file"
     popd || exit
   else
     echo -e "ASDF 🚨 Cache miss: $cache_key"
@@ -45,11 +45,13 @@ else
     asdf install
     echo "~~~ cache asdf installation"
     pushd "$HOME" || exit
-    tar cfz "$cache_file" .asdf
+    bsdtar cfz "$cache_file" .asdf
     popd || exit
-    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key"
+    aws s3 cp --profile buildkite --no-progress --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key"
   fi
 
   unset AWS_SHARED_CREDENTIALS_FILE
   unset AWS_CONFIG_FILE
 fi
+
+asdf reshim

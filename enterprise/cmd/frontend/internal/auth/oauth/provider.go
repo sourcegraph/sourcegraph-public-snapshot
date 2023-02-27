@@ -16,6 +16,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,10 +58,14 @@ func (p *Provider) Config() schema.AuthProviders {
 func (p *Provider) CachedInfo() *providers.Info {
 	displayName := p.ServiceID
 	switch {
+	case p.SourceConfig.AzureDevOps != nil && p.SourceConfig.AzureDevOps.DisplayName != "":
+		displayName = p.SourceConfig.AzureDevOps.DisplayName
 	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
 		displayName = p.SourceConfig.Github.DisplayName
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
 		displayName = p.SourceConfig.Gitlab.DisplayName
+	case p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplayName != "":
+		displayName = p.SourceConfig.Bitbucketcloud.DisplayName
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,
@@ -73,9 +82,24 @@ func (p *Provider) Refresh(ctx context.Context) error {
 	return nil
 }
 
+func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	switch account.ServiceType {
+	case extsvc.TypeGitHub:
+		return github.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeGitLab:
+		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeBitbucketCloud:
+		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeAzureDevOps:
+		return azuredevops.GetPublicExternalAccountData(ctx, &account.AccountData)
+	}
+
+	return nil, errors.Errorf("Sourcegraph currently only supports Azure DevOps, Bitbucket Cloud, GitHub, GitLab as OAuth providers")
+}
+
 type ProviderOp struct {
 	AuthPrefix   string
-	OAuth2Config func(extraScopes ...string) oauth2.Config
+	OAuth2Config func() oauth2.Config
 	SourceConfig schema.AuthProviders
 	StateConfig  gologin.CookieConfig
 	ServiceID    string
@@ -148,8 +172,7 @@ type LoginStateOp string
 
 const (
 	// NOTE: OAuth is almost always used for creating new accounts, therefore we don't need a special name for it.
-	LoginStateOpCreateAccount            LoginStateOp = ""
-	LoginStateOpCreateCodeHostConnection LoginStateOp = "createCodeHostConnection"
+	LoginStateOpCreateAccount LoginStateOp = ""
 )
 
 type LoginState struct {

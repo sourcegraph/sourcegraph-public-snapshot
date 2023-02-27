@@ -10,26 +10,30 @@ parallel_run() {
 
 export ARGS=$*
 
+# Keep the list of client workspaces in alphabetical order!
 DIRS=(
-  client/web
-  client/shared
   client/branded
   client/browser
   client/build-config
-  client/common
-  client/search
-  client/search-ui
-  client/http-client
-  client/codeintellify
-  client/wildcard
-  client/template-parser
-  client/extension-api
-  client/eslint-plugin-sourcegraph
-  client/extension-api-types
-  client/storybook
   client/client-api
+  client/codeintellify
+  client/common
+  client/extension-api
+  client/extension-api-types
+  client/http-client
+  client/jetbrains
+  client/observability-client
+  client/observability-server
+  client/shared
+  client/storybook
+  client/template-parser
+  client/testing
+  client/vscode
+  client/web
+  client/wildcard
   dev/release
 )
+# Keep the list of client workspaces in alphabetical order!
 
 run_command() {
   local MAYBE_TIME_PREFIX=""

@@ -1,9 +1,9 @@
 import React, { MouseEvent, useContext, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -16,14 +16,16 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    TooltipController,
     Icon,
     Link,
     ProductStatusBadge,
+    H2,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
+import { InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -62,14 +64,14 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChild
 
     return (
         <section {...otherProps}>
-            <h2 id="code-insights-templates">Templates</h2>
-            <p className="text-muted">
+            <H2 id="code-insights-templates">Templates</H2>
+            <Text className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                     use cases
                 </Link>
                 .
-            </p>
+            </Text>
 
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
                 <TabList wrapperClassName={styles.tabList}>
@@ -144,10 +146,6 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
-
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
@@ -180,7 +178,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    {licensed ? 'Use this template' : 'Explore template'}
+                    Use this template
                 </Button>
             )}
         </Card>
@@ -205,10 +203,6 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         setCurrentCopyTooltip(copyCompletedTooltip)
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
 
-        requestAnimationFrame(() => {
-            TooltipController.forceUpdate()
-        })
-
         event.preventDefault()
         telemetryService.log(templateCopyClickEvenName)
     }
@@ -216,16 +210,16 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
     return (
         <CodeInsightsQueryBlock className={styles.query}>
             <SyntaxHighlightedSearchQuery query={query} />
-            <Button
-                className={styles.copyButton}
-                onClick={onCopy}
-                data-tooltip={currentCopyTooltip}
-                data-placement="top"
-                aria-label="Copy Docker command to clipboard"
-                variant="icon"
-            >
-                <Icon as={ContentCopyIcon} />
-            </Button>
+            <Tooltip content={currentCopyTooltip} placement="top">
+                <Button
+                    className={styles.copyButton}
+                    onClick={onCopy}
+                    aria-label="Copy Docker command to clipboard"
+                    variant="icon"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                </Button>
+            </Tooltip>
         </CodeInsightsQueryBlock>
     )
 }

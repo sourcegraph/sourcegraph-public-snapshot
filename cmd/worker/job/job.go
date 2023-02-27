@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Job creates configuration struct and background routine instances to be run
@@ -32,5 +32,5 @@ type Job interface {
 	// passed to a periodic routine should be a fresh context unattached to this,
 	// as the argument to this function will be canceled after all Routine invocations
 	// have exited after application startup.
-	Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error)
+	Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error)
 }

@@ -12,16 +12,18 @@
     }
 
     &__preview {
-        display: flex;
+        display: block;
         width: fit-content;
         padding: 0.25rem;
         border-radius: 0.25rem;
         background-color: var(--color-bg-2);
+        white-space: normal;
+        word-break: break-all;
     }
 
     &__visibility {
         :global(.form-check) {
-            margin: 0.5rem 0;
+            margin: 0;
             :global(.form-check-label) {
                 margin-left: 0.21rem;
             }

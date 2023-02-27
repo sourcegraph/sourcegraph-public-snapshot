@@ -188,6 +188,7 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     hoverOverlayClassProps: {
         className: styles.hoverOverlay,
+        closeButtonClassName: styles.close,
         badgeClassName: styles.badge,
         actionItemClassName: styles.hoverOverlayActionItem,
         iconClassName: styles.icon,

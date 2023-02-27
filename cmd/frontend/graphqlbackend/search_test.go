@@ -9,21 +9,24 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/web"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,7 +40,7 @@ func TestSearch(t *testing.T) {
 		searchQuery                  string
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
+		repoRevsMock                 func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
@@ -48,7 +51,7 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -71,7 +74,7 @@ func TestSearch(t *testing.T) {
 
 					nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -110,24 +113,26 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := &schemaResolver{db: db}
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
+			gsClient := gitserver.NewMockClient()
+			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
+
+			sr := newSchemaResolver(db, gsClient)
+			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			git.Mocks.ResolveRevision = tc.repoRevsMock
-			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
-			if len(result.Errors) > 0 {
-				t.Fatalf("graphQL query returned errors: %+v", result.Errors)
+			response := gqlSchema.Exec(context.Background(), testSearchGQLQuery, "", vars)
+			if len(response.Errors) > 0 {
+				t.Fatalf("graphQL query returned errors: %+v", response.Errors)
 			}
-			var search struct {
+			var searchStruct struct {
 				Results Results
 			}
-			if err := json.Unmarshal(result.Data, &search); err != nil {
+			if err := json.Unmarshal(response.Data, &searchStruct); err != nil {
 				t.Fatalf("parsing JSON response: %v", err)
 			}
-			gotResults := search.Results
+			gotResults := searchStruct.Results
 			if !reflect.DeepEqual(gotResults, tc.wantResults) {
 				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
 			}
@@ -285,24 +290,39 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("exactly one repo", func(t *testing.T) {
-			if got := searchrepos.ExactlyOneRepo(c.repoFilters); got != c.want {
+			parsedFilters := make([]query.ParsedRepoFilter, len(c.repoFilters))
+			for i, repoFilter := range c.repoFilters {
+				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+				if err != nil {
+					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+				}
+				parsedFilters[i] = parsedFilter
+			}
+
+			if got := searchrepos.ExactlyOneRepo(parsedFilters); got != c.want {
 				t.Errorf("got %t, want %t", got, c.want)
 			}
 		})
 	}
 }
 
-func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
-	var lines []*result.LineMatch
+func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
+	var hms result.ChunkMatches
 	for _, n := range lineNumbers {
-		lines = append(lines, &result.LineMatch{LineNumber: n})
+		hms = append(hms, result.ChunkMatch{
+			Ranges: []result.Range{{
+				Start: result.Location{Line: n},
+				End:   result.Location{Line: n},
+			}},
+		})
 	}
+
 	return &result.FileMatch{
 		File: result.File{
 			Path: path,
 			Repo: repo,
 		},
-		LineMatches: lines,
+		ChunkMatches: hms,
 	}
 }
 
@@ -310,9 +330,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, zoektRepos := generateRepos(500_000)
 	zoektFileMatches := generateZoektMatches(1000)
 
-	z := zoektRPC(b, &searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := zoektRPC(b, &searchbackend.FakeStreamer{
+		Repos:   zoektRepos,
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	})
 
 	ctx := context.Background()
@@ -332,13 +352,14 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: db,
-			SearchInputs: &run.SearchInputs{
+			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil),
+			db:     db,
+			SearchInputs: &search.Inputs{
 				Plan:         plan,
-				Query:        plan.ToParseTree(),
+				Query:        plan.ToQ(),
+				Features:     &search.Features{},
 				UserSettings: &schema.Settings{},
 			},
-			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -387,12 +408,8 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 			RepositoryID: uint32(i),
 			Repository:   repoName, // Important: this needs to match a name in `repos`
 			Branches:     []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
+			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Checksum:     []byte{0, 1, 2},
 		})
 	}
 	return zoektFileMatches

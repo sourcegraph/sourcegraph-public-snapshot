@@ -33,7 +33,10 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
+            __typename: 'BatchSpec',
             id: 'old-spec-1',
+            state: BatchSpecState.COMPLETED,
+            applyURL: null,
         },
         batchSpecs: {
             nodes: [
@@ -65,7 +68,10 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'empty-draft-2',
+            __typename: 'BatchSpec',
+            id: 'empty-draft',
+            state: BatchSpecState.PENDING,
+            applyURL: null,
         },
         batchSpecs: {
             nodes: [
@@ -97,7 +103,10 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'old-spec-3',
+            __typename: 'BatchSpec',
+            id: 'empty-draft',
+            state: BatchSpecState.PENDING,
+            applyURL: null,
         },
         batchSpecs: {
             nodes: [
@@ -131,7 +140,10 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'test-4',
+            __typename: 'BatchSpec',
+            id: 'empty-draft',
+            state: BatchSpecState.PENDING,
+            applyURL: null,
         },
         batchSpecs: {
             nodes: [
@@ -173,9 +185,11 @@ export const BATCH_CHANGES_BY_NAMESPACE_RESULT: BatchChangesByNamespaceResult = 
 
 export const getLicenseAndUsageInfoResult = (
     isLicensed = true,
-    hasBatchChanges = true
+    hasBatchChanges = true,
+    maxUnlicensedChangesets = 10
 ): GetLicenseAndUsageInfoResult => ({
     campaigns: isLicensed,
     batchChanges: isLicensed,
     allBatchChanges: { totalCount: hasBatchChanges ? Object.values(nodes).length : 0 },
+    maxUnlicensedChangesets,
 })

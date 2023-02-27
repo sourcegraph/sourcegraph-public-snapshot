@@ -1,10 +1,10 @@
 import { Remote, proxy } from 'comlink'
-import { Subscription, from, Observable, Subject } from 'rxjs'
+import { Unsubscribable, Subscription, from, Observable, Subject, of } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 
+import { InputBoxOptions } from '../../codeintel/legacy-extensions/api'
 import { registerBuiltinClientCommands } from '../../commands/commands'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
@@ -13,7 +13,6 @@ import { proxySubscribable } from '../extension/api/common'
 import { NotificationType, PlainNotification } from '../extension/extensionHostApi'
 
 import { ProxySubscription } from './api/common'
-import { getEnabledExtensions } from './enabledExtensions'
 import { updateSettings } from './services/settings'
 
 /** A registered command in the command registry. */
@@ -46,7 +45,7 @@ function messageFromExtension(message: string): string {
  * Returned to Controller for access by client applications.
  */
 export interface ExposedToClient {
-    registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
+    registerCommand: (entryToRegister: CommandEntry) => Unsubscribable
     executeCommand: (parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean) => Promise<any>
 
     /**
@@ -65,8 +64,6 @@ export const initMainThreadAPI = (
         | 'requestGraphQL'
         | 'showMessage'
         | 'showInputBox'
-        | 'sideloadedExtensionURL'
-        | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
         | 'clientApplication'
@@ -89,7 +86,7 @@ export const initMainThreadAPI = (
 
     // Commands
     const commands = new Map<string, CommandEntry>()
-    const registerCommand = ({ command, run }: CommandEntry): sourcegraph.Unsubscribable => {
+    const registerCommand = ({ command, run }: CommandEntry): Unsubscribable => {
         if (commands.has(command)) {
             throw new Error(`command is already registered: ${JSON.stringify(command)}`)
         }
@@ -150,26 +147,23 @@ export const initMainThreadAPI = (
         showInputBox: options =>
             platformContext.showInputBox ? platformContext.showInputBox(options) : defaultShowInputBox(options),
 
-        getSideloadedExtensionURL: () => proxySubscribable(platformContext.sideloadedExtensionURL),
-        getScriptURLForExtension: () => {
-            const getScriptURL = platformContext.getScriptURLForExtension()
-            if (!getScriptURL) {
-                return undefined
-            }
-
-            return proxy(getScriptURL)
-        },
         getEnabledExtensions: () => {
-            const staticExtensions = platformContext.getStaticExtensions?.()
-            if (staticExtensions) {
-                // Ensure that the observable never completes while subscribed to
-                return proxySubscribable(from(staticExtensions).pipe(publishReplay(1), refCount()))
+            if (platformContext.getStaticExtensions) {
+                return proxySubscribable(
+                    platformContext
+                        .getStaticExtensions()
+                        .pipe(
+                            switchMap(staticExtensions =>
+                                staticExtensions ? of(staticExtensions).pipe(publishReplay(1), refCount()) : of([])
+                            )
+                        )
+                )
             }
 
-            return proxySubscribable(getEnabledExtensions(platformContext))
+            return proxySubscribable(of([]))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
-        logExtensionMessage: (...data) => console.log(...data),
+        logExtensionMessage: (...data) => logger.log(...data),
     }
 
     return { api, exposedToClient, subscription }
@@ -182,7 +176,7 @@ function defaultShowMessage(message: string): Promise<void> {
     })
 }
 
-function defaultShowInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined> {
+function defaultShowInputBox(options?: InputBoxOptions): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {
         const response = prompt(messageFromExtension(options?.prompt ?? ''), options?.value)
         resolve(response ?? undefined)

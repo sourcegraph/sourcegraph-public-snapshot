@@ -27,16 +27,28 @@ func main() {
 	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personal access token")
 	org := flag.String("org", "sourcegraph", "GitHub organization to list issues from")
 	dry := flag.Bool("dry", false, "If true, do not update GitHub tracking issues in-place, but print them to stdout")
-	verbose := flag.Bool("verbose", false, "If true, print the resulting tracking issue bodies to stdout")
 
 	flag.Parse()
 
-	if err := run(*token, *org, *dry, *verbose); err != nil {
-		log.Fatal(err)
+	if err := run(*token, *org, *dry); err != nil {
+		if isRateLimitErr(err) {
+			log.Printf("Github API limit reached - soft failing. Err: %s\n", err)
+		} else {
+			log.Fatal(err)
+		}
 	}
 }
 
-func run(token, org string, dry, verbose bool) (err error) {
+func isRateLimitErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	baseErr := errors.UnwrapAll(err)
+	return strings.Contains(baseErr.Error(), "API rate limit exceeded")
+}
+
+func run(token, org string, dry bool) (err error) {
 	if token == "" {
 		return errors.Errorf("no -token given")
 	}
@@ -80,27 +92,23 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	var updatedTrackingIssues []*Issue
 	for _, trackingIssue := range openTrackingIssues {
-		context := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
+		issueContext := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
 
-		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(context))
+		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(issueContext))
 		if !ok {
-			log.Printf("failed to patch work section in %q %s", trackingIssue.Title, trackingIssue.URL)
+			log.Printf("failed to patch work section in %q %s", trackingIssue.SafeTitle(), trackingIssue.URL)
 			continue
 		}
 		if !updated {
-			log.Printf("%q %s not modified.", trackingIssue.Title, trackingIssue.URL)
+			log.Printf("%q %s not modified.", trackingIssue.SafeTitle(), trackingIssue.URL)
 			continue
 		}
 
 		if !dry {
-			log.Printf("%q %s modified", trackingIssue.Title, trackingIssue.URL)
+			log.Printf("%q %s modified", trackingIssue.SafeTitle(), trackingIssue.URL)
 			updatedTrackingIssues = append(updatedTrackingIssues, trackingIssue)
 		} else {
-			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.Title, trackingIssue.URL)
-		}
-
-		if verbose {
-			log.Printf("%q %s body\n%s\n\n", trackingIssue.Title, trackingIssue.URL, trackingIssue.Body)
+			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.SafeTitle(), trackingIssue.URL)
 		}
 	}
 

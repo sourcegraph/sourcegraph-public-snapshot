@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-import * as H from 'history'
-import HistoryIcon from 'mdi-react/HistoryIcon'
+import { mdiHistory } from '@mdi/js'
+import { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -13,10 +13,10 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { TooltipController, Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
@@ -25,8 +25,8 @@ import { BlobPanelTabID } from '../panel/BlobPanel'
  */
 export class ToggleHistoryPanel extends React.PureComponent<
     {
-        location: H.Location
-        history: H.History
+        location: Location
+        navigate: NavigateFunction
     } & RepoHeaderContext
 > {
     private toggles = new Subject<boolean>()
@@ -35,7 +35,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
     /**
      * Reports the current visibility (derived from the location).
      */
-    public static isVisible(location: H.Location): boolean {
+    public static isVisible(location: Location): boolean {
         return parseQueryAndHash<BlobPanelTabID>(location.search, location.hash).viewState === 'history'
     }
 
@@ -43,7 +43,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
      * Returns the location object (that can be passed to H.History's push/replace methods) that sets visibility to
      * the given value.
      */
-    private static locationWithVisibility(location: H.Location, visible: boolean): H.LocationDescriptorObject {
+    private static locationWithVisibility(location: Location, visible: boolean): To {
         const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         if (visible) {
             parsedQuery.viewState = 'history' // defaults to last-viewed tab, or first tab
@@ -51,6 +51,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
             delete parsedQuery.viewState
         }
         const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
+
         return {
             search: formatSearchParameters(
                 addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
@@ -64,8 +65,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
-                this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                TooltipController.forceUpdate()
+                this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })
         )
 
@@ -86,24 +86,28 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
+        const message = `${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon as={HistoryIcon} />
-                    <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
-                </RepoHeaderActionButtonLink>
+                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
+                    <span>{message}</span>
+                </RepoHeaderActionMenuItem>
             )
         }
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                onSelect={this.onClick}
-                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
-            >
-                <Icon as={HistoryIcon} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content={message}>
+                <RepoHeaderActionButtonLink
+                    aria-label={message}
+                    aria-controls="references-panel"
+                    aria-expanded={visible}
+                    file={false}
+                    onSelect={this.onClick}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

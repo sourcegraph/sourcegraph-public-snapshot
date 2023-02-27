@@ -2,10 +2,6 @@
 
 If you've encountered a term and aren't sure what it is, start here. This is intended to describe what a thing is, where it comes from, and how it relates to our product or processes.
 
-### [Atom](https://atom.io/)
-
-GitHub's extensible/customizable text editor, which can be adapted to do things like [LSP](#lsp) support.
-
 ### [Buildkite](https://buildkite.com/)
 
 Buildkite is the [continuous integration](#ci) tool we use. Our instances are actually connected to [kubernetes](#kubernetes) stuff running on Google Cloud. Buildkite runs builds automatically whenever changes show up in our trees (but only for internal pull requests, not for pull requests from third parties), and produces feedback on whether the pull breaks anything. To access our Buildkite infrastructure, [make a Buildkite account](https://buildkite.com/signup), then ask for access to the [Sourcegraph organization](https://buildkite.com/sourcegraph). Don't create a new organization when the signup process prompts; just give your email address to the person administering it. (Nick Snyder.)
@@ -124,9 +120,9 @@ Microsoft's "Visual Studio Code", a fairly powerful and flexible programming edi
 
 A "bundler" which combines multiple source files (for instance, of javascript or CSS) into single unified files that can be more easily cached. Used in Sourcegraph to improve performance of some of the built-in web interface. Can also do translations, such as converting TypeScript to JavaScript.
 
-### [Zoekt](https://github.com/google/zoekt)
+### [Zoekt](https://github.com/sourcegraph/zoekt)
 
-Fast search program with indexing, used in Sourcegraph for some search functionality. We also maintain [a private fork](https://github.com/sourcegraph/zoekt).
+Fast search program with indexing, used in Sourcegraph for some search functionality.
 
 ### [Zoom](https://zoom.us/)
 

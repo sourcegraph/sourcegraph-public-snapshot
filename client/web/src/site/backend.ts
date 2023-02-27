@@ -1,7 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, mergeMap, take, tap } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import { authRequired } from '../auth'
@@ -35,9 +35,7 @@ export function refreshSiteFlags(): Observable<never> {
                     needsRepositoryConfiguration
                     freeUsersExceeded
                     alerts {
-                        type
-                        message
-                        isDismissibleWithKey
+                        ...SiteFlagAlertFields
                     }
                     sendsEmailVerificationEmails
                     productSubscription {
@@ -46,6 +44,12 @@ export function refreshSiteFlags(): Observable<never> {
                         }
                         noLicenseWarningUserCount
                     }
+                }
+
+                fragment SiteFlagAlertFields on Alert {
+                    type
+                    message
+                    isDismissibleWithKey
                 }
             `)
         ),
@@ -63,5 +67,5 @@ refreshSiteFlags()
     .toPromise()
     .then(
         () => undefined,
-        error => console.error(error)
+        error => logger.error(error)
     )

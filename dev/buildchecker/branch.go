@@ -58,7 +58,8 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 	for _, u := range failureAuthors {
 		membership, _, err := b.ghc.Organizations.GetOrgMembership(ctx, *u.Login, b.owner)
 		if err != nil {
-			return nil, errors.Newf("getOrgMembership: %w", err)
+			fmt.Printf("getOrgMembership error: %s\n", err)
+			continue // we don't want this user
 		}
 		if membership == nil || *membership.State != "active" {
 			continue // we don't want this user

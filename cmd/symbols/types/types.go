@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 type SqliteConfig struct {
-	SanityCheck             bool
 	CacheDir                string
 	CacheSizeMB             int
 	NumCtagsProcesses       int
@@ -25,16 +24,33 @@ type SqliteConfig struct {
 	MaxConcurrentlyIndexing int
 }
 
-func LoadSqliteConfig(baseConfig env.BaseConfig) SqliteConfig {
+func aliasEnvVar(oldName, newName string) {
+	if os.Getenv(newName) != "" {
+		return // prefer using the new name
+	}
+	oldValue := os.Getenv(oldName)
+	if oldValue == "" {
+		return // old name was not set
+	}
+	// New name not in use, but old name is, so update the env.
+	_ = os.Setenv(newName, oldValue)
+}
+
+func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
+	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
+	// in searcher when running as a single binary. The old name is treated as an alias to prevent
+	// customer environments from breaking if they still use it, because we have no way of migrating
+	// environment variables today.
+	aliasEnvVar("CACHE_DIR", "SYMBOLS_CACHE_DIR")
+
 	return SqliteConfig{
-		Ctags:                   LoadCtagsConfig(baseConfig),
-		RepositoryFetcher:       LoadRepositoryFetcherConfig(baseConfig),
-		SanityCheck:             baseConfig.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"),
-		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
+		Ctags:                   ctags,
+		RepositoryFetcher:       repositoryFetcher,
+		CacheDir:                baseConfig.Get("SYMBOLS_CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
 		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
-		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository"),
+		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h0m0s", "maximum time to spend processing a repository"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
 	}
 }
@@ -75,47 +91,21 @@ type RepositoryFetcherConfig struct {
 	// We want to remain well under that limit, so defaulting to 100,000 seems safe (see the
 	// MAX_TOTAL_PATHS_LENGTH environment variable below).
 	MaxTotalPathsLength int
+
+	MaxFileSizeKb int
 }
 
 func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherConfig {
+	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
+	// in searcher when running as a single binary. The old name is treated as an alias to prevent
+	// customer environments from breaking if they still use it, because we have no way of migrating
+	// environment variables today.
+	aliasEnvVar("MAX_TOTAL_PATHS_LENGTH", "SYMBOLS_MAX_TOTAL_PATHS_LENGTH")
+
 	return RepositoryFetcherConfig{
-		MaxTotalPathsLength: baseConfig.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		MaxTotalPathsLength: baseConfig.GetInt("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
 	}
 }
 
-type SearchFunc func(ctx context.Context, args SearchArgs) (results result.Symbols, err error)
-
-// SearchArgs are the arguments to perform a search on the symbols service.
-type SearchArgs struct {
-	// Repo is the name of the repository to search in.
-	Repo api.RepoName `json:"repo"`
-
-	// CommitID is the commit to search in.
-	CommitID api.CommitID `json:"commitID"`
-
-	// Query is the search query.
-	Query string
-
-	// IsRegExp if true will treat the Pattern as a regular expression.
-	IsRegExp bool
-
-	// IsCaseSensitive if false will ignore the case of query and file pattern
-	// when finding matches.
-	IsCaseSensitive bool
-
-	// IncludePatterns is a list of regexes that symbol's file paths
-	// need to match to get included in the result
-	//
-	// The patterns are ANDed together; a file's path must match all patterns
-	// for it to be kept. That is also why it is a list (unlike the singular
-	// ExcludePattern); it is not possible in general to construct a single
-	// glob or Go regexp that represents multiple such patterns ANDed together.
-	IncludePatterns []string
-
-	// ExcludePattern is an optional regex that symbol's file paths
-	// need to match to get included in the result
-	ExcludePattern string
-
-	// First indicates that only the first n symbols should be returned.
-	First int
-}
+type SearchFunc func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error)

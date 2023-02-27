@@ -20,7 +20,6 @@
 
     b {
         display: contents;
-        font-weight: normal;
 
         // A bootstrap CSS class .card brings custom color styles that we should change
         // for b elements within a card accroding to our designs for this card.
@@ -61,19 +60,4 @@
     :global(.theme-dark) & {
         background-color: transparent;
     }
-}
-
-.images {
-    display: flex;
-    height: 10rem;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    width: 6rem;
-    margin: auto;
-}
-
-.image {
-    object-fit: contain;
-    width: 1.75rem;
 }

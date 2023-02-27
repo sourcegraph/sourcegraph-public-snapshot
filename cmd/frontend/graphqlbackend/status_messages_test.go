@@ -4,10 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -16,15 +20,15 @@ func TestStatusMessages(t *testing.T) {
 			statusMessages {
 				__typename
 
+				... on GitUpdatesDisabled {
+					message
+				}
+
 				... on CloningProgress {
 					message
 				}
 
 				... on SyncError {
-					message
-				}
-
-				... on IndexingError {
 					message
 				}
 
@@ -45,8 +49,8 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db).StatusMessages(context.Background())
-		if want := backend.ErrNotAuthenticated; err != want {
+		result, err := newSchemaResolver(db, gitserver.NewClient()).StatusMessages(context.Background())
+		if want := auth.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
 		if result != nil {
@@ -59,10 +63,12 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
-		defer func() { repos.MockStatusMessages = nil }()
+		t.Cleanup(func() {
+			repos.MockStatusMessages = nil
+		})
 
 		RunTests(t, []*Test{
 			{
@@ -82,13 +88,22 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		externalServices := database.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
+		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{
+			ID:          1,
+			DisplayName: "GitHub.com testing",
+			Config:      extsvc.NewEmptyConfig(),
+		}, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
+				{
+					GitUpdatesDisabled: &repos.GitUpdatesDisabled{
+						Message: "Repositories will not be cloned or updated.",
+					},
+				},
 				{
 					Cloning: &repos.CloningProgress{
 						Message: "Currently cloning 5 repositories in parallel...",
@@ -105,23 +120,31 @@ func TestStatusMessages(t *testing.T) {
 						Message: "Could not save to database",
 					},
 				},
-				{
-					IndexingError: &repos.IndexingError{
-						Message: "Could not complete indexing.",
-					},
-				},
 			}
 			return res, nil
 		}
-		defer func() { repos.MockStatusMessages = nil }()
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query:  graphqlQuery,
-				ExpectedResult: `
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				DisableAutoGitUpdates: true,
+			},
+		})
+
+		t.Cleanup(func() {
+			repos.MockStatusMessages = nil
+			conf.Mock(nil)
+		})
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  graphqlQuery,
+			ExpectedResult: `
 					{
 						"statusMessages": [
+							{
+								"__typename": "GitUpdatesDisabled",
+        						"message": "Repositories will not be cloned or updated."
+							},
 							{
 								"__typename": "CloningProgress",
 								"message": "Currently cloning 5 repositories in parallel..."
@@ -137,15 +160,10 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
-							},
-							{
-								"__typename": "IndexingError",
-								"message": "Could not complete indexing."
 							}
 						]
 					}
 				`,
-			},
 		})
 	})
 }

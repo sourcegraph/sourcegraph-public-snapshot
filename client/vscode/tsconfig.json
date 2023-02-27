@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2020",
@@ -16,12 +16,34 @@
     "jsx": "react-jsx",
   },
   "references": [
-    { "path": "../shared" },
-    { "path": "../common" },
-    { "path": "../branded" },
-    { "path": "../search" },
-    { "path": "../search-ui" },
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
-  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }

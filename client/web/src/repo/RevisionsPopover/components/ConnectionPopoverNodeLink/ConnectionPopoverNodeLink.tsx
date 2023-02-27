@@ -17,8 +17,9 @@ export const ConnectionPopoverNodeLink: React.FunctionComponent<
 > = ({ className, children, active, ...rest }) => (
     <Link
         className={classNames(
+            styles.connectionPopoverNode,
             styles.connectionPopoverNodeLink,
-            active && styles.connectionPopoverNodeLinkActive,
+            active && styles.connectionPopoverNodeActive,
             className
         )}
         {...rest}
@@ -35,11 +36,8 @@ export const ConnectionPopoverGitReferenceNode: React.FunctionComponent<
     React.PropsWithChildren<ConnectionPopoverGitReferenceNodeProps>
 > = ({ className, active, ...rest }) => (
     <GitReferenceNode
-        className={classNames(
-            styles.connectionPopoverNodeLink,
-            active && styles.connectionPopoverNodeLinkActive,
-            className
-        )}
+        className={classNames(styles.connectionPopoverNode, active && styles.connectionPopoverNodeActive, className)}
+        nodeLinkClassName={styles.connectionPopoverNodeLink}
         {...rest}
     />
 )

@@ -1,9 +1,9 @@
 import { SymbolKind } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems, repositoryCompletionItemKind } from './completion'
+import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
+import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
 
 expect.addSnapshotSerializer({
@@ -15,8 +15,10 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
 
-const createFetcher = (matches: SearchMatch[]): FetchSuggestions => (_token, type) =>
-    Promise.resolve(matches.filter(isSearchMatchOfType(type)))
+const createFetcher =
+    (matches: SearchMatch[]): FetchSuggestions =>
+    (_token, type) =>
+        Promise.resolve(matches.filter(isSearchMatchOfType(type)))
 
 // Using async as a short way to create functions that return promises
 /* eslint-disable @typescript-eslint/require-await */
@@ -42,6 +44,7 @@ describe('getCompletionItems()', () => {
                                     name: 'RepoRoutes',
                                     url: '',
                                     containerName: '',
+                                    line: 1,
                                 },
                             ],
                         },
@@ -72,7 +75,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -105,6 +107,7 @@ describe('getCompletionItems()', () => {
                                     name: 'RepoRoutes',
                                     containerName: '',
                                     url: '',
+                                    line: 1,
                                 },
                             ],
                         },
@@ -135,7 +138,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -176,7 +178,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -216,7 +217,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -256,7 +256,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -322,27 +321,22 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
-        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
-    })
-
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    { column: 21 },
-                    createFetcher([
-                        {
-                            type: 'repo',
-                            repository: 'github.com/sourcegraph/jsonrpc2.go',
-                        },
-                    ]),
-                    {}
-                )
-            )?.suggestions
-                .filter(({ kind }) => kind === repositoryCompletionItemKind)
-                .map(({ insertText }) => insertText)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
+        ).toStrictEqual([
+            {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.content(${1:TODO}) ',
+                label: 'has.content(...)',
+            },
+            {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.owner(${1}) ',
+                label: 'has.owner(...)',
+            },
+            {
+                insertText: '^connect\\.go$ ',
+                label: 'connect.go',
+            },
+        ])
     })
 
     test('sets current filter value as filterText', async () => {
@@ -361,7 +355,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['^jsonrpc'])
+        ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -380,7 +374,13 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^some/path/main\\.go$ '])
+        ).toStrictEqual([
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.content(${1:TODO}) ',
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.owner(${1}) ',
+            '^some/path/main\\.go$ ',
+        ])
     })
 
     test('escapes spaces in repo value', async () => {
@@ -395,17 +395,20 @@ describe('getCompletionItems()', () => {
                             repository: 'repo/with a space',
                         },
                     ]),
+
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
             [
-              "contains.file(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
-              "deps(\${1}) ",
-              "dependencies(\${1}) ",
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
+              "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -423,12 +426,14 @@ describe('getCompletionItems()', () => {
               "^github\\\\.com/\${1:ORGANIZATION}/.* ",
               "^github\\\\.com/\${1:ORGANIZATION}/\${2:REPO-NAME}$ ",
               "\${1:STRING} ",
-              "contains.file(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
-              "deps(\${1}) ",
-              "dependencies(\${1}) "
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
+              "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) "
             ]
         `)
     })

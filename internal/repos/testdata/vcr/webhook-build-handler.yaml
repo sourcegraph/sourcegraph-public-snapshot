@@ -1,0 +1,65 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
+    method: GET
+  response:
+    body: '[{"type":"Repository","id":113,"name":"web","active":true,"events":["push"],"config":{"url":"https://example.com/github-webhooks","content_type":"json","secret":"********","insecure_ssl":"0"},"updated_at":"2022-08-04T10:58:33Z","created_at":"2022-08-04T10:58:33Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/113","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/113/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/113/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/113/deliveries","last_response":{"code":404,"status":"missing","message":"Invalid
+      HTTP Response: 404"}},{"type":"Repository","id":114,"name":"web","active":true,"events":["push"],"config":{"url":"https://example.com/github-webhooks","content_type":"json","secret":"********","insecure_ssl":"0"},"updated_at":"2022-08-04T11:05:51Z","created_at":"2022-08-04T11:05:51Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/114","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/114/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/114/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/114/deliveries","last_response":{"code":404,"status":"missing","message":"Invalid
+      HTTP Response: 404"}},{"type":"Repository","id":115,"name":"web","active":true,"events":["push"],"config":{"url":"https://example.com/github-webhooks","content_type":"json","secret":"********","insecure_ssl":"0"},"updated_at":"2022-08-04T11:12:49Z","created_at":"2022-08-04T11:12:49Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/115","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/115/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/115/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/115/deliveries","last_response":{"code":404,"status":"missing","message":"Invalid
+      HTTP Response: 404"}}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 04 Aug 2022 11:13:04 GMT
+      Etag:
+      - W/"507295438187422b859340b4c8a022eae2c1eeadc81eb16ee18cd6d772fe03aa"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.0
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - 836967a3-0e52-4db4-8b6d-644e3db15ec5
+      X-Runtime-Rack:
+      - "0.054841"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

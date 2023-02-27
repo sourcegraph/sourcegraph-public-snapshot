@@ -21,7 +21,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteConfig.authProviders.unshift(builtinAuthProvider)
     }
 
-    return {
+    const jsContext: SourcegraphContext = {
+        currentUser: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -31,7 +32,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         executorsEnabled: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
-        codeInsightsGqlApiEnabled: true,
+        codeInsightsEnabled: true,
         externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
@@ -51,13 +52,24 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
-        githubAppCloudSlug: 'TestApp',
-        githubAppCloudClientID: 'TestClientID',
+        sourcegraphAppMode: false,
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
         authProviders: [builtinAuthProvider],
+        authMinPasswordLength: 12,
+        authPasswordPolicy: {
+            enabled: false,
+            numberOfSpecialCharacters: 2,
+            requireAtLeastOneNumber: true,
+            requireUpperandLowerCase: true,
+        },
+        openTelemetry: {
+            endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
+        },
         // Site-config overrides default JS context
         ...siteConfig,
     }
+
+    return jsContext
 }

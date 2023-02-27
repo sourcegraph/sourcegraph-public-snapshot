@@ -1,19 +1,22 @@
 import { render, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../../auth'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
 
 const additionalProps = {
-    authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
+    authenticatedUser: {
+        id: 'foobar',
+        username: 'alice',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
+    } as AuthenticatedUser,
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
             nodes: mockCodeMonitorNodes,
@@ -26,20 +29,21 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
-    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
-const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
-    const result: ListCodeMonitors = {
-        nodes: mockCodeMonitorNodes.slice(0, count),
-        pageInfo: {
-            endCursor: `foo${count}`,
-            hasNextPage: count > 10,
-        },
-        totalCount: count,
+const generateMockFetchMonitors =
+    (count: number) =>
+    ({ id, first, after }: ListUserCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
     }
-    return of(result)
-}
 
 describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {

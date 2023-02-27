@@ -13,15 +13,6 @@ import (
 
 var GracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
-// StartableRoutine represents a component of a binary that consists of a long
-// running process.
-type StartableRoutine interface {
-	// Start begins the long-running process. This routine may also implement
-	// a Stop method that should signal this process the application is going
-	// to shut down.
-	Start()
-}
-
 // BackgroundRoutine represents a component of a binary that consists of a long
 // running process with a graceful shutdown mechanism.
 //
@@ -30,7 +21,10 @@ type StartableRoutine interface {
 // for more information and a step-by-step guide on how to implement a
 // BackgroundRoutine.
 type BackgroundRoutine interface {
-	StartableRoutine
+	// Start begins the long-running process. This routine may also implement
+	// a Stop method that should signal this process the application is going
+	// to shut down.
+	Start()
 
 	// Stop signals the Start method to stop accepting new work and complete its
 	// current work. This method can but is not required to block until Start has
@@ -74,7 +68,7 @@ func startAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	}
 }
 
-// stopAll calls each routine's Stop method in its own goroutine and and registers
+// stopAll calls each routine's Stop method in its own goroutine and registers
 // each running goroutine with the given waitgroup.
 func stopAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	for _, r := range routines {

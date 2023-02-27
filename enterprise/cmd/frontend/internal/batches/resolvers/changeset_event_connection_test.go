@@ -8,10 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,16 +28,17 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -46,7 +49,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,11 +61,11 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
@@ -92,18 +95,18 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := bstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
 
-	addChangeset(t, ctx, cstore, changeset, batchChange.ID)
+	addChangeset(t, ctx, bstore, changeset, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	changesetAPIID := string(marshalChangesetID(changeset.ID))
+	changesetAPIID := string(bgql.MarshalChangesetID(changeset.ID))
 	nodes := []apitest.ChangesetEvent{
 		{
 			ID:        string(marshalChangesetEventID(events[0].ID)),

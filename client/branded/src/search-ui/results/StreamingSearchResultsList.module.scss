@@ -1,0 +1,50 @@
+.content-centered {
+    max-width: 65rem;
+    margin: auto;
+}
+
+.list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.focus-input-message {
+    position: fixed;
+    bottom: 2rem;
+    left: 1rem;
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+
+    :global(.theme-light) & {
+        background-color: var(--black);
+        color: var(--white);
+    }
+
+    :global(.theme-dark) & {
+        background-color: var(--gray-03);
+        color: var(--black);
+    }
+
+    &-show {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    &-slash {
+        padding: 0.125rem 0.25rem;
+        margin: 0 0.125rem;
+        border-radius: var(--border-radius);
+        font-weight: bold;
+
+        :global(.theme-light) & {
+            border: 1px solid var(--white);
+        }
+
+        :global(.theme-dark) & {
+            border: 1px solid var(--black);
+        }
+    }
+}

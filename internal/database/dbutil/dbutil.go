@@ -13,31 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// A DB captures the essential method of a sql.DB: QueryContext.
+// A DB captures the methods shared between a *sql.DB and a *sql.Tx
 type DB interface {
 	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
-// A Tx captures the essential methods of a sql.Tx.
-type Tx interface {
-	Rollback() error
-	Commit() error
-}
-
-// A TxBeginner captures BeginTx method of a sql.DB
-type TxBeginner interface {
-	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
-}
-
-// An Unwrapper unwraps itself into its nested DB.
-// This is necessary because the concrete type of a dbutil.DB
-// is used to assert interfaces like `Tx` and `TxBeginner`, so
-// wrapping a dbutil.DB breaks those interface assertions.
-type Unwrapper interface {
-	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
-	Unwrap() DB
 }
 
 func IsPostgresError(err error, codename string) bool {
@@ -46,7 +26,7 @@ func IsPostgresError(err error, codename string) bool {
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, Time is set to the zero value.
 type NullTime struct{ *time.Time }
 
@@ -64,8 +44,16 @@ func (nt NullTime) Value() (driver.Value, error) {
 	return *nt.Time, nil
 }
 
+// NullTimeColumn represents a timestamp that should be inserted/updated as NULL when t.IsZero() is true.
+func NullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
 // NullString represents a string that may be null. NullString implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, String is set to the zero value.
 type NullString struct{ S *string }
 
@@ -96,10 +84,26 @@ func (nt NullString) Value() (driver.Value, error) {
 	return *nt.S, nil
 }
 
+// NullStringColumn represents a string that should be inserted/updated as NULL when blank.
+func NullStringColumn(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // NullInt32 represents an int32 that may be null. NullInt32 implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int32 is set to the zero value.
 type NullInt32 struct{ N *int32 }
+
+// NewNullInt32 returns a NullInt64 treating zero value as null.
+func NewNullInt32(i int32) NullInt32 {
+	if i == 0 {
+		return NullInt32{}
+	}
+	return NullInt32{N: &i}
+}
 
 // Scan implements the Scanner interface.
 func (n *NullInt32) Scan(value any) error {
@@ -124,8 +128,16 @@ func (n NullInt32) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullInt32Column represents an int32 that should be inserted/updated as NULL when the value is 0.
+func NullInt32Column(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
 // NullInt64 represents an int64 that may be null. NullInt64 implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int64 is set to the zero value.
 type NullInt64 struct{ N *int64 }
 
@@ -160,8 +172,16 @@ func (n NullInt64) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullInt64Column represents an int64 that should be inserted/updated as NULL when the value is 0.
+func NullInt64Column(n int64) *int64 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
 // NullInt represents an int that may be null. NullInt implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int is set to the zero value.
 type NullInt struct{ N *int }
 
@@ -197,7 +217,7 @@ func (n NullInt) Value() (driver.Value, error) {
 }
 
 // NullBool represents a bool that may be null. NullBool implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, B is set to false.
 type NullBool struct{ B *bool }
 
@@ -229,7 +249,7 @@ func (n NullBool) Value() (driver.Value, error) {
 }
 
 // JSONInt64Set represents an int64 set as a JSONB object where the keys are
-// the ids and the values are null. It implements the sql.Scanner interface so
+// the ids and the values are null. It implements the sql.Scanner interface, so
 // it can be used as a scan destination, similar to
 // sql.NullString.
 type JSONInt64Set struct{ Set *[]int64 }
@@ -270,7 +290,7 @@ func (n JSONInt64Set) Value() (driver.Value, error) {
 }
 
 // NullJSONRawMessage represents a json.RawMessage that may be null. NullJSONRawMessage implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.Scanner interface, so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, Raw is left as nil.
 type NullJSONRawMessage struct {
 	Raw json.RawMessage

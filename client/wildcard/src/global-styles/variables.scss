@@ -1,0 +1,48 @@
+// Grid breakpoints
+//
+// Define the minimum dimensions at which your layout will change,
+// adapting to different screen sizes, for use in media queries.
+$grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px,
+);
+
+:root {
+    --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-weight-base: 400;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --border-width: 1px;
+    --zindex-sticky: 1020;
+    --spacer: 1rem;
+    --font-size-base: 0.875rem;
+    --line-height-base: calc(20 / 14);
+    // Input
+    --input-font-size: var(--font-size-base);
+    --input-font-size-sm: calc(11em / 14);
+    --input-line-height: var(--line-height-base);
+    --input-line-height-sm: 1.5;
+    --input-line-height-lg: var(--line-height-base);
+    --input-padding-y: 0.375rem;
+    --input-padding-x: 0.75rem;
+    --input-padding-y-sm: 0.25rem;
+    --input-padding-x-sm: 0.5rem;
+    --input-padding-y-lg: 0.5rem;
+    --input-padding-x-lg: 1rem;
+    --input-height: calc((var(--input-line-height) * 1em) + (var(--input-padding-y) * 2) + var(--input-height-border));
+    --input-height-sm: calc(
+        (var(--input-line-height-sm) * 1em) + (var(--input-padding-y-sm) * 2) + var(--input-height-border)
+    );
+    --input-border-width: 0.0625rem;
+    --input-font-weight: 400;
+    --input-height-border: calc(var(--input-border-width) * 2);
+    --input-height-inner: calc((var(--input-line-height) * 1em) + (var(--input-padding-y) * 2));
+    --input-height-inner-quarter: calc((var(--input-line-height) * 0.25em) + (var(--input-padding-y) / 2));
+    --input-height-inner-half: calc((var(--input-line-height) * 0.5em) + var(--input-padding-y));
+    // Navbar
+    --navbar-height: 2.5rem;
+}

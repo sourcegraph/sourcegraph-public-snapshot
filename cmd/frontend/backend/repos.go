@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,43 +23,49 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
-// server.
-type ErrRepoSeeOther struct {
-	// RedirectURL is the base URL for the repository at an external location.
-	RedirectURL string
+type ReposService interface {
+	Get(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
+	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
+	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
+	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
+	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 }
 
-func (e ErrRepoSeeOther) Error() string {
-	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
-}
-
-// NewRepos uses the provided `database.RepoStore` to initialize a new repos
-// store for the backend.
+// NewRepos uses the provided `database.DB` to initialize a new RepoService.
 //
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) ReposService {
 	repoStore := db.Repos()
+	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		db:    db,
-		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(repoStore),
+		logger:          logger,
+		db:              db,
+		gitserverClient: client,
+		store:           repoStore,
+		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	db    database.DB
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	store           database.RepoStore
+	cache           *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -90,7 +98,13 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	newName, err := s.Add(ctx, name)
+	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
+		// clone it.
+		return nil, err
+	}
+
+	newName, err := s.add(ctx, name)
 	if err == nil {
 		return s.store.GetByName(ctx, newName)
 	}
@@ -117,10 +131,10 @@ var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
 }, []string{"status"})
 
-// Add adds the repository with the given name to the database by calling
+// add adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
+func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
@@ -138,7 +152,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	}()
 
 	if !codehost.IsPackageHost() {
-		if err := gitserver.NewClient(s.db).IsRepoCloneable(ctx, name); err != nil {
+		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
 			if ctx.Err() != nil {
 				status = "timeout"
 			} else {
@@ -167,8 +181,9 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()
@@ -176,14 +191,18 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// indexable repos which could include private user added repos.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists ALL
+// indexable repos. In addition, it only lists cloned repositories.
+//
+// The intended call site for this is the logic which assigns repositories to
+// zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()
@@ -192,8 +211,9 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+		OnlyCloned: true,
+	})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -208,12 +228,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, s.db, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -227,4 +247,84 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 	return &inv, nil
+}
+
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
+		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+	}
+
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
+	defer done()
+
+	err = s.gitserverClient.Remove(ctx, repo.Name)
+	return err
+}
+
+func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "RequestRepositoryClone", repoID, &err)
+	defer done()
+
+	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	if err != nil {
+		return err
+	}
+	if resp.Error != "" {
+		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+	}
+
+	return nil
+}
+
+// ResolveRev will return the absolute commit for a commit-ish spec in a repo.
+// If no rev is specified, HEAD is used.
+// Error cases:
+// * Repo does not exist: gitdomain.RepoNotExistError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
+// * The user does not have permission: errcode.IsNotFound
+// * Other unexpected errors.
+func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+	if Mocks.Repos.ResolveRev != nil {
+		return Mocks.Repos.ResolveRev(ctx, repo, rev)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	defer done()
+
+	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+}
+
+func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	defer done()
+
+	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
+
+	if !gitserver.IsAbsoluteRevision(string(commitID)) {
+		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
+	}
+
+	return s.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, gitserver.ResolveRevisionOptions{})
+}
+
+// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// server.
+type ErrRepoSeeOther struct {
+	// RedirectURL is the base URL for the repository at an external location.
+	RedirectURL string
+}
+
+func (e ErrRepoSeeOther) Error() string {
+	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }

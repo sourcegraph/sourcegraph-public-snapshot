@@ -1,0 +1,7 @@
+.button {
+    cursor: pointer;
+
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+}

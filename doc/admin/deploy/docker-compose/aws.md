@@ -1,66 +1,102 @@
-# Install Sourcegraph with Docker Compose on AWS
+# Install Sourcegraph on Amazon Web Services (AWS)
 
-This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on AWS.
+> ⚠️ We recommend new users use our [AWS AMI](../machine-images/aws-oneclick.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
 
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
-
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.md) for more details.
 ---
 
-## Deploy to EC2
+This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
-* Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
-* Select the **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
-* Select an appropriate instance size (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment), then **Next: Configure Instance Details.**
-* Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
-* Place the following script in the **User Data** text box at the bottom of the **Configure Instance Details** page
+<span class="badge badge-note">RECOMMENDED</span> Deploy a Sourcegraph instance with an [AWS AMI](../machine-images/aws-ami.md) or [AWS One-Click](../machine-images/aws-oneclick.md).
 
-![Screen Shot 2021-12-28 at 1 05 07 PM](https://user-images.githubusercontent.com/13024338/147607360-5b76e122-479d-44aa-9e71-0b282cbc243a.png)
+---
 
-> WARNING: If working from a fork of the reference repository, update the following variables in the script below:
-> 
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration guide](index.md#make-yaml-customizations)
+## Configure
+
+Click **Launch Instance** from the [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then fill in the following values for each section:
+
+#### Name and tags
+
+1. Name your instance
+
+#### Application and OS Images
+
+1. Select **Amazon Linux** in the *Quick Start* tab
+
+2. Select **Amazon Linux 2 AMI (HVM), SSD Volume Type** under *Amazon Machine Image (AMI)*
+
+#### Instance type
+
+1. Select an appropriate instance type using our [resource estimator](../resource_estimator.md) as reference
+
+#### Key pair (login)
+
+1. Create a new key pair for your instance, or choose an existing key pair from the drop down list
+
+#### Network settings
+
+1. Click `Edit` in the header to enable **Auto-assign Public IP** 
+
+2. Under **Firewall (security group)** , create or select existing security group with the following settings:
+
+  * Allow SSH traffic from Anywhere
+  * Allow HTTPs traffic from the internet
+  * Allow HTTP traffic from the internet
+
+> NOTE: If possible, replace the IP address ranges specified with the IPs from which you actually want to allow access.
+
+#### Configure storage
+
+1. Click **Add New Volume** to add an *additional* EBS volume for storing data
+
+2. Click **Advanced** in the header to update the following settings for the new Custom Volume:
+  * `Storage Type`: EBS
+  * `Device name`: `/dev/sdb`
+  * `Volume Type`: `gp3` (General Purpose SSD)
+  * `Size (GiB)`: `250GB minimum`
+      * Sourcegraph needs at least as much space as all your repositories combined take up
+      * Allocating as much disk space as you can upfront minimize the need for [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) in the future
+  * `Delete on Termination`: `No`
+
+#### Advanced details > User Data
+
+Copy and paste the *startup script* below into the **User Data** textbox:
 
 ```bash
 #!/usr/bin/env bash
-
 set -euxo pipefail
-
-EBS_VOLUME_DEVICE_NAME='/dev/sdb'
-DOCKER_DATA_ROOT='/mnt/docker-data'
-
-DOCKER_COMPOSE_VERSION='1.29.2'
-DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
-
-# 🚨 Update these variables with the correct values from your fork!
+###############################################################################
+# ACTION REQUIRED: REPLACE THE URL AND REVISION WITH YOUR DEPLOYMENT REPO INFO
+###############################################################################
+# Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.39.1'
-
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.5.1'
+##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
+DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
+DOCKER_COMPOSE_VERSION='1.29.2'
+DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+DOCKER_DATA_ROOT='/mnt/docker-data'
+EBS_VOLUME_DEVICE_NAME='/dev/sdb'
+EBS_VOLUME_LABEL='sourcegraph'
 # Install git
 yum update -y
 yum install git -y
-
-# Clone Docker Compose definition
+# Clone the deployment repository
 git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
-
-# Format (if necessary) and mount EBS volume
+# Format (if unformatted) and then mount the attached volume
 device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
-if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
+if [ "${device_fs}" == "" ]
 then
   mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
 fi
+xfs_admin -L "${EBS_VOLUME_LABEL}" "${EBS_VOLUME_DEVICE_NAME}"
 mkdir -p "${DOCKER_DATA_ROOT}"
-mount "${EBS_VOLUME_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
-
-# Mount EBS volume on reboots
-EBS_UUID=$(blkid -s UUID -o value "${EBS_VOLUME_DEVICE_NAME}")
-echo "UUID=${EBS_UUID}  ${DOCKER_DATA_ROOT}  xfs  defaults,nofail  0  2" >> '/etc/fstab'
+mount -L "${EBS_VOLUME_LABEL}" "${DOCKER_DATA_ROOT}"
+# Mount file system by label on reboot
+echo "LABEL=${EBS_VOLUME_LABEL}  ${DOCKER_DATA_ROOT}  xfs  defaults,nofail  0  2" >> '/etc/fstab'
 umount "${DOCKER_DATA_ROOT}"
 mount -a
-
 # Install, configure, and enable Docker
 yum update -y
 amazon-linux-extras install docker
@@ -68,82 +104,75 @@ systemctl enable --now docker
 sed -i -e 's/1024/262144/g' /etc/sysconfig/docker
 sed -i -e 's/4096/262144/g' /etc/sysconfig/docker
 usermod -a -G docker ec2-user
-
 # Install jq for scripting
 yum install -y jq
-
-# Edit Docker storage directory to mounted volume
-DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
-
-## initialize the config file with empty json if it doesn't exist
+## Initialize the config file with empty json if it doesn't exist
 if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
 then
   mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
   echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
 fi
-
-## update Docker's 'data-root' to point to our mounted disk
+## Point Docker storage to mounted volume
 tmp_config=$(mktemp)
 trap "rm -f ${tmp_config}" EXIT
 cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
 cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
-
-## finally, restart Docker daemon to pick up our changes
+# Restart Docker daemon to pick up new changes
 systemctl restart --now docker
-
 # Install Docker Compose
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
-
-# Run Sourcegraph. Restart the containers upon reboot.
+# Start Sourcegraph with Docker Compose
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
-docker-compose up -d
+docker-compose up -d --remove-orphans
 ```
 
-* Select **Next: Add Storage**
-* Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
-
-  * **Volume Type** (left-most column): EBS
-  * **IMPORTANT: Device**: `/dev/sdb`
-  * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
-  * **Volume Type**: General Purpose SSD (gp2)
-  * **Delete on Termination**: Leave this setting unchecked
-
-* Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
-  * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-  * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure SSL in the Docker Compose deployment](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2))
-
-> ℹ️ Please note that while the above will work, this provides open access of the ports specified. If possible, replace the IP address ranges specified with the IPs from which you actually want to allow access.
-
-* Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and using the following diagnostic commands:
-
-```bash
-# Follow the status of the user data script you provided earlier
-tail -f /var/log/cloud-init-output.log
-
-# (Once the user data script completes) monitor the health of the "sourcegraph-frontend" container
-docker ps --filter="name=sourcegraph-frontend-0"
-```
+> NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+> 
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
 ---
 
-## Update your Sourcegraph version
+## Deploy
 
-To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your instance:
+1. Click **Launch Instance** in the *Summary Section* on the right to launch the EC2 node running Sourcegraph.
+
+2. In your web browser, navigate to the public IP address assigned to the EC2 node. (Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel.) It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+
+You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
 
 ```bash
-cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
+# Follow the status of the startup script
+tail -f /var/log/cloud-init-output.log
+# Once installation is completed, check the health of the "sourcegraph-frontend" container
+docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
-And refer to the [Upgrade section](index.md#upgrade) of the [Docker Compose deployment docs](index.md).
+> NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
+
+---
+
+## Upgrade
+
+See the [Docker Compose upgrade docs](upgrade.md).
 
 ---
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional EBS volume that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
+Data is persisted within a [Docker volume](https://docs.docker.com/storage/volumes/) as defined in the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). The startup script configures Docker using a [daemon configuration file](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all the data on the attached data volume, which is mounted at `/mnt/docker-data`, where volumes are stored within `/mnt/docker-data/volumes`.
 
-* (**recommended**) The most straightforward method to backup this data is to [snapshot the entire `/mnt/docker-data` EBS disk](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+There are two, non-mutually-exclusive ways to back up data:
 
-* Using an external Postgres instance (see below) lets a service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) take care of backing up all of Sourcegraph's user data for you. If the EC2 instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
+* [Snapshot the entire `/mnt/docker-data` EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+
+* <span class="badge badge-note">RECOMMENDED</span> Use [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) instead of the Dockerized PostgreSQL instance included by default. All data from Sourcegraph is derivable from the data stored in this database. Note, however, that it may take awhile to reclone repositories and rebuild indices afresh. If you require a faster restoration process, we recommend also snapshotting the EBS volume.
+
+---
+
+## Other resources
+
+[HTTP and HTTPS/SSL configuration](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)
+[Site Administration Quickstart](../../../admin/how-to/site-admin-quickstart.md)

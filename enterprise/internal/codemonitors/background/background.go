@@ -5,13 +5,16 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewBackgroundJobs(db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
+
 	codeMonitorsStore := db.CodeMonitors()
 
-	triggerMetrics := newMetricsForTriggerQueries()
-	actionMetrics := newActionMetrics()
+	triggerMetrics := newMetricsForTriggerQueries(observationCtx)
+	actionMetrics := newActionMetrics(observationCtx)
 
 	// Create a new context. Each background routine will wrap this with
 	// a cancellable context that is canceled when Stop() is called.
@@ -19,9 +22,13 @@ func NewBackgroundJobs(db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, db, triggerMetrics),
-		newTriggerQueryResetter(ctx, codeMonitorsStore, triggerMetrics),
-		newActionRunner(ctx, codeMonitorsStore, actionMetrics),
-		newActionJobResetter(ctx, codeMonitorsStore, actionMetrics),
+		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics),
+		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observationCtx), codeMonitorsStore, triggerMetrics),
+		newActionRunner(ctx, scopedContext("ActionRunner", observationCtx), codeMonitorsStore, actionMetrics),
+		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observationCtx), codeMonitorsStore, actionMetrics),
 	}
+}
+
+func scopedContext(operation string, parent *observation.Context) *observation.Context {
+	return observation.ContextWithLogger(parent.Logger.Scoped(operation, ""), parent)
 }

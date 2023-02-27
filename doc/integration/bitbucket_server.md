@@ -22,11 +22,11 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server / Bitbucket D
 
 We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which adds the following features to your Bitbucket Server / Bitbucket Data Center instance:
 
-- **Native code intelligence**: users don't need to install the [Sourcegraph browser extension](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server / Bitbucket Data Center. Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server / Bitbucket Data Center code views and pull requests, such as test coverage data or trace/log information.
+- **Native code navigation**: users don't need to install the [Sourcegraph browser extension](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server / Bitbucket Data Center.
 - **Fast permission syncing** between Sourcegraph and Bitbucket Server / Bitbucket Data Center
 - **Webhooks with configurable scope**, which are used by and highly recommended for usage with [batch changes](../batch_changes/index.md)
 
-![Bitbucket Server / Bitbucket Data Center code intelligence](https://sourcegraphstatic.com/bitbucket-code-intel-pr-short.gif)
+![Bitbucket Server / Bitbucket Data Center code navigation](https://sourcegraphstatic.com/bitbucket-code-intel-pr-short.gif)
 
 ### Installation and requirements
 
@@ -56,13 +56,13 @@ The site admin should also set `alerts.codeHostIntegrationMessaging` in [global 
 
 In order to update the plugin, follow the same steps as for installing it, which are described in the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository.
 
-When the Sourcegraph instance connected to the Bitbucket Server plugin is updated, so will the code that's fetched by the plugin to enable native code intelligence. No manual steps required. (See the [Technical Details](#technical-details) section on how this works.)
+When the Sourcegraph instance connected to the Bitbucket Server plugin is updated, so will the code that's fetched by the plugin to enable native code navigation. No manual steps required. (See the [Technical Details](#technical-details) section on how this works.)
 
-### Native code intelligence
+### Native code navigation
 
-Once the plugin is installed and the **Sourcegraph URL** is set under **Administration > Add-ons > Sourcegraph**, native code intelligence is enabled when browsing code or pull requests on your Bitbucket Server / Bitbucket Data Center instance.
+Once the plugin is installed and the **Sourcegraph URL** is set under **Administration > Add-ons > Sourcegraph**, native code navigation is enabled when browsing code or pull requests on your Bitbucket Server / Bitbucket Data Center instance.
 
-To disable native code intelligence, simply set **Sourcegraph URL** to an empty value. Note that this will also disable [Webhooks](#webhooks)!
+To disable native code navigation, simply set **Sourcegraph URL** to an empty value. Note that this will also disable [Webhooks](#webhooks)!
 
 ### Webhooks
 
@@ -78,7 +78,7 @@ Disabling the webhook is as easy as removing the `"webhooks"` property from the 
 
 The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
-You can enable this feature when [configuring the connection to your Bitbucket Server / Bitbucket Data Center instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behavior, see our documentation on [Repository permissions](../admin/repo/permissions.md).
+You can enable this feature when [configuring the connection to your Bitbucket Server / Bitbucket Data Center instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behavior, see our documentation on [Repository permissions](../admin/permissions/index.md).
 
 The speed improvements are most important on larger Bitbucket Server / Bitbucket Data Center instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
@@ -90,13 +90,13 @@ This section provides some technical insight into the Bitbucket Server plugin to
 
 You can find the full source code for the plugin at [github.com/sourcegraph/bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin/).
 
-#### Native Code Intelligence
+#### Native code navigation
 
-The Bitbucket Server plugin provides **native code intelligence** without users having to install the [Sourcegraph browser extension](browser_extension.md).
+The Bitbucket Server plugin provides **native code navigation** without users having to install the [Sourcegraph browser extension](browser_extension.md).
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server / Bitbucket Data Center instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
 
-The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension). It is hosted by your Sourcegraph instance in this case and adds the same code intelligence functionality to all files and pull requests viewed on Bitbucket Server / Bitbucket Data Center.
+The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension). It is hosted by your Sourcegraph instance in this case and adds the same code navigation functionality to all files and pull requests viewed on Bitbucket Server / Bitbucket Data Center.
 
 The code only talks to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
 
@@ -104,7 +104,7 @@ No private code, private repository names, usernames, or any other specific data
 
 If it failed to load or talk to the Sourcegraph instance, messages are logged to the browser console.
 
-When the Sourcegraph instance is updated to a newer version, the embedded browser extension code that provides the native code intelligence may also be updated.
+When the Sourcegraph instance is updated to a newer version, the embedded browser extension code that provides the native code navigation may also be updated.
 
 #### Webhooks
 
@@ -124,7 +124,7 @@ If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks
 
 #### Fast permission syncing
 
-When Sourcegraph is configured to use [Bitbucket Server / Bitbucket Data Center's repository permissions](../../admin/repo/permissions.md#bitbucket_server) to control access to repositories on Sourcegraph, it needs to fetch permissions for each user.
+When Sourcegraph is configured to use [Bitbucket Server / Bitbucket Data Center's repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) to control access to repositories on Sourcegraph, it needs to fetch permissions for each user.
 
 The Bitbucket Server / Bitbucket Data Center REST API only provides **paginated** endpoints to fetch either the list of repositories a given user has access to, or the list of users that have access to a given repository. Both endpoints return the **full representation of the entities**.
 

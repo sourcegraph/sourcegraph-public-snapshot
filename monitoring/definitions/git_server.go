@@ -1,13 +1,14 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func GitServer() *monitoring.Container {
+func GitServer() *monitoring.Dashboard {
 	const containerName = "gitserver"
 
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
@@ -19,17 +20,24 @@ func GitServer() *monitoring.Container {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
-	return &monitoring.Container{
+	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+
+	return &monitoring.Dashboard{
 		Name:        "gitserver",
 		Title:       "Git Server",
 		Description: "Stores, manages, and operates Git repositories.",
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Shard",
-				Name:         "shard",
-				OptionsQuery: "label_values(src_gitserver_exec_running, instance)",
-				Multi:        true,
+				Label: "Shard",
+				Name:  "shard",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_gitserver_exec_running",
+					LabelName:     "instance",
+					ExampleOption: "gitserver-0:6060",
+				},
+				Multi: true,
 			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -90,14 +98,25 @@ func GitServer() *monitoring.Container {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25),
-							Critical:    monitoring.Alert().LessOrEqual(15),
+							// Warning alert when we have disk space remaining that is
+							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE
+							Warning: monitoring.Alert().Less(15),
+							// Critical alert when we have less space remaining than the
+							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
+							// This means that gitserver should be evicting repos, but it's
+							// either filling up faster than it can evict, or there is an
+							// issue with the janitor job.
+							Critical: monitoring.Alert().Less(10).For(10 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
-								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
+							Interpretation: `
+								Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
+							`,
+							NextSteps: `
+								- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
+								- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
 							`,
 						},
 					},
@@ -192,7 +211,7 @@ func GitServer() *monitoring.Container {
 							Interpretation: `
 								A high value signals load.
 							`,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
@@ -217,7 +236,7 @@ func GitServer() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **If you just added several repositories**, the warning may be expected.
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
 							`,
@@ -229,7 +248,7 @@ func GitServer() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
 								- **Check the gitserver logs for more information.**
@@ -416,6 +435,17 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						{
+							Name:           "non_existent_repos_removed",
+							Description:    "repositories removed because they are not defined in the DB",
+							Query:          "sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							Interpretation: "Repositoriess removed because they are not defined in the DB",
+						},
+					},
+					{
+						{
 							Name:           "sg_maintenance_reason",
 							Description:    "successful sg maintenance jobs over 1h (by reason)",
 							Query:          `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`,
@@ -438,6 +468,7 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
+
 			{
 				Title:  "Search",
 				Hidden: true,
@@ -484,10 +515,32 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "repos",
+
+					MetricMountNameLabel: "reposDir",
+					MetricNamespace:      "gitserver",
+
+					ServiceName:         "gitserver",
+					InstanceFilterRegex: `${shard:regex}`,
+				},
+				monitoring.ObservableOwnerRepoManagement,
+			),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:     "gitserver",
+					MetricNamespace: "gitserver",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${shard:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
+			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, provisioningIndicatorsOptions),

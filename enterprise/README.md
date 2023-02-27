@@ -7,4 +7,4 @@ This directory contains Sourcegraph Enterprise code.
 
 ## Dev
 
-See [Local development: For Sourcegraph employees](https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository#for-sourcegraph-employees-clone-shared-configuration) for how to work on this code.
+See [Local development: For Sourcegraph employees](https://docs.sourcegraph.com/dev/setup/quickstart) for how to work on this code.

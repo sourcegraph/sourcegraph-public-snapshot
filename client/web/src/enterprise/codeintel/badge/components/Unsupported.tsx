@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Text } from '@sourcegraph/wildcard'
 
 export interface UnsupportedProps {}
 
@@ -11,7 +11,7 @@ export const Unsupported: React.FunctionComponent<React.PropsWithChildren<Unsupp
                 <Badge variant="outlineSecondary">Unsupported</Badge>
             </div>
             <div className="px-2 py-1">
-                <p className="mb-0">No language detected</p>
+                <Text className="mb-0">No language detected</Text>
             </div>
         </div>
     </div>

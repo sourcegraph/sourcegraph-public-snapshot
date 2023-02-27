@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -14,9 +15,13 @@ import (
 
 // NewJVMPackagesSource returns a new MavenSource from the given external
 // service.
-func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, error) {
+func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*PackagesSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.JVMPackagesConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
@@ -25,7 +30,7 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, erro
 		configDeps = c.Maven.Dependencies
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: configDeps,
 		scheme:     dependencies.JVMPackagesScheme,
@@ -39,10 +44,10 @@ type jvmPackagesSource struct {
 	config *schema.JVMPackagesConnection
 }
 
-var _ dependenciesSource = &jvmPackagesSource{}
+var _ packagesSource = &jvmPackagesSource{}
 
-func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	mavenDependency, err := reposource.ParseMavenDependency(name + ":" + version)
+func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
+	mavenDependency, err := reposource.ParseMavenVersionedPackage(name + ":" + version)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +59,14 @@ func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (repo
 	return mavenDependency, nil
 }
 
-func (jvmPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseMavenDependency(dep)
+func (jvmPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(dep)
 }
 
-func (jvmPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParseMavenDependencyFromRepoName(repoName)
+func (jvmPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParseMavenPackageFromName(name)
+}
+
+func (jvmPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
+	return reposource.ParseMavenPackageFromRepoName(repoName)
 }

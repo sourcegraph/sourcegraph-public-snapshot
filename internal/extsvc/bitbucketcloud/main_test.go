@@ -32,6 +32,7 @@ func update(name string) bool {
 // to use from multiple sub-tests at the same level, though, provided they have
 // unique names.)
 func assertGolden(t testing.TB, expected any) {
+	t.Helper()
 	testutil.AssertGolden(
 		t,
 		filepath.Join("testdata/golden/", normalize(t.Name())),

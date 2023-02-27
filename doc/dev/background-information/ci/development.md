@@ -17,6 +17,7 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 - Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
 - Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
 - Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
+- Does your check or test need a secret? Take a look at [how to manage secrets](#managing-secrets).
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
@@ -71,7 +72,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 #### Creating annotations
 
-Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
+Annotations are used to present the viewer notices about the build and they get rendered in the Buildkite UI as well as when one executes `sg ci status`.
 The pipeline generator provides an API for this that, at a high level, works like this:
 
 1. In your script, leave a file in `./annotations`:
@@ -93,15 +94,37 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 3. That's it!
 
+Linters implemented in `sg` automatically generate annotations with the `sg lint --annotations` flag.
+
+Part of the annotation that gets generated also includes a link to view the job output and, if the build is on the main branch, a link to view the job logs on Grafana.
+
+If you don't include a file extension in the annotation file, then the contents of the file are rendered terminal output.
+An annotation can be rendered as Markdown instead by using the `.md` extension, for example:
+
+```sh
+echo -e "$OUT" >./annotations/docsite.md
+```
+
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
 #### Caching build artefacts
 
 For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../../how-to/cache_ci_artefacts.md).
 
+Cached artefacts are *automatically expired after 30 days* (by an object lifecycle policy on the bucket).
+
 ### Observability
 
 > NOTE: Sourcegraph teammates should refer to the [CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios) for help managing issues with [pipeline health](./index.md#pipeline-health).
+
+#### Failure logs
+
+Every failure in the `sourcegraph/sourcegraph` CI pipeline for `main` also [uploads logs using `sg` to Loki](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/upload-build-logs.sh).
+We do not publish data for successful builds or branch builds (for those, you can refer to our [build traces](https://docs.sourcegraph.com/dev/background-information/ci/development#pipeline-command-tracing)).
+
+For a brief overview, check out the [CI dashboard](https://sourcegraph.grafana.net/d/iBBWbxFnk/ci?orgId=1), which is a set of graphs based on the contents of uploaded logs.
+
+Some annotations also have a link "View Grafana logs" which will take one to Grafana cloud with a pre-populated query to view the log output of a failure (if any). For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
 
 #### Pipeline command tracing
 
@@ -114,15 +137,15 @@ Individual commands are tracked from the perspective of a given [step](#step-opt
   pipeline.AddStep(":memo: Check and build docsite", /* ... */)
 ```
 
-Will result in a single trace span for the `./dev/check/docsite.sh` script. But the following will have individual trace spans for each `yarn` commands:
+Will result in a single trace span for the `./dev/check/docsite.sh` script. But the following will have individual trace spans for each `pnpm` commands:
 
 ```go
   pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
     // ...
-    bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-    bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-    bk.Cmd("yarn run cover-browser-integration"),
-    bk.Cmd("yarn nyc report -r json"),
+    bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+    bk.Cmd("pnpm --filter @sourcegraph/browser -s run build"),
+    bk.Cmd("pnpm run cover-browser-integration"),
+    bk.Cmd("pnpm nyc report -r json"),
     bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 ```
 
@@ -144,8 +167,8 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
   ```go
   pipeline.AddStep(":jest::globe_with_meridians: Test",
-    withYarnCache(),
-    bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+    withPnpmCache(),
+    bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/web", bk.AnnotatedCmdOpts{
       TestReports: &bk.TestReportOpts{/* ... */},
     }),
   ```
@@ -162,7 +185,7 @@ For more details about best practices and additional features and capabilities, 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
 In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
 
-When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.
 
 This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
 
@@ -178,11 +201,20 @@ go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 
 #### Managing secrets
 
-The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
+The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. To add a secret:
 
-- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
-- use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
-- while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+1. Use Google Cloud Secret manager to add it to [the `sourcegraph-ci` project](https://console.cloud.google.com/security/secret-manager?project=sourcegraph-ci).
+2. Inject it at deployment time as an environment variable in the CI agents via adding it to [the Buildkite GSM configuration](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/gsm-secrets.tf).
+3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it sure the secret is available in the nodes environment.
+4. A Kubernetes Job gets dispatched onto a node, we need to tell Kubernetes to make the variable available to the Job by updating the [Job manifest](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/buildkite-agent-stateless/buildkite-agent.Job.yaml) for the buildkite stateless agent.
+5. Run `kubectl -f apply buildkite-agent-stateless/buildkite-agent.Job.yaml` in the `buildkite/kubernetes` folder.
+
+**Note**: Jobs are created dynamically and it might take a while for the new Job manifest to be picked up.
+
+Our CI pipeline must never leak secrets:
+
+1. Use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
+2. While environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
 #### Creating scheduled builds
 
@@ -196,4 +228,4 @@ You can schedule builds with build schedules, which automatically create builds 
 
 ![cron interval](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
 
-> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types). 
+> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types).

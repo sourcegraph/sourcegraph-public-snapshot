@@ -1,37 +1,33 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, AnchorLink, Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
+import {
+    InvitationByTokenResult,
+    InvitationByTokenVariables,
+    RespondToOrgInvitationResult,
+    RespondToOrgInvitationVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
-import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'
 
-interface Props extends RouteComponentProps<{ token: string }> {
+interface Props {
     authenticatedUser: AuthenticatedUser
     className?: string
-}
-
-interface RespondToOrgInvitationResult {
-    respondToOrganizationInvitation: Maybe<IEmptyResponse>
-}
-
-interface RespondToOrgInvitationVariables {
-    id: string
-    response: OrganizationInvitationResponseType
 }
 
 export const RESPOND_TO_ORG_INVITATION = gql`
@@ -42,30 +38,27 @@ export const RESPOND_TO_ORG_INVITATION = gql`
     }
 `
 
-interface InviteResult {
-    invitationByToken: Maybe<IOrganizationInvitation>
-}
-
-interface InviteVariables {
-    token: string
-}
-
 export const INVITATION_BY_TOKEN = gql`
     query InvitationByToken($token: String!) {
         invitationByToken(token: $token) {
-            createdAt
+            ...OrganizationInvitationFields
+        }
+    }
+
+    fragment OrganizationInvitationFields on OrganizationInvitation {
+        createdAt
+        id
+        isVerifiedEmail
+        organization {
             id
-            isVerifiedEmail
-            organization {
-                displayName
-                name
-            }
-            recipientEmail
-            sender {
-                avatarURL
-                displayName
-                username
-            }
+            displayName
+            name
+        }
+        recipientEmail
+        sender {
+            avatarURL
+            displayName
+            username
         }
     }
 `
@@ -76,20 +69,20 @@ export const INVITATION_BY_TOKEN = gql`
 export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
-    history,
-    match,
 }) => {
-    const token = match.params.token
+    const { token } = useParams<{ token: string }>()
+    const navigate = useNavigate()
 
-    const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
-        INVITATION_BY_TOKEN,
-        {
-            skip: !authenticatedUser || !token,
-            variables: {
-                token,
-            },
-        }
-    )
+    const {
+        data: inviteData,
+        loading: inviteLoading,
+        error: inviteError,
+    } = useQuery<InvitationByTokenResult, InvitationByTokenVariables>(INVITATION_BY_TOKEN, {
+        skip: !authenticatedUser || !token,
+        variables: {
+            token: token!,
+        },
+    })
 
     const data = inviteData?.invitationByToken
     const orgName = data?.organization.name
@@ -107,7 +100,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         RespondToOrgInvitationVariables
     >(RESPOND_TO_ORG_INVITATION, {
         onError: apolloError => {
-            console.error('Error when responding to invitation', apolloError)
+            logger.error('Error when responding to invitation', apolloError)
         },
     })
 
@@ -147,9 +140,9 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         }
 
         if (orgName) {
-            history.push(orgURL(orgName))
+            navigate(orgURL(orgName))
         }
-    }, [data?.id, history, orgId, orgName, respondToInvitation, willVerifyEmail])
+    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
         eventLogger.log(
@@ -185,8 +178,8 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             )
         }
 
-        history.push(userURL(authenticatedUser.username))
-    }, [authenticatedUser.username, data?.id, history, orgId, respondToInvitation, willVerifyEmail])
+        navigate(userURL(authenticatedUser.username))
+    }, [authenticatedUser.username, data?.id, navigate, orgId, respondToInvitation, willVerifyEmail])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError?.message || respondError?.message
@@ -200,7 +193,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <h2>You've been invited to join the {orgDisplayName} organization</h2>
+                        <H2>You've been invited to join the {orgDisplayName} organization</H2>
                         <div className="mt-4">
                             <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>
@@ -241,7 +234,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             )}
             {error && (
                 <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
-                    <h3>You've been invited to join an organization.</h3>
+                    <H3>You've been invited to join an organization.</H3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
                     </Alert>

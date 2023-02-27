@@ -17,12 +17,13 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -45,9 +46,9 @@ var DefaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
-	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
-	"JAEGER_SERVER_URL":  "http://127.0.0.1:16686",
-	"PROMETHEUS_URL":     "http://127.0.0.1:9090",
+	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
+	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
+	"OTEL_EXPORTER_OTLP_ENDPOINT": "", // disabled
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -76,12 +77,14 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	flag.Parse()
 	log.SetFlags(0)
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
+
+	logger := sglog.Scoped("server", "Sourcegraph server")
 
 	// Ensure CONFIG_DIR and DATA_DIR
 
@@ -121,6 +124,10 @@ func Main() {
 		SetDefaultEnv(k, v)
 	}
 
+	if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+		AllowSingleDockerCodeInsights = true
+	}
+
 	// Now we put things in the right place on the FS
 	if err := copySSH(); err != nil {
 		// TODO There are likely several cases where we don't need SSH
@@ -155,17 +162,17 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`worker: worker`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
-	if monitoringLines := maybeMonitoring(); len(monitoringLines) != 0 {
+	if monitoringLines := maybeObservability(); len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
 	}
 
-	if minioLines := maybeMinio(); len(minioLines) != 0 {
-		procfile = append(procfile, minioLines...)
+	if blobstoreLines := maybeBlobstore(logger); len(blobstoreLines) != 0 {
+		procfile = append(procfile, blobstoreLines...)
 	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()
@@ -258,7 +265,12 @@ func startProcesses(group *errgroup.Group, name string, procfile []string, optio
 func runMigrator() {
 	log.Println("Starting migrator")
 
-	for _, schemaName := range []string{"frontend", "codeintel", "codeinsights"} {
+	schemas := []string{"frontend", "codeintel"}
+	if AllowSingleDockerCodeInsights {
+		schemas = append(schemas, "codeinsights")
+	}
+
+	for _, schemaName := range schemas {
 		e := execer{}
 		e.Command("migrator", "up", "-db", schemaName)
 

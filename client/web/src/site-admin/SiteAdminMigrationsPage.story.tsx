@@ -1,5 +1,4 @@
-import { storiesOf } from '@storybook/react'
-import * as H from 'history'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'
@@ -7,88 +6,99 @@ import { OutOfBandMigrationFields } from '../graphql-operations'
 
 import { SiteAdminMigrationsPage } from './SiteAdminMigrationsPage'
 
-const { add } = storiesOf('web/Site Admin/Migrations', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/Site Admin/Migrations',
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 // invalid, pre-introduction
-add('3.23.2', () => (
+export const InvalidPreIntroduction: Story = () => (
     <WebStory>
         {props => (
             <SiteAdminMigrationsPage
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.23.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
     </WebStory>
-))
+)
+
+InvalidPreIntroduction.storyName = '3.23.2'
 
 // downgrade warning
-add('3.24.2', () => (
+export const DowngradeWarning: Story = () => (
     <WebStory>
         {props => (
             <SiteAdminMigrationsPage
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.24.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
     </WebStory>
-))
+)
+
+DowngradeWarning.storyName = '3.24.2'
 
 // no warnings
-add('3.25.2', () => (
+export const NoWarnings: Story = () => (
     <WebStory>
         {props => (
             <SiteAdminMigrationsPage
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.25.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
     </WebStory>
-))
+)
+
+NoWarnings.storyName = '3.25.2'
 
 // upgrade warning
-add('3.26.2', () => (
+export const UpgradeWarning: Story = () => (
     <WebStory>
         {props => (
             <SiteAdminMigrationsPage
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.26.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
     </WebStory>
-))
+)
+
+UpgradeWarning.storyName = '3.26.2'
 
 // invalid, post-deprecation
-add('3.27.2', () => (
+export const InvalidPostDeprecation: Story = () => (
     <WebStory>
         {props => (
             <SiteAdminMigrationsPage
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.27.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
     </WebStory>
-))
+)
+
+InvalidPostDeprecation.storyName = '3.27.2'
 
 const migrations = [
     {

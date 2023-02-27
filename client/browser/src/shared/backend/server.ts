@@ -3,10 +3,13 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
-    requestGraphQL<GQL.IQuery>({
+import { SiteProductVersionResult } from '../../graphql-operations'
+
+export const fetchSite = (
+    requestGraphQL: PlatformContext['requestGraphQL']
+): Observable<SiteProductVersionResult['site']> =>
+    requestGraphQL<SiteProductVersionResult>({
         request: gql`
             query SiteProductVersion {
                 site {

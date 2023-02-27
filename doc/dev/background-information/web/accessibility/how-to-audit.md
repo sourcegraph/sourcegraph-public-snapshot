@@ -16,7 +16,7 @@ Before starting your audit, you should ensure the following statements are true:
 1. Navigate through the journey using **only** the keyboard.
     - Ensure that you are able to access and trigger all important **actions**.
     - Ensure that the current focus position is always **clear** and **visible**.
-    - **Note:** Use [this cheatsheet](https://webaim.org/techniques/keyboard/#testing) to help you navigate with a keyboard - it isn't always obvious!
+    - **Note:** Use [this cheatsheet](https://webaim.org/techniques/keyboard/#testing) to help you navigate with a keyboard—it isn't always obvious!
 2. Enable a screen reader. Navigate through the user journey **without** looking at your screen.
     - Would a user be able to understand the **content** of the journey?
     - Would a user be able to correctly and predictably perform each important **action**?
@@ -25,14 +25,16 @@ Before starting your audit, you should ensure the following statements are true:
     - Would a user be able to sufficiently read all required content in the journey?
     - Would a user be able to correctly and predictably perform each important **action**?
       - Keep in mind that it is typically harder to select small buttons and icons using a touch device.
-    - **Note:** You don't need to use a physical mobile device to test this. Most browsers support emulating a mobile viewport - just ensure it is set to **320px**.
+    - **Note:** You don't need to use a physical mobile device to test this. Most browsers support emulating a mobile viewport—just ensure it is set to **320px**.
       - [Chrome documentation](https://developer.chrome.com/docs/devtools/device-mode/#viewport)
       - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
+    - **Note:** This does not imply full mobile device support (i.e. Touch navigation). [Sourcegraph does not target mobile devices](https://handbook.sourcegraph.com/departments/engineering/#launch).
+    - This is to support proper reflow when the browser is zoomed in. See the [WCAG 1.4.10 Reflow criterion](https://www.w3.org/WAI/WCAG21/Understanding/reflow.html) for more information.
 4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
 
 ## Raising a bug
 
-If the bug is very small, and you are confident you can quickly fix it - then go ahead and make a PR! If you aren't able to immediately address the bug, then you should create a new GitHub issue using the following steps:
+If the bug is very small, and you are confident you can quickly fix it—then go ahead and make a PR! If you aren't able to immediately address the bug, then you should create a new GitHub issue using the following steps:
 
 1. Open [this GitHub Issue template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=accessibility%2Cwcag%2F2.1%2Cwcag%2F2.1%2Ffixing%2Cestimate%2F3d&template=accessibility_issue.yaml&title=%5BAccessibility%5D%3A+)
     - Provide as much detail as possible about the bug you found, and the behavior you expected to happen.

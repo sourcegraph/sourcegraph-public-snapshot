@@ -2,25 +2,31 @@
     background-color: var(--color-bg-1);
 }
 
-.highlighted-file-wrapper {
-    padding: 0.25rem 1rem;
-    overflow: auto;
-    max-height: 32rem;
-    border-bottom-left-radius: var(--border-radius);
-    border-bottom-right-radius: var(--border-radius);
-}
-
 .header {
+    margin-bottom: 0.25rem;
+    a {
+        color: var(--text-muted);
+    }
+    font-size: 0.75rem;
+
     display: flex;
     align-items: center;
-    padding: 0.75rem 1rem;
-    background-color: var(--body-bg);
-    border-bottom: 1px solid var(--border-color);
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
-    overflow-wrap: break-word;
 }
 
-.header-link:not(:hover) {
-    color: var(--body-color);
+.separator {
+    margin: 0 0.25rem;
+    border-right: 1px solid var(--border-color);
+    height: 1rem;
+}
+
+.code > div {
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    overflow: auto;
+    max-height: 32rem;
+}
+
+.symbol-kind {
+    color: inherit;
 }

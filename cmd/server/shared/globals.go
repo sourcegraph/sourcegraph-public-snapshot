@@ -34,3 +34,5 @@ var ProcfileAdditions []string
 // DataDir is the root directory for storing persistent data. It should NOT be modified by any
 // external package.
 var DataDir = SetDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
+
+var AllowSingleDockerCodeInsights bool

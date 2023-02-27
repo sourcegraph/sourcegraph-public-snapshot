@@ -8,6 +8,7 @@ import (
 type InsightViewSeries struct {
 	ViewID                        int
 	DashboardViewID               int
+	InsightSeriesID               int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
@@ -34,6 +35,14 @@ type InsightViewSeries struct {
 	JustInTime                    bool
 	GenerationMethod              GenerationMethod
 	IsFrozen                      bool
+	SeriesSortMode                *SeriesSortMode
+	SeriesSortDirection           *SeriesSortDirection
+	SeriesLimit                   *int32
+	GroupBy                       *string
+	BackfillAttempts              int32
+	SupportsAugmentation          bool
+	RepositoryCriteria            *string
+	SeriesNumSamples              *int32
 }
 
 type Insight struct {
@@ -47,6 +56,7 @@ type Insight struct {
 	OtherThreshold   *float64
 	PresentationType PresentationType
 	IsFrozen         bool
+	SeriesOptions    SeriesDisplayOptions
 }
 
 type InsightViewFilters struct {
@@ -63,14 +73,18 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID               int
-	Title            string
-	Description      string
-	UniqueID         string
-	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
-	IsFrozen         bool
+	ID                  int
+	Title               string
+	Description         string
+	UniqueID            string
+	Filters             InsightViewFilters
+	OtherThreshold      *float64
+	PresentationType    PresentationType
+	IsFrozen            bool
+	SeriesSortMode      *SeriesSortMode
+	SeriesSortDirection *SeriesSortDirection
+	SeriesLimit         *int32
+	SeriesNumSamples    *int32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -93,6 +107,10 @@ type InsightSeries struct {
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
 	GenerationMethod           GenerationMethod
+	GroupBy                    *string
+	BackfillAttempts           int32
+	SupportsAugmentation       bool
+	RepositoryCriteria         *string
 }
 
 type IntervalUnit string
@@ -109,25 +127,11 @@ const (
 type GenerationMethod string
 
 const (
-	Search        GenerationMethod = "search"
-	SearchStream  GenerationMethod = "search-stream"
-	SearchCompute GenerationMethod = "search-compute"
-	LanguageStats GenerationMethod = "language-stats"
+	Search         GenerationMethod = "search"
+	SearchCompute  GenerationMethod = "search-compute"
+	LanguageStats  GenerationMethod = "language-stats"
+	MappingCompute GenerationMethod = "mapping-compute"
 )
-
-type DirtyQuery struct {
-	ID      int
-	Query   string
-	ForTime time.Time
-	DirtyAt time.Time
-	Reason  string
-}
-
-type DirtyQueryAggregate struct {
-	Count   int
-	ForTime time.Time
-	Reason  string
-}
 
 type Dashboard struct {
 	ID           int
@@ -150,6 +154,15 @@ type InsightSeriesStatus struct {
 	Completed  int
 }
 
+type InsightSearchFailure struct {
+	Query          string
+	QueuedAt       time.Time
+	State          string
+	FailureMessage string
+	RecordTime     *time.Time
+	PersistMode    string
+}
+
 type PresentationType string
 
 const (
@@ -157,8 +170,59 @@ const (
 	Pie  PresentationType = "PIE"
 )
 
-type Frame struct {
-	From   time.Time
-	To     time.Time
-	Commit string
+type SeriesSortMode string
+
+const (
+	ResultCount     SeriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
+	DateAdded       SeriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
+	Lexicographical SeriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
+)
+
+type SeriesSortDirection string
+
+const (
+	Asc  SeriesSortDirection = "ASC"
+	Desc SeriesSortDirection = "DESC"
+)
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+	NumSamples  *int32
 }
+
+type SeriesSortOptions struct {
+	Mode      SeriesSortMode
+	Direction SeriesSortDirection
+}
+
+type InsightSeriesRecordingTimes struct {
+	InsightSeriesID int // references insight_series(id)
+	RecordingTimes  []RecordingTime
+}
+
+type RecordingTime struct {
+	Timestamp time.Time
+	Snapshot  bool
+}
+
+type SearchAggregationMode string
+
+const (
+	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
+	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
+	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
+	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+)
+
+var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
+
+type AggregationNotAvailableReasonType string
+
+const (
+	INVALID_QUERY                      AggregationNotAvailableReasonType = "INVALID_QUERY"
+	INVALID_AGGREGATION_MODE_FOR_QUERY AggregationNotAvailableReasonType = "INVALID_AGGREGATION_MODE_FOR_QUERY"
+	TIMEOUT_EXTENSION_AVAILABLE        AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_AVAILABLE"
+	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
+	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
+)

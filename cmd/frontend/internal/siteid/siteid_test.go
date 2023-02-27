@@ -42,7 +42,7 @@ func TestGet(t *testing.T) {
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
 		gss := database.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -61,7 +61,7 @@ func TestGet(t *testing.T) {
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
 		gss := database.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(nil, errors.New("x"))
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{}, errors.New("x"))
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -102,7 +102,7 @@ func TestGet(t *testing.T) {
 		defer os.Unsetenv("TRACKING_APP_ID")
 
 		gss := database.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "b"}, nil)
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "b"}, nil)
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)

@@ -3,30 +3,31 @@ package api
 import (
 	"context"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/semaphore"
 )
 
 func init() {
-	database.Init()
+	symbolsdatabase.Init()
 }
 
 func TestHandler(t *testing.T) {
@@ -62,16 +63,16 @@ func TestHandler(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
-	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser, semaphore.NewWeighted(1))
+	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
+	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(sharedobservability.NewOperations(&observation.TestContext), cachedDatabaseWriter), nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
 	client := symbolsclient.Client{
-		URL:        server.URL,
+		Endpoints:  endpoint.Static(server.URL),
 		HTTPClient: httpcli.InternalDoer,
 	}
 
@@ -126,17 +127,17 @@ func TestHandler(t *testing.T) {
 
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			result, err := client.Search(context.Background(), testCase.args)
+			resultSymbols, err := client.Search(context.Background(), testCase.args)
 			if err != nil {
 				t.Fatalf("unexpected error performing search: %s", err)
 			}
 
-			if result == nil {
+			if resultSymbols == nil {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(result, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, result)
+			} else if diff := cmp.Diff(resultSymbols, testCase.expected, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("unexpected search result. diff: %s", diff)
 			}
 		})
 	}

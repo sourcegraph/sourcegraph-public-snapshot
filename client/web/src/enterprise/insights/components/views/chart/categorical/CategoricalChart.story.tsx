@@ -1,9 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CategoricalBasedChartTypes } from '../../types'
 
-import { CategoricalChart } from './CategoricalChart'
+import { CategoricalBasedChartTypes, CategoricalChart } from './CategoricalChart'
 
 const StoryConfig: Meta = {
     title: 'web/insights/views/CategoricalChart',

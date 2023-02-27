@@ -3,6 +3,8 @@ package logging
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/fatih/color"
@@ -58,6 +60,8 @@ func condensedFormat(r *log15.Record) []byte {
 }
 
 // Options control the behavior of a tracer.
+//
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 type Options struct {
 	filters     []func(*log15.Record) bool
 	serviceName string
@@ -65,14 +69,18 @@ type Options struct {
 
 // If this idiom seems strange:
 // https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
+//
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 type Option func(*Options)
 
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 func ServiceName(s string) Option {
 	return func(o *Options) {
 		o.serviceName = s
 	}
 }
 
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 func Filter(f func(*log15.Record) bool) Option {
 	return func(o *Options) {
 		o.filters = append(o.filters, f)
@@ -85,6 +93,8 @@ func init() {
 }
 
 // For severity field, see https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+//
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 func LogEntryLevelString(l log15.Lvl) string {
 	switch l {
 	case log15.LvlDebug:
@@ -104,6 +114,8 @@ func LogEntryLevelString(l log15.Lvl) string {
 
 // Init initializes log15's root logger based on Sourcegraph-wide logging configuration
 // variables. See https://docs.sourcegraph.com/admin/observability#logs
+//
+// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
 func Init(options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {
@@ -135,6 +147,10 @@ func Init(options ...Option) {
 	lvl, err := log15.LvlFromString(env.LogLevel)
 	if err == nil {
 		handler = log15.LvlFilterHandler(lvl, handler)
+	}
+	if env.LogLevel == "none" {
+		handler = log15.DiscardHandler()
+		log.SetOutput(io.Discard)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
 }

@@ -17,4 +17,10 @@
 
 ## `/lsif`
 
-Returns base64-encoded LSIF document
+Returns base64-encoded SCIP document.
+
+To be deprecated and removed
+
+## `/scip`
+
+Returns base64-encoded SCIP document

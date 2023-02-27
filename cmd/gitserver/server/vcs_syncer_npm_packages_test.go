@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -15,11 +16,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -77,12 +80,13 @@ func createMaliciousTgz(t *testing.T) []byte {
 
 func TestNpmCloneCommand(t *testing.T) {
 	dir := t.TempDir()
+	logger := logtest.Scoped(t)
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 
 	client := npmtest.MockClient{
-		Packages: map[string]*npm.PackageInfo{
+		Packages: map[reposource.PackageName]*npm.PackageInfo{
 			"example": {
 				Versions: map[string]*npm.DependencyInfo{
 					exampleNpmVersion: {
@@ -94,19 +98,19 @@ func TestNpmCloneCommand(t *testing.T) {
 				},
 			},
 		},
-		Tarballs: map[string][]byte{
-			exampleNpmVersion:  tgz1,
-			exampleNpmVersion2: tgz2,
+		Tarballs: map[string]io.Reader{
+			exampleNpmVersion:  bytes.NewReader(tgz1),
+			exampleNpmVersion2: bytes.NewReader(tgz2),
 		},
 	}
 
-	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), livedependencies.NewSyncer())
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		depsSvc,
 		&client,
-	).(*vcsDependenciesSyncer)
+	).(*vcsPackagesSyncer)
 
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage})
@@ -144,27 +148,23 @@ func TestNpmCloneCommand(t *testing.T) {
 	checkTagAdded()
 
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage})
-	checkTagRemoved := func() {
-		assertCommandOutput(t,
-			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
-			bareGitDirectory,
-			exampleJSFileContents,
-		)
-		assertCommandOutput(t,
-			exec.Command("git", "tag", "--list"),
-			bareGitDirectory,
-			fmt.Sprintf("v%s\n", exampleNpmVersion), // verify that second tag has been removed.
-		)
-	}
-	checkTagRemoved()
+	assertCommandOutput(t,
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
+		bareGitDirectory,
+		exampleJSFileContents,
+	)
+	assertCommandOutput(t,
+		exec.Command("git", "tag", "--list"),
+		bareGitDirectory,
+		fmt.Sprintf("v%s\n", exampleNpmVersion), // verify that second tag has been removed.
+	)
 
 	// Now run the same tests with the database output instead.
-	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
+	if _, _, err := depsSvc.InsertPackageRepoRefs(context.Background(), []dependencies.MinimalPackageRepoRef{
 		{
-			ID:      1,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "example",
-			Version: exampleNpmVersion,
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "example",
+			Versions: []string{exampleNpmVersion},
 		},
 	}); err != nil {
 		t.Fatalf(err.Error())
@@ -172,12 +172,11 @@ func TestNpmCloneCommand(t *testing.T) {
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
+	if _, _, err := depsSvc.InsertPackageRepoRefs(context.Background(), []dependencies.MinimalPackageRepoRef{
 		{
-			ID:      2,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "example",
-			Version: exampleNpmVersion2,
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "example",
+			Versions: []string{exampleNpmVersion2},
 		},
 	}); err != nil {
 		t.Fatalf(err.Error())
@@ -185,11 +184,20 @@ func TestNpmCloneCommand(t *testing.T) {
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	if err := depsSvc.DeleteDependencyReposByID(context.Background(), 2); err != nil {
+	if err := depsSvc.DeletePackageRepoRefVersionsByID(context.Background(), 2); err != nil {
 		t.Fatalf(err.Error())
 	}
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
-	checkTagRemoved()
+	assertCommandOutput(t,
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
+		bareGitDirectory,
+		exampleJSFileContents,
+	)
+	assertCommandOutput(t,
+		exec.Command("git", "tag", "--list"),
+		bareGitDirectory,
+		fmt.Sprintf("v%s\n", exampleNpmVersion), // verify that second tag has been removed.
+	)
 }
 
 func createTgz(t *testing.T, fileInfos []fileInfo) []byte {
@@ -232,7 +240,7 @@ var _ fs.FileInfo = &fileInfo{}
 
 func (info *fileInfo) Name() string       { return path.Base(info.path) }
 func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
-func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
+func (info *fileInfo) Mode() fs.FileMode  { return 0o600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
 func (info *fileInfo) Sys() any           { return nil }
@@ -255,8 +263,8 @@ func TestDecompressTgz(t *testing.T) {
 			dir := t.TempDir()
 
 			var fileInfos []fileInfo
-			for _, path := range testData.paths {
-				fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
+			for _, testDataPath := range testData.paths {
+				fileInfos = append(fileInfos, fileInfo{path: testDataPath, contents: []byte("x")})
 			}
 
 			tgz := bytes.NewReader(createTgz(t, fileInfos))

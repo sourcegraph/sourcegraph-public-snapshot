@@ -7,10 +7,11 @@ import { WebStory } from '../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
 import { InsightsDashboardOwnerType } from '../../../core/types'
+import { useCodeInsightsLicenseState } from '../../../stores'
 
 import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
-const defaultStory: Meta = {
+const config: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -21,7 +22,7 @@ const defaultStory: Meta = {
     },
 }
 
-export default defaultStory
+export default config
 
 const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
     getDashboardOwners: () =>
@@ -33,8 +34,22 @@ const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
         ]),
 }
 
-export const InsightsDashboardCreationStory: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendStoryMock>
-)
+export const InsightsDashboardCreationLicensed: Story = () => {
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}
+
+export const InsightsDashboardCreationUnlicensed: Story = () => {
+    useCodeInsightsLicenseState.setState({ licensed: false, insightsLimit: 2 })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}

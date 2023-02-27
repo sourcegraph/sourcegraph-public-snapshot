@@ -3,6 +3,7 @@ package pings
 import (
 	"context"
 	"fmt"
+	"time"
 
 	insightTypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -155,6 +156,31 @@ func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (type
 	return insightsPerDashboardStats, nil
 }
 
+func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.InsightsBackfillTimePing, error) {
+	rows, err := e.insightsDb.QueryContext(ctx, backfillTimeQuery, time.Now())
+	if err != nil {
+		return []types.InsightsBackfillTimePing{}, err
+	}
+	defer func() { err = rows.Close() }()
+
+	results := []types.InsightsBackfillTimePing{}
+	for rows.Next() {
+		backfillTimePing := types.InsightsBackfillTimePing{}
+		if err := rows.Scan(
+			&backfillTimePing.AllRepos,
+			&backfillTimePing.Count,
+			&backfillTimePing.P99Seconds,
+			&backfillTimePing.P90Seconds,
+			&backfillTimePing.P50Seconds,
+		); err != nil {
+			return []types.InsightsBackfillTimePing{}, err
+		}
+		results = append(results, backfillTimePing)
+	}
+
+	return results, nil
+}
+
 func getDays(intervalValue int, intervalUnit insightTypes.IntervalUnit) int {
 	switch intervalUnit {
 	case insightTypes.Month:
@@ -189,7 +215,7 @@ const pingSeriesType = `
 CONCAT(
    CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
     '::',
-   CASE WHEN (cardinality(repositories) = 0 or repositories is null) THEN 'global' ELSE 'scoped' END,
+   CASE WHEN (repositories IS NOT NULL AND cardinality(repositories) > 0) THEN 'scoped' WHEN repository_criteria IS NOT NULL THEN 'repo-search' ELSE 'global' END,
     '::',
    CASE WHEN (just_in_time = true) THEN 'jit' ELSE 'recorded' END
     ) as ping_series_type
@@ -258,4 +284,16 @@ SELECT
 
 const insightsCriticalCountQuery = `
 SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
+`
+
+const backfillTimeQuery = `
+SELECT
+	COALESCE(CARDINALITY(repositories),0) = 0 AS allRepos,
+	COUNT(*),
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p99_seconds,
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p90_seconds,
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p50_seconds
+FROM insight_series
+WHERE backfill_completed_at > ($1::timestamp - interval '7 days')
+GROUP BY allRepos;
 `

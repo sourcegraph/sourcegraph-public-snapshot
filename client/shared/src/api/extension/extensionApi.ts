@@ -1,18 +1,16 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, EMPTY, ReplaySubject, Unsubscribable } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
-import { createStatusBarItemType } from './api/codeEditor'
 import { proxySubscribable } from './api/common'
-import { createDecorationType } from './api/decorations'
 import { DocumentHighlightKind } from './api/documentHighlights'
 import { InitData, updateContext } from './extensionHost'
 import { NotificationType, PanelViewData } from './extensionHostApi'
@@ -31,7 +29,6 @@ export interface InitResult {
         registerImplementationProvider: any
     }
     graphQL: typeof sourcegraph['graphQL']
-    content: typeof sourcegraph['content']
     app: typeof sourcegraph['app']
 }
 
@@ -46,9 +43,7 @@ export function createExtensionAPIFactory(
     state: ExtensionHostState,
     clientAPI: Remote<ClientAPI>,
     initData: Pick<InitData, 'clientApplication' | 'sourcegraphURL'>
-): (
-    extensionID: string
-) => typeof sourcegraph & {
+): (extensionID: string) => typeof sourcegraph & {
     // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
     // noops with a log message), to avoid completely breaking extensions that use them.
     languages: {
@@ -173,8 +168,6 @@ export function createExtensionAPIFactory(
         get windows() {
             return [window]
         },
-        registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
-            addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
             const panelViewData = new BehaviorSubject<PanelViewData>({
                 id,
@@ -241,8 +234,6 @@ export function createExtensionAPIFactory(
                     return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
             }
         },
-        createDecorationType,
-        createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
     }
@@ -263,55 +254,48 @@ export function createExtensionAPIFactory(
         registerHoverProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.HoverProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
         registerDocumentHighlightProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DocumentHighlightProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
         registerDefinitionProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DefinitionProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
         registerReferenceProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.ReferenceProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
         registerLocationProvider: (
             id: string,
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.LocationProvider
-        ): sourcegraph.Unsubscribable =>
-            addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
+        ): Unsubscribable => addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
 
         // These were removed, but keep them here so that calls from old extensions do not throw
         // an exception and completely break.
         registerTypeDefinitionProvider: () => {
-            console.warn(
+            logger.warn(
                 'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
         registerImplementationProvider: () => {
-            console.warn(
+            logger.warn(
                 'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
-        registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
-            console.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
+        registerCompletionItemProvider: (): Unsubscribable => {
+            logger.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
             return { unsubscribe: () => undefined }
         },
     }
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        execute: (query, variables) => clientAPI.requestGraphQL(query, variables),
-    }
-
-    // Content
-    const content: typeof sourcegraph['content'] = {
-        registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-            addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
+        execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
     }
 
     // For debugging/tests.
@@ -337,7 +321,7 @@ export function createExtensionAPIFactory(
                         clientAPI
                             .logExtensionMessage(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
                             .catch(error => {
-                                console.error('Error sending extension message to main thread:', error)
+                                logger.error('Error sending extension message to main thread:', error)
                             })
                     }
                 },
@@ -351,7 +335,6 @@ export function createExtensionAPIFactory(
             search,
             commands,
             graphQL,
-            content,
 
             internal: {
                 sync: () => sync(),

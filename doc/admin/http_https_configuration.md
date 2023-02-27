@@ -37,12 +37,12 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.39.1
+  sourcegraph/server:4.5.1
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md#network-access) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 
@@ -109,7 +109,7 @@ There are a few options:
 
 **[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
 
-_For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
+_This step can be skipped if you already have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
 
 **3. Use your CDN's HTTPS proxy feature**<br />
 
@@ -167,7 +167,9 @@ Usage instructions are provided via [the `caddy` service's inline comments insid
 
 ### HTTPS with Custom Certificates in Docker Compose
 
-In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml)within the caddy section:
+**Important:**  [https.custom-cert.Caddyfile](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/caddy/builtins/https.custom-cert.Caddyfile) should not require any updates and should remain untouched. Updates should be made in the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file only and as described below.
+
+In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) within the caddy section:
     
 1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
 
@@ -194,6 +196,7 @@ In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-
    ```
    - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
    ```
+**NOTE**: When adding your certs to your instance, make sure they are in the `deploy-sourcegraph-docker` folder, not outside of it. They will not be recognized otherwise.
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 

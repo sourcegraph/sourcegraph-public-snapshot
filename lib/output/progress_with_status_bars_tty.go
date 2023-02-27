@@ -254,19 +254,19 @@ func (p *progressWithStatusBarsTTY) writeStatusBar(last bool, statusBar *StatusB
 }
 
 func (p *progressWithStatusBarsTTY) Verbose(s string) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.Write(s)
 	}
 }
 
 func (p *progressWithStatusBarsTTY) Verbosef(format string, args ...any) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.Writef(format, args...)
 	}
 }
 
 func (p *progressWithStatusBarsTTY) VerboseLine(line FancyLine) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.WriteLine(line)
 	}
 }

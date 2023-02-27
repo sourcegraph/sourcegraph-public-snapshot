@@ -1,50 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
-import { debounce, noop } from 'lodash'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import * as Monaco from 'monaco-editor'
-import { useLocation } from 'react-router'
-import { Redirect } from 'react-router-dom'
-import { Observable, ReplaySubject } from 'rxjs'
-import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { debounce } from 'lodash'
+import { Navigate, useLocation } from 'react-router-dom'
+import { Observable } from 'rxjs'
+import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { createHoverifier } from '@sourcegraph/codeintellify'
-import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { StreamingSearchResultsListProps, useQueryIntelligence } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, Icon, useObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { getHover, getDocumentHighlights } from '../../backend/features'
-import { WebHoverOverlay } from '../../components/WebHoverOverlay'
 import { NotebookFields } from '../../graphql-operations'
-import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
-import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { NotebookBlockSeparator } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
-import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
+import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
 
@@ -52,18 +33,13 @@ import styles from './NotebookComponent.module.scss'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
-    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
-    platformContext: Pick<
-        PlatformContext,
-        'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
-    >
+    platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
     outlineContainerElement?: HTMLElement | null
@@ -103,11 +79,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         onSerializeBlocks,
         onCopyNotebook,
         isReadOnly = false,
-        extensionsController,
         exportedFileName,
         isEmbedded,
         authenticatedUser,
-        isLightTheme,
         telemetryService,
         isSourcegraphDotCom,
         platformContext,
@@ -121,16 +95,18 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
-                    extensionHostAPI: extensionsController.extHostAPI,
                     fetchHighlightedFileLineRanges,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+            [initialBlocks, fetchHighlightedFileLineRanges]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
         const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
+        const [blockInserterIndex, setBlockInserterIndex] = useState<number>(-1)
+
         const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
         const commandPaletteInputReference = useRef<HTMLInputElement>(null)
+        const floatingCommandPaletteInputReference = useRef<HTMLInputElement>(null)
         const debouncedOnSerializeBlocks = useMemo(() => debounce(onSerializeBlocks, 400), [onSerializeBlocks])
 
         const updateBlocks = useCallback(
@@ -148,6 +124,22 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 )
             },
             [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
+        )
+
+        const selectBlock = useCallback(
+            (blockId: string | null) => {
+                if (!isReadOnly) {
+                    setSelectedBlockId(blockId)
+                }
+            },
+            [isReadOnly, setSelectedBlockId]
+        )
+
+        const focusBlock = useCallback(
+            (blockId: string) => {
+                focusBlockElement(blockId, isReadOnly)
+            },
+            [isReadOnly]
         )
 
         // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
@@ -224,6 +216,30 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [notebook, updateBlocks]
         )
 
+        const onNewBlock = useCallback(
+            (id: string) => {
+                if (isReadOnly) {
+                    return
+                }
+                const idx = notebook.getBlockIndex(id)
+                setBlockInserterIndex(idx + 1)
+                selectBlock(null)
+            },
+            [isReadOnly, notebook, selectBlock]
+        )
+
+        const dismissNewBlockPalette = useCallback(() => {
+            if (isReadOnly) {
+                return
+            }
+            if (blocks.length === 0) {
+                return
+            }
+            const blockToSelectIndex = blockInserterIndex - 1
+            selectBlock(blocks[blockToSelectIndex].id)
+            setBlockInserterIndex(-1)
+        }, [isReadOnly, blocks, selectBlock, blockInserterIndex])
+
         const onAddBlock = useCallback(
             (index: number, blockInput: BlockInput) => {
                 if (isReadOnly) {
@@ -236,12 +252,14 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 ) {
                     notebook.runBlockById(addedBlock.id)
                 }
-                setSelectedBlockId(addedBlock.id)
+                selectBlock(addedBlock.id)
+                focusBlock(addedBlock.id)
+                setBlockInserterIndex(-1)
                 updateBlocks()
 
                 telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks, setSelectedBlockId]
+            [isReadOnly, notebook, selectBlock, focusBlock, updateBlocks, telemetryService]
         )
 
         const onDeleteBlock = useCallback(
@@ -253,7 +271,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 const block = notebook.getBlockById(id)
                 const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
                 notebook.deleteBlockById(id)
-                setSelectedBlockId(blockToFocusAfterDelete)
+                selectBlock(blockToFocusAfterDelete)
                 if (blockToFocusAfterDelete) {
                     focusBlock(blockToFocusAfterDelete)
                 }
@@ -261,7 +279,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
                 telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
             },
-            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
         )
 
         const onMoveBlock = useCallback(
@@ -280,7 +298,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { type: notebook.getBlockById(id)?.type, direction }
                 )
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks]
+            [notebook, isReadOnly, telemetryService, updateBlocks, focusBlock]
         )
 
         const onDuplicateBlock = useCallback(
@@ -291,7 +309,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
                 const duplicateBlock = notebook.duplicateBlockById(id)
                 if (duplicateBlock) {
-                    setSelectedBlockId(duplicateBlock.id)
+                    selectBlock(duplicateBlock.id)
                     focusBlock(duplicateBlock.id)
                 }
                 if (duplicateBlock?.type === 'md') {
@@ -305,120 +323,61 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { type: duplicateBlock?.type }
                 )
             },
-            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
         )
 
         const onFocusLastBlock = useCallback(() => {
             const lastBlockId = notebook.getLastBlockId()
             if (lastBlockId) {
-                setSelectedBlockId(lastBlockId)
+                selectBlock(lastBlockId)
                 focusBlock(lastBlockId)
             }
-        }, [notebook, setSelectedBlockId])
+        }, [notebook, selectBlock, focusBlock])
 
         const notebookEventHandlersProps = useMemo(
             () => ({
                 notebook,
                 selectedBlockId,
                 commandPaletteInputReference,
-                setSelectedBlockId,
+                floatingCommandPaletteInputReference,
+                isReadOnly,
+                selectBlock,
                 onMoveBlock,
                 onRunBlock,
                 onDeleteBlock,
                 onDuplicateBlock,
+                onNewBlock,
             }),
-            [notebook, onDeleteBlock, onDuplicateBlock, onMoveBlock, onRunBlock, selectedBlockId]
+            [
+                notebook,
+                onDeleteBlock,
+                onDuplicateBlock,
+                onNewBlock,
+                onMoveBlock,
+                onRunBlock,
+                selectedBlockId,
+                selectBlock,
+                isReadOnly,
+            ]
         )
         useNotebookEventHandlers(notebookEventHandlersProps)
 
-        const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-            patternType: SearchPatternType.literal,
-            globbing,
-            interpretComments: true,
-        })
-
-        const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-            patternType: SearchPatternType.literal,
-            globbing,
-            interpretComments: true,
-            disablePatternSuggestions: true,
-        })
-
-        // Register dummy onCompletionSelected handler to prevent console errors
-        useEffect(() => {
-            const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
-            return () => disposable.dispose()
-        }, [])
-
-        // Element reference subjects passed to `hoverifier`
-        const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        useEffect(() => notebookElements.next(notebookElement.current), [notebookElement, notebookElements])
-        const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        const nextOverlayElement = useCallback(
-            (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
-            [hoverOverlayElements]
-        )
-
-        // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
-        // reposition hover overlay if needed when `SearchNotebook` rerenders
-        const rerenders = useMemo(() => new ReplaySubject(1), [])
-        useEffect(() => rerenders.next())
-
-        // Create hoverifier.
-        const hoverifier = useMemo(
-            () =>
-                createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                    hoverOverlayElements,
-                    hoverOverlayRerenders: rerenders.pipe(
-                        withLatestFrom(hoverOverlayElements, notebookElements),
-                        map(([, hoverOverlayElement, blockElement]) => ({
-                            hoverOverlayElement,
-                            relativeElement: blockElement,
-                        })),
-                        filter(property('relativeElement', isDefined)),
-                        // Can't reposition HoverOverlay if it wasn't rendered
-                        filter(property('hoverOverlayElement', isDefined))
-                    ),
-                    getHover: context =>
-                        getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
-                            extensionsController,
-                        }),
-                    getDocumentHighlights: context =>
-                        getDocumentHighlights(
-                            getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
-                            { extensionsController }
-                        ),
-                    getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                    tokenize: false,
-                }),
-            [
-                // None of these dependencies are likely to change
-                extensionsController,
-                platformContext,
-                hoverOverlayElements,
-                notebookElements,
-                rerenders,
-            ]
-        )
-
-        // Passed to HoverOverlay
-        const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
-
-        // Dispose hoverifier or change/unmount.
-        useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
-
         const renderBlock = useCallback(
             (block: Block) => {
+                const isSelected = selectedBlockId === block.id
+                const isSomethingElseSelected =
+                    (selectedBlockId !== null && selectedBlockId !== block.id) || blockInserterIndex !== -1
                 const blockProps = {
                     onRunBlock,
                     onBlockInputChange,
                     onDeleteBlock,
+                    onNewBlock,
+                    onAddBlock,
                     onMoveBlock,
                     onDuplicateBlock,
-                    isLightTheme,
                     isReadOnly,
-                    isSelected: selectedBlockId === block.id,
-                    isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
+                    isSelected,
+                    showMenu: isSelected || !isSomethingElseSelected,
                 }
 
                 switch (block.type) {
@@ -429,11 +388,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             <NotebookFileBlock
                                 {...block}
                                 {...blockProps}
-                                hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
-                                extensionsController={extensionsController}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                             />
                         )
                     case 'query':
@@ -442,29 +399,24 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
-                                hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
-                                extensionsController={extensionsController}
                             />
                         )
-                    case 'compute':
-                        return <NotebookComputeBlock platformContext={platformContext} {...block} {...blockProps} />
                     case 'symbol':
                         return (
                             <NotebookSymbolBlock
                                 {...block}
                                 {...blockProps}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
-                                hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
-                                extensionsController={extensionsController}
                             />
                         )
                 }
@@ -473,23 +425,22 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
+                onNewBlock,
+                onAddBlock,
                 onMoveBlock,
                 onDuplicateBlock,
                 isEmbedded,
-                isLightTheme,
                 isReadOnly,
                 selectedBlockId,
-                hoverifier,
-                sourcegraphSuggestionsSearchLanguageId,
-                extensionsController,
                 telemetryService,
                 isSourcegraphDotCom,
+                globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                sourcegraphSearchLanguageId,
+                blockInserterIndex,
             ]
         )
 
@@ -507,12 +458,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+            return (
+                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
+            )
         }
 
         return (
-            <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
-                <div className="pb-1">
+            <div
+                className={classNames(styles.searchNotebook, isReadOnly && 'is-read-only-notebook')}
+                ref={notebookElement}
+            >
+                <div className={classNames(styles.header, 'pb-1', 'px-3')}>
                     <Button
                         className="mr-2"
                         variant="primary"
@@ -520,7 +476,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         onClick={runAllBlocks}
                         disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon className="mr-1" as={PlayCircleOutlineIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlayCircleOutline} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
                     {!isEmbedded && (
@@ -531,7 +487,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             onClick={exportNotebook}
                             data-testid="export-notebook-markdown-button"
                         >
-                            <Icon className="mr-1" as={DownloadIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                             <span>Export as Markdown</span>
                         </Button>
                     )}
@@ -544,19 +500,28 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             data-testid="copy-notebook-button"
                             disabled={copiedNotebookOrError === LOADING}
                         >
-                            <Icon className="mr-1" as={ContentCopyIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiContentCopy} />
                             <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                         </Button>
                     )}
                 </div>
                 {blocks.map((block, blockIndex) => (
                     <div key={block.id}>
-                        <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
+                        {blockInserterIndex === blockIndex && (
+                            <NotebookCommandPaletteInput
+                                hasFocus={true}
+                                ref={floatingCommandPaletteInputReference}
+                                index={blockIndex}
+                                onAddBlock={onAddBlock}
+                                onShouldDismiss={dismissNewBlockPalette}
+                            />
+                        )}
                         {renderBlock(block)}
                     </div>
                 ))}
                 {!isReadOnly && (
                     <NotebookCommandPaletteInput
+                        hasFocus={blockInserterIndex === blocks.length}
                         ref={commandPaletteInputReference}
                         index={blocks.length}
                         onAddBlock={onAddBlock}
@@ -570,20 +535,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         blocks={blocks}
                     />
                 )}
-                {hoverState.hoverOverlayProps && (
-                    <WebHoverOverlay
-                        {...hoverState.hoverOverlayProps}
-                        platformContext={platformContext}
-                        settingsCascade={settingsCascade}
-                        hoveredTokenElement={hoverState.hoveredTokenElement}
-                        hoverRef={nextOverlayElement}
-                        extensionsController={extensionsController}
-                        location={location}
-                        telemetryService={telemetryService}
-                        isLightTheme={isLightTheme}
-                    />
-                )}
             </div>
         )
     }
 )
+
+NotebookComponent.displayName = 'NotebookComponent'

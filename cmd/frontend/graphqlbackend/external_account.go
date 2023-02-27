@@ -6,10 +6,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type externalAccountResolver struct {
@@ -28,7 +29,7 @@ func externalAccountByID(ctx context.Context, db database.DB, id graphql.ID) (*e
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, account.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, account.UserID); err != nil {
 		return nil, err
 	}
 
@@ -50,8 +51,12 @@ func (r *externalAccountResolver) ServiceType() string { return r.account.Servic
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
-func (r *externalAccountResolver) CreatedAt() DateTime { return DateTime{Time: r.account.CreatedAt} }
-func (r *externalAccountResolver) UpdatedAt() DateTime { return DateTime{Time: r.account.UpdatedAt} }
+func (r *externalAccountResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.account.CreatedAt}
+}
+func (r *externalAccountResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.account.UpdatedAt}
+}
 
 func (r *externalAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.
@@ -68,16 +73,41 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	// GitLab, but only site admins can view account data for all other types.
 	var err error
 	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+		err = auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
 	} else {
-		err = backend.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
+		err = auth.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	if r.account.Data != nil {
-		return &JSONValue{r.account.Data}, nil
+		raw, err := r.account.Data.Decrypt(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &JSONValue{raw}, nil
 	}
+	return nil, nil
+}
+
+func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*externalAccountDataResolver, error) {
+	// 🚨 SECURITY: We only return this data to site admin or user who is linked to the external account
+	// This method differs from the one above - here we only return specific attributes
+	// from the account that are public info, e.g. username, email, etc.
+	err := auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.account.Data != nil {
+		res, err := NewExternalAccountDataResolver(ctx, r.account)
+		if err != nil {
+			return nil, nil
+		}
+		return res, nil
+	}
+
 	return nil, nil
 }

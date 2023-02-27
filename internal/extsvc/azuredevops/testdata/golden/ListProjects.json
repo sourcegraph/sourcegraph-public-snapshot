@@ -1,0 +1,200 @@
+[
+  {
+   "id": "a000eac7-cc32-4b55-b877-1915325444a7",
+   "name": "sg test with many           spaces",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces/_git/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces",
+   "url": "https://dev.azure.com/sgtestazure/e414d6eb-05c3-46ff-a6f7-ce278577b7c2/_apis/git/repositories/a000eac7-cc32-4b55-b877-1915325444a7",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces",
+   "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces/_git/sg%20test%20with%20many%20%20%20%20%20%20%20%20%20%20%20spaces",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "e414d6eb-05c3-46ff-a6f7-ce278577b7c2",
+    "name": "sg test with many           spaces",
+    "state": "wellFormed",
+    "revision": 27,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/e414d6eb-05c3-46ff-a6f7-ce278577b7c2"
+   }
+  },
+  {
+   "id": "edaf746e-a05e-429c-ad75-2486f9c0f7d7",
+   "name": "sgtestazureforks",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks",
+   "isDisabled": false,
+   "isFork": true,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "7a7a0959-9c79-47f5-9d42-319c735179ce",
+   "name": "sg test with spaces",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces",
+   "url": "https://dev.azure.com/sgtestazure/8c1230da-3631-41e8-8df3-c94a705227d8/_apis/git/repositories/7a7a0959-9c79-47f5-9d42-319c735179ce",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20spaces/sg%20test%20with%20spaces",
+   "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "8c1230da-3631-41e8-8df3-c94a705227d8",
+    "name": "sg test with spaces",
+    "state": "wellFormed",
+    "revision": 19,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/8c1230da-3631-41e8-8df3-c94a705227d8"
+   }
+  },
+  {
+   "id": "6a1d97ce-9301-4364-8584-3c6d59d70359",
+   "name": "sgtestazurefork",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazurefork",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazurefork",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazurefork",
+   "isDisabled": false,
+   "isFork": true,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "00e0ad0a-66df-4dc2-bd1b-4c34e05b9225",
+   "name": "sg test with spaces 2",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202",
+   "url": "https://dev.azure.com/sgtestazure/8c1230da-3631-41e8-8df3-c94a705227d8/_apis/git/repositories/00e0ad0a-66df-4dc2-bd1b-4c34e05b9225",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20spaces/sg%20test%20with%20spaces%202",
+   "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "8c1230da-3631-41e8-8df3-c94a705227d8",
+    "name": "sg test with spaces",
+    "state": "wellFormed",
+    "revision": 19,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/8c1230da-3631-41e8-8df3-c94a705227d8"
+   }
+  },
+  {
+   "id": "be5d3e06-8bfb-445a-9729-5136088a5aea",
+   "name": "src cli with spaces",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/src%20cli%20with%20spaces",
+   "url": "https://dev.azure.com/sgtestazure/8c1230da-3631-41e8-8df3-c94a705227d8/_apis/git/repositories/be5d3e06-8bfb-445a-9729-5136088a5aea",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20spaces/src%20cli%20with%20spaces",
+   "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/src%20cli%20with%20spaces",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "8c1230da-3631-41e8-8df3-c94a705227d8",
+    "name": "sg test with spaces",
+    "state": "wellFormed",
+    "revision": 19,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/8c1230da-3631-41e8-8df3-c94a705227d8"
+   }
+  },
+  {
+   "id": "d66c87ea-6548-4a67-9f1f-560528393e73",
+   "name": "sgtestazure2",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/d66c87ea-6548-4a67-9f1f-560528393e73",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure2",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "f4fda787-a3ff-41fc-8c67-82484abdf752",
+   "name": "mytest",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/mytest",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/f4fda787-a3ff-41fc-8c67-82484abdf752",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/mytest",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/mytest",
+   "isDisabled": false,
+   "isFork": true,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "601cf461-9338-4396-895d-a3e2780bd52f",
+   "name": "sgtestazure3",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure3",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure3",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure3",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+   "name": "sgtestazure",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  {
+   "id": "c33edfe3-79ca-4a18-b4b2-fffa4e458e64",
+   "name": "sgtestrepo12458",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgmanyrepos/_git/sgtestrepo12458",
+   "url": "https://dev.azure.com/sgtestazure/5966469e-b7f4-4f02-ad3a-f6a881fc6f6d/_apis/git/repositories/c33edfe3-79ca-4a18-b4b2-fffa4e458e64",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgmanyrepos/sgtestrepo12458",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgmanyrepos/_git/sgtestrepo12458",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "5966469e-b7f4-4f02-ad3a-f6a881fc6f6d",
+    "name": "sgmanyrepos",
+    "state": "wellFormed",
+    "revision": 75,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/5966469e-b7f4-4f02-ad3a-f6a881fc6f6d"
+   }
+  }
+ ]

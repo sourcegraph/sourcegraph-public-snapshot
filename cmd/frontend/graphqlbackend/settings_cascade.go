@@ -6,8 +6,9 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/sourcegraph/conc/pool"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -87,34 +88,31 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 		return nil, err
 	}
 
-	allSettings := make([]*schema.Settings, len(subjects))
-
 	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
-	bounded := goroutine.NewBounded(8)
-	for i := range subjects {
-		i := i
-		bounded.Go(func() error {
-			settings, err := subjects[i].LatestSettings(ctx)
+	p := pool.NewWithResults[*schema.Settings]().WithContext(ctx).WithMaxGoroutines(8)
+	for _, subject := range subjects {
+		subject := subject
+		p.Go(func(ctx context.Context) (*schema.Settings, error) {
+			settings, err := subject.LatestSettings(ctx)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if settings == nil {
-				return nil
+				return nil, nil
 			}
 
 			var unmarshalled schema.Settings
 			if err := jsonc.Unmarshal(settings.settings.Contents, &unmarshalled); err != nil {
-				return err
+				return nil, err
 			}
 
-			allSettings[i] = &unmarshalled
-
-			return nil
+			return &unmarshalled, nil
 		})
 	}
 
-	if err := bounded.Wait(); err != nil {
+	allSettings, err := p.Wait()
+	if err != nil {
 		return nil, err
 	}
 
@@ -141,15 +139,12 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 }
 
 var settingsFieldMergeDepths = map[string]int{
-	"SearchScopes":           1,
-	"SearchSavedQueries":     1,
-	"SearchRepositoryGroups": 1,
-	"InsightsDashboards":     1,
-	"InsightsAllRepos":       1,
-	"Quicklinks":             1,
-	"Motd":                   1,
-	"Extensions":             1,
-	"ExperimentalFeatures":   1,
+	"SearchScopes":         1,
+	"SearchSavedQueries":   1,
+	"Motd":                 1,
+	"Notices":              1,
+	"Extensions":           1,
+	"ExperimentalFeatures": 1,
 }
 
 func mergeSettingsLeft(left, right *schema.Settings) *schema.Settings {
@@ -218,7 +213,7 @@ func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
 	return right
 }
 
-func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
+func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
 	user, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -231,5 +226,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return schemaResolver{db: r.db}.ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
 }

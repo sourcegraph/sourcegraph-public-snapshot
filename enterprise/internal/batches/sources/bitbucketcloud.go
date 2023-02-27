@@ -5,15 +5,14 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,9 +25,13 @@ var (
 	_ ForkableChangesetSource = BitbucketCloudSource{}
 )
 
-func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketCloudConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
 
@@ -53,8 +56,8 @@ func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s BitbucketCloudSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.client.Authenticator())
+func (s BitbucketCloudSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.client.Authenticator())
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the
@@ -207,48 +210,71 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 	return s.setChangesetMetadata(ctx, repo, updated, cs)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	upstreamRepo := targetRepo.Metadata.(*bitbucketcloud.Repo)
+// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
+// exists and creating it if it doesn't. If namespace is not provided, the fork will be in
+// the currently authenticated user's namespace. If name is not provided, the fork will be
+// named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
+func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+	var namespace string
+	if ns != nil {
+		namespace = *ns
+	} else {
+		user, err := s.client.CurrentUser(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting the current user")
+		}
+		namespace = user.Username
+	}
 
-	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, upstreamRepo.Slug); err == nil {
-		return s.createRemoteRepo(targetRepo, fork), nil
+	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	targetNamespace, err := tr.Namespace()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting target repo namespace")
+	}
+
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		name = DefaultForkName(targetNamespace, tr.Slug)
+	}
+
+	// Figure out if we already have a fork of the repo in the given namespace.
+	if fork, err := s.client.Repo(ctx, namespace, name); err == nil {
+		return s.checkAndCopy(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
-	fork, err := s.client.ForkRepository(ctx, upstreamRepo, bitbucketcloud.ForkInput{
+	fork, err := s.client.ForkRepository(ctx, tr, bitbucketcloud.ForkInput{
+		Name:      &name,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	return s.createRemoteRepo(targetRepo, fork), nil
+	return s.checkAndCopy(targetRepo, fork)
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s BitbucketCloudSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	user, err := s.client.CurrentUser(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting the current user")
+func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	if fork.Parent == nil {
+		return nil, errors.New("repo is not a fork")
+	} else if fork.Parent.UUID != tr.UUID {
+		return nil, errors.New("repo was not forked from the given parent")
 	}
 
-	return s.GetNamespaceFork(ctx, targetRepo, user.Username)
-}
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.FullName, fork.FullName)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
+	}
 
-func (BitbucketCloudSource) createRemoteRepo(targetRepo *types.Repo, fork *bitbucketcloud.Repo) *types.Repo {
-	// This needs to be good enough to get the right values out of
-	// bitbucketCloudCloneURL(), which only looks at the metadata, so we can
-	// just copy it in over the top of the targetRepo.
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
-
-	return &remoteRepo
+	return forkRepo, nil
 }
 
 func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest) (*bbcs.AnnotatedPullRequest, error) {
@@ -286,11 +312,11 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 }
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
-	destBranch := git.AbbreviateRef(cs.BaseRef)
+	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
-		SourceBranch:      git.AbbreviateRef(cs.HeadRef),
+		SourceBranch:      gitdomain.AbbreviateRef(cs.HeadRef),
 		DestinationBranch: &destBranch,
 	}
 

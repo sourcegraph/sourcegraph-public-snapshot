@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/dineshappavoo/basex"
+	"github.com/google/uuid"
+
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -48,47 +49,50 @@ func (s SQLColumns) FmtStr() string {
 	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
-// seededRand is used in RandomID() to generate a "random" number.
-var seededRand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
-
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
 // RandomID generates a random ID to be used for identifiers in the database.
 func RandomID() (string, error) {
-	return basex.Encode(strconv.Itoa(seededRand.Int()))
+	random, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	return random.String(), nil
 }
 
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
+	logger log.Logger
 	*basestore.Store
-	key                encryption.Key
-	now                func() time.Time
-	operations         *operations
-	observationContext *observation.Context
+	key            encryption.Key
+	now            func() time.Time
+	operations     *operations
+	observationCtx *observation.Context
 }
 
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB, observationContext *observation.Context, key encryption.Key) *Store {
-	return NewWithClock(db, observationContext, key, timeutil.Now)
+func New(db database.DB, observationCtx *observation.Context, key encryption.Key) *Store {
+	return NewWithClock(db, observationCtx, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
+func NewWithClock(db database.DB, observationCtx *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		Store:              basestore.NewWithDB(db, sql.TxOptions{}),
-		key:                key,
-		now:                clock,
-		operations:         newOperations(observationContext),
-		observationContext: observationContext,
+		logger:         observationCtx.Logger,
+		Store:          basestore.NewWithHandle(db.Handle()),
+		key:            key,
+		now:            clock,
+		operations:     newOperations(observationCtx),
+		observationCtx: observationCtx,
 	}
 }
 
-// ObservationContext returns the observation context wrapped in this store.
-func (s *Store) ObservationContext() *observation.Context {
-	return s.observationContext
+// observationCtx returns the observation context wrapped in this store.
+func (s *Store) ObservationCtx() *observation.Context {
+	return s.observationCtx
 }
 
 // Clock returns the clock used by the Store.
@@ -98,24 +102,21 @@ func (s *Store) Clock() func() time.Time { return s.now }
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 var _ basestore.ShareableStore = &Store{}
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
-		Store:              s.Store.With(other),
-		key:                s.key,
-		operations:         s.operations,
-		observationContext: s.observationContext,
-		now:                s.now,
+		logger:         s.logger,
+		Store:          s.Store.With(other),
+		key:            s.key,
+		operations:     s.operations,
+		observationCtx: s.observationCtx,
+		now:            s.now,
 	}
 }
 
@@ -128,27 +129,28 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		Store:              txBase,
-		key:                s.key,
-		operations:         s.operations,
-		observationContext: s.observationContext,
-		now:                s.now,
+		logger:         s.logger,
+		Store:          txBase,
+		key:            s.key,
+		operations:     s.operations,
+		observationCtx: s.observationCtx,
+		now:            s.now,
 	}, nil
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
 func (s *Store) Repos() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.logger, s)
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
 func (s *Store) ExternalServices() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.observationCtx.Logger, s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() database.UserCredentialsStore {
-	return database.UserCredentialsWith(s, s.key)
+	return database.UserCredentialsWith(s.logger, s, s.key)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
@@ -169,6 +171,7 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 
 type operations struct {
 	createBatchChange      *observation.Operation
+	upsertBatchChange      *observation.Operation
 	updateBatchChange      *observation.Operation
 	deleteBatchChange      *observation.Operation
 	countBatchChanges      *observation.Operation
@@ -187,9 +190,17 @@ type operations struct {
 	deleteBatchSpec         *observation.Operation
 	countBatchSpecs         *observation.Operation
 	getBatchSpec            *observation.Operation
+	getBatchSpecDiffStat    *observation.Operation
 	getNewestBatchSpec      *observation.Operation
 	listBatchSpecs          *observation.Operation
+	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
+
+	upsertBatchSpecWorkspaceFile *observation.Operation
+	deleteBatchSpecWorkspaceFile *observation.Operation
+	getBatchSpecWorkspaceFile    *observation.Operation
+	listBatchSpecWorkspaceFiles  *observation.Operation
+	countBatchSpecWorkspaceFiles *observation.Operation
 
 	getBulkOperation        *observation.Operation
 	listBulkOperations      *observation.Operation
@@ -211,6 +222,7 @@ type operations struct {
 	getChangesetSpec                         *observation.Operation
 	listChangesetSpecs                       *observation.Operation
 	deleteExpiredChangesetSpecs              *observation.Operation
+	deleteUnattachedExpiredChangesetSpecs    *observation.Operation
 	getRewirerMappings                       *observation.Operation
 	listChangesetSpecsWithConflictingHeadRef *observation.Operation
 	deleteChangesetSpecs                     *observation.Operation
@@ -231,8 +243,10 @@ type operations struct {
 	enqueueChangesetsToClose          *observation.Operation
 	getChangesetsStats                *observation.Operation
 	getRepoChangesetsStats            *observation.Operation
+	getGlobalChangesetsStats          *observation.Operation
 	enqueueNextScheduledChangeset     *observation.Operation
 	getChangesetPlaceInSchedulerQueue *observation.Operation
+	cleanDetachedChangesets           *observation.Operation
 
 	listCodeHosts         *observation.Operation
 	getExternalServiceIDs *observation.Operation
@@ -248,6 +262,7 @@ type operations struct {
 	listBatchSpecWorkspaces        *observation.Operation
 	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
+	listRetryBatchSpecWorkspaces   *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
@@ -256,13 +271,11 @@ type operations struct {
 	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
+	disableBatchSpecWorkspaceExecutionCache            *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
-
-	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
-	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
 
 	listBatchSpecExecutionCacheEntries     *observation.Operation
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
@@ -276,18 +289,18 @@ var (
 )
 
 // newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationContext.
-func newOperations(observationContext *observation.Context) *operations {
+// TODO: We should create one per observationCtx.
+func newOperations(observationCtx *observation.Context) *operations {
 	operationsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"batches_dbstore",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
 		op := func(name string) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("batches.dbstore.%s", name),
 				MetricLabelValues: []string{name},
 				Metrics:           m,
@@ -302,6 +315,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		singletonOperations = &operations{
 			createBatchChange:      op("CreateBatchChange"),
+			upsertBatchChange:      op("UpsertBatchChange"),
 			updateBatchChange:      op("UpdateBatchChange"),
 			deleteBatchChange:      op("DeleteBatchChange"),
 			countBatchChanges:      op("CountBatchChanges"),
@@ -320,9 +334,17 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpec:         op("DeleteBatchSpec"),
 			countBatchSpecs:         op("CountBatchSpecs"),
 			getBatchSpec:            op("GetBatchSpec"),
+			getBatchSpecDiffStat:    op("GetBatchSpecDiffStat"),
 			getNewestBatchSpec:      op("GetNewestBatchSpec"),
 			listBatchSpecs:          op("ListBatchSpecs"),
+			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
+
+			upsertBatchSpecWorkspaceFile: op("UpsertBatchSpecWorkspaceFile"),
+			deleteBatchSpecWorkspaceFile: op("DeleteBatchSpecWorkspaceFile"),
+			getBatchSpecWorkspaceFile:    op("GetBatchSpecWorkspaceFile"),
+			listBatchSpecWorkspaceFiles:  op("ListBatchSpecWorkspaceFiles"),
+			countBatchSpecWorkspaceFiles: op("CountBatchSpecWorkspaceFiles"),
 
 			getBulkOperation:        op("GetBulkOperation"),
 			listBulkOperations:      op("ListBulkOperations"),
@@ -344,6 +366,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetSpec:                         op("GetChangesetSpec"),
 			listChangesetSpecs:                       op("ListChangesetSpecs"),
 			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			deleteUnattachedExpiredChangesetSpecs:    op("DeleteUnattachedExpiredChangesetSpecs"),
 			deleteChangesetSpecs:                     op("DeleteChangesetSpecs"),
 			getRewirerMappings:                       op("GetRewirerMappings"),
 			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
@@ -364,8 +387,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
 			getChangesetsStats:                op("GetChangesetsStats"),
 			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
+			getGlobalChangesetsStats:          op("GetGlobalChangesetsStats"),
 			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
 			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
+			cleanDetachedChangesets:           op("CleanDetachedChangesets"),
 
 			listCodeHosts:         op("ListCodeHosts"),
 			getExternalServiceIDs: op("GetExternalServiceIDs"),
@@ -381,6 +406,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
 			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
+			listRetryBatchSpecWorkspaces:   op("ListRetryBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
 			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
@@ -389,13 +415,11 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
 			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
 			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
+			disableBatchSpecWorkspaceExecutionCache:            op("DisableBatchSpecWorkspaceExecutionCache"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
-
-			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
-			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 
 			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
 			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),
@@ -424,6 +448,17 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
+// buildRecordScanner converts a scan*() function as implemented in lots of
+// places in this package into something we can use in
+// `dbworker.BuildWorkerScan`.
+func buildRecordScanner[T any](scan func(*T, dbutil.Scanner) error) func(dbutil.Scanner) (*T, error) {
+	return func(s dbutil.Scanner) (*T, error) {
+		var t T
+		err := scan(&t, s)
+		return &t, err
+	}
+}
+
 func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -438,34 +473,6 @@ func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullInt64Column(n int64) *int64 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 type LimitOpts struct {

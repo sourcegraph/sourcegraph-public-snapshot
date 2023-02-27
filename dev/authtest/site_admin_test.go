@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -79,6 +80,7 @@ func TestSiteAdminEndpoints(t *testing.T) {
 	t.Run("GraphQL queries", func(t *testing.T) {
 		type gqlTest struct {
 			name      string
+			errorStr  string
 			query     string
 			variables map[string]any
 		}
@@ -92,6 +94,15 @@ mutation {
 	}
 }`,
 			}, {
+				name: "reindexRepository",
+				query: `
+mutation {
+	reindexRepository(repository: "UmVwb3NpdG9yeTox") {
+		alwaysNil
+	}
+}`,
+			},
+			{
 				name: "updateMirrorRepository",
 				query: `
 mutation {
@@ -162,10 +173,10 @@ mutation {
 	}
 }`,
 			}, {
-				name: "SetMigrationDirection",
+				name: "setMigrationDirection",
 				query: `
 mutation {
-	SetMigrationDirection(id: "TWlncmF0aW9uOjE=", applyReverse: false) {
+	setMigrationDirection(id: "TWlncmF0aW9uOjE=", applyReverse: false) {
 		alwaysNil
 	}
 }`,
@@ -200,7 +211,8 @@ mutation {
 	}
 }`,
 			}, {
-				name: "scheduleUserPermissionsSync",
+				name:     "scheduleUserPermissionsSync",
+				errorStr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
 				query: `
 mutation {
 	scheduleUserPermissionsSync(user: "VXNlcjox") {
@@ -278,16 +290,6 @@ mutation {
 				query: `
 {
 	organizations {
-		nodes {
-			id
-		}
-	}
-}`,
-			}, {
-				name: "users",
-				query: `
-{
-	users {
 		nodes {
 			id
 		}
@@ -441,8 +443,13 @@ mutation {
 			t.Run(test.name, func(t *testing.T) {
 				err := userClient.GraphQL("", test.query, test.variables, nil)
 				got := fmt.Sprintf("%v", err)
-				if !strings.Contains(got, "must be site admin") {
-					t.Fatalf(`Want "must be site admin"" error but got %q`, got)
+				expected := auth.ErrMustBeSiteAdmin.Error()
+				if test.errorStr != "" {
+					expected = test.errorStr
+				}
+				// check if it's one of errors that we expect
+				if !strings.Contains(got, expected) {
+					t.Fatalf(`Want "%s" error, but got "%q"`, expected, got)
 				}
 			})
 		}

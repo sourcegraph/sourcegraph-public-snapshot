@@ -1,6 +1,6 @@
 import escape from 'escape-html'
 
-import { JsonDocument, Occurrence, SyntaxKind } from './lsif-typed'
+import { DocumentInfo, Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 class HtmlBuilder {
     public readonly buffer: string[] = []
@@ -57,18 +57,23 @@ function closeLine(html: HtmlBuilder): void {
     html.closeTag('tr')
 }
 
-function highlightSlice(html: HtmlBuilder, kind: SyntaxKind, slice: string): void {
-    const kindName = SyntaxKind[kind]
-    if (kindName) {
-        html.span(`class="hl-typed-${kindName}"`, slice)
-    } else {
-        html.plaintext(slice)
+function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: string): void {
+    if (kind) {
+        const kindName = SyntaxKind[kind]
+        if (kindName) {
+            html.span(`class="hl-typed-${kindName}"`, slice)
+            return
+        }
     }
+    html.plaintext(slice)
 }
 
-// Currently assumes that no ranges overlap in the occurences.
-export function render(lsif_json: string, content: string): string {
-    const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences.map(occ => new Occurrence(occ))
+// Currently assumes that no ranges overlap in the occurrences.
+export function render(info: DocumentInfo): string {
+    const occurrences = Occurrence.fromInfo(info)
+    if (!occurrences) {
+        return ''
+    }
 
     // Sort by line, and then by start character.
     occurrences.sort((a, b) => {
@@ -79,7 +84,7 @@ export function render(lsif_json: string, content: string): string {
         return a.range.start.character - b.range.start.character
     })
 
-    const lines = content.replaceAll('\r\n', '\n').split('\n')
+    const lines = info.content.replaceAll('\r\n', '\n').split('\n')
     const html = new HtmlBuilder()
 
     let occIndex = 0
@@ -111,7 +116,7 @@ export function render(lsif_json: string, content: string): string {
                 // Move to the next line
                 lineNumber++
 
-                // Handle all the lines that completely owned by this occurence
+                // Handle all the lines that completely owned by this occurrence
                 while (lineNumber < end.line) {
                     line = lines[lineNumber]
 
@@ -122,7 +127,7 @@ export function render(lsif_json: string, content: string): string {
                     lineNumber++
                 }
 
-                // Write as much of the line as the last occurence owns
+                // Write as much of the line as the last occurrence owns
                 line = lines[lineNumber]
 
                 openLine(html, lineNumber)

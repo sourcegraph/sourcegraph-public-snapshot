@@ -11,14 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type ComputeExcludedReposJob struct {
+type ComputeExcludedJob struct {
 	RepoOpts search.RepoOptions
 }
 
-func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, c)
+func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(c.Tags))
 
 	excluded, err := computeExcludedRepos(ctx, clients.DB, c.RepoOpts)
 	if err != nil {
@@ -35,12 +34,21 @@ func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeCl
 	return nil, nil
 }
 
-func (c *ComputeExcludedReposJob) Name() string {
-	return "ComputeExcludedReposJob"
+func (c *ComputeExcludedJob) Name() string {
+	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedReposJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("repoOpts", &c.RepoOpts),
+func (c *ComputeExcludedJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (c *ComputeExcludedJob) Children() []job.Describer       { return nil }
+func (c *ComputeExcludedJob) MapChildren(job.MapFunc) job.Job { return c }

@@ -35,7 +35,6 @@ body.theme-dark .markdown-body ul li:before {
 <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
 </div>
 
-
 ## [Setup](setup/index.md)
 
 <p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
@@ -67,6 +66,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
+- [Current Sourcegraph tech radar](https://radar.thoughtworks.com/?sheetId=https%3A%2F%2Fraw.githubusercontent.com%2Fsourcegraph%2Fsourcegraph%2Fmain%2Fdoc%2Fdev%2Fradar%2Ftech-radar.csv) (also see [how to maintain the radar](how-to/maintain-tech-radar.md))
 
 ### [Architecture](background-information/architecture/index.md)
 
@@ -76,6 +76,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
+  - [Full `sg` reference](background-information/sg/reference.md)
 - [Developing the web clients](background-information/web/index.md)
   - [Developing the web app](background-information/web/web_app.md)
   - [Developing the code host integrations](background-information/web/code_host_integrations.md)
@@ -87,11 +88,10 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Build process](background-information/web/build.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
-- [Developing code intelligence](background-information/codeintel/index.md)
+- [Developing code navigation](background-information/codeintel/index.md)
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
-- [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
 - [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
@@ -100,13 +100,18 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
-- [Code host connections on local dev environment](background-information/code-host.md)
 - [Testing](#testing)
   - [Testing principles and guidelines](background-information/testing_principles.md)
   - [Continuous integration](background-information/ci/index.md)
   - [How to write and run tests](how-to/testing.md)
     - [Testing Go code](background-information/languages/testing_go_code.md)
     - [Testing web code](background-information/testing_web_code.md)
+- [Building p4-fusion](background-information/build_p4_fusion.md)
+- [The `gitserver` API](background-information/gitserver-api.md)
+
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -136,6 +141,10 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
 
+### Components
+
+- [`gitserver` API](components/gitserver.md)
+
 ### Other
 
 - [Telemetry](background-information/telemetry.md)
@@ -155,6 +164,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
 - [How to use feature flags](how-to/use_feature_flags.md)
+- [How to add caching](how-to/add_caching.md)
 
 ### Observability
 
@@ -162,6 +172,12 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to add logging](how-to/add_logging.md)
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
+- [Set up local monitoring development](how-to/monitoring_local_dev.md)
+- [Set up local OpenTelemetry development](how-to/opentelemetry_local_dev.md)
+
+### Plans and licenses
+
+- [How to generate a license key for testing and debugging](how-to/generate_license_key_for_testing.md)
 
 ### Documentation
 
@@ -175,9 +191,11 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Testing
 
 - [How to write and run tests](how-to/testing.md)
+- [Run a local Sourcegraph instance behind ngrok](how-to/sourcegraph_ngrok.md)
 - Testing against code hosts
   - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
   - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
+  - [Sync repositories from gitolite.sgdev.org](how-to/sync_repositories_from_gitolite_sgdev_org.md)
 
 ## [Contributing](./contributing/index.md)
 

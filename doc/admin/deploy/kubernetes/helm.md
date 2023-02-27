@@ -1,4 +1,8 @@
-# Using Helm
+# Sourcegraph Helm Charts
+
+Helm offers a simple deployment process on Kubernetes.
+
+>NOTE: We highly recommend [deploying Sourcegraph on Kubernetes with Kustomize](index.md) due to the flexibility it provides.
 
 ## Requirements
 
@@ -15,18 +19,22 @@
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
+
+> WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. The information you are looking at is currently recommended for a new install of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
+
 ## Why use Helm
 
-Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
+Our Helm chart has a lot of sensible defaults baked into the values.yaml so that when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
 
 
 ## High-level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
-   - Most environments are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
-1. Review the changes
+   - Most environments are likely to need changes from the defaults—use the guidance in [Configuration](#configuration).
+   - These changes are inclusive of updates to resourcing for each service. See our [resource estimator](../resource_estimator.md) for more information.
+2. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
-1. Select your deployment method and follow the guidance:
+3. Select your deployment method and follow the guidance:
    - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
    - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
    - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
@@ -46,7 +54,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm install --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -73,9 +81,9 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
-When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
+When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
 ### Specific Configuration Scenarios
 
@@ -239,7 +247,7 @@ In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/t
 
 ```yaml
 
-minio:
+blobstore:
   enabled: false # Disable deployment of the built-in object storage
 
 # we use YAML anchors and alias to keep override file clean
@@ -278,8 +286,8 @@ If you have access to the ssh keys locally, you can run the command below to cre
 
 ```sh
 kubectl create secret generic gitserver-ssh \
-	    --from-file id_rsa=${HOME}/.ssh/id_rsa \
-	    --from-file known_hosts=${HOME}/.ssh/known_hosts
+      --from-file id_rsa=${HOME}/.ssh/id_rsa \
+      --from-file known_hosts=${HOME}/.ssh/known_hosts
 ```
 
 Alternatively, you may manually create the secret from a manifest file.
@@ -335,6 +343,108 @@ An example of a subchart is shown in the [examples/subchart](https://github.com/
 
 More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
 
+### OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+#### Configure a tracing backend
+
+Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
+
+You can add the following values in your `override.yaml` to configure trace exporting:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        exporters:
+          ...
+
+        processors:
+          ...
+```
+
+As an example, to configure the collector to export to an external Jaeger instance, add the following to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override.yaml):
+
+```yaml
+openTelemetry:
+  gateway:
+    env:
+      JAEGER_HOST:
+        value: "http://your.jaeger.endpoint"
+    config:
+      traces:
+        exporters:
+          jaeger:
+            endpoint: "$JAEGER_HOST:14250"
+            tls:
+              insecure: true
+```
+
+#### Configure a tracing backend with TLS enabled
+
+If you require a TLS connection to export trace data, you need to first add the certificate data to a Secret. The following snippet demonstrates how you can achieve this:
+
+> WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: otel-collector-exporters-tls
+data:
+  file.cert: "<.cert data>"
+  file.key: "<.key data>"
+```
+
+After applying the secret to your cluster, you can [override](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override-tls.yaml) the value `openTelemetry.gateway.config.traces.exportersTlsSecretName` to mount the certificate data in the Collector and instruct the exporter to use TLS:
+
+```yaml
+openTelemetry:
+  gateway:
+    env:
+      JAEGER_HOST:
+        value: "http://your.jaeger.endpoint"
+    config:
+      traces:
+        exportersTlsSecretName: otel-collector-exporters-tls
+        exporters:
+          jaeger:
+            endpoint: "$JAEGER_HOST:14250"
+            tls:
+              cert_file: /tls/file.cert
+              key_file: /tls/file.key
+```
+
+#### Configure trace sampling
+
+Review the [trace sampling documentation](../../observability/opentelemetry.md#sampling-traces) to understand how to configure sampling.
+
+Add your config to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override-processor.yaml) as follows:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        processors:
+          probabilistic_sampler:
+            hash_seed: 22 # An integer used to compute the hash algorithm. Note that all collectors for a given tier (e.g. behind the same load balancer) should have the same hash_seed.
+            sampling_percentage: 10.0 # (default = 0): Percentage at which traces are sampled; >= 100 samples all traces
+```
+
+#### Enable the bundled Jaeger deployment
+
+Sourcegraph ships with a bundled Jaeger instance that is disabled by default. If you do not wish to make use of an external observability backend, you can enable this instance by adding the following to your overrides:
+
+```yaml
+jaeger:
+  enabled: true
+```
+
+This will also configure the OpenTelemetry Collector to export trace data to this instance. No further configuration is required.
+
 ## Cloud providers guides
 
 This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
@@ -359,7 +469,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#gke-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options for what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options for what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
@@ -408,7 +518,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -493,9 +603,11 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#eks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
+
+Uncomment the `provisioner` that your Amazon EKS cluster implements.
 
 <!--[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)-->
 ```yaml
@@ -503,6 +615,9 @@ frontend:
   ingress:
     enabled: true
     annotations:
+      alb.ingress.kubernetes.io/target-type: ip # specifies targeting services with type ClusterIP
+      # By default the AWS ALB will be internal to your VPC.
+    #  alb.ingress.kubernetes.io/scheme: internet-facing  # use this annotation if you plan to provision a public Sourcegraph URL.
       kubernetes.io/ingress.class: alb # aws load balancer controller ingressClass name
       # additional aws alb ingress controller supported annotations
       # ...
@@ -512,7 +627,8 @@ frontend:
 storageClass:
   create: true
   type: gp2 # This configures SSDs (recommended).
-  provisioner: ebs.csi.aws.com
+#  provisioner: ebs.csi.aws.com # use this provisioner if using the self-managed Amazon EBS Container Storage Interface driver
+#  provisioner: kubernetes.io/aws-ebs # use this provisioner if using the Amazon EKS add-on
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
@@ -521,7 +637,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -575,7 +691,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#aks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi). For an example see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml).
 
@@ -606,7 +722,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -661,7 +777,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#others-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
 
@@ -692,7 +808,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -771,9 +887,14 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
-> WARNING: Skipping minor version upgrades of Sourcegraph is not supported. You must upgrade one minor version at a time - e.g. v3.26 –> v3.27 –> v3.28.
+### Standard upgrades
 
-### Upgrading
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
+**Before upgrading:**
+
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
 
 1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
@@ -781,35 +902,92 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 1. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
 
-   ```bash
-      helm repo update sourcegraph
-   ```
+```bash
+helm repo update sourcegraph
+```
 
-1. (Optional) Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for options.
+1. (Optional) Review the changes that will be applied—see [Reviewing Changes](#reviewing-changes) for options.
 
 1.  Install the new version:
 
-   ```bash
-      helm upgrade --install -f override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+helm upgrade --install -f override.yaml --version 4.5.1 sourcegraph sourcegraph/sourcegraph
+```
 
 1.  Verify the installation has started:
 
-   ```bash
-      kubectl get pods --watch
-   ```
+```bash
+kubectl get pods --watch
+```
 
-   When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
+When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
+
+### Multi-version upgrades
+
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
+
+> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
+>
+> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+>
+> **If you do not feel confident running this process solo**, contact customer support team to help guide you thorough the process.
+
+**Before performing a multi-version upgrade**:
+
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md#multi-version-upgrade-procedure).
+
+### Multi-version upgrade procedure
+
+1. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
+  The following services must have their replicas scaled to 0:
+    - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+      - precise-code-intel-worker
+      - repo-updater
+      - searcher
+      - sourcegraph-frontend
+      - sourcegraph-frontend-internal
+      - symbols
+      - worker
+    - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+      - gitserver
+      - indexed-search
+
+    The following convenience commands provide an example of scaling down the necessary services in a single command:
+
+    Deployments:
+    ```
+    kubectl get -n sourcegraph deploy --no-headers | awk '{print $1}' | xargs -n 1 -P 8 -I % kubectl -n sourcegraph scale deployment % --replicas=0
+    ```
+    StatefulSets: 
+    ```
+    kubectl -n sourcegraph get sts --selector 'app.kubernetes.io/component!=codeinsights-db,app.kubernetes.io/component!=codeintel-db,app.kubernetes.io/component!=pgsql' --no-headers | awk '{print $1}' | xargs -n 1 -P 8 -I % kubectl -n sourcegraph scale sts % --replicas=0
+    ```
+
+    > NOTE: The commands above use the `sourcegraph` namespace and are specific to the kubernetes-helm deployment.
+2. **Run the migrator `upgrade` command**
+  - The following command is the general template for running an upgrade
+    ```
+    helm upgrade --install -n <your namespace> --set "migrator.args={upgrade,--from=<current version>,--to=<version to upgrade to>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
+    ```
+    > NOTE: The command above is general and you'll need to substitute in your own namespace, target sourcegraph version, and desired migrator image version. In general run the most recent version of migrator.
+
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
+3. **Upgrade your instance via `helm upgrade`**
+  - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
+    ```
+    helm upgrade -n <your namespace> --install -f override.yaml --version <sourcegraph version> sourcegraph sourcegraph/sourcegraph
+    ```
 
 ### Rollback
 
 You can revert to a previous version with the following command:
 
-   ```bash
-      helm rollback sourcegraph
-   ```
+```bash
+helm rollback sourcegraph
+```
 
-Sourcegraph only supports rolling back one minor version, due to database compatibility guarantees.
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
 
 ### Database Migrations
 
@@ -831,23 +1009,23 @@ For example:
 
 1. Render the initial manifests from your existing deployment setup to an output file:
 
-   ```bash
-      CHART_VERSION=0.7.0 # Currently deployed version
-      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
-   ```
+```bash
+CHART_VERSION=0.7.0 # Currently deployed version
+helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
+```
 
 1. Make changes to your override file, and/or update the chart version, then render that output:
 
-   ```bash
-      CHART_VERSION=3.39.0 # Not yet deployed version
-      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
-   ```
+```bash
+CHART_VERSION=3.39.0 # Not yet deployed version
+helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
+```
 
 1. Compare the two outputs:
 
-   ```bash
-      diff original_manifests new_manifests
-   ```
+```bash
+diff original_manifests new_manifests
+```
 
 ### Using helm upgrade --dry-run
 
@@ -855,17 +1033,17 @@ Similar to `helm template`, the `helm upgrade --dry-run` command can be used to 
 
 The following command will render and validate the manifests:
 
-   ```bash
-      helm upgrade --install --dry-run -f override.yaml sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+  helm upgrade --install --dry-run -f override.yaml sourcegraph sourcegraph/sourcegraph
+```
 
 Any validation errors will be displayed instead of the rendered manifests.
 
 If you are having difficulty tracking down the cause of an issue, add the `--debug` flag to enable verbose logging:
 
-   ```bash
-      helm upgrade --install --dry-run --debug -f override.yaml sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+helm upgrade --install --dry-run --debug -f override.yaml sourcegraph sourcegraph/sourcegraph
+```
 
 The `--debug` flag will enable verbose logging and additional context, including the computed values used by the chart. This is useful when confirming your overrides have been interpreted correctly.
 
@@ -875,15 +1053,15 @@ The [Helm Diff] plugin can provide a diff against a deployed chart. It is simila
 
 To install the plugin, run:
 
-   ```bash
-      helm plugin install https://github.com/databus23/helm-diff
-   ```
+```bash
+helm plugin install https://github.com/databus23/helm-diff
+```
 
 Then, display a diff between a live deployment and an upgrade, with 5 lines of context:
 
-   ```bash
-      helm diff upgrade -f override.yaml sourcegraph sourcegraph/sourcegraph -C 5
-   ```
+```bash
+helm diff upgrade -f override.yaml sourcegraph sourcegraph/sourcegraph -C 5
+```
 
 For more examples and configuration options, reference the [Helm Diff] plugin documentation.
 

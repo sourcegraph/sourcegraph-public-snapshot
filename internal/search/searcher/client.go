@@ -40,7 +40,7 @@ func Search(
 	indexed bool,
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
-	indexerEndpoints []string,
+	features search.Features,
 	onMatches func([]*protocol.FileMatch),
 ) (limitHit bool, err error) {
 	if MockSearch != nil {
@@ -64,7 +64,6 @@ func Search(
 			IncludePatterns:              p.IncludePatterns,
 			Languages:                    p.Languages,
 			CombyRule:                    p.CombyRule,
-			PathPatternsAreRegExps:       true,
 			Select:                       p.Select.Root(),
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
@@ -76,9 +75,9 @@ func Search(
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:          indexed,
-		FetchTimeout:     fetchTimeout.String(),
-		IndexerEndpoints: indexerEndpoints,
+		Indexed:      indexed,
+		FetchTimeout: fetchTimeout,
+		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}
 
 	body, err := json.Marshal(r)
@@ -86,7 +85,7 @@ func Search(
 		return false, err
 	}
 
-	// SearcherJob caches the file contents for repo@commit since it is
+	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
 	consistentHashKey := string(repo) + "@" + string(commit)
@@ -134,8 +133,8 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
-		nethttp.OperationName("SearcherJob Client"),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req, //nolint:staticcheck // Drop once we get rid of OpenTracing
+		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 

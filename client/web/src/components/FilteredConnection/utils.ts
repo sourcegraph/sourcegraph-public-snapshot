@@ -13,6 +13,12 @@ import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './
 export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
     typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
+export const hasDisplayName = (value: unknown): value is { displayName: Scalars['String'] } =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('displayName')(value) &&
+    typeof value.displayName === 'string'
+
 export const getFilterFromURL = (
     searchParameters: URLSearchParams,
     filters: FilteredConnectionFilter[] | undefined
@@ -59,12 +65,12 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
         : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
 
 export interface GetUrlQueryParameters {
-    first: {
+    first?: {
         actual: number
         default: number
     }
     query?: string
-    values?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
     visibleResultCount?: number
     search: Location['search']
@@ -76,7 +82,7 @@ export interface GetUrlQueryParameters {
 export const getUrlQuery = ({
     first,
     query,
-    values,
+    filterValues,
     visibleResultCount,
     filters,
     search,
@@ -87,13 +93,13 @@ export const getUrlQuery = ({
         searchParameters.set(QUERY_KEY, query)
     }
 
-    if (first.actual !== first.default) {
+    if (!!first && first.actual !== first.default) {
         searchParameters.set('first', String(first.actual))
     }
 
-    if (values && filters) {
+    if (filterValues && filters) {
         for (const filter of filters) {
-            const value = values.get(filter.id)
+            const value = filterValues.get(filter.id)
             if (value === undefined) {
                 continue
             }
@@ -105,7 +111,7 @@ export const getUrlQuery = ({
         }
     }
 
-    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first.actual) {
+    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first?.actual) {
         searchParameters.set('visible', String(visibleResultCount))
     }
 
@@ -122,7 +128,7 @@ interface AsGraphQLResultParameters<TResult> {
  */
 export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
     if (!data) {
-        return { data: undefined, errors }
+        return { data: null, errors }
     }
     return {
         data,

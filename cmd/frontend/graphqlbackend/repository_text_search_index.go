@@ -2,22 +2,23 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !conf.SearchIndexEnabled() {
-		return nil
-	}
-
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
 		client: search.Indexed(),
@@ -26,15 +27,11 @@ func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 
 type repositoryTextSearchIndexResolver struct {
 	repo   *RepositoryResolver
-	client repoLister
+	client zoekt.Streamer
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
 	err   error
-}
-
-type repoLister interface {
-	List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
@@ -71,16 +68,38 @@ func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*reposi
 	return &repositoryTextSearchIndexStatus{entry: *entry}, nil
 }
 
+func (r *repositoryTextSearchIndexResolver) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	// We don't want to let the user wait for too long. If the socket
+	// connection is working, 500ms should be generous.
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*500)
+	defer cancel()
+	host, err := searchzoekt.GetIndexserverHost(ctx, r.repo.RepoName())
+	if err != nil {
+		return nil, nil
+	}
+	return &repositoryIndexserverHostResolver{
+		host,
+	}, nil
+}
+
+type repositoryIndexserverHostResolver struct {
+	host searchzoekt.Host
+}
+
+func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
+	return r.host.Name
+}
+
 type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
 
-func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
-	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
+func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
-	return BigInt{r.entry.Stats.ContentBytes}
+	return BigInt(r.entry.Stats.ContentBytes)
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
@@ -128,7 +147,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := git.ResolveRevision(ctx, repoResolver.db, repoResolver.RepoName(), ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := repoResolver.gitserverClient.ResolveRevision(ctx, repoResolver.RepoName(), ref, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}
@@ -157,14 +176,20 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 			}
 			ref := refByName(name)
 			ref.indexedCommit = GitObjectID(branch.Version)
+			ref.skippedIndexed = &skippedIndexedResolver{
+				repo:   r.repo,
+				branch: branch.Name,
+				client: r.client,
+			}
 		}
 	}
 	return refs, nil
 }
 
 type repositoryTextSearchIndexedRef struct {
-	ref           *GitRefResolver
-	indexedCommit GitObjectID
+	ref            *GitRefResolver
+	indexedCommit  GitObjectID
+	skippedIndexed *skippedIndexedResolver
 }
 
 func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }
@@ -187,4 +212,52 @@ func (r *repositoryTextSearchIndexedRef) IndexedCommit() *gitObject {
 		return nil
 	}
 	return &gitObject{repo: r.ref.repo, oid: r.indexedCommit, typ: GitObjectTypeCommit}
+}
+
+func (r *repositoryTextSearchIndexedRef) SkippedIndexed() *skippedIndexedResolver {
+	return r.skippedIndexed
+}
+
+type skippedIndexedResolver struct {
+	repo   *RepositoryResolver
+	branch string
+
+	client zoekt.Streamer
+}
+
+func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
+	// During indexing, Zoekt may decide to skip a document for various reasons. If
+	// a document is skipped, Zoekt replaces the content of the skipped document
+	// with "NOT-INDEXED: <reason>"
+	expr, err := syntax.Parse("^NOT-INDEXED: ", syntax.Perl)
+	if err != nil {
+		return 0, err
+	}
+
+	q := &zoektquery.And{Children: []zoektquery.Q{
+		&zoektquery.Regexp{Regexp: expr, Content: true, CaseSensitive: true},
+		zoektquery.NewSingleBranchesRepos(r.branch, uint32(r.repo.IDInt32())),
+	}}
+
+	var stats zoekt.Stats
+	if err := r.client.StreamSearch(
+		ctx,
+		q,
+		&zoekt.SearchOptions{},
+		stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			stats.Add(sr.Stats)
+		}),
+	); err != nil {
+		return 0, err
+	}
+
+	return BigInt(stats.FileCount), nil
+}
+
+func (r *skippedIndexedResolver) Query() string {
+	// Adding select:file renders the results as path match instead of content
+	// match. This is important because the indexed content (NOT-INDEXED: <reason>)
+	// is different from the on-disk content served by gitserver which leads to
+	// broken highlighting and problems with rendering content of binary files.
+	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", regexp.QuoteMeta(r.repo.Name()), r.branch)
 }

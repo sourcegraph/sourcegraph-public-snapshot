@@ -9,9 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type refsArgs struct {
@@ -35,11 +34,10 @@ func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefC
 }
 
 func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	var branches []*git.Branch
-	db := r.db
+	var branches []*gitdomain.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = git.ListBranches(ctx, db, r.RepoName(), git.BranchesOptions{
+		branches, err = gitserver.NewClient().ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -67,7 +65,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, db, r.RepoName(), args.Interactive, branches)
+			ok, err := hydrateBranchCommits(ctx, r.gitserverClient, r.RepoName(), args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -103,10 +101,10 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		}
 	}
 
-	var tags []*git.Tag
+	var tags []*gitdomain.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = git.ListTags(ctx, db, r.RepoName())
+		tags, err = gitserver.NewClient().ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -145,11 +143,10 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	return &gitRefConnectionResolver{
 		first: args.First,
 		refs:  refs,
-		repo:  r,
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*git.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
@@ -161,7 +158,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = git.GetCommit(ctx, db, repo, branch.Head, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout
@@ -177,8 +174,6 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
-
-	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -16,17 +15,21 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/inconshreveable/log15"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -155,6 +158,7 @@ type Label struct {
 
 type PullRequestRepo struct {
 	ID    string
+	Name  string
 	Owner struct {
 		Login string
 	}
@@ -585,10 +589,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 	input := map[string]any{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if isPullRequestAlreadyExistsError(err) {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, err
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -647,10 +648,7 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 	input := map[string]any{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if isPullRequestAlreadyExistsError(err) {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, err
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.UpdatePullRequest.PullRequest.TimelineItems
@@ -1383,6 +1381,7 @@ fragment prCommit on PullRequestCommit {
 
 fragment repo on Repository {
   id
+  name
   owner {
     login
   }
@@ -1467,19 +1466,35 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 	}
 }
 
+func githubBaseURLDefault() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return ""
+	}
+	return "http://github-proxy"
+}
+
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
-	githubProxyURL   = func() *url.URL {
-		url, err := url.Parse(env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)"))
-		if err != nil {
-			log.Fatal("Error parsing GITHUB_BASE_URL:", err)
-		}
-		return url
-	}()
 
 	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
+
+	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", githubBaseURLDefault(), "base URL for GitHub.com API (used for github-proxy)")
 )
+
+func getGithubProxyURL() (*url.URL, bool) {
+	if githubProxyRawURL == "" {
+		return nil, false
+	}
+	parsedUrl, err := url.Parse(githubProxyRawURL)
+	if err != nil {
+		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+		return nil, false
+	}
+	return parsedUrl, true
+}
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
 func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
@@ -1506,19 +1521,17 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
-			return nil, errors.Wrap(err, "authenticating request")
-		}
-	}
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -1530,13 +1543,15 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "request failed")
 	}
 	defer resp.Body.Close()
 
-	log15.Debug("doRequest", "status", resp.Status, "x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"))
+	logger.Debug("doRequest",
+		log.String("status", resp.Status),
+		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
@@ -1573,14 +1588,25 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return githubProxyURL
+		u, ok := getGithubProxyURL()
+		if ok {
+			return u
+		}
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
+	if hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
+		return true
+	}
+
+	if u, ok := getGithubProxyURL(); ok {
+		return apiURL.String() == u.String()
+	}
+
+	return false
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}
@@ -1669,6 +1695,18 @@ type ErrPullRequestNotFound int
 func (e ErrPullRequestNotFound) Error() string {
 	return fmt.Sprintf("GitHub pull request not found: %d", e)
 }
+
+// ErrRepoArchived is returned when a mutation is performed on an archived
+// repo.
+type ErrRepoArchived struct{}
+
+func (ErrRepoArchived) Archived() bool { return true }
+
+func (ErrRepoArchived) Error() string {
+	return "GitHub repository is archived"
+}
+
+func (ErrRepoArchived) NonRetryable() bool { return true }
 
 type disabledClient struct{}
 
@@ -1860,30 +1898,49 @@ type restTopicsResponse struct {
 	Names []string `json:"names"`
 }
 
-func GetExternalAccountData(data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
-	var (
-		u github.User
-		t oauth2.Token
-	)
-
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		if err := data.GetAccountData(&u); err != nil {
+		usr, err = encryption.DecryptJSON[github.User](ctx, data.Data)
+		if err != nil {
 			return nil, nil, err
 		}
-		usr = &u
 	}
+
 	if data.AuthData != nil {
-		if err := data.GetAuthData(&t); err != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
 			return nil, nil, err
 		}
-		tok = &t
 	}
+
 	return usr, tok, nil
 }
 
-func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) {
-	data.SetAccountData(user)
-	data.SetAuthData(token)
+func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	d, _, err := GetExternalAccountData(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: d.Name,
+		Login:       d.Login,
+		URL:         d.URL,
+	}, nil
+}
+
+func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
+	serializedUser, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	serializedToken, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+
+	data.Data = extsvc.NewUnencryptedData(serializedUser)
+	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	return nil
 }
 
 type User struct {
@@ -1900,8 +1957,9 @@ type UserEmail struct {
 }
 
 type Org struct {
-	ID    int    `json:"id,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID     int    `json:"id,omitempty"`
+	Login  string `json:"login,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }
 
 // OrgDetails describes the more detailed Org data you can only get from the
@@ -1958,10 +2016,64 @@ func normalizeURL(rawURL string) string {
 	return parsed.String()
 }
 
+func isArchivedError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 &&
+		errs[0].Type == "UNPROCESSABLE" &&
+		strings.Contains(errs[0].Message, "Repository was archived")
+}
+
 func isPullRequestAlreadyExistsError(err error) bool {
 	var errs graphqlErrors
 	if !errors.As(err, &errs) {
 		return false
 	}
 	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
+}
+
+func handlePullRequestError(err error) error {
+	if isArchivedError(err) {
+		return ErrRepoArchived{}
+	}
+	if isPullRequestAlreadyExistsError(err) {
+		return ErrPullRequestAlreadyExists
+	}
+	return err
+}
+
+// IsGitHubAppAccessToken checks whether the access token starts with "ghu",
+// which is used for GitHub App access tokens.
+func IsGitHubAppAccessToken(token string) bool {
+	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+			}
+		}
+	}
+	return nil
 }

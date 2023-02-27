@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
@@ -16,11 +18,80 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var mockVersion = semver.MustParse("12.0.0-pre")
+var mockVersion2 = semver.MustParse("14.10.0-pre")
+
+func TestGitLabSource(t *testing.T) {
+	t.Run("determineVersion", func(t *testing.T) {
+		t.Run("external service is cached in redis", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
+			v, err := p.source.determineVersion(p.ctx)
+
+			assert.NoError(t, err)
+			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			assert.False(t, p.isGetVersionCalled, "Client.GetVersion should not be called")
+		})
+
+		t.Run("external service (matching the key) does not exist in redis", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			p.mockGetVersions("", "random-urn-key-that-doesnt exist")
+			p.mockGetVersion(mockVersion.String())
+			v, err := p.source.determineVersion(p.ctx)
+
+			assert.NoError(t, err)
+			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			assert.True(t, p.isGetVersionCalled, "Client.GetVersion should be called")
+		})
+	})
+
+	t.Run("CreateDraftChangeset", func(t *testing.T) {
+		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			p.mockGetVersions(mockVersion2.String(), p.source.client.Urn())
+			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
+				SourceBranch: p.mr.SourceBranch,
+				TargetBranch: p.mr.TargetBranch,
+			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
+
+			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
+			assert.NoError(t, err)
+			assert.True(t, strings.HasPrefix(p.changeset.Title, "Draft:"))
+			assert.False(t, exists)
+		})
+
+		t.Run("GitLab Version is less than 14.0.0", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
+			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
+				SourceBranch: p.mr.SourceBranch,
+				TargetBranch: p.mr.TargetBranch,
+			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
+
+			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
+			assert.NoError(t, err)
+			assert.True(t, strings.HasPrefix(p.changeset.Title, "WIP:"))
+			assert.False(t, exists)
+		})
+	})
+}
 
 // TestGitLabSource_ChangesetSource tests the various Changeset functions that
 // implement the ChangesetSource interface.
@@ -416,18 +487,18 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 					svc := &types.ExternalService{
 						Kind: extsvc.KindGitLab,
-						Config: marshalJSON(t, &schema.GitLabConnection{
+						Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 							Url:   "https://gitlab.com",
 							Token: os.Getenv("GITLAB_TOKEN"),
-						}),
+						})),
 					}
 
-					gitlabSource, err := NewGitLabSource(svc, cf)
+					ctx := context.Background()
+					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					ctx := context.Background()
 					if tc.err == "" {
 						tc.err = "<nil>"
 					}
@@ -619,33 +690,67 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 	})
 
 	t.Run("UpdateChangeset draft", func(t *testing.T) {
-		// We won't test the full set of UpdateChangeset scenarios; instead
-		// we'll just make sure the title is appropriately munged.
-		in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
-		out := &gitlab.MergeRequest{}
+		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdateChangeset scenarios; instead
+			// we'll just make sure the title is appropriately munged.
+			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlab.MergeRequest{}
 
-		p := newGitLabChangesetSourceTestProvider(t)
-		p.changeset.Changeset.Metadata = in
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersions(mockVersion2.String(), p.source.client.Urn())
+			p.changeset.Changeset.Metadata = in
 
-		oldMock := gitlab.MockUpdateMergeRequest
-		t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
-		gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			if have, want := opts.Title, "WIP: title"; have != want {
-				t.Errorf("unexpected title: have=%q want=%q", have, want)
+			oldMock := gitlab.MockUpdateMergeRequest
+			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				if have, want := opts.Title, "Draft: title"; have != want {
+					t.Errorf("unexpected title: have=%q want=%q", have, want)
+				}
+				return out, nil
 			}
-			return out, nil
-		}
 
-		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
-		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-		if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if p.changeset.Changeset.Metadata != out {
-			t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
-		}
+			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected non-nil error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != out {
+				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			}
+		})
+
+		t.Run("GitLab version is less than 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdateChangeset scenarios; instead
+			// we'll just make sure the title is appropriately munged.
+			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
+			p.changeset.Changeset.Metadata = in
+
+			oldMock := gitlab.MockUpdateMergeRequest
+			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				if have, want := opts.Title, "WIP: title"; have != want {
+					t.Errorf("unexpected title: have=%q want=%q", have, want)
+				}
+				return out, nil
+			}
+
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+
+			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected non-nil error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != out {
+				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			}
+		})
 	})
 
 	t.Run("UndraftChangeset", func(t *testing.T) {
@@ -664,6 +769,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			return out, nil
 		}
 
+		p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
 		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
 		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
 		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
@@ -728,18 +834,18 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 				svc := &types.ExternalService{
 					Kind: extsvc.KindGitLab,
-					Config: marshalJSON(t, &schema.GitLabConnection{
+					Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 						Url:   "https://gitlab.com",
 						Token: os.Getenv("GITLAB_TOKEN"),
-					}),
+					})),
 				}
 
-				gitlabSource, err := NewGitLabSource(svc, cf)
+				ctx := context.Background()
+				gitlabSource, err := NewGitLabSource(ctx, svc, cf)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				ctx := context.Background()
 				repo := &types.Repo{Metadata: newGitLabProject(16606088)}
 				cs := &Changeset{
 					RemoteRepo: repo,
@@ -862,6 +968,8 @@ type gitLabChangesetSourceTestProvider struct {
 	mr        *gitlab.MergeRequest
 	source    *GitLabSource
 	t         *testing.T
+
+	isGetVersionCalled bool
 }
 
 // newGitLabChangesetSourceTestProvider provides a set of useful pre-canned
@@ -943,7 +1051,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequest(expected gitlab.
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlab.ID, notes []*gitlab.Note, pageSize int, err error) {
 	gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
 		p.testCommonParams(ctx, client, project)
@@ -958,7 +1065,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
 	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
 		p.testCommonParams(ctx, client, project)
@@ -973,7 +1079,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEven
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
 	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
 		p.testCommonParams(ctx, client, project)
@@ -1019,6 +1124,40 @@ func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, e
 	}
 }
 
+func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected, key string) {
+	versions.MockGetVersions = func() ([]*versions.Version, error) {
+		return []*versions.Version{
+			{
+				ExternalServiceKind: extsvc.KindGitLab,
+				Version:             expected,
+				Key:                 key,
+			},
+			{
+				ExternalServiceKind: extsvc.KindGitHub,
+				Version:             "2.38.0",
+				Key:                 "random-key-<1>",
+			},
+			{
+				ExternalServiceKind: extsvc.KindGitLab,
+				Version:             "1.3.5",
+				Key:                 "random-key-<2>",
+			},
+			{
+				ExternalServiceKind: extsvc.KindBitbucketCloud,
+				Version:             "1.2.5",
+				Key:                 "random-key-<3>",
+			},
+		}, nil
+	}
+}
+
+func (p *gitLabChangesetSourceTestProvider) mockGetVersion(expected string) {
+	gitlab.MockGetVersion = func(ctx context.Context) (string, error) {
+		p.isGetVersionCalled = true
+		return expected, nil
+	}
+}
+
 func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockCreateMergeRequest = nil
 	gitlab.MockGetMergeRequest = nil
@@ -1028,6 +1167,8 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
 	gitlab.MockCreateMergeRequestNote = nil
+
+	versions.MockGetVersions = nil
 }
 
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt
@@ -1144,6 +1285,167 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
+func TestGitlabSource_GetFork(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("failures", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			client     gitlabClientFork
+		}{
+			"invalid PathWithNamespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							PathWithNamespace: "foo",
+						},
+					},
+				},
+				client: nil,
+			},
+			"client error": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							PathWithNamespace: "foo/bar",
+						},
+					},
+				},
+				client: &mockGitlabClientFork{err: errors.New("hello!")},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
+				assert.Nil(t, fork)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		org := "org"
+		user := "user"
+		urn := extsvc.URN(extsvc.KindGitLab, 1)
+
+		for name, tc := range map[string]struct {
+			targetRepo    *types.Repo
+			forkRepo      *gitlab.Project
+			namespace     *string
+			wantNamespace string
+			name          *string
+			wantName      string
+			client        gitlabClientFork
+		}{
+			"no namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}},
+				namespace:     nil,
+				wantNamespace: user,
+				wantName:      user + "-bar",
+				client: &mockGitlabClientFork{fork: &gitlab.Project{ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon: gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}}},
+			},
+			"with namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+				namespace:     &org,
+				wantNamespace: org,
+				wantName:      org + "-bar",
+				client: &mockGitlabClientFork{
+					fork: &gitlab.Project{
+						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+					wantOrg: &org,
+				},
+			},
+			"with namespace and name": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+				namespace:     &org,
+				wantNamespace: org,
+				name:          strPtr("custom-bar"),
+				wantName:      "custom-bar",
+				client: &mockGitlabClientFork{
+					fork: &gitlab.Project{
+						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+					wantOrg: &org,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, tc.targetRepo)
+				assert.Equal(t, tc.forkRepo, fork.Metadata)
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://gitlab.com/"+tc.wantNamespace+"/"+tc.wantName)
+			})
+		}
+	})
+}
+
+type mockGitlabClientFork struct {
+	wantOrg *string
+	fork    *gitlab.Project
+	err     error
+}
+
+var _ gitlabClientFork = &mockGitlabClientFork{}
+
+func (mock *mockGitlabClientFork) ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error) {
+	if (mock.wantOrg == nil && namespace != nil) || (mock.wantOrg != nil && namespace == nil) || (mock.wantOrg != nil && namespace != nil && *mock.wantOrg != *namespace) {
+		return nil, errors.Newf("unexpected organisation: have=%v want=%v", namespace, mock.wantOrg)
+	}
+
+	return mock.fork, mock.err
+}
+
 func TestDecorateMergeRequestData(t *testing.T) {
 	ctx := context.Background()
 
@@ -1168,24 +1470,26 @@ func TestDecorateMergeRequestData(t *testing.T) {
 
 	src := createSource(t)
 
-	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/1
-	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 1)
+	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/6
+	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 6)
 	assert.Nil(t, err)
 
-	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2
-	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 2)
+	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/1
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 1)
 	assert.Nil(t, err)
 
 	t.Run("fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
 		assert.Nil(t, err)
-		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
+		assert.Equal(t, "courier-new", forked.SourceProjectNamespace)
+		assert.Equal(t, "src-cli-forked", forked.SourceProjectName)
 	})
 
 	t.Run("not a fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
 		assert.Nil(t, err)
 		assert.Equal(t, "", unforked.SourceProjectNamespace)
+		assert.Equal(t, "", unforked.SourceProjectName)
 	})
 }
 

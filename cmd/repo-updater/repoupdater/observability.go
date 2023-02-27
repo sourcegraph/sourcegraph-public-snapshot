@@ -5,13 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -52,31 +52,24 @@ func (m HandlerMetrics) MustRegister(r prometheus.Registerer) {
 // ObservedHandler returns a decorator that wraps an http.Handler
 // with logging, Prometheus metrics and tracing.
 func ObservedHandler(
-	log log15.Logger,
+	logger log.Logger,
 	m HandlerMetrics,
-	tr opentracing.Tracer,
+	tr trace.TracerProvider,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return ot.MiddlewareWithTracer(tr,
+		return instrumentation.HTTPMiddleware("",
 			&observedHandler{
 				next:    next,
-				log:     log,
+				logger:  logger,
 				metrics: m,
 			},
-			nethttp.OperationNameFunc(func(r *http.Request) string {
-				return "HTTP " + r.Method + ":" + r.URL.Path
-			}),
-			nethttp.MWComponentName("repo-updater"),
-			nethttp.MWSpanObserver(func(sp opentracing.Span, r *http.Request) {
-				sp.SetTag("http.uri", r.URL.EscapedPath())
-			}),
 		)
 	}
 }
 
 type observedHandler struct {
 	next    http.Handler
-	log     log15.Logger
+	logger  log.Logger
 	metrics HandlerMetrics
 }
 
@@ -86,12 +79,14 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func(begin time.Time) {
 		took := time.Since(begin)
 
-		h.log.Debug(
+		h.logger.Debug(
 			"http.request",
-			"method", r.Method,
-			"route", r.URL.Path,
-			"code", rr.code,
-			"duration", took,
+			log.Object("request",
+				log.String("method", r.Method),
+				log.String("route", r.URL.Path),
+				log.Int("code", rr.code),
+				log.Duration("duration", took),
+			),
 		)
 
 		var err error

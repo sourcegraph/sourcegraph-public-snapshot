@@ -2,7 +2,7 @@ import { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, Textar
 
 import classNames from 'classnames'
 
-import { Label } from '../../Typography/Label'
+import { Label } from '../..'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 
@@ -51,6 +51,26 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
             resizeable = true,
             ...otherProps
         } = props
+
+        if (!label && !message) {
+            return (
+                // eslint-disable-next-line react/forbid-elements
+                <textarea
+                    disabled={disabled}
+                    className={classNames(
+                        'form-control',
+                        styles.textarea,
+                        getValidStyle(isValid),
+                        size === 'small' && 'form-control-sm',
+                        resizeable === false && styles.resizeNone,
+                        inputClassName,
+                        className
+                    )}
+                    {...otherProps}
+                    ref={reference}
+                />
+            )
+        }
 
         return (
             <Label className={classNames(styles.label, className)}>

@@ -1,22 +1,20 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import type { NavigateFunction } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { Button, Modal, Select } from '@sourcegraph/wildcard'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
 import styles from './SavedSearchModal.module.scss'
 
 interface Props extends SearchPatternTypeProps {
-    location: H.Location
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     query?: string
     onDidCancel: () => void
+    navigate: NavigateFunction
 }
 
 enum UserOrOrg {
@@ -59,7 +57,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     data-testid="saved-search-modal"
                 >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
+                        <H3 id={MODAL_LABEL_ID}>Save search query to: </H3>
 
                         <Select aria-label="" onChange={this.onLocationChange} selectClassName={styles.select}>
                             <option value={UserOrOrg.User}>User</option>
@@ -105,7 +103,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
     private onSubmit = (): void => {
         if (this.props.query && this.props.authenticatedUser) {
             const encodedQuery = encodeURIComponent(this.props.query)
-            this.props.history.push(
+            this.props.navigate(
                 this.state.saveLocation.toLowerCase() === 'user'
                     ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
                     : `/organizations/${this.state.organization!}/searches/add?query=${encodedQuery}&patternType=${

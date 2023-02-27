@@ -1,11 +1,11 @@
 import { action } from '@storybook/addon-actions'
-import { number, select, text } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
-import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
 import { NotificationType } from '@sourcegraph/extension-api-classes'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
+
+import type { NotificationType as NotificationTypeType } from '../codeintel/legacy-extensions/api'
 
 import { NotificationItem } from './NotificationItem'
 
@@ -20,25 +20,38 @@ const notificationClassNames = {
 const onDismiss = action('onDismiss')
 
 const decorator: DecoratorFn = story => (
-    <>
-        <style>{webStyles}</style>
-        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
-    </>
+    <BrandedStory>{() => <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>}</BrandedStory>
 )
+
 const config: Meta = {
     title: 'shared/NotificationItem',
     decorators: [decorator],
+    argTypes: {
+        message: {
+            name: 'Message',
+            control: { type: 'text' },
+            defaultValue: 'My *custom* message',
+        },
+        type: {
+            name: 'type',
+            control: {
+                type: 'select',
+                options: NotificationType as Record<keyof typeof NotificationType, NotificationTypeType>,
+            },
+        },
+        source: {
+            name: 'Source',
+            control: { type: 'text' },
+            defaultValue: 'some source',
+        },
+    },
 }
 export default config
 
-export const WithoutProgress: Story = () => {
-    const message = text('Message', 'My *custom* message')
-    const type = select<NotificationTypeType>(
-        'Type',
-        NotificationType as Record<keyof typeof NotificationType, NotificationTypeType>,
-        NotificationType.Error
-    )
-    const source = text('Source', 'some source')
+export const WithoutProgress: Story = args => {
+    const message = args.message
+    const type = args.type
+    const source = args.source
     return (
         <NotificationItem
             notification={{ message, type, source }}
@@ -47,17 +60,17 @@ export const WithoutProgress: Story = () => {
         />
     )
 }
-
-export const WithProgress: Story = () => {
-    const message = text('Message', 'My *custom* message')
-    const type = select<NotificationTypeType>(
-        'Type',
-        NotificationType as Record<keyof typeof NotificationType, NotificationTypeType>,
-        NotificationType.Info
-    )
-    const source = text('Source', 'some source')
-    const progressMessage = text('Progress message', 'My *custom* progress message')
-    const progressPercentage = number('Progress % (0-100)', 50)
+WithoutProgress.argTypes = {
+    type: {
+        defaultValue: NotificationType.Error,
+    },
+}
+export const WithProgress: Story = args => {
+    const message = args.message
+    const type = args.type
+    const source = args.source
+    const progressMessage = args.progressMessage
+    const progressPercentage = args.progressPercentage
     return (
         <NotificationItem
             notification={{
@@ -73,6 +86,21 @@ export const WithProgress: Story = () => {
             onDismiss={onDismiss}
         />
     )
+}
+WithProgress.argTypes = {
+    progressMessage: {
+        name: 'Progress message',
+        control: { type: 'text' },
+        defaultValue: 'My *custom* progress message',
+    },
+    progressPercentage: {
+        name: 'Progress % (0-100)',
+        control: { type: 'number', min: 0, max: 100 },
+        defaultValue: 50,
+    },
+    type: {
+        defaultValue: NotificationType.Info,
+    },
 }
 
 WithProgress.storyName = 'With progress'

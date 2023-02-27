@@ -1,32 +1,35 @@
 import React from 'react'
 
+import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
-import { UserAvatar } from '../user/UserAvatar'
 
 import { ExternalsAuth } from './ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
+    >
+    isSourcegraphDotCom: boolean
+    isLightTheme: boolean
 }
 
 const SourceToTitleMap = {
@@ -53,7 +56,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
-    featureFlags,
+    isSourcegraphDotCom,
 }) => {
     const location = useLocation()
 
@@ -71,7 +74,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const invitedBy = queryWithUseEmailToggled.get('invitedBy')
     const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
-        variables: { username: invitedBy || '', siteAdmin: false },
+        variables: { username: invitedBy || '', isSourcegraphDotCom },
         skip: !invitedBy,
     })
     const invitedByUser = data?.user
@@ -83,13 +86,13 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const signUpForm = (
         <SignUpForm
-            featureFlags={featureFlags}
             onSignUp={args => {
                 logEvent('builtin')
                 return onSignUp(args)
             }}
             context={{
                 authProviders: [],
+                authMinPasswordLength: context.authMinPasswordLength,
                 sourcegraphDotComMode: true,
                 experimentalFeatures: context.experimentalFeatures,
             }}
@@ -121,7 +124,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} aria-hidden={true} svgPath={mdiChevronLeft} />
                     Go back
                 </Link>
             </small>
@@ -141,7 +144,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <h2
+                    <H2
                         className={classNames(
                             'd-flex',
                             'align-items-center',
@@ -162,16 +165,11 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                         ) : (
                             title
                         )}
-                    </h2>
+                    </H2>
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
-                        <li>
-                            <div className="d-flex align-items-center">
-                                <ProductStatusBadge status="beta" className="text-uppercase mr-1" /> Search across all
-                                your public and private repositories
-                            </div>
-                        </li>
+                        <li>Search across 2M+ open source repositories</li>
                         <li>Monitor code for changes</li>
                         <li>Navigate through code with IDE like go to references and definition hovers</li>
                         <li>Integrate data, tooling, and code in a single location </li>
@@ -187,7 +185,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 </div>
 
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
-                    <h2>Create a free account</h2>
+                    <H2>Create a free account</H2>
                     {renderAuthMethod()}
 
                     <small className="text-muted">
@@ -205,7 +203,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     <hr className={styles.separator} />
 
                     <div>
-                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                     </div>
                 </div>
             </div>

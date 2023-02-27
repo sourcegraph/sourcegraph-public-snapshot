@@ -2,9 +2,8 @@ package conf
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,13 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.SingleProgram, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -34,9 +36,19 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
 		panic("deploy type did not register default configuration")
 	}
+}
+
+func ExecutorsAccessToken() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return confdefaults.SingleProgramInMemoryExecutorPassword
+	}
+	return Get().ExecutorsAccessToken
 }
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
@@ -79,6 +91,42 @@ func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, e
 	return config, nil
 }
 
+func GitHubAppEnabled() bool {
+	cfg, _ := GitHubAppConfig()
+	return cfg.Configured()
+}
+
+type GitHubAppConfiguration struct {
+	PrivateKey   []byte
+	AppID        string
+	Slug         string
+	ClientID     string
+	ClientSecret string
+}
+
+func (c GitHubAppConfiguration) Configured() bool {
+	return c.AppID != "" && len(c.PrivateKey) != 0 && c.Slug != "" && c.ClientID != "" && c.ClientSecret != ""
+}
+
+func GitHubAppConfig() (config GitHubAppConfiguration, err error) {
+	cfg := Get().GitHubApp
+	if cfg == nil {
+		return GitHubAppConfiguration{}, nil
+	}
+
+	privateKey, err := base64.StdEncoding.DecodeString(cfg.PrivateKey)
+	if err != nil {
+		return GitHubAppConfiguration{}, errors.Wrap(err, "decoding GitHub app private key failed")
+	}
+	return GitHubAppConfiguration{
+		PrivateKey:   privateKey,
+		AppID:        cfg.AppID,
+		Slug:         cfg.Slug,
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+	}, nil
+}
+
 type AccessTokenAllow string
 
 const (
@@ -108,7 +156,7 @@ func AccessTokensAllow() AccessTokenAllow {
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {
-	return Get().EmailSmtp != nil
+	return CanSendEmail()
 }
 
 // CanSendEmail returns whether the site can send emails (e.g., to reset a password or
@@ -128,15 +176,6 @@ func UpdateChannel() string {
 	return channel
 }
 
-// SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search.
-func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
-		return *v
-	}
-	return true // always on by default in all deployment types, see confdefaults.go
-}
-
 func BatchChangesEnabled() bool {
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
@@ -153,6 +192,55 @@ func BatchChangesRestrictedToAdmins() bool {
 
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
+}
+
+func ExecutorsFrontendURL() string {
+	current := Get()
+	if current.ExecutorsFrontendURL != "" {
+		return current.ExecutorsFrontendURL
+	}
+
+	return current.ExternalURL
+}
+
+func ExecutorsSrcCLIImage() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImage != "" {
+		return current.ExecutorsSrcCLIImage
+	}
+
+	return "sourcegraph/src-cli"
+}
+
+func ExecutorsSrcCLIImageTag() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImageTag != "" {
+		return current.ExecutorsSrcCLIImageTag
+	}
+
+	return srccli.MinimumVersion
+}
+
+func ExecutorsBatcheshelperImage() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImage != "" {
+		return current.ExecutorsBatcheshelperImage
+	}
+
+	return "sourcegraph/batcheshelper"
+}
+
+func ExecutorsBatcheshelperImageTag() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImageTag != "" {
+		return current.ExecutorsBatcheshelperImageTag
+	}
+
+	if version.IsDev(version.Version()) {
+		return "insiders"
+	}
+
+	return version.Version()
 }
 
 func CodeIntelAutoIndexingEnabled() bool {
@@ -176,11 +264,6 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	}
 
 	return *val
-}
-
-func CodeInsightsGQLApiEnabled() bool {
-	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
@@ -213,6 +296,12 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
+// IsAccessRequestsEnabled returns whether request access experimental feature is enabled or not.
+func IsAccessRequestsEnabled() bool {
+	experimentalFeatures := Get().ExperimentalFeatures
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestsEnabled == nil || *experimentalFeatures.AccessRequestsEnabled
+}
+
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {
@@ -236,14 +325,6 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
-func APIDocsSearchIndexingEnabled() bool {
-	val := ExperimentalFeatures().ApidocsSearchIndexing
-	if val == "" {
-		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
-	}
-	return val == "enabled"
-}
-
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
@@ -252,12 +333,29 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func DependeciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
-	if val == "" {
-		return true
+// SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
+// SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
+// to match existing behavior where ranks are given half the priority as existing scoring signals.
+// We plan to eventually remove this, once we experiment on real data to find a good default.
+func SearchDocumentRanksWeight() float64 {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.DocumentRanksWeight != nil {
+		return *ranking.DocumentRanksWeight
+	} else {
+		return 4500
 	}
-	return val == "enabled"
+}
+
+// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results when
+// the 'search-ranking' feature is enabled. We plan to eventually remove this, once we experiment
+// on real data to find a good default.
+func SearchFlushWallTime() time.Duration {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.FlushWallTimeMS > 0 {
+		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
+	} else {
+		return 500 * time.Millisecond
+	}
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {
@@ -284,6 +382,53 @@ func AuthMinPasswordLength() int {
 		return 12
 	}
 	return val
+}
+
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+	ml := Get().AuthMinPasswordLength
+
+	if p := Get().AuthPasswordPolicy; p != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+		}
+	}
+
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.
@@ -389,22 +534,6 @@ func GitMaxConcurrentClones() int {
 	v := Get().GitMaxConcurrentClones
 	if v <= 0 {
 		return 5
-	}
-	return v
-}
-
-func UserReposMaxPerUser() int {
-	v := Get().UserReposMaxPerUser
-	if v == 0 {
-		return 2000
-	}
-	return v
-}
-
-func UserReposMaxPerSite() int {
-	v := Get().UserReposMaxPerSite
-	if v == 0 {
-		return 200000
 	}
 	return v
 }

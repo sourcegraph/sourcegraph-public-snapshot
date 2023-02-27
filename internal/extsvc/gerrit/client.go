@@ -3,20 +3,17 @@ package gerrit
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
+	"strconv"
 
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
-
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Client access a Gerrit via the REST API.
@@ -24,116 +21,188 @@ type Client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
-	// Config is the code host connection config for this client
-	Config *schema.GerritConnection
-
 	// URL is the base URL of Gerrit.
 	URL *url.URL
 
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
+
+	// Authenticator used to authenticate HTTP requests.
+	auther auth.Authenticator
 }
 
 // NewClient returns an authenticated Gerrit API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// the provided configuration. If a nil httpClient is provided, httpcli.ExternalDoer
 // will be used.
-func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-
+func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
+	auther := &auth.BasicAuth{
+		Username: creds.Username,
+		Password: creds.Password,
+	}
+
 	return &Client{
 		httpClient: httpClient,
-		Config:     config,
-		URL:        u,
+		URL:        url,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auther:     auther,
 	}, nil
+}
+
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		rateLimit:  c.rateLimit,
+		auther:     a,
+	}
+}
+
+func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
+	req, err := http.NewRequest("GET", "a/accounts/self", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var account Account
+	if _, err = c.do(ctx, req, &account); err != nil {
+		if httpErr := (&httpError{}); errors.As(err, &httpErr) {
+			if httpErr.Unauthorized() {
+				return nil, errors.New("Invalid username or password.")
+			}
+		}
+
+		return nil, err
+	}
+
+	return &account, nil
+}
+
+func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) {
+
+	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
+
+	reqAllAccounts, err := http.NewRequest("GET", urlGroup.String(), nil)
+
+	if err != nil {
+		return Group{}, err
+	}
+
+	respGetGroup := Group{}
+	if _, err = c.do(ctx, reqAllAccounts, &respGetGroup); err != nil {
+		return respGetGroup, err
+	}
+	return respGetGroup, nil
 }
 
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
 	Cursor *Pagination
+	// If true, only fetches repositories with type CODE
+	OnlyCodeProjects bool
 }
 
 // ListProjectsResponse defines a response struct returned from ListProjects method calls.
 type ListProjectsResponse map[string]*Project
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
-
+func (c *Client) listCodeProjects(ctx context.Context, cursor *Pagination) (ListProjectsResponse, bool, error) {
 	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
-	// Currently, if you want to only get CODE projects and know if there is another page
-	// to query for, the only way to do that is to query twice and compare the results.
-	qsAllProjects := make(url.Values)
-	qsCodeProjects := make(url.Values)
+	// e.g. when we request a list of 100 CODE projects, 100 projects are fetched and
+	// only then filtered for CODE projects, possibly returning less than 100 projects.
+	// This means we cannot rely on the number of projects returned to determine if
+	// there are more projects to fetch.
+	// Currently, if you want to only get CODE projects and want to know if there is another page
+	// to query for, the only way to do that is to query both CODE and ALL projects and compare
+	// the number of projects returned.
+
+	query := make(url.Values)
+	query.Set("n", strconv.Itoa(cursor.PerPage))
+	query.Set("S", strconv.Itoa((cursor.Page-1)*cursor.PerPage))
+	query.Set("type", "CODE")
+
+	uProjects := url.URL{Path: "a/projects/", RawQuery: query.Encode()}
+	req, err := http.NewRequest("GET", uProjects.String(), nil)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var projects ListProjectsResponse
+	if _, err = c.do(ctx, req, &projects); err != nil {
+		return nil, false, err
+	}
+
+	// If the number of projects returned is zero we cannot assume that there is no next page.
+	// We fetch the first project on the next page of ALL projects and check if that page is empty.
+	if len(projects) == 0 {
+		nextPageProject, _, err := c.listAllProjects(ctx, &Pagination{PerPage: 1, Skip: cursor.Page * cursor.PerPage})
+		if err != nil {
+			return nil, false, err
+		}
+		if len(nextPageProject) == 0 {
+			return projects, false, nil
+		}
+	}
+
+	// Otherwise we always assume that there is a next page.
+	return projects, true, nil
+}
+
+func (c *Client) listAllProjects(ctx context.Context, cursor *Pagination) (ListProjectsResponse, bool, error) {
+	query := make(url.Values)
+	query.Set("n", strconv.Itoa(cursor.PerPage))
+	if cursor.Skip > 0 {
+		query.Set("S", strconv.Itoa(cursor.Skip))
+	} else {
+		query.Set("S", strconv.Itoa((cursor.Page-1)*cursor.PerPage))
+	}
+
+	uProjects := url.URL{Path: "a/projects/", RawQuery: query.Encode()}
+	req, err := http.NewRequest("GET", uProjects.String(), nil)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var projects ListProjectsResponse
+	if _, err = c.do(ctx, req, &projects); err != nil {
+		return nil, false, err
+	}
+
+	// If the number of returned projects equal the number of requested projects,
+	// we assume that there is a next page.
+	return projects, len(projects) == cursor.PerPage, nil
+}
+
+// ListProjects fetches a list of CODE projects from Gerrit.
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error) {
 
 	if opts.Cursor == nil {
 		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
-	// Number of results to return.
-	qsAllProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
-	qsCodeProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
-
-	// Skip the first S projects.
-	qsAllProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
-	qsCodeProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
-
-	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
-	qsCodeProjects.Set("type", "CODE")
-
-	urlPath := "a/projects/"
-
-	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAllProjects.Encode()}
-
-	reqAllProjects, err := http.NewRequest("GET", uAllProjects.String(), nil)
-	if err != nil {
-		return nil, false, err
+	if opts.OnlyCodeProjects {
+		return c.listCodeProjects(ctx, opts.Cursor)
 	}
 
-	var respAllProjects ListProjectsResponse
-	if _, err = c.do(ctx, reqAllProjects, &respAllProjects); err != nil {
-		return nil, false, err
-	}
-
-	uCodeProjects := url.URL{Path: urlPath, RawQuery: qsCodeProjects.Encode()}
-
-	reqCodeProjects, err := http.NewRequest("GET", uCodeProjects.String(), nil)
-	if err != nil {
-		return nil, false, err
-	}
-
-	var respCodeProjects ListProjectsResponse
-	if _, err = c.do(ctx, reqCodeProjects, &respCodeProjects); err != nil {
-		return nil, false, err
-	}
-
-	// If the amount of Projects we get back from AllProjects is greater than or equal to
-	// the amount we asked for in a page, then there is another page.
-	nextPage = len(respAllProjects) >= opts.Cursor.PerPage
-
-	return &respCodeProjects, nextPage, nil
+	return c.listAllProjects(ctx, opts.Cursor)
 }
 
-// nolint:unparam
+//nolint:unparam // http.Response is never used, but it makes sense API wise.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
-	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
-
-	startWait := time.Now()
-	if err := c.rateLimit.Wait(ctx); err != nil {
-		return nil, err
+	// Authenticate request with auther
+	if c.auther != nil {
+		if err := c.auther.Authenticate(req); err != nil {
+			return nil, err
+		}
 	}
 
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Gerrit self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+	if err := c.rateLimit.Wait(ctx); err != nil {
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -169,6 +238,24 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	return resp, json.Unmarshal(bs[4:], result)
 }
 
+type Account struct {
+	ID          int32  `json:"_account_id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
+}
+
+type Group struct {
+	ID          string `json:"id"`
+	GroupID     int32  `json:"group_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedOn   string `json:"created_on"`
+	Owner       string `json:"owner"`
+	OwnerID     string `json:"owner_id"`
+}
+
 type Project struct {
 	Description string            `json:"description"`
 	ID          string            `json:"id"`
@@ -185,8 +272,10 @@ type Label struct {
 }
 
 type Pagination struct {
-	Page    int `json:"page"`
-	PerPage int `json:"per_page"`
+	PerPage int
+	// Either Skip or Page should be set. If Skip is non-zero, it takes precedence.
+	Page int
+	Skip int
 }
 
 type httpError struct {

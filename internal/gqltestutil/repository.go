@@ -2,17 +2,26 @@ package gqltestutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// WaitForReposToBeCloned waits (up to two minutes) for all repositories
+// WaitForReposToBeCloned waits up to two minutes for all repositories
 // in the list to be cloned.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	timeout := 120 * time.Second
+	return c.WaitForReposToBeClonedWithin(timeout, repos...)
+}
+
+// WaitForReposToBeClonedWithin waits up to specified duration for all
+// repositories in the list to be cloned.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -26,7 +35,7 @@ func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, cloned: true, notCloned: false) {
+	repositories(first: 1000, cloneStatus: CLONED) {
 		nodes {
 			name
 		}
@@ -45,6 +54,29 @@ query Repositories {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
+}
+
+// DeleteRepoFromDiskByName will remove the repo form disk on GitServer.
+func (c *Client) DeleteRepoFromDiskByName(name string) error {
+	repo, err := c.Repository(name)
+	if err != nil {
+		return errors.Wrap(err, "getting repo")
+	}
+	if repo == nil {
+		// Repo doesn't exist, no point trying to delete it
+		return nil
+	}
+
+	q := fmt.Sprintf(`
+mutation {
+  deleteRepositoryFromDisk(repo:"%s") {
+    alwaysNil
+  }
+}
+`, repo.ID)
+
+	err = c.GraphQL("", q, nil, nil)
+	return errors.Wrap(err, "deleting repo from disk")
 }
 
 // WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
@@ -205,7 +237,10 @@ query Repository($name: String!) {
 // PermissionsInfo contains permissions information of a repository from
 // GraphQL.
 type PermissionsInfo struct {
-	SyncedAt time.Time
+	SyncedAt     time.Time
+	UpdatedAt    time.Time
+	Permissions  []string
+	Unrestricted bool
 }
 
 // RepositoryPermissionsInfo returns permissions information of the given
@@ -220,6 +255,7 @@ query RepositoryPermissionsInfo($name: String!) {
 			syncedAt
 			updatedAt
 			permissions
+			unrestricted
 		}
 	}
 }
@@ -240,4 +276,37 @@ query RepositoryPermissionsInfo($name: String!) {
 	}
 
 	return resp.Data.Repository.PermissionsInfo, nil
+}
+
+func (c *Client) AddRepoKVP(repo string, key string, value *string) error {
+	const query = `
+mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
+	addRepoKeyValuePair(repo: $repo, key: $key, value: $value) {
+		alwaysNil
+	}
+}
+`
+	variables := map[string]any{
+		"repo":  repo,
+		"key":   key,
+		"value": value,
+	}
+	var resp map[string]interface{}
+	return c.GraphQL("", query, variables, &resp)
+}
+
+func (c *Client) SetFeatureFlag(name string, value bool) error {
+	const query = `
+mutation SetFeatureFlag($name: String!, $value: Boolean!) {
+	createFeatureFlag(name: $name, value: $value) {
+		__typename
+	}
+}
+`
+	variables := map[string]any{
+		"name":  name,
+		"value": value,
+	}
+	var resp map[string]interface{}
+	return c.GraphQL("", query, variables, &resp)
 }

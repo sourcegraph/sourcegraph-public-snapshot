@@ -4,13 +4,15 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 // Toggles particularly slow tests. To enable, use `go test` with this flag, for example:
 //
-//   go test -timeout 360s -v -run ^TestIntegration_PermsStore$ github.com/sourcegraph/sourcegraph/enterprise/internal/database -slow-tests
-//
+//	go test -timeout 360s -v -run ^TestIntegration_PermsStore$ github.com/sourcegraph/sourcegraph/enterprise/internal/database -slow-tests
 var slowTests = flag.Bool("slow-tests", false, "Enable very slow tests")
 
 // postgresParameterLimitTest names tests that are focused on ensuring the default
@@ -28,17 +30,25 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
 
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T)
 	}{
 		{"LoadUserPermissions", testPermsStore_LoadUserPermissions(db)},
+		{"FetchReposByUserAndExternalService", testPermsStore_FetchReposByUserAndExternalService(db)},
+		{"FetchReposByExternalAccount", testPermsStore_FetchReposByExternalAccount(db)},
 		{"LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
 		{"SetUserPermissions", testPermsStore_SetUserPermissions(db)},
+		{"SetUserRepoPermissions", testPermsStore_SetUserRepoPermissions(db)},
 		{"SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},
+		{"SetRepoPermissionsUnrestricted", testPermsStore_SetRepoPermissionsUnrestricted(db)},
 		{"TouchRepoPermissions", testPermsStore_TouchRepoPermissions(db)},
+		{"TouchUserPermissions", testPermsStore_TouchUserPermissions(db)},
 		{"LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"ListPendingUsers", testPermsStore_ListPendingUsers(db)},
@@ -47,17 +57,13 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
-
-		{"ListExternalAccounts", testPermsStore_ListExternalAccounts(db)},
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
-
-		{"UserIDsWithOutdatedPerms", testPermsStore_UserIDsWithOutdatedPerms(db)},
 		{"UserIDsWithNoPerms", testPermsStore_UserIDsWithNoPerms(db)},
 		{"RepoIDsWithNoPerms", testPermsStore_RepoIDsWithNoPerms(db)},
 		{"UserIDsWithOldestPerms", testPermsStore_UserIDsWithOldestPerms(db)},
 		{"ReposIDsWithOldestPerms", testPermsStore_ReposIDsWithOldestPerms(db)},
-		{"UserIsMemberOfOrgHasCodeHostConnection", testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db)},
 		{"Metrics", testPermsStore_Metrics(db)},
+		{"MapUsers", testPermsStore_MapUsers(db)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { renderHook, act } from '@testing-library/react-hooks'
+import { renderHook, act } from '@testing-library/react'
 import { last, min, noop } from 'lodash'
 import { BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
 import { delay } from 'rxjs/operators'

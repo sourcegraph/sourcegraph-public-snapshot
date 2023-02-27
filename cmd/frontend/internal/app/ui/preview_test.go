@@ -25,7 +25,7 @@ func TestFindLineRangeInQueryParameters(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := findLineRangeInQueryParameters(test.queryParameters)
+			got := FindLineRangeInQueryParameters(test.queryParameters)
 			if !reflect.DeepEqual(test.wantLineRange, got) {
 				t.Errorf("got %v, want %v", got, test.wantLineRange)
 			}

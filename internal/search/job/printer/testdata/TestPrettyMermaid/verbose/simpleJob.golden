@@ -1,0 +1,7 @@
+flowchart TB
+0["AND"]
+  0---1
+  1["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+    0---2
+  2["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+    

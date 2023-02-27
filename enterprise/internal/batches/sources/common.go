@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ChangesetNotFoundError is returned by LoadChangeset if the changeset
@@ -27,6 +26,16 @@ func (e ChangesetNotFoundError) Error() string {
 
 func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
+// ArchivableChangesetSource represents a changeset source that has a
+// concept of archived repositories.
+type ArchivableChangesetSource interface {
+	ChangesetSource
+
+	// IsArchivedPushError parses the given error output from `git push` to
+	// detect whether the error was caused by the repository being archived.
+	IsArchivedPushError(output string) bool
+}
+
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
 	ChangesetSource
@@ -42,21 +51,19 @@ type DraftChangesetSource interface {
 type ForkableChangesetSource interface {
 	ChangesetSource
 
-	// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-	// the given namespace, ensuring that the fork exists and is a fork of the
-	// target repo.
-	GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error)
-
-	// GetUserFork returns a repo pointing to a fork of the given repo in the
-	// currently authenticated user's namespace.
-	GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error)
+	// GetFork returns a repo pointing to a fork of the target repo, ensuring that the
+	// fork exists and creating it if it doesn't. If namespace is not provided, the fork
+	// will be in the currently authenticated user's namespace. If name is not provided,
+	// the fork will be named with the default Sourcegraph convention:
+	// "${original-namespace}-${original-name}"
+	GetFork(ctx context.Context, targetRepo *types.Repo, namespace, name *string) (*types.Repo, error)
 }
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
 	// commits to the code host.
-	GitserverPushConfig(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.
@@ -149,7 +156,7 @@ func (c *Changeset) IsOutdated() (bool, error) {
 		return false, err
 	}
 
-	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+	if gitdomain.EnsureRefPrefix(currentBaseRef) != gitdomain.EnsureRefPrefix(c.BaseRef) {
 		return true, nil
 	}
 

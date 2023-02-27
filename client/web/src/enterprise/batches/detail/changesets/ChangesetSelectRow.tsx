@@ -1,6 +1,6 @@
 import React, { useMemo, useContext } from 'react'
 
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
@@ -38,7 +38,47 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
     ) => void | JSX.Element
 }
 
+/**
+ * These actions are arranged in alphabetical order.
+ * Ensure the order (alphabetical) is preserved when adding a new bulk action.
+ */
 const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
+    [BulkOperationType.CLOSE]: {
+        type: 'close',
+        buttonLabel: 'Close changesets',
+        dropdownTitle: 'Close changesets',
+        dropdownDescription:
+            'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_close:clicked')
+            return (
+                <CloseChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
+    },
+    [BulkOperationType.COMMENT]: {
+        type: 'commentatore',
+        buttonLabel: 'Create comment',
+        dropdownTitle: 'Create comment',
+        dropdownDescription:
+            'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_comment:clicked')
+            return (
+                <CreateCommentModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
+    },
     [BulkOperationType.DETACH]: {
         type: 'detach',
         buttonLabel: 'Detach changesets',
@@ -56,35 +96,6 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
             />
         ),
     },
-    [BulkOperationType.REENQUEUE]: {
-        type: 'retry',
-        buttonLabel: 'Retry changesets',
-        dropdownTitle: 'Retry changesets',
-        dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <ReenqueueChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
-    },
-    [BulkOperationType.COMMENT]: {
-        type: 'commentatore',
-        buttonLabel: 'Create comment',
-        dropdownTitle: 'Create comment',
-        dropdownDescription:
-            'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <CreateCommentModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
-    },
     [BulkOperationType.MERGE]: {
         type: 'merge',
         experimental: true,
@@ -92,43 +103,51 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Merge changesets',
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <MergeChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
-    },
-    [BulkOperationType.CLOSE]: {
-        type: 'close',
-        buttonLabel: 'Close changesets',
-        dropdownTitle: 'Close changesets',
-        dropdownDescription:
-            'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <CloseChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_merge:clicked')
+            return (
+                <MergeChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.PUBLISH]: {
         type: 'publish',
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <PublishChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_published:clicked')
+            return (
+                <PublishChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
+    },
+    [BulkOperationType.REENQUEUE]: {
+        type: 'retry',
+        buttonLabel: 'Retry changesets',
+        dropdownTitle: 'Retry changesets',
+        dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            return (
+                <ReenqueueChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
 }
 
@@ -181,10 +200,13 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
             return []
         }
 
-        return availableBulkOperations.map(operation => {
-            const action = AVAILABLE_ACTIONS[operation]
+        return Object.keys(AVAILABLE_ACTIONS).map(operation => {
+            const bulkOperation = operation as BulkOperationType
+            const action = AVAILABLE_ACTIONS[bulkOperation]
+            const isDisabled = !availableBulkOperations.includes(bulkOperation)
             const dropdownAction: Action = {
                 ...action,
+                disabled: isDisabled,
                 onTrigger: (onDone, onCancel) =>
                     action.onTrigger(
                         batchChangeID,
@@ -205,7 +227,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiInformationOutline} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (

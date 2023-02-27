@@ -204,7 +204,8 @@ steps:
 In this case, `steps.env` is an array. Each array item is either:
 
 1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
-2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
+2. For src-cli execution: A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
+3. For server-side execution: A string that defines a secret value to expose as an environment variable. Follow [the guide on executor secrets](../../admin/executor_secrets.md) to set them up. The editor will suggest available secrets. This is useful to use secret values that you don't want to include in the spec file. The execution cache will be invalidated each time the secret value changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
 
 #### Examples
 
@@ -218,7 +219,7 @@ steps:
       - MESSAGE: Hello world!
 ```
 
-This example pulls in the `USER` environment variable and uses it to construct the line that will be appended to `README.md`:
+This example pulls in the `USER` environment variable, or for server-side uses the executor secret called `USER`, and uses it to construct the line that will be appended to `README.md`:
 
 ```yaml
 steps:
@@ -418,6 +419,67 @@ steps:
     container: golang
 ```
 
+## [`steps.mount`](#steps-mount)
+
+<aside class="note">
+<span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+</aside>
+
+> NOTE: This feature is currently only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.
+
+Mounts a local path to a path in a Docker container. Mounted paths are accessible to the step's `run` command.
+
+A `path` can point to a file or a directory. The `path` can be an absolute path or a relative path. Regardless if the 
+path is absolute or relative, the path must be within the same directory as the batch spec that is being run (the batch 
+spec directory is considered the "working directory"). If the batch spec is provided using standard input, the current 
+directory is used as the working directory.
+
+Individual files are restricted to a max size of 10MB. Do not include any sensitive information in files being uploaded.
+
+### Examples
+
+```yaml
+# Mount a Python script and run the script
+steps:
+  run: python /tmp/some-script.py # execute the script located at the mountpoint
+  container: python:latest
+  mount:
+    - path: ./some-script.py # or absolute path /my/local/path/some-script.py
+      mountpoint: /tmp/some-script.py
+```
+
+```yaml
+# Mount a binary and run the binary
+steps:
+  run: /tmp/some-binary # execute the binary located at the mountpoint
+  container: alpine:latest
+  mount:
+    - path: ./some-binary # or absolute path /my/local/path/some-binary
+      mountpoint: /tmp/some-binary
+```
+
+```yaml
+# Mount a directory containing scripts and run a script from the directory
+steps:
+  run: python /tmp/scripts/some-script.py
+  container: python:latest
+  mount:
+    - path: ./scripts # or absolute path /my/local/path/scripts
+      mountpoint: /tmp/scripts
+```
+
+```yaml
+# Mount a Python script and a directory with supporting files for the script and run the script
+steps:
+  run: python /tmp/some-script.py
+  container: python:latest
+  mount:
+    - path: ./some-script.py # or absolute path /my/local/path/some-script.py
+      mountpoint: /tmp/some-script.py
+    - path: ./supporting-files # or absolute path /my/local/path/supporting-files
+      mountpoint: /tmp/supporting-files
+```
+
 ## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the batch change.
@@ -439,7 +501,7 @@ The repository name as configured on your Sourcegraph instance.
 
 ## [`importChangesets.externalIDs`](#importchangesets-externalids)
 
-The changesets to import from the code host. For GitHub this is the pull request number, for GitLab this is the merge request number, for Bitbucket Server / Bitbucket Data Center this is the pull request number.
+The changesets to import from the code host. For GitHub this is the pull request number, for GitLab this is the merge request number, and for Bitbucket Server, Bitbucket Data Center, or Bitbucket Cloud this is the pull request number.
 
 ## [`changesetTemplate`](#changesettemplate)
 
@@ -565,7 +627,7 @@ When `published` is set to `draft` a commit, branch, and pull request / merge re
 
 - On GitHub the changeset will be a [draft pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests).
 - On GitLab the changeset will be a merge request whose title is be prefixed with `'WIP: '` to [flag it as a draft merge request](https://docs.gitlab.com/ee/user/project/merge_requests/work_in_progress_merge_requests.html#adding-the-draft-flag-to-a-merge-request).
-- On BitBucket Server / Bitbucket Data Center draft pull requests are not supported and changesets published as `draft` won't be created.
+- On Bitbucket Server, Bitbucket Data Center, and Bitbucket Cloud draft pull requests are not supported and changesets published as `draft` won't be created.
 
 > NOTE: Changesets that have already been published on a code host as a non-draft (`published: true`) cannot be converted into drafts. Changesets can only go from unpublished to draft to published, but not from published to draft. That also allows you to take it out of draft mode on your code host, without risking Sourcegraph to revert to draft mode.
 
@@ -839,6 +901,35 @@ changesetTemplate:
 
   # Use `outputs` variables to create a unique branch name per changeset:
   branch: my-batch-change-${{ outputs.projectName }}
+```
+
+Create changesets only on workspaces defined within subdirectories using `if:`:
+
+```yaml
+name: test-in
+description: what happens in `in`?
+
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/sourcegraph/sourcegraph
+    onlyFetchWorkspace: true
+
+steps:
+  - run: |
+      echo Path is: ${{ steps.path }} | tee path.txt
+    container: alpine:3
+    # Only creates changesets in subdirectories of client containing package.json files
+    if: ${{ matches steps.path "client*" }}
+
+changesetTemplate:
+  title: Test `in` 
+  body: what happens in `in`?
+  branch: test-in-${{ replace "/" "-" steps.path }}
+  commit:
+    message: Test in
 ```
 
 ## [`workspaces.rootAtLocationOf`](#workspaces-rootatlocationof)

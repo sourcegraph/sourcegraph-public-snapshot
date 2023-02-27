@@ -1,22 +1,26 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    extensionsController,
-    HIGHLIGHTED_FILE_LINES_LONG,
-    NOOP_PLATFORM_CONTEXT,
-} from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_LONG, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
 
 import { NotebookComponent } from './NotebookComponent'
 
-const { add } = storiesOf('web/search/notebooks/notebook/NotebookComponent', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshots: false } })
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/notebook/NotebookComponent',
+    parameters: {
+        chromatic: { disableSnapshots: false },
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const blocks: BlockInit[] = [
     { id: '1', type: 'md', input: { text: '# Markdown' } },
@@ -34,7 +38,7 @@ const blocks: BlockInit[] = [
     },
 ]
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebookComponent
@@ -48,18 +52,16 @@ add('default', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                extensionsController={extensionsController}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>
-))
+)
 
-add('default read-only', () => (
+export const DefaultReadOnly: Story = () => (
     <WebStory>
         {props => (
             <NotebookComponent
@@ -74,13 +76,13 @@ add('default read-only', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                extensionsController={extensionsController}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>
-))
+)
+
+DefaultReadOnly.storyName = 'default read-only'

@@ -21,10 +21,10 @@ func init() {
 func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
-			return oauth.NewHandler(db, extsvc.TypeGitHub, authPrefix, true, next)
+			return oauth.NewMiddleware(db, extsvc.TypeGitHub, authPrefix, true, next)
 		},
 		App: func(next http.Handler) http.Handler {
-			return oauth.NewHandler(db, extsvc.TypeGitHub, authPrefix, false, next)
+			return oauth.NewMiddleware(db, extsvc.TypeGitHub, authPrefix, false, next)
 		},
 	}
 }

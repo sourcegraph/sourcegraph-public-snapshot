@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,7 +42,7 @@ func (GitObjectID) ImplementsGraphQLType(name string) bool {
 }
 
 func (id *GitObjectID) UnmarshalGraphQL(input any) error {
-	if input, ok := input.(string); ok && git.IsAbsoluteRevision(input) {
+	if input, ok := input.(string); ok && gitserver.IsAbsoluteRevision(input) {
 		*id = GitObjectID(input)
 		return nil
 	}
@@ -78,7 +77,7 @@ type gitObjectResolver struct {
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, GitObjectType, error) {
 	o.once.Do(func() {
-		obj, err := gitserver.NewClient(o.repo.db).GetObject(ctx, o.repo.RepoName(), o.revspec)
+		obj, err := gitserver.NewClient().GetObject(ctx, o.repo.RepoName(), o.revspec)
 		if err != nil {
 			o.err = err
 			return

@@ -1,0 +1,31 @@
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:defs.bzl", "sass")
+
+module_style_typings(
+    name = "module_style_typings",
+    deps = ["//client/wildcard:sass-breakpoints"],
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+    deps = ["//client/wildcard:sass-breakpoints"],
+)
+
+# TODO(bazel): sass - src/webview/index.scss
+
+sass(
+    name = "package_styles",
+    srcs = glob(
+        ["src/**/*.scss"],
+        exclude = [
+            "src/**/*.module.scss",
+            "src/webview/index.scss",
+        ],
+    ),
+    deps = [
+        "//:node_modules/@reach/tabs",
+        "//:node_modules/@vscode/codicons",
+        "//client/wildcard:global-styles",
+    ],
+)

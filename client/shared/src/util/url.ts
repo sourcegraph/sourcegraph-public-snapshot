@@ -5,17 +5,18 @@ import {
     findLineKeyInSearchParameters,
     formatSearchParameters,
     LineOrPositionOrRange,
-    replaceRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
-import { appendContextFilter } from '../search/query/transformer'
+import { appendContextFilter, omitFilter } from '../search/query/transformer'
+import { SearchMode } from '../search/searchQueryState'
 
 export interface RepoSpec {
     /**
@@ -71,7 +72,7 @@ interface ComparisonSpec {
  * 1-indexed position in a blob.
  * Positions in URLs are 1-indexed.
  */
-interface UIPosition {
+export interface UIPosition {
     /** 1-indexed line number */
     line: number
 
@@ -83,7 +84,7 @@ interface UIPosition {
  * 1-indexed range in a blob.
  * Ranges in URLs are 1-indexed.
  */
-interface UIRange {
+export interface UIRange {
     start: UIPosition
     end: UIPosition
 }
@@ -111,7 +112,7 @@ export interface ModeSpec {
 }
 
 // `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
-type BlobViewState = 'def' | 'references' | 'panelID'
+export type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -228,14 +229,6 @@ export interface RepoRevision extends RepoSpec, RevisionSpec {}
  * A repo resolved to an exact commit
  */
 export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
-
-/**
- * A documentation page in a repo
- */
-export interface DocumentationPathID {
-    pathID: string
-}
-export interface RepoDocumentation extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
 
 /**
  * A file in a repo
@@ -528,8 +521,9 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+
     searchContextSpec?: string,
-    searchParametersList?: { key: string; value: string }[]
+    searchMode?: SearchMode
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -538,9 +532,8 @@ export function buildSearchURLQuery(
 
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value) {
-        const { start, end } = globalPatternType.range
         patternTypeParameter = globalPatternType.value.value
-        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
+        queryParameter = omitFilter(queryParameter, globalPatternType)
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
@@ -548,7 +541,7 @@ export function buildSearchURLQuery(
         // When case:value is explicit in the query, override any previous value of caseParameter.
         const globalCaseParameterValue = globalCase.value.value
         caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
-        queryParameter = replaceRange(queryParameter, globalCase.range)
+        queryParameter = omitFilter(queryParameter, globalCase)
     }
 
     if (searchContextSpec) {
@@ -562,23 +555,32 @@ export function buildSearchURLQuery(
         searchParameters.set('case', caseParameter)
     }
 
-    if (searchParametersList) {
-        for (const queryParameter of searchParametersList) {
-            searchParameters.set(queryParameter.key, queryParameter.value)
-        }
-    }
+    searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started')
-    url.searchParams.set('utm_medium', 'inproduct')
-    url.searchParams.set('utm_source', source)
-    url.searchParams.set('utm_campaign', 'inproduct-cta')
+/**
+ *
+ * @param authenticatedUser - User email/name for Cloud form prefill
+ * @param product - CTA source product page, determines dynamic Cloud description
+ * @returns signup UR string with relevant params attached
+ */
+export const buildCloudTrialURL = (
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
+    product?: string
+): string => {
+    const url = new URL('https://signup.sourcegraph.com/')
 
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
+    if (product) {
+        url.searchParams.append('p', product)
+    }
+    const primaryEmail = authenticatedUser?.emails.find(email => email.isPrimary)
+    if (primaryEmail) {
+        url.searchParams.append('email', primaryEmail.email)
+    }
+    if (authenticatedUser?.displayName) {
+        url.searchParams.append('name', authenticatedUser.displayName)
     }
 
     return url.toString()
@@ -599,7 +601,13 @@ export interface ParsedRepoRevision {
  * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
  */
 export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
-    const [repository, revision] = repoRevision.split('@', 2) as [string, string | undefined]
+    const firstAtSign = repoRevision.indexOf('@')
+    if (firstAtSign === -1) {
+        return { repoName: decodeURIComponent(repoRevision) }
+    }
+
+    const repository = repoRevision.slice(0, firstAtSign)
+    const revision = repoRevision.slice(firstAtSign + 1)
     return {
         repoName: decodeURIComponent(repository),
         revision: revision && decodeURIComponent(revision),

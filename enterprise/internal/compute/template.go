@@ -2,13 +2,18 @@ package compute
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 	"unicode/utf8"
 
 	"github.com/go-enry/go-enry/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
@@ -48,7 +53,7 @@ func (v Variable) String() string {
 }
 func (c Constant) String() string { return string(c) }
 
-const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
+const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_."
 
 // scanTemplate scans an input string to produce a Template. Recognized
 // metavariable syntax is `$(varAllowed+)`.
@@ -178,8 +183,8 @@ func toJSONString(template *Template) string {
 	for _, atom := range *template {
 		jsons = append(jsons, toJSON(atom))
 	}
-	json, _ := json.Marshal(jsons)
-	return string(json)
+	j, _ := json.Marshal(jsons)
+	return string(j)
 }
 
 type MetaEnvironment struct {
@@ -188,25 +193,30 @@ type MetaEnvironment struct {
 	Content string
 	Commit  string
 	Author  string
-	Date    string
+	Date    time.Time
 	Email   string
 	Lang    string
+	Owner   string
 }
 
 var empty = struct{}{}
 
 var builtinVariables = map[string]struct{}{
-	"repo":    empty,
-	"path":    empty,
-	"content": empty,
-	"commit":  empty,
-	"author":  empty,
-	"date":    empty,
-	"email":   empty,
-	"lang":    empty,
+	"repo":            empty,
+	"path":            empty,
+	"content":         empty,
+	"commit":          empty,
+	"author":          empty,
+	"date":            empty,
+	"date.day":        empty,
+	"date.month":      empty,
+	"date.month.name": empty,
+	"date.year":       empty,
+	"email":           empty,
+	"lang":            empty,
 }
 
-func templatize(pattern string) string {
+func templatize(pattern string, env *MetaEnvironment) string {
 	t := scanTemplate([]byte(pattern))
 	var templatized []string
 	for _, atom := range *t {
@@ -215,8 +225,21 @@ func templatize(pattern string) string {
 			templatized = append(templatized, string(a))
 		case Variable:
 			if _, ok := builtinVariables[a.Name[1:]]; ok {
-				templateVar := strings.Title(a.Name[1:])
-				templatized = append(templatized, `{{.`+templateVar+`}}`)
+				switch a.Name[1:] {
+				case "date.year":
+					templatized = append(templatized, strconv.Itoa(env.Date.Year()))
+				case "date.month.name":
+					templatized = append(templatized, env.Date.Month().String())
+				case "date.month":
+					templatized = append(templatized, fmt.Sprintf("%02d", int(env.Date.Month())))
+				case "date.day":
+					templatized = append(templatized, strconv.Itoa(env.Date.Day()))
+				case "date":
+					templatized = append(templatized, env.Date.Format("2006-01-02"))
+				default:
+					templateVar := cases.Title(language.English).String(a.Name[1:])
+					templatized = append(templatized, `{{.`+templateVar+`}}`)
+				}
 				continue
 			}
 			// Leave alone other variables that don't correspond to
@@ -228,7 +251,7 @@ func templatize(pattern string) string {
 }
 
 func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
-	templated := templatize(pattern)
+	templated := templatize(pattern, env)
 	t, err := template.New("").Parse(templated)
 	if err != nil {
 		return "", err
@@ -242,14 +265,14 @@ func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, erro
 
 // NewMetaEnvironment maps results to a metavariable:value environment where
 // metavariables can be referenced and substituted for in an output template.
-func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
+func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 	switch m := r.(type) {
-	case *result.RepoMatch:
+	case *searchresult.RepoMatch:
 		return &MetaEnvironment{
 			Repo:    string(m.Name),
 			Content: string(m.Name),
 		}
-	case *result.FileMatch:
+	case *searchresult.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(m.Path)
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
@@ -258,13 +281,33 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Content: content,
 			Lang:    lang,
 		}
-	case *result.CommitMatch:
+	case *searchresult.CommitMatch:
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),
 			Author:  m.Commit.Author.Name,
-			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Date:    m.Commit.Committer.Date,
 			Email:   m.Commit.Author.Email,
+			Content: content,
+		}
+	case *searchresult.CommitDiffMatch:
+		path := m.Path()
+		lang, _ := enry.GetLanguageByExtension(path)
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.Commit.ID),
+			Author:  m.Commit.Author.Name,
+			Date:    m.Commit.Committer.Date,
+			Email:   m.Commit.Author.Email,
+			Path:    path,
+			Lang:    lang,
+			Content: content,
+		}
+	case *searchresult.OwnerMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.CommitID),
+			Owner:   m.ResolvedOwner.Identifier(),
 			Content: content,
 		}
 	}

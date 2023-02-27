@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 
+import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
@@ -19,13 +19,14 @@ const actionableBatchSpecStates = [
 type ActionableBatchSpecState = typeof actionableBatchSpecStates[number]
 
 const isLatestExecutionActionable = (executionState: BatchSpecState): executionState is ActionableBatchSpecState =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     actionableBatchSpecStates.includes(executionState as any)
 
 export interface BatchChangeStatePillProps {
     className?: string
     state: BatchChangeState
     latestExecutionState?: BatchSpecState
-    currentSpecID: Scalars['ID']
+    currentSpecID?: Scalars['ID']
     latestSpecID?: Scalars['ID']
 }
 
@@ -55,13 +56,12 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
 
     return (
         <div
-            role="group"
             className={classNames(styles.pillGroup, className, {
                 [styles.open]: state === BatchChangeState.OPEN,
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
-            aria-label={`${state} status`}
+            aria-label={`${state.toLowerCase()} batch change`}
         >
             <StatePill state={state} />
             {executionStatePill}
@@ -104,14 +104,19 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="warning"
-                    className={styles.executionPill}
-                    data-tooltip={`This batch change has a new spec ${
+                    aria-label={`This batch change has a new spec ${
                         latestExecutionState === BatchSpecState.QUEUED
                             ? 'queued for execution'
                             : 'in the process of executing'
                     }.`}
+                    tooltip={`This batch change has a new spec ${
+                        latestExecutionState === BatchSpecState.QUEUED
+                            ? 'queued for execution'
+                            : 'in the process of executing'
+                    }.`}
+                    className={styles.executionPill}
                 >
-                    <HistoryIcon className={styles.executionIcon} />
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
 
@@ -119,10 +124,11 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="primary"
+                    aria-label="This batch change has a newer batch spec execution that is ready to be applied."
+                    tooltip="This batch change has a newer batch spec execution that is ready to be applied."
                     className={styles.executionPill}
-                    data-tooltip="This batch change has a newer batch spec execution that is ready to be applied."
                 >
-                    <HistoryIcon className={styles.executionIcon} />
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
         case BatchSpecState.FAILED:
@@ -130,10 +136,11 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="danger"
+                    aria-label="The latest batch spec execution for this batch change failed."
+                    tooltip="The latest batch spec execution for this batch change failed."
                     className={styles.executionPill}
-                    data-tooltip="The latest batch spec execution for this batch change failed."
                 >
-                    <HistoryIcon className={styles.executionIcon} />
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
     }

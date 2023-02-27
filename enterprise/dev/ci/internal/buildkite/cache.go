@@ -1,7 +1,7 @@
 package buildkite
 
 // Follow-up to INC-101, this fork of 'gencer/cache#v2.4.10' uses bsdtar instead of tar.
-const cachePluginName = "https://github.com/jhchabran/cache-buildkite-plugin.git#master"
+const cachePluginName = "https://github.com/sourcegraph/cache-buildkite-plugin.git#master"
 
 // CacheConfig represents the configuration data for https://github.com/gencer/cache-buildkite-plugin
 type CacheConfigPayload struct {
@@ -16,6 +16,7 @@ type CacheConfigPayload struct {
 	} `json:"tarball,omitempty"`
 	Paths []string             `json:"paths"`
 	S3    CacheConfigS3Payload `json:"s3"`
+	PR    string               `json:"pr,omitempty"`
 }
 
 type CacheConfigS3Payload struct {
@@ -28,14 +29,19 @@ type CacheConfigS3Payload struct {
 }
 
 type CacheOptions struct {
-	ID          string
-	Key         string
-	RestoreKeys []string
-	Paths       []string
-	Compress    bool
+	ID                string
+	Key               string
+	RestoreKeys       []string
+	Paths             []string
+	Compress          bool
+	IgnorePullRequest bool
 }
 
 func Cache(opts *CacheOptions) StepOpt {
+	var cachePR string
+	if opts.IgnorePullRequest {
+		cachePR = "off"
+	}
 	return flattenStepOpts(
 		// Overrides the aws command configuration to use the buildkite cache
 		// configuration instead.
@@ -48,6 +54,7 @@ func Cache(opts *CacheOptions) StepOpt {
 			Paths:       opts.Paths,
 			Compress:    opts.Compress,
 			Backend:     "s3",
+			PR:          cachePR,
 			S3: CacheConfigS3Payload{
 				Bucket:   "sourcegraph_buildkite_cache",
 				Profile:  "buildkite",

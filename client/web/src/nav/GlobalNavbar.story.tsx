@@ -1,123 +1,106 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Grid, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
 
-import { GlobalNavbar } from './GlobalNavbar'
+import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
 
-if (!window.context) {
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
-
-const history = createMemoryHistory()
-
-const defaultProps = (
-    props: ThemeProps
-): Omit<
-    React.ComponentProps<typeof GlobalNavbar>,
-    'authenticatedUser' | 'variant' | 'showSearchBox' | 'authRequired'
-> => ({
+const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
+    isSourcegraphApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
     },
-    location: history.location,
-    history,
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    themePreference: ThemePreference.Light,
-    onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
-    isLightTheme: props.isLightTheme,
-    isExtensionAlertAnimating: false,
+    searchContextsEnabled: false,
+    batchChangesEnabled: false,
+    batchChangesExecutionEnabled: false,
+    batchChangesWebhookLogsEnabled: false,
+    routes: [],
+    fetchSearchContexts: mockFetchSearchContexts,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
+    showSearchBox: false,
+    authenticatedUser: null,
+    setFuzzyFinderIsVisible: () => {},
+    notebooksEnabled: true,
+    codeMonitoringEnabled: true,
+    showFeedbackModal: () => undefined,
+}
+
+const allNavItemsProps: Partial<GlobalNavbarProps> = {
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
-    activation: undefined,
-    routes: [],
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-    fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
-    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-})
+    codeInsightsEnabled: true,
+}
 
-const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
+const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
+    authenticatedUser: {
+        username: 'alice',
+        organizations: { nodes: [{ id: 'acme', name: 'acme' }] },
+        siteAdmin: true,
+    } as AuthenticatedUser,
+}
+
+const decorator: DecoratorFn = Story => {
     useExperimentalFeatures.setState({ codeMonitoring: true })
-    return <Story />
-})
 
-add('Anonymous viewer', () => (
-    <WebStory>
-        {webProps => (
-            <GlobalNavbar
-                {...defaultProps(webProps)}
-                authRequired={false}
-                authenticatedUser={null}
-                variant="default"
-                showSearchBox={false}
-            />
-        )}
-    </WebStory>
-))
-
-add('Auth required', () => (
-    <WebStory>
-        {webProps => (
-            <GlobalNavbar
-                {...defaultProps(webProps)}
-                authRequired={true}
-                authenticatedUser={null}
-                variant="default"
-                showSearchBox={false}
-            />
-        )}
-    </WebStory>
-))
-
-add(
-    'Authenticated viewer',
-    () => (
+    return (
         <WebStory>
-            {webProps => (
-                <GlobalNavbar
-                    {...defaultProps(webProps)}
-                    authRequired={false}
-                    authenticatedUser={
-                        { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
-                    }
-                    variant="default"
-                    showSearchBox={false}
-                />
+            {() => (
+                <div className="mt-3">
+                    <Story args={defaultProps} />
+                </div>
             )}
         </WebStory>
-    ),
-    {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
+    )
+}
+
+const config: Meta = {
+    title: 'web/nav/GlobalNav',
+    decorators: [decorator],
+    parameters: {
+        chromatic: {
+            disableSnapshot: false,
+            viewports: [320, 576, 978],
         },
-    }
+    },
+}
+
+export default config
+
+export const Default: Story<GlobalNavbarProps> = props => (
+    <Grid columnCount={1}>
+        <div>
+            <H3 className="ml-2">Anonymous viewer</H3>
+            <GlobalNavbar {...props} />
+        </div>
+        <div>
+            <H3 className="ml-2">Anonymous viewer with all possible nav items</H3>
+            <GlobalNavbar {...props} {...allNavItemsProps} />
+        </div>
+        <div>
+            <H3 className="ml-2">Authenticated user with all possible nav items</H3>
+            <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} />
+        </div>
+        <div>
+            <H3 className="ml-2">Authenticated user with all possible nav items and search input</H3>
+            <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} showSearchBox={true} />
+        </div>
+    </Grid>
 )

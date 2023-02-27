@@ -5,7 +5,7 @@ import { upperFirst } from 'lodash'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { asError, renderMarkdown } from '@sourcegraph/common'
-import { Alert, AlertProps, Badge } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, Badge, Text } from '@sourcegraph/wildcard'
 
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
 import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
@@ -44,7 +44,7 @@ export const HoverOverlayContent: React.FunctionComponent<
                 data-testid="hover-overlay-content"
                 className={classNames(style.hoverOverlayContent, hoverOverlayContentsStyle.hoverOverlayContent)}
             >
-                <p>{content.value}</p>
+                <Text>{content.value}</Text>
             </span>
         )
     }

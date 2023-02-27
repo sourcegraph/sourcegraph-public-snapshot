@@ -6,7 +6,7 @@ import styles from './ConnectionList.module.scss'
 
 interface ConnectionListProps extends AriaAttributes {
     /** list HTML element type. Default is <ul>. */
-    as?: 'ul' | 'table' | 'div'
+    as?: 'ul' | 'table' | 'div' | 'ol'
 
     /** CSS class name for the list element (<ul>, <table>, or <div>). */
     className?: string

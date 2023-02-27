@@ -10,7 +10,8 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -18,10 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -38,7 +40,7 @@ func TestSearchResults(t *testing.T) {
 	db := database.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
+		r, err := newSchemaResolver(db, gitserver.NewClient()).Search(ctx, &SearchArgs{Query: query, Version: version})
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
@@ -52,7 +54,7 @@ func TestSearchResults(t *testing.T) {
 			case *result.RepoMatch:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name)
 			case *result.FileMatch:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.LineMatches[0].LineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.ChunkMatches[0].Ranges[0].Start.Line)
 			default:
 				t.Fatal("unexpected result type:", match)
 			}
@@ -237,20 +239,16 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			for _, globbing := range []bool{true, false} {
-				globbing := globbing // avoid a reference to the loop variable
-				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
-				actualDynamicFilterStrs := make(map[string]int)
+			actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+			actualDynamicFilterStrs := make(map[string]int)
 
-				for _, filter := range actualDynamicFilters {
-					actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
-				}
+			for _, filter := range actualDynamicFilters {
+				actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
+			}
 
-				expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
-				if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
-					t.Errorf("mismatch (-want, +got):\n%s", diff)
-				}
+			expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
+			if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}
@@ -307,17 +305,13 @@ func TestSearchResultsHydration(t *testing.T) {
 		RepositoryID: uint32(repoWithIDs.ID),
 		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
 		Branches:     []string{"master"},
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-		Checksum: []byte{0, 1, 2},
+		ChunkMatches: make([]zoekt.ChunkMatch, 1),
+		Checksum:     []byte{0, 1, 2},
 	}}
 
-	z := &searchbackend.FakeSearcher{
-		Repos:  []*zoekt.RepoListEntry{zoektRepo},
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := &searchbackend.FakeStreamer{
+		Repos:   []*zoekt.RepoListEntry{zoektRepo},
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	}
 
 	// Act in a user context
@@ -326,12 +320,13 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	searchInputs, err := run.NewSearchInputs(
+	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+	searchInputs, err := cli.Plan(
 		ctx,
-		db,
 		"V2",
 		&literalPatternType,
 		query,
+		search.Precise,
 		search.Batch,
 		&schema.Settings{},
 		false,
@@ -341,9 +336,9 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	resolver := &searchResolver{
+		client:       cli,
 		db:           db,
 		SearchInputs: searchInputs,
-		zoekt:        z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -541,9 +536,9 @@ func TestEvaluateAnd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
-			z := &searchbackend.FakeSearcher{
-				Repos:  zoektRepos,
-				Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
+			z := &searchbackend.FakeStreamer{
+				Repos:   zoektRepos,
+				Results: []*zoekt.SearchResult{{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}}},
 			}
 
 			ctx := context.Background()
@@ -563,12 +558,13 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.query,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,
@@ -578,9 +574,9 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 
 			resolver := &searchResolver{
+				client:       cli,
 				db:           db,
 				SearchInputs: searchInputs,
-				zoekt:        z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -641,11 +637,11 @@ func TestSubRepoFiltering(t *testing.T) {
 	}
 
 	zoektFileMatches := generateZoektMatches(3)
-	mockZoekt := &searchbackend.FakeSearcher{
+	mockZoekt := &searchbackend.FakeStreamer{
 		Repos: []*zoekt.RepoListEntry{},
-		Result: &zoekt.SearchResult{
+		Results: []*zoekt.SearchResult{{
 			Files: zoektFileMatches,
-		},
+		}},
 	}
 
 	for _, tt := range tts {
@@ -667,12 +663,13 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.searchQuery,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,
@@ -682,8 +679,8 @@ func TestSubRepoFiltering(t *testing.T) {
 			}
 
 			resolver := searchResolver{
+				client:       cli,
 				SearchInputs: searchInputs,
-				zoekt:        mockZoekt,
 				db:           db,
 			}
 

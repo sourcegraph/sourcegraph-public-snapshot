@@ -1,25 +1,30 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchBox, Toggles } from '@sourcegraph/branded'
+// The experimental search input should be shown on the search home page
+// eslint-disable-next-line no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SubmitSearchParameters,
     canSubmitSearch,
-} from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+    QueryState,
+    SearchModeProps,
+    SearchContextProps,
+} from '@sourcegraph/shared/src/search'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
@@ -28,140 +33,185 @@ import {
     useNavbarQueryState,
     setSearchCaseSensitivity,
     setSearchPatternType,
+    setSearchMode,
 } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
-import { QuickLinks } from '../QuickLinks'
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
+import { useRecentSearches } from '../input/useRecentSearches'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        SearchContextInputProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** A query fragment to appear at the beginning of the input. */
-    queryPrefix?: string
-    /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
-    hiddenQueryPrefix?: string
     autoFocus?: boolean
-    showOnboardingTour?: boolean
+    queryState: QueryState
+    setQueryState: (newState: QueryState) => void
 }
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    searchMode: state.searchMode,
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    /** The value entered by the user in the query input */
-    const [userQueryState, setUserQueryState] = useState({
-        query: props.queryPrefix ? props.queryPrefix : '',
-    })
-    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const location = useLocation()
+    const navigate = useNavigate()
 
-    useEffect(() => {
-        setUserQueryState({ query: props.queryPrefix || '' })
-    }, [props.queryPrefix])
+    const isLightTheme = useIsLightTheme()
+    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
+    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const quickLinks =
-        (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
-
-    const tourContainer = useRef<HTMLDivElement>(null)
-
-    const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
-        ...props,
-        showOnboardingTour: props.showOnboardingTour ?? false,
-        queryState: userQueryState,
-        setQueryState: setUserQueryState,
-        stepsContainer: tourContainer.current ?? undefined,
-    })
+    const { recentSearches } = useRecentSearches()
+    const recentSearchesRef = useRef(recentSearches)
+    recentSearchesRef.current = recentSearches
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.hiddenQueryPrefix
-                ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
-                : userQueryState.query
+            const query = parameters.query ?? props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
                     source: 'home',
                     query,
-                    history: props.history,
+                    historyOrNavigate: navigate,
+                    location,
                     patternType,
                     caseSensitive,
-                    activation: props.activation,
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    searchMode,
+                    // In the new query input, context is either omitted (-> global)
+                    // or explicitly specified.
+                    selectedSearchContextSpec: experimentalQueryInput ? undefined : props.selectedSearchContextSpec,
                     ...parameters,
                 })
             }
         },
         [
-            props.history,
+            props.queryState.query,
+            props.selectedSearchContextSpec,
+            navigate,
+            location,
             patternType,
             caseSensitive,
-            props.activation,
-            props.selectedSearchContextSpec,
-            props.hiddenQueryPrefix,
-            userQueryState.query,
+            searchMode,
+            experimentalQueryInput,
         ]
     )
+    const submitSearchOnChangeRef = useRef(submitSearchOnChange)
+    submitSearchOnChangeRef.current = submitSearchOnChange
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearchOnChange()
+            submitSearchOnChangeRef.current()
         },
-        [submitSearchOnChange]
+        [submitSearchOnChangeRef]
     )
 
+    // We want to prevent autofocus by default on devices with touch as their only input method.
+    // Touch only devices result in the onscreen keyboard not showing until the input loses focus and
+    // gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
+    // where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
+    const isTouchOnlyDevice =
+        !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
+
+    const suggestionSource = useLazyCreateSuggestions(
+        experimentalQueryInput,
+        useMemo(
+            () => ({
+                platformContext: props.platformContext,
+                authenticatedUser: props.authenticatedUser,
+                fetchSearchContexts: props.fetchSearchContexts,
+                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
+            }),
+            [
+                props.platformContext,
+                props.authenticatedUser,
+                props.fetchSearchContexts,
+                props.getUserSearchContextNamespaces,
+                props.isSourcegraphDotCom,
+            ]
+        )
+    )
+
+    const experimentalExtensions = useLazyHistoryExtension(
+        experimentalQueryInput,
+        recentSearchesRef,
+        submitSearchOnChangeRef
+    )
+
+    // TODO (#48103): Remove/simplify when new search input is released
+    const input = experimentalQueryInput ? (
+        <LazyCodeMirrorQueryInput
+            patternType={patternType}
+            interpretComments={false}
+            queryState={props.queryState}
+            onChange={props.setQueryState}
+            onSubmit={onSubmit}
+            isLightTheme={isLightTheme}
+            placeholder="Search for code or files..."
+            suggestionSource={suggestionSource}
+            extensions={experimentalExtensions}
+        >
+            <Toggles
+                patternType={patternType}
+                caseSensitive={caseSensitive}
+                setPatternType={setSearchPatternType}
+                setCaseSensitivity={setSearchCaseSensitivity}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
+                settingsCascade={props.settingsCascade}
+                navbarSearchQuery={props.queryState.query}
+                showCopyQueryButton={false}
+                showSmartSearchButton={false}
+            />
+        </LazyCodeMirrorQueryInput>
+    ) : (
+        <SearchBox
+            {...props}
+            showSearchContext={props.searchContextsEnabled}
+            showSearchContextManagement={true}
+            caseSensitive={caseSensitive}
+            patternType={patternType}
+            setPatternType={setSearchPatternType}
+            setCaseSensitivity={setSearchCaseSensitivity}
+            searchMode={searchMode}
+            setSearchMode={setSearchMode}
+            queryState={props.queryState}
+            onChange={props.setQueryState}
+            onSubmit={onSubmit}
+            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            showSearchHistory={true}
+            recentSearches={recentSearches}
+        />
+    )
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    {/* Search onboarding tour must be rendered before the SearchBox so
-                    the Monaco autocomplete suggestions are not blocked by the tour. */}
-                    <div ref={tourContainer} />
-                    <SearchBox
-                        {...props}
-                        {...onboardingTourQueryInputProps}
-                        editorComponent={editorComponent}
-                        showSearchContext={showSearchContext}
-                        showSearchContextManagement={showSearchContextManagement}
-                        caseSensitive={caseSensitive}
-                        patternType={patternType}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        submitSearchOnToggle={submitSearchOnChange}
-                        queryState={userQueryState}
-                        onChange={setUserQueryState}
-                        onSubmit={onSubmit}
-                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
-                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                    />
+                    <TraceSpanProvider name="SearchBox">
+                        <div className="d-flex flex-grow-1 w-100">{input}</div>
+                    </TraceSpanProvider>
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
-                <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
+                <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
     )

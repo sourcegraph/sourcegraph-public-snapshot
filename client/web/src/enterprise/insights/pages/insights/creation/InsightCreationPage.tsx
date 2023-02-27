@@ -1,19 +1,22 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../stores'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
-import { useQueryParameters } from '../../../hooks/use-query-parameters'
+import { useQueryParameters } from '../../../hooks'
+import { encodeDashboardIdQueryParam } from '../../../routers.constant'
 
 import { CaptureGroupCreationPage } from './capture-group'
-import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
+import { ComputeInsightCreationPage } from './compute'
+import { LangStatsInsightCreationPage } from './lang-stats'
 import { SearchInsightCreationPage } from './search-insight'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
+    Compute = 'compute',
     Search = 'search-based',
     CaptureGroup = 'capture-group',
 }
@@ -26,45 +29,48 @@ interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
 }
 
-export const InsightCreationPage: React.FunctionComponent<
-    React.PropsWithChildren<InsightCreationPageProps>
-> = props => {
+export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
-    const history = useHistory()
-    const { getDashboardById, createInsight } = useContext(CodeInsightsBackendContext)
-
+    const navigate = useNavigate()
+    const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
-    if (dashboard === undefined) {
-        return <LoadingSpinner inline={false} />
-    }
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
-        return createInsight({ insight, dashboard }).toPromise()
+        return createInsight({ insight, dashboardId: dashboardId ?? null }).toPromise()
     }
 
     const handleInsightSuccessfulCreation = (): void => {
-        if (!dashboard) {
+        if (!dashboardId) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/dashboards/')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+        if (!dashboardId) {
+            navigate('/insights/all')
+
+            return
+        }
+
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
+
+    const backCreateUrl = encodeDashboardIdQueryParam('/insights/create', dashboardId)
 
     if (mode === InsightCreationPageType.CaptureGroup) {
         return (
             <CaptureGroupCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -76,6 +82,19 @@ export const InsightCreationPage: React.FunctionComponent<
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
+                backUrl={backCreateUrl}
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
+
+    if (codeInsightsCompute && mode === InsightCreationPageType.Compute) {
+        return (
+            <ComputeInsightCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -86,6 +105,7 @@ export const InsightCreationPage: React.FunctionComponent<
 
     return (
         <LangStatsInsightCreationPage
+            backUrl={backCreateUrl}
             telemetryService={telemetryService}
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,12 +16,15 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -40,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -68,12 +69,21 @@ type Metadata struct {
 	PreviewImage string
 }
 
+type PreloadedAsset struct {
+	// The as property. E.g. `image`
+	As string
+	// The href property. It should be set to a resolved path using `assetsutil.URL`
+	Href string
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	PreloadedAssets *[]PreloadedAsset
 
 	Manifest *assets.WebpackManifest
 
@@ -105,6 +115,7 @@ type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.
 // mockNewCommon is used in tests to mock newCommon (duh!).
 //
 // Ensure that the mock is reset at the end of every test by adding a call like the following:
+//
 //	defer func() {
 //		mockNewCommon = nil
 //	}()
@@ -115,17 +126,18 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the event of the repository having been renamed, the request is handled
 // by newCommon and nil, nil is returned. Basic usage looks like:
 //
-// 	common, err := newCommon(w, r, noIndex, serveError)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if common == nil {
-// 		return nil // request was handled
-// 	}
+//	common, err := newCommon(w, r, noIndex, serveError)
+//	if err != nil {
+//		return err
+//	}
+//	if common == nil {
+//		return nil // request was handled
+//	}
 //
 // In the case of a repository that is cloning, a Common data structure is
-// returned but it has an incomplete RevSpec.
+// returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
+	logger := sglog.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -139,6 +151,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		w.Header().Set("X-Robots-Tag", "noindex")
 	}
 
+	var preloadedAssets *[]PreloadedAsset
+	preloadedAssets = nil
+	if globals.Branding() == nil || (globals.Branding().Dark == nil && globals.Branding().Light == nil) {
+		preloadedAssets = &[]PreloadedAsset{
+			// sourcegraph-mark.svg is always loaded as part of the layout component unless a custom
+			// branding is defined
+			{As: "image", Href: assetsutil.URL("/img/sourcegraph-mark.svg").String() + "?v2"},
+		}
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -146,9 +168,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		Context:  jscontext.NewJSContextFromRequest(r, db),
-		Title:    title,
-		Manifest: manifest,
+		Context:         jscontext.NewJSContextFromRequest(r, db),
+		Title:           title,
+		Manifest:        manifest,
+		PreloadedAssets: preloadedAssets,
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
@@ -161,7 +184,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
 		var err error
-		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), db, mux.Vars(r))
+		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
 		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError
@@ -198,7 +221,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 					return nil, nil
 				}
 
-				// Repository is not clonable.
+				// Repository is not cloneable.
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
@@ -239,7 +262,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 	// common.Repo and common.CommitID are populated in the above if statement
 	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
-		lineRange := findLineRangeInQueryParameters(r.URL.Query())
+		lineRange := FindLineRangeInQueryParameters(r.URL.Query())
 
 		var symbolResult *result.Symbol
 		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
@@ -249,6 +272,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
 				ctx,
+				authz.DefaultSubRepoPermsChecker,
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),
@@ -261,7 +285,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 		common.Metadata.ShowPreview = true
 		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
-		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
+		common.Metadata.Description = ""
 		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
 	}
 
@@ -308,7 +332,13 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
-		// Homepage redirects to /search.
+		// we only allow HEAD requests on sourcegraph.com.
+		if r.Method == "HEAD" {
+			w.WriteHeader(http.StatusOK)
+			return nil
+		}
+
+		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		return nil
@@ -333,7 +363,7 @@ func serveSignIn(db database.DB) handlerFunc {
 func serveEmbed(db database.DB) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		flagSet := featureflag.FromContext(r.Context())
-		if enabled := flagSet["enable-embed-route"]; !enabled {
+		if enabled := flagSet.GetBoolOr("enable-embed-route", false); !enabled {
 			w.WriteHeader(http.StatusNotFound)
 			return nil
 		}
@@ -361,7 +391,7 @@ func serveEmbed(db database.DB) handlerFunc {
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {
 	// NOTE: It makes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
@@ -378,7 +408,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := git.Stat(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stat, err := client.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)
@@ -420,7 +450,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}
@@ -451,7 +481,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}

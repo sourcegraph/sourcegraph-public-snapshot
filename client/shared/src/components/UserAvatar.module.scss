@@ -1,0 +1,30 @@
+.user-avatar {
+    isolation: isolate;
+    display: inline-flex;
+    border-radius: 50%;
+    text-transform: capitalize;
+    color: var(--color-bg-1);
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    position: relative;
+    background: linear-gradient(to bottom, var(--logo-purple), var(--logo-orange));
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: 50%;
+        background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
+        mask-image: linear-gradient(to bottom, #000000, transparent);
+    }
+}
+
+.initials {
+    z-index: 1;
+    color: var(--white);
+}

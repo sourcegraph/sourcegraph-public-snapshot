@@ -4,7 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -38,7 +39,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
+		event.Results, err = applySubRepoFiltering(ctx, checker, clients.Logger, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -58,9 +59,21 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
+func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []otlog.Field { return nil }
+
+func (s *subRepoPermsFilterJob) Children() []job.Describer {
+	return []job.Describer{s.child}
+}
+
+func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.child = job.Map(s.child, fn)
+	return &cp
+}
+
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, logger log.Logger, matches []result.Match) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -91,19 +104,22 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 				filtered = append(filtered, m)
 			}
 		case *result.CommitMatch:
-			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+			allowed, err := authz.CanReadAnyPath(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
 			if err != nil {
 				errs = errors.Append(errs, err)
 				continue
 			}
 			if allowed {
-				filtered = append(filtered, m)
+				if !diffIsEmpty(mm.DiffPreview) {
+					filtered = append(filtered, m)
+				}
 			}
 		case *result.RepoMatch:
-			// Repo filtering is taking care of by our usual repo filtering logic
+			// Repo filtering is taken care of by our usual repo filtering logic
 			filtered = append(filtered, m)
+			// Owner matches are found after the sub-repo permissions filtering, hence why we don't have
+			// an OwnerMatch case here.
 		}
-
 	}
 
 	if errs == nil {
@@ -112,6 +128,15 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
+	logger.Warn("Applying sub-repo permissions to search results", log.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
+}
+
+func diffIsEmpty(diffPreview *result.MatchedString) bool {
+	if diffPreview != nil {
+		if diffPreview.Content == "" || len(diffPreview.MatchedRanges) == 0 {
+			return true
+		}
+	}
+	return false
 }

@@ -1,8 +1,7 @@
 import React from 'react'
 
+import { mdiCheck, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -13,12 +12,12 @@ export interface Props {
 export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ code }) => (
     <span>
         <span className={classNames('mr-1')}>
-            {code < 400 ? (
-                <Icon className="text-success" as={CheckIcon} />
+            {code < 400 && code > 0 ? (
+                <Icon className="text-success" aria-label="Success" svgPath={mdiCheck} />
             ) : (
-                <Icon className="text-danger" as={AlertCircleIcon} />
+                <Icon className="text-danger" aria-label="Failed" svgPath={mdiAlertCircle} />
             )}
         </span>
-        {code}
+        {code > 0 ? code : 'Network error'}
     </span>
 )

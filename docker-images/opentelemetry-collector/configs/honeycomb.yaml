@@ -1,0 +1,55 @@
+# Export traces to Honeycomb.
+#
+# Variables:
+#
+# - $HONEYCOMB_API_KEY
+# - $HONEYCOMB_DATASET
+#
+# Learn more: https://docs.honeycomb.io/getting-data-in/otel-collector/
+
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+
+exporters:
+  otlp:
+    endpoint: "api.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": "$HONEYCOMB_API_KEY"
+  otlp/webapp:
+    endpoint: "api.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": "$HONEYCOMB_API_KEY_WEBAPP"
+
+processors:
+  filter/webapp: # You can include certain traces
+    spans:
+      include:
+        match_type: strict
+        services:
+          - web-app
+  filter/exc-webapp: # You can exclude certain traces
+      spans:
+        exclude:
+          match_type: strict
+          services:
+            - web-app
+
+extensions:
+  health_check:
+  zpages:
+    endpoint: ":55679"
+
+service:
+  extensions: [health_check,zpages]
+  pipelines:
+    traces/webapp: # Only traces for the service web-app will be allowed through this pipeline
+      receivers: [otlp]
+      processors: [filter/webapp]
+      exporters: [otlp/webapp]
+    traces/all: # All traces except web-app is allowed through the pipeline
+      receivers: [otlp]
+      processors: [filter/exc-webapp]
+      exporters: [otlp]

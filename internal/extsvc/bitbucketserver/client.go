@@ -14,14 +14,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -58,7 +56,7 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
 	// concept of rate limiting in HTTP response headers). Default limits are defined
 	// in extsvc.GetLimitFromConfig
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
@@ -792,6 +790,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -929,7 +948,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
@@ -939,13 +958,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -1128,26 +1142,31 @@ type GroupProjectPermission struct {
 	Project *Project
 }
 
+type Link struct {
+	Href string `json:"href"`
+	Name string `json:"name"`
+}
+
+type RepoLinks struct {
+	Clone []Link `json:"clone"`
+	Self  []struct {
+		Href string `json:"href"`
+	} `json:"self"`
+}
+
 type Repo struct {
-	Slug          string   `json:"slug"`
-	ID            int      `json:"id"`
-	Name          string   `json:"name"`
-	SCMID         string   `json:"scmId"`
-	State         string   `json:"state"`
-	StatusMessage string   `json:"statusMessage"`
-	Forkable      bool     `json:"forkable"`
-	Origin        *Repo    `json:"origin"`
-	Project       *Project `json:"project"`
-	Public        bool     `json:"public"`
-	Links         struct {
-		Clone []struct {
-			Href string `json:"href"`
-			Name string `json:"name"`
-		} `json:"clone"`
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
+	Slug          string    `json:"slug"`
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	SCMID         string    `json:"scmId"`
+	State         string    `json:"state"`
+	StatusMessage string    `json:"statusMessage"`
+	Forkable      bool      `json:"forkable"`
+	Origin        *Repo     `json:"origin"`
+	Project       *Project  `json:"project"`
+	Public        bool      `json:"public"`
+	Links         RepoLinks `json:"links"`
 }
 
 // IsPersonalRepository tells if the repository is a personal one.

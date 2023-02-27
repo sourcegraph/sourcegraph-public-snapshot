@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -26,11 +25,10 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
 
     // Debt: lift this shared query up to HistorySidebarView.
     const recentRepositoriesResult = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext), [
-            authenticatedUser.id,
-            itemsToLoad,
-            platformContext,
-        ])
+        useMemo(
+            () => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext),
+            [authenticatedUser.id, itemsToLoad, platformContext]
+        )
     )
 
     if (!recentRepositoriesResult) {
@@ -49,7 +47,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.
                 caseSensitive: false,
-                patternType: SearchPatternType.literal,
+                patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,
                 trace: undefined,
             })
@@ -61,20 +59,16 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
 
     return (
         <div className={styles.sidebarSection}>
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+            <Button
+                variant="secondary"
+                outline={true}
+                className={styles.sidebarSectionCollapseButton}
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
-                <h5 className="flex-grow-1">Recent Repositories</h5>
-                <Icon
-                    role="img"
-                    aria-hidden={true}
-                    className="mr-1"
-                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
-                />
-            </button>
+                <H5 className="flex-grow-1">Recent Repositories</H5>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
+            </Button>
 
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
@@ -83,13 +77,13 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                         .map((repository, index) => (
                             <div key={`${repository}-${index}`}>
                                 <small className={styles.sidebarSectionListItem}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link p-0 text-left text-decoration-none"
+                                    <Button
+                                        variant="link"
+                                        className="p-0 text-left text-decoration-none"
                                         onClick={() => onRecentRepositoryClick(`repo:${repository}`)}
                                     >
                                         <SyntaxHighlightedSearchQuery query={`r:${repository}`} />
-                                    </button>
+                                    </Button>
                                 </small>
                             </div>
                         ))}

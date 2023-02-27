@@ -1,10 +1,9 @@
 import React from 'react'
 
-import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { ProductStatusBadge, Button, H3, Text } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
 
 export const NOTEPAD_CTA_ID = 'notepad-cta'
 
@@ -18,13 +17,13 @@ export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<Notepad
     onCancel,
 }) => {
     const assetsRoot = window.context?.assetsRoot || ''
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <div>
-            <h3 id={NOTEPAD_CTA_ID} className="d-inline-block">
+            <H3 id={NOTEPAD_CTA_ID} className="d-inline-block">
                 <NotepadIcon /> Enable notepad
-            </h3>{' '}
+            </H3>{' '}
             <ProductStatusBadge status="beta" />
             <div className="d-flex align-items-center">
                 <img
@@ -32,10 +31,10 @@ export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<Notepad
                     src={`${assetsRoot}/img/notepad-illustration-${isLightTheme ? 'light' : 'dark'}.svg`}
                     alt="notepad illustration"
                 />
-                <p>
+                <Text>
                     The notepad adds a toolbar to the bottom right of search results and file pages to help you create
                     notebooks from your code navigation activities.
-                </p>
+                </Text>
             </div>
             <div className="float-right mt-2">
                 <Button className="mr-2" variant="secondary" size="sm" onClick={onCancel}>

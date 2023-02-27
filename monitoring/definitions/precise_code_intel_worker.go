@@ -5,10 +5,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func PreciseCodeIntelWorker() *monitoring.Container {
+func PreciseCodeIntelWorker() *monitoring.Dashboard {
 	const containerName = "precise-code-intel-worker"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "precise-code-intel-worker",
 		Title:       "Precise Code Intel Worker",
 		Description: "Handles conversion of uploaded precise code intelligence bundles.",

@@ -1,10 +1,11 @@
 import { MockedProviderProps } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
 
-import { RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
+import { RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import sidebarStyles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchSidebar.module.scss'
 // eslint-disable-next-line no-restricted-imports
-import sidebarStyles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar.module.scss'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -93,8 +94,8 @@ export function RevisionsSection() {
                             key={title}
                             style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}
                         >
-                            <h2>{title}</h2>
-                            <div className={sidebarStyles.searchSidebar}>
+                            <H2>{title}</H2>
+                            <div className={sidebarStyles.sidebar}>
                                 <MockedTestProvider mocks={mocks}>
                                     <Revisions {...props} />
                                 </MockedTestProvider>

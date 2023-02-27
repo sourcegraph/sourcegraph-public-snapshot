@@ -14,12 +14,14 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -75,7 +77,7 @@ type ClientProvider struct {
 	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
 	baseURL *url.URL
 
-	// httpClient is the underlying the HTTP client to use
+	// httpClient is the underlying the HTTP client to use.
 	httpClient httpcli.Doer
 
 	gitlabClients   map[string]*Client
@@ -148,7 +150,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.httpClient)
+	c := p.newClient(a)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -175,7 +177,7 @@ type Client struct {
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -184,10 +186,14 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
+func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
+	return p.NewClient(a)
+}
+
+func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(baseURL) && a == nil {
+	if isGitLabDotComURL(p.baseURL) && a == nil {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
@@ -201,12 +207,12 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(p.urn)
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
 		urn:              p.urn,
-		baseURL:          baseURL,
-		httpClient:       httpClient,
+		baseURL:          p.baseURL,
+		httpClient:       p.httpClient,
 		projCache:        projCache,
 		Auth:             a,
 		rateLimiter:      rl,
@@ -219,6 +225,10 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
+func (c *Client) Urn() string {
+	return c.urn
+}
+
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
@@ -226,17 +236,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 	return c.doWithBaseURL(ctx, req, result)
 }
 
-// doWithBaseURL will not amend the request URL.
+// doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
+// used for authentication, it will try to refresh the token and retry the same
+// request when the token has expired.
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.Auth != nil {
-		if err := c.Auth.Authenticate(req); err != nil {
-			return nil, 0, errors.Wrap(err, "authenticating request")
-		}
-	}
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -255,24 +261,29 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		}
 	}
 
-	resp, err = c.httpClient.Do(req.WithContext(ctx))
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
+
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth)
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-		return nil, 0, err
+		return nil, 0, errors.Wrap(err, "request failed")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, errors.Wrap(err, "read response body")
 	}
 	defer resp.Body.Close()
-	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// We swallow the error here, because we don't want to fail. Parsing the body
-		// is just optional to provide some more context.
-		body, _ := io.ReadAll(resp.Body)
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
-	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
+	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -314,6 +325,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 	v := struct {
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
+
 	_, _, err = c.doWithBaseURL(ctx, req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
@@ -373,9 +385,6 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
-var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
-
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
@@ -383,6 +392,9 @@ func IsNotFound(err error) bool {
 		errors.Is(err, ErrMergeRequestNotFound) ||
 		HTTPErrorCode(err) == http.StatusNotFound
 }
+
+// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
+var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 
 // ErrProjectNotFound is when the requested GitLab project is not found.
 var ErrProjectNotFound = &ProjectNotFoundError{}
@@ -400,3 +412,49 @@ func (e ProjectNotFoundError) Error() string {
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+// GetOAuthContext matches the corresponding auth provider using the given
+// baseURL and returns the oauthutil.OAuthContext of it.
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p := authProvider.Gitlab
+			glURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, glURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  glURL + "/oauth/authorize",
+					TokenURL: glURL + "/oauth/token",
+				},
+				Scopes: RequestedOAuthScopes(p.ApiScope),
+			}
+		}
+	}
+	return nil
+}
+
+// ProjectArchivedError is returned when a request cannot be performed due to the
+// GitLab project being archived.
+type ProjectArchivedError struct{ Name string }
+
+func (ProjectArchivedError) Archived() bool { return true }
+
+func (e ProjectArchivedError) Error() string {
+	if e.Name == "" {
+		return "GitLab project is archived"
+	}
+	return fmt.Sprintf("GitLab project %q is archived", e.Name)
+}
+
+func (ProjectArchivedError) NonRetryable() bool { return true }

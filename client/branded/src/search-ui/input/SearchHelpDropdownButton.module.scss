@@ -1,0 +1,18 @@
+.trigger-button {
+    padding: 0.375rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    &[aria-expanded='true'],
+    &:hover {
+        background-color: var(--color-bg-2);
+        color: var(--link-color);
+    }
+}
+
+.content {
+    min-width: 10rem;
+    max-width: 14.8rem;
+    padding-top: 0.25rem;
+}

@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,6 +56,8 @@ func (s *Service) ApplyBatchChange(
 	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
 	})
@@ -62,7 +66,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +110,7 @@ func (s *Service) ApplyBatchChange(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	l := locker.NewWithDB(nil, "batches_apply").With(tx)
+	l := locker.NewWith(tx, "batches_apply")
 	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
 	if err != nil {
 		return nil, err
@@ -143,7 +147,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// And execute the mapping.
-	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
+	newChangesets, updatedChangesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
@@ -154,17 +158,31 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// Upsert all changesets.
-	for _, changeset := range changesets {
+	for _, changeset := range newChangesets {
 		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
 			changeset.UiPublicationState = state
 		}
+	}
 
-		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
+	for _, changeset := range updatedChangesets {
+		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
+			changeset.UiPublicationState = state
+		}
+	}
+
+	if len(newChangesets) > 0 {
+		if err = tx.CreateChangeset(ctx, newChangesets...); err != nil {
 			return nil, err
 		}
 	}
 
+	if len(updatedChangesets) > 0 {
+		if err = tx.UpdateChangesetsForApply(ctx, updatedChangesets); err != nil {
+			return nil, err
+		}
+	}
+
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
 	return batchChange, nil
 }
 

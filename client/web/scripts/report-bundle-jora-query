@@ -1,0 +1,187 @@
+// Modified version of the jora query that is shown in the statoscope dashboard
+// https://sourcegraph.com/github.com/statoscope/statoscope/-/blob/packages/webpack-ui/src/pages/diff/queries/dashboard.ts
+//
+// Usage:
+//   cat query > statoscope query -i stats-compare.json -i stats.json
+
+$useCompressedSize: true;
+
+$getChunksAssetsSize: => (
+    files.[].[not false].(getAssetSize($$, $useCompressedSize))
+ );
+
+$chunksAllA: compilations[0].chunks;
+$chunksAllB: compilations[1].chunks;
+$chunksInitialA: $chunksAllA.[initial];
+$chunksInitialB: $chunksAllB.[initial];
+$chunksAsyncA: $chunksAllA.[not initial];
+$chunksAsyncB: $chunksAllB.[not initial];
+
+$assetsAllSizeA: $chunksAllA.$getChunksAssetsSize(compilations[0].hash).reduce(=> size + $$, 0);
+$assetsAllSizeB: $chunksAllB.$getChunksAssetsSize(compilations[1].hash).reduce(=> size + $$, 0);
+$assetsInitialSizesA: $chunksInitialA.$getChunksAssetsSize(compilations[0].hash);
+$assetsInitialSizeA: $assetsInitialSizesA.reduce(=> size + $$, 0);
+$assetsInitialSizesB: $chunksInitialB.$getChunksAssetsSize(compilations[1].hash);
+$assetsInitialSizeB: $assetsInitialSizesB.reduce(=> size + $$, 0);
+$assetsAsyncSizeA: $chunksAsyncA.$getChunksAssetsSize(compilations[0].hash).reduce(=> size + $$, 0);
+$assetsAsyncSizeB: $chunksAsyncB.$getChunksAssetsSize(compilations[1].hash).reduce(=> size + $$, 0);
+
+[
+  // These hashes are needed to generate a the diff link in the Statoscope report
+  // e.g. #diff&diffWith=fd291e3f6ddc5daf0412&hash=adb653b96df5a0f24aec
+  {
+    hash: compilations[0].hash,
+    diffWith: compilations[1].hash,
+  },
+  {
+    $value: $assetsInitialSizeB - $assetsInitialSizeA;
+    $valueP: $assetsInitialSizeB.percentFrom($assetsInitialSizeA);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value.formatSize(),
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Initial size',
+    visible: $value
+  },
+  {
+    $value: $assetsAllSizeB - $assetsAllSizeA;
+    $valueP: $assetsAllSizeB.percentFrom($assetsAllSizeA);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value.formatSize(),
+    valueTextP: $valueP.toFixed() + '%',
+    label: "Total size",
+    visible: $value
+  },
+  {
+    $value: $assetsAsyncSizeB - $assetsAsyncSizeA;
+    $valueP: $assetsAsyncSizeB.percentFrom($assetsAsyncSizeA);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value.formatSize(),
+    valueTextP: $valueP.toFixed() + '%',
+    label: "Async size",
+    visible: $value
+  },
+  {
+    $value: compilations[1].time - compilations[0].time;
+    $valueP: compilations[1].time.percentFrom(compilations[0].time);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value.formatDuration(),
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Build Time',
+    visible: $value
+  },
+  {
+    $a: compilations[0].nodeModules.size();
+    $b: compilations[1].nodeModules.size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Packages',
+    visible: $value
+  },
+  {
+    $packagesWithMultipleInstancesA: compilations[0].nodeModules.[instances.size() > 1];
+    $packagesWithMultipleInstancesB: compilations[1].nodeModules.[instances.size() > 1];
+    $a: $packagesWithMultipleInstancesA.instances.size() - $packagesWithMultipleInstancesA.size();
+    $b: $packagesWithMultipleInstancesB.instances.size() - $packagesWithMultipleInstancesB.size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Package copies',
+    visible: $value
+  },
+  {
+    $packagesSizeA: compilations[0].nodeModules.instances.modules.(getModuleSize($$, compilations[0].hash, $useCompressedSize)).reduce(=> size + $$, 0);
+    $packagesSizeB: compilations[1].nodeModules.instances.modules.(getModuleSize($$, compilations[1].hash, $useCompressedSize)).reduce(=> size + $$, 0);
+    $value: $packagesSizeB - $packagesSizeA;
+    $valueP: $packagesSizeB.percentFrom($packagesSizeA);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value.formatSize(),
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Packages size',
+    visible: $value
+  },
+  {
+    $a: compilations[0].entrypoints.size();
+    $b: compilations[1].entrypoints.size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Entrypoints',
+    visible: $value
+  },
+  {
+    $a: compilations[0].modules.identifier.size();
+    $b: compilations[1].modules.identifier.size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Modules',
+    visible: $value
+  },
+  {
+    $getDuplicateModules: => (
+      $duplicates: (..modules).[source].group(<source>)
+        .({source: key, duplicates: value})
+        .[duplicates.size() > 1].(
+          $module: duplicates[0];
+          $dups: duplicates - [duplicates[0]];
+          {
+            module: $module,
+            duplicates: $dups
+          }
+        );
+      $duplicates.module.size()
+    );
+    $a: compilations[0].$getDuplicateModules();
+    $b: compilations[1].$getDuplicateModules();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Duplicate modules',
+    visible: $value
+  },
+  {
+    $a: (compilations[0].chunks + compilations[0].chunks..children).size();
+    $b: (compilations[1].chunks + compilations[1].chunks..children).size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Chunks',
+    visible: $value
+  },
+  {
+    $a: compilations[0].assets.size();
+    $b: compilations[1].assets.size();
+    $value: $b - $a;
+    $valueP: $b.percentFrom($a);
+    value: $value,
+    valueP: $valueP,
+    valueText: $value,
+    valueTextP: $valueP.toFixed() + '%',
+    label: 'Assets',
+    visible: $value
+  },
+]

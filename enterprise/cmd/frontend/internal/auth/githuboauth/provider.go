@@ -11,6 +11,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -22,7 +24,7 @@ import (
 
 const sessionKey = "githuboauth@0"
 
-func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.GetURL()
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -39,11 +41,11 @@ func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schem
 
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
-		OAuth2Config: func(extraScopes ...string) oauth2.Config {
+		OAuth2Config: func() oauth2.Config {
 			return oauth2.Config{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Scopes:       requestedScopes(p, extraScopes),
+				Scopes:       requestedScopes(p),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
 					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
@@ -60,12 +62,13 @@ func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schem
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return github.CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(db, &sessionIssuerHelper{
-					CodeHost:    codeHost,
-					db:          db,
-					clientID:    p.ClientID,
-					allowSignup: p.AllowSignup,
-					allowOrgs:   p.AllowOrgs,
+				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
+					CodeHost:     codeHost,
+					db:           db,
+					clientID:     p.ClientID,
+					allowSignup:  p.AllowSignup,
+					allowOrgs:    p.AllowOrgs,
+					allowOrgsMap: p.AllowOrgsMap,
 				}, sessionKey),
 				http.HandlerFunc(failureHandler),
 			)
@@ -104,7 +107,7 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
 }
 
-func requestedScopes(p *schema.GitHubAuthProvider, extraScopes []string) []string {
+func requestedScopes(p *schema.GitHubAuthProvider) []string {
 	scopes := []string{"user:email"}
 	if !envvar.SourcegraphDotComMode() {
 		scopes = append(scopes, "repo")
@@ -113,21 +116,6 @@ func requestedScopes(p *schema.GitHubAuthProvider, extraScopes []string) []strin
 	// Needs extra scope to check organization membership
 	if len(p.AllowOrgs) > 0 || p.AllowGroupsPermissionsSync {
 		scopes = append(scopes, "read:org")
-	}
-
-	// Append extra scopes and ensure there are no duplicates
-	for _, s := range extraScopes {
-		var found bool
-		for _, inner := range scopes {
-			if inner == s {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			scopes = append(scopes, s)
-		}
 	}
 
 	return scopes

@@ -1,15 +1,20 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 
-const { add } = storiesOf('web/batches/details/SupersedingBatchSpecAlert', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('None published', () => (
+const config: Meta = {
+    title: 'web/batches/details/SupersedingBatchSpecAlert',
+    decorators: [decorator],
+}
+
+export default config
+
+export const NonePublished: Story = () => (
     <WebStory>
         {() => (
             <SupersedingBatchSpecAlert
@@ -20,4 +25,6 @@ add('None published', () => (
             />
         )}
     </WebStory>
-))
+)
+
+NonePublished.storyName = 'None published'

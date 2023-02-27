@@ -21,13 +21,8 @@ func maybeZoektProcFile() []string {
 	frontendInternalHost := os.Getenv("SRC_FRONTEND_INTERNAL")
 	indexDir := filepath.Join(DataDir, "zoekt/index")
 
-	debugFlag := ""
-	if verbose {
-		debugFlag = "-debug"
-	}
-
 	return []string{
-		fmt.Sprintf("zoekt-indexserver: env GOGC=50 HOSTNAME=%s zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 -cpu_fraction 0.25 %s", defaultHost, frontendInternalHost, indexDir, debugFlag),
-		fmt.Sprintf("zoekt-webserver: env GOGC=50 zoekt-webserver -rpc -pprof -listen %s -index %s", defaultHost, indexDir),
+		fmt.Sprintf("zoekt-indexserver: env GOGC=25 HOSTNAME=%s zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 -cpu_fraction 0.25", defaultHost, frontendInternalHost, indexDir),
+		fmt.Sprintf("zoekt-webserver: env GOGC=25 zoekt-webserver -rpc -pprof -indexserver_proxy -listen %s -index %s", defaultHost, indexDir),
 	}
 }

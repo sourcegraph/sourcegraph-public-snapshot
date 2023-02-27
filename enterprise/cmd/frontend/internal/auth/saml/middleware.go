@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -52,15 +52,17 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	}
 
 	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
-	if actor.FromContext(r.Context()).IsAuthenticated() {
+	if sgactor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
 		return
 	}
 
-	// If there is only one auth provider configured, the single auth provider is SAML, and it's an
-	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
-	// anyway; there's no point in showing them a signin screen with just a single signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !isAPIRequest {
+	// If there is only one auth provider configured, the single auth provider is SAML, it's an
+	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
+	//
+	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
+	ps := providers.Providers()
+	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
@@ -141,6 +143,11 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 
+			if !allowSignin(p, info.groups) {
+				log15.Warn("Error authorizing SAML-authenticated user.", "AccountID", info.spec.AccountID, "Expected groups", p.config.AllowGroups, "Got", info.groups)
+				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
+				return
+			}
 			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
 			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
@@ -244,11 +251,11 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 // login flows.
 //
 // SAML overloads the term "RelayState".
-// * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
-//   the RelayState.
-// * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
-//   is the desired post-login redirect URL in plain text.
+//   - In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
+//     back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//     the RelayState.
+//   - In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
+//     is the desired post-login redirect URL in plain text.
 type relayState struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`
@@ -274,4 +281,17 @@ func (s *relayState) decode(encoded string) {
 	}
 
 	s.ProviderID, s.ReturnToURL = "", ""
+}
+
+func allowSignin(p *provider, groups map[string]bool) bool {
+	if p.config.AllowGroups == nil {
+		return true
+	}
+
+	for _, group := range p.config.AllowGroups {
+		if groups[group] {
+			return true
+		}
+	}
+	return false
 }

@@ -1,19 +1,21 @@
 import * as React from 'react'
 
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { RouteComponentProps } from 'react-router-dom'
+import { mdiChevronRight } from '@mdi/js'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservable } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
+import {
+    GitRefFields,
+    RepositoryGitBranchesOverviewRepository,
+    RepositoryGitBranchesOverviewResult,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
@@ -22,29 +24,31 @@ import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {
-    defaultBranch: GQL.IGitRef | null
-    activeBranches: GQL.IGitRef[]
+    defaultBranch: GitRefFields | null
+    activeBranches: GitRefFields[]
     hasMoreActiveBranches: boolean
 }
 
 export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
-        queryGraphQL(
+        queryGraphQL<RepositoryGitBranchesOverviewResult>(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
                     node(id: $repo) {
-                        ... on Repository {
-                            defaultBranch {
-                                ...GitRefFields
-                            }
-                            gitRefs(first: $first, type: GIT_BRANCH, orderBy: AUTHORED_OR_COMMITTED_AT) {
-                                nodes {
-                                    ...GitRefFields
-                                }
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
+                        ...RepositoryGitBranchesOverviewRepository
+                    }
+                }
+
+                fragment RepositoryGitBranchesOverviewRepository on Repository {
+                    defaultBranch {
+                        ...GitRefFields
+                    }
+                    gitRefs(first: $first, type: GIT_BRANCH, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                        nodes {
+                            ...GitRefFields
+                        }
+                        pageInfo {
+                            hasNextPage
                         }
                     }
                 }
@@ -56,7 +60,7 @@ export const queryGitBranches = memoizeObservable(
                 if (!data || !data.node) {
                     throw createAggregateError(errors)
                 }
-                const repo = data.node as GQL.IRepository
+                const repo = data.node as RepositoryGitBranchesOverviewRepository
                 if (!repo.gitRefs || !repo.gitRefs.nodes) {
                     throw createAggregateError(errors)
                 }
@@ -73,7 +77,7 @@ export const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryBranchesAreaPageProps {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */
@@ -105,7 +109,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
         this.componentUpdates.next(this.props)
@@ -133,27 +137,36 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <Card className={styles.card}>
                                 <CardHeader>Default branch</CardHeader>
                                 <ul className="list-group list-group-flush">
-                                    <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitReferenceNode
+                                        node={this.state.dataOrError.defaultBranch}
+                                        ariaLabel={`View this repository using ${this.state.dataOrError.defaultBranch.displayName} as the selected revision`}
+                                    />
                                 </ul>
                             </Card>
                         )}
                         {this.state.dataOrError.activeBranches.length > 0 && (
                             <Card className={styles.card}>
                                 <CardHeader>Active branches</CardHeader>
-                                <div className="list-group list-group-flush">
+                                <ul className="list-group list-group-flush" data-testid="active-branches-list">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
-                                        <GitReferenceNode key={index} node={gitReference} />
+                                        <GitReferenceNode
+                                            key={index}
+                                            node={gitReference}
+                                            ariaLabel={`View this repository using ${gitReference.displayName} as the selected revision`}
+                                        />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
-                                        <Link
-                                            className="list-group-item list-group-item-action py-2 d-flex"
-                                            to={`/${this.props.repo.name}/-/branches/all`}
-                                        >
-                                            View more branches
-                                            <Icon as={ChevronRightIcon} />
-                                        </Link>
+                                        <li className="list-group-item list-group-item-action">
+                                            <Link
+                                                className="py-2 d-flex align-items-center"
+                                                to={`/${this.props.repo.name}/-/branches/all`}
+                                            >
+                                                View more branches
+                                                <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                                            </Link>
+                                        </li>
                                     )}
-                                </div>
+                                </ul>
                             </Card>
                         )}
                     </div>

@@ -1,18 +1,11 @@
 import React, { useEffect, useRef } from 'react'
 
-import { action } from '@storybook/addon-actions'
-import { boolean, select } from '@storybook/addon-knobs'
-import { useMemo } from '@storybook/addons'
+import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
-import { Position } from '@sourcegraph/wildcard'
-
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
-
-const onThemePreferenceChange = action('onThemePreferenceChange')
 
 const config: Meta = {
     title: 'web/nav/UserNavItem',
@@ -25,6 +18,16 @@ const config: Meta = {
         chromatic: {
             enableDarkMode: true,
             viewports: [600],
+        },
+    },
+    argTypes: {
+        isSourcegraphDotCom: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        codeHostIntegrationMessaging: {
+            control: { type: 'select', options: ['browser-extension', 'native-integration'] as const },
+            defaultValue: 'browser-extension',
         },
     },
 }
@@ -41,6 +44,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     organizations: {
         nodes: [
             {
+                __typename: 'Org',
                 id: '0',
                 name: 'acme',
                 displayName: 'Acme Corp',
@@ -48,6 +52,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
                 settingsURL: '/organizations/acme/settings',
             },
             {
+                __typename: 'Org',
                 id: '1',
                 name: 'beta',
                 displayName: 'Beta Inc',
@@ -58,28 +63,17 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     },
 }
 
-const commonProps = (): UserNavItemProps => ({
-    themePreference: ThemePreference.Light,
-    isLightTheme: true,
-    onThemePreferenceChange,
-    showDotComMarketing: boolean('showDotComMarketing', true),
-    isExtensionAlertAnimating: false,
-    codeHostIntegrationMessaging: select(
-        'codeHostIntegrationMessaging',
-        ['browser-extension', 'native-integration'] as const,
-        'browser-extension'
-    ),
-    featureFlags: new Map(),
-    showRepositorySection: true,
+const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
-    position: Position.bottomStart,
+    isSourcegraphDotCom: props.isSourcegraphDotCom,
+    codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
+    showKeyboardShortcutsHelp: () => undefined,
+    showFeedbackModal: () => undefined,
 })
 
-const OpenByDefaultWrapper: React.FunctionComponent<
-    React.PropsWithChildren<{
-        children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
-    }>
-> = ({ children }) => {
+const OpenByDefaultWrapper: React.FunctionComponent<{
+    children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
+}> = ({ children }) => {
     const menuButtonReference = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
@@ -89,28 +83,21 @@ const OpenByDefaultWrapper: React.FunctionComponent<
     return children({ menuButtonRef: menuButtonReference })
 }
 
-export const SiteAdmin: Story = () => {
-    const props = useMemo(() => commonProps(), [])
+export const SiteAdmin: Story = args => {
+    const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
                 <WebStory>
-                    {webProps => (
-                        <UserNavItem
-                            {...props}
-                            {...webProps}
-                            menuButtonRef={menuButtonRef}
-                            themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-                        />
-                    )}
+                    {webProps => <UserNavItem {...props} {...webProps} menuButtonRef={menuButtonRef} />}
                 </WebStory>
             )}
         </OpenByDefaultWrapper>
     )
 }
 
-export const WithAvatar: Story = () => {
-    const props = useMemo(() => commonProps(), [])
+export const WithAvatar: Story = args => {
+    const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
@@ -120,7 +107,6 @@ export const WithAvatar: Story = () => {
                             {...props}
                             {...webProps}
                             menuButtonRef={menuButtonRef}
-                            showRepositorySection={true}
                             authenticatedUser={{
                                 ...props.authenticatedUser,
                                 avatarURL:

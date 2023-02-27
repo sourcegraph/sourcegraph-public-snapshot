@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,14 +35,23 @@ func TestToResultResolverList(t *testing.T) {
 
 	nonNilMatches := []result.Match{
 		&result.FileMatch{
-			LineMatches: []*result.LineMatch{
-				{Preview: "a"},
-				{Preview: "b"},
-			},
+			ChunkMatches: result.ChunkMatches{{
+				Content: "a",
+				Ranges: result.Ranges{{
+					Start: result.Location{Offset: 0, Line: 1, Column: 0},
+					End:   result.Location{Offset: 1, Line: 1, Column: 1},
+				}},
+			}, {
+				Content: "b",
+				Ranges: result.Ranges{{
+					Start: result.Location{Offset: 0, Line: 2, Column: 0},
+					End:   result.Location{Offset: 1, Line: 2, Column: 1},
+				}},
+			}},
 		},
 	}
-	autogold.Want("resolver copies all match results", `["a","b"]`).Equal(t, test("a|b", nonNilMatches))
+	autogold.Expect(`["a","b"]`).Equal(t, test("a|b", nonNilMatches))
 
 	producesNilResult := []result.Match{&result.CommitMatch{}}
-	autogold.Want("resolver ignores nil compute result", "[]").Equal(t, test("a|b", producesNilResult))
+	autogold.Expect("[]").Equal(t, test("a|b", producesNilResult))
 }

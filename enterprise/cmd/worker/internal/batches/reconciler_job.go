@@ -3,9 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -15,8 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type reconcilerJob struct{}
@@ -33,12 +28,8 @@ func (j *reconcilerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "reconciler job routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "reconciler job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -53,11 +44,13 @@ func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]gorout
 
 	reconcilerWorker := workers.NewReconcilerWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		reconcilerStore,
-		gitserver.NewClient(bstore.DatabaseDB()),
-		sources.NewSourcer(httpcli.NewExternalClientFactory()),
-		observationContext,
+		gitserver.NewClient(),
+		sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
+		)),
 	)
 
 	routines := []goroutine.BackgroundRoutine{

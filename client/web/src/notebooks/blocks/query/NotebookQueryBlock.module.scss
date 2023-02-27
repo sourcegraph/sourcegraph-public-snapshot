@@ -1,4 +1,4 @@
-.block {
+.content {
     padding: 1rem;
     background-color: var(--body-bg);
 }
@@ -10,7 +10,10 @@
     max-height: 25rem;
 }
 
-.query-input-monaco-wrapper {
+.query-input-wrapper {
+    display: flex;
+    align-items: center;
+
     border-radius: 0.25rem;
     padding: 0.5rem;
     background-color: var(--color-bg-1);
@@ -21,4 +24,9 @@
         border: 1px solid var(--border-active-color) !important;
         box-shadow: 0 0 0 0.125rem var(--primary-2);
     }
+}
+
+.code-mirror-wrapper {
+    padding-left: 0.5rem;
+    flex-grow: 2;
 }

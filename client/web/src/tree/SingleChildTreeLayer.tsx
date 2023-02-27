@@ -1,23 +1,15 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 
-import { FileDecoration } from 'sourcegraph'
-
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable } from './components'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, SingleChildGitTree } from './util'
+import { SingleChildGitTree } from './util'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
-
-    fileDecorationsByPath: FileDecorationsByPath
-
-    fileDecorations?: FileDecoration[]
 }
 
 /**
@@ -130,15 +122,16 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                 <TreeLayerTable onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         <Directory
-                            {...this.props}
-                            maxEntries={maxEntries}
+                            entryInfo={this.props.entryInfo}
+                            depth={this.props.depth}
+                            index={this.props.index}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
-                            fileDecorations={this.props.fileDecorations}
                             isActive={isActive}
                             isSelected={isSelected}
+                            isExpanded={this.props.isExpanded}
                         />
                         {this.props.isExpanded && (
                             <tr>

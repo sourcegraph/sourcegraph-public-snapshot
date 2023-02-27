@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { FC, useEffect, useMemo } from 'react'
 
-import * as H from 'history'
-
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
@@ -15,15 +13,12 @@ import { repoPermissionsInfo } from './backend'
 
 export interface RepoSettingsPermissionsPageProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: React.FunctionComponent<
-    React.PropsWithChildren<RepoSettingsPermissionsPageProps>
-> = ({ repo, history }) => {
+export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
 
@@ -51,12 +46,16 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
             <Container className="repo-settings-permissions-page">
                 {!repo.isPrivate ? (
                     <Alert className="mb-0" variant="info">
-                        Access to this repository is not restricted, all Sourcegraph users have access.
+                        Access to this repository is <strong>not restricted</strong>, all Sourcegraph users have access.
                     </Alert>
                 ) : !permissionsInfo ? (
                     <Alert className="mb-0" variant="info">
                         This repository is queued to sync permissions, only site admins will have access to it until
                         syncing is finished.
+                    </Alert>
+                ) : permissionsInfo.unrestricted ? (
+                    <Alert className="mb-0" variant="info">
+                        This repository has been explicitly flagged as unrestricted, all Sourcegraph users have access.
                     </Alert>
                 ) : (
                     <div>
@@ -82,7 +81,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
                                 </tr>
                             </tbody>
                         </table>
-                        <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} history={history} />
+                        <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} />
                     </div>
                 )}
             </Container>
@@ -92,7 +91,6 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
 class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<ScheduleRepositoryPermissionsSyncActionContainerProps> {
@@ -106,7 +104,6 @@ class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureCompone
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleRepositoryPermissions}
-                history={this.props.history}
             />
         )
     }

@@ -60,9 +60,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 							File: result.File{
 								Repo: repo,
 							},
-							LineMatches: []*result.LineMatch{{
-								OffsetAndLengths: make([][2]int32, 2),
-							}},
+							ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 2)}},
 						},
 					},
 				},

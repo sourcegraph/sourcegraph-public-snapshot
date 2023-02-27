@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -366,6 +367,10 @@ func (m mockAuthnProvider) Refresh(ctx context.Context) error {
 	panic("should not be called")
 }
 
+func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	panic("should not be called")
+}
+
 func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) *extsvc.Account {
 	var data extsvc.AccountData
 
@@ -375,9 +380,9 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) 
 			t.Fatalf("Could not convert accountID to number: %s", err)
 		}
 
-		gitlab.SetExternalAccountData(&data, &gitlab.User{
-			ID: int32(gitlabAcctID),
-		}, nil)
+		if err := gitlab.SetExternalAccountData(&data, &gitlab.User{ID: int32(gitlabAcctID)}, nil); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
 	}
 
 	return &extsvc.Account{

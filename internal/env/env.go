@@ -16,14 +16,17 @@ import (
 )
 
 type envflag struct {
-	name        string
 	description string
 	value       string
 }
 
-var env []envflag
-var environ map[string]string
-var locked = false
+var (
+	env     map[string]envflag
+	environ map[string]string
+	locked  = false
+
+	expvarPublish = true
+)
 
 var (
 	// MyName represents the name of the current process.
@@ -92,11 +95,10 @@ func init() {
 }
 
 // Get returns the value of the given environment variable. It also registers the description for
-// PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
+// HelpString. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
 //
-// This should be used for only *internal* environment values. User-visible configuration should be
-// added to the Config struct in the github.com/sourcegraph/sourcegraph/config package.
+// This should be used for only *internal* environment values.
 func Get(name, defaultValue, description string) string {
 	if locked {
 		panic("env.Get has to be called on package initialization")
@@ -120,11 +122,15 @@ func Get(name, defaultValue, description string) string {
 		}
 	}
 
-	env = append(env, envflag{
-		name:        name,
-		description: description,
-		value:       value,
-	})
+	if env == nil {
+		env = map[string]envflag{}
+	}
+
+	e := envflag{description: description, value: value}
+	if existing, ok := env[name]; ok && existing != e {
+		panic(fmt.Sprintf("env var %q already registered with a different description or value", name))
+	}
+	env[name] = e
 
 	return value
 }
@@ -149,6 +155,16 @@ func MustGetInt(name string, defaultValue int, description string) int {
 	return i
 }
 
+// MustGetBool is similar to Get but ensures that the value is a valid bool.
+func MustGetBool(name string, defaultValue bool, description string) bool {
+	s := Get(name, strconv.FormatBool(defaultValue), description)
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		panic(fmt.Sprintf("parsing environment variable %q. Expected valid bool, got %q", name, s))
+	}
+	return b
+}
+
 func environMap(environ []string) map[string]string {
 	m := make(map[string]string, len(environ))
 	for _, e := range environ {
@@ -160,37 +176,56 @@ func environMap(environ []string) map[string]string {
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
 func Lock() {
+	if locked {
+		panic("env.Lock must be called at most once")
+	}
+
 	locked = true
 
-	sort.Slice(env, func(i, j int) bool { return env[i].name < env[j].name })
-
-	for i := 1; i < len(env); i++ {
-		if env[i-1].name == env[i].name {
-			panic(fmt.Sprintf("%q already registered", env[i].name))
-		}
+	if expvarPublish {
+		expvar.Publish("env", expvar.Func(func() any {
+			return env
+		}))
 	}
-
-	expvar.Publish("env", expvar.Func(func() any {
-		return env
-	}))
 }
 
-// PrintHelp prints a list of all registered environment variables and their descriptions.
-func PrintHelp() {
-	log.Print("Environment variables:")
-	for _, e := range env {
-		log.Printf("  %-40s %s (value: %q)", e.name, e.description, e.value)
+// HelpString prints a list of all registered environment variables and their descriptions.
+func HelpString() string {
+	helpStr := "Environment variables:\n"
+
+	sorted := make([]string, 0, len(env))
+	for name := range env {
+		sorted = append(sorted, name)
 	}
+	sort.Strings(sorted)
+
+	for _, name := range sorted {
+		e := env[name]
+		helpStr += fmt.Sprintf("  %-40s %s (value: %q)\n", name, e.description, e.value)
+	}
+
+	return helpStr
 }
 
 // HandleHelpFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
-// PrintHelp and exits.
+// HelpString and exits.
 func HandleHelpFlag() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			PrintHelp()
+			log.Print(HelpString())
 			os.Exit(0)
 		}
 	}
+}
+
+// HackClearEnvironCache can be used to clear the environ cache if os.Setenv was called and you want
+// subsequent env.Get calls to return the new value. It is a hack but useful because some env.Get
+// calls are hard to remove from static init time, and the ones we've moved to post-init we want to
+// be able to use the default values we set in package singleprogram.
+//
+// TODO(sqs): TODO(single-binary): this indicates our initialization order could be better, hence this
+// is labeled as a hack.
+func HackClearEnvironCache() {
+	environ = nil
 }

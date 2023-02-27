@@ -37,7 +37,6 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs [
 }
 
 var listCodeHostsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:ListCodeHosts
 WITH
 	-- esr_with_ssh includes all external_service_repos records where the
 	-- external service is cloned over SSH.
@@ -128,7 +127,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 
 	var aggregatePreds []*sqlf.Query
 	if opts.OnlyWithoutWebhooks {
-		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0"))
+		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0 AND external_service_id NOT IN (SELECT DISTINCT(code_host_urn) FROM webhooks)"))
 	} else {
 		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("TRUE"))
 	}
@@ -182,7 +181,6 @@ func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServi
 }
 
 const getExternalServiceIDsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceIDs
 SELECT
 	external_services.id
 FROM external_services

@@ -35,7 +35,6 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         </span>
         <div
           class="d-inline-block mr-3"
-          data-tooltip="Jan 1, 2021, 12:00:00 AM"
         >
           <strong
             class="text-success"
@@ -50,44 +49,58 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           Created 
           <span
             class="timestamp"
-            data-tooltip="2020-01-01"
           >
             in almost 14 years
           </span>
         </span>
       </div>
     </div>
+    <div
+      aria-live="assertive"
+      class="alert alertWarning mt-3 mb-3"
+      role="alert"
+    >
+      License tags contain unknown values (marked red), please check if the tags are correct.
+    </div>
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
+        class="badge danger mr-1"
       >
         a
       </div>
     </div>
     <div
-      class="form-inline mt-2 d-block"
+      class="form-inline mt-2"
     >
       <div
-        class="input-group"
+        class="input-group flex-1"
       >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="input form-control with-invalid-icon"
+            readonly=""
+            type="text"
+            value="lk1"
+          />
+        </div>
         <div
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -139,7 +152,6 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         </span>
         <span
           class="text-warning font-weight-bold mr-3"
-          data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
         >
           Inactive
         </span>
@@ -149,44 +161,58 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           Created 
           <span
             class="timestamp"
-            data-tooltip="2020-01-01"
           >
             in almost 14 years
           </span>
         </span>
       </div>
     </div>
+    <div
+      aria-live="assertive"
+      class="alert alertWarning mt-3 mb-3"
+      role="alert"
+    >
+      License tags contain unknown values (marked red), please check if the tags are correct.
+    </div>
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
+        class="badge danger mr-1"
       >
         a
       </div>
     </div>
     <div
-      class="form-inline mt-2 d-block"
+      class="form-inline mt-2"
     >
       <div
-        class="input-group"
+        class="input-group flex-1"
       >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="input form-control with-invalid-icon"
+            readonly=""
+            type="text"
+            value="lk1"
+          />
+        </div>
         <div
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >

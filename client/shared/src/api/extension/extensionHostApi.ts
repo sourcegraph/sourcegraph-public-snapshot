@@ -1,6 +1,6 @@
 import { proxy } from 'comlink'
-import { castArray, groupBy, identity, isEqual } from 'lodash'
-import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable, throwError } from 'rxjs'
+import { castArray, isEqual } from 'lodash'
+import { combineLatest, concat, from, Observable, of, Subscribable, throwError } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -10,7 +10,7 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import { ProviderResult } from 'sourcegraph'
 
 import {
     fromHoverMerged,
@@ -27,11 +27,21 @@ import {
     isDefined,
     isExactly,
     isNot,
+    logger,
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
+import type {
+    ReferenceContext,
+    DocumentSelector,
+    NotificationType as LegacyNotificationType,
+    Progress,
+    DirectoryViewContext,
+    View,
+    PanelView,
+} from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
@@ -47,7 +57,6 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './api/contribution'
-import { validateFileDecoration } from './api/decorations'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
 import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
@@ -184,7 +193,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-        getReferences: (textParameters: TextDocumentPositionParameters, context: sourcegraph.ReferenceContext) => {
+        getReferences: (textParameters: TextDocumentPositionParameters, context: ReferenceContext) => {
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -225,29 +234,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-
-        // Decorations
-        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) =>
-            proxySubscribable(
-                parameters.files.length === 0
-                    ? EMPTY // Don't call providers when there are no files in the directory
-                    : callProviders(
-                          state.fileDecorationProviders,
-                          identity,
-                          // No need to filter
-                          provider => provider.provideFileDecorations(parameters),
-                          mergeProviderResults
-                      ).pipe(
-                          map(({ result }) =>
-                              groupBy(
-                                  result.filter(validateFileDecoration),
-                                  // Get path from uri to key by path.
-                                  // Path should always exist, but fall back to uri just in case
-                                  ({ uri }) => parseRepoURI(uri).filePath || uri
-                              )
-                          )
-                      )
-            ),
 
         // MODELS
 
@@ -298,11 +284,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
             viewer.update({ selections })
-        },
-        getTextDecorations: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.mergedDecorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
@@ -398,7 +379,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
-
                         return multiContributions.map(contributions => {
                             try {
                                 const evaluatedContributions = evaluateContributions(computedContext, contributions)
@@ -408,7 +388,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
-                                console.log('Discarding contributions: evaluating expressions or templates failed.', {
+                                logger.error('Discarding contributions: evaluating expressions or templates failed.', {
                                     contributions,
                                     error,
                                 })
@@ -456,7 +436,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                         return providerResultToObservable(provider.viewProvider.provideView(context))
                     }),
                     catchError((error: unknown) => {
-                        console.error('View provider errored:', error)
+                        logger.error('View provider errored:', error)
                         // Pass only primitive copied values because Error object is not
                         // cloneable in Firefox and Safari
                         const { message, name, stack } = asError(error)
@@ -489,35 +469,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
 
-        getStatusBarItems: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            if (viewer.type !== 'CodeEditor') {
-                return proxySubscribable(EMPTY)
-            }
-
-            return proxySubscribable(
-                viewer.mergedStatusBarItems.pipe(
-                    debounceTime(0),
-                    map(statusBarItems =>
-                        statusBarItems.sort(
-                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
-                        )
-                    )
-                )
-            )
-        },
-
-        // Content
-        getLinkPreviews: (url: string) =>
-            proxySubscribable(
-                callProviders(
-                    state.linkPreviewProviders,
-                    entries => entries.filter(entry => url.startsWith(entry.urlMatchPattern)),
-                    ({ provider }) => provider.provideLinkPreview(new URL(url)),
-                    stuffs => mergeLinkPreviews(stuffs)
-                ).pipe(map(result => (result.isLoading ? null : result.result)))
-            ),
-
         getActiveExtensions: () => proxySubscribable(state.activeExtensions),
     }
 
@@ -525,7 +476,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 }
 
 export interface RegisteredProvider<T> {
-    selector: sourcegraph.DocumentSelector
+    selector: DocumentSelector
     provider: T
 }
 
@@ -541,7 +492,7 @@ export interface RegisteredProvider<T> {
 export function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: readonly P[],
-    selector: (p: P) => sourcegraph.DocumentSelector
+    selector: (p: P) => DocumentSelector
 ): P[] {
     return entries.filter(provider =>
         match(selector(provider), {
@@ -570,16 +521,16 @@ export function providersForDocument<P>(
 export function callProviders<TRegisteredProvider, TProviderResult, TMergedResult>(
     providersObservable: Observable<readonly TRegisteredProvider[]>,
     filterProviders: (providers: readonly TRegisteredProvider[]) => TRegisteredProvider[],
-    invokeProvider: (provider: TRegisteredProvider) => sourcegraph.ProviderResult<TProviderResult>,
+    invokeProvider: (provider: TRegisteredProvider) => ProviderResult<TProviderResult>,
     mergeResult: (providerResults: readonly (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     const logError = (...args: any): void => {
         if (logErrors) {
-            console.error('Provider errored:', ...args)
+            logger.error('Provider errored:', ...args)
         }
     }
-    const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
+    const safeInvokeProvider = (provider: TRegisteredProvider): ProviderResult<TProviderResult> => {
         try {
             return invokeProvider(provider)
         } catch (error) {
@@ -634,9 +585,6 @@ export function mergeProviderResults<TProviderResultElement>(
         .filter(isDefined)
 }
 
-/** Object of array of file decorations keyed by path relative to repo root uri */
-export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
-
 // Viewers + documents
 
 const VIEWER_NOT_FOUND_ERROR_NAME = 'ViewerNotFoundError'
@@ -656,37 +604,6 @@ function assertViewerType<T extends ExtensionViewer['type']>(
     }
 }
 
-// Content
-
-interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
-    kind: sourcegraph.MarkupKind.PlainText
-}
-
-/**
- * Represents one or more {@link sourcegraph.LinkPreview} values merged together.
- */
-export interface LinkPreviewMerged {
-    /** The content of the merged {@link sourcegraph.LinkPreview} values. */
-    content: sourcegraph.MarkupContent[]
-
-    /** The hover content of the merged {@link sourcegraph.LinkPreview} values. */
-    hover: MarkupContentPlainTextOnly[]
-}
-
-function mergeLinkPreviews(
-    values: readonly (sourcegraph.LinkPreview | 'loading' | null | undefined)[]
-): LinkPreviewMerged | null {
-    const nonemptyValues = values
-        .filter(isDefined)
-        .filter((value): value is Exclude<sourcegraph.LinkPreview | 'loading', 'loading'> => value !== 'loading')
-    const contentValues = nonemptyValues.filter(property('content', isDefined))
-    const hoverValues = nonemptyValues.filter(property('hover', isDefined))
-    if (hoverValues.length === 0 && contentValues.length === 0) {
-        return null
-    }
-    return { content: contentValues.map(({ content }) => content), hover: hoverValues.map(({ hover }) => hover) }
-}
-
 // Views
 
 /**
@@ -697,13 +614,13 @@ export interface ViewContexts {
     [ContributableViewContainer.Homepage]: {}
     [ContributableViewContainer.InsightsPage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: sourcegraph.DirectoryViewContext
+    [ContributableViewContainer.Directory]: DirectoryViewContext
 }
 
 export interface RegisteredViewProvider<W extends ContributableViewContainer> {
     id: string
     viewProvider: {
-        provideView: (context: ViewContexts[W]) => sourcegraph.ProviderResult<sourcegraph.View>
+        provideView: (context: ViewContexts[W]) => ProviderResult<View>
     }
 }
 
@@ -720,9 +637,9 @@ function callViewProviders<W extends ContributableViewContainer>(
                     concat(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
-                            defaultIfEmpty<sourcegraph.View | null | undefined>(null),
+                            defaultIfEmpty<View | null | undefined>(null),
                             catchError((error: unknown): [ErrorLike] => {
-                                console.error('View provider errored:', error)
+                                logger.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
                                 const { message, name, stack } = asError(error)
@@ -757,7 +674,7 @@ export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
 }
 
 /** @internal */
-export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
+export interface PanelViewData extends Omit<PanelView, 'unsubscribe'> {
     id: string
 }
 
@@ -773,7 +690,7 @@ interface BaseNotification {
     /**
      * The type of the message.
      */
-    type: sourcegraph.NotificationType
+    type: LegacyNotificationType
 
     /** The source of the notification.  */
     source?: string
@@ -792,7 +709,7 @@ export interface ProgressNotification {
      * Progress updates to show in this notification (progress bar and status messages).
      * If this Observable errors, the notification will be changed to an error type.
      */
-    progress: ProxySubscribable<sourcegraph.Progress>
+    progress: ProxySubscribable<Progress>
 }
 
 export interface ViewProviderResult {
@@ -800,7 +717,7 @@ export interface ViewProviderResult {
     id: string
 
     /** The result returned by the provider. */
-    view: sourcegraph.View | undefined | ErrorLike
+    view: View | undefined | ErrorLike
 }
 
 /**
@@ -808,7 +725,7 @@ export interface ViewProviderResult {
  * This is needed because if sourcegraph.NotificationType enum values are referenced,
  * the `sourcegraph` module import at the top of the file is emitted in the generated code.
  */
-export const NotificationType: typeof sourcegraph.NotificationType = {
+export const NotificationType: typeof LegacyNotificationType = {
     Error: 1,
     Warning: 2,
     Info: 3,

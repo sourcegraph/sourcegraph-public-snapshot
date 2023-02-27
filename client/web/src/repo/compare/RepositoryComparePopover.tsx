@@ -1,9 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon, useObservable } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { fetchFeatureFlags } from '../../featureFlags/featureFlags'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
@@ -41,12 +40,6 @@ export const RepositoryComparePopover: React.FunctionComponent<
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
-    const features = useObservable(useMemo(() => fetchFeatureFlags(), []))
-
-    if (!features) {
-        return null
-    }
-
     const handleSelect = (): void => {
         eventLogger.log('RepositoryComparisonSubmitted')
         togglePopover()
@@ -62,9 +55,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                 ? `${escapedRevision}...${escapeRevspecForURL(comparison.head.revision || '')}`
                 : `${escapeRevspecForURL(comparison.base.revision || '')}...${escapedRevision}`
 
-        const revisionPath = features.get('new-repo-page')
-            ? `/${repo.name}/-/compare/tab/${comparePath}`
-            : `/${repo.name}/-/compare/${comparePath}`
+        const revisionPath = `/${repo.name}/-/compare/${comparePath}`
 
         return revisionPath
     }
@@ -84,11 +75,11 @@ export const RepositoryComparePopover: React.FunctionComponent<
             >
                 <div className="text-muted mr-1">{type}: </div>
                 {comparison[type].revision || defaultBranch}
-                <Icon as={RepoRevisionChevronDownIcon} />
+                <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomStart}>
                 <RevisionsPopover
-                    repo={repo.id}
+                    repoId={repo.id}
                     repoName={repo.name}
                     defaultBranch={defaultBranch}
                     currentRev={currentRevision}

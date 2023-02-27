@@ -16,12 +16,12 @@ const relativeWorkingDirectory = "internal/database/migration/definition"
 
 func TestReadDefinitions(t *testing.T) {
 	t.Run("well-formed", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "well-formed")
+		fsys, err := fs.Sub(testdata.Content, "well-formed")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "well-formed", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -32,6 +32,7 @@ func TestReadDefinitions(t *testing.T) {
 			{ID: 10003, Name: "third or fourth (1)", UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},
 			{ID: 10004, Name: "third or fourth (2)", UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10002}},
 			{ID: 10005, Name: "fifth", UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10003, 10004}},
+			{ID: 10006, Name: "do the thing", UpQuery: sqlf.Sprintf("10006 UP"), DownQuery: sqlf.Sprintf("10006 DOWN"), Parents: []int{10005}},
 		}
 		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
@@ -39,12 +40,12 @@ func TestReadDefinitions(t *testing.T) {
 	})
 
 	t.Run("concurrent", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "concurrent")
+		fsys, err := fs.Sub(testdata.Content, "concurrent")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -75,12 +76,12 @@ func TestReadDefinitions(t *testing.T) {
 	})
 
 	t.Run("privileged", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "privileged")
+		fsys, err := fs.Sub(testdata.Content, "privileged")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "privileged", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -123,12 +124,39 @@ func TestReadDefinitions(t *testing.T) {
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {
 	t.Helper()
 
-	fs, err := fs.Sub(testdata.Content, name)
+	fsys, err := fs.Sub(testdata.Content, name)
 	if err != nil {
 		t.Fatalf("unexpected error fetching schema %q: %s", name, err)
 	}
 
-	if _, err := ReadDefinitions(fs, relativeWorkingDirectory); err == nil || !strings.Contains(err.Error(), expectedError) {
+	if _, err := ReadDefinitions(fsys, relativeWorkingDirectory); err == nil || !strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("unexpected error. want=%q got=%q", expectedError, err)
+	}
+}
+
+var testFrontmatter = `
+-- +++
+parent: 12345
+-- +++
+`
+
+func TestCanonicalizeQuery(t *testing.T) {
+	for _, testCase := range []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"noop", "MY QUERY;", "MY QUERY;"},
+		{"whitespace", "  MY QUERY;  ", "MY QUERY;"},
+		{"yaml frontmatter", testFrontmatter + "\n\nMY QUERY;\n", "MY QUERY;"},
+		{"kitchen sink", "BEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
+		{"transactions", testFrontmatter + "\n\nMY QUERY;\n", "MY QUERY;"},
+		{"kitchen sink", testFrontmatter + "\n\nBEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			if query := CanonicalizeQuery(testCase.input); query != testCase.expected {
+				t.Errorf("unexpected canonical query. want=%q have=%q", testCase.expected, query)
+			}
+		})
 	}
 }

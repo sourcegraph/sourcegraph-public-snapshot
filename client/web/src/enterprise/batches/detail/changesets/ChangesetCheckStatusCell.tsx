@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { mdiCheckCircle, mdiCloseCircle, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseCircleIcon from 'mdi-react/CloseCircleIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetCheckState } from '../../../../graphql-operations'
 
@@ -34,8 +34,12 @@ export const ChangesetCheckStatusPending: React.FunctionComponent<React.PropsWit
             className
         )}
     >
-        <TimerSandIcon data-tooltip="Check state is pending" />
-        <span className="text-muted">Pending</span>
+        <Tooltip content="Some checks are still pending">
+            <Icon svgPath={mdiTimerSand} aria-label="Some checks are still pending" inline={false} />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Pending
+        </span>
     </div>
 )
 export const ChangesetCheckStatusPassed: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
@@ -47,8 +51,12 @@ export const ChangesetCheckStatusPassed: React.FunctionComponent<React.PropsWith
             className
         )}
     >
-        <CheckCircleIcon data-tooltip="All checks complete" />
-        <span className="text-muted">Passed</span>
+        <Tooltip content="All checks succeeded">
+            <Icon svgPath={mdiCheckCircle} aria-label="All checks succeeded" inline={false} />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Passed
+        </span>
     </div>
 )
 export const ChangesetCheckStatusFailed: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
@@ -60,7 +68,11 @@ export const ChangesetCheckStatusFailed: React.FunctionComponent<React.PropsWith
             className
         )}
     >
-        <CloseCircleIcon data-tooltip="Some checks failed" />
-        <span className="text-muted">Failed</span>
+        <Tooltip content="Some checks failed">
+            <Icon svgPath={mdiCloseCircle} aria-label="Some checks failed" inline={false} />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Failed
+        </span>
     </div>
 )

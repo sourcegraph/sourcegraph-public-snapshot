@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -161,6 +161,16 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
+	n, ok := r.Node.(*externalServiceNamespaceResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceRepository() (*externalServiceRepositoryResolver, bool) {
+	n, ok := r.Node.(*externalServiceRepositoryResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -191,13 +201,6 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
-	if NodeToRegistryExtension == nil {
-		return nil, false
-	}
-	return NodeToRegistryExtension(r.Node)
-}
-
 func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
@@ -218,18 +221,28 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
-	n, ok := r.Node.(LSIFUploadResolver)
+func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
+	n, ok := r.Node.(*SiteConfigurationChangeResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
-	n, ok := r.Node.(LSIFIndexResolver)
+func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
+	n, ok := r.Node.(resolverstubs.LSIFUploadResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (CodeIntelligenceConfigurationPolicyResolver, bool) {
-	n, ok := r.Node.(CodeIntelligenceConfigurationPolicyResolver)
+func (r *NodeResolver) ToLSIFIndex() (resolverstubs.LSIFIndexResolver, bool) {
+	n, ok := r.Node.(resolverstubs.LSIFIndexResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPreciseIndex() (resolverstubs.PreciseIndexResolver, bool) {
+	n, ok := r.Node.(resolverstubs.PreciseIndexResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (resolverstubs.CodeIntelligenceConfigurationPolicyResolver, bool) {
+	n, ok := r.Node.(resolverstubs.CodeIntelligenceConfigurationPolicyResolver)
 	return n, ok
 }
 
@@ -274,7 +287,72 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
-	n, ok := r.Node.(*executor.ExecutorResolver)
+func (r *NodeResolver) ToOutboundRequest() (*OutboundRequestResolver, bool) {
+	n, ok := r.Node.(*OutboundRequestResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBackgroundJob() (*BackgroundJobResolver, bool) {
+	n, ok := r.Node.(*BackgroundJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
+	n, ok := r.Node.(WebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
+	n, ok := r.Node.(*ExecutorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutorSecret() (*executorSecretResolver, bool) {
+	n, ok := r.Node.(*executorSecretResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutorSecretAccessLog() (*executorSecretAccessLogResolver, bool) {
+	n, ok := r.Node.(*executorSecretAccessLogResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
+	n, ok := r.Node.(*externalServiceSyncJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+	n, ok := r.Node.(BatchWorkspaceFileResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionsSyncJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
+	n, ok := r.Node.(OutboundWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
+	n, ok := r.Node.(*TeamResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRole() (RoleResolver, bool) {
+	n, ok := r.Node.(RoleResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
+	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
 	return n, ok
 }

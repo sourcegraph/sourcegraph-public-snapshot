@@ -4,17 +4,17 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,9 +26,13 @@ type GithubSource struct {
 
 var _ ForkableChangesetSource = GithubSource{}
 
-func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(svc.URN(), &c, cf, nil)
@@ -69,8 +73,8 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -117,7 +121,7 @@ func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (b
 }
 
 func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, error) {
-	headRef := git.AbbreviateRef(c.HeadRef)
+	headRef := gitdomain.AbbreviateRef(c.HeadRef)
 	if c.RemoteRepo != c.TargetRepo {
 		owner, err := c.RemoteRepo.Metadata.(*github.Repository).Owner()
 		if err != nil {
@@ -132,7 +136,7 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 		Title:        c.Title,
 		Body:         c.Body,
 		HeadRefName:  headRef,
-		BaseRefName:  git.AbbreviateRef(c.BaseRef),
+		BaseRefName:  gitdomain.AbbreviateRef(c.BaseRef),
 	}, nil
 }
 
@@ -141,6 +145,11 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
+			// There is a creation limit (undocumented) in GitHub. When reached, GitHub provides an unclear error
+			// message to users. See https://github.com/cli/cli/issues/4801.
+			if strings.Contains(err.Error(), "was submitted too quickly") {
+				return exists, errors.Wrap(err, "reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits")
+			}
 			return exists, err
 		}
 		repo := c.TargetRepo.Metadata.(*github.Repository)
@@ -231,7 +240,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
-		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {
@@ -284,42 +293,69 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 	return c.Changeset.SetMetadata(pr)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s GithubSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	return githubGetUserFork(ctx, targetRepo, s.client, &namespace)
+func (GithubSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "This repository was archived so it is read-only.")
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	// The implementation is separated here so we can mock the GitHub client.
-	return githubGetUserFork(ctx, targetRepo, s.client, nil)
+func (s GithubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
 type githubClientFork interface {
-	Fork(context.Context, string, string, *string) (*github.Repository, error)
+	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
+	GetRepo(context.Context, string, string) (*github.Repository, error)
 }
 
-func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
-	meta, ok := targetRepo.Metadata.(*github.Repository)
-	if !ok || meta == nil {
-		return nil, errors.New("target repo is not a GitHub repo")
+func getGitHubForkInternal(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace, n *string) (*types.Repo, error) {
+	if namespace != nil && n != nil {
+		// Even though we can technically use a single call to `client.Fork` to get or
+		// create the fork, it only succeeds if the fork belongs in the currently
+		// authenticated user's namespace or if the fork belongs to an organization
+		// namespace. So in case the PAT we're using has changed since the last time we
+		// tried to get a fork for this repo and it was previously created under a
+		// different user's namespace, we'll first separately check if the fork exists.
+		if fork, err := client.GetRepo(ctx, *namespace, *n); err == nil && fork != nil {
+			return checkAndCopyGitHubRepo(targetRepo, fork)
+		}
 	}
 
-	owner, name, err := github.SplitRepositoryNameWithOwner(meta.NameWithOwner)
+	tr := targetRepo.Metadata.(*github.Repository)
+
+	targetNamespace, targetName, err := github.SplitRepositoryNameWithOwner(tr.NameWithOwner)
 	if err != nil {
-		return nil, errors.New("parsing repo name")
+		return nil, errors.New("getting target repo namespace")
 	}
 
-	fork, err := client.Fork(ctx, owner, name, namespace)
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		name = DefaultForkName(targetNamespace, targetName)
+	}
+
+	// `client.Fork` automatically uses the currently authenticated user's namespace if
+	// none is provided.
+	fork, err := client.Fork(ctx, targetNamespace, targetName, namespace, name)
 	if err != nil {
-		return nil, errors.Wrap(err, "forking repository")
+		return nil, errors.Wrap(err, "fetching fork or forking repository")
 	}
 
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+	return checkAndCopyGitHubRepo(targetRepo, fork)
+}
 
-	return &remoteRepo, nil
+func checkAndCopyGitHubRepo(targetRepo *types.Repo, fork *github.Repository) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*github.Repository)
+
+	if !fork.IsFork {
+		return nil, errors.New("repo is not a fork")
+	}
+
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.NameWithOwner, fork.NameWithOwner)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
+	}
+
+	return forkRepo, nil
 }

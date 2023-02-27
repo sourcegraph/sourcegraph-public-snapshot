@@ -2,13 +2,18 @@ import React from 'react'
 
 import { TabsSettings } from '.'
 
-export const TabsSettingsContext = React.createContext<Required<TabsSettings> | null>(null)
-TabsSettingsContext.displayName = 'TabsSettingsContext'
+export interface TabsState {
+    settings: Required<TabsSettings>
+    activeIndex: number
+}
 
-export const useTabsSettings = (): Required<TabsSettings> => {
-    const context = React.useContext(TabsSettingsContext)
+export const TabsStateContext = React.createContext<TabsState | null>(null)
+TabsStateContext.displayName = 'TabsStateContext'
+
+export const useTabsState = (): TabsState => {
+    const context = React.useContext(TabsStateContext)
     if (!context) {
-        throw new Error('useTabsSettingsContext or Tabs inner components cannot be used outside <Tabs> sub-tree')
+        throw new Error('useTabsState or Tabs inner components cannot be used outside <Tabs> sub-tree')
     }
     return context
 }

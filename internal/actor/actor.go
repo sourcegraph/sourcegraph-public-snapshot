@@ -36,6 +36,9 @@ type Actor struct {
 	// not tied to a specific user).
 	Internal bool `json:",omitempty"`
 
+	// SourcegraphOperator indicates whether the actor is a Sourcegraph operator user account.
+	SourcegraphOperator bool `json:",omitempty"`
+
 	// FromSessionCookie is whether a session cookie was used to authenticate the actor. It is used
 	// to selectively display a logout link. (If the actor wasn't authenticated with a session
 	// cookie, logout would be ineffective.)
@@ -101,7 +104,8 @@ type contextKey int
 
 const actorKey contextKey = iota
 
-// FromContext returns a new Actor instance from a given context.
+// FromContext returns a new Actor instance from a given context. It always returns a
+// non-nil actor.
 func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)
 	if !ok || a == nil {

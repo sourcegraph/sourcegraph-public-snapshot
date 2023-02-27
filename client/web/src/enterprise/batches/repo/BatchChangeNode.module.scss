@@ -1,4 +1,6 @@
 .node {
+    display: contents;
+
     &__full-width {
         grid-column: 1 / -1;
     }

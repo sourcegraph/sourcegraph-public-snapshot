@@ -10,7 +10,6 @@ export const mockUser: AuthenticatedUser = {
     __typename: 'User',
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
     siteAdmin: true,
     databaseID: 0,
     tags: [],
@@ -26,6 +25,8 @@ export const mockUser: AuthenticatedUser = {
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
+    latestSettings: null,
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {
@@ -302,7 +303,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
 export const mockAuthenticatedUser: AuthenticatedUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
 
@@ -547,6 +548,58 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                 events: {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
+                {
+                    __typename: 'Monitor',
+                    description: 'Fifth test code monitor (only pending events)',
+                    id: '131415',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'f',
+                                    status: EventStatus.PENDING,
+                                    message: null,
+                                    timestamp: '2022-02-14T16:20:16Z',
+                                    query: '',
+                                    resultCount: 0,
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            id: 'af',
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.PENDING,
+                                                            message: null,
+                                                            timestamp: '2022-02-14T16:20:16Z',
+                                                        },
+                                                    ],
                                                 },
                                             },
                                         ],

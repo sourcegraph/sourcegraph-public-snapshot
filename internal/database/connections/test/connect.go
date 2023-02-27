@@ -3,6 +3,10 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"testing"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -11,8 +15,8 @@ import (
 )
 
 // NewTestDB creates a new connection to the a database and applies the given migrations.
-func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, err := dbconn.ConnectInternal(dsn, "", "")
+func NewTestDB(t testing.TB, logger log.Logger, dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
+	db, err := dbconn.ConnectInternal(logger, dsn, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +41,9 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 	options := runner.Options{
 		Operations: operations,
 	}
-	if err := runner.NewRunner(newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
+
+	migrationLogger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelError})
+	if err := runner.NewRunnerWithSchemas(migrationLogger, newStoreFactoryMap(db, schemas), schemas).Run(context.Background(), options); err != nil {
 		return nil, err
 	}
 

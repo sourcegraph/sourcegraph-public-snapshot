@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type NotebooksOrderBy string
@@ -37,7 +38,7 @@ type NotebookConnectionResolver interface {
 
 type NotebookStarResolver interface {
 	User(context.Context) (*UserResolver, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 }
 
 type NotebookStarConnectionResolver interface {
@@ -54,8 +55,8 @@ type NotebookResolver interface {
 	Updater(ctx context.Context) (*UserResolver, error)
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	Public(ctx context.Context) bool
-	UpdatedAt(ctx context.Context) DateTime
-	CreatedAt(ctx context.Context) DateTime
+	UpdatedAt(ctx context.Context) gqlutil.DateTime
+	CreatedAt(ctx context.Context) gqlutil.DateTime
 	ViewerCanManage(ctx context.Context) (bool, error)
 	ViewerHasStarred(ctx context.Context) (bool, error)
 	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
@@ -66,7 +67,6 @@ type NotebookBlockResolver interface {
 	ToQueryBlock() (QueryBlockResolver, bool)
 	ToFileBlock() (FileBlockResolver, bool)
 	ToSymbolBlock() (SymbolBlockResolver, bool)
-	ToComputeBlock() (ComputeBlockResolver, bool)
 }
 
 type MarkdownBlockResolver interface {
@@ -106,11 +106,6 @@ type SymbolBlockInputResolver interface {
 	SymbolKind() string
 }
 
-type ComputeBlockResolver interface {
-	ID() string
-	ComputeInput() string
-}
-
 type FileBlockLineRangeResolver interface {
 	StartLine() int32
 	EndLine() int32
@@ -123,7 +118,6 @@ const (
 	NotebookQueryBlockType    NotebookBlockType = "QUERY"
 	NotebookFileBlockType     NotebookBlockType = "FILE"
 	NotebookSymbolBlockType   NotebookBlockType = "SYMBOL"
-	NotebookComputeBlockType  NotebookBlockType = "COMPUTE"
 )
 
 type CreateNotebookInputArgs struct {
@@ -153,7 +147,6 @@ type CreateNotebookBlockInputArgs struct {
 	QueryInput    *string                 `json:"queryInput"`
 	FileInput     *CreateFileBlockInput   `json:"fileInput"`
 	SymbolInput   *CreateSymbolBlockInput `json:"symbolInput"`
-	ComputeInput  *string                 `json:"computeInput"`
 }
 
 type CreateFileBlockInput struct {

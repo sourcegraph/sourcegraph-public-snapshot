@@ -48,5 +48,5 @@ func main() {
 }
 
 func backtickStringLiteral(data string) string {
-	return "`" + strings.Replace(data, "`", "` + \"`\" + `", -1) + "`"
+	return "`" + strings.ReplaceAll(data, "`", "` + \"`\" + `") + "`"
 }

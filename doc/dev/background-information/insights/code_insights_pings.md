@@ -4,6 +4,23 @@ Code Insights pings allow us to quantitatively measure the usage and success of 
 
 We keep this docs page up to date because pings are a vital component of our product knowledge and prioritization process, and a broken or incorrect ping impacts 3-5 months of data (because that's how long a fix takes to propagate).
 
+<!-- 
+TEMPLATE 
+
+**Type:** FE/BE event
+
+**Intended purpose:** Why does this ping exist?
+
+**Functional implementation:** When does this event fire?
+
+**Other considerations:** Anything worth noting.
+
+- Aggregation: e.g. total, weekly
+- Event Code: link to a Sourcegraph search of this event code name
+- **Version added:** (link to PR)
+- **Version(s) broken:** (only add if required, link to fix PR)
+-->
+
 ## Terminology
 
 - **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in the `event_logs` table. These typically represent user actions, such as hovers.
@@ -26,7 +43,6 @@ We keep this docs page up to date because pings are a vital component of our pro
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:**  3.31-3.35.0 (does not count backend insights) ([fix PR](https://github.com/sourcegraph/sourcegraph/pull/25317))
-
 
 ### Hovers count
 
@@ -88,7 +104,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 **Other considerations:** As we add new insights pages it's important to make sure we're adding pages to this counter. 
 
 - Aggregation: By week 
-- Event Code: [InsightsPageView](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPageView&patternType=regexp) 
+- Event Code: [ViewInsights](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewInsights&patternType=regexp), [StandaloneInsightPageViewed](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+StandaloneInsightPageViewed&patternType=regexp)
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
@@ -108,6 +124,51 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
+
+### Standalone insights page filters edits count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users actively re-filter insights through the standalone insight page's filter panel.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user changes insights filters (include/exclude repository regexp, search context, etc).
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [InsightFiltersChange](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightFiltersChange%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
+
+### Standalone insights page dashboard clicks count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users are discovering dashboards from this page.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user clicks any dashboard pills on the standalone insight page.
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [StandaloneInsightDashboardClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27StandaloneInsightDashboardClick%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
+
+### Standalone insights page edit button clicks count
+
+**Type:** FE event
+
+**Intended purpose:** To track how many users are going to the edit page through the standalone insight page.
+
+**Functional implementation:** This ping works by firing a telemetry event on the client when a user clicks on the edit button on the standalone insight page.
+
+**Other considerations:** N/A
+
+- Aggregation: By week
+- Event Code: [StandaloneInsightPageEditClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27StandaloneInsightPageEditClick%27&patternType=literal)
+- PRs: [#37521](https://github.com/sourcegraph/sourcegraph/pull/37521)
+- **Version Added:** 3.41
 
 ### In-product landing page events (hover, data points click, template section clicks)
 
@@ -230,7 +291,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track the number of insight views, grouped by presentation type.
 
-**Functional implementation:** This is calculated using the `insight_view` table. 
+**Functional implementation:** This is calculated using the `insight_view` table. Unlike critical telemetry which only [shows the number of unlocked insights](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L286) for customers without full access, this ping [shows the total number that are locked or unlocked](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L243-247) (and may have been created during a trial or free beta phase).  
 
 **Other considerations:** N/A
 
@@ -283,3 +344,108 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [InsightsPerDashboard](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPerDashboard&patternType=literal)
 - **Version added:** 3.38
 <!-- - **Version(s) broken:**  -->
+
+### Series backfill time
+
+**Type:** BE capture
+
+**Intended purpose:** To track how long on average it takes series to backfill.
+
+**Functional implementation:** Exposes aggregate information using the backfill times found on `insight_series`.
+
+**Other considerations:** N/A
+
+- Aggregation: weekly
+- Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
+- **Version added:** 4.1
+
+### Data export requests
+
+**Type:** BE capture
+
+**Intended purpose:** To track usage of data exporting functionality.
+
+**Functional implementation:** Telemetry events are fired when a request reaches the backend HTTP handler, whether that comes from the webapp or the CLI.
+
+**Other considerations:** The ping name contains `click` but this does indeed also record events from the CLI.
+
+- Aggregation: weekly
+- Event Code: [WeeklyDataExportClicks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklyDataExportClicks&patternType=standard), `InsightsDataExportRequest` in `event_logs`
+- **Version added:** 4.6
+
+## Search results aggregations metrics
+
+### Information icon hovers
+
+**Type:** FE event
+
+**Intended purpose:** To track interest in the feature.
+
+**Functional implementation:** This ping works by firing a telemetry evente on the client when a user hovers over the information icon.
+
+- Aggregation: weekly
+- Event Code: [WeeklyGroupResultsInfoIconHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsInfoIconHover&patternType=lucky)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+
+### Sidebar and expanded view events
+
+**Type:** FE event
+
+**Intended purpose:** To track how users are using the different aggregation UI modes.
+
+**Functional implementation:** These pings work by firing telemetry events on the client when a user expands or collapses the sidebar or full view panel.
+
+**Other considerations**: For the expanded UI mode events we record which aggregation mode was toggled.
+
+- Aggregation: weekly
+- Event Codes:
+  - [WeeklyGroupResultsOpenSection](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsOpenSection&patternType=lucky)
+  - [WeeklyGroupResultsCollapseSection](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsCollapseSection&patternType=lucky)
+  - [WeeklyGroupResultsExpandedViewOpen](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewOpen&patternType=lucky)
+  - [WeeklyGroupResultsExpandedViewCollapse](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewCollapse&patternType=lucky)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+### Aggregation modes clicks and hovers
+
+**Type:** FE event
+
+**Intended purpose:** To track aggregation mode usage and interest.
+
+**Functional implementation:** These pings work by firing telemetry events on the client when a user clicks on a mode or hovers over a disabled mode.
+
+**Other considerations:** The ping also includes data for current UI mode.
+
+- Aggregation: weekly
+- Event Codes: 
+  - [WeeklyGroupResultsAggregationModeClicked](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeClicked%7CGroupAggregationModeClicked&patternType=regexp)
+  - [WeeklyGroupResultsAggregationModeDisabledHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeDisabledHover%7CGroupAggregationModeDisabledHover&patternType=regexp)
+- **Version added:** 4.0 ([#40997](https://github.com/sourcegraph/sourcegraph/pull/40997))
+
+### Aggregation chart clicks and hovers 
+
+**Type:** FE event
+
+**Intended purpose:** To track if users are hovering over results and clicking through.
+
+**Functional implementation:** These pings work by firing telemetry events on the client when a user hovers or clicks on a result.
+
+**Other considerations:** The ping also includes data for the current UI mode and aggregation mode.
+
+- Aggregation: weekly
+- Event Codes:
+  - [WeeklyGroupResultsChartBarClick](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarClick&patternType=regexp)
+  - [WeeklyGroupResultsChartBarHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarHover&patternType=regexp)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+### Search mode (proactive/extended) success rate
+
+**Type:** FE event
+
+**Intended purpose:** To track the number of aggregation searches that succeed or hit limit in either a proactive or extended search. 
+
+**Functional implementation:** These pings fire a telemetry event when an aggregation search completes or times out.
+
+- Aggregation: weekly
+- Event Code: [WeeklyGroupResultsSearches](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsSearches&patternType=lucky)
+- **Version added:** 4.1 ([#42554](https://github.com/sourcegraph/sourcegraph/pull/42554))

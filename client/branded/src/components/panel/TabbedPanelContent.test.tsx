@@ -1,8 +1,10 @@
+import React from 'react'
+
 import { cleanup, fireEvent } from '@testing-library/react'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { TabbedPanelContent } from './TabbedPanelContent'
+import { Panel, TabbedPanelContent, useBuiltinTabbedPanelViews } from './TabbedPanelContent'
 import { panels, panelProps } from './TabbedPanelContent.fixtures'
 
 describe('TabbedPanel', () => {
@@ -15,15 +17,25 @@ describe('TabbedPanel', () => {
 
     afterEach(cleanup)
 
+    const TabbedPanelContentWithPanels: React.FunctionComponent<
+        { panels: Panel[] } & React.ComponentPropsWithoutRef<typeof TabbedPanelContent>
+    > = ({ panels, ...props }) => {
+        useBuiltinTabbedPanelViews(panels)
+        return <TabbedPanelContent {...props} />
+    }
+
     it('preserves `location.pathname` and `location.hash` on tab change', async () => {
-        const renderResult = renderWithBrandedContext(<TabbedPanelContent {...panelProps} />, { route })
+        const renderResult = renderWithBrandedContext(
+            <TabbedPanelContentWithPanels panels={panels} {...panelProps} />,
+            { route }
+        )
 
         const panelToSelect = panels[2]
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })
         fireEvent.click(panelButton)
 
-        expect(renderResult.history.location.pathname).toEqual(location.pathname)
-        expect(renderResult.history.location.search).toEqual(location.search)
-        expect(renderResult.history.location.hash).toEqual(`#tab=${panelToSelect.id}`)
+        expect(renderResult.locationRef.current?.pathname).toEqual(location.pathname)
+        expect(renderResult.locationRef.current?.search).toEqual(location.search)
+        expect(renderResult.locationRef.current?.hash).toEqual(`#tab=${panelToSelect.id}`)
     })
 })

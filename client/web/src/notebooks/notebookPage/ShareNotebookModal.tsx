@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button, Checkbox } from '@sourcegraph/wildcard'
+import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -23,7 +23,7 @@ interface ShareNotebookModalProps extends TelemetryProps {
 
 function getSelectedShareOptionDescription(shareOption: ShareOption, isSourcegraphDotCom: boolean): string {
     if (shareOption.namespaceType === 'User') {
-        const withAccess = isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+        const withAccess = isSourcegraphDotCom ? 'on Sourcegraph.com' : 'with access to the Sourcegraph instance'
         return shareOption.isPublic
             ? `Everyone ${withAccess} can view the notebook, but only you can edit it`
             : 'Only you can view and edit the notebook'
@@ -49,10 +49,10 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
 
     const shareLabelId = 'shareNotebookId'
 
-    const description = useMemo(() => getSelectedShareOptionDescription(selectedShareOption, isSourcegraphDotCom), [
-        selectedShareOption,
-        isSourcegraphDotCom,
-    ])
+    const description = useMemo(
+        () => getSelectedShareOptionDescription(selectedShareOption, isSourcegraphDotCom),
+        [selectedShareOption, isSourcegraphDotCom]
+    )
 
     const onDoneClick = useCallback((): void => {
         onUpdateVisibility(selectedShareOption.isPublic, selectedShareOption.namespaceId)
@@ -61,7 +61,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <Modal isOpen={isOpen} position="top-third" onDismiss={toggleModal} aria-labelledby={shareLabelId}>
-            <h3 id={shareLabelId}>Share Notebook</h3>
+            <H3 id={shareLabelId}>Share Notebook</H3>
             <div className={classNames('mb-2', styles.body)}>
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}
@@ -85,7 +85,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
                             })
                         }
                         label={`Everyone ${
-                            isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+                            isSourcegraphDotCom ? 'on Sourcegraph.com' : 'with access to the Sourcegraph instance'
                         } can view the notebook`}
                     />
                 )}

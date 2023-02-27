@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
@@ -6,7 +6,6 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     NOOP_PLATFORM_CONTEXT,
@@ -16,9 +15,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { NotebookQueryBlock } from './NotebookQueryBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/query/NotebookQueryBlock', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/blocks/query/NotebookQueryBlock',
+    decorators: [decorator],
+}
+
+export default config
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
     state: 'complete',
@@ -39,9 +43,10 @@ const noopBlockCallbacks = {
     onDeleteBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
+    onNewBlock: noop,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -53,21 +58,20 @@ add('default', () => (
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
-))
+)
 
-add('selected', () => (
+export const Selected: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -77,23 +81,22 @@ add('selected', () => (
                 input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isReadOnly={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
-))
+)
 
-add('read-only selected', () => (
+export const ReadOnlySelected: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -104,17 +107,18 @@ add('read-only selected', () => (
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
-))
+)
+
+ReadOnlySelected.storyName = 'read-only selected'

@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Story, Meta, DecoratorFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 
@@ -9,11 +9,18 @@ import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 
-const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
-))
+)
 
-add('All states', () => {
+const config: Meta = {
+    title: 'web/batches/HiddenExternalChangesetNode',
+    decorators: [decorator],
+}
+
+export default config
+
+export const AllStates: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -36,4 +43,6 @@ add('All states', () => {
             )}
         </WebStory>
     )
-})
+}
+
+AllStates.storyName = 'All states'

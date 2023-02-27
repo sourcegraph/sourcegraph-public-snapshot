@@ -1,0 +1,4 @@
+{
+  "Input": "https://github.com/sourcegraph/sourcegraph/tree/2.12",
+  "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ rev:2.12"
+}

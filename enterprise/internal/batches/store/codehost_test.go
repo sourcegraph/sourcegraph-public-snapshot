@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/go-cmp/cmp"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	"github.com/sourcegraph/log/logtest"
+
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,23 +22,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	rs := database.ReposWith(s.Store)
-	es := database.ExternalServicesWith(s.Store)
+func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	logger := logtest.Scoped(t)
+	rs := database.ReposWith(logger, s.Store)
+	es := database.ExternalServicesWith(s.observationCtx.Logger, s.Store)
 
-	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
 
-	gh, ghExtSvc := ct.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
-	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	gh, ghExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	bbs, _ := bt.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
 	sshRepos := []*types.Repo{gh[0], bbs[0]}
 
-	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
-	bitbucketRepo := ct.TestRepo(t, es, extsvc.KindBitbucketServer)
-	awsRepo := ct.TestRepo(t, es, extsvc.KindAWSCodeCommit)
+	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	bitbucketRepo := bt.TestRepo(t, es, extsvc.KindBitbucketServer)
+	awsRepo := bt.TestRepo(t, es, extsvc.KindAWSCodeCommit)
 
 	// Enable webhooks on GitHub only.
-	rawConfig, err := ghExtSvc.Configuration()
+	rawConfig, err := ghExtSvc.Configuration(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +51,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	if err != nil {
 		t.Fatal(err)
 	}
-	ghExtSvc.Config = string(marshalledConfig)
+	ghExtSvc.Config.Set(string(marshalledConfig))
 	es.Upsert(ctx, ghExtSvc)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
@@ -102,26 +107,44 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			}
 		})
 		t.Run("OnlyWithoutWebhooks", func(t *testing.T) {
-			have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := []*btypes.CodeHost{
-				{
-					ExternalServiceType: extsvc.TypeBitbucketServer,
-					ExternalServiceID:   "https://bitbucketserver.com/",
-					RequiresSSH:         true,
-					HasWebhooks:         false,
-				},
-				{
-					ExternalServiceType: extsvc.TypeGitLab,
-					ExternalServiceID:   "https://gitlab.com/",
-					HasWebhooks:         false,
-				},
-			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("Invalid code hosts returned. %s", diff)
-			}
+			t.Run("has_webhooks column is false", func(t *testing.T) {
+				have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []*btypes.CodeHost{
+					{
+						ExternalServiceType: extsvc.TypeBitbucketServer,
+						ExternalServiceID:   "https://bitbucketserver.com/",
+						RequiresSSH:         true,
+						HasWebhooks:         false,
+					},
+					{
+						ExternalServiceType: extsvc.TypeGitLab,
+						ExternalServiceID:   "https://gitlab.com/",
+						HasWebhooks:         false,
+					},
+				}
+				assert.Equal(t, want, have)
+			})
+			t.Run("excludes codehosts w/ associated row in webhooks table", func(t *testing.T) {
+				ws := database.WebhooksWith(s.Store, nil)
+
+				_, err := ws.Create(ctx, "mytestwebhook", extsvc.KindBitbucketServer, "https://bitbucketserver.com/", 0, nil)
+				assert.NoError(t, err)
+				have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []*btypes.CodeHost{
+					{
+						ExternalServiceType: extsvc.TypeGitLab,
+						ExternalServiceID:   "https://gitlab.com/",
+						HasWebhooks:         false,
+					},
+				}
+				assert.Equal(t, want, have)
+			})
 		})
 	})
 

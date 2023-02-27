@@ -1,11 +1,16 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 
-const { add } = storiesOf('web/batches/BatchChangesChangelogAlert', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
 
-add('Changelog', () => <WebStory>{() => <BatchChangesChangelogAlert />}</WebStory>)
+const config: Meta = {
+    title: 'web/batches/BatchChangesChangelogAlert',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Changelog: Story = () => <WebStory>{() => <BatchChangesChangelogAlert />}</WebStory>

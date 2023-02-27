@@ -15,11 +15,11 @@ Site admins can view the Grafana monitoring dashboards on a Sourcegraph instance
 
 A complete [dashboard reference](dashboards.md) is available for more context on our available service dashboards and panels.
 
-Additional dashboards can also be set up - see [Grafana configuration](#grafana-configuration) for more details.
+Additional dashboards can also be set up—see [Grafana configuration](#grafana-configuration) for more details.
 
 #### View documentation
 
-On service dashboards, each metric panel has links attached that lead to relevant [alert solutions](alert_solutions.md) or [panel documentation](dashboards.md).
+On service dashboards, each metric panel has links attached that lead to relevant [alert solutions](alerts.md) or [panel documentation](dashboards.md).
 These can be accessed from the top left corner of each panel.
 
 #### View alerts
@@ -100,7 +100,7 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
 This is the same metric presented on the **Overview** Grafana dashboard.
 
 > NOTE: We provide [built-in alerting](./alerting.md) for these alerting metrics to help monitor the health of your Sourcegraph instance.
-> Refer to our [alert solutions reference](./alert_solutions.md) for details on specific alerts.
+> Refer to our [alert solutions reference](./alerts.md) for details on specific alerts.
 
 **Description:** The number of alerts each service has fired for a given alert name and severity level.
 

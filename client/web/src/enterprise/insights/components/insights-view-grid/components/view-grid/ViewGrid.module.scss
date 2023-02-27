@@ -1,0 +1,26 @@
+.view-grid {
+    :global(.react-resizable-handle) {
+        background: none;
+        cursor: nwse-resize;
+        width: 1rem;
+        height: 1rem;
+
+        // Visual handle
+        &::after {
+            right: 0.25rem;
+            bottom: 0.25rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-right: 2px solid var(--card-border-color);
+            border-bottom: 2px solid var(--card-border-color);
+        }
+    }
+}
+
+.item {
+    // Hardcoded value for better scroll into view positioning
+    // top = <height of global nav bar> + <sticky code insight select height>
+    // bottom = default 2 rem padding
+    scroll-margin-top: 3.75rem;
+    scroll-margin-bottom: 2rem;
+}

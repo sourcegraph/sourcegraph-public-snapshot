@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { Card } from '@sourcegraph/wildcard'
 
@@ -6,9 +6,16 @@ import { WebStory } from '../components/WebStory'
 
 import { OrDivider } from './OrDivider'
 
-const { add } = storiesOf('web/OrDivider', module).addDecorator(story => <div className="p-3 container">{story()}</div>)
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Alone', () => (
+const config: Meta = {
+    title: 'web/OrDivider',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Alone: Story = () => (
     <WebStory>
         {() => (
             <Card className="border-0">
@@ -16,4 +23,4 @@ add('Alone', () => (
             </Card>
         )}
     </WebStory>
-))
+)

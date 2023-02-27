@@ -1,23 +1,107 @@
-.search-context-node {
-    &:first-child {
-        border-top: 1px solid var(--border-color-2);
+@import 'wildcard/src/global-styles/breakpoints';
+
+.row {
+    td {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--border-color-2);
+
+        &:not(:last-of-type) {
+            padding-right: 0.5rem;
+        }
+
+        &.name.spec {
+            font-weight: 500;
+        }
+
+        &.description {
+            // Table cell content is not truncated with just the normal CSS.
+            // We need this width hack to get the description to truncate with ellipsis,
+            // while keeping the automatic table layout.
+            // Tested on Chrome, Firefox, and Safari.
+            // See https://stackoverflow.com/a/61382039/176059
+            max-width: 0;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &.contents,
+        &.last-updated,
+        &.name {
+            white-space: nowrap;
+        }
     }
-    border-bottom: 1px solid var(--border-color-2);
+
+    @media (--sm-breakpoint-down) {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        grid-template-rows: auto auto auto auto;
+        grid-template-areas:
+            'star name        name        actions'
+            'star tags        tags        actions'
+            'star description description description'
+            'star contents    updated     updated';
+
+        td {
+            padding: 0;
+            border-bottom: none;
+
+            &:not(:last-of-type) {
+                padding-right: 0;
+            }
+
+            &.star {
+                grid-area: star;
+                margin-right: 0.5rem;
+            }
+
+            &.name {
+                grid-area: name;
+                margin-top: 0.125rem;
+            }
+
+            &.description {
+                grid-area: description;
+                max-width: initial;
+            }
+
+            &.last-updated {
+                grid-area: updated;
+            }
+
+            &.contents {
+                grid-area: contents;
+            }
+
+            &.tags {
+                grid-area: tags;
+                margin-top: 0.25rem;
+                margin-bottom: 0.25rem;
+            }
+
+            &.actions {
+                grid-area: actions;
+            }
+        }
+    }
 }
 
-.left {
-    /* Enables responsive ellipsis text truncation */
-    min-width: 0;
+.button {
+    padding: 0.25rem;
+    color: var(--icon-color);
+    font-size: 1rem;
 
-    &-description {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    &:hover {
+        background-color: var(--color-bg-2);
     }
-}
-
-.right {
-    font-size: 0.75rem;
-    margin-left: 1rem;
-    flex-shrink: 0;
 }

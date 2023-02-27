@@ -1,22 +1,28 @@
 # sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
+# Note: to be able to use an ARG with a FROM it has to be at the TOP of the Dockerfile
+# This allows the base image to be substituted for a GCP image that ships metrics to managed Prometheus. Default base image is regular upstream Prometheus
+#	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
+# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
+ARG BASE_IMAGE="prom/prometheus:v2.42.0@sha256:5689a4360cf1479bbad944b1311a90b495546c498c46f48e44fa7e5ac6412191"
+# https://github.com/hadolint/hadolint/issues/339
+# hadolint ignore=DL3006
+FROM ${BASE_IMAGE} AS prom_upstream
+FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
+
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
-
-# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-FROM prom/prometheus:v2.34.0@sha256:b37103e03399e90c9b7b1b2940894d3634915cf9df4aa2e5402bd85b4377808c AS prom_upstream
-FROM prom/alertmanager:v0.24.0@sha256:088464f949de8065b9da7dfce7302a633d700e9d598e2bebc03310712f083b31 AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest
 
 # Should reflect versions above
-LABEL com.sourcegraph.prometheus.version=v2.34.0
+LABEL com.sourcegraph.prometheus.version=v2.38.0
 LABEL com.sourcegraph.alertmanager.version=v0.24.0
 
 ARG COMMIT_SHA="unknown"
@@ -33,7 +39,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 # Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
 # Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=prom_upstream /bin/prometheus /bin/prometheus
-COPY --from=prom_upstream /bin/promtool /bin/promtoool
+COPY --from=prom_upstream /bin/promtool /bin/promtool
 COPY --from=prom_upstream /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
 COPY --from=prom_upstream /usr/share/prometheus/console_libraries/ /usr/share/prometheus/console_libraries/
 COPY --from=prom_upstream /usr/share/prometheus/consoles/ /usr/share/prometheus/consoles/

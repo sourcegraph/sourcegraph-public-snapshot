@@ -10,32 +10,36 @@ import (
 )
 
 type Operations struct {
-	SetupGitInit              *observation.Operation
-	SetupGitFetch             *observation.Operation
-	SetupAddRemote            *observation.Operation
-	SetupGitCheckout          *observation.Operation
-	SetupFirecrackerStart     *observation.Operation
-	SetupStartupScript        *observation.Operation
-	TeardownFirecrackerRemove *observation.Operation
-	Exec                      *observation.Operation
+	SetupGitInit                 *observation.Operation
+	SetupAddRemote               *observation.Operation
+	SetupGitDisableGC            *observation.Operation
+	SetupGitFetch                *observation.Operation
+	SetupGitSparseCheckoutConfig *observation.Operation
+	SetupGitSparseCheckoutSet    *observation.Operation
+	SetupGitCheckout             *observation.Operation
+	SetupGitSetRemoteUrl         *observation.Operation
+	SetupFirecrackerStart        *observation.Operation
+	SetupStartupScript           *observation.Operation
+	TeardownFirecrackerRemove    *observation.Operation
+	Exec                         *observation.Operation
 
 	RunLockWaitTotal prometheus.Counter
 	RunLockHeldTotal prometheus.Counter
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func NewOperations(observationCtx *observation.Context) *Operations {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		"apiworker_command",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(opName string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("apiworker.%s", opName),
 			MetricLabelValues: []string{opName},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -43,23 +47,31 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		Name: "src_executor_run_lock_wait_total",
 		Help: "The number of milliseconds spent waiting for the run lock.",
 	})
-	observationContext.Registerer.MustRegister(runLockWaitTotal)
+	// TODO(sqs): TODO(single-binary): We use IgnoreDuplicate here to allow running 2 executor instances in
+	// the same process, but ideally we shouldn't need IgnoreDuplicate as that is a bit of a hack.
+	runLockWaitTotal = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockWaitTotal)
 
 	runLockHeldTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_executor_run_lock_held_total",
 		Help: "The number of milliseconds spent holding the run lock.",
 	})
-	observationContext.Registerer.MustRegister(runLockHeldTotal)
+	// TODO(sqs): TODO(single-binary): We use IgnoreDuplicate here to allow running 2 executor instances in
+	// the same process, but ideally we shouldn't need IgnoreDuplicate as that is a bit of a hack.
+	runLockHeldTotal = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockHeldTotal)
 
 	return &Operations{
-		SetupGitInit:              op("setup.git.init"),
-		SetupGitFetch:             op("setup.git.fetch"),
-		SetupAddRemote:            op("setup.git.add-remote"),
-		SetupGitCheckout:          op("setup.git.checkout"),
-		SetupFirecrackerStart:     op("setup.firecracker.start"),
-		SetupStartupScript:        op("setup.startup-script"),
-		TeardownFirecrackerRemove: op("teardown.firecracker.remove"),
-		Exec:                      op("exec"),
+		SetupGitInit:                 op("setup.git.init"),
+		SetupAddRemote:               op("setup.git.add-remote"),
+		SetupGitDisableGC:            op("setup.git.disable-gc"),
+		SetupGitFetch:                op("setup.git.fetch"),
+		SetupGitSparseCheckoutConfig: op("setup.git.sparse-checkout-config"),
+		SetupGitSparseCheckoutSet:    op("setup.git.sparse-checkout-set"),
+		SetupGitCheckout:             op("setup.git.checkout"),
+		SetupGitSetRemoteUrl:         op("setup.git.set-remote"),
+		SetupFirecrackerStart:        op("setup.firecracker.start"),
+		SetupStartupScript:           op("setup.startup-script"),
+		TeardownFirecrackerRemove:    op("teardown.firecracker.remove"),
+		Exec:                         op("exec"),
 
 		RunLockWaitTotal: runLockWaitTotal,
 		RunLockHeldTotal: runLockHeldTotal,

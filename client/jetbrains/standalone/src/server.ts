@@ -11,6 +11,7 @@ const javaResourcesPath = path.join(__dirname, '..', '..', 'src', 'main', 'resou
 app.use(express.static(__dirname))
 app.use('/html', express.static(path.join(javaResourcesPath, 'html')))
 app.use('/dist', express.static(path.join(javaResourcesPath, 'dist')))
+app.use('/icons', express.static(path.join(javaResourcesPath, 'icons')))
 
 app.listen(port, () => {
     console.log(`Standalone JetBrains extension started on port ${port}`)

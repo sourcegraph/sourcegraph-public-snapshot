@@ -1,0 +1,19 @@
+.chevron-icon {
+    // The chevron icon has a larger viewbox than the chevron, so we apply negative margin
+    // to more uniformly lay it out in its parent container.
+    margin-right: -0.25rem;
+}
+
+.cancel-icon {
+    color: var(--danger);
+}
+
+.preview-button {
+    z-index: 1;
+    position: absolute;
+}
+
+.menu-button-hidden {
+    opacity: 0;
+    z-index: -999;
+}

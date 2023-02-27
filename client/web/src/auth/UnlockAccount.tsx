@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
-import * as H from 'history'
-import { Redirect, RouteComponentProps } from 'react-router-dom'
+import { Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, Link, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -17,8 +15,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import unlockAccountStyles from './SignInSignUpCommon.module.scss'
 
-interface UnlockAccountPageProps extends RouteComponentProps<{ token: string }> {
-    location: H.Location
+interface UnlockAccountPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -29,7 +26,9 @@ interface UnlockAccountPageProps extends RouteComponentProps<{ token: string }> 
 export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<UnlockAccountPageProps>> = props => {
     const [error, setError] = useState<Error | null>(null)
     const [loading, setLoading] = useState(true)
-    const { token } = props.match.params
+
+    const location = useLocation()
+    const { token } = useParams()
 
     const unlockAccount = React.useCallback(async (): Promise<void> => {
         try {
@@ -71,8 +70,8 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
     }, [unlockAccount, props.authenticatedUser])
 
     if (props.authenticatedUser) {
-        const returnTo = getReturnTo(props.location)
-        return <Redirect to={returnTo} />
+        const returnTo = getReturnTo(location)
+        return <Navigate to={returnTo} replace={true} />
     }
 
     const body = (
@@ -99,7 +98,7 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
                 lessPadding={true}
                 title={
                     props.context.sourcegraphDotComMode
-                        ? 'Unlock your Sourcegraph Cloud account'
+                        ? 'Unlock your Sourcegraph.com account'
                         : 'Unlock your Sourcegraph Server account'
                 }
                 body={body}

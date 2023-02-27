@@ -3,17 +3,12 @@ package batches
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type workspaceResolverJob struct{}
@@ -30,12 +25,8 @@ func (j *workspaceResolverJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "workspace resolver job routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "workspace resolver job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -50,9 +41,9 @@ func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([
 
 	resolverWorker := workers.NewBatchSpecResolutionWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		resStore,
-		observationContext,
 	)
 
 	routines := []goroutine.BackgroundRoutine{

@@ -1,22 +1,19 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
-import sinon from 'sinon'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    extensionsController,
-    HIGHLIGHTED_FILE_LINES_LONG,
+    HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -35,44 +32,46 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
-    history,
-    location: history.location,
     authenticatedUser: {
         url: '/users/alice',
         displayName: 'Alice',
         username: 'alice',
-        email: 'alice@email.test',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
-    isLightTheme: true,
 
     settingsCascade: {
         subjects: null,
         final: null,
     },
-    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
+    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
 
     streamSearch: () => of(streamingSearchResult),
 
-    fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
-    featureFlags: EMPTY_FEATURE_FLAGS,
+    fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
+    searchAggregationEnabled: true,
+    codeMonitoringEnabled: true,
 }
 
-const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
-    .addParameters({
-        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
-    })
-    .addDecorator(Story => {
-        useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
-        useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
-        return <Story />
-    })
+const decorator: DecoratorFn = Story => {
+    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
+    return <Story />
+}
 
-add('standard render', () => (
+const config: Meta = {
+    title: 'web/search/results/StreamingSearchResults',
+    decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
+    },
+}
+
+export default config
+
+export const StandardRender: Story = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -80,9 +79,11 @@ add('standard render', () => (
             </SearchQueryStateStoreProvider>
         )}
     </WebStory>
-))
+)
 
-add('unauthenticated user standard render', () => (
+StandardRender.storyName = 'standard render'
+
+export const UnauthenticatedUserStandardRender: Story = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -90,9 +91,11 @@ add('unauthenticated user standard render', () => (
             </SearchQueryStateStoreProvider>
         )}
     </WebStory>
-))
+)
 
-add('no results', () => {
+UnauthenticatedUserStandardRender.storyName = 'unauthenticated user standard render'
+
+export const NoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: [],
@@ -113,23 +116,13 @@ add('no results', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('search with quotes', () => {
-    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis "test"' })
-    return (
-        <WebStory>
-            {() => (
-                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                    <StreamingSearchResults {...defaultProps} />
-                </SearchQueryStateStoreProvider>
-            )}
-        </WebStory>
-    )
-})
+NoResults.storyName = 'no results'
 
-add('did you mean', () => {
+export const DidYouMean: Story = () => {
     useNavbarQueryState.setState({ searchQueryFromURL: 'javascript test' })
+
     return (
         <WebStory>
             {() => (
@@ -139,9 +132,11 @@ add('did you mean', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('progress with warnings', () => {
+DidYouMean.storyName = 'did you mean'
+
+export const ProgressWithWarning: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -193,9 +188,11 @@ add('progress with warnings', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('loading with no results', () => (
+ProgressWithWarning.storyName = 'progress with warnings'
+
+export const LoadingWithNoResults: Story = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -203,9 +200,11 @@ add('loading with no results', () => (
             </SearchQueryStateStoreProvider>
         )}
     </WebStory>
-))
+)
 
-add('loading with some results', () => {
+LoadingWithNoResults.storyName = 'loading with no results'
+
+export const LoadingWithSomeResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'loading',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -226,9 +225,11 @@ add('loading with some results', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('server-side alert', () => {
+LoadingWithSomeResults.storyName = 'loading with some results'
+
+export const ServerSideAlert: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -254,9 +255,11 @@ add('server-side alert', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('server-side alert with no results', () => {
+ServerSideAlert.storyName = 'server-side alert'
+
+export const ServerSideAlertNoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: [],
@@ -282,9 +285,11 @@ add('server-side alert with no results', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('error with no results', () => {
+ServerSideAlertNoResults.storyName = 'server-side alert with no results'
+
+export const ErrorWithNoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',
         results: [],
@@ -306,9 +311,11 @@ add('error with no results', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('error with some results', () => {
+ErrorWithNoResults.storyName = 'error with no results'
+
+export const ErrorWithSomeResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -330,9 +337,11 @@ add('error with some results', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('limit hit with some results', () => {
+ErrorWithSomeResults.storyName = 'error with some results'
+
+export const LimitHitWithSomeResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -360,4 +369,6 @@ add('limit hit with some results', () => {
             )}
         </WebStory>
     )
-})
+}
+
+LimitHitWithSomeResults.storyName = 'limit hit with some results'

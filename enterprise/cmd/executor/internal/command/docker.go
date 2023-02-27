@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 )
@@ -14,27 +15,38 @@ const ScriptsPath = ".sourcegraph-executor"
 // will be run _directly_ on the host. Otherwise, the command will be run inside
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
-func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
-	// TODO - make this a non-special case
+func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
+	// TODO - remove this once src-cli is not required anymore for SSBC.
 	if spec.Image == "" {
+		env := spec.Env
+		if dockerConfigPath != "" {
+			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", dockerConfigPath))
+		}
 		return command{
 			Key:       spec.Key,
 			Command:   spec.Command,
 			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       spec.Env,
+			Env:       env,
 			Operation: spec.Operation,
 		}
+	}
+
+	hostDir := dir
+	if options.ResourceOptions.DockerHostMountPath != "" {
+		hostDir = filepath.Join(options.ResourceOptions.DockerHostMountPath, filepath.Base(dir))
 	}
 
 	return command{
 		Key: spec.Key,
 		Command: flatten(
-			"docker", "run", "--rm",
+			"docker",
+			dockerConfigFlag(dockerConfigPath),
+			"run", "--rm",
+			dockerHostGatewayFlag(options.DockerOptions.AddHostGateway),
 			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir),
+			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
-			// If the env vars will be part of the command line args, we need to quote them
-			dockerEnvFlags(quoteEnv(spec.Env)),
+			dockerEnvFlags(spec.Env),
 			dockerEntrypointFlags(),
 			spec.Image,
 			filepath.Join("/data", ScriptsPath, spec.ScriptPath),
@@ -43,15 +55,39 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 	}
 }
 
-func dockerResourceFlags(options ResourceOptions) []string {
-	return []string{
-		"--cpus", strconv.Itoa(options.NumCPUs),
-		"--memory", options.Memory,
+// dockerHostGatewayFlag makes the Docker host accessible to the container (on the hostname
+// `host.docker.internal`), which simplifies the use of executors when the Sourcegraph instance is
+// running uncontainerized in the Docker host. This *only* takes effect if the site config
+// `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
+// unexpected compatibility or security issues with using --add-host=...  when it is not needed.
+func dockerHostGatewayFlag(shouldAdd bool) []string {
+	if shouldAdd {
+		return []string{"--add-host=host.docker.internal:host-gateway"}
 	}
+	return nil
+}
+
+func dockerResourceFlags(options ResourceOptions) []string {
+	flags := make([]string, 0, 2)
+	if options.NumCPUs != 0 {
+		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
+	}
+	if options.Memory != "0" && options.Memory != "" {
+		flags = append(flags, "--memory", options.Memory)
+	}
+
+	return flags
 }
 
 func dockerVolumeFlags(wd string) []string {
 	return []string{"-v", wd + ":/data"}
+}
+
+func dockerConfigFlag(dockerConfigPath string) []string {
+	if dockerConfigPath == "" {
+		return nil
+	}
+	return []string{"--config", dockerConfigPath}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {

@@ -1,14 +1,13 @@
 import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
-import { createAggregateError, asError, LocalStorageSubject, appendSubtreeQueryParameter } from '@sourcegraph/common'
+import { createAggregateError, asError, appendSubtreeQueryParameter, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
     RepoFile,
@@ -17,7 +16,6 @@ import {
     RenderModeSpec,
     UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { TooltipController } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
@@ -69,18 +67,16 @@ export function createPlatformContext(): PlatformContext {
             }
 
             // The error will be emitted to consumers from the `context.settings` observable.
-            await settingsQueryWatcher.refetch().catch(error => console.error(error))
+            await settingsQueryWatcher.refetch().catch(error => logger.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        forceUpdateTooltip: () => TooltipController.forceUpdate(),
-        createExtensionHost: async () =>
-            (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
+        createExtensionHost: () => {
+            throw new Error('extensions are no longer supported in the web app')
+        },
         urlToFile: toPrettyWebBlobURL,
-        getScriptURLForExtension: () => undefined,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
         telemetryService: eventLogger,
     }
 
@@ -97,12 +93,14 @@ function toPrettyWebBlobURL(
     return appendSubtreeQueryParameter(toPrettyBlobURL(context))
 }
 
-function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): GQL.ISettingsCascade {
+function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): {
+    subjects: SettingsSubject[]
+} {
     if (!data?.viewerSettings) {
         throw createAggregateError(errors)
     }
 
-    return data.viewerSettings as GQL.ISettingsCascade
+    return data.viewerSettings
 }
 
 /**

@@ -36,12 +36,28 @@ func (e ErrBatchChangesDisabledForUser) Extensions() map[string]any {
 	return map[string]any{"code": "ErrBatchChangesDisabledForUser"}
 }
 
+type ErrBatchChangeInvalidName struct{ error }
+
+func (e ErrBatchChangeInvalidName) Error() string {
+	return "The batch change name can only contain word characters, dots and dashes."
+}
+
+func (e ErrBatchChangeInvalidName) Extensions() map[string]any {
+	return map[string]any{"code": "ErrBatchChangeInvalidName"}
+}
+
 // ErrBatchChangesUnlicensed wraps an underlying licensing.featureNotActivatedError
 // to add an error code.
 type ErrBatchChangesUnlicensed struct{ error }
 
 func (e ErrBatchChangesUnlicensed) Extensions() map[string]any {
 	return map[string]any{"code": "ErrBatchChangesUnlicensed"}
+}
+
+type ErrBatchChangesOverLimit struct{ error }
+
+func (e ErrBatchChangesOverLimit) Extensions() map[string]any {
+	return map[string]any{"code": "ErrBatchChangesOverLimit"}
 }
 
 type ErrBatchChangesDisabledDotcom struct{ error }

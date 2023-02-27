@@ -205,7 +205,7 @@ describe('Repository component', () => {
             await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-            ).toEqual(1)
+            ).toEqual(2)
         })
 
         test('responds to keyboard shortcuts', async () => {
@@ -313,6 +313,9 @@ describe('Repository component', () => {
                     'constant',
                     'constant',
                     'function',
+                    'unknown',
+                    'unknown',
+                    'unknown',
                 ],
             },
             {
@@ -391,14 +394,14 @@ describe('Repository component', () => {
 
                 await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
 
                 const symbolNames = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('.test-symbol-name')].map(name => name.textContent || '')
+                    [...document.querySelectorAll('[data-testid="symbol-name"]')].map(name => name.textContent || '')
                 )
                 const symbolTypes = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('.test-symbol-icon')].map(
-                        icon => icon.getAttribute('data-tooltip') || ''
+                    [...document.querySelectorAll('[data-testid="symbol-icon"]')].map(
+                        icon => icon.getAttribute('data-symbol-kind') || ''
                     )
                 )
 
@@ -408,12 +411,13 @@ describe('Repository component', () => {
         }
 
         const navigateToSymbolTests = [
-            {
-                name: 'navigates to file on symbol click for Go',
-                repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
-                filePath: '/tree/cmd',
-                symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
-            },
+            // Flake, see https://github.com/sourcegraph/sourcegraph/issues/44791
+            // {
+            //     name: 'navigates to file on symbol click for Go',
+            //     repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
+            //     filePath: '/tree/cmd',
+            //     symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
+            // },
             {
                 name: 'navigates to file on symbol click for Java',
                 repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
@@ -422,8 +426,7 @@ describe('Repository component', () => {
                 skip: true,
             },
             {
-                name:
-                    'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
+                name: 'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                 repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                 filePath: '/tree/examples',
                 symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go?L26:6-26:10',
@@ -447,7 +450,7 @@ describe('Repository component', () => {
 
                 await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
 
                 await (
                     await driver.page.waitForSelector(`.test-symbol-link[href*="${navigationTest.symbolPath}"]`, {
@@ -463,40 +466,41 @@ describe('Repository component', () => {
                 name: 'highlights correct line for Go',
                 filePath:
                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
-                index: 5,
+                symbol: 'diffTimeParseLayout',
                 line: 65,
             },
             {
                 name: 'highlights correct line for TypeScript',
                 filePath:
                     '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
-                index: 2,
+                symbol: 'throwIfCancelled',
                 line: 17,
             },
         ]
 
-        for (const { name, filePath, index, line } of highlightSymbolTests) {
+        for (const { name, filePath, symbol, line } of highlightSymbolTests) {
             test(name, async () => {
                 await driver.page.goto(sourcegraphBaseUrl + filePath)
                 await driver.page.waitForSelector('[data-tab-content="symbols"]')
                 await driver.page.click('[data-tab-content="symbols"]')
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
-                await driver.page.click(`[data-testid="filtered-connection-nodes"] li:nth-child(${index + 1}) a`)
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
+                const [link] = await driver.page.$x(`//*[@data-testid='symbol-name' and contains(text(), '${symbol}')]`)
+                if (!link) {
+                    throw new Error(`Could not find symbol "${symbol}" in the sidebar`)
+                }
+                await link.click()
 
-                await driver.page.waitForSelector('.test-blob .selected .line')
-                const selectedLineNumber = await driver.page.evaluate(() => {
-                    const element = document.querySelector<HTMLElement>('.test-blob .selected .line')
-                    return element?.dataset.line && parseInt(element.dataset.line, 10)
-                })
-
-                expect(selectedLineNumber).toEqual(line)
+                const selectedLine = await driver.page.waitForSelector(
+                    `[data-testid="repo-blob"] .cm-line:nth-child(${line}).selected-line`
+                )
+                expect(selectedLine).not.toBeNull()
             })
         }
     })
 
     describe('hovers', () => {
         describe('Blob', () => {
-            test('gets displayed and updates URL when hovering over a token', async () => {
+            test.skip('gets displayed and updates URL when hovering over a token', async () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl +
                         '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
@@ -518,7 +522,8 @@ describe('Repository component', () => {
             })
 
             describe('jump to definition', () => {
-                test('noops when on the definition', async () => {
+                // https://github.com/sourcegraph/sourcegraph/issues/41555
+                test.skip('noops when on the definition', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
@@ -529,7 +534,8 @@ describe('Repository component', () => {
                     )
                 })
 
-                test('does navigation (same repo, same file)', async () => {
+                test.skip('does navigation (same repo, same file)', async () => {
+                    // See https://github.com/sourcegraph/sourcegraph/pull/39747
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'

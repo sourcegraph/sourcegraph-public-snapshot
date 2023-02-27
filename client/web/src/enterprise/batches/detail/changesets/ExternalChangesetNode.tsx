@@ -1,21 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 
-import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -34,18 +25,13 @@ import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 
 import styles from './ExternalChangesetNode.module.scss'
 
-export interface ExternalChangesetNodeProps extends ThemeProps {
+export interface ExternalChangesetNodeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
     selectable?: {
         onSelect: (id: string) => void
         isSelected: (id: string) => boolean
     }
-    history: H.History
-    location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
@@ -56,10 +42,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
     node: initialNode,
     viewerCanAdminister,
     selectable,
-    isLightTheme,
-    history,
-    location,
-    extensionInfo,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
@@ -93,14 +75,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {selectable ? (
                 <div className="p-2">
+                    {/* eslint-disable-next-line no-restricted-syntax*/}
                     <InputTooltip
                         id={`select-changeset-${node.id}`}
                         type="checkbox"
@@ -108,6 +87,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
                         tooltip={tooltipLabel}
+                        placement="right"
                         aria-label={tooltipLabel}
                     />
                 </div>
@@ -136,9 +116,21 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     (node.checkState || node.reviewState || node.diffStat) && 'p-2'
                 )}
             >
-                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
-                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
-                {node.diffStat && <DiffStatStack {...node.diffStat} />}
+                {node.checkState ? (
+                    <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />
+                ) : (
+                    <VisuallyHidden>No check state available</VisuallyHidden>
+                )}
+                {node.reviewState ? (
+                    <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />
+                ) : (
+                    <VisuallyHidden>No review state available</VisuallyHidden>
+                )}
+                {node.diffStat ? (
+                    <DiffStatStack {...node.diffStat} />
+                ) : (
+                    <VisuallyHidden>No diff available</VisuallyHidden>
+                )}
             </div>
             <span
                 className={classNames(
@@ -146,7 +138,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.checkState && 'p-2'
                 )}
             >
-                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
+                {node.checkState ? (
+                    <ChangesetCheckStatusCell checkState={node.checkState} />
+                ) : (
+                    <VisuallyHidden>No check state available</VisuallyHidden>
+                )}
             </span>
             <span
                 className={classNames(
@@ -154,7 +150,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.reviewState && 'p-2'
                 )}
             >
-                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
+                {node.reviewState ? (
+                    <ChangesetReviewStatusCell reviewState={node.reviewState} />
+                ) : (
+                    <VisuallyHidden>No review state available</VisuallyHidden>
+                )}
             </span>
             <div
                 className={classNames(
@@ -162,11 +162,14 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.diffStat && 'p-2'
                 )}
             >
-                {node.diffStat && <DiffStatStack {...node.diffStat} />}
+                {node.diffStat ? (
+                    <DiffStatStack {...node.diffStat} />
+                ) : (
+                    <VisuallyHidden>No diff available</VisuallyHidden>
+                )}
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <Button
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.externalChangesetNodeShowDetails,
@@ -175,11 +178,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -208,12 +207,8 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                         <ChangesetError node={node} />
                         <ChangesetFileDiff
                             changesetID={node.id}
-                            isLightTheme={isLightTheme}
-                            history={history}
-                            location={location}
                             repositoryID={node.repository.id}
                             repositoryName={node.repository.name}
-                            extensionInfo={extensionInfo}
                             queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                             updateOnChange={node.updatedAt}
                         />
@@ -226,14 +221,14 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
 
 const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError: string }>> = ({ syncerError }) => (
     <Alert role="alert" variant="danger">
-        <h4 className={classNames(styles.alertHeading)}>
+        <H4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
-        </h4>
+        </H4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
-        <p className="mb-0">
+        <Text className="mb-0">
             <small>This might be an ephemeral error that resolves itself at the next sync.</small>
-        </p>
+        </Text>
     </Alert>
 )
 
@@ -248,7 +243,7 @@ const ChangesetError: React.FunctionComponent<
 
     return (
         <Alert role="alert" variant="danger">
-            <h4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</h4>
+            <H4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</H4>
             <ErrorMessage error={node.error} />
         </Alert>
     )
@@ -280,8 +275,9 @@ const RetryChangesetButton: React.FunctionComponent<
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" />}
             <Button className="mb-1" onClick={onRetry} disabled={isLoading === true} variant="link">
                 <Icon
+                    aria-hidden={true}
                     className={classNames(isLoading === true && styles.externalChangesetNodeRetrySpinning)}
-                    as={SyncIcon}
+                    svgPath={mdiSync}
                 />{' '}
                 Retry
             </Button>

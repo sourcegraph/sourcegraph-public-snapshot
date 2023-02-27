@@ -1,24 +1,27 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
-import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import { useHistory } from 'react-router'
+import { mdiLinkVariant } from '@mdi/js'
+import { escapeRegExp } from 'lodash'
+import { useNavigate } from 'react-router-dom'
 
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
-import { Insight } from '../../../../../core'
+import { Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'
 
-interface Props {
-    insight: Pick<Insight, 'title' | 'id' | 'type'>
+interface Props extends TelemetryProps {
+    insight: Insight
 }
 
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
-    const { insight } = props
+    const { insight, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const copyLinkButtonReference = useRef<HTMLButtonElement | null>(null)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -39,27 +42,45 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         setShowDeleteConfirm(true)
     }
 
+    const handleEditClick = (): void => {
+        telemetryService.log('StandaloneInsightPageEditClick')
+    }
+
     return (
         <div className={styles.container}>
-            <Button
-                variant="secondary"
-                ref={copyLinkButtonReference}
-                data-tooltip={isCopied ? 'Copied!' : undefined}
-                onClick={handleCopyLinkClick}
-            >
-                <Icon as={LinkVariantIcon} /> Copy link
-            </Button>
+            {!isLangStatsInsight(insight) && (
+                <Tooltip content="This will create a CVS archive of all data for this Code Insight, including data that has been archived. This will only include data that you are permitted to see.">
+                    <DownloadFileButton
+                        fileName={escapeRegExp(insight.title)}
+                        fileUrl={`/.api/insights/export/${insight.id}`}
+                        variant="secondary"
+                    >
+                        Export data as CSV
+                    </DownloadFileButton>
+                </Tooltip>
+            )}
+
+            <Tooltip content={isCopied ? 'Copied!' : undefined}>
+                <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
+                    <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
+                </Button>
+            </Tooltip>
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete
             </Button>
-            <Button variant="primary" as={Link} to={`/insights/edit/${insight.id}`}>
+            <Button
+                variant="primary"
+                as={Link}
+                to={`/insights/edit/${insight.id}?insight=${insight.id}`}
+                onClick={handleEditClick}
+            >
                 Edit
             </Button>
 
             <ConfirmDeleteModal
                 insight={insight}
                 showModal={showDeleteConfirm}
-                onConfirm={() => history.push('/insights/dashboards/all')}
+                onConfirm={() => navigate('/insights/all')}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </div>

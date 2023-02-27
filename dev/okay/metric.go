@@ -33,7 +33,8 @@ func (m *Metric) ValueString() string {
 	case "count", "number":
 		return fmt.Sprintf("%+v", m.Value)
 	case "durationMs":
-		return time.Duration(int64(m.Value)).String()
+		dur := time.Duration(m.Value) * time.Millisecond
+		return dur.String()
 	}
 	return fmt.Sprintf("invalid type %q", m.Type)
 }

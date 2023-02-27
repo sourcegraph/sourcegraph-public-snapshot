@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H3 } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
@@ -35,9 +35,9 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<
     return (
         <div className={classNames('d-flex flex-column', className)}>
             <div className="m-0">
-                <h3 className={classNames('m-0 d-md-inline-block', { 'mr-2': node.labels.length > 0 })}>
+                <H3 className={classNames('m-0 d-md-inline-block', { 'mr-2': node.labels.length > 0 })}>
                     {changesetTitle}
-                </h3>
+                </H3>
                 {node.labels.length > 0 && (
                     <span className="d-block d-md-inline-block mr-2">
                         {node.labels.map(label => (
@@ -85,9 +85,7 @@ function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
 }
 
-function hasHeadReference(
-    node: ExternalChangesetFields
-): node is ExternalChangesetFields & {
+function hasHeadReference(node: ExternalChangesetFields): node is ExternalChangesetFields & {
     currentSpec: typeof node.currentSpec & {
         description: { __typename: 'GitBranchChangesetDescription' }
     }

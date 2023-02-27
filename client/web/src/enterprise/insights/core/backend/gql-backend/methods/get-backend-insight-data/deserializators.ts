@@ -1,41 +1,47 @@
-import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
-import { DATA_SERIES_COLORS } from '../../../../../pages/insights/creation/search-insight'
-import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
+import { InsightDataNode } from '../../../../../../../graphql-operations'
+import { BackendInsight, isComputeInsight, isCaptureGroupInsight } from '../../../../types'
+import { InsightContentType } from '../../../../types/insight/common'
 import { BackendInsightData } from '../../../code-insights-backend-types'
+import { createComputeCategoricalChart } from '../../../utils/create-categorical-content'
 import { createLineChartContent } from '../../../utils/create-line-chart-content'
 
-export const MAX_NUMBER_OF_SERIES = 20
-export const DATA_SERIES_COLORS_LIST = Object.values(DATA_SERIES_COLORS)
-
 export const createBackendInsightData = (insight: BackendInsight, response: InsightDataNode): BackendInsightData => {
-    const seriesData = response.dataSeries.slice(0, MAX_NUMBER_OF_SERIES)
-    const seriesMetadata = getParsedDataSeriesMetadata(insight, seriesData)
+    const seriesData = response.dataSeries
+    const isFetchingHistoricalData = seriesData.some(({ status: { isLoadingData } }) => isLoadingData)
+    const isAllSeriesErrored =
+        seriesData.length > 0 && seriesData.every(series => series.status.incompleteDatapoints.length > 0)
+    const topLevelIncompleteAlert = isAllSeriesErrored ? seriesData[0].status.incompleteDatapoints[0] : null
+
+    if (isComputeInsight(insight)) {
+        return {
+            incompleteAlert: topLevelIncompleteAlert,
+            isFetchingHistoricalData,
+            data: {
+                type: InsightContentType.Categorical,
+                content: createComputeCategoricalChart(insight, seriesData),
+            },
+        }
+    }
+
+    if (isCaptureGroupInsight(insight)) {
+        return {
+            incompleteAlert: topLevelIncompleteAlert,
+            isFetchingHistoricalData,
+            data: {
+                type: InsightContentType.Series,
+                series: createLineChartContent({ insight, seriesData, showError: false }),
+            },
+        }
+    }
 
     return {
-        content: createLineChartContent(seriesData, seriesMetadata, insight.filters),
-        isFetchingHistoricalData: seriesData.some(
-            ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
-        ),
-    }
-}
-
-function getParsedDataSeriesMetadata(
-    insight: BackendInsight,
-    seriesData: InsightDataSeries[]
-): SearchBasedInsightSeries[] {
-    switch (insight.type) {
-        case InsightType.SearchBased:
-            return insight.series
-
-        case InsightType.CaptureGroup: {
-            const { query } = insight
-
-            return seriesData.map((generatedSeries, index) => ({
-                id: generatedSeries.seriesId,
-                name: generatedSeries.label,
-                query,
-                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
-            }))
-        }
+        // Search based insight doesn't support top-level incomplete alerts, they will be generated on
+        // series level, see createLineChartContent show error logic.
+        incompleteAlert: null,
+        isFetchingHistoricalData,
+        data: {
+            type: InsightContentType.Series,
+            series: createLineChartContent({ insight, seriesData, showError: true }),
+        },
     }
 }

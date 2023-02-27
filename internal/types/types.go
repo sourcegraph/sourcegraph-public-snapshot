@@ -2,6 +2,7 @@
 package types
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -9,8 +10,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+)
+
+// BatchChangeSource represents how a batch change can be created
+// it can either be created locally or via an executor (SSBC)
+type BatchChangeSource string
+
+const (
+	ExecutorBatchChangeSource BatchChangeSource = "executor"
+	LocalBatchChangeSource    BatchChangeSource = "local"
 )
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
@@ -65,6 +79,8 @@ type Repo struct {
 	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
+	// KeyValuePairs is the set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -87,6 +103,8 @@ type SearchedRepo struct {
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
+	// A set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
@@ -140,50 +158,121 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// Update updates Repo r with the fields from the given newer Repo n,
-// returning true if modified.
-func (r *Repo) Update(n *Repo) (modified bool) {
+// RepoModified is a bitfield that tracks which fields were modified while
+// syncing a repository.
+type RepoModified uint64
+
+const (
+	RepoUnmodified   RepoModified = 0
+	RepoModifiedName              = 1 << iota
+	RepoModifiedURI
+	RepoModifiedDescription
+	RepoModifiedExternalRepo
+	RepoModifiedArchived
+	RepoModifiedFork
+	RepoModifiedPrivate
+	RepoModifiedStars
+	RepoModifiedMetadata
+	RepoModifiedSources
+)
+
+func (m RepoModified) String() string {
+	if m == RepoUnmodified {
+		return "repo unmodified"
+	}
+
+	modifications := []string{}
+	if m&RepoModifiedName == RepoModifiedName {
+		modifications = append(modifications, "name")
+	}
+	if m&RepoModifiedURI == RepoModifiedURI {
+		modifications = append(modifications, "uri")
+	}
+	if m&RepoModifiedDescription == RepoModifiedDescription {
+		modifications = append(modifications, "description")
+	}
+	if m&RepoModifiedExternalRepo == RepoModifiedExternalRepo {
+		modifications = append(modifications, "external repo")
+	}
+	if m&RepoModifiedArchived == RepoModifiedArchived {
+		modifications = append(modifications, "archived")
+	}
+	if m&RepoModifiedFork == RepoModifiedFork {
+		modifications = append(modifications, "fork")
+	}
+	if m&RepoModifiedPrivate == RepoModifiedPrivate {
+		modifications = append(modifications, "private")
+	}
+	if m&RepoModifiedStars == RepoModifiedStars {
+		modifications = append(modifications, "stars")
+	}
+	if m&RepoModifiedMetadata == RepoModifiedMetadata {
+		modifications = append(modifications, "metadata")
+	}
+	if m&RepoModifiedSources == RepoModifiedSources {
+		modifications = append(modifications, "sources")
+	}
+	if m&RepoUnmodified == RepoUnmodified {
+		modifications = append(modifications, "unmodified")
+	}
+
+	return "repo modifications: " + strings.Join(modifications, ", ")
+}
+
+// Update updates Repo r with the fields from the given newer Repo n, returning
+// RepoUnmodified (0) if no fields were modified, and a non-zero value if one
+// or more fields were modified.
+func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	if !r.Name.Equal(n.Name) {
-		r.Name, modified = n.Name, true
+		r.Name = n.Name
+		modified |= RepoModifiedName
 	}
 
 	if r.URI != n.URI {
-		r.URI, modified = n.URI, true
+		r.URI = n.URI
+		modified |= RepoModifiedURI
 	}
 
 	if r.Description != n.Description {
-		r.Description, modified = n.Description, true
+		r.Description = n.Description
+		modified |= RepoModifiedDescription
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
+		r.ExternalRepo = n.ExternalRepo
+		modified |= RepoModifiedExternalRepo
 	}
 
 	if r.Archived != n.Archived {
-		r.Archived, modified = n.Archived, true
+		r.Archived = n.Archived
+		modified |= RepoModifiedArchived
 	}
 
 	if r.Fork != n.Fork {
-		r.Fork, modified = n.Fork, true
+		r.Fork = n.Fork
+		modified |= RepoModifiedFork
 	}
 
 	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
+		r.Private = n.Private
+		modified |= RepoModifiedPrivate
 	}
 
 	if r.Stars != n.Stars {
-		r.Stars, modified = n.Stars, true
+		r.Stars = n.Stars
+		modified |= RepoModifiedStars
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata, modified = n.Metadata, true
+		r.Metadata = n.Metadata
+		modified |= RepoModifiedMetadata
 	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
-			modified = true
+			modified |= RepoModifiedSources
 		}
 	}
 
@@ -448,6 +537,13 @@ func ParseCloneStatus(s string) CloneStatus {
 	}
 }
 
+// ParseCloneStatusFromGraphQL converts the raw value of the GraphQL enum
+// CloneStatus into the corresponding CloneStatus defined here. If the GraphQL
+// value can't be matched to a CloneStatus, CloneStatusUnknown is returned.
+func ParseCloneStatusFromGraphQL(s string) CloneStatus {
+	return ParseCloneStatus(strings.ToLower(s))
+}
+
 // GitserverRepo  represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
@@ -462,39 +558,83 @@ type GitserverRepo struct {
 	LastChanged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	UpdatedAt     time.Time
+	// Time when corruption of repo was detected
+	CorruptedAt time.Time
+	UpdatedAt   time.Time
+	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
+	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
+	CorruptionLogs []RepoCorruptionLog
+}
+
+// RepoCorruptionLog represents a corruption event that has been detected on a repo.
+type RepoCorruptionLog struct {
+	// When the corruption event was detected
+	Timestamp time.Time `json:"time"`
+	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
+	Reason string `json:"reason"`
 }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+}
+
+type ExternalServiceRepo struct {
+	ExternalServiceID int64      `json:"externalServiceID"`
+	RepoID            api.RepoID `json:"repoID"`
+	CloneURL          string     `json:"cloneURL"`
+	UserID            int32      `json:"userID"`
+	OrgID             int32      `json:"orgID"`
+	CreatedAt         time.Time  `json:"createdAt"`
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
-	ID                int64
+	ID                int64 // TODO: Why is this an int64, it's a 32 bit int in the database
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
-	NumResets         int
+	NumResets         int // TODO: This is a 32 bit int in the database
 	ExternalServiceID int64
 	NumFailures       int
+	Cancel            bool
+
+	// Counters that show progress of a running job
+	ReposSynced     int32
+	RepoSyncErrors  int32
+	ReposAdded      int32
+	ReposDeleted    int32
+	ReposModified   int32
+	ReposUnmodified int32
+}
+
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -506,14 +646,11 @@ func (e *ExternalService) URN() string {
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
-
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
-func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
 	if e.ID != n.ID {
-		return false
+		return false, nil
 	}
 
 	if !strings.EqualFold(e.Kind, n.Kind) {
@@ -524,8 +661,18 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DisplayName, modified = n.DisplayName, true
 	}
 
-	if e.Config != n.Config {
-		e.Config, modified = n.Config, true
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	nConfig, err := n.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+	if eConfig != nConfig {
+		e.Config.Set(nConfig)
+		modified = true
 	}
 
 	if !e.UpdatedAt.Equal(n.UpdatedAt) {
@@ -536,12 +683,12 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
-	return modified
+	return modified, nil
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg any, _ error) {
-	return extsvc.ParseConfig(e.Kind, e.Config)
+func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) {
+	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
 }
 
 // Clone returns a clone of the given external service.
@@ -568,22 +715,10 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService() api.ExternalService {
-	return api.ExternalService{
-		ID:              e.ID,
-		Kind:            e.Kind,
-		DisplayName:     e.DisplayName,
-		Config:          e.Config,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		DeletedAt:       e.DeletedAt,
-		LastSyncAt:      e.LastSyncAt,
-		NextSyncAt:      e.NextSyncAt,
-		NamespaceUserID: e.NamespaceUserID,
-		NamespaceOrgID:  e.NamespaceOrgID,
-		Unrestricted:    e.Unrestricted,
-		CloudDefault:    e.CloudDefault,
-	}
+// SupportsRepoExclusion returns true when given external service supports repo
+// exclusion.
+func (e *ExternalService) SupportsRepoExclusion() bool {
+	return extsvc.SupportsRepoExclusion(e.Kind)
 }
 
 // ExternalServices is a utility type with convenience methods for operating on
@@ -685,6 +820,92 @@ type User struct {
 	Searchable            bool
 }
 
+// UserForSCIM extends user with email addresses and SCIM external ID.
+type UserForSCIM struct {
+	User
+	Emails         []string
+	SCIMExternalID string
+}
+
+type SystemRole string
+
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
+type Role struct {
+	ID        int32
+	Name      string
+	System    bool
+	CreatedAt time.Time
+}
+
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+
+type Permission struct {
+	ID        int32
+	Namespace PermissionNamespace
+	Action    string
+	CreatedAt time.Time
+}
+
+// DisplayName returns an human-readable string for permissions.
+func (p *Permission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
+}
+
+type RolePermission struct {
+	RoleID       int32
+	PermissionID int32
+	CreatedAt    time.Time
+}
+
+type UserRole struct {
+	RoleID    int32
+	UserID    int32
+	CreatedAt time.Time
+}
+
+type NamespacePermission struct {
+	ID         int64
+	Namespace  PermissionNamespace
+	ResourceID int64
+	UserID     int32
+	CreatedAt  time.Time
+}
+
+func (n *NamespacePermission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
+}
+
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
@@ -707,11 +928,6 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -815,9 +1031,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatChangedSum int32
 	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatDeletedSum int32
@@ -830,9 +1043,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatChangedSum int32
 	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatDeletedSum int32
@@ -863,6 +1073,93 @@ type BatchChangesUsageStatistics struct {
 	CurrentMonthUsersCount int64
 
 	BatchChangesCohorts []*BatchChangesCohort
+
+	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
+	// 15 seconds.
+	ActiveExecutorsCount int32
+
+	// BulkOperationsCount is the count of bulk operations used to manage changesets
+	BulkOperationsCount []*BulkOperationsCount
+
+	// ChangesetDistribution is the distribution of batch changes per source and the amount of
+	// changesets created via the different sources
+	ChangesetDistribution []*ChangesetDistribution
+
+	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
+	// across multiple sources
+	BatchChangeStatsBySource []*BatchChangeStatsBySource
+
+	// MonthlyBatchChangesExecutorUsage is the number of users who ran a job on an
+	// executor in a given month
+	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+
+	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BulkOperationsCount struct {
+	Name  string
+	Count int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type WeeklyBulkOperationStats struct {
+	// Week is the week of this cohort and is used to group batch changes by
+	// their creation date.
+	Week string
+
+	// Count is the number of bulk operations carried out in a particular week.
+	Count int32
+
+	BulkOperation string
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type MonthlyBatchChangesExecutorUsage struct {
+	// Month of the year corresponding to this executor usage data.
+	Month string
+
+	// The number of unique users who ran a job on an executor this month.
+	Count int32
+
+	// The cumulative number of minutes of executor usage for batch changes this month.
+	Minutes int64
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BatchChangeStatsBySource struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally.
+	Source BatchChangeSource
+
+	// the amount of changesets published using this batch change source.
+	PublishedChangesetsCount int32
+
+	// the amount of batch changes created from this source.
+	BatchChangesCount int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type ChangesetDistribution struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally
+	Source BatchChangeSource
+
+	// range of changeset distribution per batch_change
+	Range string
+
+	// number of batch changes with the range of changesets defined
+	BatchChangesCount int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1006,14 +1303,6 @@ type SiteUsageSummary struct {
 	IntegrationUniquesMonth int32
 	IntegrationUniquesWeek  int32
 	IntegrationUniquesDay   int32
-	ManageUniquesMonth      int32
-	CodeUniquesMonth        int32
-	VerifyUniquesMonth      int32
-	MonitorUniquesMonth     int32
-	ManageUniquesWeek       int32
-	CodeUniquesWeek         int32
-	VerifyUniquesWeek       int32
-	MonitorUniquesWeek      int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1035,20 +1324,21 @@ type SearchAggregatedEvent struct {
 }
 
 type SurveyResponse struct {
-	ID        int32
-	UserID    *int32
-	Email     *string
-	Score     int32
-	Reason    *string
-	Better    *string
-	CreatedAt time.Time
+	ID           int32
+	UserID       *int32
+	Email        *string
+	Score        int32
+	Reason       *string
+	Better       *string
+	OtherUseCase *string
+	CreatedAt    time.Time
 }
 
 type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
@@ -1107,6 +1397,36 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+}
+
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1131,30 +1451,6 @@ type CodeHostIntegrationUsageType struct {
 type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	UniquesCount int32
 	TotalCount   int32
-}
-
-// UserAndEventCount represents the number of events triggered in a given
-// time frame per user and overall.
-type UserAndEventCount struct {
-	UserCount  int32
-	EventCount int32
-}
-
-// FileAndSearchPageUserAndEventCounts represents the number of events triggered
-// on the "search result" and "file" pages in a given time frame.
-type FileAndSearchPageUserAndEventCounts struct {
-	StartTime             time.Time
-	DisplayedOnFilePage   UserAndEventCount
-	DisplayedOnSearchPage UserAndEventCount
-	ClickedOnFilePage     UserAndEventCount
-	ClickedOnSearchPage   UserAndEventCount
-}
-
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
-	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users
@@ -1238,25 +1534,61 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
-	WeeklyInsightsPageViews                 *int32
-	WeeklyInsightsGetStartedPageViews       *int32
-	WeeklyInsightsUniquePageViews           *int32
-	WeeklyInsightsGetStartedUniquePageViews *int32
-	WeeklyInsightConfigureClick             *int32
-	WeeklyInsightAddMoreClick               *int32
-	WeekStart                               time.Time
-	WeeklyInsightCreators                   *int32
-	WeeklyFirstTimeInsightCreators          *int32
-	WeeklyAggregatedUsage                   []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
-	InsightTimeIntervals                    []InsightTimeIntervalPing
-	InsightOrgVisible                       []OrgVisibleInsightPing
-	InsightTotalCounts                      InsightTotalCounts
-	TotalOrgsWithDashboard                  *int32
-	TotalDashboardCount                     *int32
-	InsightsPerDashboard                    InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
+	WeeklyInsightsPageViews                        *int32
+	WeeklyStandaloneInsightPageViews               *int32
+	WeeklyStandaloneDashboardClicks                *int32
+	WeeklyStandaloneEditClicks                     *int32
+	WeeklyInsightsGetStartedPageViews              *int32
+	WeeklyInsightsUniquePageViews                  *int32
+	WeeklyInsightsGetStartedUniquePageViews        *int32
+	WeeklyStandaloneInsightUniquePageViews         *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
+	WeeklyStandaloneInsightUniqueEditClicks        *int32
+	WeeklyInsightConfigureClick                    *int32
+	WeeklyInsightAddMoreClick                      *int32
+	WeekStart                                      time.Time
+	WeeklyInsightCreators                          *int32
+	WeeklyFirstTimeInsightCreators                 *int32
+	WeeklyAggregatedUsage                          []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
+	InsightTimeIntervals                           []InsightTimeIntervalPing
+	InsightOrgVisible                              []OrgVisibleInsightPing
+	InsightTotalCounts                             InsightTotalCounts
+	TotalOrgsWithDashboard                         *int32
+	TotalDashboardCount                            *int32
+	InsightsPerDashboard                           InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                  *int32
+	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsInfoIconHover                *int32
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover                []GroupResultPing
+	WeeklyGroupResultsChartBarClick                []GroupResultPing
+	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklyGroupResultsSearches                     []GroupResultSearchPing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+	BarIndex        *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
+}
+
+type GroupResultSearchPing struct {
+	Name            PingName
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1272,6 +1604,7 @@ type InsightUsageStatistics struct {
 	Hovers           *int32
 	UICustomizations *int32
 	DataPointClicks  *int32
+	FiltersChange    *int32
 }
 
 type PingName string
@@ -1328,13 +1661,62 @@ type InsightsPerDashboardPing struct {
 	Median float32
 }
 
+type InsightsBackfillTimePing struct {
+	AllRepos   bool
+	P99Seconds int
+	P90Seconds int
+	P50Seconds int
+	Count      int
+}
+
 type CodeMonitoringUsageStatistics struct {
 	CodeMonitoringPageViews                       *int32
 	CreateCodeMonitorPageViews                    *int32
 	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
-	CodeMonitorEmailLinkClicks                    *int32
+	CodeMonitorEmailLinkClicked                   *int32
+	ExampleMonitorClicked                         *int32
+	GettingStartedPageViewed                      *int32
+	CreateFormSubmitted                           *int32
+	ManageFormSubmitted                           *int32
+	ManageDeleteSubmitted                         *int32
+	LogsPageViewed                                *int32
+	EmailActionsTriggered                         *int32
+	EmailActionsErrored                           *int32
+	EmailActionsTriggeredUniqueUsers              *int32
+	EmailActionsEnabled                           *int32
+	EmailActionsEnabledUniqueUsers                *int32
+	SlackActionsTriggered                         *int32
+	SlackActionsErrored                           *int32
+	SlackActionsTriggeredUniqueUsers              *int32
+	SlackActionsEnabled                           *int32
+	SlackActionsEnabledUniqueUsers                *int32
+	WebhookActionsTriggered                       *int32
+	WebhookActionsErrored                         *int32
+	WebhookActionsTriggeredUniqueUsers            *int32
+	WebhookActionsEnabled                         *int32
+	WebhookActionsEnabledUniqueUsers              *int32
+	MonitorsEnabled                               *int32
+	MonitorsEnabledUniqueUsers                    *int32
+	MonitorsEnabledLastRunErrored                 *int32
+	ReposMonitored                                *int32
+	TriggerRuns                                   *int32
+	TriggerRunsErrored                            *int32
+	P50TriggerRunTimeSeconds                      *float32
+	P90TriggerRunTimeSeconds                      *float32
+}
+
+type NotebooksUsageStatistics struct {
+	NotebookPageViews                *int32
+	EmbeddedNotebookPageViews        *int32
+	NotebooksListPageViews           *int32
+	NotebooksCreatedCount            *int32
+	NotebookAddedStarsCount          *int32
+	NotebookAddedMarkdownBlocksCount *int32
+	NotebookAddedQueryBlocksCount    *int32
+	NotebookAddedFileBlocksCount     *int32
+	NotebookAddedSymbolBlocksCount   *int32
 }
 
 // Secret represents the secrets table
@@ -1385,6 +1767,15 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	AutoDefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1395,3 +1786,119 @@ type SearchContextRepositoryRevisions struct {
 	Repo      MinimalRepo
 	Revisions []string
 }
+
+type EncryptableSecret = encryption.Encryptable
+
+// NewUnencryptedSecret creates an EncryptableSecret that *may* be encrypted in
+// the future, but the current value has not yet been encrypted.
+func NewUnencryptedSecret(value string) *EncryptableSecret {
+	return encryption.NewUnencrypted(value)
+}
+
+// NewEncryptedSecret creates an EncryptableSecret that has come from an
+// encrypted source. In this case you need to provide the keyID and key in order
+// to be able to decrypt it.
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+// Webhook defines the information we need to handle incoming webhooks from a
+// code host.
+type Webhook struct {
+	// The primary key, used for sorting and pagination.
+	ID int32
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
+	CodeHostKind string
+	CodeHostURN  extsvc.CodeHostBaseURL
+	// Secret can be in one of three states:
+	//
+	// 1. nil, no secret provided.
+	// 2. Provided but not encrypted.
+	// 3. Provided and encrypted.
+	//
+	// For 2 and 3 you interact with it in the same way and just assume that it IS
+	// encrypted. All the methods on EncryptableSecret will just pass around the raw
+	// value and encryption / decryption methods are noops.
+	Secret          *EncryptableSecret
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserID int32
+	UpdatedByUserID int32
+}
+
+// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
+type OutboundRequestLogItem struct {
+	ID                 string              `json:"id"`
+	StartedAt          time.Time           `json:"startedAt"`
+	Method             string              `json:"method"` // The request method (GET, POST, etc.)
+	URL                string              `json:"url"`
+	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestBody        string              `json:"requestBody"`
+	StatusCode         int32               `json:"statusCode"` // The response status code
+	ResponseHeaders    map[string][]string `json:"responseHeaders"`
+	Duration           float64             `json:"duration"`
+	ErrorMessage       string              `json:"errorMessage"`
+	CreationStackFrame string              `json:"creationStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+}
+
+type SlowRequest struct {
+	Index     string         `json:"index"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type CodeownersFile struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	RepoID   api.RepoID
+	Contents string
+	Proto    *codeownerspb.File
+}
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID             int32
+	Name           string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          string
+	AdditionalInfo string
+	Status         AccessRequestStatus
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

@@ -1,7 +1,10 @@
-@import './forkedBranded.scss';
-@import './theming/highlight.scss';
-@import './theming/monaco.scss';
-@import '~@vscode/codicons/dist/codicon.css';
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/tabs/styles';
+
+@import 'wildcard/src/global-styles/base';
+@import './theming/highlight';
+@import './theming/monaco';
+@import '@vscode/codicons/dist/codicon';
 
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
@@ -71,13 +74,6 @@
     --media-xl: 1200px;
 }
 
-// stylelint-disable-next-line selector-max-id
-html,
-body,
-#root {
-    height: 100%;
-}
-
 body {
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
@@ -110,10 +106,18 @@ code {
 }
 
 .btn-text-link {
-    color: var(--vscode-textLink-foreground);
-    padding: 0;
+    color: var(--vscode-textLink-foreground) !important;
+    padding: 0 !important;
+    margin: 0 !important;
     font-weight: var(--vscode-editor-font-weight) !important;
     font-size: var(--vscode-editor-font-size) !important;
+    background-color: transparent !important;
+    text-align: left;
+
+    &:hover,
+    &:focus {
+        color: var(--vscode-foreground) !important;
+    }
 }
 
 .input,

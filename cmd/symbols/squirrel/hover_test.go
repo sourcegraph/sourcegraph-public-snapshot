@@ -65,11 +65,11 @@ namespace Foo {
 		return nil, errors.Newf("path %s not found", path.Path)
 	}
 
-	squirrel := NewSquirrelService(readFile)
+	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
 	for _, test := range tests {
-		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path})
+		payload, err := squirrel.LocalCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path})
 		fatalIfError(t, err)
 
 		ok := false
@@ -95,11 +95,5 @@ namespace Foo {
 			}
 			t.FailNow()
 		}
-	}
-}
-
-func fatalIfError(t *testing.T, err error) {
-	if err != nil {
-		t.Fatal(err)
 	}
 }

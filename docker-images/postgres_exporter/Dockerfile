@@ -1,5 +1,6 @@
-FROM prometheuscommunity/postgres-exporter:v0.9.0@sha256:9100e51f477827840e06638f7ebec111799eece916c603fac2d2369bfbc9f507 as postgres_exporter
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
+FROM prometheuscommunity/postgres-exporter:v0.11.1@sha256:a7f8f66064b95c2b08dce9a0aaafe78c6639b7546d472fab649e9e7480be0454 as postgres_exporter
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
+# hadolint ignore=DL3048
 LABEL com.sourcegraph.postgres_exporter.version=v0.9.0
 
 ARG COMMIT_SHA="unknown"

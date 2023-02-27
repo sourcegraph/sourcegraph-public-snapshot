@@ -11,8 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestMain(m *testing.M) {
@@ -60,10 +61,10 @@ func TestPush(t *testing.T) {
    ]
 }`
 
-		svr, cli := newTestServer(t, eventHandler(func(body []byte) int {
+		svr, cli := newTestServer(t, func(body []byte) int {
 			assert.JSONEq(t, wantJSON, string(body))
 			return 200
-		}))
+		})
 		defer svr.Close()
 
 		err := cli.Push(&okay.Event{

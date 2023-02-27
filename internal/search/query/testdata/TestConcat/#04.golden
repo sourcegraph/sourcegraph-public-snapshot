@@ -1,0 +1,19 @@
+[
+  {
+    "value": "(?:bar\\*).*?(?:foo\\d).*?(?:bar\\*).*?(?:foo\\d)",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 0
+      }
+    }
+  }
+]

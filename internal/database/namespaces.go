@@ -7,7 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,7 +31,7 @@ var (
 type NamespaceStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) NamespaceStore
-	Transact(ctx context.Context) (NamespaceStore, error)
+	WithTransact(context.Context, func(NamespaceStore) error) error
 	GetByID(ctx context.Context, orgID, userID int32) (*Namespace, error)
 	GetByName(ctx context.Context, name string) (*Namespace, error)
 }
@@ -41,12 +40,7 @@ type namespaceStore struct {
 	*basestore.Store
 }
 
-// Namespaces instantiates and returns a new NamespaceStore with prepared statements.
-func Namespaces(db dbutil.DB) NamespaceStore {
-	return &namespaceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore using the other store handle.
+// NamespacesWith instantiates and returns a new NamespaceStore using the other store handle.
 func NamespacesWith(other basestore.ShareableStore) NamespaceStore {
 	return &namespaceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -55,9 +49,10 @@ func (s *namespaceStore) With(other basestore.ShareableStore) NamespaceStore {
 	return &namespaceStore{Store: s.Store.With(other)}
 }
 
-func (s *namespaceStore) Transact(ctx context.Context) (NamespaceStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &namespaceStore{Store: txBase}, err
+func (s *namespaceStore) WithTransact(ctx context.Context, f func(NamespaceStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&namespaceStore{Store: tx})
+	})
 }
 
 // GetByID looks up the namespace by an ID.
@@ -125,7 +120,6 @@ func getNamespaceQuery(preds []*sqlf.Query) *sqlf.Query {
 }
 
 var namespaceQueryFmtstr = `
--- source: internal/database/namespaces.go:getNamespace
 SELECT
 	name,
 	COALESCE(user_id, 0) AS user_id,

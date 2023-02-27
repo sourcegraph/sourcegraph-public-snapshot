@@ -9,6 +9,8 @@ import (
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -66,33 +68,6 @@ query{
 			want: QueryCost{
 				FieldCount: 22,
 				MaxDepth:   3,
-			},
-		},
-		{
-			name: "Query with variables",
-			query: `
-query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
-                    extensionRegistry {
-                        extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
-                            nodes {
-                                id
-                                extensionID
-                                url
-                                manifest {
-                                    raw
-                                }
-                                viewerCanAdminister
-                            }
-                        }
-                    }
-                }
-`,
-			variables: map[string]any{
-				"first": 10,
-			},
-			want: QueryCost{
-				FieldCount: 62,
-				MaxDepth:   5,
 			},
 		},
 		{
@@ -556,11 +531,12 @@ func TestRatelimitFromConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rlw := &RateLimitWatcher{
-				store: store,
-			}
 
-			rlw.updateFromConfig(tc.config)
+			logger := logtest.Scoped(t)
+
+			rlw := NewRateLimiteWatcher(logger, store)
+
+			rlw.updateFromConfig(logger, tc.config)
 			rl, enabled := rlw.Get()
 
 			if tc.enabled != enabled {
@@ -612,8 +588,11 @@ func TestBasicLimiterEnabled(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			bl := BasicLimitWatcher{store: store}
-			bl.updateFromConfig(tt.limit)
+
+			logger := logtest.Scoped(t)
+
+			bl := NewBasicLimitWatcher(logger, store)
+			bl.updateFromConfig(logger, tt.limit)
 
 			_, enabled := bl.Get()
 
@@ -629,8 +608,11 @@ func TestBasicLimiter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bl := BasicLimitWatcher{store: store}
-	bl.updateFromConfig(1)
+
+	logger := logtest.Scoped(t)
+
+	bl := NewBasicLimitWatcher(logger, store)
+	bl.updateFromConfig(logger, 1)
 
 	limiter, enabled := bl.Get()
 	if !enabled {

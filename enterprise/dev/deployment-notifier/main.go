@@ -17,10 +17,11 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Flags struct {
@@ -49,8 +50,8 @@ var logger log.Logger
 
 func main() {
 	ctx := context.Background()
-	sync := log.Init(log.Resource{Name: "deployment-notifier"})
-	defer sync()
+	liblog := log.Init(log.Resource{Name: "deployment-notifier"})
+	defer liblog.Sync()
 	logger = log.Scoped("main", "a script that checks for deployment notifications")
 
 	flags := &Flags{}
@@ -116,7 +117,7 @@ func main() {
 	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
-	if !flags.DryRun {
+	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
@@ -127,17 +128,18 @@ func main() {
 		}
 		fmt.Println(out)
 		fmt.Println("Slack\n---")
-		out, err = slackSummary(ctx, teammates, report, traceURL)
+		presenter, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			logger.Fatal("can't render Slack post", log.Error(err))
 		}
-		fmt.Println(out)
+
+		fmt.Println(presenter.toString())
 	} else {
-		out, err := slackSummary(ctx, teammates, report, traceURL)
+		presenter, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			logger.Fatal("can't render Slack post", log.Error(err))
 		}
-		err = postSlackUpdate(flags.SlackAnnounceWebhook, out)
+		err = postSlackUpdate(flags.SlackAnnounceWebhook, presenter)
 		if err != nil {
 			logger.Fatal("can't post Slack update", log.Error(err))
 		}

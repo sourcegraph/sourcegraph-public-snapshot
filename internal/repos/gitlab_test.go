@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -138,17 +139,15 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
-				}),
+				})),
 			}
 
-			gitlabSrc, err := NewGitLabSource(svc, cf)
+			ctx := context.Background()
+			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -175,7 +174,11 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
@@ -203,10 +206,8 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGitLabSource(&svc, test.schema, nil)
+			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -222,9 +223,11 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
+
+		src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +251,8 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
+
+				src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

@@ -1,19 +1,18 @@
 package graphqlbackend
 
 import (
-	"github.com/hexops/autogold"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/hexops/autogold/v2"
 
 	"context"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
@@ -21,13 +20,13 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 
 	type args struct {
 		repoName api.RepoName
-		opt      git.CommitsOptions
+		opt      gitserver.CommitsOptions
 	}
 	var (
 		callsMu sync.Mutex
 		calls   []args
 	)
-	gitCommitsFunc := func(ctx context.Context, db database.DB, repoName api.RepoName, opt git.CommitsOptions, perms authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	gitCommitsFunc := func(ctx context.Context, perms authz.SubRepoPermissionChecker, repoName api.RepoName, opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 		callsMu.Lock()
 		calls = append(calls, args{repoName, opt})
 		callsMu.Unlock()
@@ -56,7 +55,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		{Name: "golang/go"},
 		{Name: "sourcegraph/sourcegraph"},
 	}
-	recentCommitters := gitserverParallelRecentCommitters(ctx, database.NewMockDB(), repos, gitCommitsFunc)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, repos, gitCommitsFunc)
 
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].repoName < calls[j].repoName
@@ -65,26 +64,26 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		return recentCommitters[i].name < recentCommitters[j].name
 	})
 
-	autogold.Want("calls", []args{
+	autogold.Expect([]args{
 		{
-			repoName: api.RepoName("golang/go"),
-			opt: git.CommitsOptions{
+			repoName: "golang/go",
+			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
 				NameOnly:         true,
 			},
 		},
 		{
-			repoName: api.RepoName("gorilla/mux"),
-			opt: git.CommitsOptions{
+			repoName: "gorilla/mux",
+			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
 				NameOnly:         true,
 			},
 		},
 		{
-			repoName: api.RepoName("sourcegraph/sourcegraph"),
-			opt: git.CommitsOptions{
+			repoName: "sourcegraph/sourcegraph",
+			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
 				NameOnly:         true,
@@ -92,7 +91,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		},
 	}).Equal(t, calls)
 
-	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
+	autogold.Expect([]*invitableCollaboratorResolver{
 		{
 			name:      "golang/go-jane",
 			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",

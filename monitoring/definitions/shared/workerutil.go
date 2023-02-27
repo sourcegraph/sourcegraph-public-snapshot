@@ -3,6 +3,8 @@ package shared
 import (
 	"fmt"
 
+	"github.com/prometheus/common/model"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -57,7 +59,7 @@ func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sha
 // Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
 func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -68,6 +70,30 @@ func (workerutilConstructor) Handlers(options ObservableConstructorOptions) shar
 			Owner:       owner,
 		}
 	}
+}
+
+// LastOverTime creates a workerutil-specific last-over-time aggregate for the error-rate metric.
+func (workerutilConstructor) LastOverTimeErrorRate(containerName string, lookbackWindow model.Duration, options ObservableConstructorOptions) string {
+	options.MetricNameRoot += "_processor"
+	return Standard.LastOverTimeErrorRate(containerName, lookbackWindow, options)
+}
+
+// QueueForwardProgress creates a queue-based workerutil-specific query that yields 0 when the queue is non-empty but the
+// number of processed records is zero.
+// Two series are requred: `src_{options.MetricNameRoot}_processor_handlers` for active handlers and `src_{options.MetricNameRoot}_total`
+// for queue size.
+func (workerutilConstructor) QueueForwardProgress(containerName string, handlerOptions, queueOptions ObservableConstructorOptions) string {
+	handlerFilters := makeFilters(handlerOptions.JobLabel, containerName, handlerOptions.Filters...)
+	handlerBy, _ := makeBy(handlerOptions.By...)
+
+	queueFilters := makeFilters(queueOptions.JobLabel, containerName, queueOptions.Filters...)
+	queueBy, _ := makeBy(queueOptions.By...)
+
+	return fmt.Sprintf(`
+		(sum%[1]s(src_%[2]s_processor_handlers{%[3]s}) OR vector(0)) == 0
+			AND
+		(sum%[4]s(src_%[5]s_total{%[6]s})) > 0
+	`, handlerBy, handlerOptions.MetricNameRoot, handlerFilters, queueBy, queueOptions.MetricNameRoot, queueFilters)
 }
 
 type WorkerutilGroupOptions struct {
@@ -118,7 +144,10 @@ func (workerutilConstructor) NewGroup(containerName string, owner monitoring.Obs
 	if len(row) == 5 {
 		// If we have all 5 metrics, put handlers on a row by itself first,
 		// followed by the standard observation group panels.
-		rows = []monitoring.Row{row[:1], row[1:]}
+		firstRow := monitoring.Row{row[0]}
+		secondRow := make(monitoring.Row, len(row[1:]))
+		copy(secondRow, row[1:])
+		rows = []monitoring.Row{firstRow, secondRow}
 	}
 
 	return monitoring.Group{

@@ -1,3 +1,0 @@
-package database
-
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -o mocks.go -i DB -i AccessTokenStore -i AuthzStore -i ConfStore -i EventLogStore -i SecurityEventLogsStore -i ExternalServiceStore -i FeatureFlagStore -i GlobalStateStore -i NamespaceStore -i OrgInvitationStore -i OrgMemberStore -i OrgStore -i PhabricatorStore -i RepoStore -i GitserverRepoStore -i GitserverLocalCloneStore -i SavedSearchStore -i SearchContextsStore -i SettingsStore -i SubRepoPermsStore -i TemporarySettingsStore -i UserCredentialsStore -i UserEmailsStore -i UserExternalAccountsStore -i UserPublicRepoStore -i UserStore -i WebhookLogStore

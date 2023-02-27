@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FormTriggerArea } from './FormTriggerArea'
 
@@ -12,6 +12,11 @@ describe('FormTriggerArea', () => {
 
     beforeAll(() => {
         clock = sinon.useFakeTimers()
+        Range.prototype.getClientRects = () => ({
+            length: 0,
+            item: () => null,
+            [Symbol.iterator]: [][Symbol.iterator],
+        })
     })
 
     afterAll(() => {
@@ -19,10 +24,25 @@ describe('FormTriggerArea', () => {
     })
 
     const testCases = [
-        { query: '', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: false },
-        { query: 'test', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: true },
+        {
+            query: '',
+            isSourcegraphDotCom: true,
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: false,
+        },
+        {
+            query: 'test',
+            isSourcegraphDotCom: true,
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
         {
             query: 'test patternType:literal',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -30,6 +50,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:regexp',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -37,6 +58,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:structural',
+            isSourcegraphDotCom: true,
             patternTypeChecked: false,
             typeChecked: false,
             repoChecked: false,
@@ -44,6 +66,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:repo',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -51,6 +74,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:diff',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -58,6 +82,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:commit',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -65,6 +90,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: true,
@@ -72,6 +98,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test type:diff',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: true,
@@ -88,8 +115,7 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
-                    isLightTheme={true}
-                    isSourcegraphDotCom={false}
+                    isSourcegraphDotCom={testCase.isSourcegraphDotCom}
                 />
             )
             userEvent.click(screen.getByTestId('trigger-button'))
@@ -112,10 +138,15 @@ describe('FormTriggerArea', () => {
             }
 
             const repoCheckbox = screen.getByTestId('repo-checkbox')
-            if (testCase.repoChecked) {
-                expect(repoCheckbox).toBeChecked()
+            if (testCase.isSourcegraphDotCom) {
+                const repoCheckbox = screen.getByTestId('repo-checkbox')
+                if (testCase.repoChecked) {
+                    expect(repoCheckbox).toBeChecked()
+                } else {
+                    expect(repoCheckbox).not.toBeChecked()
+                }
             } else {
-                expect(repoCheckbox).not.toBeChecked()
+                expect(repoCheckbox).not.toBeInTheDocument()
             }
 
             const validCheckbox = screen.getByTestId('valid-checkbox')
@@ -131,22 +162,15 @@ describe('FormTriggerArea', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByRole('textbox')
-        userEvent.type(triggerInput, 'test type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
@@ -156,22 +180,15 @@ describe('FormTriggerArea', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test patternType:regexp type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByRole('textbox')
-        userEvent.type(triggerInput, 'test patternType:regexp type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test patternType:regexp type:diff repo:test')

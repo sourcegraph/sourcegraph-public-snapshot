@@ -3,6 +3,7 @@
 exports[`LicenseExpirationAlert expired 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
     role="alert"
   >
@@ -33,14 +34,16 @@ exports[`LicenseExpirationAlert expired 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >
       <svg
+        aria-hidden="true"
         class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >
@@ -56,6 +59,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
 exports[`LicenseExpirationAlert expiring soon 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
     role="alert"
   >
@@ -86,14 +90,16 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >
       <svg
+        aria-hidden="true"
         class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >

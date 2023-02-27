@@ -2,50 +2,54 @@ package executorqueue
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
-func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
-	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
-	}
-
-	frontendOrigin, err := url.Parse(fmt.Sprintf("http://%s:%s/.internal/git", host, port))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct the origin for the internal frontend")
-	}
+func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
+	metricsStore := metricsstore.NewDistributedStore("executors:")
+	executorStore := db.Executors()
+	gitserverClient := gitserver.NewClient()
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
 		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
-		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch).
-		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
+		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
+		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
+		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 
 		// Serve the executor queue API.
-		handler.SetupRoutes(executorStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
+		handler.SetupRoutes(executorStore, metricsStore, queueHandlers, base.PathPrefix("/queue/").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
+		base.Path("/scip/upload").Methods("POST").Handler(uploadHandler)
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
+		base.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 
-		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+
+		// Make sure requests to these endpoints are treated as an internal actor.
+		// We treat executors as internal and the executor secret is an internal actor
+		// access token.
+		// Also ensure that proper executor authentication is provided.
+		return authMiddleware(accessToken, withInternalActor(base))
 	}
 
-	return factory, nil
+	return factory
 }
 
 // authMiddleware rejects requests that do not have a Authorization header set
@@ -85,6 +89,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 	if token == "" {
 		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
+		return false
 	}
 
 	if token != expectedAccessToken {
@@ -94,3 +99,16 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 
 	return true
 }
+
+// withInternalActor ensures that the request handling is running as an internal actor.
+func withInternalActor(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
+	})
+}
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

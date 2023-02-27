@@ -46,8 +46,11 @@
     background-color: var(--purple);
 }
 
-.filter-badge {
+.panel-preview {
     margin-left: 0.5rem;
+}
+
+.filter-badge {
     border-radius: var(--border-radius);
     background-color: var(--subtle-bg);
     padding: 0 0.25rem;

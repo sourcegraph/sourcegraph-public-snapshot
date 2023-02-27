@@ -2,11 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, Link, H4, Text } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
-
-import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 
 import styles from './BatchChangesListIntro.module.scss'
 
@@ -17,13 +15,13 @@ export interface BatchChangesListIntroProps {
 export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChildren<BatchChangesListIntroProps>> = ({
     isLicensed,
 }) => {
-    if (isLicensed === undefined) {
+    if (isLicensed === undefined || isLicensed === true) {
         return null
     }
 
     return (
         <div className="row">
-            {isLicensed === true ? (
+            {/* {isLicensed === true ? (
                 <div className="col-12">
                     <BatchChangesChangelogAlert />
                 </div>
@@ -36,7 +34,11 @@ export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChild
                         <BatchChangesChangelogAlert />
                     </div>
                 </>
-            )}
+            )} */}
+
+            <div className="col-12">
+                <BatchChangesUnlicensedAlert />
+            </div>
         </div>
     )
 }
@@ -48,15 +50,15 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildr
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                 <div>
-                    <h4>Batch changes trial</h4>
-                    <p>
+                    <H4>Batch changes trial</H4>
+                    <Text>
                         Batch changes is a paid feature of Sourcegraph. All users can create sample batch changes with
                         up to five changesets without a license.
-                    </p>
-                    <p className="mb-0">
+                    </Text>
+                    <Text className="mb-0">
                         <Link to="https://about.sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial
                         license.
-                    </p>
+                    </Text>
                 </div>
             </CardBody>
         </Card>

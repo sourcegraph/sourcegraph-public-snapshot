@@ -7,10 +7,6 @@
     :global(.alert) {
         margin-bottom: 0.5rem;
     }
-
-    :global(.mdi-icon) {
-        margin-right: 0.125rem;
-    }
 }
 
 .nav-item:last-child {
@@ -48,4 +44,8 @@
 .expander {
     display: block;
     flex-grow: 1;
+}
+
+.filters-button {
+    background-color: var(--sidebar-bg);
 }

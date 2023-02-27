@@ -1,16 +1,26 @@
-import React, { DOMAttributes, useRef, useState } from 'react'
+import { FC, RefObject, useRef, useState } from 'react'
 
+import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
-import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    PopoverTail,
+    Position,
+    createRectangle,
+    FormChangeEvent,
+    SubmissionResult,
+} from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
-import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
+    DrillDownFiltersFormValues,
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
-    DrillDownFiltersFormValues,
     DrillDownInsightFilters,
     FilterSectionVisualMode,
     hasActiveFilters,
@@ -18,21 +28,20 @@ import {
 
 import styles from './DrillDownFiltersPopover.module.scss'
 
-const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
+const POPOVER_TARGET_PADDING = createRectangle(0, 0, 4, 4)
+const POPOVER_CONTAINER_PADDING = { top: 58 }
+
 interface DrillDownFiltersPopoverProps {
     isOpen: boolean
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
-    anchor: React.RefObject<HTMLElement>
+    isNumSamplesFilterAvailable: boolean
+    anchor: RefObject<HTMLElement>
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
 }
-
-// To prevent grid layout position change animation. Attempts to drag
-// the filter panel should not trigger react-grid-layout events.
-const handleMouseDown: DOMAttributes<HTMLElement>['onMouseDown'] = event => event.stopPropagation()
 
 export enum DrillDownFiltersStep {
     Filters = 'filters',
@@ -44,14 +53,13 @@ const STEP_STYLES = {
     [DrillDownFiltersStep.ViewCreation]: styles.popoverWithViewCreation,
 }
 
-export const DrillDownFiltersPopover: React.FunctionComponent<
-    React.PropsWithChildren<DrillDownFiltersPopoverProps>
-> = props => {
+export const DrillDownFiltersPopover: FC<DrillDownFiltersPopoverProps> = props => {
     const {
         isOpen,
         anchor,
         initialFiltersValue,
         originalFiltersValue,
+        isNumSamplesFilterAvailable,
         onVisibilityChange,
         onFilterChange,
         onFilterSave,
@@ -69,6 +77,12 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         }
     }
 
+    const handleCreateInsight = (values: DrillDownInsightCreationFormValues): void => {
+        setStep(DrillDownFiltersStep.Filters)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        onInsightCreate(values)
+    }
+
     return (
         <Popover isOpen={isOpen} anchor={anchor} onOpenChange={event => onVisibilityChange(event.isOpen)}>
             <PopoverTrigger
@@ -77,26 +91,35 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                 variant="icon"
                 type="button"
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
-                className={classNames('btn-icon p-1', styles.filterButton, {
+                className={classNames('p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
             >
-                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
+                <Icon
+                    className={styles.filterIcon}
+                    svgPath={mdiFilterOutline}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1rem"
+                    width="1rem"
+                />
             </PopoverTrigger>
 
             <PopoverContent
-                targetPadding={POPOVER_PADDING}
-                constrainToScrollParents={true}
                 position={Position.rightStart}
+                constrainToScrollParents={true}
+                targetPadding={POPOVER_TARGET_PADDING}
+                constraintPadding={POPOVER_CONTAINER_PADDING}
                 aria-label="Drill-down filters panel"
-                onMouseDown={handleMouseDown}
                 className={classNames(styles.popover, STEP_STYLES[step])}
+                onKeyDown={event => event.stopPropagation()}
             >
                 {step === DrillDownFiltersStep.Filters && (
                     <DrillDownInsightFilters
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
+                        isNumSamplesFilterAvailable={isNumSamplesFilterAvailable}
                         visualMode={FilterSectionVisualMode.CollapseSections}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
@@ -106,11 +129,13 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
 
                 {step === DrillDownFiltersStep.ViewCreation && (
                     <DrillDownInsightCreationForm
-                        onCreateInsight={onInsightCreate}
+                        onCreateInsight={handleCreateInsight}
                         onCancel={() => setStep(DrillDownFiltersStep.Filters)}
                     />
                 )}
             </PopoverContent>
+
+            <PopoverTail size="sm" />
         </Popover>
     )
 }

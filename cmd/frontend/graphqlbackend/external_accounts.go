@@ -6,10 +6,16 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	gext "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit/externalaccount"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -20,7 +26,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 	ClientID    *string
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all external accounts.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +55,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -121,19 +127,58 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	account, err := database.ExternalAccounts(r.db).Get(ctx, id)
+	account, err := r.db.UserExternalAccounts().Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, account.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, account.UserID); err != nil {
 		return nil, err
 	}
 
-	if err := database.ExternalAccounts(r.db).Delete(ctx, account.ID); err != nil {
+	deleteOpts := database.ExternalAccountsDeleteOptions{IDs: []int32{account.ID}}
+	if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
 		return nil, err
 	}
+
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		UserIDs: []int32{account.UserID},
+	})
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
+	ServiceType    string
+	ServiceID      string
+	AccountDetails string
+}) (*EmptyResponse, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() || a.IsInternal() {
+		return nil, auth.ErrNotAuthenticated
+	}
+
+	switch args.ServiceType {
+	case extsvc.TypeGerrit:
+		err := gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		if err != nil {
+			return nil, err
+		}
+
+	case auth.SourcegraphOperatorProviderType:
+		err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to add Sourcegraph Operator external account")
+		}
+
+	default:
+		return nil, errors.Newf("unsupported service type %q", args.ServiceType)
+	}
+
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		UserIDs: []int32{a.UID},
+	})
 
 	return &EmptyResponse{}, nil
 }

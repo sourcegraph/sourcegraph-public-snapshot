@@ -2,59 +2,55 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Store struct {
-	*basestore.Store
+// Store provides the interface for package dependencies storage.
+type Store interface {
+	ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error)
+	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
+	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
+	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
+}
+
+// store manages the database tables for package dependencies.
+type store struct {
+	db         *basestore.Store
 	operations *operations
 }
 
-func newStore(db dbutil.DB, op *operations) *Store {
-	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: op,
+// New returns a new store.
+func New(op *observation.Context, db database.DB) *store {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
+		operations: newOperations(op),
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store:      s.Store.With(other),
-		operations: s.operations,
-	}
-}
-
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Store{
-		Store:      txBase,
-		operations: s.operations,
-	}, nil
-}
-
+// ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
-	Scheme      string
-	Name        string
-	After       int
-	Limit       int
-	NewestFirst bool
+	Scheme        string
+	Name          reposource.PackageName
+	ExactNameOnly bool
+	After         int
+	Limit         int
 }
 
-func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
+// ListDependencyRepos returns dependency repositories to be synced by gitserver.
+func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error) {
 	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -64,107 +60,319 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
-	sortDirection := "ASC"
-	if opts.NewestFirst {
-		sortDirection = "DESC"
+	depReposMap := basestore.NewOrderedMap[int, shared.PackageRepoReference]()
+	scanner := basestore.NewKeyedCollectionScanner[int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
+		dep, err := scanDependencyRepo(s)
+		return dep.ID, dep, err
+	}, dependencyVersionsReducer{})
+
+	query := sqlf.Sprintf(
+		listDependencyReposQuery,
+		sqlf.Sprintf("lr.id, lr.scheme, lr.name, prv.id, prv.package_id, prv.version"),
+		sqlf.Join([]*sqlf.Query{makeListDependencyReposConds(opts), makeOffset(opts.After)}, "AND"),
+		sqlf.Sprintf("ORDER BY id ASC"),
+		makeLimit(opts.Limit),
+		sqlf.Sprintf("JOIN package_repo_versions prv ON lr.id = prv.package_id"),
+		sqlf.Sprintf("ORDER BY lr.id ASC"),
+	)
+	err = scanner(s.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error listing dependency repos")
 	}
 
-	return scanDependencyRepos(s.Query(ctx, sqlf.Sprintf(
+	query = sqlf.Sprintf(
 		listDependencyReposQuery,
-		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(sortDirection),
-		makeLimit(opts.Limit),
-	)))
+		sqlf.Sprintf("COUNT(lr.id)"),
+		makeListDependencyReposConds(opts),
+		sqlf.Sprintf(""),
+		sqlf.Sprintf("LIMIT ALL"),
+		sqlf.Sprintf(""),
+		sqlf.Sprintf(""),
+	)
+	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error counting dependency repos")
+	}
+
+	dependencyRepos = depReposMap.Values()
+	return dependencyRepos, totalCount, err
+}
+
+type dependencyVersionsReducer struct{}
+
+func (dependencyVersionsReducer) Create() shared.PackageRepoReference {
+	return shared.PackageRepoReference{}
+}
+
+func (dependencyVersionsReducer) Reduce(collection shared.PackageRepoReference, value shared.PackageRepoReference) shared.PackageRepoReference {
+	value.Versions = append(collection.Versions, value.Versions...)
+	collection, value = value, collection
+	return collection
 }
 
 const listDependencyReposQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
-SELECT id, scheme, name, version
-FROM lsif_dependency_repos
-WHERE %s
-ORDER BY id %s
+SELECT %s
+FROM (
+	SELECT id, scheme, name
+	FROM lsif_dependency_repos
+	WHERE %s
+	%s %s
+) lr
+%s -- optional join
 %s
 `
 
-func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
-	conds := make([]*sqlf.Query, 0, 3)
-	conds = append(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
+func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
+	conds := make([]*sqlf.Query, 0, 2)
 
-	if opts.Name != "" {
+	if opts.Scheme != "" {
+		conds = append(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
+	}
+
+	if opts.Name != "" && opts.ExactNameOnly {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
-	}
-	if opts.After != 0 {
-		if opts.NewestFirst {
-			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-		} else {
-			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
-		}
+	} else if opts.Name != "" {
+		conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
 	}
 
-	return conds
+	if len(conds) > 0 {
+		return sqlf.Sprintf("%s", sqlf.Join(conds, "AND"))
+	}
+
+	return sqlf.Sprintf("TRUE")
 }
 
 func makeLimit(limit int) *sqlf.Query {
 	if limit == 0 {
-		return sqlf.Sprintf("")
+		return sqlf.Sprintf("LIMIT ALL")
 	}
-
 	return sqlf.Sprintf("LIMIT %s", limit)
 }
 
-// UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
-// did not exist previously are returned.
-func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
+func makeOffset(id int) *sqlf.Query {
+	if id > 0 {
+		return sqlf.Sprintf("id > %s", id)
+	}
+
+	return sqlf.Sprintf("TRUE")
+}
+
+// InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
+// [{npm, @types/nodejs, [v0.0.1]}, {npm, @types/nodejs, [v0.0.2]}] will be collapsed into [{npm, @types/nodejs, [v0.0.1, v0.0.2]}]
+func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error) {
 	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numDeps", len(deps)),
+		log.Int("numInputDeps", len(deps)),
 	}})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numNewDeps", len(newDeps)),
+			log.Int("newDependencies", len(newDeps)),
+			log.Int("newVersion", len(newVersions)),
+			log.Int("numDedupedDeps", len(deps)),
 		}})
 	}()
 
-	callback := func(inserter *batch.Inserter) error {
-		for _, dep := range deps {
-			if err := inserter.Insert(ctx, dep.Scheme, dep.Name, dep.Version); err != nil {
-				return err
-			}
-		}
-
-		return nil
+	if len(deps) == 0 {
+		return
 	}
 
-	returningScanner := func(rows dbutil.Scanner) error {
-		var dependencyRepo shared.Repo
-		if err = rows.Scan(
-			&dependencyRepo.ID,
-			&dependencyRepo.Scheme,
-			&dependencyRepo.Name,
-			&dependencyRepo.Version,
-		); err != nil {
-			return err
+	slices.SortStableFunc(deps, func(a, b shared.MinimalPackageRepoRef) bool {
+		if a.Scheme != b.Scheme {
+			return a.Scheme < b.Scheme
 		}
 
-		newDeps = append(newDeps, dependencyRepo)
-		return nil
+		return a.Name < b.Name
+	})
+
+	// first reduce
+	var lastCommon int
+	for i, dep := range deps[1:] {
+		if dep.Name == deps[lastCommon].Name && dep.Scheme == deps[lastCommon].Scheme {
+			deps[lastCommon].Versions = append(deps[lastCommon].Versions, dep.Versions...)
+			deps[i+1] = shared.MinimalPackageRepoRef{}
+		} else {
+			lastCommon = i + 1
+		}
 	}
 
-	err = batch.WithInserterWithReturn(
+	// then collapse
+	nonDupes := deps[:0]
+	for _, dep := range deps {
+		if dep.Name != "" && dep.Scheme != "" {
+			nonDupes = append(nonDupes, dep)
+		}
+	}
+	// replace the originals :wave
+	deps = nonDupes
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	for _, tempTableQuery := range []string{temporaryPackageRepoRefsTableQuery, temporaryPackageRepoRefVersionsTableQuery} {
+		if err := tx.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
+			return nil, nil, errors.Wrap(err, "failed to create temporary tables")
+		}
+	}
+
+	err = batch.WithInserter(
 		ctx,
-		s.Handle().DB(),
-		"lsif_dependency_repos",
+		tx.Handle(),
+		"t_package_repo_refs",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version"},
-		"ON CONFLICT DO NOTHING",
-		[]string{"id", "scheme", "name", "version"},
-		returningScanner,
-		callback,
+		[]string{"scheme", "name"},
+		func(inserter *batch.Inserter) error {
+			for _, pkg := range deps {
+				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 	)
-	return newDeps, err
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to insert package repos in temporary table")
+	}
+
+	newDeps, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (dep shared.PackageRepoReference, err error) {
+		err = rows.Scan(&dep.ID, &dep.Scheme, &dep.Name)
+		return
+	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefsQuery)))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
+	}
+
+	// we need the IDs of all newly inserted and already existing package repo references
+	// for all of the references in `deps`, so that we have the package repo reference ID that
+	// we need for the package repo reference versions table.
+	// We already have the IDs of newly inserted ones (in `newDeps`), but for simplicity we'll
+	// just search based on (scheme, name) tuple in `deps`.
+
+	// we slice into `deps`, which will continuously shrink as we batch based on the amount of
+	// postgres parameters we can fit. Divide by 2 because for each entry in the batch, we need 2 free params
+	const maxBatchSize = batch.MaxNumPostgresParameters / 2
+	remainingDeps := deps
+
+	allIDs := make([]int, 0, len(deps))
+
+	for len(remainingDeps) > 0 {
+		// avoid slice out of bounds nonsense
+		var batch []shared.MinimalPackageRepoRef
+		if len(remainingDeps) <= maxBatchSize {
+			batch, remainingDeps = remainingDeps, nil
+		} else {
+			batch, remainingDeps = remainingDeps[:maxBatchSize], remainingDeps[maxBatchSize:]
+		}
+
+		// dont over-allocate
+		max := maxBatchSize
+		if len(remainingDeps) < maxBatchSize {
+			max = len(remainingDeps)
+		}
+		params := make([]*sqlf.Query, 0, max)
+		for _, dep := range batch {
+			params = append(params, sqlf.Sprintf("(%s, %s)", dep.Scheme, dep.Name))
+		}
+
+		query := sqlf.Sprintf(
+			getAttemptedInsertDependencyReposQuery,
+			sqlf.Join(params, ", "),
+		)
+
+		allIDsWindow, err := basestore.ScanInts(tx.Query(ctx, query))
+		if err != nil {
+			return nil, nil, err
+		}
+		allIDs = append(allIDs, allIDsWindow...)
+	}
+
+	err = batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"t_package_repo_versions",
+		batch.MaxNumPostgresParameters,
+		[]string{"package_id", "version"},
+		func(inserter *batch.Inserter) error {
+			for i, dep := range deps {
+				for _, version := range dep.Versions {
+					if err := inserter.Insert(ctx, allIDs[i], version); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to insert package repo versions in temporary table")
+	}
+
+	newVersions, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (version shared.PackageRepoRefVersion, err error) {
+		err = rows.Scan(&version.ID, &version.PackageRefID, &version.Version)
+		return
+	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefVersionsQuery)))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
+	}
+
+	return newDeps, newVersions, err
 }
 
+const temporaryPackageRepoRefsTableQuery = `
+CREATE TEMPORARY TABLE t_package_repo_refs (
+	scheme TEXT NOT NULL,
+	name TEXT NOT NULL
+) ON COMMIT DROP
+`
+
+const temporaryPackageRepoRefVersionsTableQuery = `
+CREATE TEMPORARY TABLE t_package_repo_versions (
+	package_id BIGINT NOT NULL,
+	version TEXT NOT NULL
+) ON COMMIT DROP
+`
+
+const transferPackageRepoRefsQuery = `
+INSERT INTO lsif_dependency_repos (scheme, name)
+SELECT scheme, name
+FROM t_package_repo_refs t
+WHERE NOT EXISTS (
+	SELECT scheme, name
+	FROM lsif_dependency_repos
+	WHERE scheme = t.scheme AND
+	name = t.name
+)
+ORDER BY name
+RETURNING id, scheme, name
+`
+
+const transferPackageRepoRefVersionsQuery = `
+INSERT INTO package_repo_versions (package_id, version)
+-- we dont reduce package repo versions,
+-- so DISTINCT here to avoid conflict
+SELECT DISTINCT package_id, version
+FROM t_package_repo_versions t
+WHERE NOT EXISTS (
+	SELECT package_id, version
+	FROM package_repo_versions
+	WHERE package_id = t.package_id AND
+	version = t.version
+)
+-- unit tests rely on a certain order
+ORDER BY package_id, version
+RETURNING id, package_id, version
+`
+
+const getAttemptedInsertDependencyReposQuery = `
+SELECT id FROM lsif_dependency_repos
+WHERE (scheme, name) IN (VALUES %s)
+ORDER BY (scheme, name)
+`
+
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
-func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+func (s *store) DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
@@ -174,11 +382,23 @@ func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err 
 		return nil
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
 }
 
 const deleteDependencyReposByIDQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
 DELETE FROM lsif_dependency_repos
+WHERE id = ANY(%s)
+`
+
+func (s *store) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyRepoVersionsByID, pq.Array(ids)))
+}
+
+const deleteDependencyRepoVersionsByID = `
+DELETE FROM package_repo_versions
 WHERE id = ANY(%s)
 `

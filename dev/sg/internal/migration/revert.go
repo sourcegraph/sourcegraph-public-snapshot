@@ -26,20 +26,30 @@ func Revert(databases []db.Database, commit string) error {
 	}
 
 	redacted := false
-	for name, versions := range versionsByDatabase {
+	for dbName, versions := range versionsByDatabase {
 		if len(versions) == 0 {
 			continue
 		}
 		redacted = true
 
 		var (
-			database, _ = db.DatabaseByName(name)
+			database, _ = db.DatabaseByName(dbName)
 			upPaths     = make([]string, 0, len(versions))
 			downQueries = make([]string, 0, len(versions))
 		)
 
+		defs, err := readDefinitions(database)
+		if err != nil {
+			return err
+		}
+
 		for _, version := range versions {
-			files, err := makeMigrationFilenames(database, version)
+			def, ok := defs.GetByID(version)
+			if !ok {
+				return errors.Newf("could not find migration %d in database %q", version, dbName)
+			}
+
+			files, err := makeMigrationFilenames(database, version, def.Name)
 			if err != nil {
 				return err
 			}
@@ -65,7 +75,7 @@ func Revert(databases []db.Database, commit string) error {
 		}
 		block.Close()
 
-		if err := add(database, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
+		if err := AddWithTemplate(database, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
 			return err
 		}
 	}
@@ -81,11 +91,11 @@ func Revert(databases []db.Database, commit string) error {
 func selectMigrationsDefinedInCommit(database db.Database, commit string) ([]int, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
-	output, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)
+	gitCmdOutput, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	versions := parseVersions(strings.Split(output, "\n"), migrationsDir)
+	versions := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
 	return versions, nil
 }

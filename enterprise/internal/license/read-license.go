@@ -6,7 +6,7 @@
 //
 // EXAMPLE
 //
-//   go run ./read-license.go < license-file
+//	go run ./read-license.go < license-file
 package main
 
 import (

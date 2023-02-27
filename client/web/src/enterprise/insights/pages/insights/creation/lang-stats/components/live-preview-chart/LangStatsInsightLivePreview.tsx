@@ -1,24 +1,23 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components'
 import {
+    CategoricalBasedChartTypes,
+    CategoricalChart,
     LivePreviewBanner,
     LivePreviewBlurBackdrop,
     LivePreviewCard,
     LivePreviewChart,
     LivePreviewLoading,
     LivePreviewUpdateButton,
-    useLivePreview,
-    StateStatus,
-} from '../../../../../../components/creation-ui-kit'
-import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../../../../core'
+} from '../../../../../../components'
+import { CategoricalChartContent } from '../../../../../../core'
+import { LivePreviewStatus, useLivePreviewLangStatsInsight } from '../../../../../../core/hooks/live-preview-insight'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
 
-export interface LangStatsInsightLivePreviewProps {
+export interface LangStatsInsightLivePreviewProps extends HTMLAttributes<HTMLElement> {
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
@@ -27,48 +26,37 @@ export interface LangStatsInsightLivePreviewProps {
     disabled?: boolean
     repository: string
     threshold: number
-    className?: string
 }
 
 /**
  * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
-export const LangStatsInsightLivePreview: React.FunctionComponent<
-    React.PropsWithChildren<LangStatsInsightLivePreviewProps>
-> = props => {
-    const { repository = '', threshold, disabled = false, className } = props
-    const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
+export const LangStatsInsightLivePreview: FC<LangStatsInsightLivePreviewProps> = props => {
+    const { repository = '', threshold, disabled = false, ...attributes } = props
 
     const settings = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
-        disabled,
+        skip: disabled,
     })
 
-    const getLivePreviewContent = useMemo(
-        () => ({
-            disabled: settings.disabled,
-            fetcher: () => getLangStatsInsightContent(settings),
-        }),
-        [settings, getLangStatsInsightContent]
-    )
-
-    const { state, update } = useLivePreview(getLivePreviewContent)
+    const debouncedSettings = useDebounce(settings, 500)
+    const { state, refetch } = useLivePreviewLangStatsInsight(debouncedSettings)
 
     return (
-        <aside className={className}>
-            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
+        <aside {...attributes}>
+            <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
             <LivePreviewCard>
-                {state.status === StateStatus.Loading ? (
+                {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
-                ) : state.status === StateStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                ) : state.status === LivePreviewStatus.Error ? (
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
-                            state.status === StateStatus.Data ? (
+                            state.status === LivePreviewStatus.Data ? (
                                 <CategoricalChart
                                     type={CategoricalBasedChartTypes.Pie}
                                     width={parent.width}

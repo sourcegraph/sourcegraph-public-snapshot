@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -15,13 +16,14 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
+func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -30,6 +32,25 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Sym
 		defer threadStatus.Tasklog.Print()
 	}
 	defer threadStatus.End()
+
+	if args.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, args.Timeout)
+		defer cancel()
+		defer func() {
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) &&
+				!errors.Is(err, context.DeadlineExceeded) {
+				return
+			}
+
+			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)).")
+			for _, status := range s.status.threadIdToThreadStatus {
+				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
+					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
+				}
+			}
+		}()
+	}
 
 	// Acquire a read lock on the repo.
 	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
@@ -60,41 +81,65 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Sym
 	if err != nil {
 		return nil, err
 	} else if !present {
-
 		// Try to send an index request.
 		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
 		if err != nil {
 			return nil, err
 		}
 
-		// Wait for indexing to complete or the request to be canceled.
-		threadStatus.Tasklog.Start("awaiting indexing completion")
-		select {
-		case <-done:
-			threadStatus.Tasklog.Start("recheck commit presence")
-			commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
-			if err != nil {
-				return nil, err
-			}
-			if !present {
-				return nil, errors.Newf("indexing failed, check server logs")
-			}
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
+		if s.searchLastIndexedCommit {
+			found := false
+			threadStatus.Tasklog.Start("RevList")
+			err = s.git.RevList(ctx, repo, commitHash, func(commitHash string) (shouldContinue bool, err error) {
+				defer threadStatus.Tasklog.Continue("RevList")
 
+				threadStatus.Tasklog.Start("GetCommitByHash")
+				id, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return false, err
+				} else if present {
+					found = true
+					commit = id
+					args.CommitID = api.CommitID(commitHash)
+					return false, nil
+				}
+				return true, nil
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "RevList")
+			}
+			if !found {
+				return nil, context.DeadlineExceeded
+			}
+		} else {
+			// Wait for indexing to complete or the request to be canceled.
+			threadStatus.Tasklog.Start("awaiting indexing completion")
+			select {
+			case <-done:
+				threadStatus.Tasklog.Start("recheck commit presence")
+				commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return nil, err
+				}
+				if !present {
+					return nil, errors.Newf("indexing failed, check server logs")
+				}
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
 	}
 
 	// Finally search.
 	symbols, err := s.querySymbols(ctx, args, repoId, commit, threadStatus)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "querySymbols")
 	}
 
 	return symbols, nil
 }
 
-func mkIsMatch(args types.SearchArgs) (func(string) bool, error) {
+func mkIsMatch(args search.SymbolsParameters) (func(string) bool, error) {
 	if !args.IsRegExp {
 		if args.IsCaseSensitive {
 			return func(symbol string) bool { return strings.Contains(symbol, args.Query) }, nil
@@ -164,8 +209,8 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
-	db := database.NewDB(s.db)
+func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameters, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
+	db := database.NewDB(s.logger, s.db)
 	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
@@ -209,32 +254,32 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 		return nil, err
 	}
 
-	pathSet := map[string]struct{}{}
+	paths := goset.NewSet[string]()
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		pathSet[path] = struct{}{}
+		paths.Add(path)
 	}
 
 	stopErr := errors.New("stop iterating")
 
 	symbols := []result.Symbol{}
 
-	parse := s.createParser()
+	parser, err := s.createParser()
+	if err != nil {
+		return nil, errors.Wrap(err, "create parser")
+	}
+	defer parser.Close()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
-	paths := []string{}
-	for path := range pathSet {
-		paths = append(paths, path)
-	}
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
+	err = archiveEach(ctx, s.fetcher, string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")
-		allSymbols, err := parse(path, contents)
+		allSymbols, err := parser.Parse(path, contents)
 		if err != nil {
 			return err
 		}
@@ -243,12 +288,12 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
-				if symbol.Line < 0 || symbol.Line >= len(lines) {
+				if symbol.Line < 1 || symbol.Line > len(lines) {
 					log15.Warn("ctags returned an invalid line number", "path", path, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Name)
 					continue
 				}
 
-				character := strings.Index(lines[symbol.Line], symbol.Name)
+				character := strings.Index(lines[symbol.Line-1], symbol.Name)
 				if character == -1 {
 					// Could not find the symbol in the line. ctags doesn't always return the right line.
 					character = 0
@@ -257,7 +302,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 				symbols = append(symbols, result.Symbol{
 					Name:      symbol.Name,
 					Path:      path,
-					Line:      symbol.Line,
+					Line:      symbol.Line - 1,
 					Character: character,
 					Kind:      symbol.Kind,
 					Parent:    symbol.Parent,
@@ -286,7 +331,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db database.DB, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
+func logQuery(ctx context.Context, db database.DB, args search.SymbolsParameters, q *sqlf.Query, duration time.Duration, symbols int) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)
@@ -376,7 +421,7 @@ func sqlEscapeQuotes(s string) string {
 	return strings.ReplaceAll(s, "'", "''")
 }
 
-func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
+func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 	// TODO support non regexp queries once the frontend supports it.
 
 	conjunctOrNils := []*sqlf.Query{}
@@ -516,20 +561,20 @@ func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralEquality(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 3 which is [begin, literal, end]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 3 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 3 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
+			if regex.Sub[1].Op == syntax.OpLiteral {
 				// ends with $
-				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
-					return string(regexp.Sub[1].Rune), true, nil
+				if regex.Sub[2].Op == syntax.OpEndLine || regex.Sub[2].Op == syntax.OpEndText {
+					return string(regex.Sub[1].Rune), true, nil
 				}
 			}
 		}
@@ -542,18 +587,18 @@ func isLiteralEquality(expr string) (string, bool, error) {
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralPrefix(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 2 which is [begin, literal]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 2 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
-				return string(regexp.Sub[1].Rune), true, nil
+			if regex.Sub[1].Op == syntax.OpLiteral {
+				return string(regex.Sub[1].Rune), true, nil
 			}
 		}
 	}

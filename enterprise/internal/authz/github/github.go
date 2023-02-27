@@ -3,14 +3,16 @@ package github
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -34,6 +36,10 @@ type Provider struct {
 	// soon as we have verified our approach works and is reliable, at which point the fix will
 	// become the default behaviour.
 	enableGithubInternalRepoVisibility bool
+
+	InstallationID *int64
+
+	db database.DB
 }
 
 type ProviderOptions struct {
@@ -43,12 +49,15 @@ type ProviderOptions struct {
 
 	BaseToken      string
 	GroupsCacheTTL time.Duration
+	IsApp          bool
+	DB             database.DB
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -69,6 +78,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
+		db: opts.DB,
 	}
 }
 
@@ -92,24 +102,20 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
-	required := p.requiredAuthScopes()
-	if len(required) == 0 {
-		return []string{}
+func (p *Provider) ValidateConnection(ctx context.Context) error {
+	required, ok := p.requiredAuthScopes()
+	if !ok {
+		return nil
 	}
 
 	client, err := p.client()
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Unable to get client: %v", err),
-		}
+		return errors.Wrap(err, "unable to get client")
 	}
 
 	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
-		}
+		return errors.Wrap(err, "additional OAuth scopes are required, but failed to get available scopes")
 	}
 
 	gotScopes := make(map[string]struct{})
@@ -117,22 +123,19 @@ func (p *Provider) ValidateConnection(ctx context.Context) []string {
 		gotScopes[gotScope] = struct{}{}
 	}
 
-	var problems []string
 	// check if required scopes are satisfied
-	for _, requiredScope := range required {
-		satisfiesScope := false
-		for _, s := range requiredScope.oneOf {
-			if _, found := gotScopes[s]; found {
-				satisfiesScope = true
-				break
-			}
-		}
-		if !satisfiesScope {
-			problems = append(problems, requiredScope.message)
+	satisfiesScope := false
+	for _, s := range required.oneOf {
+		if _, found := gotScopes[s]; found {
+			satisfiesScope = true
+			break
 		}
 	}
+	if !satisfiesScope {
+		return errors.New(required.message)
+	}
 
-	return problems
+	return nil
 }
 
 type requiredAuthScope struct {
@@ -142,32 +145,30 @@ type requiredAuthScope struct {
 	message string
 }
 
-func (p *Provider) requiredAuthScopes() []requiredAuthScope {
-	scopes := []requiredAuthScope{}
-
-	if p.groupsCache != nil {
-		// Needs extra scope to pull group permissions
-		scopes = append(scopes, requiredAuthScope{
-			oneOf: []string{"read:org", "write:org", "admin:org"},
-			message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
-				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
-				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
-		})
+func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
+	if p.groupsCache == nil {
+		return requiredAuthScope{}, false
 	}
 
-	return scopes
+	// Needs extra scope to pull group permissions
+	return requiredAuthScope{
+		oneOf: []string{"read:org", "write:org", "admin:org"},
+		message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
+			"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
+			"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+	}, true
 }
 
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-	client = client.WithToken(token)
+	client = client.WithAuthenticator(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -217,7 +218,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
 		if err != nil {
 			return perms, errors.Wrap(err, "list repos for user")
 		}
@@ -239,6 +240,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
 
+	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
 		// If this is a partial cache, add self to group
@@ -252,7 +255,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			}
 			if !hasUser {
 				group.Users = append(group.Users, accountID)
-				p.groupsCache.setGroup(group)
+				if err := p.groupsCache.setGroup(group); err != nil {
+					logger.Warn("setting group", log.Error(err))
+				}
 			}
 		}
 
@@ -275,15 +280,17 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			} else {
 				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
-			if github.IsNotFound(err) {
-				// If we get a 404 here, something funky is going on and this is very
-				// unexpected. Since this is likely not transient, instead of bailing out
-				// and potentially causing unbounded retries later, we let this result
-				// proceed to cache. This is safe because the cache will eventually get
-				// invalidated, at which point we can retry this group, or a sync can be
-				// triggered that marks the cached group as invalidated.
-				log15.Debug("list repos for group: unexpected 404, persisting to cache",
-					"error", err)
+			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StatusForbidden {
+				// If we get a 403/404 here, something funky is going on and this is very
+				// unexpected. Since this is likely not transient, instead of bailing out and
+				// potentially causing unbounded retries later, we let this result proceed to
+				// cache. This is safe because the cache will eventually get invalidated, at
+				// which point we can retry this group, or a sync can be triggered that marks the
+				// cached group as invalidated. GitHub sometimes returns 403 when requesting team
+				// or org information when the token is not allowed to see it, so we treat it the
+				// same as 404.
+				logger.Debug("list repos for group: unexpected 403/404, persisting to cache",
+					log.Error(err))
 			} else if err != nil {
 				// Add and return what we've found on this page but don't persist group
 				// to cache
@@ -301,7 +308,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 
 		// Persist repos affiliated with group to cache
-		p.groupsCache.setGroup(group)
+		if err := p.groupsCache.setGroup(group); err != nil {
+			logger.Warn("setting group", log.Error(err))
+		}
 	}
 
 	return perms, nil
@@ -323,20 +332,26 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(&account.AccountData)
+	_, tok, err := github.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	} else if tok == nil {
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), tok.AccessToken, opts)
-}
+	oauthToken := &auth.OAuthBearerToken{
+		Token:        tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
+	}
 
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, "", token, opts)
+	if p.InstallationID != nil && p.db != nil {
+		// Only used if created by newAppProvider
+		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
+		oauthToken.NeedsRefreshBuffer = 5
+	}
+
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -422,7 +437,12 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		for _, u := range users {
-			addUserToRepoPerms(extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
+			userID := strconv.FormatInt(u.DatabaseID, 10)
+			if p.InstallationID != nil {
+				userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
+			}
+
+			addUserToRepoPerms(extsvc.AccountID(userID))
 		}
 	}
 

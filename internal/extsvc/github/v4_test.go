@@ -11,7 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -197,12 +200,11 @@ func TestCreatePullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "CreatePullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only
-	// open a pull request once. To update, push two new branches to
-	// automation-testing, and put their branch names into the `success` and
-	// `draft-pr` cases below.
+	// The requests here cannot be easily rerun with `-update` since you can only open a
+	// pull request once. To update, push two new branches with at least one commit each to
+	// automation-testing, and put the branch names into the `success` and 'draft-pr' cases below.
 	//
 	// You can update just this test with `-update CreatePullRequest`.
 	for i, tc := range []struct {
@@ -216,7 +218,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-8",
+				HeadRefName:  "test-pr-12",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -227,8 +229,8 @@ func TestCreatePullRequest(t *testing.T) {
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
 				HeadRefName:  "always-open-pr",
-				Title:        "This is a test PR that is always open",
-				Body:         "Feel free to ignore this. This is a test PR that is always open.",
+				Title:        "This is a test PR that is always open (keep it open!)",
+				Body:         "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
 			},
 			err: ErrPullRequestAlreadyExists.Error(),
 		},
@@ -247,7 +249,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-9",
+				HeadRefName:  "test-pr-13",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -282,20 +284,49 @@ func TestCreatePullRequest(t *testing.T) {
 	}
 }
 
+func TestCreatePullRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newV4Client(t, "CreatePullRequest_Archived")
+	defer save()
+
+	// Repository used: sourcegraph-testing/archived
+	//
+	// This test can be updated at any time with `-update`, provided
+	// `sourcegraph-testing/archived` is still archived.
+	//
+	// You can update just this test with `-update CreatePullRequest_Archived`.
+	input := &CreatePullRequestInput{
+		RepositoryID: "R_kgDOHpFg8A",
+		BaseRefName:  "main",
+		HeadRefName:  "branch-without-pr",
+		Title:        "This is a PR that will never open",
+		Body:         "This PR should not be open, as the repository is supposed to be archived!",
+	}
+
+	pr, err := cli.CreatePullRequest(ctx, input)
+	assert.Nil(t, pr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+
+	testutil.AssertGolden(t,
+		"testdata/golden/CreatePullRequest_Archived",
+		update("CreatePullRequest_Archived"),
+		pr,
+	)
+}
+
 func TestClosePullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "ClosePullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update ClosePullRequest`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/44 must be open.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/29 must be
 	//    closed, but _not_ merged.
-	//
-	// You can update just this test with `-update ClosePullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -346,17 +377,14 @@ func TestReopenPullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "ReopenPullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update ReopenPullRequest`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/355 must be
 	//    open.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/356 must be
 	//    closed, but _not_ merged.
-	//
-	// You can update just this test with `-update ReopenPullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -397,17 +425,14 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	cli, save := newV4Client(t, "MarkPullRequestReadyForReview")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update MarkPullRequestReadyForReview`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/467 must be
 	//    open as a draft.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/466 must be
 	//    open and ready for review.
-	//
-	// You can update just this test with `-update MarkPullRequestReadyForReview`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -465,8 +490,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/465
-			ID: "PR_kwDODS5xec4waLb5",
+			// https://github.com/sourcegraph/automation-testing/pull/488
+			ID: "PR_kwDODS5xec5JaPkU",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)
@@ -498,6 +523,35 @@ func TestMergePullRequest(t *testing.T) {
 			err,
 		)
 	})
+}
+
+func TestUpdatePullRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newV4Client(t, "UpdatePullRequest_Archived")
+	defer save()
+
+	// Repository used: sourcegraph-testing/archived
+	//
+	// This test can be updated at any time with `-update`, provided
+	// `sourcegraph-testing/archived` is still archived.
+	//
+	// You can update just this test with `-update UpdatePullRequest_Archived`.
+	input := &UpdatePullRequestInput{
+		PullRequestID: "PR_kwDOHpFg8M47NV9e",
+		Body:          "This PR should never have its body changed.",
+	}
+
+	pr, err := cli.UpdatePullRequest(ctx, input)
+	assert.Nil(t, pr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+
+	testutil.AssertGolden(t,
+		"testdata/golden/UpdatePullRequest_Archived",
+		update("UpdatePullRequest_Archived"),
+		pr,
+	)
 }
 
 func TestEstimateGraphQLCost(t *testing.T) {
@@ -659,7 +713,7 @@ func TestRecentCommitters(t *testing.T) {
 
 	testutil.AssertGolden(t,
 		"testdata/golden/RecentCommitters",
-		update("SearchRepos-Enterprise"),
+		update("RecentCommitters"),
 		recentCommitters,
 	)
 }
@@ -726,19 +780,19 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &V4Client{
+	oldClient := &V4Client{
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken)
-	if old == new {
+	newClient := oldClient.WithAuthenticator(newToken)
+	if oldClient == newClient {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.auth != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.auth)
+	if newClient.auth != newToken {
+		t.Fatalf("token: want %p but got %p", newToken, newClient.auth)
 	}
 }
 
@@ -988,4 +1042,21 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 	if !strings.Contains(query, wantIncluded) {
 		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
 	}
+}
+
+func TestClient_Releases(t *testing.T) {
+	cli, save := newV4Client(t, "Releases")
+	t.Cleanup(save)
+
+	releases, err := cli.Releases(context.Background(), &ReleasesParams{
+		Name:  "src-cli",
+		Owner: "sourcegraph",
+	})
+	assert.NoError(t, err)
+
+	testutil.AssertGolden(t,
+		"testdata/golden/Releases",
+		update("Releases"),
+		releases,
+	)
 }

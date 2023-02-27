@@ -95,7 +95,7 @@ async function main(): Promise<void> {
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
         observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
             if (previousSubscription) {
-                console.log('Sourcegraph detached code intelligence')
+                console.log('Sourcegraph detached code navigation')
                 previousSubscription.unsubscribe()
             }
 
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
                         await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
                     }
                 )
-                console.log('Sourcegraph attached code intelligence')
+                console.log('Sourcegraph attached code navigation')
             } catch (error) {
                 console.log('Sourcegraph code host integration stopped initialization. Reason:', error)
             }

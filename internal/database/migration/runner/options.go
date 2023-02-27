@@ -1,6 +1,10 @@
 package runner
 
 import (
+	"strings"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -13,17 +17,52 @@ type Options struct {
 	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
 	Parallel bool
 
-	// UnprivilegedOnly controls whether privileged migrations can run with the current user
-	// credentials, or if an error should be printed so the site admin can apply manulaly the
-	// privileged migration file with a superuser.
-	UnprivilegedOnly bool
+	// PrivilegedMode controls how privileged migrations are applied.
+	PrivilegedMode PrivilegedMode
+
+	// MatchPrivilegedHash is a function that matches a string indicating a deterministic hash
+	// of the set of privileged migrations that should be no-op'd against user-supplied strings
+	// given from a previous run with the same migration state. This value is only checked when
+	// running up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
+	MatchPrivilegedHash func(hash string) bool
 
 	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
 	// case when the _next_ migration application is the only failure. This is meant to enable
 	// a short development loop where the user can re-apply the `up` command without having to
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
+
+	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log in the
+	// specific case when the _next_ migration application is the only pending migration. This
+	// is meant to enable interruptable upgrades.
+	IgnoreSinglePendingLog bool
 }
+
+type PrivilegedMode uint
+
+func (m PrivilegedMode) Valid() bool {
+	return m < InvalidPrivilegedMode
+}
+
+const (
+	// ApplyPrivilegedMigrations, the default privileged mode, indicates to the runner that any
+	// privileged migrations should be applied along with unprivileged migrations.
+	ApplyPrivilegedMigrations PrivilegedMode = iota
+
+	// NoopPrivilegedMigrations, enabled via the -noop-privileged flag, indicates to the runner
+	// that any privileged migrations should be skipped, but an entry in the migration logs table
+	// should be added. This mode assumes that the user has already applied these migrations by hand.
+	NoopPrivilegedMigrations
+
+	// RefusePrivilegedMigrations, enabled via the -unprivileged-only flag, indicates to the runner
+	// that any privileged migrations should result in an error. This indicates to the user that
+	// these migrations need to be run by hand with elevated permissions before the migration can
+	// succeed.
+	RefusePrivilegedMigrations
+
+	// InvalidPrivilegedMode indicates an unsupported privileged mode state.
+	InvalidPrivilegedMode
+)
 
 type MigrationOperation struct {
 	SchemaName     string
@@ -56,10 +95,10 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `upgrade` to `targeted up` operation",
-		"schema", operation.SchemaName,
-		"leafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("leafVersions", leafVersions),
 	)
 
 	return MigrationOperation{
@@ -105,10 +144,10 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		}
 	}
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
-		"schema", operation.SchemaName,
-		"appliedLeafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("appliedLeafVersions", leafVersions),
 	)
 
 	switch len(leafVersions) {
@@ -129,7 +168,8 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 
 	case 0:
 		return MigrationOperation{}, errors.Newf("nothing to revert")
+
 	default:
-		return MigrationOperation{}, errors.Newf("ambiguous revert")
+		return MigrationOperation{}, errors.Newf("ambiguous revert - candidates include %s", strings.Join(intsToStrings(leafVersions), ", "))
 	}
 }

@@ -1,83 +1,140 @@
 import React from 'react'
 
-import classNames from 'classnames'
+import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
-import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
-import { Icon } from '@sourcegraph/wildcard'
+import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
+import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
+import { InfoDivider } from './InfoDivider'
+import { RepoName } from './RepoName'
+import { SearchResultHeader } from './SearchResultHeader'
+import { SearchResultLayout } from './SearchResultLayout'
+import { SelectableSearchResult } from './SelectableSearchResult'
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
-import { getIdForLine } from './utils'
-
-interface Props {
-    selectResultFromId: (id: string) => void
-    selectedResult: null | string
-    result: ContentMatch
-}
+import { getResultId } from './utils'
 
 import styles from './FileSearchResult.module.scss'
 
-export const FileSearchResult: React.FunctionComponent<Props> = ({
-    result,
-    selectedResult,
-    selectResultFromId,
-}: Props) => {
-    const lines = result.lineMatches.map(line => {
-        const key = getIdForLine(result, line)
-        const onClick = (): void => selectResultFromId(key)
-
-        return (
-            // The below element's accessibility is handled via a document level event listener.
-            //
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-            <div
-                id={`search-result-list-item-${key}`}
-                className={classNames(styles.line, {
-                    [styles.lineActive]: key === selectedResult,
-                })}
-                onMouseDown={preventAll}
-                onClick={onClick}
-                key={key}
+function renderResultElementsForContentMatch(
+    match: ContentMatch,
+    selectedResult: string | null,
+    selectResult: (resultId: string) => void,
+    openResult: (resultId: string) => void
+): JSX.Element[] {
+    return (
+        match.lineMatches?.map(line => (
+            <SelectableSearchResult
+                key={getResultId(match, line)}
+                lineOrSymbolMatch={line}
+                match={match}
+                selectedResult={selectedResult}
+                selectResult={selectResult}
+                openResult={openResult}
             >
-                <div className={styles.lineCode}>
-                    <TrimmedCodeLineWithHighlights line={line} />
-                </div>
-                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber}</div>
-            </div>
-        )
-    })
+                {isActive => (
+                    <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
+                        <TrimmedCodeLineWithHighlights line={line} />
+                    </SearchResultLayout>
+                )}
+            </SelectableSearchResult>
+        )) || []
+    )
+}
 
-    const repoDisplayName = result.repository
-    const repoAtRevisionURL = '#'
-    const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
+interface Props extends SettingsCascadeProps {
+    selectResult: (resultId: string) => void
+    selectedResult: null | string
+    match: ContentMatch | SymbolMatch
+    openResult: (resultId: string) => void
+}
+
+function renderResultElementsForSymbolMatch(
+    match: SymbolMatch,
+    selectedResult: string | null,
+    selectResult: (resultId: string) => void,
+    openResult: (resultId: string) => void,
+    settingsCascade: SettingsCascadeProps['settingsCascade']
+): JSX.Element[] {
+    return match.symbols.map(symbol => (
+        <SelectableSearchResult
+            key={getResultId(match, symbol)}
+            lineOrSymbolMatch={symbol}
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+            openResult={openResult}
+        >
+            {isActive => (
+                <SearchResultLayout className={styles.code} isActive={isActive}>
+                    <SymbolKind
+                        kind={symbol.kind}
+                        className="mr-1"
+                        symbolKindTags={
+                            isSettingsValid(settingsCascade) &&
+                            settingsCascade.final.experimentalFeatures?.symbolKindTags
+                        }
+                    />
+                    {symbol.name} {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                </SearchResultLayout>
+            )}
+        </SelectableSearchResult>
+    ))
+}
+
+export const FileSearchResult: React.FunctionComponent<Props> = ({
+    match,
+    selectedResult,
+    selectResult,
+    openResult,
+    settingsCascade,
+}: Props) => {
+    const lines =
+        match.type === 'content'
+            ? renderResultElementsForContentMatch(match, selectedResult, selectResult, openResult)
+            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult, settingsCascade)
+
+    const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
+
+    const onClick = (): void =>
+        lines.length
+            ? selectResult(
+                  getResultId(
+                      match,
+                      match.type === 'content'
+                          ? match.lineMatches
+                              ? match.lineMatches[0]
+                              : undefined
+                          : match.symbols[0]
+                  )
+              )
+            : undefined
 
     const title = (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div className={styles.header} onMouseDown={preventAll}>
-            <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
-                <Icon role="img" title="File" className="flex-shrink-0" as={FileDocumentIcon} />
-                <div className={classNames('mx-1', styles.headerDivider)} />
-                <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
-                <RepoFileLink
-                    repoName={result.repository}
-                    repoURL={repoAtRevisionURL}
-                    filePath={result.path}
-                    fileURL={getFileMatchUrl(result)}
-                    repoDisplayName={repoDisplayName}
-                    className={classNames('ml-1', 'flex-shrink-past-contents', 'text-truncate', styles.headerLink)}
-                />
-            </div>
-            {formattedRepositoryStarCount && (
-                <>
-                    <SearchResultStar />
-                    {formattedRepositoryStarCount}
-                </>
-            )}
-        </div>
+        <SearchResultHeader onClick={onClick}>
+            <SearchResultLayout
+                iconColumn={{
+                    icon: match.type === 'content' ? FileDocumentIcon : AlphaSBoxIcon,
+                    repoName: match.repository,
+                }}
+                infoColumn={
+                    formattedRepositoryStarCount && (
+                        <>
+                            <span className={styles.matches}>
+                                {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            </span>
+                            <InfoDivider />
+                            <SearchResultStar />
+                            {formattedRepositoryStarCount}
+                        </>
+                    )
+                }
+            >
+                <RepoName repoName={match.repository} suffix={match.path} />
+            </SearchResultLayout>
+        </SearchResultHeader>
     )
 
     return (
@@ -86,9 +143,4 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
             {lines}
         </>
     )
-}
-
-function preventAll(event: React.MouseEvent): void {
-    event.stopPropagation()
-    event.preventDefault()
 }

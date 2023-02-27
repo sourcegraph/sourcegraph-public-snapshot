@@ -3,6 +3,8 @@ package runner
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
@@ -28,36 +30,27 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 
-	logger.Info(
-		"Checked current schema state",
-		"schema", schemaContext.schema.Name,
-		"appliedVersions", extractIDs(byState.applied),
-		"pendingVersions", extractIDs(byState.pending),
-		"failedVersions", extractIDs(byState.failed),
+	logger := r.logger.With(
+		log.String("schema", schemaContext.schema.Name),
+	)
+
+	logger.Debug("Checked current schema state",
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
 
 	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
 	// to take an advisory lock and poll index creation status below.
 	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
-		logger.Info(
-			"Schema is in the expected state",
-			"schema", schemaContext.schema.Name,
-		)
-
+		logger.Debug("Schema is in the expected state")
 		return nil
 	}
 
-	logger.Warn(
-		"Schema not in expected state",
-		"schema", schemaContext.schema.Name,
-		"appliedVersions", extractIDs(byState.applied),
-		"pendingVersions", extractIDs(byState.pending),
-		"failedVersions", extractIDs(byState.failed),
-		"targetDefinitions", extractIDs(definitions),
-	)
-	logger.Info(
-		"Checking for active migrations",
-		"schema", schemaContext.schema.Name,
+	logger.Info("Schema is not in the expected state - checking for active migrations",
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
 
 	for {
@@ -81,18 +74,14 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		}
 	}
 
-	logger.Info(
-		"Schema is in the expected state",
-		"schema", schemaContext.schema.Name,
-	)
-
+	logger.Info("Schema is in the expected state")
 	return nil
 }
 
 // validateDefinitions attempts to take an advisory lock, then re-checks the version of the database.
 // If there are still migrations to apply from the given definitions, an error is returned.
 func (r *Runner) validateDefinitions(ctx context.Context, schemaContext schemaContext, definitions []definition.Definition) (retry bool, _ error) {
-	return r.withLockedSchemaState(ctx, schemaContext, definitions, false, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
+	return r.withLockedSchemaState(ctx, schemaContext, definitions, false, false, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
 		if len(byState.applied) != len(definitions) {
 			// Return an error if all expected schemas have not been applied
 			return newOutOfDateError(schemaContext, schemaVersion)

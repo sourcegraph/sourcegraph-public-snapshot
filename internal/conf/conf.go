@@ -10,10 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/jsonx"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -23,7 +24,6 @@ import (
 //
 // - The site configuration, from the database (from the site-admin panel).
 // - Service connections, from the frontend (e.g. which gitservers to talk to).
-//
 type Unified struct {
 	schema.SiteConfiguration
 	ServiceConnectionConfig conftypes.ServiceConnections
@@ -54,7 +54,25 @@ const (
 	modeEmpty
 )
 
+var (
+	cachedModeOnce sync.Once
+	cachedMode     configurationMode
+)
+
 func getMode() configurationMode {
+	cachedModeOnce.Do(func() {
+		cachedMode = getModeUncached()
+	})
+	return cachedMode
+}
+
+func getModeUncached() configurationMode {
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		// Single-program always uses the server mode because everything is running in the same
+		// process.
+		return modeServer
+	}
+
 	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {
@@ -89,8 +107,7 @@ func getMode() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	clientStore := defaultStore
-	defaultClient := &client{store: clientStore}
+	defaultClient := &client{store: newStore()}
 
 	mode := getMode()
 	// Don't kickoff the background updaters for the client/server
@@ -136,10 +153,10 @@ func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnif
 	return *c.entry, nil
 }
 
-func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
 	c.entryMu.Lock()
 	defer c.entryMu.Unlock()
-	if err := c.source.Write(ctx, input); err != nil {
+	if err := c.source.Write(ctx, input, lastID, authorUserID); err != nil {
 		return err
 	}
 	c.entry = &input
@@ -173,6 +190,10 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// and instead only relies on the DB.
 	DefaultClient().passthrough = source
 
+	// Notify the default client of updates to the source to ensure updates
+	// propagate quickly.
+	DefaultClient().sourceUpdates = server.sourceWrites
+
 	go DefaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
 
@@ -192,28 +213,35 @@ var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "$HOME/
 // cannot access the UI (for example by configuring auth in a way that locks them out)
 // they can simply edit this file in any of the frontend containers to undo the change.
 func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
+	if os.Getenv("NO_SITE_CONFIG_ESCAPE_HATCH") == "1" {
+		return
+	}
+
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
 
 	var (
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
+		lastKnownConfigID                          int32
+		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
 		// First, ensure we populate the file with what is currently in the DB.
 		for {
 			config, err := c.Read(ctx)
 			if err != nil {
-				log15.Error("config: failed to read config from database, trying again in 1s", "error", err)
+				logger.Warn("failed to read config from database, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
-				log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+				logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			lastKnownDBContents = config.Site
 			lastKnownFileContents = config.Site
+			lastKnownConfigID = config.ID
 			break
 		}
 
@@ -223,22 +251,28 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// we should propagate it to the database for them.
 			newFileContents, err := os.ReadFile(siteConfigEscapeHatchPath)
 			if err != nil {
-				log15.Error("config: failed to read site config from disk, trying again in 1s", "path", siteConfigEscapeHatchPath)
+				logger.Warn("failed to read site config from disk, trying again in 1s")
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if string(newFileContents) != lastKnownFileContents {
-				log15.Info("config: detected site config file edit, saving edit to database", "path", siteConfigEscapeHatchPath)
+				logger.Info("detected site config file edit, saving edit to database")
 				config, err := c.Read(ctx)
 				if err != nil {
-					log15.Error("config: failed to save edit to database, trying again in 1s (read error)", "error", err)
+					logger.Warn("failed to save edit to database, trying again in 1s (read error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
 				config.Site = string(newFileContents)
-				err = c.Write(ctx, config)
+
+				// NOTE: authorUserID is 0 because this code is on the start-up path and we will
+				// never have a non-nil actor available here to determine the user ID. This is
+				// consistent with the behaviour of site config creation via SITE_CONFIG_FILE.
+				//
+				// A value of 0 will be treated as null when writing to the the database for this column.
+				err = c.Write(ctx, config, lastKnownConfigID, 0)
 				if err != nil {
-					log15.Error("config: failed to save edit to database, trying again in 1s (write error)", "error", err)
+					logger.Warn("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
@@ -251,17 +285,18 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// process), and we should propagate it to the file on disk.
 			newDBConfig, err := c.Read(ctx)
 			if err != nil {
-				log15.Error("config: failed to read config from database(2), trying again in 1s (read error)", "error", err)
+				logger.Warn("failed to read config from database(2), trying again in 1s (read error)", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if newDBConfig.Site != lastKnownDBContents {
 				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
-					log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+					logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
 				lastKnownFileContents = newDBConfig.Site
+				lastKnownConfigID = newDBConfig.ID
 			}
 			time.Sleep(1 * time.Second)
 		}

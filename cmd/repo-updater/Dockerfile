@@ -3,15 +3,14 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS coursier
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS coursier
 
-# TODO(code-intel): replace with official streams when musl builds are upstreamed
-RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
-    unzip coursier.zip && \
-    mv cs-musl /usr/local/bin/coursier && \
+RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
+    gzip -d coursier.gz && \
+    mv coursier /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

@@ -13,6 +13,20 @@ const path = require('path')
 // ugly side effect. (This is especially evident when running tests in-band.)
 process.env.LANG = 'en_US.UTF-8'
 
+const ESM_NPM_DEPS = [
+  'abortable-rx',
+  '@sourcegraph/comlink',
+  'monaco-editor',
+  'monaco-yaml',
+  'marked',
+  'date-fns',
+  'react-sticky-box',
+  'uuid',
+  'vscode-languageserver-types',
+]
+  .join('|')
+  .replace(/\//g, '\\+')
+
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
@@ -25,12 +39,21 @@ const config = {
   coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.tsx?$/.source, /\.d\.ts$/.source],
   roots: ['<rootDir>/src'],
 
+  transform: { '\\.[jt]sx?$': ['babel-jest', { root: __dirname }] },
+
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
   // modules). If you get an error from jest like "Jest encountered an unexpected token. ... SyntaxError:
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: ['/node_modules/(?!abortable-rx|@sourcegraph/comlink|monaco-editor|marked)'],
+  transformIgnorePatterns: [
+    // packages within the root pnpm/rules_js package store
+    `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    // files under a subdir: eg. '/packages/lib-a/'
+    `(../)+node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    // packages nested within another
+    `node_modules/(?!.aspect_rules_js|.pnpm|${ESM_NPM_DEPS})`,
+  ],
 
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
@@ -44,7 +67,7 @@ const config = {
   },
   modulePaths: ['node_modules', '<rootDir>/src'],
 
-  // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
+  // By default, don't clutter `pnpm run test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],
 
@@ -53,9 +76,9 @@ const config = {
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
-    path.join(__dirname, 'client/shared/dev/mockPopper.ts'),
     path.join(__dirname, 'client/shared/dev/fetch'),
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
+    path.join(__dirname, 'client/shared/dev/mockDomRect.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
@@ -65,8 +88,12 @@ const config = {
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
+    path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
+  globals: {
+    Uint8Array,
+  },
 }
 
 module.exports = config

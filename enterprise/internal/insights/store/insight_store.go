@@ -9,10 +9,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,13 +22,14 @@ type InsightStore struct {
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
-func NewInsightStore(db dbutil.DB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+func NewInsightStore(db edb.InsightsDB) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+// NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.
+func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(other.Handle()), Now: time.Now}
+}
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
@@ -46,6 +47,7 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 type InsightQueryArgs struct {
 	UniqueIDs   []string
 	UniqueID    string
+	ExcludeIDs  []string
 	UserID      []int
 	OrgID       []int
 	DashboardID int
@@ -53,6 +55,7 @@ type InsightQueryArgs struct {
 	After    string
 	Limit    int
 	IsFrozen *bool
+	Find     string
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -103,6 +106,13 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
+	if len(args.ExcludeIDs) > 0 {
+		exclusions := make([]*sqlf.Query, 0, len(args.UniqueIDs))
+		for _, id := range args.ExcludeIDs {
+			exclusions = append(exclusions, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("iv.unique_id NOT IN (%s)", sqlf.Join(exclusions, ",")))
+	}
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
@@ -118,6 +128,9 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+	if args.Find != "" {
+		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
@@ -221,6 +234,16 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
+		var sortOptions *types.SeriesSortOptions
+		// TODO what only one of these is set? I think the idea is that they have to be set together, but it's not enforced
+		// in the database..
+		if seriesSet[0].SeriesSortMode != nil && seriesSet[0].SeriesSortDirection != nil {
+			sortOptions = &types.SeriesSortOptions{
+				Mode:      *seriesSet[0].SeriesSortMode,
+				Direction: *seriesSet[0].SeriesSortDirection,
+			}
+		}
+
 		results = append(results, types.Insight{
 			ViewID:          seriesSet[0].ViewID,
 			DashboardViewId: seriesSet[0].DashboardViewID,
@@ -236,6 +259,11 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
 			IsFrozen:         seriesSet[0].IsFrozen,
+			SeriesOptions: types.SeriesDisplayOptions{
+				SortOptions: sortOptions,
+				Limit:       seriesSet[0].SeriesLimit,
+				NumSamples:  seriesSet[0].SeriesNumSamples,
+			},
 		})
 	}
 
@@ -245,96 +273,17 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	return results
 }
 
-func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
-	q := sqlf.Sprintf(insertDirtyQuerySql, series.ID, query.Query, query.Reason, query.ForTime, s.Now())
-	return s.Exec(ctx, q)
-}
-
-// GetDirtyQueries returns up to 100 dirty queries for a given insight series.
-func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
-	// We are going to limit this for now to some fixed value, and in the future if necessary add pagination.
-	limit := 100
-	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID, limit)
-	return scanDirtyQueries(s.Query(ctx, q))
-}
-
-func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	results := make([]*types.DirtyQuery, 0)
-	for rows.Next() {
-		var temp types.DirtyQuery
-		if err := rows.Scan(
-			&temp.ID,
-			&temp.Query,
-			&temp.Reason,
-			&temp.ForTime,
-			&temp.DirtyAt,
-		); err != nil {
-			return nil, err
-		}
-		results = append(results, &temp)
-	}
-	return results, nil
-}
-
-// GetDirtyQueriesAggregated returns aggregated information about dirty queries for a given series.
-func (s *InsightStore) GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error) {
-	q := sqlf.Sprintf(getDirtyQueriesAggregatedSql, seriesID)
-	return scanDirtyQueriesAggregated(s.Query(ctx, q))
-}
-
-func scanDirtyQueriesAggregated(rows *sql.Rows, queryErr error) (_ []*types.DirtyQueryAggregate, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	results := make([]*types.DirtyQueryAggregate, 0)
-	for rows.Next() {
-		var temp types.DirtyQueryAggregate
-		if err := rows.Scan(
-			&temp.Count,
-			&temp.ForTime,
-			&temp.Reason,
-		); err != nil {
-			return nil, err
-		}
-		results = append(results, &temp)
-	}
-	return results, nil
-}
-
-const insertDirtyQuerySql = `
--- source: enterprise/internal/insights/store/insight_store.go:InsertDirtyQuery
-INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
-VALUES (%s, %s, %s, %s, %s);
-`
-
-const getDirtyQueriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueries
-select id, query, reason, for_time, dirty_at from insight_dirty_queries
-where insight_series_id = %s
-limit %s;`
-
-const getDirtyQueriesAggregatedSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueriesAggregated
-select count(*) as count, for_time, reason from insight_dirty_queries
-where insight_dirty_queries.insight_series_id = (select id from insight_series where series_id = %s)
-group by for_time, reason;
-`
-
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+	ID                  int
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
 	IncludeDeleted      bool
-	BackfillIncomplete  bool
+	BackfillNotQueued   bool
+	BackfillNotComplete bool
 	SeriesID            string
 	GlobalOnly          bool
+	ExcludeJustInTime   bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -352,19 +301,88 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
-	if args.BackfillIncomplete {
+	if args.BackfillNotQueued {
 		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	}
+	if args.BackfillNotComplete {
+		preds = append(preds, sqlf.Sprintf("backfill_completed_at IS NULL"))
 	}
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
+	if args.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
+	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
+		preds = append(preds, sqlf.Sprintf("((repositories IS NULL OR CARDINALITY(repositories) = 0) AND repository_criteria IS NULL)"))
+	}
+	if args.ExcludeJustInTime {
+		preds = append(preds, sqlf.Sprintf("just_in_time = false"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
 	return scanDataSeries(s.Query(ctx, q))
 }
+
+func (s *InsightStore) GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error) {
+	matchingSeries, err := s.GetDataSeries(ctx, GetDataSeriesArgs{ID: id, IncludeDeleted: false})
+	if err != nil {
+		return nil, err
+	}
+	switch len(matchingSeries) {
+	case 0:
+		return nil, errors.New("series not found")
+	case 1:
+		return &matchingSeries[0], nil
+	default:
+		return nil, errors.New("multiple series match id")
+	}
+}
+
+// GetScopedSearchSeriesNeedBackfill Is a special purpose func to get only just in time series that should
+// be converted to scoped backfilled insights
+func (s *InsightStore) GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error) {
+	preds := make([]*sqlf.Query, 0, 1)
+
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
+	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))
+	preds = append(preds, sqlf.Sprintf("generation_method !=  %s", "language-stats"))
+	preds = append(preds, sqlf.Sprintf("needs_migration = true"))
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scanDataSeries(s.Query(ctx, q))
+}
+
+// CompleteJustInTimeConversionAttempt is a special purpose func to convert a Just In Time search insight
+// to a scoped backfilled search insight
+func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+	nextRecording := interval.StepForwards(s.Now())
+	nextSnapshot := NextSnapshot(s.Now())
+
+	return s.Exec(ctx, sqlf.Sprintf(completeJustInTimeConversionAttemptSql, nextRecording, nextSnapshot, series.ID))
+
+}
+
+const completeJustInTimeConversionAttemptSql = `
+UPDATE insight_series
+SET just_in_time = false,
+    next_recording_after = %s,
+	next_snapshot_after = %s,
+	backfill_queued_at = now(),
+	needs_migration = false
+WHERE
+	id = %d
+	AND generation_method !='language-stats'
+	AND deleted_at is null;
+`
 
 func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
 	if queryErr != nil {
@@ -391,6 +409,11 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.GeneratedFromCaptureGroups,
 			&temp.JustInTime,
 			&temp.GenerationMethod,
+			pq.Array(&temp.Repositories),
+			&temp.GroupBy,
+			&temp.BackfillAttempts,
+			&temp.SupportsAugmentation,
+			&temp.RepositoryCriteria,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -435,6 +458,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.Description,
 			&temp.Label,
 			&temp.LineColor,
+			&temp.InsightSeriesID,
 			&temp.SeriesID,
 			&temp.Query,
 			&temp.CreatedAt,
@@ -456,6 +480,14 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GenerationMethod,
 			&temp.IsFrozen,
 			pq.Array(&temp.DefaultFilterSearchContexts),
+			&temp.SeriesSortMode,
+			&temp.SeriesSortDirection,
+			&temp.SeriesLimit,
+			&temp.SeriesNumSamples,
+			&temp.GroupBy,
+			&temp.BackfillAttempts,
+			&temp.SupportsAugmentation,
+			&temp.RepositoryCriteria,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -496,7 +528,8 @@ SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
 func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	series types.InsightSeries,
 	view types.InsightView,
-	metadata types.InsightViewSeriesMetadata) error {
+	metadata types.InsightViewSeriesMetadata,
+) error {
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
@@ -581,6 +614,10 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
+		view.SeriesSortMode,
+		view.SeriesSortDirection,
+		view.SeriesLimit,
+		view.SeriesNumSamples,
 		view.UniqueID,
 	))
 	var id int
@@ -616,7 +653,6 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 }
 
 const addViewGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
 INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
 VALUES %s;
 `
@@ -637,8 +673,25 @@ func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string
 }
 
 const deleteViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:DeleteView
 delete from insight_view where %s;
+`
+
+// IncrementBackfillAttempts increments backfill_attempts to track how many attempts at backfilling a series has taken.
+func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error {
+	return s.Exec(ctx, sqlf.Sprintf(incrementSeriesBackfillAttemptsSql, series.SeriesID))
+}
+
+const incrementSeriesBackfillAttemptsSql = `
+update insight_series set backfill_attempts = backfill_attempts + 1 where series_id = %s;
+`
+
+// StartJustInTimeConversionAttempt increments backfill_attempts and updates the created date and seriesID.
+func (s *InsightStore) StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
+	return s.Exec(ctx, sqlf.Sprintf(startJustInTimeConversionAttemptSql, series.CreatedAt, series.SeriesID, series.ID))
+}
+
+const startJustInTimeConversionAttemptSql = `
+update insight_series set backfill_attempts = backfill_attempts + 1, created_at=%s, series_id = %s where id = %d;
 `
 
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
@@ -679,6 +732,8 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.GeneratedFromCaptureGroups,
 		series.JustInTime,
 		series.GenerationMethod,
+		series.GroupBy,
+		series.RepositoryCriteria,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -687,6 +742,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	series.ID = id
 	series.Enabled = true
+	series.SupportsAugmentation = true
 	return series, nil
 }
 
@@ -695,13 +751,15 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
 	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
+	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
+	GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error)
+	CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
 }
 
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
-	GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error)
-	GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
@@ -761,12 +819,17 @@ type MatchSeriesArgs struct {
 	StepIntervalUnit          string
 	StepIntervalValue         int
 	GenerateFromCaptureGroups bool
+	GroupBy                   *string
 }
 
 func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
+	groupByClause := sqlf.Sprintf("group_by IS NULL")
+	if args.GroupBy != nil {
+		groupByClause = sqlf.Sprintf("group_by = %s", *args.GroupBy)
+	}
 	where := sqlf.Sprintf(
-		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s",
-		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups,
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s AND %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups, groupByClause,
 	)
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
@@ -786,10 +849,18 @@ type UpdateFrontendSeriesArgs struct {
 	Repositories      []string
 	StepIntervalUnit  string
 	StepIntervalValue int
+	GroupBy           *string
 }
 
 func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
-	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql,
+		args.Query,
+		pq.Array(args.Repositories),
+		args.StepIntervalUnit,
+		args.StepIntervalValue,
+		args.GroupBy,
+		args.SeriesID,
+	))
 }
 
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
@@ -833,22 +904,23 @@ func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) er
 	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
+func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
+}
+
 const setSeriesStatusSql = `
--- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
 SET deleted_at = %s
 WHERE series_id = %s;
 `
 
 const stampBackfillSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampRecording
 UPDATE insight_series
 SET backfill_queued_at = %s
 WHERE id = %s;
 `
 
 const stampRecordingSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampRecording
 UPDATE insight_series
 SET last_recorded_at = %s,
     next_recording_after = %s
@@ -856,7 +928,6 @@ WHERE id = %s;
 `
 
 const stampSnapshotSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampSnapshot
 UPDATE insight_series
 SET last_snapshot_at = %s,
     next_snapshot_after = %s
@@ -864,20 +935,17 @@ WHERE id = %s;
 `
 
 const attachSeriesToViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, %s, %s);
 `
 
 const removeSeriesFromViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:RemoveSeriesFromView
 DELETE FROM insight_view_series vs
 USING insight_series s
 WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s;
 `
 
 const updateInsightViewSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateViewSeries
 UPDATE insight_view_series vs
 SET label = %s, stroke = %s
 FROM insight_series s
@@ -885,36 +953,34 @@ WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = 
 `
 
 const createInsightViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
 default_filter_search_contexts, other_threshold, presentation_type)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s
+default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, series_sort_mode = %s, series_sort_direction = %s,
+series_limit = %s, series_num_samples = %s
 WHERE unique_id = %s
 RETURNING id;`
 
 const createInsightSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+							just_in_time, generation_method, group_by, needs_migration, repository_criteria)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -924,11 +990,12 @@ ORDER BY iv.id, i.series_id
 
 const getInsightsByDashboardSql = `
 SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -939,12 +1006,11 @@ ORDER BY dbiv.id
 `
 
 const getInsightDataSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
+SELECT id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method
-from insight_series
+just_in_time, generation_method, repositories, group_by, backfill_attempts, supports_augmentation, repository_criteria
+FROM insight_series
 WHERE %s
 `
 
@@ -964,13 +1030,14 @@ ORDER BY iv.unique_id
 `
 
 const getInsightsWithSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-       i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+       i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+	   default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+	   i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
+
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -979,27 +1046,23 @@ ORDER BY iv.unique_id
 `
 
 const countSeriesReferencesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
 SELECT COUNT(*) FROM insight_view_series viewSeries
 	INNER JOIN insight_series series ON viewSeries.insight_series_id = series.id
 WHERE series.series_id = %s
 `
 
 const updateFrontendSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
 UPDATE insight_series
-SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
+SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s, group_by = %s
 WHERE series_id = %s
 `
 
 const getReferenceCountSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
 `
 
 const getSoftDeletedSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:GetSoftDeletedSeries
 SELECT series_id
 FROM insight_series i
 LEFT JOIN insight_view_series ivs ON i.id = ivs.insight_series_id
@@ -1009,22 +1072,18 @@ WHERE i.deleted_at IS NOT NULL
 `
 
 const hardDeleteSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:HardDeleteSeries
 DELETE FROM insight_series WHERE series_id = %s;
 `
 
 const freezeAllInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:FreezeAllInsights
 UPDATE insight_view SET is_frozen = TRUE
 `
 
 const unfreezeAllInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeAllInsights
 UPDATE insight_view SET is_frozen = FALSE
 `
 
 const getUnfrozenInsightCountSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetFrozenInsightCounts
 SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTotal FROM (
 	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
 	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
@@ -1039,7 +1098,6 @@ CROSS JOIN
 `
 
 const unfreezeGlobalInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 UPDATE insight_view SET is_frozen = FALSE
 WHERE id IN (
 	SELECT DISTINCT(iv.id) from insight_view as iv
@@ -1052,6 +1110,9 @@ WHERE id IN (
 `
 
 const getUnfrozenInsightUniqueIdsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
+`
+
+const setSeriesBackfillComplete = `
+UPDATE insight_series SET backfill_completed_at = %s WHERE series_id = %s;
 `

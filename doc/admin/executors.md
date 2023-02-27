@@ -9,9 +9,9 @@
   }
 </style>
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -21,11 +21,23 @@ Executors are Sourcegraph's solution for running untrusted code in a secure and 
 
 ## Installation
 
-To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md). We currently provide resources to deploy on Google Cloud, AWS, and bare-metal machines.
+To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md).
+
+There are two supported installation paths (in Beta):
+
+- <span class="badge badge-beta">Beta</span> Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
+- <span class="badge badge-beta">Beta</span> Deploy [binaries](./deploy_executors_binary.md).
+
+There are two supported installation methods (Experimental):
+
+- <span class="badge badge-experimental">Experimental</span> Deploy on [Kubernetes via Helm or manifests](./deploy_executors_kubernetes.md).
+- <span class="badge badge-experimental">Experimental</span> Deploy via [Docker-Compose](./deploy_executors_docker.md).
+
+> NOTE: Note to all Technical Success team members: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers (Large Enterprise and Strategic) to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.
 
 ## Why use executors?
 
-Running untrusted code is a core requirement of features such as precise code intelligence [auto-indexing](../code_intelligence/explanations/auto_indexing.md), and [running batch changes server-side](../batch_changes/explanations/server_side.md).
+Running untrusted code is a core requirement of features such as precise code navigation [auto-indexing](../code_navigation/explanations/auto_indexing.md), and [running batch changes server-side](../batch_changes/explanations/server_side.md).
 
 Auto-indexing jobs, in particular, require the invocation of arbitrary and untrusted code to support the resolution of project dependencies. Invocation of post-install hooks, use of insecure [package management tools](https://github.com/golang/go/issues/29230), and package manager proxy attacks can create opportunities in which an adversary can gain unlimited use of compute or exfiltrate data. The latter outcome is particularly dangerous for on-premise installations of Sourcegraph, which is the chosen option for companies wanting to maintain strict privacy of their code property.
 
@@ -37,6 +49,6 @@ Compute jobs are coordinated by the executor binary, which polls a configured So
 
 <img src="executors_arch.svg" alt="Executors architecture" class="executor-node-diagram">
 
-When a compute job is available, it will be handed out to an executor polling for work. After accepting a job, the executor spawns an empty [Firecracker](https://firecracker-microvm.github.io/) microVM via [Waveworks Ignite](https://ignite.readthedocs.io/en/stable/). A workspace prepared with the target repository is moved into virtual machine. A series of Docker commands are invoked inside of the microVM, which generally produces an artifact on disk to send back to the Sourcegraph instance via [src CLI](../cli/index.md). The status and logs of this compute job are streamed back to the Sourcegraph instance as the job progresses.
+When a compute job is available, it will be handed out to an executor polling for work. After accepting a job, the executor spawns an empty [Firecracker](https://firecracker-microvm.github.io/) microVM via [Waveworks Ignite](https://ignite.readthedocs.io/en/stable/). A workspace prepared with the target repository is moved into the virtual machine. A series of Docker commands are invoked inside of the microVM, which generally produces an artifact on disk to send back to the Sourcegraph instance via [src CLI](../cli/index.md). The status and logs of this compute job are streamed back to the Sourcegraph instance as the job progresses.
 
 We perform layered security/security in-depth at untrusted boundaries. Untrusted code is run only within a fresh virtual machine, and the host machine running untrusted code does not have privileged access to the Sourcegraph instance. The API to which the executor instances can authenticate provides only the exact data needed to perform the job. See [_Firecracker: Lightweight Virtualization for Serverless Applications_](https://www.amazon.science/publications/firecracker-lightweight-virtualization-for-serverless-applications) for an in-depth look at the isolation model provided by the Firecracker Virtual Machine Monitor (VMM).

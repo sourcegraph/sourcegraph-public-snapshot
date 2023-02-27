@@ -3,7 +3,7 @@ import '../../polyfills'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { hasProperty } from '@sourcegraph/common'
+import { hasProperty, logger } from '@sourcegraph/common'
 
 import { isEndpointPair } from '../../platform/context'
 
@@ -34,7 +34,7 @@ async function extensionHostMain(): Promise<void> {
         const extensionHost = startExtensionHost(endpoints)
         self.addEventListener('unload', () => extensionHost.unsubscribe())
     } catch (error) {
-        console.error('Error starting the extension host:', error)
+        logger.error('Error starting the extension host:', error)
         self.close()
     }
 }

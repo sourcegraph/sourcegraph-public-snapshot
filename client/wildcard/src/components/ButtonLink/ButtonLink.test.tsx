@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '../../testing'
 
 import { ButtonLink } from './ButtonLink'
 
@@ -39,7 +39,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
             >
                 Button link
@@ -58,7 +57,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
                 onClick={onSelect}
                 data-testid="button-link"

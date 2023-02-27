@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -47,19 +48,19 @@ func NewProvider(cli *bitbucketserver.Client, urn string, pluginPerm bool) *Prov
 	}
 }
 
-// Validate validates that the Provider has access to the Bitbucket Server API
+// ValidateConnection validates that the Provider has access to the Bitbucket Server API
 // with the OAuth credentials it was configured with.
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
+func (p *Provider) ValidateConnection(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	username, err := p.client.Username()
 	if err != nil {
-		return []string{err.Error()}
+		return err
 	}
 
 	if _, err := p.client.UserPermissions(ctx, username); err != nil {
-		return []string{err.Error()}
+		return err
 	}
 
 	return nil
@@ -84,10 +85,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.FetchAccount", "")
 	defer func() {
-		tr.LogFields(
-			otlog.String("user.name", user.Username),
-			otlog.Int32("user.id", user.ID),
-		)
+		tr.SetAttributes(
+			attribute.String("user.name", user.Username),
+			attribute.Int64("user.id", int64(user.ID)))
 
 		if err != nil {
 			tr.SetError(err)
@@ -114,7 +114,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
 		AccountData: extsvc.AccountData{
-			Data: (*json.RawMessage)(&accountData),
+			Data: extsvc.NewUnencryptedData(accountData),
 		},
 	}, nil
 }
@@ -138,8 +138,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
-	var user bitbucketserver.User
-	if err := json.Unmarshal(*account.Data, &user); err != nil {
+	user, err := encryption.DecryptJSON[bitbucketserver.User](ctx, account.Data)
+	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 
@@ -153,12 +153,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	return &authz.ExternalUserPermissions{
 		Exacts: extIDs,
 	}, err
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

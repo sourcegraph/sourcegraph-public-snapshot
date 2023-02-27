@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX IF NOT EXISTS org_invitations_singleflight ON org_invitations USING btree (org_id, recipient_user_id) WHERE ((responded_at IS NULL) AND (revoked_at IS NULL) AND (deleted_at IS NULL));

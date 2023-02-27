@@ -1,13 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as H from 'history'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
-
-import { ThemePreference } from '../stores/themeState'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -30,6 +27,7 @@ describe('UserNavItem', () => {
         organizations: {
             nodes: [
                 {
+                    __typename: 'Org',
                     id: '0',
                     name: 'acme',
                     displayName: 'Acme Corp',
@@ -37,6 +35,7 @@ describe('UserNavItem', () => {
                     settingsURL: '/organizations/acme/settings',
                 },
                 {
+                    __typename: 'Org',
                     id: '1',
                     name: 'beta',
                     displayName: 'Beta Inc',
@@ -47,22 +46,16 @@ describe('UserNavItem', () => {
         },
     }
 
-    const history = H.createMemoryHistory({ keyLength: 0 })
-
     test('simple', () => {
         expect(
             render(
                 <MemoryRouter>
                     <UserNavItem
-                        showRepositorySection={true}
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
-                        themePreference={ThemePreference.Light}
+                        showKeyboardShortcutsHelp={() => undefined}
                         authenticatedUser={USER}
-                        showDotComMarketing={true}
-                        isExtensionAlertAnimating={false}
-                        featureFlags={new Map()}
+                        isSourcegraphDotCom={true}
                         codeHostIntegrationMessaging="browser-extension"
+                        showFeedbackModal={() => undefined}
                     />
                 </MemoryRouter>
             ).asFragment()
@@ -70,21 +63,14 @@ describe('UserNavItem', () => {
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
-        renderWithBrandedContext(
+        const result = renderWithBrandedContext(
             <UserNavItem
-                showRepositorySection={true}
-                isLightTheme={true}
-                onThemePreferenceChange={() => undefined}
-                themePreference={ThemePreference.Light}
+                showKeyboardShortcutsHelp={() => undefined}
                 authenticatedUser={USER}
-                showDotComMarketing={true}
-                isExtensionAlertAnimating={false}
-                featureFlags={new Map()}
+                isSourcegraphDotCom={true}
                 codeHostIntegrationMessaging="browser-extension"
-            />,
-            {
-                history,
-            }
+                showFeedbackModal={() => undefined}
+            />
         )
 
         // Prevent console.error cause by "Not implemented: navigation (except hash changes)"
@@ -93,7 +79,7 @@ describe('UserNavItem', () => {
         userEvent.click(screen.getByRole('button'))
         userEvent.click(await screen.findByText('Sign out'))
 
-        expect(history.entries.length).toBe(1)
-        expect(history.entries.find(({ pathname }) => pathname.includes('sign-out'))).toBe(undefined)
+        expect(result.locationRef.entries.length).toBe(1)
+        expect(result.locationRef.entries.find(({ pathname }) => pathname.includes('sign-out'))).toBe(undefined)
     })
 })

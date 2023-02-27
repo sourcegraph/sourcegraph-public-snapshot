@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { UseConnectionResult } from '../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionError,
     ConnectionLoading,
@@ -10,11 +10,12 @@ import {
 
 import { ConnectionPopoverContainer, ConnectionPopoverForm, ConnectionPopoverList } from './components'
 
-interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
+interface RevisionsPopoverTabProps extends UseShowMorePaginationResult<unknown, unknown> {
     inputValue: string
     onInputChange: (value: string) => void
     query: string
     summary?: JSX.Element
+    inputAriaLabel: string
 }
 
 export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverTabProps>> = ({
@@ -28,6 +29,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildre
     connection,
     hasNextPage,
     fetchMore,
+    inputAriaLabel,
 }) => (
     <ConnectionPopoverContainer>
         <ConnectionPopoverForm
@@ -36,6 +38,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildre
             autoFocus={true}
             inputPlaceholder="Find..."
             compact={true}
+            inputAriaLabel={inputAriaLabel}
         />
         <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
         {error && <ConnectionError errors={[error.message]} compact={true} />}

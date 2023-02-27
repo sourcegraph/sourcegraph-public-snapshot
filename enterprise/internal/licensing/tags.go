@@ -43,6 +43,8 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		baseName = "Sourcegraph Team"
 	case strings.HasPrefix(string(plan), "enterprise-"):
 		baseName = "Sourcegraph Enterprise"
+	case strings.HasPrefix(string(plan), "business-"):
+		baseName = "Sourcegraph Business"
 
 	default:
 		if hasTag("team") {
@@ -64,4 +66,11 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	}
 
 	return baseName + name
+}
+
+var MiscTags = []string{
+	"trial",
+	"dev",
+	TrueUpUserCountTag,
+	"starter",
 }

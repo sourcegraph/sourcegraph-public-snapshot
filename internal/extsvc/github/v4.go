@@ -15,18 +15,21 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // V4Client is a GitHub GraphQL API client.
 type V4Client struct {
+	log log.Logger
+
 	// The URN of the external service that the client is derived from.
 	urn string
 
@@ -52,7 +55,7 @@ type V4Client struct {
 	rateLimitMonitor *ratelimit.Monitor
 
 	// rateLimit is our self imposed rate limiter.
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -89,6 +92,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
+		log:              log.Scoped("github.v4", "github v4 client"),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -151,9 +155,10 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "rate limit")
 	}
 
-	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+	// Wait for the rate limit, or return if context has been canceled.
+	timeutil.SleepWithContext(ctx, c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if _, err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
+	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 
@@ -268,9 +273,7 @@ func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
 	return limitStack
 }
 
-// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
-type graphqlErrors []struct {
+type graphqlError struct {
 	Message   string `json:"message"`
 	Type      string `json:"type"`
 	Path      []any  `json:"path"`
@@ -279,6 +282,10 @@ type graphqlErrors []struct {
 		Column int `json:"column"`
 	} `json:"locations,omitempty"`
 }
+
+// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
+// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
+type graphqlErrors []graphqlError
 
 const graphqlErrTypeNotFound = "NOT_FOUND"
 
@@ -311,7 +318,7 @@ func unmarshal(data []byte, v any) error {
 // determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
 // error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
-	url := normalizeURL(c.apiURL.String())
+	urlStr := normalizeURL(c.apiURL.String())
 	globalVersionCache.mu.Lock()
 	defer globalVersionCache.mu.Unlock()
 
@@ -320,11 +327,11 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 		globalVersionCache.lastReset = time.Now()
 		globalVersionCache.versions = make(map[string]*semver.Version)
 	}
-	if version, ok := globalVersionCache.versions[url]; ok {
+	if version, ok := globalVersionCache.versions[urlStr]; ok {
 		return version
 	}
 	version := c.fetchGitHubVersion(ctx)
-	globalVersionCache.versions[url] = version
+	globalVersionCache.versions[urlStr] = version
 	return version
 }
 
@@ -339,13 +346,14 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	v3Client := NewV3Client(c.urn, c.apiURL, c.auth, c.httpClient)
+	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
+	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version",
-			"method", "fetchGitHubVersion",
-			"apiURL", c.apiURL,
-			"err", err,
+		c.log.Warn("Failed to fetch GitHub enterprise version",
+			log.String("method", "fetchGitHubVersion"),
+			log.String("apiURL", c.apiURL.String()),
+			log.Error(err),
 		)
 		return allMatchingSemver
 	}
@@ -490,11 +498,14 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 		if errors.As(err, &e) {
 			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
-					log15.Warn("GitHub repository not found", "error", err2)
+					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
 					continue
 				}
 				return nil, err
 			}
+			// The lack of an error return here is intentional. Do not use this
+			// as a basis for implementing other functions that need normal
+			// error handling!
 		} else {
 			return nil, err
 		}
@@ -582,13 +593,20 @@ fragment RepositoryFields on Repository {
 	`, strings.Join(conditionalGHEFields, "\n	"))
 }
 
+func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	logger := c.log.Scoped("GetRepo", "temporary client for getting GitHub repository")
+	// We technically don't need to use the REST API for this but it's just a bit easier.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRepo(ctx, owner, repo)
+}
+
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
-func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	return NewV3Client(c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
 type RecentCommittersParams struct {
@@ -681,14 +699,107 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 		if errors.As(err, &e) {
 			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
-					log15.Warn("RecentCommitters: GitHub repository not found", "error", err2)
+					c.log.Warn("RecentCommitters: GitHub repository not found")
 					continue
 				}
 				return nil, err
 			}
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	return &result.Repository.DefaultBranchRef.Target.History, nil
+}
+
+type Release struct {
+	TagName      string
+	IsDraft      bool
+	IsPrerelease bool
+}
+
+type ReleasesResult struct {
+	Nodes    []Release
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   Cursor
+	}
+}
+
+type ReleasesParams struct {
+	// Repository name
+	Name string
+	// Repository owner
+	Owner string
+	// After is the cursor to paginate from.
+	After Cursor
+	// First is the page size. Default to 100 if left zero.
+	First int
+}
+
+// Releases returns the releases for the given repository, ordered from newest
+// to oldest. This excludes pre-release and draft releases.
+func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*ReleasesResult, error) {
+	const query = `
+		query($owner: String!, $name: String!, $first: Int!, $after: String, $order: ReleaseOrder!) {
+			repository(owner: $owner, name: $name) {
+				releases(first: $first, after: $after, orderBy: $order) {
+					nodes {
+						tagName
+						isDraft
+						isPrerelease
+					}
+					pageInfo {
+						hasNextPage
+						endCursor
+					}
+				}
+			}
+		}
+	`
+
+	if params.First == 0 {
+		params.First = 100
+	}
+
+	vars := map[string]any{
+		"name":  params.Name,
+		"owner": params.Owner,
+		"first": params.First,
+		"order": map[string]any{
+			"field":     "CREATED_AT",
+			"direction": "DESC",
+		},
+	}
+	if params.After != "" {
+		vars["after"] = params.After
+	}
+
+	var result struct {
+		Repository struct {
+			Releases ReleasesResult
+		}
+	}
+	err := c.requestGraphQL(ctx, query, vars, &result)
+	if err != nil {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
+				if err2.Type == graphqlErrTypeNotFound {
+					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
+					continue
+				}
+				return nil, err
+			}
+		}
+		return nil, err
+	}
+
+	return &result.Repository.Releases, nil
+}
+
+func graphQLErrorField(err graphqlError) log.Field {
+	return log.Object("err",
+		log.String("message", err.Message),
+		log.String("type", err.Type),
+		log.String("path", fmt.Sprintf("%+v", err.Path)),
+		log.String("locations", fmt.Sprintf("%+v", err.Locations)))
 }

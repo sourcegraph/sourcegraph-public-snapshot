@@ -1,9 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { H1, H2, H3, Text } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -13,11 +11,7 @@ const config: Meta = {
     title: 'wildcard/Card',
     component: Card,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Card,
@@ -44,13 +38,13 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <h1>Cards</h1>
-        <p>
+        <H1>Cards</H1>
+        <Text>
             A card is a flexible and extensible content container. It includes options for headers and footers, a wide
             variety of content, contextual background colors, and powerful display options.{' '}
-        </p>
+        </Text>
 
-        <h2>Examples</h2>
+        <H2>Examples</H2>
 
         <Grid className="mb-3" columnCount={1}>
             <Card>
@@ -90,13 +84,6 @@ const cardItem = (
                 <CardSubtitle>New search result → Sends email notifications, delivers webhook</CardSubtitle>
             </div>
             <div className="d-flex align-items-center">
-                <Toggle
-                    display="inline"
-                    onClick={() => {}}
-                    value={true}
-                    className="mr-3 align-item-baseline"
-                    disabled={false}
-                />
                 <Button variant="link">Edit</Button>
             </div>
         </CardBody>
@@ -105,10 +92,10 @@ const cardItem = (
 
 export const InteractiveCard: Story = () => (
     <>
-        <h2>Interactive Cards</h2>
+        <H2>Interactive Cards</H2>
         {cardItem}
 
-        <h3 className="mt-4">Cards List</h3>
+        <H3 className="mt-4">Cards List</H3>
 
         <div className="d-flex flex-column">
             {cardItem}

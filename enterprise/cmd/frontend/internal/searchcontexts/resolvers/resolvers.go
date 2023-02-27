@@ -10,7 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,14 +54,6 @@ func (r *Resolver) SearchContextsToResolvers(searchContexts []*types.SearchConte
 		searchContextResolvers[idx] = &searchContextResolver{searchContext, r.db}
 	}
 	return searchContextResolvers
-}
-
-func (r *Resolver) AutoDefinedSearchContexts(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	searchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	return r.SearchContextsToResolvers(searchContexts), nil
 }
 
 func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.SearchContextBySpecArgs) (graphqlbackend.SearchContextResolver, error) {
@@ -151,7 +146,7 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 		}
 		repoIDs = append(repoIDs, repoID)
 	}
-	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	idToRepo, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,6 +186,101 @@ func (r *Resolver) DeleteSearchContext(ctx context.Context, args graphqlbackend.
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlbackend.CreateSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.CreateSearchContextStarForUser(ctx, r.db, searchContext, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlbackend.DeleteSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.DeleteSearchContextStarForUser(ctx, r.db, searchContext, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlbackend.SetDefaultSearchContextArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Make sure the current user has permission to set the search context as default.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.SetDefaultSearchContextForUser(ctx, r.db, searchContext, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) DefaultSearchContext(ctx context.Context) (graphqlbackend.SearchContextResolver, error) {
+	searchContext, err := r.db.SearchContexts().GetDefaultSearchContextForCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
 }
 
 func unmarshalSearchContextCursor(cursor *string) (int32, error) {
@@ -307,7 +397,7 @@ func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbac
 		return a.UID == searchContext.NamespaceUserID, nil
 	} else {
 		// Is search context created by one of the users' organizations
-		orgs, err := database.Orgs(r.db).GetByUserID(ctx, a.UID)
+		orgs, err := r.db.Orgs().GetByUserID(ctx, a.UID)
 		if err != nil {
 			return false, err
 		}
@@ -363,8 +453,8 @@ func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.sc.UpdatedAt}
+func (r *searchContextResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.sc.UpdatedAt}
 }
 
 func (r *searchContextResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
@@ -390,19 +480,27 @@ func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
 	return !searchcontexts.IsAutoDefinedSearchContext(r.sc) && hasWriteAccess
 }
 
+func (r *searchContextResolver) ViewerHasAsDefault(ctx context.Context) bool {
+	return r.sc.Default
+}
+
+func (r *searchContextResolver) ViewerHasStarred(ctx context.Context) bool {
+	return r.sc.Starred
+}
+
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlbackend.SearchContextRepositoryRevisionsResolver, error) {
 	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
 		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
 	}
 
-	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	repoRevs, err := r.db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }

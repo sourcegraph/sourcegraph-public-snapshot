@@ -32,7 +32,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--secondary);
+    color: var(--text-muted);
 
     &--active,
     &:hover {
@@ -48,5 +48,16 @@
 }
 
 .container-name {
-    margin-left: 0.25rem;
+    margin-left: 0.5rem;
+}
+
+.form-container {
+    position: sticky;
+    top: 0;
+    background-color: var(--body-bg);
+}
+
+.hierarchical-symbols-container {
+    list-style-type: none;
+    padding-left: 0;
 }

@@ -10,24 +10,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Zoekt() *monitoring.Container {
+func Zoekt() *monitoring.Dashboard {
 	const (
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "zoekt",
 		Title:                    "Zoekt",
 		Description:              "Indexes repositories, populates the search index, and responds to indexed search queries.",
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Instance",
-				Name:         "instance",
-				OptionsQuery: "label_values(index_num_assigned, instance)",
-				Multi:        true,
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "index_num_assigned",
+					LabelName:     "instance",
+					ExampleOption: "zoekt-indexserver-0:6072",
+				},
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -38,67 +42,49 @@ func Zoekt() *monitoring.Container {
 						{
 							Name:        "total_repos_aggregate",
 							Description: "total number of repos (aggregate)",
-							Query:       `sum(index_num_assigned)`,
+							Query:       `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "assigned",
-									}, {
-										Expr:         "sum(index_num_indexed)",
-										LegendFormat: "indexed",
-									}, {
-										Expr:         "sum(index_queue_cap)",
-										LegendFormat: "tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
 							`,
 						},
 						{
 							Name:        "total_repos_per_instance",
 							Description: "total number of repos (per instance)",
-							Query:       "sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})",
+							Query:       `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "{{instance}} assigned",
-									}, {
-										Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} indexed",
-									}, {
-										Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{instance}} {{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
 							`,
 						},
 					},
@@ -128,14 +114,13 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "average_resolve_revision_duration",
-							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(15),
-							Critical:          monitoring.Alert().GreaterOrEqual(30),
-							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "average_resolve_revision_duration",
+							Description: "average resolve revision duration over 5m",
+							Query:       `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(15),
+							Panel:       monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
 						},
 						{
 							Name:        "get_index_options_error_increase",
@@ -151,7 +136,7 @@ func Zoekt() *monitoring.Container {
 							Critical: monitoring.Alert().GreaterOrEqual(100).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: `
+							NextSteps: `
 								- View error rates on gitserver and frontend to identify root cause.
 								- Rollback frontend/gitserver deployment if due to a bad code change.
 								- View error logs for 'getIndexOptions' via net/trace debug interface. For example click on a 'indexed-search-indexer-' on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
@@ -174,13 +159,220 @@ func Zoekt() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "indexed_search_request_errors",
-							Description:       "indexed search request errors every 5m by code",
-							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "indexed_search_request_duration_p99_aggregate",
+							Description: "99th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_aggregate",
+							Description: "90th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_aggregate",
+							Description: "75th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_request_duration_p99_by_instance",
+							Description: "99th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_by_instance",
+							Description: "90th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_by_instance",
+							Description: "75th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_num_concurrent_requests_aggregate",
+							Description: "amount of in-flight indexed search requests (aggregate)",
+							Query:       `sum by (name) (zoekt_search_running)`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+
+								In-flight search requests include both running and queued requests.
+
+								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+							`,
+						},
+						{
+							Name:        "indexed_search_num_concurrent_requests_by_instance",
+							Description: "amount of in-flight indexed search requests (per instance)",
+							Query:       "sum by (instance, name) (zoekt_search_running{instance=~`${instance:regex}`})",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+
+								In-flight search requests include both running and queued requests.
+
+								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_concurrent_request_growth_rate_1m_aggregate",
+							Description: "rate of growth of in-flight indexed search requests over 1m (aggregate)",
+							Query:       `sum by (name) (deriv(zoekt_search_running[1m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
+
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
+
+								In-flight search requests include both running and queued requests.
+
+								This metric gives a notion of how quickly the indexed-search backend is working through its request load
+								(taking into account the request arrival rate and processing time). A sustained high rate of growth
+								can indicate that the indexed-search backend is saturated.
+							`,
+						},
+						{
+							Name:        "indexed_search_concurrent_request_growth_rate_1m_per_instance",
+							Description: "rate of growth of in-flight indexed search requests over 1m (per instance)",
+							Query:       "sum by (instance) (deriv(zoekt_search_running[1m]))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the rate of growth of in-flight requests, broken out per instance.
+
+								In-flight search requests include both running and queued requests.
+
+								This metric gives a notion of how quickly the indexed-search backend is working through its request load
+								(taking into account the request arrival rate and processing time). A sustained high rate of growth
+								can indicate that the indexed-search backend is saturated.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_request_errors",
+							Description: "indexed search request errors every 5m by code",
+							Query:       `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
+							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
+						},
+					},
+					{
+						{
+							Name:        "zoekt_shards_sched",
+							Description: "current number of zoekt scheduler processes in a state",
+							Query:       "sum by (type, state) (zoekt_shards_sched)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+						{
+							Name:        "zoekt_shards_sched_total",
+							Description: "rate of zoekt scheduler process state transitions in the last 5m",
+							Query:       "sum by (type, state) (rate(zoekt_shards_sched[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
 						},
 					},
 				},
@@ -189,7 +381,6 @@ func Zoekt() *monitoring.Container {
 				Title: "Git fetch durations",
 				Rows: []monitoring.Row{
 					{
-
 						{
 							Name:        "90th_percentile_successful_git_fetch_durations_5m",
 							Description: "90th percentile successful git fetch durations over 5m",
@@ -227,9 +418,9 @@ func Zoekt() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(
 								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
 								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+									p.GraphPanel.Yaxes[0].LogBase = 2 // log to show the huge number of "noop" or "empty"
 								},
 							),
 							Interpretation: `
@@ -612,7 +803,51 @@ func Zoekt() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Compound shards (experimental)",
+				Title: "Virtual Memory Statistics",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "memory_map_areas_percentage_used",
+							Description: "process memory map areas percentage used (per instance)",
+							Query:       fmt.Sprintf("(proc_metrics_memory_map_current_count{%s} / proc_metrics_memory_map_max_limit{%s}) * 100", "instance=~`${instance:regex}`", "instance=~`${instance:regex}`"),
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Percentage).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Warning:  monitoring.Alert().GreaterOrEqual(60),
+							Critical: monitoring.Alert().GreaterOrEqual(80),
+							Owner:    monitoring.ObservableOwnerSearchCore,
+
+							Interpretation: `
+								Processes have a limited about of memory map areas that they can use. In Zoekt, memory map areas
+								are mainly used for loading shards into memory for queries (via mmap). However, memory map areas
+								are also used for loading shared libraries, etc.
+
+								_See https://en.wikipedia.org/wiki/Memory-mapped_file and the related articles for more information about memory maps._
+
+								Once the memory map limit is reached, the Linux kernel will prevent the process from creating any
+								additional memory map areas. This could cause the process to crash.
+							`,
+							NextSteps: `
+								If you are running out of memory map areas, you could resolve this by:
+
+								    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
+								if your corpus of repositories has a high percentage of small, rarely updated repositories. See
+								[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
+								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
+								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+								    - Increasing the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
+								a process can use. The default value of max_map_count is usually 65536. We recommend to set this value to 2x the number
+								of repos to be indexed per Zoekt instance. This means, if you want to index 240k repositories with 3 Zoekt instances,
+								set max_map_count to (240000 / 3) * 2 = 160000. The exact instructions for tuning this parameter can differ depending
+								on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+							`,
+						},
+					},
+				},
+			},
+			{
+				Title:  "Compound shards",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -820,6 +1055,18 @@ func Zoekt() *monitoring.Container {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "data",
+
+					MetricMountNameLabel: "indexDir",
+					MetricNamespace:      "zoekt_indexserver",
+
+					ServiceName:         "zoekt",
+					InstanceFilterRegex: `${instance:regex}`,
+				},
+				monitoring.ObservableOwnerSearchCore,
+			),
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service

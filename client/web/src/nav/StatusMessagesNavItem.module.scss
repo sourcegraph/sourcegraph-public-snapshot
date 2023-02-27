@@ -6,7 +6,7 @@
 }
 
 .dropdown-menu-content {
-    max-height: 50vh;
+    max-height: 60vh;
     overflow-y: auto;
     padding: 1rem;
     padding-bottom: 0;
@@ -54,6 +54,10 @@
         margin-top: 0.75rem;
         padding: 0.5rem 0.75rem;
         background-color: var(--color-bg-2);
+    }
+
+    &--message-code {
+        white-space: break-spaces;
     }
 }
 

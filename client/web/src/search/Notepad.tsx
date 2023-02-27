@@ -10,38 +10,44 @@ import React, {
     useLayoutEffect,
 } from 'react'
 
+import {
+    mdiBookPlusOutline,
+    mdiChevronUp,
+    mdiDelete,
+    mdiMagnify,
+    mdiFileDocumentOutline,
+    mdiCodeBrackets,
+    mdiTextBox,
+} from '@mdi/js'
 import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
-import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
+import type { LocationDescriptorObject } from 'history'
+import { useNavigate } from 'react-router-dom'
+import * as uuid from 'uuid'
 
-import { isMacPlatform } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { isMacPlatform, logger } from '@sourcegraph/common'
+import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
+import { createNotebook } from '../notebooks/backend'
+import { blockToGQLInput } from '../notebooks/serialize'
+import { EnterprisePageRoutes } from '../routes.constants'
 import {
-    useNotepadState,
+    addNotepadEntry,
+    NotepadEntry,
+    NotepadEntryID,
+    NotepadEntryInput,
+    removeAllNotepadEntries,
+    removeFromNotepad,
     restorePreviousSession,
     SearchEntry,
-    NotepadEntry,
-    removeFromNotepad,
-    removeAllNotepadEntries,
-    NotepadEntryInput,
-    addNotepadEntry,
     setEntryAnnotation,
-    NotepadEntryID,
+    useNotepadState,
 } from '../stores/notepad'
 
 import styles from './Notepad.module.scss'
@@ -82,31 +88,33 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
 }
 
 export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Icon as={BookPlusOutlineIcon} />
+    <Icon aria-hidden={true} svgPath={mdiBookPlusOutline} />
 )
 
 export interface NotepadContainerProps {
     initialOpen?: boolean
-    onCreateNotebook: (blocks: BlockInput[]) => void
+    userId?: string
 }
 
 export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<NotepadContainerProps>> = ({
     initialOpen,
-    onCreateNotebook,
+    userId,
 }) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
     const [enableNotepad] = useTemporarySetting('search.notepad.enabled')
+    // Taken from global-styles/breakpoints.css , $viewport-md
+    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
-    if (enableNotepad) {
+    if (enableNotepad && isWideScreen) {
         return (
             <Notepad
                 className={styles.fixed}
                 initialOpen={initialOpen}
-                onCreateNotebook={onCreateNotebook}
                 newEntry={newEntry}
                 entries={entries}
+                userId={userId}
                 restorePreviousSession={canRestore ? restorePreviousSession : undefined}
                 addEntry={addNotepadEntry}
                 removeEntry={removeFromNotepad}
@@ -120,7 +128,6 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
 export interface NotepadProps {
     className?: string
     initialOpen?: boolean
-    onCreateNotebook: (blocks: BlockInput[]) => void
     newEntry?: NotepadEntryInput | null
     entries: NotepadEntry[]
     addEntry: typeof addNotepadEntry
@@ -129,21 +136,23 @@ export interface NotepadProps {
     // This is only used in our CTA to prevent notes from being rendered as
     // selected
     selectable?: boolean
+    userId?: string
 }
 
 export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
     className,
     initialOpen = false,
-    onCreateNotebook,
     entries,
     restorePreviousSession,
     addEntry,
     removeEntry,
     newEntry,
     selectable = true,
+    userId,
 }) => {
+    const navigate = useNavigate()
+
     const [open, setOpen] = useState(initialOpen)
-    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const [selectedEntries, setSelectedEntries] = useState<number[]>([])
     const isMacPlatform_ = useMemo(isMacPlatform, [])
 
@@ -204,7 +213,11 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         [reversedEntries, selectedEntries, setSelectedEntries, removeEntry]
     )
 
-    const createNotebook = useCallback(() => {
+    const handleCreateNotebook = useCallback(() => {
+        if (!userId) {
+            return
+        }
+
         const blocks: BlockInput[] = []
         for (const entry of entries) {
             if (entry.annotation) {
@@ -230,8 +243,21 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     break
             }
         }
-        onCreateNotebook(blocks)
-    }, [entries, onCreateNotebook])
+
+        createNotebook({
+            notebook: {
+                title: 'New Notebook',
+                blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
+                public: false,
+                namespace: userId,
+            },
+        })
+            .toPromise()
+            .then(createdNotebook => {
+                navigate(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
+            })
+            .catch(logger.error)
+    }, [entries, userId, navigate])
 
     const toggleOpen = useCallback(() => {
         setOpen(open => {
@@ -325,45 +351,87 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         [reversedEntries, selectedEntries, deleteSelectedEntries, isMacPlatform_]
     )
 
+    // Focus the cancel button when the remove all confirmation box is shown
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
+    const cancelRemoveAll = useRef<HTMLButtonElement>(null)
+    useEffect(() => {
+        if (confirmRemoveAll) {
+            cancelRemoveAll.current?.focus()
+        }
+    }, [confirmRemoveAll])
+
+    // Focus the remove all button when the remove all confirmation box is hidden.
+    // If the remove all button is now disabled (because there are no entries left),
+    // focus the top-level notepad button.
+    const removeAllButton = useRef<HTMLButtonElement>(null)
+    const rootButton = useRef<HTMLButtonElement>(null)
+    const onRemoveAllClosed = useCallback((removeAll: boolean) => {
+        setConfirmRemoveAll(false)
+
+        if (removeAll) {
+            removeAllNotepadEntries()
+            rootButton.current?.focus()
+        } else {
+            removeAllButton.current?.focus()
+        }
+    }, [])
+
     return (
-        <section className={classNames(styles.root, className, { [styles.open]: open })} id={NOTEPAD_ID} role="dialog">
+        <aside
+            className={classNames(styles.root, className, { [styles.open]: open })}
+            id={NOTEPAD_ID}
+            aria-labelledby={`${NOTEPAD_ID}-button`}
+        >
             <Button
-                aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"
                 className={classNames(styles.header, 'p-2 d-flex align-items-center justify-content-between')}
                 onClick={toggleOpen}
                 aria-controls={NOTEPAD_ID}
                 aria-expanded="true"
+                id={`${NOTEPAD_ID}-button`}
+                ref={rootButton}
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <H2 className="px-1 d-inline">Notepad</H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon as={ChevronUpIcon} />
+                    <Icon aria-label={(open ? 'Close' : 'Open') + ' Notepad'} svgPath={mdiChevronUp} />
                 </span>
             </Button>
             {open && (
                 <>
                     {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <H3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</H3>
                             <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
-                    <h3 className="p-2">
+                    <H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
-                    </h3>
-                    <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
+                    </H3>
+
+                    {/* This should be a role="listbox" and the entries should be role="option", but that doesn't work with the
+                        design because of the nested buttons. Leave this as a normal list with some interaction (arrow keys, etc)
+                        so that screen readers can navigate the nested controls.
+                    */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+                    <ol
+                        onKeyDown={handleKey}
+                        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+                        tabIndex={0}
+                        aria-label="Notepad entries. Use arrow keys to move selection. Use shift key to select multiple items."
+                    >
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)
                             return (
+                                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                                 <li
                                     key={entry.id}
-                                    role="option"
+                                    data-notepad-entry-index={index}
                                     onClick={event => toggleSelectedEntry(index, event)}
                                     onKeyDown={event => {
                                         if (document.activeElement === event.currentTarget && event.key === ' ') {
@@ -371,35 +439,34 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                                             toggleSelectedEntry(index, event)
                                         }
                                     }}
-                                    aria-selected={selected}
-                                    aria-label={getLabel(entry)}
                                     onMouseDown={preventTextSelection}
+                                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                                     tabIndex={0}
+                                    aria-label={getLabel(entry, selected)}
                                 >
                                     <NotepadEntryComponent
                                         entry={entry}
                                         focus={hasNewEntry && index === 0}
                                         selected={selected}
-                                        onDelete={selected ? deleteSelectedEntries : deleteEntry}
+                                        onDelete={deleteEntry}
+                                        index={index}
                                     />
                                 </li>
                             )
                         })}
-                    </ul>
+                    </ol>
                     {confirmRemoveAll && (
-                        <div className="p-2">
-                            <p>Are you sure you want to delete all entries?</p>
+                        <div className="p-2" role="alert">
+                            <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
-                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => onRemoveAllClosed(false)}
+                                    ref={cancelRemoveAll}
+                                >
                                     Cancel
                                 </Button>
-                                <Button
-                                    variant="danger"
-                                    onClick={() => {
-                                        removeAllNotepadEntries()
-                                        setConfirmRemoveAll(false)
-                                    }}
-                                >
+                                <Button variant="danger" onClick={() => onRemoveAllClosed(true)}>
                                     Yes, delete
                                 </Button>
                             </div>
@@ -407,7 +474,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     )}
                     <div className="p-2 d-flex align-items-center">
                         <Button
-                            onClick={createNotebook}
+                            onClick={handleCreateNotebook}
                             variant="primary"
                             size="sm"
                             disabled={entries.length === 0}
@@ -433,13 +500,14 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             className="text-muted"
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
+                            ref={removeAllButton}
                         >
-                            <Icon as={DeleteIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
                         </Button>
                     </div>
                 </>
             )}
-        </section>
+        </aside>
     )
 }
 
@@ -464,7 +532,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon as={SearchIcon} /> Add search
+                    <Icon aria-hidden={true} svgPath={mdiMagnify} /> Add search
                 </Button>
             )
             break
@@ -482,7 +550,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -496,7 +564,8 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
+                            <Icon aria-hidden={true} svgPath={mdiCodeBrackets} /> Add as range{' '}
+                            {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
                 </span>
@@ -525,6 +594,7 @@ interface NotepadEntryComponentProps {
     focus: boolean
     selected: boolean
     onDelete: (entry: NotepadEntry) => void
+    index: number
 }
 
 const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<NotepadEntryComponentProps>> = ({
@@ -532,6 +602,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     focus = false,
     selected,
     onDelete,
+    index,
 }) => {
     const { icon, title, location } = getUIComponentsForEntry(entry)
     const [annotation, setAnnotation] = useState(entry.annotation ?? '')
@@ -545,7 +616,14 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
         }
     }, [showAnnotationInput])
 
-    const deletionLabel = selected ? 'Remove all selected notes' : 'Remove note'
+    // Focus entry when selected.
+    useEffect(() => {
+        if (selected) {
+            const element = document.querySelector(`[data-notepad-entry-index="${index}"]`) as HTMLElement
+            element?.focus()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected])
 
     const toggleAnnotationInput = useCallback(
         (show: boolean) => {
@@ -561,9 +639,13 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     return (
         <div className={classNames(styles.entry, { [styles.selected]: selected })}>
             <div className="d-flex">
+                <span className="sr-only">{selected ? 'Selected, ' : ''}</span>
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
-                    <Link to={location} className="p-0">
+                    <Link
+                        to={typeof location === 'string' ? location : createLinkUrl(location)}
+                        className="text-monospace search-query-link"
+                    >
                         {title}
                     </Link>
                 </span>
@@ -578,11 +660,11 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon as={TextBoxIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiTextBox} />
                     </Button>
                     <Button
-                        aria-label={deletionLabel}
-                        title={deletionLabel}
+                        aria-label="Remove entry"
+                        title="Remove entry"
                         variant="icon"
                         className="ml-1 text-muted"
                         onClick={event => {
@@ -590,7 +672,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={DeleteIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </span>
             </div>
@@ -621,13 +703,16 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     )
 }
 
-function getUIComponentsForEntry(
-    entry: NotepadEntry | NotepadEntryInput
-): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
+function getUIComponentsForEntry(entry: NotepadEntry | NotepadEntryInput): {
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptorObject | string
+    body?: React.ReactElement
+} {
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon as={SearchIcon} />,
+                icon: <Icon aria-label="Search" svgPath={mdiMagnify} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -641,7 +726,12 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: (
+                    <Icon
+                        aria-label={entry.lineRange ? 'Line range' : 'File'}
+                        svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline}
+                    />
+                ),
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
@@ -663,21 +753,22 @@ function getUIComponentsForEntry(
     }
 }
 
-function getLabel(entry: NotepadEntry): string {
+function getLabel(entry: NotepadEntry, selected: boolean): string {
+    const selectedText = selected ? 'Selected, ' : ''
     switch (entry.type) {
         case 'search':
-            return `search: ${toSearchQuery(entry)}`
+            return `${selectedText}search: ${toSearchQuery(entry)}`
         case 'file':
             if (entry.lineRange) {
-                return `line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
+                return `${selectedText}line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
             }
-            return `file: ${fileName(entry.path)}`
+            return `${selectedText}file: ${fileName(entry.path)}`
     }
 }
 
 function toSearchQuery(entry: SearchEntry): string {
     let { query } = entry
-    if (entry.patternType !== SearchPatternType.literal) {
+    if (entry.patternType !== SearchPatternType.standard) {
         query = updateFilter(entry.query, FilterType.patterntype, entry.patternType)
     }
     if (entry.caseSensitive) {
@@ -694,7 +785,7 @@ function fileName(path: string): string {
     return parts[parts.length - 1]
 }
 
-function formatLineRange(lineRange: IHighlightLineRange): string {
+function formatLineRange(lineRange: HighlightLineRange): string {
     if (lineRange.startLine === lineRange.endLine) {
         return `L${lineRange.startLine + 1}`
     }
@@ -725,6 +816,7 @@ function toggleSelection(selection: Selection, position: number, multiple: boole
         newSelection.splice(index, 1)
         return newSelection
     }
+
     return index === -1 || selection.length > 1 ? [position] : []
 }
 

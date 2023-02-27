@@ -1,0 +1,4 @@
+{
+  "Input": "(repo:foo or repo:bar file:a) or (repo:baz or repo:qux and file:b) a and b",
+  "Result": "((repo:foo OR repo:bar file:a) OR ((repo:baz OR repo:qux file:b) AND a AND b))"
+}

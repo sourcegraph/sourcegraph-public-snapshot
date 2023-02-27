@@ -1,20 +1,21 @@
-export enum InsightExecutionType {
-    /**
-     * This type of insights run on FE via search API.
-     */
-    Runtime = 'runtime',
+import { InsightDataNode, SeriesSortDirection, SeriesSortMode } from '../../../../../graphql-operations'
 
-    /**
-     * This type of insights work via our backend and gql API returns this insight with
-     * pre-calculated data points.
-     */
-    Backend = 'backend',
+export interface BaseInsight {
+    id: string
+    title: string
+    type: InsightType
+    dashboardReferenceCount: number
+    dashboards: InsightDashboardReference[]
+    isFrozen: boolean
 }
+
+export type IncompleteDatapointAlert = InsightDataNode['dataSeries'][number]['status']['incompleteDatapoints'][number]
 
 export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
     CaptureGroup = 'CaptureGroup',
+    Compute = 'Compute',
 }
 
 export enum InsightContentType {
@@ -27,13 +28,19 @@ export interface InsightFilters {
     excludeRepoRegexp: string
     context: string
     repositories?: string[]
+    seriesDisplayOptions: InsightSeriesDisplayOptions
 }
 
-export interface BaseInsight {
+export interface InsightSeriesDisplayOptions {
+    numSamples: number | null
+    limit: number | null
+    sortOptions: {
+        mode: SeriesSortMode
+        direction: SeriesSortDirection
+    }
+}
+
+export interface InsightDashboardReference {
     id: string
     title: string
-    executionType: InsightExecutionType
-    type: InsightType
-    dashboardReferenceCount: number
-    isFrozen: boolean
 }

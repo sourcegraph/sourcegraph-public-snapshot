@@ -4,23 +4,31 @@ import { parseISO } from 'date-fns'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink } from '@sourcegraph/wildcard'
+import {
+    LoadingSpinner,
+    useObservable,
+    Link,
+    CardFooter,
+    Alert,
+    ButtonLink,
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
+import { ProductLicenseInfoResult } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 
 const queryProductLicenseInfo = (): Observable<{
-    productSubscription: GQL.IProductSubscriptionStatus
+    productSubscription: ProductLicenseInfoResult['site']['productSubscription']
     currentUserCount: number
 }> =>
-    queryGraphQL(gql`
+    queryGraphQL<ProductLicenseInfoResult>(gql`
         query ProductLicenseInfo {
             site {
                 productSubscription {
@@ -29,15 +37,18 @@ const queryProductLicenseInfo = (): Observable<{
                     actualUserCountDate
                     noLicenseWarningUserCount
                     license {
-                        tags
-                        userCount
-                        expiresAt
+                        ...ProductLicenseInfoLicenseFields
                     }
                 }
             }
             users {
                 totalCount
             }
+        }
+        fragment ProductLicenseInfoLicenseFields on ProductLicenseInfo {
+            tags
+            userCount
+            expiresAt
         }
     `).pipe(
         map(dataOrThrowErrors),
@@ -140,16 +151,17 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                                         : ''}
                                 </div>
                                 <div className="text-nowrap flex-wrap-reverse">
-                                    <ButtonLink
-                                        to="http://about.sourcegraph.com/contact/sales"
-                                        target="_blank"
-                                        rel="noopener"
-                                        data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
-                                        variant="primary"
-                                        size="sm"
-                                    >
-                                        Get license
-                                    </ButtonLink>
+                                    <Tooltip content="Buy a Sourcegraph Enterprise subscription to get a license key">
+                                        <ButtonLink
+                                            to="http://about.sourcegraph.com/contact/sales"
+                                            target="_blank"
+                                            rel="noopener"
+                                            variant="primary"
+                                            size="sm"
+                                        >
+                                            Get license
+                                        </ButtonLink>
+                                    </Tooltip>
                                 </div>
                             </>
                         )}

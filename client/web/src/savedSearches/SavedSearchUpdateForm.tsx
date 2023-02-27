@@ -1,6 +1,6 @@
-import * as React from 'react'
+import React, { FC } from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -15,29 +15,36 @@ import {
 } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { SavedSearchFields } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespaceProps {
+interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
+    searchId: string
 }
 
 const LOADING = 'loading' as const
 
 interface State {
-    savedSearchOrError: typeof LOADING | GQL.ISavedSearch | ErrorLike
+    savedSearchOrError: typeof LOADING | SavedSearchFields | ErrorLike
     updatedOrError: null | true | typeof LOADING | ErrorLike
 }
 
-export class SavedSearchUpdateForm extends React.Component<Props, State> {
+export const SavedSearchUpdateForm: FC<Omit<Props, 'searchId'>> = props => {
+    const { id } = useParams<{ id: string }>()
+
+    return <InnerSavedSearchUpdateForm {...props} searchId={id!} />
+}
+
+class InnerSavedSearchUpdateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -54,7 +61,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(props => props.match.params.id),
+                    map(props => props.searchId),
                     distinctUntilChanged(),
                     switchMap(id =>
                         fetchSavedSearch(id).pipe(

@@ -25,8 +25,6 @@ kubectl delete pods -l app=sourcegraph-frontend
 
 Settings options and their default values are shown below.
 
-[Sourcegraph extensions](../../extensions/index.md) can also define new settings properties. Check the documentation of an extension to see what settings it defines, or consult the `contributes.configuration` object in the extension's `package.json` (e.g., for the [Codecov extension](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov@560595f0dab5dfb54f5da8be95e685dd2d88c2cf/-/blob/package.json#L178)).
-
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/settings.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/settings) to see rendered content.</div>
 
 ## Additional details on settings
@@ -37,7 +35,7 @@ Notices can be added in global, organization, or user settings. The `notices` se
 
 1. `message`: the markdown copy to be displayed in the banner
 1. `location`: where the banner will be shown. Either on the home page with `"home"` or at the top of the page with `"top"`
-1. `dismissable`: boolean (`true` or `false`). If true, users will be able to close the notice and not see it again. If false, it will persist on the instance until the configuration is removed.
+1. `dismissible`: boolean (`true` or `false`). If true, users will be able to close the notice and not see it again. If false, it will persist on the instance until the configuration is removed.
 
 ### Example settings:
 

@@ -9,10 +9,14 @@
 package types
 
 import (
+	"context"
+	"fmt"
 	"net/url"
 	"reflect"
+	"sort"
 
 	"github.com/sourcegraph/jsonx"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,13 +26,26 @@ import (
 // RedactedSecret is used as a placeholder for secret fields when reading external service config
 const RedactedSecret = "REDACTED"
 
+type errCodeHostIdentityChanged struct {
+	identityProperty string
+	redactedProperty string
+}
+
+func (e errCodeHostIdentityChanged) Error() string {
+	return fmt.Sprintf("Property %q has been changed, please re-enter %q", e.identityProperty, e.redactedProperty)
+}
+
 // RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
-func (e *ExternalService) RedactedConfig() (string, error) {
-	if e.Config == "" {
+func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
+	rawConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return "", err
+	}
+	if rawConfig == "" {
 		return "", nil
 	}
 
-	cfg, err := e.Configuration()
+	cfg, err := e.Configuration(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -38,6 +55,9 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 	case *schema.GitHubConnection:
 		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
+		es.redactString(c.Token, "token")
+		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
+	case *schema.AzureDevOpsConnection:
 		es.redactString(c.Token, "token")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
@@ -69,6 +89,10 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 				return "", err
 			}
 		}
+	case *schema.RustPackagesConnection:
+		// Nothing to redact
+	case *schema.RubyPackagesConnection:
+		es.redactString(c.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -87,31 +111,40 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
 
-	return es.apply(e.Config)
+	return es.apply(rawConfig)
 }
 
 // UnredactConfig will replace redacted fields with their unredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
-func (e *ExternalService) UnredactConfig(old *ExternalService) error {
-	if e == nil || old == nil || e.Config == "" || old.Config == "" {
+func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalService) error {
+	if e == nil || old == nil {
 		return nil
+	}
+
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil || eConfig == "" {
+		return err
+	}
+	oldConfig, err := old.Config.Decrypt(ctx)
+	if err != nil || oldConfig == "" {
+		return err
 	}
 
 	if old.Kind != e.Kind {
 		return errors.Errorf(
-			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
+			"UnredactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
 			old.Kind,
 			e.Kind,
 		)
 	}
 
-	newCfg, err := e.Configuration()
+	newCfg, err := e.Configuration(ctx)
 	if err != nil {
 		return err
 	}
 
-	oldCfg, err := old.Configuration()
+	oldCfg, err := old.Configuration(ctx)
 	if err != nil {
 		return err
 	}
@@ -121,27 +154,62 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	switch c := newCfg.(type) {
 	case *schema.GitHubConnection:
 		o := oldCfg.(*schema.GitHubConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
 		es.unredactString(c.Token, o.Token, "token")
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
 		es.unredactString(c.Token, o.Token, "token")
+		es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
+		var redactedProperty string
+		if c.Url != o.Url {
+			if c.Password == RedactedSecret {
+				redactedProperty = "password"
+			}
+			if c.Token == RedactedSecret {
+				redactedProperty = "token"
+			}
+
+			if redactedProperty != "" {
+				return errCodeHostIdentityChanged{"url", redactedProperty}
+			}
+		}
 		es.unredactString(c.Password, o.Password, "password")
 		es.unredactString(c.Token, o.Token, "token")
 	case *schema.BitbucketCloudConnection:
 		o := oldCfg.(*schema.BitbucketCloudConnection)
 		es.unredactString(c.AppPassword, o.AppPassword, "appPassword")
+		if c.Url != o.Url {
+			return errCodeHostIdentityChanged{"apiUrl", "appPassword"}
+		}
 	case *schema.AWSCodeCommitConnection:
 		o := oldCfg.(*schema.AWSCodeCommitConnection)
 		es.unredactString(c.SecretAccessKey, o.SecretAccessKey, "secretAccessKey")
 		es.unredactString(c.GitCredentials.Password, o.GitCredentials.Password, "gitCredentials", "password")
 	case *schema.PhabricatorConnection:
 		o := oldCfg.(*schema.PhabricatorConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
 		es.unredactString(c.Token, o.Token, "token")
 	case *schema.PerforceConnection:
 		o := oldCfg.(*schema.PerforceConnection)
+		if c.P4Passwd == RedactedSecret && c.P4Port != o.P4Port {
+			return errCodeHostIdentityChanged{"p4.port", "p4.passwd"}
+		}
 		es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd")
+	case *schema.GerritConnection:
+		o := oldCfg.(*schema.GerritConnection)
+		es.unredactString(c.Password, o.Password, "password")
+		if c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "password"}
+		}
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
@@ -154,34 +222,93 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		if err != nil {
 			return err
 		}
+	case *schema.RustPackagesConnection:
+		// Nothing to unredact
+	case *schema.RubyPackagesConnection:
+		o := oldCfg.(*schema.RubyPackagesConnection)
+		es.unredactString(c.Repository, o.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {
-			es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
+			// credentials didn't change check if repositories did
+			if c.Maven.Credentials == RedactedSecret {
+				oldRepos := o.Maven.Repositories
+				sort.Strings(oldRepos)
+
+				newRepos := c.Maven.Repositories
+				sort.Strings(newRepos)
+
+				// if we only remove a known repo, it's fine
+				if len(newRepos) < len(oldRepos) {
+					for _, r := range newRepos {
+						// we have a new repo in the list, return error
+						if !slices.Contains(oldRepos, r) {
+							return errCodeHostIdentityChanged{"repositories", "credentials"}
+						}
+					}
+				} else if !slices.Equal(oldRepos, newRepos) {
+					return errCodeHostIdentityChanged{"repositories", "credentials"}
+				}
+			}
+
 		}
+		es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
 	case *schema.PagureConnection:
 		o := oldCfg.(*schema.PagureConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
+		es.unredactString(c.Token, o.Token, "token")
+	case *schema.AzureDevOpsConnection:
+		o := oldCfg.(*schema.AzureDevOpsConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
 		es.unredactString(c.Token, o.Token, "token")
 	case *schema.NpmPackagesConnection:
 		o := oldCfg.(*schema.NpmPackagesConnection)
+		if c.Credentials == RedactedSecret && c.Registry != o.Registry {
+			return errCodeHostIdentityChanged{"registry", "credentials"}
+		}
 		es.unredactString(c.Credentials, o.Credentials, "credentials")
 	case *schema.OtherExternalServiceConnection:
 		o := oldCfg.(*schema.OtherExternalServiceConnection)
-		err = es.unredactURL(c.Url, o.Url, "url")
+		err := es.unredactURL(c.Url, o.Url, "url")
 		if err != nil {
 			return err
 		}
+		oldParsed, err := url.Parse(o.Url)
+		if err != nil {
+			return err
+		}
+		newParsed, err := url.Parse(c.Url)
+		if err != nil {
+			return err
+		}
+		// compare URLs and see if password changed
+		pwd, ok := newParsed.User.Password()
+
+		// remove UserInfo so we can compare URLs
+		oldParsed.User = nil
+		newParsed.User = nil
+
+		if newParsed.String() != oldParsed.String() {
+			if ok && pwd == RedactedSecret {
+				return errCodeHostIdentityChanged{"url", "password"}
+			}
+		}
+
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
 	}
 
-	unredacted, err := es.apply(e.Config)
+	unredacted, err := es.apply(eConfig)
 	if err != nil {
 		return err
 	}
 
-	e.Config = unredacted
+	e.Config.Set(unredacted)
 	return nil
 }
 
@@ -235,17 +362,30 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 			continue
 		}
 
-		redactedOldURL, err := redactedURL(oldURL)
+		parsed, err := url.Parse(oldURL)
 		if err != nil {
 			return err
 		}
 
-		m[redactedOldURL] = oldURL
+		parsed.User = nil
+		m[parsed.String()] = oldURL
 	}
 
 	for i := range new {
-		oldURL, ok := m[new[i]]
+		parsed, err := url.Parse(new[i])
+		if err != nil {
+			return err
+		}
+
+		pwd, set := parsed.User.Password()
+		parsed.User = nil
+
+		oldURL, ok := m[parsed.String()]
+
 		if !ok {
+			if set && pwd == RedactedSecret {
+				return errCodeHostIdentityChanged{"url", "password"}
+			}
 			continue
 		}
 
@@ -257,7 +397,6 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 
 	return nil
 }
-
 func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil
@@ -300,17 +439,17 @@ func unredactedString(new, old string) string {
 }
 
 func redactedURL(rawURL string) (string, error) {
-	redacted, err := url.Parse(rawURL)
+	parsed, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
 	}
 
-	if _, ok := redacted.User.Password(); !ok {
-		return rawURL, nil
+	if _, ok := parsed.User.Password(); !ok {
+		return parsed.String(), nil
 	}
 
-	redacted.User = url.UserPassword(redacted.User.Username(), RedactedSecret)
-	return redacted.String(), nil
+	parsed.User = url.UserPassword(parsed.User.Username(), RedactedSecret)
+	return parsed.String(), nil
 }
 
 func unredactedURL(new, old string) (string, error) {

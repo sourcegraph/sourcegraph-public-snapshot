@@ -91,7 +91,7 @@ func getStoreProvider(serverAddress string) (string, error) {
 		serverAddress == "https://docker.io" ||
 		serverAddress == "https://registry.hub.docker.com" ||
 		serverAddress == "https://index.docker.io/v2/" {
-		serverAddress = "https://index.docker.io/v1/"
+		serverAddress = "https://registry.hub.docker.com/v2"
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -113,13 +113,13 @@ func getStoreProvider(serverAddress string) (string, error) {
 		return config.CredentialsStore, nil
 	}
 
-	url, err := url.Parse(serverAddress)
+	serverUrl, err := url.Parse(serverAddress)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse server address %s", serverAddress)
 	}
 
-	if config.CredentialHelpers[url.Host] != "" {
-		return config.CredentialHelpers[url.Host], nil
+	if config.CredentialHelpers[serverUrl.Host] != "" {
+		return config.CredentialHelpers[serverUrl.Host], nil
 	}
 
 	return "", errors.Errorf("failed to find store provider or credential helper for %s", serverAddress)
@@ -131,10 +131,10 @@ func GetCredentialsFromStore(serverAddress string) (*credentials.Credentials, er
 		return nil, err
 	}
 	program := client.NewShellProgramFunc(fmt.Sprintf("docker-credential-%s", provider))
-	credentials, err := client.Get(program, serverAddress)
+	creds, err := client.Get(program, serverAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	return credentials, err
+	return creds, err
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -30,40 +33,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client("Test", apiURL, auth, cli)
-}
-
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -172,7 +142,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
 			defer save()
 
-			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, test.affiliations...)
+			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, 100, test.affiliations...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -204,11 +174,12 @@ func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
 // for GITHUB_TOKEN, which can be found in 1Password.
 func TestListRepositoryCollaborators(t *testing.T) {
 	tests := []struct {
-		name        string
-		owner       string
-		repo        string
-		affiliation CollaboratorAffiliation
-		wantUsers   []*Collaborator
+		name            string
+		owner           string
+		repo            string
+		affiliation     CollaboratorAffiliation
+		wantUsers       []*Collaborator
+		wantHasNextPage bool
 	}{
 		{
 			name:  "public repo",
@@ -220,6 +191,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:  "private repo",
@@ -240,6 +212,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 89494884,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator outside collaborator",
@@ -252,6 +225,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 66464926,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator repo owner",
@@ -264,6 +238,15 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
+		},
+		{
+			name:            "has next page is true",
+			owner:           "sourcegraph-vcr",
+			repo:            "private-repo-1",
+			affiliation:     AffiliationDirect,
+			wantUsers:       nil,
+			wantHasNextPage: true,
 		},
 	}
 	for _, test := range tests {
@@ -271,13 +254,19 @@ func TestListRepositoryCollaborators(t *testing.T) {
 			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
 			defer save()
 
-			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			users, hasNextPage, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
-				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			if test.wantUsers != nil {
+				if diff := cmp.Diff(test.wantUsers, users); diff != "" {
+					t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+				}
+			}
+
+			if diff := cmp.Diff(test.wantHasNextPage, hasNextPage); diff != "" {
+				t.Fatalf("HasNextPage mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -288,7 +277,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +500,6 @@ func TestGetRepository(t *testing.T) {
 			if remaining2 < remaining {
 				t.Fatalf("expected cached repsonse, but API quota used")
 			}
-
 		})
 	})
 
@@ -527,7 +515,6 @@ func TestGetRepository(t *testing.T) {
 			t.Error("repo != nil")
 		}
 	})
-
 }
 
 // ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
@@ -625,7 +612,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -714,19 +701,20 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &V3Client{
+	oldClient := &V3Client{
+		log:    logtest.Scoped(t),
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken)
-	if old == new {
+	newClient := oldClient.WithAuthenticator(newToken)
+	if oldClient == newClient {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.auth != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.auth)
+	if newClient.auth != newToken {
+		t.Fatalf("token: want %p but got %p", newToken, newClient.auth)
 	}
 }
 
@@ -750,7 +738,7 @@ func TestV3Client_Fork(t *testing.T) {
 				client, save := newV3TestClient(t, testName)
 				defer save()
 
-				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org)
+				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
 				assert.Nil(t, err)
 				assert.NotNil(t, fork)
 				if org != nil {
@@ -771,7 +759,7 @@ func TestV3Client_Fork(t *testing.T) {
 		client, save := newV3TestClient(t, testName)
 		defer save()
 
-		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil)
+		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
 		assert.NotNil(t, err)
 		assert.Nil(t, fork)
 
@@ -793,7 +781,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, vcrToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -810,7 +798,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, gheToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }
@@ -821,7 +809,6 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 
 	rcache.SetupForTest(t)
 	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -835,7 +822,6 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 		update("ListRepositoriesForSearch"),
 		reposPage.Repos,
 	)
-
 }
 
 func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
@@ -873,4 +859,164 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
 	}
+}
+
+type testCase struct {
+	repoName    string
+	expectedUrl string
+}
+
+var testCases = map[string]testCase{
+	"github.com": {
+		repoName:    "github.com/sd9/sourcegraph",
+		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+	},
+	"enterprise": {
+		repoName:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+	},
+}
+
+func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	defer save()
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+
+			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
+			}
+
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !deleted {
+				t.Fatal("Could not delete created repo")
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilder(tc.repoName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
+	type testCaseWithID struct {
+		repoName    string
+		id          int
+		expectedUrl string
+	}
+
+	testCases := map[string]testCaseWithID{
+		"github.com": {
+			repoName:    "github.com/sd9/sourcegraph",
+			id:          42,
+			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
+		},
+		"enterprise": {
+			repoName:    "ghe.sgdev.org/milton/test",
+			id:          69,
+			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/69",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}
+
+func TestResponseHasNextPage(t *testing.T) {
+	t.Run("has next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != true {
+			t.Fatal("expected true, got false")
+		}
+	})
+
+	t.Run("does not have next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="prev", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=1&per_page=100&affiliation=direct>; rel="first"`)
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != false {
+			t.Fatal("expected false, got true")
+		}
+	})
+
+	t.Run("no header returns false", func(t *testing.T) {
+		headers := http.Header{}
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != false {
+			t.Fatal("expected false, got true")
+		}
+	})
+}
+
+func TestListPublicRepositories(t *testing.T) {
+	t.Run("should skip null REST repositories", func(t *testing.T) {
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := w.Write([]byte(`[{"node_id": "1"}, null, {}, {"node_id": "2"}]`))
+			if err != nil {
+				t.Fatalf("failed to write response: %v", err)
+			}
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+
+		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Len(t, repositories, 2)
+		assert.False(t, hasNextPage)
+		assert.Equal(t, "1", repositories[0].ID)
+		assert.Equal(t, "2", repositories[1].ID)
+	})
 }

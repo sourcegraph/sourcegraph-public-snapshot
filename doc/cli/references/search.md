@@ -63,7 +63,7 @@ Other tips:
 
   Force color output on (not on by default when piped to other programs) by setting COLOR=t
 
-  Query syntax: https://about.sourcegraph.com/docs/search/query-syntax/
+  Query syntax: https://docs.sourcegraph.com/code_search/reference/queries
 
   Be careful with search strings including negation: a search with an initial
   negated term may be parsed as a flag rather than as a search string. You can

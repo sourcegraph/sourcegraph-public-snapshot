@@ -1,67 +1,50 @@
-import * as React from 'react'
+import { useEffect } from 'react'
 
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate } from 'react-router-dom'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { BatchChangesProps } from './batches'
-import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import type { LayoutProps } from './Layout'
-import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
-import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
-import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
-import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
+import { LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
-import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
-import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { getExperimentalFeatures } from './stores'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
-const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
-const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+const InstallGitHubAppSuccessPage = lazyComponent(
+    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
+    'InstallGitHubAppSuccessPage'
+)
+const RedirectToUserSettings = lazyComponent(
+    () => import('./user/settings/RedirectToUserSettings'),
+    'RedirectToUserSettings'
+)
+const RedirectToUserPage = lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
+const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
+const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
+const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
+const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
+const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
+const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
+const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 
-export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
-    extends RouteComponentProps<RouteParameters>,
-        Omit<LayoutProps, 'match'>,
-        ThemeProps,
-        ThemePreferenceProps,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
-        ExtensionAlertProps,
-        CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
-    isSourcegraphDotCom: boolean
-    isMacPlatform: boolean
-}
-
-export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
+export interface LayoutRouteProps {
     path: string
-    exact?: boolean
-    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
-
-    /**
-     * A condition function that needs to return true if the route should be rendered
-     *
-     * @default () => true
-     */
-    condition?: (props: LayoutRouteComponentProps<Parameters_>) => boolean
+    handle?: {}
+    element: React.ReactNode
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
-function passThroughToServer(): React.ReactNode {
-    window.location.reload()
+const PassThroughToServer: React.FC = () => {
+    useEffect(() => {
+        window.location.reload()
+    })
     return null
 }
 
@@ -71,182 +54,125 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
-    {
-        path: PageRoutes.Index,
-        render: () => <Redirect to={PageRoutes.Search} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.Search,
-        render: props => <SearchPageWrapper {...props} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.SearchConsole,
-        render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
-
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+export const routes: readonly LayoutRouteProps[] = (
+    [
+        {
+            path: PageRoutes.Index,
+            element: <Navigate replace={true} to={PageRoutes.Search} />,
         },
-        exact: true,
-    },
-    {
-        path: PageRoutes.SearchNotebook,
-        render: () => <Redirect to={PageRoutes.Notebooks} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Redirect to={PageRoutes.Notebooks} />
-            ),
-        exact: true,
-    },
-    {
-        path: PageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
-
-            return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+        {
+            path: PageRoutes.Search,
+            element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
         },
-        exact: true,
-    },
-    {
-        path: PageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <NotebooksListPage {...props} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-        exact: true,
-    },
-    {
-        path: PageRoutes.SignIn,
-        render: props => <SignInPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.SignUp,
-        render: props => <SignUpPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.UnlockAccount,
-        render: props => <UnlockAccountPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.Welcome,
-        render: props =>
-            /**
-             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
-             * 1. user is authenticated
-             * 2. it's a DotComMode instance
-             * AND
-             * instance has enabled enablePostSignupFlow experimental feature
-             * OR
-             * user authenticated has a AllowUserViewPostSignup tag
-             */
+        {
+            path: PageRoutes.SearchConsole,
+            element: (
+                <LegacyRoute
+                    render={props => {
+                        const { showMultilineSearchConsole } = getExperimentalFeatures()
 
-            !!props.authenticatedUser &&
-            (!!new URLSearchParams(props.location.search).get('debug') ||
-                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
-                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-                <PostSignUpPage
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                    context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
-                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                        return showMultilineSearchConsole ? (
+                            <SearchConsolePage {...props} />
+                        ) : (
+                            <Navigate replace={true} to={PageRoutes.Search} />
+                        )
+                    }}
                 />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
             ),
-
-        exact: true,
-    },
-    {
-        path: PageRoutes.InstallGitHubAppSuccess,
-        render: () => <InstallGitHubAppSuccessPage />,
-    },
-    {
-        path: PageRoutes.InstallGitHubAppSelectOrg,
-        render: props => <ConnectGitHubAppPage {...props} />,
-    },
-    {
-        path: PageRoutes.Settings,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
-    },
-    {
-        path: PageRoutes.User,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
-    },
-    {
-        path: PageRoutes.Organizations,
-        render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
-    },
-    {
-        path: PageRoutes.SiteAdminInit,
-        exact: true,
-        render: props => <SiteInitPage {...props} context={window.context} />,
-    },
-    {
-        path: PageRoutes.SiteAdmin,
-        render: props => (
-            <SiteAdminArea
-                {...props}
-                routes={props.siteAdminAreaRoutes}
-                sideBarGroups={props.siteAdminSideBarGroups}
-                overviewComponents={props.siteAdminOverviewComponents}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.PasswordReset,
-        render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
-        exact: true,
-    },
-    {
-        path: PageRoutes.ApiConsole,
-        render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
-        exact: true,
-    },
-    {
-        path: PageRoutes.UserArea,
-        render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
-    },
-    {
-        path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
-    },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-    },
-    {
-        path: PageRoutes.Help,
-        render: passThroughToServer,
-    },
-    {
-        path: PageRoutes.Debug,
-        render: passThroughToServer,
-    },
-    ...communitySearchContextsRoutes,
-    {
-        path: PageRoutes.RepoContainer,
-        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
-    },
-]
+        },
+        {
+            path: PageRoutes.SignIn,
+            element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
+        },
+        {
+            path: PageRoutes.RequestAccess,
+            element: <RequestAccessPage />,
+        },
+        {
+            path: PageRoutes.SignUp,
+            element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
+        },
+        {
+            path: PageRoutes.UnlockAccount,
+            element: <LegacyRoute render={props => <UnlockAccountPage {...props} context={window.context} />} />,
+        },
+        {
+            path: PageRoutes.Welcome,
+            // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
+            element: <Navigate replace={true} to={PageRoutes.Search} />,
+        },
+        {
+            path: PageRoutes.InstallGitHubAppSuccess,
+            element: <InstallGitHubAppSuccessPage />,
+        },
+        {
+            path: PageRoutes.Settings,
+            element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
+        },
+        {
+            path: PageRoutes.User,
+            element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
+        },
+        {
+            path: PageRoutes.Teams,
+            element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
+        },
+        {
+            path: PageRoutes.Organizations,
+            element: <LegacyRoute render={props => <OrgsArea {...props} />} />,
+        },
+        {
+            path: PageRoutes.SiteAdminInit,
+            element: <LegacyRoute render={props => <SiteInitPage {...props} context={window.context} />} />,
+        },
+        {
+            path: PageRoutes.SiteAdmin,
+            element: (
+                <LegacyRoute
+                    render={props => (
+                        <SiteAdminArea
+                            {...props}
+                            routes={props.siteAdminAreaRoutes}
+                            sideBarGroups={props.siteAdminSideBarGroups}
+                            overviewComponents={props.siteAdminOverviewComponents}
+                        />
+                    )}
+                />
+            ),
+        },
+        {
+            path: PageRoutes.PasswordReset,
+            element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
+        },
+        {
+            path: PageRoutes.ApiConsole,
+            element: <ApiConsole />,
+        },
+        {
+            path: PageRoutes.UserArea,
+            element: <LegacyRoute render={props => <UserArea {...props} />} />,
+        },
+        {
+            path: PageRoutes.Survey,
+            element: <LegacyRoute render={props => <SurveyPage {...props} />} />,
+        },
+        {
+            path: PageRoutes.Help,
+            element: <PassThroughToServer />,
+        },
+        {
+            path: PageRoutes.Debug,
+            element: <PassThroughToServer />,
+        },
+        ...communitySearchContextsRoutes,
+        {
+            path: PageRoutes.RepoContainer,
+            element: <LegacyRoute render={props => <RepoContainer {...props} />} />,
+            // In RR6, the useMatches hook will only give you the location that is matched
+            // by the path rule and not the path rule instead. Since we need to be able to
+            // detect if we're inside the repo container reliably inside the Layout, we
+            // expose this information in the handle object instead.
+            handle: { isRepoContainer: true },
+        },
+    ] as readonly (LayoutRouteProps | undefined)[]
+).filter(Boolean) as readonly LayoutRouteProps[]

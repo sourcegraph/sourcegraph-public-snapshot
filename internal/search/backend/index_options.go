@@ -3,11 +3,11 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"sort"
 
-	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/zoekt"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -48,6 +48,11 @@ type zoektIndexOptions struct {
 	// Priority indicates ranking in results, higher first.
 	Priority float64 `json:",omitempty"`
 
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string `json:",omitempty"`
+
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
 }
@@ -67,6 +72,11 @@ type RepoIndexOptions struct {
 
 	// Priority indicates ranking in results, higher first.
 	Priority float64
+
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string
 
 	// Fork is true if the repository is a fork.
 	Fork bool
@@ -134,6 +144,8 @@ func getIndexOptions(
 		Archived:   opts.Archived,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+
+		DocumentRanksVersion: opts.DocumentRanksVersion,
 	}
 
 	// Set of branch names. Always index HEAD
@@ -176,13 +188,12 @@ func getIndexOptions(
 		})
 	}
 
-	sort.Slice(o.Branches, func(i, j int) bool {
-		a, b := o.Branches[i].Name, o.Branches[j].Name
+	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
 		// Zoekt treats first branch as default branch, so put HEAD first
-		if a == "HEAD" || b == "HEAD" {
-			return a == "HEAD"
+		if a.Name == "HEAD" || b.Name == "HEAD" {
+			return a.Name == "HEAD"
 		}
-		return a < b
+		return a.Name < b.Name
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should

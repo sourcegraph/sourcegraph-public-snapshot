@@ -1,32 +1,30 @@
 import React, { useCallback, useState } from 'react'
 
-import { RouteComponentProps } from 'react-router-dom'
+import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
-import { Button, Container } from '@sourcegraph/wildcard'
-
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 
-interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {}
+interface DeleteOrgProps extends OrgAreaRouteContext {}
 
 /**
  * Deletes an organization.
  */
 export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOrgProps>> = props => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const toggleDeleteModal = useCallback(() => setShowDeleteModal(!showDeleteModal), [
-        setShowDeleteModal,
-        showDeleteModal,
-    ])
+    const toggleDeleteModal = useCallback(
+        () => setShowDeleteModal(!showDeleteModal),
+        [setShowDeleteModal, showDeleteModal]
+    )
 
     return (
         <Container className="mt-3 mb-5">
-            <h3 className="text-danger">Delete this organization</h3>
+            <H3 className="text-danger">Delete this organization</H3>
             <div className="d-flex justify-content-between">
-                <p className="d-flex justify-content-right">
+                <Text className="d-flex justify-content-right">
                     This cannot be undone. Deleting an organization removes all of its resources.
-                </p>
+                </Text>
                 <Button variant="danger" size="sm" onClick={toggleDeleteModal}>
                     Delete this organization
                 </Button>

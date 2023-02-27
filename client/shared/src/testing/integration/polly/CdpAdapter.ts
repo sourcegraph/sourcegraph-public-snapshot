@@ -1,12 +1,10 @@
 import PollyAdapter from '@pollyjs/adapter'
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
-import Protocol from 'devtools-protocol'
-import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping'
 import { noop } from 'lodash'
-import Puppeteer from 'puppeteer'
+import Puppeteer, { Protocol, ProtocolMapping } from 'puppeteer'
 import { Observable, Subject } from 'rxjs'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, logger } from '@sourcegraph/common'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')
@@ -183,7 +181,7 @@ export class CdpAdapter extends PollyAdapter {
 
         return new Promise<PollyResponse>((resolve, reject) => {
             this.passthroughPromises.set(requestId, { resolve, reject })
-            this.continuePausedRequest({ requestId }, cdpSession).catch(console.error)
+            this.continuePausedRequest({ requestId }, cdpSession).catch(logger.error)
         })
     }
 
@@ -329,7 +327,7 @@ export class CdpAdapter extends PollyAdapter {
 
         // Passthrough missing Chrome extension request because it's expected to fail if the extension is not installed.
         if (request.url.includes('chrome-extension://invalid')) {
-            this.continuePausedRequest({ requestId: event.requestId }, cdpSession).catch(console.error)
+            this.continuePausedRequest({ requestId: event.requestId }, cdpSession).catch(logger.error)
 
             return
         }
@@ -376,7 +374,7 @@ export class CdpAdapter extends PollyAdapter {
                 this.pendingRequests.get(requestId)?.resolve(pollyResponse)
                 this.pendingRequests.delete(requestId)
             })
-            .catch(console.error)
+            .catch(logger.error)
     }
 }
 

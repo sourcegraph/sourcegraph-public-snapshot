@@ -125,3 +125,34 @@ query User($username: String) {
 	}
 	return names, nil
 }
+
+// UserPermissions returns repo permissions that given user has.
+func (c *Client) UserPermissions(username string) ([]string, error) {
+	const query = `
+query User($username: String) {
+	user(username: $username) {
+		permissionsInfo {
+			permissions
+		}
+	}
+}
+`
+	variables := map[string]any{
+		"username": username,
+	}
+	var resp struct {
+		Data struct {
+			User struct {
+				PermissionsInfo struct {
+					Permissions []string `json:"permissions"`
+				} `json:"permissionsInfo"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.User.PermissionsInfo.Permissions, nil
+}

@@ -1,16 +1,13 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
-import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
-import { RouteComponentProps } from 'react-router'
+import { mdiArrowLeft, mdiPlus } from '@mdi/js'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Button,
     LoadingSpinner,
@@ -21,19 +18,25 @@ import {
     CardBody,
     Card,
     Icon,
+    H2,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { Timestamp } from '../../../../components/time/Timestamp'
-import { ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables } from '../../../../graphql-operations'
+import {
+    ArchiveProductSubscriptionResult,
+    ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    ProductLicensesResult,
+    ProductLicenseFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductSubscriptionHistory } from '../../../user/productSubscriptions/ProductSubscriptionHistory'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
@@ -41,21 +44,14 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
-import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props {
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
-    history: H.History
 }
-
-class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
 
 const LOADING = 'loading' as const
 
@@ -63,14 +59,11 @@ const LOADING = 'loading' as const
  * Displays a product subscription in the site admin area.
  */
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
+    const navigate = useNavigate()
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
@@ -106,14 +99,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     switchMap(() =>
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
-                            tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
                 )
             },
-            [history, productSubscription]
+            [navigate, productSubscription]
         )
     )
 
@@ -123,10 +116,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     )
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
-
-    /** Updates to the subscription. */
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onUpdate = useCallback(() => updates.next(), [updates])
 
     /** Updates to the subscription's licenses. */
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
@@ -144,7 +133,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon as={ArrowLeftIcon} /> All subscriptions
+                    <Icon aria-hidden={true} svgPath={mdiArrowLeft} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -153,7 +142,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <h2>Product subscription {productSubscription.name}</h2>
+                    <H2>Product subscription {productSubscription.name}</H2>
                     <div className="mb-3">
                         <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive
@@ -190,15 +179,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th className="text-nowrap">Billing</th>
-                                    <td className="w-100">
-                                        <SiteAdminProductSubscriptionBillingLink
-                                            productSubscription={productSubscription}
-                                            onDidUpdate={onUpdate}
-                                        />
-                                    </td>
-                                </tr>
-                                <tr>
                                     <th className="text-nowrap">Created at</th>
                                     <td className="w-100">
                                         <Timestamp date={productSubscription.createdAt} />
@@ -217,7 +197,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon as={AddIcon} /> Generate new license manually
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>
@@ -225,11 +205,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
+                                    subscriptionAccount={productSubscription.account?.username || ''}
                                     onGenerate={onLicenseUpdate}
                                 />
                             </CardBody>
                         )}
-                        <FilteredSiteAdminProductLicenseConnection
+                        <FilteredConnection<
+                            ProductLicenseFields,
+                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
+                        >
                             className="list-group list-group-flush"
                             noun="product license"
                             pluralNoun="product licenses"
@@ -240,13 +224,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
-                            history={history}
-                            location={location}
                         />
-                    </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
                     </Card>
                 </>
             )}
@@ -254,8 +232,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
+function queryProductSubscription(
+    uuid: string
+): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
+    return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
@@ -263,30 +243,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         id
                         name
                         account {
-                            id
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                            }
-                        }
-                        invoiceItem {
-                            plan {
-                                billingPlanID
-                                name
-                                nameWithBrand
-                                pricePerUserPerYear
-                            }
-                            userCount
-                            expiresAt
-                        }
-                        events {
-                            id
-                            date
-                            title
-                            description
-                            url
+                            ...DotComProductSubscriptionEmailFields
                         }
                         productLicenses {
                             nodes {
@@ -304,11 +261,31 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                                 hasNextPage
                             }
                         }
+                        activeLicense {
+                            id
+                            info {
+                                productNameWithBrand
+                                tags
+                                userCount
+                                expiresAt
+                            }
+                            licenseKey
+                            createdAt
+                        }
                         createdAt
                         isArchived
                         url
-                        urlForSiteAdminBilling
                     }
+                }
+            }
+
+            fragment DotComProductSubscriptionEmailFields on User {
+                id
+                username
+                displayName
+                emails {
+                    email
+                    verified
                 }
             }
         `,
@@ -326,8 +303,8 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.IProductLicenseConnection> {
-    return queryGraphQL(
+): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
+    return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
                 dotcom {

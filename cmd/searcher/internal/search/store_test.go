@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,10 +15,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -132,17 +136,29 @@ func TestPrepareZip_errHeader(t *testing.T) {
 	}
 }
 
-func TestIngoreSizeMax(t *testing.T) {
-	patterns := []string{
-		"foo",
-		"foo.*",
-		"foo_*",
-		"*.foo",
-		"bar.baz",
-	}
+func TestSearchLargeFiles(t *testing.T) {
+	filter := newSearchableFilter(&schema.SiteConfiguration{
+		SearchLargeFiles: []string{
+			"foo",
+			"foo.*",
+			"foo_*",
+			"*.foo",
+			"bar.baz",
+			"**/*.bam",
+			"qu?.foo",
+			"!qux.*",
+			"**/quu?.foo",
+			"!**/quux.foo",
+			"!quuux.foo",
+			"quuu?.foo",
+			"\\!foo.baz",
+			"!!foo.bam",
+			"\\!!baz.foo",
+		},
+	})
 	tests := []struct {
-		name    string
-		ignored bool
+		name   string
+		search bool
 	}{
 		// Pass
 		{"foo", true},
@@ -150,14 +166,32 @@ func TestIngoreSizeMax(t *testing.T) {
 		{"foo_bar", true},
 		{"bar.baz", true},
 		{"bar.foo", true},
+		{"hello.bam", true},
+		{"sub/dir/hello.bam", true},
+		{"/sub/dir/hello.bam", true},
+
+		// Pass - with negate meta character
+		{"quuux.foo", true},
+		{"!foo.baz", true},
+		{"!!baz.foo", true},
+
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
+
+		// Fail - with negate meta character
+		{"qux.foo", false},
+		{"/sub/dir/quux.foo", false},
+		{"!foo.bam", false},
 	}
 
 	for _, test := range tests {
-		if got, want := ignoreSizeMax(test.name, patterns), test.ignored; got != want {
+		hdr := &tar.Header{
+			Name: test.name,
+			Size: maxFileSize + 1,
+		}
+		if got, want := filter.SkipContent(hdr), !test.search; got != want {
 			t.Errorf("case %s got %v want %v", test.name, got, want)
 		}
 	}
@@ -179,9 +213,11 @@ func TestSymlink(t *testing.T) {
 	}
 	zw := zip.NewWriter(f)
 
-	if err := copySearchable(tarReader, zw, []string{}, func(hdr *tar.Header) bool {
+	filter := newSearchableFilter(&schema.SiteConfiguration{})
+	filter.CommitIgnore = func(hdr *tar.Header) bool {
 		return false
-	}); err != nil {
+	}
+	if err := copySearchable(tarReader, zw, filter); err != nil {
 		t.Fatal(err)
 	}
 	zw.Close()
@@ -220,7 +256,7 @@ func TestSymlink(t *testing.T) {
 }
 
 func createSymlinkRepo(dir string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	script := `mkdir repo
@@ -246,13 +282,14 @@ func tarArchive(dir string) (*tar.Reader, error) {
 		"archive",
 		"--worktree-attributes",
 		"--format=tar",
-		"master",
+		"HEAD",
 		"--",
 	}
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	b := bytes.Buffer{}
 	cmd.Stdout = &b
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
@@ -264,6 +301,8 @@ func tmpStore(t *testing.T) *Store {
 	return &Store{
 		Path: d,
 		Log:  logtest.Scoped(t),
+
+		ObservationCtx: observation.TestContextTB(t),
 	}
 }
 
@@ -275,4 +314,13 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return io.NopCloser(bytes.NewReader(buf.Bytes()))
+}
+
+func TestIsNetOpError(t *testing.T) {
+	if !isNetOpError(&net.OpError{}) {
+		t.Fatal("should be net.OpError")
+	}
+	if isNetOpError(errors.New("hi")) {
+		t.Fatal("should not be net.OpError")
+	}
 }

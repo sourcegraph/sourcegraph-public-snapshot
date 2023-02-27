@@ -3,8 +3,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -euo pipefail
-
-REPO_ROOT="$PWD"
+base=$(pwd)
 
 function usage {
   cat <<EOF
@@ -13,6 +12,11 @@ Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
 Run go tests, optionally restricting which ones based on the only and exclude commands.
 
 EOF
+}
+
+# Set up gotestsum for better output
+function gotestsum() {
+  go run gotest.tools/gotestsum@v1.8.2 "$@"
 }
 
 function go_test() {
@@ -28,30 +32,24 @@ function go_test() {
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
   # shellcheck disable=SC2086
-  go test \
+  gotestsum -- \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
     -race \
-    -v \
-    $test_packages | tee "$tmpfile" | richgo testfilter
+    $test_packages | tee "$tmpfile"
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
+  echo "--- Tests complete with status $test_exit_code"
   set -eo pipefail # resume being strict about errors
-
-  mkdir -p './test-reports'
-  go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
-    set -x
     echo "~~~ Creating test failures anotation"
-    RICHGO_CONFIG="./.richstyle.yml"
-    cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
-    richgo testfilter <"$tmpfile" >>./annotations/go-test
-    rm -rf $RICHGO_CONFIG
-    set +x
+    # in $base, because we're running this function with a cwd set to where we 
+    # found the go.mod.
+    sed '0,/=== Failed$/d'<"$tmpfile" >> "${base}/annotations/go-test"
   fi
 
   return "$test_exit_code"
@@ -72,16 +70,6 @@ fi
 if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
-
-echo "--- install tools"
-# https://github.com/sourcegraph/sourcegraph/issues/28469
-# TODO is that the best way to handle this?
-go install github.com/jstemmer/go-junit-report@latest
-# Install richgo for better output
-# This fork gives us the `anyStyle` configuration required to hide log lines
-go install github.com/jhchabran/richgo@installable
-# Reshim so that the above tools are available
-asdf reshim golang
 
 # For searcher
 echo "--- comby install"

@@ -3,15 +3,18 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
+const { StatsWriterPlugin } = require('webpack-stats-plugin')
 
 const {
   ROOT_PATH,
+  STATIC_ASSETS_PATH,
   getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
@@ -23,23 +26,32 @@ const {
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
-  STATOSCOPE_STATS,
 } = require('@sourcegraph/build-config')
 
-const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
-const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
   CI: IS_CI,
+  INTEGRATION_TESTS,
   ENTERPRISE,
   EMBED_DEVELOPMENT,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
-  WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_EXPORT_STATS_FILENAME,
+  WEBPACK_SERVE_INDEX,
+  WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
+  WEBPACK_DEVELOPMENT_DEVTOOL,
+  SENTRY_UPLOAD_SOURCE_MAPS,
+  COMMIT_SHA,
+  VERSION,
+  SENTRY_DOT_COM_AUTH_TOKEN,
+  SENTRY_ORGANIZATION,
+  SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
 
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
@@ -47,7 +59,10 @@ const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOP
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
+  INTEGRATION_TESTS,
+  COMMIT_SHA,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
@@ -58,21 +73,23 @@ const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace 
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
 
-const extensionHostWorker = /main\.worker\.ts$/
+// Used to ensure that we include all initial chunks into the Webpack manifest.
+const initialChunkNames = {
+  react: 'react',
+  opentelemetry: 'opentelemetry',
+}
 
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode: IS_PRODUCTION ? 'production' : 'development',
-  stats: WEBPACK_BUNDLE_ANALYZER
-    ? STATOSCOPE_STATS
-    : {
-        // Minimize logging in case if Webpack is used along with multiple other services.
-        // Use `normal` output preset in case of running standalone web server.
-        preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
-        errorDetails: true,
-        timings: true,
-      },
+  stats: {
+    // Minimize logging in case if Webpack is used along with multiple other services.
+    // Use `normal` output preset in case of running standalone web server.
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    errorDetails: true,
+    timings: true,
+  },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
@@ -83,13 +100,18 @@ const config = {
     IS_PERSISTENT_CACHE_ENABLED &&
     getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: IS_PRODUCTION,
+    minimize: IS_PRODUCTION && !INTEGRATION_TESTS,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
-        react: {
+        [initialChunkNames.react]: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
-          name: 'react',
+          name: initialChunkNames.react,
+          chunks: 'all',
+        },
+        [initialChunkNames.opentelemetry]: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
       },
@@ -112,7 +134,7 @@ const config = {
     ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {
-    path: path.join(ROOT_PATH, 'ui', 'assets'),
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -125,7 +147,9 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : 'eval-cheap-module-source-map',
+  // Inline source maps for integration tests to preserve readable stack traces.
+  // See related issue here: https://github.com/puppeteer/puppeteer/issues/985
+  devtool: IS_PRODUCTION ? (INTEGRATION_TESTS ? 'inline-source-map' : 'source-map') : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
@@ -133,19 +157,24 @@ const config = {
     getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-      filename: IS_PRODUCTION ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
+      filename:
+        IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
+          ? 'styles/[name].[contenthash].bundle.css'
+          : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !WEBPACK_SERVE_INDEX &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
-      }),
-    ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
-    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(),
-    isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      seed: {
+        environment: NODE_ENV,
+      },
+      // Only output files that are required to run the application.
+      filter: ({ isInitial, name }) =>
+        isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
+    }),
+    ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
+    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({
@@ -172,10 +201,44 @@ const config = {
          */
         threshold: 10240,
       }),
+    VERSION &&
+      SENTRY_UPLOAD_SOURCE_MAPS &&
+      new SentryWebpackPlugin({
+        silent: true,
+        org: SENTRY_ORGANIZATION,
+        project: SENTRY_PROJECT,
+        authToken: SENTRY_DOT_COM_AUTH_TOKEN,
+        release: `frontend@${VERSION}`,
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
+      }),
+    WEBPACK_EXPORT_STATS_FILENAME &&
+      new StatsWriterPlugin({
+        filename: WEBPACK_EXPORT_STATS_FILENAME,
+        stats: {
+          all: false, // disable all the stats
+          hash: true, // compilation hash
+          entrypoints: true,
+          chunks: true,
+          chunkModules: true, // modules
+          ids: true, // IDs of modules and chunks (webpack 5)
+          cachedAssets: true, // information about the cached assets (webpack 5)
+          nestedModules: true, // concatenated modules
+          usedExports: true,
+          assets: true,
+          chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+          timings: true, // modules timing information
+          performance: true, // info about oversized assets
+        },
+      }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+      punycode: require.resolve('punycode'),
+      util: require.resolve('util'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
@@ -189,13 +252,11 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: hotLoadablePaths,
-        exclude: extensionHostWorker,
         use: [
-          ...(IS_PRODUCTION ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
-              cacheDirectory: true,
+              cacheDirectory: !IS_PRODUCTION,
               ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
             },
           },
@@ -203,8 +264,8 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: [...hotLoadablePaths, extensionHostWorker],
-        use: [...(IS_PRODUCTION ? ['thread-loader'] : []), getBabelLoader()],
+        exclude: hotLoadablePaths,
+        use: [getBabelLoader()],
       },
       {
         test: /\.(sass|scss)$/,
@@ -219,24 +280,8 @@ const config = {
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
-      {
-        test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, getBabelLoader()],
-      },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
-      {
-        test: /\.elm$/,
-        exclude: /elm-stuff/,
-        use: {
-          loader: 'elm-webpack-loader',
-          options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
-            report: 'json',
-            pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
-          },
-        },
-      },
     ],
   },
 }

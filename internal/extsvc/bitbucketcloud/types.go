@@ -20,6 +20,11 @@ type Account struct {
 	UUID          string        `json:"uuid"`
 }
 
+type Author struct {
+	User *Account `json:"account,omitempty"`
+	Raw  string   `json:"raw"`
+}
+
 type Comment struct {
 	ID        int64          `json:"id"`
 	CreatedOn time.Time      `json:"created_on"`
@@ -36,6 +41,17 @@ type CommentInline struct {
 	To   int64  `json:"to,omitempty"`
 	From int64  `json:"from,omitempty"`
 	Path string `json:"path"`
+}
+
+type Commit struct {
+	Links        Links          `json:"links"`
+	Hash         string         `json:"hash"`
+	Date         time.Time      `json:"date"`
+	Author       Author         `json:"author"`
+	Message      string         `json:"message"`
+	Summary      RenderedMarkup `json:"summary"`
+	Parents      []Commit       `json:"parents"`
+	Participants []Participant  `json:"participants"`
 }
 
 type Link struct {
@@ -101,7 +117,7 @@ type RenderedPullRequestMarkup struct {
 type PullRequestStatus struct {
 	Links       Links                  `json:"links"`
 	UUID        string                 `json:"uuid"`
-	Key         string                 `json:"key"`
+	StatusKey   string                 `json:"key"`
 	RefName     string                 `json:"refname"`
 	URL         string                 `json:"url"`
 	State       PullRequestStatusState `json:"state"`
@@ -109,6 +125,16 @@ type PullRequestStatus struct {
 	Description string                 `json:"description"`
 	CreatedOn   time.Time              `json:"created_on"`
 	UpdatedOn   time.Time              `json:"updated_on"`
+}
+
+func (prs *PullRequestStatus) Key() string {
+	// Statuses sometimes have UUIDs, and sometimes don't. Let's ensure we have
+	// a fallback path.
+	if uuid := prs.UUID; uuid != "" {
+		return uuid
+	}
+
+	return prs.URL
 }
 
 type MergeStrategy string
@@ -135,6 +161,7 @@ type RenderedMarkup struct {
 	Raw    string `json:"raw"`
 	Markup string `json:"markup"`
 	HTML   string `json:"html"`
+	Type   string `json:"type,omitempty"`
 }
 
 type AccountStatus string
@@ -167,6 +194,7 @@ type Repo struct {
 	IsPrivate   bool       `json:"is_private"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
+	Owner       *Account   `json:"owner"`
 }
 
 func (r *Repo) Namespace() (string, error) {
@@ -174,13 +202,12 @@ func (r *Repo) Namespace() (string, error) {
 	// cases (for example, embedded in pull requests), but we always have the
 	// full name, so let's parse the namespace out of that.
 
-	// TODO: replace with strings.Cut() once we upgrade to Go 1.18.
-	parts := strings.SplitN(r.FullName, "/", 2)
-	if len(parts) < 2 {
+	namespace, _, found := strings.Cut(r.FullName, "/")
+	if !found {
 		return "", errors.New("cannot split namespace from repo name")
 	}
 
-	return parts[0], nil
+	return namespace, nil
 }
 
 type ForkPolicy string
@@ -206,4 +233,14 @@ func (cl CloneLinks) HTTPS() (string, error) {
 		}
 	}
 	return "", errors.New("HTTPS clone link not found")
+}
+
+type Workspace struct {
+	Links     Links     `json:"links"`
+	UUID      string    `json:"string"`
+	Name      string    `json:"name"`
+	Slug      string    `json:"slug"`
+	IsPrivate bool      `json:"is_private"`
+	CreatedOn time.Time `json:"created_on"`
+	UpdatedOn time.Time `json:"updated_on"`
 }

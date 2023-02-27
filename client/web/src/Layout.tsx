@@ -1,180 +1,125 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
-import { Observable } from 'rxjs'
+import classNames from 'classnames'
+import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-router-dom'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { isMacPlatform } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_HELP,
-} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { KeyboardShortcutsHelp } from '@sourcegraph/shared/src/keyboardShortcuts/KeyboardShortcutsHelp'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
-import { BatchChangesProps } from './batches'
-import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
-import { GlobalContributions } from './contributions'
-import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { FeatureFlagProps } from './featureFlags/featureFlags'
+import { useUserHistory } from './components/useUserHistory'
+import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
-import { SurveyToast } from './marketing/SurveyToast'
+import { useHandleSubmitFeedback } from './hooks'
+import { LegacyLayoutRouteContext } from './LegacyRouteContext'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { useExtensionAlertAnimation } from './nav/UserNavItem'
-import { OrgAreaRoute } from './org/area/OrgArea'
-import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { RepoContainerRoute } from './repo/RepoContainer'
-import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
-import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
-import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
-import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromURL } from './stores'
-import { useThemeProps } from './theme'
-import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { parseSearchURLQuery } from './search'
+import { NotepadContainer } from './search/Notepad'
+import { SearchQueryStateObserver } from './SearchQueryStateObserver'
+import { useExperimentalFeatures } from './stores'
+import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
 
-export interface LayoutProps
-    extends RouteComponentProps<{}>,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        KeyboardShortcutsProps,
-        TelemetryProps,
-        ActivationProps,
-        SearchContextProps,
-        HomePanelsProps,
-        SearchStreamingProps,
-        UserExternalServicesOrRepositoriesUpdateProps,
-        CodeIntelligenceProps,
-        BatchChangesProps,
-        FeatureFlagProps {
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
-    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
-    siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
-    userAreaRoutes: readonly UserAreaRoute[]
-    userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
-    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
-    orgAreaRoutes: readonly OrgAreaRoute[]
-    repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps<any>[]
+const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
-    authenticatedUser: AuthenticatedUser | null
-
-    /**
-     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
-     * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
-     */
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-
-    // Search
-    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
-    globbing: boolean
-    isSourcegraphDotCom: boolean
+export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never
 }
 
-export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
-    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
-    const minimalNavLinks = routeMatch === '/cncf'
-    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
-    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+/**
+ * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+ * https://github.com/sourcegraph/sourcegraph/issues/36251
+ */
+const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
-    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
+function useIsSignInOrSignUpPage(): boolean {
+    const isSignInPage = useMatch(PageRoutes.SignIn)
+    const isSignUpPage = useMatch(PageRoutes.SignUp)
+    const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
+    const isWelcomePage = useMatch(PageRoutes.Welcome)
+    const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+}
+export const Layout: React.FC<LegacyLayoutProps> = props => {
+    const location = useLocation()
 
-    useEffect(() => setQueryStateFromURL(location.search), [location.search])
+    const routeMatches = useMatches()
 
-    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
+    const isRepositoryRelatedPage =
+        routeMatches.some(
+            routeMatch =>
+                routeMatch.handle &&
+                typeof routeMatch.handle === 'object' &&
+                Object.hasOwn(routeMatch.handle, 'isRepoContainer')
+        ) ?? false
+    // TODO: Move the search box into a shared layout component that is only used for repo routes
+    //       and search routes once we have flattened the router hierarchy.
+    const isSearchRelatedPage =
+        (isRepositoryRelatedPage || routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search'))) ?? false
+    const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
+    const isSearchConsolePage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search/console'))
+    const isSearchNotebooksPage = routeMatches.some(routeMatch =>
+        routeMatch.pathname.startsWith(EnterprisePageRoutes.Notebooks)
+    )
+    const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
 
-    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
+    const { setupWizard } = useExperimentalFeatures()
+    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    useEffect(() => {
-        // Only override filters from URL if there is a search query
-        if (query) {
-            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
-                setSelectedSearchContextSpec(searchContextSpec)
-            }
-        }
-    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
+    // enable fuzzy finder by default unless it's explicitly disabled in settings
+    const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
+    const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
+    const userHistory = useUserHistory(isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
-    const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
+    const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
-    const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
-    const isSignInOrUp =
-        props.location.pathname === PageRoutes.SignIn ||
-        props.location.pathname === PageRoutes.SignUp ||
-        props.location.pathname === PageRoutes.PasswordReset ||
-        props.location.pathname === PageRoutes.Welcome
+    const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
+    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
+    const isSignInOrUp = useIsSignInOrSignUpPage()
 
-    // TODO Change this behavior when we have global focus management system
-    // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
+    const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
-    const authRequired = useObservable(authRequiredObservable)
+    const { theme } = useTheme()
+    const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+    const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
 
-    const themeProps = useThemeProps()
+    const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
+    const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
+    const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
-    const breadcrumbProps = useBreadcrumbs()
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch:
+            routeMatches && routeMatches.length > 0 ? routeMatches[routeMatches.length - 1].pathname : undefined,
+    })
 
-    // Control browser extension discoverability animation here.
-    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
-    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
-    const onExtensionAlertDismissed = useCallback(() => {
-        startExtensionAlertAnimation()
-    }, [startExtensionAlertAnimation])
+    useLayoutEffect(() => {
+        const isLightTheme = theme === Theme.Light
 
-    useScrollToLocationHash(props.location)
+        document.documentElement.classList.add('theme')
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [theme])
+
+    useScrollToLocationHash(location)
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -186,39 +131,65 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // }, [])
 
     // Remove trailing slash (which is never valid in any of our URLs).
-    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
-        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+        return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
-    // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
-    // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
-    // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
-    // if (!props.isSourcegraphDotCom && !tosAccepted) {
-    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
-    // }
-
-    const context: LayoutRouteComponentProps<any> = {
-        ...props,
-        ...themeProps,
-        ...breadcrumbProps,
-        onExtensionAlertDismissed,
-        isMacPlatform: isMacPlatform(),
+    if (isSetupWizardPage) {
+        return (
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <LazySetupWizard />
+            </Suspense>
+        )
     }
 
     return (
-        <div className={styles.layout}>
-            <KeyboardShortcutsHelp
-                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
-                keyboardShortcuts={props.keyboardShortcuts}
+        <div
+            className={classNames(
+                styles.layout,
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+            )}
+        >
+            {showHelpShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
+            ))}
+            <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+
+            {feedbackModalOpen && (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={
+                        props.authenticatedUser
+                            ? {
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
+                            : null
+                    }
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            )}
+
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                settingsCascade={props.settingsCascade}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast />}
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
-                    {...themeProps}
-                    authRequired={!!authRequired}
+                    routes={[]}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -226,21 +197,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage
                     }
-                    variant={
-                        isSearchHomepage
-                            ? 'low-profile'
-                            : isCommunitySearchContextPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
-                    minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isExtensionAlertAnimating={isExtensionAlertAnimating}
+                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    showFeedbackModal={showFeedbackModal}
                 />
             )}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary location={props.location}>
+            {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
+            <ErrorBoundary location={location}>
                 <Suspense
                     fallback={
                         <div className="flex flex-1">
@@ -248,43 +212,47 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         </div>
                     }
                 >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
+                    <AppRouterContainer>
+                        <Outlet />
+                    </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel className={styles.panel} position="bottom" defaultSize={350} storageKey="panel-size">
-                        <TabbedPanelContent
-                            {...props}
-                            {...themeProps}
-                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                        />
-                    </Panel>
-                )}
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
+            {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
+                <Panel
+                    className={styles.panel}
+                    position="bottom"
+                    defaultSize={350}
+                    storageKey="panel-size"
+                    ariaLabel="References panel"
+                    id="references-panel"
+                >
+                    <TabbedPanelContent
+                        {...props}
+                        repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
+                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                    />
+                </Panel>
+            )}
+            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
+                <NotepadContainer userId={props.authenticatedUser?.id} />
+            )}
+            {fuzzyFinder && (
+                <LazyFuzzyFinder
+                    isVisible={isFuzzyFinderVisible}
+                    setIsVisible={setFuzzyFinderVisible}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    location={location}
+                    userHistory={userHistory}
+                />
+            )}
+            <SearchQueryStateObserver
                 platformContext={props.platformContext}
-                history={props.history}
+                searchContextsEnabled={props.searchAggregationEnabled}
+                setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
-            <GlobalDebug {...props} />
         </div>
     )
 }

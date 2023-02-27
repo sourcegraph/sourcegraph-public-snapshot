@@ -1,3 +1,5 @@
+import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+
 import { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
@@ -13,16 +15,17 @@ export const builtinAuthProvider = {
 }
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({
+    currentUser: currentUserMock,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
     batchChangesEnabled: true,
     batchChangesDisableWebhooksWarning: false,
     batchChangesWebhookLogsEnabled: true,
+    codeInsightsEnabled: true,
     executorsEnabled: true,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
-    codeInsightsGqlApiEnabled: false,
     externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
     assetsRoot: new URL('/.assets', sourcegraphBaseUrl).href,
@@ -40,10 +43,10 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
-    githubAppCloudSlug: 'test-app',
-    githubAppCloudClientID: 'client-id',
+    sourcegraphAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
+    authMinPasswordLength: 12,
 })

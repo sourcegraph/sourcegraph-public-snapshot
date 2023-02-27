@@ -9,5 +9,11 @@
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "test": "jest"
+  },
+  "devDependencies": {
+    "@sourcegraph/extension-api-types": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*"
   }
 }

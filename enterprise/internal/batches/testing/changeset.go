@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type TestChangesetOpts struct {
@@ -19,18 +19,19 @@ type TestChangesetOpts struct {
 	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
+
 	BatchChanges []btypes.BatchChangeAssoc
 
 	ExternalServiceType   string
 	ExternalID            string
 	ExternalBranch        string
 	ExternalForkNamespace string
+	ExternalForkName      string
 	ExternalState         btypes.ChangesetExternalState
 	ExternalReviewState   btypes.ChangesetReviewState
 	ExternalCheckState    btypes.ChangesetCheckState
 
 	DiffStatAdded   int32
-	DiffStatChanged int32
 	DiffStatDeleted int32
 
 	PublicationState   btypes.ChangesetPublicationState
@@ -53,7 +54,7 @@ type TestChangesetOpts struct {
 }
 
 type CreateChangeseter interface {
-	CreateChangeset(ctx context.Context, changeset *btypes.Changeset) error
+	CreateChangeset(ctx context.Context, changesets ...*btypes.Changeset) error
 }
 
 func CreateChangeset(
@@ -109,11 +110,15 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 	}
 
 	if opts.ExternalBranch != "" {
-		changeset.ExternalBranch = git.EnsureRefPrefix(opts.ExternalBranch)
+		changeset.ExternalBranch = gitdomain.EnsureRefPrefix(opts.ExternalBranch)
 	}
 
 	if opts.ExternalForkNamespace != "" {
 		changeset.ExternalForkNamespace = opts.ExternalForkNamespace
+	}
+
+	if opts.ExternalForkName != "" {
+		changeset.ExternalForkName = opts.ExternalForkName
 	}
 
 	if opts.FailureMessage != "" {
@@ -126,9 +131,8 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 		}
 	}
 
-	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
+	if opts.DiffStatAdded > 0 || opts.DiffStatDeleted > 0 {
 		changeset.DiffStatAdded = &opts.DiffStatAdded
-		changeset.DiffStatChanged = &opts.DiffStatChanged
 		changeset.DiffStatDeleted = &opts.DiffStatDeleted
 	}
 
@@ -147,7 +151,7 @@ type ChangesetAssertions struct {
 	ExternalID            string
 	ExternalBranch        string
 	ExternalForkNamespace string
-	DiffStat              *diff.Stat
+	DiffStat              *godiff.Stat
 	Closing               bool
 
 	Title string
@@ -421,5 +425,15 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
+	}
+}
+
+func DeleteChangeset(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+	t.Helper()
+
+	c.SetDeleted()
+
+	if err := s.UpdateChangeset(ctx, c); err != nil {
+		t.Fatalf("failed to delete changeset: %s", err)
 	}
 }

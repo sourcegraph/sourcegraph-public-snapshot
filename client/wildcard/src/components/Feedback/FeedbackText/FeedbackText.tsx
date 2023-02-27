@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link } from '../../Link'
+import { Text } from '../../Typography'
 
 interface FeedbackTextProps {
     /**
@@ -19,7 +20,7 @@ export const FeedbackText: React.FunctionComponent<React.PropsWithChildren<Feedb
     footerText,
     headerText,
 }) => (
-    <p className={className}>
+    <Text className={className}>
         {headerText || 'Questions/feedback?'} Contact us at{' '}
         <Link to="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph
@@ -33,5 +34,5 @@ export const FeedbackText: React.FunctionComponent<React.PropsWithChildren<Feedb
             public issue tracker
         </Link>
         . {footerText}
-    </p>
+    </Text>
 )

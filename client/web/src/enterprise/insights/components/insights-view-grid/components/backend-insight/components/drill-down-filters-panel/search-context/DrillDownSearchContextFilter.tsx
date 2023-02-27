@@ -1,13 +1,12 @@
-import { ChangeEvent, FunctionComponent, memo, useState } from 'react'
+import { ChangeEvent, FocusEvent, forwardRef, InputHTMLAttributes, memo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
-import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, useDebounce, ErrorAlert, InputProps } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
@@ -31,43 +30,52 @@ export const SEARCH_CONTEXT_GQL = gql`
     }
 `
 
-interface DrillDownSearchContextFilter extends InputProps {}
+interface DrillDownSearchContextFilter extends InputProps, InputHTMLAttributes<HTMLInputElement> {}
 
-export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchContextFilter> = props => {
-    const { value = '', className, onChange = noop, ...attributes } = props
-    const [showSuggest, setShowSuggest] = useState<boolean>(true)
-    const debouncedQuery = useDebounce(value, 700)
+export const DrillDownSearchContextFilter = forwardRef<HTMLInputElement, DrillDownSearchContextFilter>(
+    (props, reference) => {
+        const { value = '', className, onChange = noop, onFocus = noop, ...attributes } = props
+        const [showSuggest, setShowSuggest] = useState<boolean>(false)
+        const debouncedQuery = useDebounce(value, 700)
 
-    const handleSelect = (value: string): void => {
-        setShowSuggest(false)
-        onChange(value)
+        const handleSelect = (value: string): void => {
+            setShowSuggest(false)
+            onChange(value)
+        }
+
+        const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
+            setShowSuggest(true)
+            onChange(event)
+        }
+
+        const handleFocus = (event: FocusEvent<HTMLInputElement>): void => {
+            setShowSuggest(true)
+            onFocus(event)
+        }
+
+        return (
+            <Combobox onSelect={handleSelect}>
+                <ComboboxInput
+                    {...attributes}
+                    ref={reference}
+                    as={DrillDownInput}
+                    placeholder="global (default)"
+                    prefix="context:"
+                    value={value.toString()}
+                    className={classNames(className, styles.input)}
+                    onChange={handleChange}
+                    onFocus={handleFocus}
+                />
+
+                {showSuggest && (
+                    <ComboboxList className={styles.suggestionList}>
+                        <SuggestPanel query={debouncedQuery.toString()} />
+                    </ComboboxList>
+                )}
+            </Combobox>
+        )
     }
-
-    const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        setShowSuggest(true)
-        onChange(event)
-    }
-
-    return (
-        <Combobox onSelect={handleSelect}>
-            <ComboboxInput
-                {...attributes}
-                as={DrillDownInput}
-                placeholder="global (default)"
-                prefix="context:"
-                value={value.toString()}
-                className={classNames(className, styles.input)}
-                onChange={handleChange}
-            />
-
-            {showSuggest && (
-                <ComboboxList className={styles.suggestionList}>
-                    <SuggestPanel query={debouncedQuery.toString()} />
-                </ComboboxList>
-            )}
-        </Combobox>
-    )
-}
+)
 
 interface SuggestPanelProps {
     query: string

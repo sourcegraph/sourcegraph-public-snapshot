@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,7 +21,8 @@ import (
 var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
 
 type changesetApplyPreviewConnectionResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	opts              store.GetRewirerMappingsOpts
 	action            *btypes.ReconcilerOperation
@@ -110,6 +112,7 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	sleep        int32
 	detach       int32
 	archive      int32
+	reattach     int32
 
 	added    int32
 	modified int32
@@ -152,6 +155,9 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
 func (r *changesetApplyPreviewConnectionStatsResolver) Archive() int32 {
 	return r.archive
 }
+func (r *changesetApplyPreviewConnectionStatsResolver) Reattach() int32 {
+	return r.reattach
+}
 func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
 	return r.added
 }
@@ -175,7 +181,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 		res := mappings.Resolver(mapping)
 		var ops []string
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
-			// Hidden ones never perform operations.
+			// Hidden ones never perform operations.
 			continue
 		}
 
@@ -192,8 +198,10 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			stats.added++
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
-			if len(ops) > 0 {
+			if len(ops) > 0 && len(mapping.Changeset.BatchChanges) > 0 {
 				stats.modified++
+			} else if len(mapping.Changeset.BatchChanges) == 0 {
+				stats.added++
 			}
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsDetach(); ok {
@@ -225,6 +233,8 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 				stats.detach++
 			case string(btypes.ReconcilerOperationArchive):
 				stats.archive++
+			case string(btypes.ReconcilerOperationReattach):
+				stats.reattach++
 			}
 		}
 	}
@@ -234,7 +244,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 
 func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID, r.publicationStates)
+		r.mappings = newRewirerMappingsFacade(r.store, r.gitserverClient, r.batchSpecID, r.publicationStates)
 		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
@@ -250,6 +260,7 @@ type rewirerMappingsFacade struct {
 	batchSpecID       int64
 	publicationStates publicationStateMap
 	store             *store.Store
+	gitserverClient   gitserver.Client
 
 	// This field is set when ReconcileBatchChange is called.
 	batchChange *btypes.BatchChange
@@ -265,11 +276,12 @@ type rewirerMappingsFacade struct {
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
 // includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
+func newRewirerMappingsFacade(s *store.Store, gitserverClient gitserver.Client, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
 		batchSpecID:       batchSpecID,
 		publicationStates: publicationStates,
 		store:             s,
+		gitserverClient:   gitserverClient,
 		pages:             make(map[rewirerMappingPageOpts]*rewirerMappingPage),
 		resolvers:         make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
 	}
@@ -381,6 +393,7 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graph
 	// will have calculated that.
 	rmf.resolvers[mapping] = &changesetApplyPreviewResolver{
 		store:                rmf.store,
+		gitserverClient:      rmf.gitserverClient,
 		mapping:              mapping,
 		preloadedBatchChange: rmf.batchChange,
 		batchSpecID:          rmf.batchSpecID,

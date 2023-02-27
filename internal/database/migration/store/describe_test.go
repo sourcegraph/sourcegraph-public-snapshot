@@ -4,13 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDescribe(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -23,7 +26,7 @@ func TestDescribe(t *testing.T) {
 		t.Fatalf("unexpected error describing schema: %s", err)
 	}
 
-	autogold.Equal(t, descriptions["public"])
+	autogold.ExpectFile(t, descriptions["public"])
 }
 
 const testDescribeQuery = `

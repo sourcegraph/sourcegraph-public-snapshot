@@ -11,8 +11,8 @@ var namespace = "codeinsights"
 // codeInsights provides `CodeInsights` implementations.
 type codeInsights struct{}
 
-// src_insights_search_queue_total
-// src_insights_search_queue_processor_total
+// src_query_runner_worker_total
+// src_query_runner_worker_processor_total
 func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -21,8 +21,8 @@ func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monit
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "insights_search_queue",
-				MetricDescriptionRoot: "code insights search queue",
+				MetricNameRoot:        "query_runner_worker",
+				MetricDescriptionRoot: "code insights query runner queue",
 			},
 		},
 
@@ -37,10 +37,10 @@ func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monit
 	})
 }
 
-// src_insights_search_queue_processor_total
-// src_insights_search_queue_processor_duration_seconds_bucket
-// src_insights_search_queue_processor_errors_total
-// src_insights_search_queue_processor_handlers
+// src_query_runner_worker_processor_total
+// src_query_runner_worker_processor_duration_seconds_bucket
+// src_query_runner_worker_processor_errors_total
+// src_query_runner_worker_processor_handlers
 func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) monitoring.Group {
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -49,7 +49,7 @@ func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) moni
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "insights_search_queue",
+				MetricNameRoot:        "query_runner_worker",
 				MetricDescriptionRoot: "handler",
 			},
 		},
@@ -64,20 +64,20 @@ func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) moni
 	})
 }
 
-// src_insights_search_queue_resets_total
-// src_insights_search_queue_reset_failures_total
-// src_insights_search_queue_reset_errors_total
+// src_query_runner_worker_resets_total
+// src_query_runner_worker_reset_failures_total
+// src_query_runner_worker_reset_errors_total
 func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) monitoring.Group {
 
 	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       namespace,
-			DescriptionRoot: "code insights search queue record resetter",
+			DescriptionRoot: "code insights query runner queue record resetter",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "insights_search_queue",
-				MetricDescriptionRoot: "insights search queue",
+				MetricNameRoot:        "query_runner_worker",
+				MetricDescriptionRoot: "insights query runner queue",
 			},
 		},
 
@@ -101,6 +101,33 @@ func (codeInsights) NewInsightsQueryRunnerStoreGroup(containerName string) monit
 			},
 		},
 
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+func (codeInsights) NewSearchAggregationsGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "insights_aggregations",
+				MetricDescriptionRoot: "search aggregations",
+				By:                    []string{"op", "extended_mode"},
+			},
+			Namespace:       "search aggregations",
+			DescriptionRoot: "proactive and expanded search aggregations",
+			Hidden:          true,
+		},
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
 			Duration:  NoAlertsOption("none"),

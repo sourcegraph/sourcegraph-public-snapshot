@@ -6,13 +6,13 @@ import (
 )
 
 type ExternalSecret struct {
-	Provider string `yaml:"provider"`
-	Project  string `yaml:"project"`
-	Name     string `yaml:"name"`
+	// For details on how each field is used, see the relevant ExternalProvider docstring.
+	Project string `yaml:"project"`
+	Name    string `yaml:"name"`
 }
 
 func (s *ExternalSecret) id() string {
-	return fmt.Sprintf("%s/%s/%s", s.Provider, s.Project, s.Name)
+	return fmt.Sprintf("gcloud/%s/%s", s.Project, s.Name)
 }
 
 // externalSecretValue is the stored representation of an external secret's value

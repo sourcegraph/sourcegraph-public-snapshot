@@ -8,13 +8,14 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
-	"github.com/inconshreveable/log15"
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+
+	"github.com/sourcegraph/log"
 )
 
 // Included in tracing so that we can differentiate different costs as we tweak
@@ -376,27 +377,27 @@ type LimitWatcher interface {
 	Get() (Limiter, bool)
 }
 
-func NewBasicLimitWatcher(store throttled.GCRAStore) *BasicLimitWatcher {
+func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStore) *BasicLimitWatcher {
 	basic := &BasicLimitWatcher{
 		store: store,
 	}
 	conf.Watch(func() {
 		e := conf.Get().ExperimentalFeatures
 		if e == nil {
-			basic.updateFromConfig(0)
+			basic.updateFromConfig(logger, 0)
 			return
 		}
-		basic.updateFromConfig(e.RateLimitAnonymous)
+		basic.updateFromConfig(logger, e.RateLimitAnonymous)
 	})
 	return basic
 }
 
 type BasicLimitWatcher RateLimitWatcher
 
-func (bl *BasicLimitWatcher) updateFromConfig(limit int) {
+func (bl *BasicLimitWatcher) updateFromConfig(logger log.Logger, limit int) {
 	if limit <= 0 {
 		bl.rl.Store(&BasicLimiter{nil, false})
-		log15.Debug("BasicLimiter disabled")
+		logger.Debug("BasicLimiter disabled")
 		return
 	}
 	maxBurstPercentage := 0.2
@@ -404,15 +405,16 @@ func (bl *BasicLimitWatcher) updateFromConfig(limit int) {
 		bl.store,
 		throttled.RateQuota{
 			MaxRate:  throttled.PerHour(limit),
-			MaxBurst: int(float64(limit) * maxBurstPercentage)},
+			MaxBurst: int(float64(limit) * maxBurstPercentage),
+		},
 	)
 	if err != nil {
-		log15.Warn("error updating BasicLimiter from config")
+		logger.Warn("error updating BasicLimiter from config")
 		bl.rl.Store(&BasicLimiter{nil, false})
 		return
 	}
 	bl.rl.Store(&BasicLimiter{l, true})
-	log15.Debug("BasicLimiter: rate limit updated", "new limit", limit)
+	logger.Debug("BasicLimiter: rate limit updated", log.Int("new limit", limit))
 }
 
 // Get returns the latest Limiter.
@@ -446,14 +448,14 @@ type RateLimitWatcher struct {
 
 // NewRateLimiteWatcher creates a new limiter with the provided store and starts
 // watching for config changes.
-func NewRateLimiteWatcher(store throttled.GCRAStore) *RateLimitWatcher {
+func NewRateLimiteWatcher(logger log.Logger, store throttled.GCRAStore) *RateLimitWatcher {
 	w := &RateLimitWatcher{
 		store: store,
 	}
 
 	conf.Watch(func() {
-		log15.Debug("Rate limit config updated, applying changes")
-		w.updateFromConfig(conf.Get().ApiRatelimit)
+		logger.Debug("Rate limit config updated, applying changes")
+		w.updateFromConfig(logger, conf.Get().ApiRatelimit)
 	})
 
 	return w
@@ -468,7 +470,7 @@ func (w *RateLimitWatcher) Get() (Limiter, bool) {
 	return nil, false
 }
 
-func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
+func (w *RateLimitWatcher) updateFromConfig(logger log.Logger, rlc *schema.ApiRatelimit) {
 	// We can burst up to a max of 20% of limit
 	maxBurstPercentage := 0.2
 
@@ -483,7 +485,7 @@ func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
 	}
 	ipLimiter, err := throttled.NewGCRARateLimiter(w.store, ipQuota)
 	if err != nil {
-		log15.Warn("error creating ip rate limiter", "error", err)
+		logger.Warn("error creating ip rate limiter", log.Error(err))
 		return
 	}
 
@@ -493,7 +495,7 @@ func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
 	}
 	userLimiter, err := throttled.NewGCRARateLimiter(w.store, userQuota)
 	if err != nil {
-		log15.Warn("error creating user rate limiter", "error", err)
+		logger.Warn("error creating user rate limiter", log.Error(err))
 		return
 	}
 
@@ -522,7 +524,7 @@ func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
 					},
 				}
 			} else {
-				log15.Warn("unknown limit value", "value", l)
+				logger.Warn("unknown limit value", log.String("value", l))
 				return
 			}
 		case int:
@@ -531,7 +533,7 @@ func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
 				MaxBurst: int(float64(l) * maxBurstPercentage),
 			})
 			if err != nil {
-				log15.Warn("error creating override rate limiter", "key", o.Key, "error", err)
+				logger.Warn("error creating override rate limiter", log.String("key", o.Key), log.Error(err))
 				return
 			}
 			overrides[o.Key] = rl

@@ -12,6 +12,9 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -27,12 +30,13 @@ import (
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
 	const mockUserID = 123
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("got through"))
@@ -62,7 +66,7 @@ func TestMiddleware(t *testing.T) {
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
-	t.Run("unauthenticated homepage visit -> gitlab oauth flow", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> gitlab oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -76,6 +80,14 @@ func TestMiddleware(t *testing.T) {
 		}
 		if got, want := redirectURL.Query().Get("redirect"), "/"; got != want {
 			t.Errorf("got return-to URL %v, want %v", got, want)
+		}
+	})
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated subpage visit -> gitlab oauth flow", func(t *testing.T) {
@@ -292,7 +304,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		ClientID:     clientID,
 		Type:         extsvc.TypeGitLab,
 	}}
-	mp.Provider, problems = parseProvider(db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
+	mp.Provider, problems = parseProvider(logtest.Scoped(t), db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

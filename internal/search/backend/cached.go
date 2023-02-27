@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // cachedSearcher wraps a zoekt.Searcher with caching of List call results.
@@ -21,7 +21,7 @@ type cachedSearcher struct {
 	cache map[listCacheKey]*listCacheValue
 }
 
-func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) *cachedSearcher {
+func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) zoekt.Streamer {
 	return &cachedSearcher{
 		Streamer: z,
 		ttl:      ttl,
@@ -106,6 +106,12 @@ func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCache
 		ttl:  c.ttl,
 		now:  c.now,
 		ts:   c.now(),
+	}
+
+	// If we encountered an error or a crash, shorten how long we wait before
+	// refreshing the cache.
+	if err != nil || list.Crashes > 0 {
+		v.ttl /= 4
 	}
 
 	c.cache[k] = v

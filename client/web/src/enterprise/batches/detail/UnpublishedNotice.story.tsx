@@ -1,11 +1,18 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { UnpublishedNotice } from './UnpublishedNotice'
 
-const { add } = storiesOf('web/batches/details/UnpublishedNotice', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('None published', () => <WebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</WebStory>)
+const config: Meta = {
+    title: 'web/batches/details/UnpublishedNotice',
+    decorators: [decorator],
+}
+
+export default config
+
+export const NonePublished: Story = () => <WebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</WebStory>
+
+NonePublished.storyName = 'None published'

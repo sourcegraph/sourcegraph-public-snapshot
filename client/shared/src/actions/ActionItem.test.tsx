@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { createBarrier } from '../api/integration-test/testHelpers'
+import { assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
+import { createBarrier } from '../testing/testHelpers'
 
 import { ActionItem } from './ActionItem'
 
@@ -13,7 +15,7 @@ jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
+    const NOOP_PLATFORM_CONTEXT = { settings: NEVER }
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
@@ -185,7 +187,8 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        await new Promise<void>(resolve => setTimeout(resolve))
+        // we should wait for the button to be enabled again after got errors. Otherwise, it will be flaky
+        await waitFor(() => assertAriaEnabled(screen.getByLabelText('d')))
 
         expect(asFragment()).toMatchSnapshot()
     })
@@ -211,7 +214,7 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => expect(screen.getByLabelText('Error: x')).toBeInTheDocument())
 
         expect(asFragment()).toMatchSnapshot()
     })

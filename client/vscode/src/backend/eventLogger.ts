@@ -1,8 +1,9 @@
 import { EMPTY, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/http-client/src/graphql/graphql'
-import { LogEventsResult, LogEventsVariables, Event } from '@sourcegraph/web/src/graphql-operations'
+import { gql } from '@sourcegraph/http-client'
+
+import { LogEventsResult, LogEventsVariables, Event } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

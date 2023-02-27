@@ -58,35 +58,31 @@ export const getToolbarMount = (
  * Sometimes tabs are converted to spaces so we need to adjust. Luckily, there
  * is an attribute `cm-text` that contains the real text.
  */
-const createPositionAdjuster = (
-    dom: DOMFunctions
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({
-    direction,
-    codeView,
-    position,
-}) => {
-    const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
-    if (!codeElement) {
-        throw new Error('(adjustPosition) could not find code element for line provided')
+const createPositionAdjuster =
+    (dom: DOMFunctions): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) => {
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
+        if (!codeElement) {
+            throw new Error('(adjustPosition) could not find code element for line provided')
+        }
+
+        let delta = 0
+        for (const modifiedTextElement of codeElement.querySelectorAll('[cm-text]')) {
+            const actualText = modifiedTextElement.getAttribute('cm-text') || ''
+            const adjustedText = modifiedTextElement.textContent || ''
+
+            delta += actualText.length - adjustedText.length
+        }
+
+        const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
+
+        const newPosition = {
+            line: position.line,
+            character: position.character + modifier * delta,
+        }
+
+        return of(newPosition)
     }
-
-    let delta = 0
-    for (const modifiedTextElement of codeElement.querySelectorAll('[cm-text]')) {
-        const actualText = modifiedTextElement.getAttribute('cm-text') || ''
-        const adjustedText = modifiedTextElement.textContent || ''
-
-        delta += actualText.length - adjustedText.length
-    }
-
-    const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
-
-    const newPosition = {
-        line: position.line,
-        character: position.character + modifier * delta,
-    }
-
-    return of(newPosition)
-}
 
 /**
  * A code view spec for single file code view in the "source" view (not diff).
@@ -272,7 +268,6 @@ export const bitbucketServerCodeHost: CodeHost = {
             styles.commandPalettePopover,
             'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
         ),
-        popoverInnerClassName: 'aui-dropdown2-section',
         formClassName: 'aui',
         inputClassName: 'text',
         resultsContainerClassName: 'results',

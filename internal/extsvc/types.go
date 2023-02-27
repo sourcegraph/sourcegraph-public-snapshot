@@ -1,6 +1,7 @@
 package extsvc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,8 +26,9 @@ type Account struct {
 	UserID      int32
 	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
 	AccountData // AuthData, Data
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	PublicAccountData
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // AccountSpec specifies a user external account by its external identifier (i.e., by the
@@ -41,8 +44,31 @@ type AccountSpec struct {
 // AccountData contains data that can be freely updated in the user external account after it
 // has been created. See the GraphQL API's corresponding fields for documentation.
 type AccountData struct {
-	AuthData *json.RawMessage
-	Data     *json.RawMessage
+	AuthData *EncryptableData
+	Data     *EncryptableData
+}
+
+// PublicAccountData contains a few fields from the AccountData.Data mentioned above.
+// We only expose publicly available fields in this struct.
+// See the GraphQL API's corresponding fields for documentation.
+type PublicAccountData struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Login       *string `json:"login,omitempty"`
+	URL         *string `json:"url,omitempty"`
+}
+
+type EncryptableData = encryption.JSONEncryptable[any]
+
+func NewUnencryptedData(value json.RawMessage) *EncryptableData {
+	return &EncryptableData{Encryptable: encryption.NewUnencrypted(string(value))}
+}
+
+func NewEncryptedData(cipher, keyID string, key encryption.Key) *EncryptableData {
+	if cipher == "" && keyID == "" {
+		return nil
+	}
+
+	return &EncryptableData{Encryptable: encryption.NewEncrypted(cipher, keyID, key)}
 }
 
 // Repository contains necessary information to identify an external repository on the code host.
@@ -59,6 +85,28 @@ type Accounts struct {
 	ServiceType string
 	ServiceID   string
 	AccountIDs  []string
+}
+
+type EncryptableConfig = encryption.Encryptable
+
+func NewEmptyConfig() *EncryptableConfig {
+	return NewUnencryptedConfig("{}")
+}
+
+func NewEmptyGitLabConfig() *EncryptableConfig {
+	return NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abdef", "projectQuery":["none"]}`)
+}
+
+func NewUnencryptedConfig(value string) *EncryptableConfig {
+	return encryption.NewUnencrypted(value)
+}
+
+func NewEncryptedConfig(cipher, keyID string, key encryption.Key) *EncryptableConfig {
+	if cipher == "" && keyID == "" {
+		return nil
+	}
+
+	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -83,11 +131,15 @@ const (
 	KindGitolite        = "GITOLITE"
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
-	KindGoModules       = "GOMODULES"
+	KindGoPackages      = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPythonPackages  = "PYTHONPACKAGES"
-	KindPagure          = "PAGURE"
+	KindRustPackages    = "RUSTPACKAGES"
+	KindRubyPackages    = "RUBYPACKAGES"
 	KindNpmPackages     = "NPMPACKAGES"
+	KindPagure          = "PAGURE"
+	KindAzureDevOps     = "AZUREDEVOPS"
+	KindSCIM            = "SCIM"
 	KindOther           = "OTHER"
 )
 
@@ -133,6 +185,9 @@ const (
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
 
+	// TypeAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	TypeAzureDevOps = "azuredevops"
+
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
 
@@ -141,6 +196,12 @@ const (
 
 	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
 	TypePythonPackages = "pythonPackages"
+
+	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Rust packages.
+	TypeRustPackages = "rustPackages"
+
+	// TypeRubyPackages is the (api.ExternalRepoSpec).ServiceType value for Ruby packages.
+	TypeRubyPackages = "rubyPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
@@ -172,12 +233,18 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindRustPackages:
+		return TypeRustPackages
+	case KindRubyPackages:
+		return TypeRubyPackages
 	case KindNpmPackages:
 		return TypeNpmPackages
-	case KindGoModules:
+	case KindGoPackages:
 		return TypeGoModules
 	case KindPagure:
 		return TypePagure
+	case KindAzureDevOps:
+		return TypeAzureDevOps
 	case KindOther:
 		return TypeOther
 	default:
@@ -213,10 +280,16 @@ func TypeToKind(t string) string {
 		return KindJVMPackages
 	case TypePythonPackages:
 		return KindPythonPackages
+	case TypeRustPackages:
+		return KindRustPackages
+	case TypeRubyPackages:
+		return KindRubyPackages
 	case TypeGoModules:
-		return KindGoModules
+		return KindGoPackages
 	case TypePagure:
 		return KindPagure
+	case TypeAzureDevOps:
+		return KindAzureDevOps
 	case TypeOther:
 		return KindOther
 	default:
@@ -232,6 +305,8 @@ var (
 	npmLower    = strings.ToLower(TypeNpmPackages)
 	goLower     = strings.ToLower(TypeGoModules)
 	pythonLower = strings.ToLower(TypePythonPackages)
+	rustLower   = strings.ToLower(TypeRustPackages)
+	rubyLower   = strings.ToLower(TypeRubyPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -264,8 +339,14 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeNpmPackages, true
 	case pythonLower:
 		return TypePythonPackages, true
+	case rustLower:
+		return TypeRustPackages, true
+	case rubyLower:
+		return TypeRubyPackages, true
 	case TypePagure:
 		return TypePagure, true
+	case TypeAzureDevOps:
+		return TypeAzureDevOps, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -295,19 +376,41 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
-	case KindGoModules:
-		return KindGoModules, true
+	case KindGoPackages:
+		return KindGoPackages, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
 	case KindPythonPackages:
 		return KindPythonPackages, true
+	case KindRustPackages:
+		return KindRustPackages, true
+	case KindRubyPackages:
+		return KindRubyPackages, true
 	case KindPagure:
 		return KindPagure, true
+	case KindAzureDevOps:
+		return KindAzureDevOps, true
 	case KindOther:
 		return KindOther, true
 	default:
 		return "", false
 	}
+}
+
+var supportsRepoExclusion = map[string]bool{
+	KindAWSCodeCommit:   true,
+	KindBitbucketCloud:  true,
+	KindBitbucketServer: true,
+	KindGitHub:          true,
+	KindGitLab:          true,
+	KindGitolite:        true,
+	KindAzureDevOps:     true,
+}
+
+// SupportsRepoExclusion returns true when given external service kind supports
+// repo exclusion.
+func SupportsRepoExclusion(extSvcKind string) bool {
+	return supportsRepoExclusion[extSvcKind]
 }
 
 // AccountID is a descriptive type for the external identifier of an external account on the
@@ -323,49 +426,82 @@ type RepoID string
 // RepoIDType indicates the type of the RepoID.
 type RepoIDType string
 
+func ParseEncryptableConfig(ctx context.Context, kind string, config *EncryptableConfig) (any, error) {
+	cfg, err := getConfigPrototype(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	rawConfig, err := config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := jsonc.Unmarshal(rawConfig, &cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
-func ParseConfig(kind, config string) (cfg any, _ error) {
+func ParseConfig(kind, config string) (any, error) {
+	cfg, err := getConfigPrototype(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, jsonc.Unmarshal(config, cfg)
+}
+
+func getConfigPrototype(kind string) (any, error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
-		cfg = &schema.AWSCodeCommitConnection{}
+		return &schema.AWSCodeCommitConnection{}, nil
+	case KindAzureDevOps:
+		return &schema.AzureDevOpsConnection{}, nil
 	case KindBitbucketServer:
-		cfg = &schema.BitbucketServerConnection{}
+		return &schema.BitbucketServerConnection{}, nil
 	case KindBitbucketCloud:
-		cfg = &schema.BitbucketCloudConnection{}
+		return &schema.BitbucketCloudConnection{}, nil
 	case KindGerrit:
-		cfg = &schema.GerritConnection{}
+		return &schema.GerritConnection{}, nil
 	case KindGitHub:
-		cfg = &schema.GitHubConnection{}
+		return &schema.GitHubConnection{}, nil
 	case KindGitLab:
-		cfg = &schema.GitLabConnection{}
+		return &schema.GitLabConnection{}, nil
 	case KindGitolite:
-		cfg = &schema.GitoliteConnection{}
+		return &schema.GitoliteConnection{}, nil
 	case KindPerforce:
-		cfg = &schema.PerforceConnection{}
+		return &schema.PerforceConnection{}, nil
 	case KindPhabricator:
-		cfg = &schema.PhabricatorConnection{}
-	case KindGoModules:
-		cfg = &schema.GoModulesConnection{}
+		return &schema.PhabricatorConnection{}, nil
+	case KindGoPackages:
+		return &schema.GoModulesConnection{}, nil
 	case KindJVMPackages:
-		cfg = &schema.JVMPackagesConnection{}
+		return &schema.JVMPackagesConnection{}, nil
 	case KindPagure:
-		cfg = &schema.PagureConnection{}
+		return &schema.PagureConnection{}, nil
 	case KindNpmPackages:
-		cfg = &schema.NpmPackagesConnection{}
+		return &schema.NpmPackagesConnection{}, nil
 	case KindPythonPackages:
-		cfg = &schema.PythonPackagesConnection{}
+		return &schema.PythonPackagesConnection{}, nil
+	case KindRustPackages:
+		return &schema.RustPackagesConnection{}, nil
+	case KindRubyPackages:
+		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
-		cfg = &schema.OtherExternalServiceConnection{}
+		return &schema.OtherExternalServiceConnection{}, nil
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
-	return cfg, jsonc.Unmarshal(config, cfg)
 }
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
-	var path string
+// WebhookURL returns an endpoint URL for the given external service. If the kind
+// of external service does not support webhooks it returns an empty string.
+func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
+	var path, extra string
 	switch strings.ToUpper(kind) {
 	case KindGitHub:
 		path = "github-webhooks"
@@ -373,11 +509,33 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) string
 		path = "bitbucket-server-webhooks"
 	case KindGitLab:
 		path = "gitlab-webhooks"
+	case KindBitbucketCloud:
+		path = "bitbucket-cloud-webhooks"
+
+		// Unlike other external service kinds, Bitbucket Cloud doesn't support
+		// a shared secret defined as part of the webhook. As a result, we need
+		// to include it as an explicit part of the URL that we construct.
+		switch c := cfg.(type) {
+		case *schema.BitbucketCloudConnection:
+			extra = "&secret=" + url.QueryEscape(c.WebhookSecret)
+		default:
+			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", cfg)
+		}
 	default:
-		return ""
+		// If not a supported kind, bail out.
+		return "", nil
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID)
+	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil
+}
+
+func ExtractEncryptableToken(ctx context.Context, config *EncryptableConfig, kind string) (string, error) {
+	parsed, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return "", errors.Wrap(err, "loading service configuration")
+	}
+
+	return extractToken(parsed, kind)
 }
 
 // ExtractToken attempts to extract the token from the supplied args
@@ -386,10 +544,17 @@ func ExtractToken(config string, kind string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
+
+	return extractToken(parsed, kind)
+}
+
+func extractToken(parsed any, kind string) (string, error) {
 	switch c := parsed.(type) {
 	case *schema.GitHubConnection:
 		return c.Token, nil
 	case *schema.GitLabConnection:
+		return c.Token, nil
+	case *schema.AzureDevOpsConnection:
 		return c.Token, nil
 	case *schema.BitbucketServerConnection:
 		return c.Token, nil
@@ -400,6 +565,20 @@ func ExtractToken(config string, kind string) (string, error) {
 	default:
 		return "", errors.Errorf("unable to extract token for service kind %q", kind)
 	}
+}
+
+func ExtractEncryptableRateLimit(ctx context.Context, config *EncryptableConfig, kind string) (rate.Limit, error) {
+	parsed, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return rate.Inf, errors.Wrap(err, "loading service configuration")
+	}
+
+	rlc, err := GetLimitFromConfig(kind, parsed)
+	if err != nil {
+		return rate.Inf, err
+	}
+
+	return rlc, nil
 }
 
 // ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
@@ -457,7 +636,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		}
 	case *schema.JVMPackagesConnection:
 		limit = rate.Limit(2)
-		if c != nil && c.Maven.RateLimit != nil {
+		if c != nil && c.Maven != nil && c.Maven.RateLimit != nil {
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
@@ -467,7 +646,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
-		limit = rate.Limit(3000 / 3600.0) // Same as the default in npm-packages.schema.json
+		limit = rate.Limit(6000 / 3600.0) // Same as the default in npm-packages.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -483,6 +662,18 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
 		// document an enforced req/s rate limit.
 		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in python-packages.schema.json
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.RustPackagesConnection:
+		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
+		limit = rate.Limit(100)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.RubyPackagesConnection:
+		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
+		limit = rate.Limit(10)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -509,10 +700,10 @@ func (e ErrRateLimitUnsupported) Error() string {
 }
 
 const (
-	URNGitHubAppCloud = "GitHubAppCloud"
-	URNGitHubOAuth    = "GitHubOAuth"
-	URNGitLabOAuth    = "GitLabOAuth"
-	URNCodeIntel      = "CodeIntel"
+	URNGitHubApp   = "GitHubApp"
+	URNGitHubOAuth = "GitHubOAuth"
+	URNGitLabOAuth = "GitLabOAuth"
+	URNCodeIntel   = "CodeIntel"
 )
 
 // URN returns a unique resource identifier of an external service by given kind and ID.
@@ -540,6 +731,15 @@ type OtherRepoMetadata struct {
 	RelativePath string
 }
 
+func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
+	cfg, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return "", err
+	}
+
+	return uniqueCodeHostIdentifier(kind, cfg)
+}
+
 // UniqueCodeHostIdentifier returns a string that uniquely identifies the
 // instance of a code host an external service is pointing at.
 //
@@ -558,11 +758,17 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return "", err
 	}
 
+	return uniqueCodeHostIdentifier(kind, cfg)
+}
+
+func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 	var rawURL string
 	switch c := cfg.(type) {
 	case *schema.GitLabConnection:
 		rawURL = c.Url
 	case *schema.GitHubConnection:
+		rawURL = c.Url
+	case *schema.AzureDevOpsConnection:
 		rawURL = c.Url
 	case *schema.BitbucketServerConnection:
 		rawURL = c.Url
@@ -584,13 +790,17 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
 	case *schema.GoModulesConnection:
-		return KindGoModules, nil
+		return KindGoPackages, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
 	case *schema.NpmPackagesConnection:
 		return KindNpmPackages, nil
 	case *schema.PythonPackagesConnection:
 		return KindPythonPackages, nil
+	case *schema.RustPackagesConnection:
+		return KindRustPackages, nil
+	case *schema.RubyPackagesConnection:
+		return KindRubyPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:
@@ -603,4 +813,30 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	}
 
 	return NormalizeBaseURL(u).String(), nil
+}
+
+// CodeHostBaseURL is an identifier for a unique code host in the form
+// of its host URL.
+// To create a new CodeHostBaseURL, use NewCodeHostURN.
+// e.g. NewCodeHostURN("https://github.com")
+// To use the string value again, use codeHostURN.String()
+type CodeHostBaseURL struct {
+	baseURL string
+}
+
+// NewCodeHostBaseURL takes a code host URL string, normalizes it,
+// and returns a CodeHostURN. If the string is required, use the
+// .String() method on the CodeHostURN.
+func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
+	codeHostURL, err := url.Parse(baseURL)
+	if err != nil {
+		return CodeHostBaseURL{}, err
+	}
+
+	return CodeHostBaseURL{baseURL: NormalizeBaseURL(codeHostURL).String()}, nil
+}
+
+// String returns the stored, normalized code host URN as a string.
+func (c CodeHostBaseURL) String() string {
+	return c.baseURL
 }

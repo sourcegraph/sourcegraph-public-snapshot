@@ -11,10 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type changesetsConnectionResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	opts store.ListChangesetsOpts
 	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
@@ -55,7 +57,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.gitserverClient, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 
 	return resolvers, nil
@@ -74,7 +76,8 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		EnforceAuthz:         !r.optsSafe,
 		OnlyArchived:         r.opts.OnlyArchived,
 		IncludeArchived:      r.opts.IncludeArchived,
-		RepoID:               r.opts.RepoID,
+		RepoIDs:              r.opts.RepoIDs,
+		States:               r.opts.States,
 	})
 	return int32(count), err
 }

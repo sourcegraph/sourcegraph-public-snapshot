@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/amit7itz/goset"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
@@ -76,6 +77,42 @@ func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name 
 		return 0, false, errors.Newf("GetSymbol: %s", err)
 	}
 	return id, true, nil
+}
+
+func GetSymbolsInFiles(ctx context.Context, db dbutil.DB, repoId int, paths []string, hops []CommitId) (map[string]*goset.Set[string], error) {
+	pathToSymbols := map[string]*goset.Set[string]{}
+
+	for _, chunk := range chunksOf(paths, 1000) {
+		rows, err := db.QueryContext(ctx, `
+			SELECT name, path
+			FROM rockskip_symbols
+			WHERE
+				repo_id = $1 AND
+				path = ANY($2) AND
+				$3 && added AND
+				NOT $3 && deleted
+		`, repoId, pg.Array(chunk), pg.Array(hops))
+		if err != nil {
+			return nil, errors.Newf("GetSymbolsInFiles: %s", err)
+		}
+		for rows.Next() {
+			var name string
+			var path string
+			if err := rows.Scan(&name, &path); err != nil {
+				return nil, errors.Newf("GetSymbolsInFiles: %s", err)
+			}
+			if pathToSymbols[path] == nil {
+				pathToSymbols[path] = goset.NewSet[string]()
+			}
+			pathToSymbols[path].Add(name)
+		}
+		err = rows.Close()
+		if err != nil {
+			return nil, errors.Newf("GetSymbolsInFiles: %s", err)
+		}
+	}
+
+	return pathToSymbols, nil
 }
 
 func UpdateSymbolHops(ctx context.Context, db dbutil.DB, id int, status StatusAD, hop CommitId) error {
@@ -374,4 +411,24 @@ func wLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, repo s
 // iLock acquires the indexing lock on the repo.
 func iLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, repo string) (func() error, error) {
 	return lock(ctx, db, threadStatus, INDEXING_LOCKS_NAMESPACE, "iLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
+}
+
+func chunksOf[T any](xs []T, size int) [][]T {
+	if xs == nil {
+		return nil
+	}
+
+	chunks := [][]T{}
+
+	for i := 0; i < len(xs); i += size {
+		end := i + size
+
+		if end > len(xs) {
+			end = len(xs)
+		}
+
+		chunks = append(chunks, xs[i:end])
+	}
+
+	return chunks
 }

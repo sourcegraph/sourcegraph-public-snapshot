@@ -1,10 +1,10 @@
 .tabpanels {
     margin-top: 0.25rem;
-    height: calc(100% - 2.25rem);
+    flex-grow: 1;
 }
 
 .close-icon {
-    color: var(--link-color);
+    color: var(--icon-color);
 }
 
 .toggle {

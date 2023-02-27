@@ -1,0 +1,16 @@
+.stat {
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    svg {
+        height: 1.25rem;
+    }
+}
+
+.label {
+    font-weight: normal;
+    font-size: 0.875rem;
+    margin: 0;
+}

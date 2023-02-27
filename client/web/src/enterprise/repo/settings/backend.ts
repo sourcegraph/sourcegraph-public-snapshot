@@ -28,6 +28,7 @@ export function repoPermissionsInfo(repo: Scalars['ID']): Observable<RepoPermiss
             fragment RepoPermissionsInfoFields on PermissionsInfo {
                 syncedAt
                 updatedAt
+                unrestricted
             }
         `,
         { repo }

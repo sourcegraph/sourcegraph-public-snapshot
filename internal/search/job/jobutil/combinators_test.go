@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -100,8 +101,8 @@ func TestLimitJob(t *testing.T) {
 	})
 
 	t.Run("NewLimitJob propagates noop", func(t *testing.T) {
-		job := NewLimitJob(10, NewNoopJob())
-		require.Equal(t, NewNoopJob(), job)
+		j := NewLimitJob(10, NewNoopJob())
+		require.Equal(t, NewNoopJob(), j)
 	})
 }
 
@@ -118,8 +119,8 @@ func TestTimeoutJob(t *testing.T) {
 	})
 
 	t.Run("NewTimeoutJob propagates noop", func(t *testing.T) {
-		job := NewTimeoutJob(10*time.Second, NewNoopJob())
-		require.Equal(t, NewNoopJob(), job)
+		j := NewTimeoutJob(10*time.Second, NewNoopJob())
+		require.Equal(t, NewNoopJob(), j)
 	})
 }
 
@@ -186,7 +187,9 @@ func TestSequentialJob(t *testing.T) {
 			default:
 			}
 			s.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{}},
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{Path: strconv.Itoa(i)},
+				}},
 			})
 		}
 		return nil, nil
@@ -200,7 +203,7 @@ func TestSequentialJob(t *testing.T) {
 	// Setup: A child job that panics.
 	neverJob := mockjob.NewStrictMockJob()
 	t.Run("sequential job returns early after cancellation when limit job sees 5 events", func(t *testing.T) {
-		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(mockJob, neverJob))
+		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(true, mockJob, neverJob))
 		require.NotPanics(t, func() {
 			limitedSequentialJob.Run(context.Background(), job.RuntimeClients{}, stream)
 		})

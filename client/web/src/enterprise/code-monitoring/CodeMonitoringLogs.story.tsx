@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { parseISO } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -10,13 +10,17 @@ import { WebStory } from '../../components/WebStory'
 import { CodeMonitoringLogs, CODE_MONITOR_EVENTS } from './CodeMonitoringLogs'
 import { mockLogs } from './testing/util'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringLogs', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/CodeMonitoringLogs',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             disableSnapshot: false,
         },
-    })
+    },
+}
 
 const mockedResponse: MockedResponse[] = [
     {
@@ -28,7 +32,9 @@ const mockedResponse: MockedResponse[] = [
     },
 ]
 
-add('default', () => (
+export default config
+
+export const Default: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={mockedResponse}>
@@ -36,9 +42,9 @@ add('default', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('open', () => (
+export const Open: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={mockedResponse}>
@@ -46,9 +52,9 @@ add('open', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('empty', () => {
+export const Empty: Story = () => {
     const emptyMockedResponse: MockedResponse[] = [
         {
             request: {
@@ -74,4 +80,4 @@ add('empty', () => {
             )}
         </WebStory>
     )
-})
+}

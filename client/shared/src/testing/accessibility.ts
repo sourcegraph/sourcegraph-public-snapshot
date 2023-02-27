@@ -2,6 +2,8 @@ import { AxePuppeteer } from '@axe-core/puppeteer'
 import type { Result, NodeResult, RunOptions } from 'axe-core'
 import { Page } from 'puppeteer'
 
+import { logger } from '@sourcegraph/common'
+
 /**
  * Takes a list of Axe violation nodes and formats them into a readable string.
  */
@@ -52,14 +54,11 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
         // https://github.com/microsoft/monaco-editor/issues/2448
         .exclude('.monaco-status')
         /*
-            Rule: "aria-dialog-name" (ARIA dialog and alertdialog nodes should have an accessible name)
-            Since shephered.js doesn't support aria attributes, adding title attribute to the tour-card element
-            Would generate UI diff, as well as heading-order accessibility error since title is rendered as h3.
-            Ref: https://github.com/shipshapecode/shepherd/blob/master/src/js/components/shepherd-element.svelte#L194
-            Rule: "color-contrast" (Elements must have sufficient color contrast)
-            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
-        */
-        .exclude('.shepherd-element')
+         * TODO: Design review on some CodeMirror query input features to choose
+         * a color that fulfill contrast requirements:
+         * https://github.com/sourcegraph/sourcegraph/issues/36534
+         */
+        .exclude('.cm-content .cm-line')
 
     if (options) {
         axe.options(options)
@@ -77,6 +76,6 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
             throw new Error(errorMessage)
         }
 
-        console.warn(errorMessage)
+        logger.warn(errorMessage)
     }
 }

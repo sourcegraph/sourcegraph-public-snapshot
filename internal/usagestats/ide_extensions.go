@@ -69,7 +69,22 @@ var ideExtensionsPeriodUsageQuery = `
 			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
 			DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
 		FROM event_logs
-		WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) AND source = 'IDEEXTENSION' OR (source = 'BACKEND' AND (name LIKE 'IDE%' OR name = 'VSCESearchSubmitted'))
+		WHERE
+			timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp))
+			AND
+			(
+				source = 'IDEEXTENSION'
+				OR
+				(
+					source = 'BACKEND'
+					AND
+					(
+						name LIKE 'IDE%'
+						OR
+						name = 'VSCESearchSubmitted'
+					)
+				)
+			)
 	)
 	SELECT
 		ide_kind,

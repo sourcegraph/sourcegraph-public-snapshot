@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -26,6 +27,40 @@ import {
     UpdateCodeMonitorVariables,
 } from '../../graphql-operations'
 
+const MonitorEmailFragment = gql`
+    fragment MonitorEmailFields on MonitorEmail {
+        __typename
+        id
+        enabled
+        includeResults
+        recipients {
+            nodes {
+                id
+            }
+        }
+    }
+`
+
+const MonitorWebhookFragment = gql`
+    fragment MonitorWebhookFields on MonitorWebhook {
+        __typename
+        id
+        enabled
+        includeResults
+        url
+    }
+`
+
+const MonitorSlackWebhookFragment = gql`
+    fragment MonitorSlackWebhookFields on MonitorSlackWebhook {
+        __typename
+        id
+        enabled
+        includeResults
+        url
+    }
+`
+
 const CodeMonitorFragment = gql`
     fragment CodeMonitorFields on Monitor {
         id
@@ -39,34 +74,16 @@ const CodeMonitorFragment = gql`
         }
         actions {
             nodes {
-                ... on MonitorEmail {
-                    __typename
-                    id
-                    enabled
-                    includeResults
-                    recipients {
-                        nodes {
-                            id
-                        }
-                    }
-                }
-                ... on MonitorWebhook {
-                    __typename
-                    id
-                    enabled
-                    includeResults
-                    url
-                }
-                ... on MonitorSlackWebhook {
-                    __typename
-                    id
-                    enabled
-                    includeResults
-                    url
-                }
+                __typename
+                ...MonitorEmailFields
+                ...MonitorWebhookFields
+                ...MonitorSlackWebhookFields
             }
         }
     }
+    ${MonitorEmailFragment}
+    ${MonitorWebhookFragment}
+    ${MonitorSlackWebhookFragment}
 `
 
 const ListCodeMonitorsFragment = gql`
@@ -291,7 +308,7 @@ export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
         map(dataOrThrowErrors),
         map(data => {
             if (!data.resetTriggerQueryTimestamps) {
-                console.log('DATA', data)
+                logger.log('DATA', data)
                 throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
             }
         })

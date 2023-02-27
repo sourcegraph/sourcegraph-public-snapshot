@@ -38,7 +38,7 @@ export interface MultiSelectContextState {
     // aggregating the existing state from visible if required (for example, if
     // pagination is being performed by appending to the existing list in an
     // infinite scrolling style approach).
-    setVisible: (ids: string[]) => void
+    setVisible: (reset: boolean, ids: string[]) => void
 }
 
 // eslint-disable @typescript-eslint/no-unused-vars
@@ -84,8 +84,12 @@ export const MultiSelectContextProvider: React.FunctionComponent<
 > = ({ children, initialSelected, initialVisible }) => {
     // Set up state and callbacks for the visible items.
     const [visible, setVisibleInternal] = useState<Set<string>>(new Set(initialVisible ?? []))
-    const setVisible = useCallback((ids: string[]) => {
-        setVisibleInternal(new Set(ids))
+    const setVisible = useCallback((reset: boolean, ids: string[]) => {
+        if (reset) {
+            setVisibleInternal(new Set(ids))
+        } else {
+            setVisibleInternal(previousIds => new Set([...previousIds, ...ids]))
+        }
     }, [])
 
     // Now for selected items.
@@ -94,11 +98,10 @@ export const MultiSelectContextProvider: React.FunctionComponent<
     )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
-    const toggleAll = useCallback(() => (selected === 'all' ? deselectAll() : selectAll()), [
-        deselectAll,
-        selectAll,
-        selected,
-    ])
+    const toggleAll = useCallback(
+        () => (selected === 'all' ? deselectAll() : selectAll()),
+        [deselectAll, selectAll, selected]
+    )
 
     // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {

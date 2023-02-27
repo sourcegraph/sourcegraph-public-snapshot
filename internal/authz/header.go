@@ -29,9 +29,9 @@ func IsUnrecognizedScheme(err error) bool {
 // Two forms of the Authorization header's "credentials" token are supported (see [RFC 7235,
 // Appendix C](https://tools.ietf.org/html/rfc7235#appendix-C):
 //
-// - With only an access token: "token" 1*SP token68
-// - With a token as params:
-//   "token" 1*SP "token" BWS "=" BWS quoted-string
+//   - With only an access token: "token" 1*SP token68
+//   - With a token as params:
+//     "token" 1*SP "token" BWS "=" BWS quoted-string
 //
 // The returned values are derived directly from user input and have not been validated or
 // authenticated.

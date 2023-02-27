@@ -1,0 +1,129 @@
+[
+  {
+    "value": "(?:a).*?(?:b)",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 0
+      }
+    }
+  },
+  {
+    "and": [
+      {
+        "value": "c",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 5
+          },
+          "end": {
+            "line": 0,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "d",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 11
+          },
+          "end": {
+            "line": 0,
+            "column": 12
+          }
+        }
+      }
+    ]
+  },
+  {
+    "value": "(?:e).*?(?:f)",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 0
+      }
+    }
+  },
+  {
+    "or": [
+      {
+        "value": "g",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 19
+          },
+          "end": {
+            "line": 0,
+            "column": 20
+          }
+        }
+      },
+      {
+        "value": "h",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 24
+          },
+          "end": {
+            "line": 0,
+            "column": 25
+          }
+        }
+      }
+    ]
+  },
+  {
+    "value": "(i j k)",
+    "negated": false,
+    "labels": [
+      "Regexp"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 27
+      },
+      "end": {
+        "line": 0,
+        "column": 34
+      }
+    }
+  }
+]

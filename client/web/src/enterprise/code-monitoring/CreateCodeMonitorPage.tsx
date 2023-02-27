@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import * as H from 'history'
+import { VisuallyHidden } from '@reach/visually-hidden'
+import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -17,9 +17,7 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps extends ThemeProps {
-    location: H.Location
-    history: H.History
+interface CreateCodeMonitorPageProps {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
@@ -29,25 +27,22 @@ interface CreateCodeMonitorPageProps extends ThemeProps {
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({
-    authenticatedUser,
-    history,
-    location,
-    createCodeMonitor = _createCodeMonitor,
-    isLightTheme,
-    isSourcegraphDotCom,
-}) => {
-    const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
-        location.search,
-    ])
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+    const location = useLocation()
 
-    const description = useMemo(() => new URLSearchParams(location.search).get('description') ?? undefined, [
-        location.search,
-    ])
+    const triggerQuery = useMemo(
+        () => new URLSearchParams(location.search).get('trigger-query') ?? undefined,
+        [location.search]
+    )
+
+    const description = useMemo(
+        () => new URLSearchParams(location.search).get('description') ?? undefined,
+        [location.search]
+    )
 
     useEffect(
         () =>
-            eventLogger.logViewEvent('CreateCodeMonitorPage', {
+            eventLogger.logPageView('CreateCodeMonitorPage', {
                 hasTriggerQuery: !!triggerQuery,
                 hasDescription: !!description,
             }),
@@ -72,31 +67,34 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     )
 
     return (
-        <div className="container col-8">
+        <div className="container col-sm-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[
-                    { icon: CodeMonitoringLogo, to: '/code-monitoring', ariaLabel: 'Code monitoring logo' },
-                    { text: 'Create code monitor' },
-                ]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link to="/help/code_monitoring/how-tos/starting_points" target="_blank" rel="noopener">
-                            Learn more
+                            <VisuallyHidden>Learn more about code monitors</VisuallyHidden>
+                            <span aria-hidden={true}>Learn more</span>
                         </Link>
                     </>
                 }
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb
+                        icon={CodeMonitoringLogo}
+                        to="/code-monitoring"
+                        aria-label="Code monitoring"
+                    />
+                    <PageHeader.Breadcrumb>Create code monitor</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <CodeMonitorForm
-                history={history}
-                location={location}
                 authenticatedUser={authenticatedUser}
                 onSubmit={createMonitorRequest}
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
-                isLightTheme={isLightTheme}
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>

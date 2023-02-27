@@ -1,18 +1,19 @@
-import React, { useCallback, useContext, useState } from 'react'
+import React, { useCallback, useContext, useMemo, useState } from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { CircularProgressbar } from 'react-circular-progressbar'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
+import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'
-import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
-import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
+import { TourNewTabLink } from './TourNewTabLink'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
 import styles from './Tour.module.scss'
@@ -30,13 +31,17 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     completed,
     icon,
     variant,
+    dataAttributes = {},
 }) => {
     const [selectedStep, setSelectedStep] = useState<TourTaskStepType>()
     const [showLanguagePicker, setShowLanguagePicker] = useState(false)
     const { language, onLanguageSelect, onStepClick, onRestart } = useContext(TourContext)
 
     const handleLinkClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement>, step: TourTaskStepType) => {
+        (
+            event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>,
+            step: TourTaskStepType
+        ) => {
             onStepClick(step, language)
             if (isLanguageRequired(step) && !language) {
                 event.preventDefault()
@@ -58,7 +63,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
 
     const onLanguageClose = useCallback(() => setShowLanguagePicker(false), [])
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const handleLanguageSelect = useCallback(
         (language: TourLanguage) => {
             onLanguageSelect(language)
@@ -71,10 +76,18 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
             if (isExternalLink(url)) {
                 window.open(url, '_blank')
             } else {
-                history.push(url)
+                navigate(url)
             }
         },
-        [onStepClick, onLanguageSelect, selectedStep, history]
+        [onStepClick, onLanguageSelect, selectedStep, navigate]
+    )
+    const attributes = useMemo(
+        () =>
+            Object.entries(dataAttributes).reduce(
+                (result, [key, value]) => ({ ...result, [`data-${key}`]: value }),
+                {}
+            ),
+        [dataAttributes]
     )
 
     if (showLanguagePicker) {
@@ -91,17 +104,31 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
 
     const isMultiStep = steps.length > 1
     return (
-        <div className={classNames(icon && [styles.task, variant === 'small' && styles.isSmall])}>
+        <div
+            className={classNames(
+                icon && [styles.task, variant === 'small' && styles.isSmall],
+                !title && styles.noTitleTask
+            )}
+            {...attributes}
+        >
             {icon && variant !== 'small' && <span className={styles.taskIcon}>{icon}</span>}
             <div className={classNames('flex-grow-1', variant !== 'small' && 'h-100 d-flex flex-column')}>
-                <div className="d-flex justify-content-between position-relative">
-                    {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
-                    <p className={styles.title}>{title}</p>
-                    {completed === 100 && <Icon as={CheckCircleIcon} size="sm" className="text-success" />}
-                    {typeof completed === 'number' && completed < 100 && (
-                        <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
-                    )}
-                </div>
+                {title && (
+                    <div className="d-flex justify-content-between position-relative">
+                        {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
+                        <Text className={styles.title}>{title}</Text>
+                        {completed === 100 && (
+                            <Icon size="sm" className="text-success" aria-label="Completed" svgPath={mdiCheckCircle} />
+                        )}
+                        {typeof completed === 'number' && completed < 100 && (
+                            <CircularProgressbar
+                                className={styles.progressBar}
+                                strokeWidth={10}
+                                value={completed || 0}
+                            />
+                        )}
+                    </div>
+                )}
                 <ul
                     className={classNames(
                         styles.stepList,
@@ -111,7 +138,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                     )}
                 >
                     {steps.map(step => (
-                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-start')}>
+                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-center')}>
                             {step.action.type === 'link' && (
                                 <Link
                                     className="flex-grow-1"
@@ -122,19 +149,17 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 </Link>
                             )}
                             {step.action.type === 'new-tab-link' && (
-                                <Link
-                                    className="flex-grow-1"
+                                <TourNewTabLink
+                                    step={step}
+                                    variant={step.action.variant === 'button-primary' ? 'button' : 'link'}
+                                    className={classNames('flex-grow-1')}
                                     to={getTourTaskStepActionValue(step, language)}
-                                    onClick={event => handleLinkClick(event, step)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {step.label}
-                                </Link>
+                                    onClick={handleLinkClick}
+                                />
                             )}
                             {step.action.type === 'restart' && (
                                 <div className="flex-grow">
-                                    <p className="m-0">{step.label}</p>
+                                    <Text className="m-0">{step.label}</Text>
                                     <div className="d-flex flex-column">
                                         <Button
                                             variant="link"
@@ -157,8 +182,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
                             )}
-                            {isMultiStep && step.isCompleted && (
-                                <Icon as={CheckCircleIcon} size="md" className="text-success" />
+                            {(isMultiStep || !title) && step.isCompleted && (
+                                <Icon
+                                    size="md"
+                                    className="text-success"
+                                    aria-label="Completed step"
+                                    svgPath={mdiCheckCircle}
+                                />
                             )}
                         </li>
                     ))}

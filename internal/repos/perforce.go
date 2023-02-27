@@ -24,9 +24,13 @@ type PerforceSource struct {
 
 // NewPerforceSource returns a new PerforceSource from the given external
 // service.
-func NewPerforceSource(svc *types.ExternalService) (*PerforceSource, error) {
+func NewPerforceSource(ctx context.Context, svc *types.ExternalService) (*PerforceSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.PerforceConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newPerforceSource(svc, &c)
@@ -39,10 +43,23 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 	}, nil
 }
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s PerforceSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 // ListRepos returns all Perforce depots accessible to all connections
 // configured in Sourcegraph via the external services configuration.
 func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	for _, depot := range s.config.Depots {
+		// Tiny optimization: exit early if context has been canceled.
+		if err := ctx.Err(); err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+
 		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
 	}
 }

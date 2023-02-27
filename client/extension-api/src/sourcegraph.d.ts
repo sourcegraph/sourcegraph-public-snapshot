@@ -2,7 +2,7 @@
  * ## The Sourcegraph extension API
  *
  * Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
- * - Code intelligence (go-to-definition, find references, hovers, etc.)
+ * - Code navigation (go-to-definition, find references, hovers, etc.)
  * - Test coverage overlays
  * - Links to live traces, log output, and performance data for a line of code
  * - Git blame
@@ -544,117 +544,6 @@ declare module 'sourcegraph' {
      */
     export type ViewComponent = CodeEditor | DirectoryViewer
 
-    /**
-     * A style for a {@link TextDocumentDecoration}.
-     */
-    export interface ThemableDecorationStyle {
-        /** The CSS background-color property value for the line. */
-        backgroundColor?: string
-
-        /** The CSS border property value for the line. */
-        border?: string
-
-        /** The CSS border-color property value for the line. */
-        borderColor?: string
-
-        /** The CSS border-width property value for the line. */
-        borderWidth?: string
-    }
-
-    /**
-     * A text document decoration changes the appearance of a range in the document and/or adds other content to
-     * it.
-     */
-    export interface TextDocumentDecoration extends ThemableDecorationStyle {
-        /**
-         * The range that the decoration applies to. Currently, decorations are
-         * only applied only on the start line, and the entire line. Multiline
-         * and intra-line ranges are not supported.
-         */
-        range: Range
-
-        /**
-         * If true, the decoration applies to all lines in the range (inclusive), even if not all characters on the
-         * line are included.
-         */
-        isWholeLine?: boolean
-
-        /** Content to display after the range. */
-        after?: DecorationAttachmentRenderOptions
-
-        /** Overwrite style for light themes. */
-        light?: ThemableDecorationStyle
-
-        /** Overwrite style for dark themes. */
-        dark?: ThemableDecorationStyle
-    }
-
-    /**
-     * A style for {@link DecorationAttachmentRenderOptions}.
-     */
-    export interface ThemableDecorationAttachmentStyle {
-        /** The CSS background-color property value for the attachment. */
-        backgroundColor?: string
-
-        /** The CSS color property value for the attachment. */
-        color?: string
-    }
-
-    /** A decoration attachment adds content after a {@link TextDocumentDecoration}. */
-    export interface DecorationAttachmentRenderOptions extends ThemableDecorationAttachmentStyle {
-        /** Text to display in the attachment. */
-        contentText?: string
-
-        /** Tooltip text to display when hovering over the attachment. */
-        hoverMessage?: string
-
-        /** If set, the attachment becomes a link with this destination URL. */
-        linkURL?: string
-
-        /** Overwrite style for light themes. */
-        light?: ThemableDecorationAttachmentStyle
-
-        /** Overwrite style for dark themes. */
-        dark?: ThemableDecorationAttachmentStyle
-    }
-
-    /**
-     * Represents a handle to a set of decorations.
-     *
-     * To get an instance of {@link TextDocumentDecorationType}, use
-     * {@link sourcegraph.app.createDecorationType}
-     */
-    export interface TextDocumentDecorationType {
-        /** An opaque identifier. */
-        readonly key: string
-    }
-
-    /**
-     * A text element displayed in an editor's status bar.
-     * A status bar item can display tooltips on hover and execute commands on click
-     */
-    export interface StatusBarItem {
-        /** The text to display in the status bar */
-        text: string
-
-        /** Tooltip text to display when hovering over the status bar item. */
-        tooltip?: string
-
-        /** The id of and arguments to a command to execute when the status bar item is clicked */
-        command?: { id: string; args?: any[] }
-    }
-
-    /**
-     * Represents a handle to a status bar item.
-     *
-     * To get an instance of {@link StatusBarItemType}, use
-     * {@link sourcegraph.app.createStatusBarItemType}
-     */
-    export interface StatusBarItemType {
-        /** An opaque identifier. */
-        readonly key: string
-    }
-
     export interface Directory {
         /**
          * The URI of the directory.
@@ -714,26 +603,6 @@ declare module 'sourcegraph' {
          * is always at index 0 of the emitted array.
          */
         readonly selectionsChanges: Subscribable<Selection[]>
-
-        /**
-         * Add a set of decorations to this editor. If a set of decorations already exists with the given
-         * {@link TextDocumentDecorationType}, they will be replaced.
-         *
-         * @see {@link TextDocumentDecorationType}
-         * @see {@link sourcegraph.app.createDecorationType}
-         *
-         */
-        setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
-
-        /**
-         * Add a status bar item to this editor's status bar. If a status bar item already exists with the given
-         * {@link StatusBarItemType}, it will be replaced.
-         *
-         * @see {@link StatusBarItemType}
-         * @see {@link sourcegraph.app.createStatusBarItemType}
-         *
-         */
-        setStatusBarItem(statusBarItemType: StatusBarItemType, statusBarItem: StatusBarItem): void
     }
 
     /**
@@ -975,134 +844,6 @@ declare module 'sourcegraph' {
         provideView(context: DirectoryViewContext): ProviderResult<View>
     }
 
-    export interface ThemableFileDecorationStyle {
-        /** The CSS color property value for the text contet */
-        color?: string
-
-        /** Overwrite style for when the file is active */
-        activeColor?: string
-    }
-
-    /** A decoration attachment adds content after a {@link FileDecoration}. */
-    export interface FileDecorationAttachmentRenderOptions extends ThemableFileDecorationStyle {
-        /** Text value to be displayed. This value should be very short to prevent truncation */
-        contentText: string
-
-        /** Tooltip text to display when hovering over the text content. */
-        hoverMessage?: string
-
-        /** Overwrite style for light themes. */
-        light?: ThemableFileDecorationStyle
-
-        /** Overwrite color for dark themes. */
-        dark?: ThemableFileDecorationStyle
-    }
-
-    /**
-     * A file decoration adds text content and/or a progress bar to files in a tree view
-     */
-    export interface FileDecoration {
-        /** The resource identifier of this file */
-        uri: string
-
-        /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
-        where?: 'sidebar' | 'page'
-
-        /** An optional object that describes the text content contributed by the decoration */
-        after?: FileDecorationAttachmentRenderOptions
-
-        /**
-         * Describes a meter bar like the [HTML5 `<meter>`
-         * element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter)
-         * to be rendered after the file/directory name.
-         */
-        meter?: {
-            /**
-             * The current numeric value. This must be between the minimum and maximum values
-             * (min attribute and max attribute) if they are specified.
-             */
-            value: number
-
-            /**
-             * The lower numeric bound of the measured range. This must be less than
-             * the maximum value (max attribute), if specified. If unspecified, the
-             * minimum value is 0.
-             */
-            min?: number
-
-            /**
-             * The upper numeric bound of the measured range. This must be greater
-             * than the minimum value (min attribute), if specified. If unspecified,
-             * the maximum value is 1.
-             */
-            max?: number
-
-            /**
-             * The upper numeric bound of the low end of the measured range. This
-             * must be greater than the minimum value (min attribute), and it also
-             * must be less than the high value and maximum value (high attribute
-             * and max attribute, respectively), if any are specified. If
-             * unspecified, or if less than the minimum value, the low value is
-             * equal to the minimum value.
-             */
-            low?: number
-
-            /**
-             * The lower numeric bound of the high end of the measured range. This
-             * must be less than the maximum value (max attribute), and it also must
-             * be greater than the low value and minimum value (low attribute and
-             * min attribute, respectively), if any are specified. If unspecified,
-             * or if greater than the maximum value, the high value is equal to the
-             * maximum value.
-             */
-            high?: number
-
-            /**
-             * This attribute indicates the optimal numeric value. It must be within
-             * the range (as defined by the min attribute and max attribute). When
-             * used with the low attribute and high attribute, it gives an
-             * indication where along the range is considered preferable. For
-             * example, if it is between the min attribute and the low attribute,
-             * then the lower range is considered preferred. The browser may color
-             * the meter's bar differently depending on whether the value is less
-             * than or equal to the optimum value.
-             */
-            optimum?: number
-
-            /** Tooltip text to display when hovering over the progress bar. */
-            hoverMessage?: string
-        }
-    }
-
-    /**
-     * Context passed to file decoration providers.
-     *
-     * The schema of these parameters is experimental and subject to change without notice.
-     */
-    export interface FileDecorationContext {
-        /** The uri of the file's parent */
-        uri: string
-
-        files: {
-            /** The uri of the file */
-            uri: string
-
-            /** Whether this file is a directory */
-            isDirectory: boolean
-
-            /**
-             * File path relative to repo root uri
-             *
-             * @todo Remove this once `parseRepoUri` is public
-             * */
-            path: string
-        }[]
-    }
-
-    export interface FileDecorationProvider {
-        provideFileDecorations: (fileDecorationContext: FileDecorationContext) => ProviderResult<FileDecoration[]>
-    }
-
     /**
      * The client application that is running the extension.
      */
@@ -1138,23 +879,6 @@ declare module 'sourcegraph' {
         export function createPanelView(id: string): PanelView
 
         /**
-         * Creates a decorationType that can be used to add decorations to code views.
-         *
-         * Use this to create a unique handle to a set of decorations, that can be applied to
-         * text editors using {@link setDecorations}.
-         */
-        export function createDecorationType(): TextDocumentDecorationType
-
-        /**
-         * Creates a statusBarItemType that can be used to add a status bar item to
-         * the status bar of code views.
-         *
-         * Use this to create a unique handle to a status bar item, that can be applied to
-         * text editors using {@link setStatusBarItem}.
-         */
-        export function createStatusBarItemType(): StatusBarItemType
-
-        /**
          * Register a view provider, which provides the contents of a view.
          *
          * This API is experimental and is subject to change or removal without notice.
@@ -1164,11 +888,6 @@ declare module 'sourcegraph' {
          * @returns An unsubscribable to unregister this provider.
          */
         export function registerViewProvider(id: string, provider: ViewProvider): Unsubscribable
-
-        /**
-         * Register a file decoration provider
-         */
-        export function registerFileDecorationProvider(provider: FileDecorationProvider): Unsubscribable
 
         /**
          * Log a message to the console if logs for the extension are enabled in user settings.
@@ -1245,7 +964,7 @@ declare module 'sourcegraph' {
          * The current version context of the workspace, if any.
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          *
@@ -1264,7 +983,7 @@ declare module 'sourcegraph' {
          * The current search context of the workspace, if any.
          *
          * A search context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts.
          */
@@ -1404,7 +1123,7 @@ declare module 'sourcegraph' {
          * values can briefly be used to describe some common property of the underlying result set.
          *
          * We currently use this to display whether a file in the file match locations pane contains
-         * only precise or only search-based code intelligence results.
+         * only precise or only search-based code navigation results.
          */
         aggregableBadges?: AggregableBadge[]
     }
@@ -1470,6 +1189,16 @@ declare module 'sourcegraph' {
 
         /** Predefined icons to display next ot the summary. */
         iconKind?: 'info' | 'error' | 'warning'
+
+        /**
+         * When set, this renders a row of button underneath the content. Note
+         * that this was added after the extension deprecation and will only
+         * work with newer clients.
+         *
+         * When buttons are rendered this way, an eventual dismiss button is
+         * appended to this list.
+         */
+        buttons?: React.ReactNode[]
     }
 
     export interface HoverProvider {
@@ -1537,68 +1266,6 @@ declare module 'sourcegraph' {
          * @returns Related locations, or `null` if there are none.
          */
         provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
-    }
-
-    /**
-     * A completion item is a suggestion to complete text that the user has typed.
-     *
-     * @see {@link CompletionItemProvider#provideCompletionItems}
-     *
-     * @deprecated
-     */
-    export interface CompletionItem {
-        /**
-         * The label of this completion item, which is rendered prominently. If no
-         * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
-         * user selects this completion.
-         */
-        label: string
-
-        /**
-         * The description of this completion item, which is rendered less prominently but still
-         * alongside the {@link CompletionItem#label}.
-         */
-        description?: string
-
-        /**
-         * A string to insert in a document when the user selects this completion. When not set, the
-         * {@link CompletionItem#label} is used.
-         */
-        insertText?: string
-    }
-
-    /**
-     * A collection of [completion items](#CompletionItem) to be presented in the editor.
-     *
-     * @deprecated
-     */
-    export interface CompletionList {
-        /**
-         * The list of completions.
-         */
-        items: CompletionItem[]
-    }
-
-    /**
-     * A completion item provider provides suggestions to insert or apply at the cursor as the user
-     * is typing.
-     *
-     * Providers are queried for completions as the user types in any document matching the document
-     * selector specified at registration time.
-     *
-     * @deprecated
-     */
-    export interface CompletionItemProvider {
-        /**
-         * Provide completion items for the given position and document.
-         *
-         * @param document The document in which the command was invoked.
-         * @param position The position at which the command was invoked.
-         *
-         * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
-         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
-         */
-        provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
     }
 
     /**
@@ -1824,75 +1491,19 @@ declare module 'sourcegraph' {
             variables: TVariables
         ): Promise<GraphQLResult<TResult>>
 
-        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult<T>
 
         export interface SuccessGraphQLResult<T> {
             data: T
             errors: undefined
         }
-        export interface ErrorGraphQLResult {
-            data: undefined
+        export interface ErrorGraphQLResult<T> {
+            // It might be possible that even with errored response we have
+            // a partially resolved data
+            // See https://github.com/sourcegraph/sourcegraph/pull/36033
+            data: T | null
             errors: readonly import('graphql').GraphQLError[]
         }
-    }
-
-    /**
-     * A description of the information available at a URL.
-     */
-    export interface LinkPreview {
-        /**
-         * The content of this link preview, which is shown next to the link.
-         */
-        content?: MarkupContent
-
-        /**
-         * The hover content of this link preview, which is shown when the cursor hovers the link.
-         *
-         * @todo Add support for Markdown. Currently only plain text is supported.
-         */
-        hover?: Pick<MarkupContent, 'value'> & { kind: MarkupKind.PlainText }
-    }
-
-    /**
-     * Called to obtain a preview of the information available at a URL.
-     */
-    export interface LinkPreviewProvider {
-        /**
-         * Provides a preview of the information available at the URL of a link in a document.
-         *
-         * @todo Add a `context` parameter so that the provider knows what document contains the
-         * link (so that it can handle links in code files differently from rendered Markdown
-         * documents, for example).
-         *
-         * @param url The URL of the link to preview.
-         */
-        provideLinkPreview(url: URL): ProviderResult<LinkPreview>
-    }
-
-    /**
-     * Extensions can customize how content is rendered.
-     */
-    export namespace content {
-        /**
-         * EXPERIMENTAL. This API is subject to change without notice and has no compatibility
-         * guarantees.
-         *
-         * Registers a provider for link previews ({@link LinkPreviewProvider}) for all URLs in a
-         * document matching the {@link urlMatchPattern}. A link preview is a description of the
-         * information available at a URL.
-         *
-         * @todo Support a more powerful syntax for URL match patterns, such as Chrome's
-         * (https://developer.chrome.com/extensions/match_patterns).
-         *
-         * @param urlMatchPattern A pattern that matches URLs for which the provider is called to
-         * obtain a preview. Currently it matches all URLs that start with the match pattern (i.e.,
-         * string prefix matches). No wildcards are supported.
-         * @param provider The link preview provider.
-         */
-        export function registerLinkPreviewProvider(
-            urlMatchPattern: string,
-            provider: LinkPreviewProvider
-        ): Unsubscribable
     }
 
     export interface ContextValues {

@@ -1,5 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
+import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
+
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
@@ -18,12 +20,16 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             ... on User {
                 username
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
             ... on Org {
                 name
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
         }
         description
@@ -34,6 +40,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             id
             originalInput
             createdAt
+            startedAt
+            state
+            applyURL
         }
 
         batchSpecs(first: 1) {
@@ -41,6 +50,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
                 id
                 originalInput
                 createdAt
+                startedAt
+                state
+                applyURL
             }
         }
 
@@ -49,17 +61,13 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
 `
 
 export const EXECUTE_BATCH_SPEC = gql`
-    mutation ExecuteBatchSpec($batchSpec: ID!) {
-        executeBatchSpec(batchSpec: $batchSpec) {
-            id
-            description {
-                name
-            }
-            namespace {
-                url
-            }
+    mutation ExecuteBatchSpec($batchSpec: ID!, $noCache: Boolean) {
+        executeBatchSpec(batchSpec: $batchSpec, noCache: $noCache) {
+            ...BatchSpecExecutionFields
         }
     }
+
+    ${batchSpecExecutionFieldsFragment}
 `
 
 // This mutation is used to create a new batch change. It creates the batch change and an
@@ -76,10 +84,17 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
 // This mutation is used to create a new batch spec when the existing batch spec attached
 // to a batch change has already been applied.
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!) {
-        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace) {
+    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!, $batchChange: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace, batchChange: $batchChange) {
             id
             createdAt
+            workspaceResolution {
+                # We fetch started at to make sure we distinguish a new workspace
+                # resolution from a previous one.
+                startedAt
+                state
+                failureMessage
+            }
         }
     }
 `
@@ -87,10 +102,17 @@ export const CREATE_BATCH_SPEC_FROM_RAW = gql`
 // This mutation is used to update the batch spec when the existing batch spec is
 // unapplied.
 export const REPLACE_BATCH_SPEC_INPUT = gql`
-    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
-        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
+    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
+        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
             id
             createdAt
+            workspaceResolution {
+                # We fetch started at to make sure we distinguish a new workspace
+                # resolution from a previous one.
+                startedAt
+                state
+                failureMessage
+            }
         }
     }
 `
@@ -101,6 +123,9 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
             __typename
             ... on BatchSpec {
                 workspaceResolution {
+                    # We fetch started at to make sure we distinguish a new workspace
+                    # resolution from a previous one.
+                    startedAt
                     state
                     failureMessage
                 }
@@ -144,6 +169,7 @@ export const WORKSPACES = gql`
         ignored
         unsupported
         cachedResultFound
+        stepCacheResultCount
     }
 
     fragment PreviewVisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
@@ -219,5 +245,11 @@ export const IMPORTING_CHANGESETS = gql`
     fragment PreviewBatchSpecImportingHiddenChangesetFields on HiddenChangesetSpec {
         __typename
         id
+    }
+`
+
+export const EXECUTORS = gql`
+    query CheckExecutorsAccessToken {
+        areExecutorsConfigured
     }
 `

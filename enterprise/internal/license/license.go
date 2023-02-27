@@ -40,10 +40,9 @@ func (l Info) IsExpired() bool {
 	return l.ExpiresAt.Before(time.Now())
 }
 
-// IsExpiredWithGracePeriod reports whether the license has expired, adding a grace period of 3 days
-// after the license's expiration.
-func (l Info) IsExpiredWithGracePeriod() bool {
-	return l.ExpiresAt.Add(3 * 24 * time.Hour).Before(time.Now())
+// IsExpiringSoon reports whether the license will expire within the next 7 days.
+func (l Info) IsExpiringSoon() bool {
+	return l.ExpiresAt.Add(-7 * 24 * time.Hour).Before(time.Now())
 }
 
 // HasTag reports whether tag is in l's list of tags.
@@ -122,20 +121,20 @@ type signedKey struct {
 
 // GenerateSignedKey generates a new signed license key with the given license information, using
 // the private key for the signature.
-func GenerateSignedKey(info Info, privateKey ssh.Signer) (string, error) {
+func GenerateSignedKey(info Info, privateKey ssh.Signer) (licenseKey string, version int, err error) {
 	encodedInfo, err := info.encode()
 	if err != nil {
-		return "", err
+		return "", 0, errors.Wrap(err, "encode")
 	}
 	sig, err := privateKey.Sign(rand.Reader, encodedInfo)
 	if err != nil {
-		return "", err
+		return "", 0, errors.Wrap(err, "sign")
 	}
 	signedKeyData, err := json.Marshal(signedKey{Signature: sig, EncodedInfo: encodedInfo})
 	if err != nil {
-		return "", err
+		return "", 0, errors.Wrap(err, "marshal")
 	}
-	return base64.RawURLEncoding.EncodeToString(signedKeyData), nil
+	return base64.RawURLEncoding.EncodeToString(signedKeyData), formatVersion, nil
 }
 
 // ParseSignedKey parses and verifies the signed license key. If parsing or verification fails, a

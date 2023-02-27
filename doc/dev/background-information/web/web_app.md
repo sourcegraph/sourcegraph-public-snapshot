@@ -55,36 +55,36 @@ To install it, [see the instructions](../../setup/quickstart.md).
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
 
     ```sh
-    yarn generate
+    pnpm generate
     ```
 
     To regenerate on file change:
 
     ```sh
-    yarn watch-generate
+    pnpm watch-generate
     ```
 
 ### Storybook
 
 Storybook is used to work on the components in isolation. The latest version is deployed at http://storybook.sgdev.org/.
 
-To use it locally, use `yarn storybook` command to start the Storybook development server. This will load stories from all the workspaces that we have in the monorepo.
+To use it locally, use `pnpm storybook` command to start the Storybook development server. This will load stories from all the workspaces that we have in the monorepo.
 
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
 The root `package.json` has commands to launch Storybook only for each individual workspace, which greatly increases the build performance.
 
 ```sh
-yarn storybook:branded
-yarn storybook:browser
-yarn storybook:shared
-yarn storybook:web
-yarn storybook:wildcard
+pnpm storybook:branded
+pnpm storybook:browser
+pnpm storybook:shared
+pnpm storybook:web
+pnpm storybook:wildcard
 ```
 
 ## Naming files
@@ -131,7 +131,7 @@ If you don't do this (and just use a normal `import`), it will still work, but i
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`yarn run format` will check & autoformat all code.
+`pnpm run format` will check & autoformat all code.
 
 ## Tests
 
@@ -143,8 +143,19 @@ Unit tests are for things that can be tested in isolation; you provide inputs an
 
 React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](../../how-to/testing.md#react-component-snapshot-tests)" for more information.
 
-You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](../../how-to/testing.md)" for more information.
+You can run unit tests via `pnpm test` (to run all) or `pnpm test --watch` (to run only tests changed since the last commit). See "[Testing](../../how-to/testing.md)" for more information.
 
 ### E2E tests
 
 See [testing.md](../../how-to/testing.md).
+
+## Logging
+
+`console` methods are banned in browser environments via [the `no-console` ESLint rule](https://eslint.org/docs/latest/rules/no-console) to:
+
+1. Avoid leaving `console.*` added for debugging purposes during development.
+2. Have more control over logging pipelines. E.g.,
+    - Forward errors to the error monitoring services.
+    - Dynamically change logging level depending on the environment.
+
+Use [the `logger` service](https://sourcegraph.sourcegraph.com/search?q=context:sourcegraph+export+const+logger:+Logger+%3D&patternType=standard) that wraps console methods where we want to preserve console output in non-development environments. E.g., logging helpful information during an integration test execution. Feel free to disable the `no-console` ESLint rule for node.js environments via [the `overrides` configuration key](https://eslint.org/docs/latest/user-guide/configuring/configuration-files#configuration-based-on-glob-patterns). Check out [the Unified logger service RFC](https://docs.google.com/document/d/1PolGRDS9XfKj-IJEBi7BTbVZeUsQfM-3qpjLsLlB-yw/edit) for more context.

@@ -2,21 +2,27 @@
     display: flex;
     min-width: 0;
     position: relative;
-    padding: 0.375rem 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
     background-image: none !important;
 
     .monaco-field {
-        background-position: right 0.75rem top 0.175rem !important;
+        background-position: right 0.75rem top 0.1rem !important;
     }
 }
 
 .focus-container {
     height: auto;
 
+    // Spread standard input paddings in order to fix visually problem
+    // with codemirror editor on the code insight creation UI pages.
+    // See https://github.com/sourcegraph/sourcegraph/issues/37785
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+
     &:focus-within,
     &:focus {
         border: 1px solid var(--input-focus-border-color);
-        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        box-shadow: var(--search-box-focus-box-shadow);
     }
 
     &:global(.is-valid) {
@@ -64,6 +70,17 @@
         padding: 0;
         border: none;
         box-shadow: none;
+    }
+
+    :global(.cm-editor) {
+        flex: 1;
+    }
+
+    // Fix loading spinner layout position (since line height has non default value
+    // loading layout requires layout change)
+    // stylelint-disable-next-line selector-class-pattern
+    :global(.cm-sg-loading-spinner-container) {
+        align-self: center;
     }
 }
 

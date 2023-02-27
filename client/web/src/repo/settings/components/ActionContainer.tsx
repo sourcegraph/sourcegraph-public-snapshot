@@ -1,40 +1,38 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, H4, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 
 export const BaseActionContainer: React.FunctionComponent<
     React.PropsWithChildren<{
-        title: React.ReactFragment
-        description: React.ReactFragment
-        action: React.ReactFragment
-        details?: React.ReactFragment
+        title: React.ReactNode
+        description: React.ReactNode
+        action?: React.ReactNode
+        details?: React.ReactNode
         className?: string
     }>
 > = ({ title, description, action, details, className }) => (
     <div className={classNames(styles.actionContainer, className)}>
         <div className={styles.row}>
             <div>
-                <h4 className={styles.title}>{title}</h4>
+                <H4 className={styles.title}>{title}</H4>
                 {description}
             </div>
-            <div className={styles.btnContainer}>{action}</div>
+            {action && <div className={styles.btnContainer}>{action}</div>}
         </div>
         {details && <div className={styles.row}>{details}</div>}
     </div>
 )
 
 interface Props {
-    title: React.ReactFragment
-    description: React.ReactFragment
-    buttonClassName?: string
-    buttonLabel: React.ReactFragment
+    title: React.ReactNode
+    description: React.ReactNode
+    buttonVariant?: ButtonProps['variant']
+    buttonLabel: React.ReactNode
     buttonSubtitle?: string
     buttonDisabled?: boolean
     info?: React.ReactNode
@@ -44,7 +42,6 @@ interface Props {
     flashText?: string
 
     run: () => Promise<void>
-    history: H.History
 }
 
 interface State {
@@ -78,15 +75,16 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 className={this.props.className}
                 action={
                     <>
-                        <Button
-                            className={classNames(styles.btn, this.props.buttonClassName)}
-                            variant={this.props.buttonClassName ? undefined : 'primary'}
-                            onClick={this.onClick}
-                            data-tooltip={this.props.buttonSubtitle}
-                            disabled={this.props.buttonDisabled || this.state.loading}
-                        >
-                            {this.props.buttonLabel}
-                        </Button>
+                        <Tooltip content={this.props.buttonSubtitle}>
+                            <Button
+                                className={styles.btn}
+                                variant={this.props.buttonVariant || 'primary'}
+                                onClick={this.onClick}
+                                disabled={this.props.buttonDisabled || this.state.loading}
+                            >
+                                {this.props.buttonLabel}
+                            </Button>
+                        </Tooltip>
                         {this.props.buttonSubtitle && (
                             <div className={styles.btnSubtitle}>
                                 <small>{this.props.buttonSubtitle}</small>

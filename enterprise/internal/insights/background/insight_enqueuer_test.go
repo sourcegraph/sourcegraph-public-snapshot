@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -63,7 +63,6 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 // 1. Webhook insights are not enqueued (not yet supported.)
 // 2. Duplicate insights are deduplicated / do not submit multiple jobs.
 // 3. Jobs are scheduled not to all run at the same time.
-//
 func Test_discoverAndEnqueueInsights(t *testing.T) {
 	// Setup the setting store and job enqueuer mocks.
 	ctx := context.Background()
@@ -79,6 +78,9 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		t.Fatal(err)
 	}
 	clock := func() time.Time { return now }
+
+	ie := NewInsightEnqueuer(clock, nil)
+	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
 	dataSeriesStore := store.NewMockDataSeriesStore()
 
@@ -97,7 +99,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := discoverAndEnqueueInsights(ctx, clock, dataSeriesStore, enqueueQueryRunnerJob); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,15 +108,15 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("0", `[
+	autogold.Expect(`[
   {
     "SeriesID": "series1",
-    "SearchQuery": "fork:no archived:no count:99999999 query1",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "record",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -127,12 +129,12 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "fork:no archived:no count:99999999 query2",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "record",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -145,12 +147,12 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series1",
-    "SearchQuery": "fork:no archived:no count:99999999 query1",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "snapshot",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -163,12 +165,12 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "fork:no archived:no count:99999999 query2",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "snapshot",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,

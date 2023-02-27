@@ -6,6 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -28,10 +30,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.CommitSearchJob{}),
-			&run.RepoSearchJob{},
-			jobutil.NewAndJob(&searcher.SymbolSearcherJob{}, &commit.CommitSearchJob{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
+			jobutil.NewParallelJob(&jobutil.RepoSearchJob{}, &commit.SearchJob{}),
+			&jobutil.RepoSearchJob{},
+			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
+			jobutil.NewTimeoutJob(0, &jobutil.RepoSearchJob{}),
 		}
 
 		for _, j := range erroringJobs {
@@ -43,15 +45,15 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearchJob{}, &commit.CommitSearchJob{}), nil)
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
 		require.Error(t, err)
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewLimitJob(1000, &commit.CommitSearchJob{}),
-			&commit.CommitSearchJob{},
-			jobutil.NewTimeoutJob(0, &commit.CommitSearchJob{}),
+			jobutil.NewLimitJob(1000, &commit.SearchJob{}),
+			&commit.SearchJob{},
+			jobutil.NewTimeoutJob(0, &commit.SearchJob{}),
 		}
 
 		for _, j := range nonErroringJobs {
@@ -66,13 +68,14 @@ func TestAddCodeMonitorHook(t *testing.T) {
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))
 			require.NoError(t, err)
-			inputs := &run.SearchInputs{
+			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteralDefault,
+				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
+				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewJob(inputs, plan, jobutil.IdentityPass)
+			j, err := jobutil.NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}
@@ -88,9 +91,9 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			"type:commit a or b repo:c context:global",
 		}
 
-		for _, query := range queries {
+		for _, q := range queries {
 			t.Run("", func(t *testing.T) {
-				test(t, query)
+				test(t, q)
 			})
 		}
 	})
@@ -104,6 +107,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
+	logger := logtest.Scoped(t)
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
@@ -118,13 +122,14 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	fixtures := populateFixtures(edb.NewEnterpriseDB(db))
 	ctx := context.Background()
 
 	gs := gitserver.NewMockClient()
 	gs.ResolveRevisionsFunc.PushReturn([]string{"hash1", "hash2"}, nil)
 	gs.ResolveRevisionsFunc.PushReturn([]string{"hash3", "hash4"}, nil)
+	gs.ResolveRevisionsFunc.PushReturn([]string{"hash5", "hash6"}, nil)
 
 	// The first time, doSearch should receive only the resolved hashes
 	doSearch := func(args *gitprotocol.SearchRequest) error {
@@ -135,7 +140,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -152,6 +157,16 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err = hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
+
+	t.Run("deadline exceeded is not propagated", func(t *testing.T) {
+		logger, getLogs := logtest.Captured(t)
+		doSearch = func(args *gitprotocol.SearchRequest) error {
+			return context.DeadlineExceeded
+		}
+		err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+		require.NoError(t, err)
+		require.Equal(t, getLogs()[0].Level, log.LevelWarn)
+	})
 }

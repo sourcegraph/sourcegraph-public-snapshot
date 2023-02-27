@@ -2,14 +2,15 @@ import {
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
+    TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
-import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
+import { InsightType } from '../../../../types'
 import {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalLangStatsInsightData,
-    MinimalSearchBackendBasedInsightData,
-    MinimalSearchRuntimeBasedInsightData,
+    MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
@@ -20,66 +21,92 @@ type CreateInsightInput = LineChartSearchInsightInput | PieChartSearchInsightInp
  */
 export function getInsightCreateGqlInput(
     insight: CreationInsightInput,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): CreateInsightInput {
     switch (insight.type) {
         case InsightType.SearchBased:
-            return getSearchInsightCreateInput(insight, dashboard)
+            return getSearchInsightCreateInput(insight, dashboardId)
         case InsightType.CaptureGroup:
-            return getCaptureGroupInsightCreateInput(insight, dashboard)
+            return getCaptureGroupInsightCreateInput(insight, dashboardId)
+        case InsightType.Compute:
+            return getComputeInsightCreateInput(insight, dashboardId)
         case InsightType.LangStats:
-            return getLangStatsInsightCreateInput(insight, dashboard)
+            return getLangStatsInsightCreateInput(insight, dashboardId)
     }
 }
 
 export function getCaptureGroupInsightCreateInput(
     insight: MinimalCaptureGroupInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): LineChartSearchInsightInput {
-    const [unit, value] = getStepInterval(insight.step)
+    const { step, repositories, repoQuery, filters, title } = insight
+    const [unit, value] = getStepInterval(step)
 
     const input: LineChartSearchInsightInput = {
+        repositoryScope: {
+            repositories: insight.repositories,
+            repositoryCriteria: repoQuery || null,
+        },
         dataSeries: [
             {
                 query: insight.query,
                 options: {},
-                repositoryScope: { repositories: insight.repositories },
+                repositoryScope: { repositories },
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
         ],
-        options: { title: insight.title },
+        options: { title },
+        viewControls: {
+            seriesDisplayOptions: filters.seriesDisplayOptions,
+            filters: {
+                searchContexts: [filters.context],
+                excludeRepoRegex: filters.excludeRepoRegexp,
+                includeRepoRegex: filters.includeRepoRegexp,
+            },
+        },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input
 }
 
 export function getSearchInsightCreateInput(
-    insight: MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData,
-    dashboard: InsightDashboard | null
+    insight: MinimalSearchBasedInsightData,
+    dashboardId: string | null
 ): LineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const { step, repositories, repoQuery, filters, title } = insight
+    const [unit, value] = getStepInterval(step)
 
-    const [unit, value] = getStepInterval(insight.step)
     const input: LineChartSearchInsightInput = {
+        repositoryScope: {
+            repositories,
+            repositoryCriteria: repoQuery || null,
+        },
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             query: series.query,
             options: {
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories },
             timeScope: { stepInterval: { unit, value } },
         })),
-        options: { title: insight.title },
+        options: { title },
+        viewControls: {
+            seriesDisplayOptions: filters.seriesDisplayOptions,
+            filters: {
+                searchContexts: [filters.context],
+                excludeRepoRegex: filters.excludeRepoRegexp,
+                includeRepoRegex: filters.includeRepoRegexp,
+            },
+        },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input
@@ -87,7 +114,7 @@ export function getSearchInsightCreateInput(
 
 export function getLangStatsInsightCreateInput(
     insight: MinimalLangStatsInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): PieChartSearchInsightInput {
     const input: PieChartSearchInsightInput = {
         // Query do not exist as setting for this type of insight, it's predefined
@@ -101,8 +128,43 @@ export function getLangStatsInsightCreateInput(
         },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
+    }
+
+    return input
+}
+
+export function getComputeInsightCreateInput(
+    insight: MinimalComputeInsightData,
+    dashboardId: string | null
+): LineChartSearchInsightInput {
+    const { repositories, filters, groupBy, title, series } = insight
+    const input: LineChartSearchInsightInput = {
+        repositoryScope: { repositories },
+        dataSeries: series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            query: series.query,
+            options: {
+                label: series.name,
+                lineColor: series.stroke,
+            },
+            groupBy,
+            timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            generatedFromCaptureGroups: true,
+        })),
+        options: { title },
+        viewControls: {
+            seriesDisplayOptions: filters.seriesDisplayOptions,
+            filters: {
+                searchContexts: [filters.context],
+                excludeRepoRegex: filters.excludeRepoRegexp,
+                includeRepoRegex: filters.includeRepoRegexp,
+            },
+        },
+    }
+
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input

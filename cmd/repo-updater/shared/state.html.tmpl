@@ -14,13 +14,11 @@
 
 <body>
     <div class="container">
-        {{$schedulerDump := index . 0}}
-        {{if gt (len .) 1}}
-            <div class="alert alert-info mt-5 mx-auto text-center" onclick="loadJSON()" role="button">
-                To view additional debug dumps, please request a JSON response
-                <i class="fas fa-link ml-2"></i>
-            </div>
-        {{end}}
+        {{$schedulerDump := .}}
+        <div class="alert alert-info mt-5 mx-auto text-center" onclick="loadJSON()" role="button">
+            To view additional debug dumps, please request a JSON response.
+            <i class="fas fa-link ml-2"></i>
+        </div>
 
         <div class="mt-5 w-9/12" id="Index">
           <li><a href="#Schedule">Schedule</a></li>

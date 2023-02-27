@@ -6,7 +6,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionError,
     ConnectionLoading,
@@ -73,7 +73,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
         telemetryService.log('RepositoriesPopover')
     }, [telemetryService])
 
-    const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
+    const { connection, loading, error, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoriesForPopoverResult,
         RepositoriesForPopoverVariables,
         RepositoryPopoverFields

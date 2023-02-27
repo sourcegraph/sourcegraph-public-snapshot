@@ -10,35 +10,33 @@ interactions:
     url: https://gitlab.com/api/v4/user
     method: GET
   response:
-    body: '{"id":2383551,"username":"LawnGnome","name":"Adam Harvey","state":"active","avatar_url":"https://secure.gravatar.com/avatar/36d8c4d60eaed7139aa0ab88378590c0?s=80\u0026d=identicon","web_url":"https://gitlab.com/LawnGnome","created_at":"2018-06-04T17:20:52.854Z","bio":"","location":"Vancouver,
-      Canada","public_email":"","skype":"","linkedin":"","twitter":"@LGnome","website_url":"","organization":"Sourcegraph","job_title":"Software
-      developer","pronouns":null,"bot":false,"work_information":"Software developer
-      at Sourcegraph","followers":0,"following":0,"local_time":"3:09 AM","last_sign_in_at":"2021-12-31T21:13:26.969Z","confirmed_at":"2018-06-04T17:23:23.711Z","last_activity_on":"2022-01-11","email":"adam@adamharvey.name","theme_id":1,"color_scheme_id":1,"projects_limit":100000,"current_sign_in_at":"2022-01-11T02:37:38.341Z","identities":[],"can_create_group":true,"can_create_project":true,"two_factor_enabled":true,"external":false,"private_profile":false,"commit_email":"adam@adamharvey.name","shared_runners_minutes_limit":null,"extra_shared_runners_minutes_limit":null}'
+    body: '{"id":4850933,"username":"sourcegraph-dotcom-bot","name":"Sourcegraph Bot","state":"active","avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/4850933/avatar.png","web_url":"https://gitlab.com/sourcegraph-dotcom-bot","created_at":"2019-10-24T15:39:16.376Z","bio":"","location":"","public_email":"","skype":"","linkedin":"","twitter":"","website_url":"","organization":"Sourcegraph","job_title":"","pronouns":null,"bot":false,"work_information":"Sourcegraph","followers":0,"following":0,"is_followed":false,"local_time":"12:41
+      AM","last_sign_in_at":"2022-10-20T01:15:52.656Z","confirmed_at":"2019-10-24T15:39:28.336Z","last_activity_on":"2022-11-23","email":"dev@sourcegraph.com","theme_id":1,"color_scheme_id":1,"projects_limit":100000,"current_sign_in_at":"2022-11-14T18:59:05.306Z","identities":[],"can_create_group":true,"can_create_project":true,"two_factor_enabled":true,"external":false,"private_profile":false,"commit_email":"dev@sourcegraph.com","shared_runners_minutes_limit":null,"extra_shared_runners_minutes_limit":null}'
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 6cbaf20c09038407-YVR
+      - 76e5dc633e9aad13-ATL
+      Content-Security-Policy:
+      - default-src 'none'
       Content-Type:
       - application/json
       Date:
-      - Tue, 11 Jan 2022 03:09:18 GMT
+      - Wed, 23 Nov 2022 00:41:44 GMT
       Etag:
-      - W/"a4c15c2aadab9c948339c4360baec56d"
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - W/"c2421fd8d410950cec745b9a128d4cc5"
       Gitlab-Lb:
-      - fe-12-lb-gprd
+      - fe-02-lb-gprd
       Gitlab-Sv:
-      - api-gke-us-east1-b
+      - api-gke-us-east1-d
       Nel:
       - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
       Referrer-Policy:
       - strict-origin-when-cross-origin
       Report-To:
-      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=BZbWSDY9TM7ed6B4pJdS305n%2F5Jt%2Bl5%2B1jOSdRta9POYl2riUlOI14Kaj%2FtcfUJCHqpgx8%2FJBK3PgBhMLS3QldkbSe3OuTbIgMjHImRZFYapxniZYBO5Y%2F2RD1%2BQaUyAEooRUo226tA%3D"}],"group":"cf-nel","max_age":604800}'
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=b6S7nCjZXlDXldpQCLhXfVeNLw9QPWCWhf13tcz8wCE%2Ffaq3qLs49osPHC469EqFScQkOeXypsM7uDQjFK%2Bc6eIeldtBkuoyAlUo9S6ZaURat7GLoGLIJ0pbbd%2BLGsUUt9KG67OrymY%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -50,9 +48,9 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - 01FS3HS0YQGP4ZKFYNAR0R3SQ8
+      - 71017fcbf86a38df1409ae6296eb9aac
       X-Runtime:
-      - "0.044602"
+      - "0.068880"
     status: 200 OK
     code: 200
     duration: ""
@@ -62,91 +60,39 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://gitlab.com/api/v4/projects/LawnGnome%2Fsrc-cli
+    url: https://gitlab.com/api/v4/projects/sourcegraph-dotcom-bot%2Fsourcegraph-src-cli
     method: GET
   response:
-    body: '{"message":"404 Project Not Found"}'
-    headers:
-      Cache-Control:
-      - no-cache
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 6cbaf20d1a0b8407-YVR
-      Content-Length:
-      - "35"
-      Content-Type:
-      - application/json
-      Date:
-      - Tue, 11 Jan 2022 03:09:18 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
-      Gitlab-Lb:
-      - fe-11-lb-gprd
-      Gitlab-Sv:
-      - api-gke-us-east1-d
-      Nel:
-      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
-      Referrer-Policy:
-      - strict-origin-when-cross-origin
-      Report-To:
-      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=hGXSs2Pqk2KUvm1OuvpqkvkRsf4cwvZ9ua32wZyw9YBDfgEeGwvCuvUl7dFyWF6kcW8f9DR%2B%2Bncb%2FocsXMU9r2CEqwRCj6Oq1XPTb58psTnaDhHhD%2FIgU7jPRuTJ70eR%2BVOZx8P0S%2Fw%3D"}],"group":"cf-nel","max_age":604800}'
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000
-      Vary:
-      - Origin
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Request-Id:
-      - 01FS3HS14QR5208XX2TZTD7KA5
-      X-Runtime:
-      - "0.041672"
-    status: 404 Not Found
-    code: 404
-    duration: ""
-- request:
-    body: '{}'
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://gitlab.com/api/v4/projects/16606399/fork
-    method: POST
-  response:
-    body: '{"id":32718728,"description":"","name":"src CLI","name_with_namespace":"Adam
-      Harvey / src CLI","path":"src-cli","path_with_namespace":"LawnGnome/src-cli","created_at":"2022-01-11T03:09:18.667Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:LawnGnome/src-cli.git","http_url_to_repo":"https://gitlab.com/LawnGnome/src-cli.git","web_url":"https://gitlab.com/LawnGnome/src-cli","readme_url":null,"avatar_url":null,"forks_count":0,"star_count":0,"last_activity_at":"2022-01-11T03:09:18.667Z","namespace":{"id":2976484,"name":"Adam
-      Harvey","path":"LawnGnome","kind":"user","full_path":"LawnGnome","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/36d8c4d60eaed7139aa0ab88378590c0?s=80\u0026d=identicon","web_url":"https://gitlab.com/LawnGnome"},"container_registry_image_prefix":"registry.gitlab.com/lawngnome/src-cli","_links":{"self":"https://gitlab.com/api/v4/projects/32718728","issues":"https://gitlab.com/api/v4/projects/32718728/issues","merge_requests":"https://gitlab.com/api/v4/projects/32718728/merge_requests","repo_branches":"https://gitlab.com/api/v4/projects/32718728/repository/branches","labels":"https://gitlab.com/api/v4/projects/32718728/labels","events":"https://gitlab.com/api/v4/projects/32718728/events","members":"https://gitlab.com/api/v4/projects/32718728/members"},"packages_enabled":true,"empty_repo":true,"archived":false,"visibility":"public","owner":{"id":2383551,"username":"LawnGnome","name":"Adam
-      Harvey","state":"active","avatar_url":"https://secure.gravatar.com/avatar/36d8c4d60eaed7139aa0ab88378590c0?s=80\u0026d=identicon","web_url":"https://gitlab.com/LawnGnome"},"resolve_outdated_diff_discussions":false,"container_expiration_policy":{"cadence":"1d","enabled":false,"keep_n":10,"older_than":"90d","name_regex":".*","name_regex_keep":null,"next_run_at":"2022-01-12T03:09:18.677Z"},"issues_enabled":true,"merge_requests_enabled":true,"wiki_enabled":true,"jobs_enabled":true,"snippets_enabled":true,"container_registry_enabled":true,"service_desk_enabled":true,"service_desk_address":"contact-project+lawngnome-src-cli-32718728-issue-@incoming.gitlab.com","can_create_merge_request_in":true,"issues_access_level":"enabled","repository_access_level":"enabled","merge_requests_access_level":"enabled","forking_access_level":"enabled","wiki_access_level":"enabled","builds_access_level":"enabled","snippets_access_level":"enabled","pages_access_level":"enabled","operations_access_level":"enabled","analytics_access_level":"enabled","container_registry_access_level":"enabled","emails_disabled":null,"shared_runners_enabled":true,"lfs_enabled":true,"creator_id":2383551,"forked_from_project":{"id":16606399,"description":"","name":"src
-      CLI","name_with_namespace":"sourcegraph / src CLI","path":"src-cli","path_with_namespace":"sourcegraph/src-cli","created_at":"2020-01-30T11:45:14.073Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:sourcegraph/src-cli.git","http_url_to_repo":"https://gitlab.com/sourcegraph/src-cli.git","web_url":"https://gitlab.com/sourcegraph/src-cli","readme_url":"https://gitlab.com/sourcegraph/src-cli/-/blob/master/README.md","avatar_url":null,"forks_count":2,"star_count":0,"last_activity_at":"2022-01-11T02:37:55.714Z","namespace":{"id":2582152,"name":"sourcegraph","path":"sourcegraph","kind":"group","full_path":"sourcegraph","parent_id":null,"avatar_url":"/uploads/-/system/group/avatar/2582152/3979584.png","web_url":"https://gitlab.com/groups/sourcegraph"}},"import_status":"scheduled","import_error":null,"open_issues_count":0,"runners_token":"nfRtF_rzy2CXvhzCkuCU","ci_default_git_depth":50,"ci_forward_deployment_enabled":true,"ci_job_token_scope_enabled":false,"public_jobs":true,"build_git_strategy":"fetch","build_timeout":3600,"auto_cancel_pending_pipelines":"enabled","build_coverage_regex":null,"ci_config_path":null,"shared_with_groups":[],"only_allow_merge_if_pipeline_succeeds":false,"allow_merge_on_skipped_pipeline":null,"restrict_user_defined_variables":false,"request_access_enabled":true,"only_allow_merge_if_all_discussions_are_resolved":false,"remove_source_branch_after_merge":true,"printing_merge_request_link_enabled":true,"merge_method":"merge","squash_option":"default_off","suggestion_commit_message":null,"merge_commit_template":null,"squash_commit_template":null,"auto_devops_enabled":false,"auto_devops_deploy_strategy":"continuous","autoclose_referenced_issues":true,"keep_latest_artifact":true,"approvals_before_merge":0,"mirror":false,"external_authorization_classification_label":"","marked_for_deletion_at":null,"marked_for_deletion_on":null,"requirements_enabled":true,"security_and_compliance_enabled":true,"compliance_frameworks":[],"issues_template":null,"merge_requests_template":null,"merge_pipelines_enabled":false,"merge_trains_enabled":false}'
+    body: '{"id":41288308,"description":"","name":"sourcegraph-src-cli","name_with_namespace":"Sourcegraph
+      Bot / sourcegraph-src-cli","path":"sourcegraph-src-cli","path_with_namespace":"sourcegraph-dotcom-bot/sourcegraph-src-cli","created_at":"2022-11-23T00:04:50.059Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:sourcegraph-dotcom-bot/sourcegraph-src-cli.git","http_url_to_repo":"https://gitlab.com/sourcegraph-dotcom-bot/sourcegraph-src-cli.git","web_url":"https://gitlab.com/sourcegraph-dotcom-bot/sourcegraph-src-cli","readme_url":"https://gitlab.com/sourcegraph-dotcom-bot/sourcegraph-src-cli/-/blob/master/README.md","avatar_url":null,"forks_count":0,"star_count":0,"last_activity_at":"2022-11-23T00:04:50.059Z","namespace":{"id":6373771,"name":"Sourcegraph
+      Bot","path":"sourcegraph-dotcom-bot","kind":"user","full_path":"sourcegraph-dotcom-bot","parent_id":null,"avatar_url":"/uploads/-/system/user/avatar/4850933/avatar.png","web_url":"https://gitlab.com/sourcegraph-dotcom-bot"},"container_registry_image_prefix":"registry.gitlab.com/sourcegraph-dotcom-bot/sourcegraph-src-cli","_links":{"self":"https://gitlab.com/api/v4/projects/41288308","issues":"https://gitlab.com/api/v4/projects/41288308/issues","merge_requests":"https://gitlab.com/api/v4/projects/41288308/merge_requests","repo_branches":"https://gitlab.com/api/v4/projects/41288308/repository/branches","labels":"https://gitlab.com/api/v4/projects/41288308/labels","events":"https://gitlab.com/api/v4/projects/41288308/events","members":"https://gitlab.com/api/v4/projects/41288308/members","cluster_agents":"https://gitlab.com/api/v4/projects/41288308/cluster_agents"},"packages_enabled":true,"empty_repo":false,"archived":false,"visibility":"public","owner":{"id":4850933,"username":"sourcegraph-dotcom-bot","name":"Sourcegraph
+      Bot","state":"active","avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/4850933/avatar.png","web_url":"https://gitlab.com/sourcegraph-dotcom-bot"},"resolve_outdated_diff_discussions":false,"container_expiration_policy":{"cadence":"1d","enabled":false,"keep_n":10,"older_than":"90d","name_regex":".*","name_regex_keep":null,"next_run_at":"2022-11-24T00:04:50.086Z"},"issues_enabled":true,"merge_requests_enabled":true,"wiki_enabled":true,"jobs_enabled":true,"snippets_enabled":true,"container_registry_enabled":true,"service_desk_enabled":true,"service_desk_address":"contact-project+sourcegraph-dotcom-bot-sourcegraph-src-cli-41288308-issue-@incoming.gitlab.com","can_create_merge_request_in":true,"issues_access_level":"enabled","repository_access_level":"enabled","merge_requests_access_level":"enabled","forking_access_level":"enabled","wiki_access_level":"enabled","builds_access_level":"enabled","snippets_access_level":"enabled","pages_access_level":"enabled","operations_access_level":"enabled","analytics_access_level":"enabled","container_registry_access_level":"enabled","security_and_compliance_access_level":"private","releases_access_level":"enabled","emails_disabled":null,"shared_runners_enabled":true,"lfs_enabled":true,"creator_id":4850933,"forked_from_project":{"id":16606399,"description":"","name":"src
+      CLI","name_with_namespace":"sourcegraph / src CLI","path":"src-cli","path_with_namespace":"sourcegraph/src-cli","created_at":"2020-01-30T11:45:14.073Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:sourcegraph/src-cli.git","http_url_to_repo":"https://gitlab.com/sourcegraph/src-cli.git","web_url":"https://gitlab.com/sourcegraph/src-cli","readme_url":"https://gitlab.com/sourcegraph/src-cli/-/blob/master/README.md","avatar_url":null,"forks_count":3,"star_count":0,"last_activity_at":"2022-01-11T16:11:41.070Z","namespace":{"id":2582152,"name":"sourcegraph","path":"sourcegraph","kind":"group","full_path":"sourcegraph","parent_id":null,"avatar_url":"/uploads/-/system/group/avatar/2582152/3979584.png","web_url":"https://gitlab.com/groups/sourcegraph"}},"mr_default_target_self":false,"import_url":null,"import_type":null,"import_status":"finished","import_error":null,"open_issues_count":0,"runners_token":"GR1348941RDdTjf9AeVt4FYuYoTsM","ci_default_git_depth":50,"ci_forward_deployment_enabled":true,"ci_job_token_scope_enabled":false,"ci_separated_caches":true,"ci_opt_in_jwt":false,"ci_allow_fork_pipelines_to_run_in_parent_project":true,"public_jobs":true,"build_git_strategy":"fetch","build_timeout":3600,"auto_cancel_pending_pipelines":"enabled","ci_config_path":null,"shared_with_groups":[],"only_allow_merge_if_pipeline_succeeds":false,"allow_merge_on_skipped_pipeline":null,"restrict_user_defined_variables":false,"request_access_enabled":true,"only_allow_merge_if_all_discussions_are_resolved":false,"remove_source_branch_after_merge":true,"printing_merge_request_link_enabled":true,"merge_method":"merge","squash_option":"default_off","enforce_auth_checks_on_uploads":true,"suggestion_commit_message":null,"merge_commit_template":null,"squash_commit_template":null,"issue_branch_template":null,"auto_devops_enabled":false,"auto_devops_deploy_strategy":"continuous","autoclose_referenced_issues":true,"keep_latest_artifact":true,"runner_token_expiration_interval":null,"external_authorization_classification_label":"","requirements_enabled":false,"requirements_access_level":"enabled","security_and_compliance_enabled":true,"compliance_frameworks":[],"permissions":{"project_access":{"access_level":50,"notification_level":3},"group_access":null}}'
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 6cbaf20e4b1c8407-YVR
+      - 76e5dc6428a9ad13-ATL
+      Content-Security-Policy:
+      - default-src 'none'
       Content-Type:
       - application/json
       Date:
-      - Tue, 11 Jan 2022 03:09:19 GMT
+      - Wed, 23 Nov 2022 00:41:44 GMT
       Etag:
-      - W/"5e146e3e547149a16c9ea04a25b2290a"
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - W/"aa1718c8ec860128855ae7204b912811"
       Gitlab-Lb:
-      - fe-14-lb-gprd
+      - fe-19-lb-gprd
       Gitlab-Sv:
-      - gke-cny-api
+      - api-gke-us-east1-c
       Nel:
       - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
       Referrer-Policy:
       - strict-origin-when-cross-origin
       Report-To:
-      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=iEv%2BeSHw4BOnSm5VDxaYVAMs%2FizgOhWIQQwWWvBlpIWsOWFfy1KzufC%2B4K4vNEbrwJCW98RvNT1E2eRpJHEPifgtKUfUljXBYXZJMM0nQJVy1lauZadD9149bJ5z2H7ZOHyzkXRoT50%3D"}],"group":"cf-nel","max_age":604800}'
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=PUoYDL%2FoslhmbG47vof18loEZJ0NZ0GVaNQ8LYj%2FoiKV9O365KYEfUB3YqY4V2CS9ZM%2BZeVhPhaVCgpni1gdRH%2FLJdbuGblbXy%2BAPsEZov3ozBT5ZzNz2d4CZlxG4WAad7m%2B2Nq5ePg%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -158,9 +104,9 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - 01FS3HS19R8JT9VWE7PHP2A1MC
+      - 4ca658078e3019080c9cd660c98d8c26
       X-Runtime:
-      - "0.487628"
-    status: 201 Created
-    code: 201
+      - "0.116811"
+    status: 200 OK
+    code: 200
     duration: ""

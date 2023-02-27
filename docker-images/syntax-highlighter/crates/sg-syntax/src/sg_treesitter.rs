@@ -1,6 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Write as _; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -9,7 +10,7 @@ use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
 use crate::SourcegraphQuery;
-use sg_lsif::{Document, Occurrence, SyntaxKind};
+use scip::types::{Document, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
 #[rustfmt::skip]
@@ -27,18 +28,21 @@ use sg_macros::include_project_file_optional;
 //  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
 //  particularly new rust code to be written. You can just modify queries for that)
 const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("attribute",               SyntaxKind::UnspecifiedSyntaxKind),
     ("boolean",                 SyntaxKind::BooleanLiteral),
+    ("character",               SyntaxKind::CharacterLiteral),
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunctionDefinition),
+    ("function",                SyntaxKind::IdentifierFunction),
+    ("identifier.function",     SyntaxKind::IdentifierFunction),
     ("function.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
     ("identifier",              SyntaxKind::Identifier),
-    ("identifier.function",     SyntaxKind::IdentifierFunctionDefinition),
+    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
+    ("tag.attribute",           SyntaxKind::TagAttribute),
     ("include",                 SyntaxKind::IdentifierKeyword),
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
@@ -46,18 +50,30 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
+    ("identifier.operator",     SyntaxKind::IdentifierOperator),
     ("property",                SyntaxKind::Identifier),
     ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
+    ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierType),
+    ("identifier.type",         SyntaxKind::IdentifierType),
+    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
+    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
+    ("regex.join",              SyntaxKind::RegexJoin),
+    ("regex.escape",            SyntaxKind::RegexEscape),
+    ("regex.repeated",          SyntaxKind::RegexRepeated),
+    ("regex.wildcard",          SyntaxKind::RegexWildcard),
+    ("identifier",              SyntaxKind::Identifier),
     ("variable",                SyntaxKind::Identifier),
-    ("variable.builtin",        SyntaxKind::UnspecifiedSyntaxKind),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
     ("variable.parameter",      SyntaxKind::IdentifierParameter),
+    ("identifier.module",       SyntaxKind::IdentifierModule),
     ("variable.module",         SyntaxKind::IdentifierModule),
 ];
 
@@ -94,13 +110,64 @@ macro_rules! create_configurations {
             }
         )*
 
+        // Manually insert the typescript and tsx languages because the
+        // tree-sitter-typescript crate doesn't have a language() function.
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_typescript() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/", "typescript", "/injections.scm"),
+                include_project_file_optional!("queries/", "typescript", "/locals.scm"),
+            ).expect("parser for 'typescript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("typescript", lang);
+        }
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/tsx/highlights.scm"),
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_tsx() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/tsx/injections.scm"),
+                include_project_file_optional!("queries/tsx/locals.scm"),
+            ).expect("parser for 'tsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("tsx", lang);
+        }
+
         m
     }}
 }
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp )
+        create_configurations!(
+            c,
+            c_sharp,
+            go,
+            java,
+            javascript,
+            jsonnet,
+            rust,
+            scala,
+            sql,
+            xlsg
+        )
+    };
+}
+
+// Handle special cases where syntect language names don't match treesitter names.
+pub fn treesitter_language(syntect_language: &str) -> &str {
+    return match syntect_language {
+        "c++" => "cpp",
+        _ => syntect_language,
     };
 }
 
@@ -108,6 +175,8 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
+// TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
+// Currently left unchanged
 pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     let filetype = q
         .filetype
@@ -157,6 +226,11 @@ pub fn index_language_with_config(
     code: &str,
     lang_config: &HighlightConfiguration,
 ) -> Result<Document, Error> {
+    // Normalize string to be always only \n endings.
+    //  We don't care that the byte offsets are "incorrect" now for this
+    //  because we are using a line,col based approach
+    let code = code.replace("\r\n", "\n");
+
     // TODO: We should automatically apply no highlights when we are
     // in an injected piece of code.
     //
@@ -167,59 +241,77 @@ pub fn index_language_with_config(
         CONFIGURATIONS.get(l)
     })?;
 
-    let mut emitter = LsifEmitter::new();
-    emitter.render(highlights, code, &get_syntax_kind_for_hl)
+    let mut emitter = ScipEmitter::new();
+    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
-struct LineManager {
+struct OffsetManager {
+    source: String,
     offsets: Vec<usize>,
 }
 
-impl LineManager {
+impl OffsetManager {
     fn new(s: &str) -> Result<Self, Error> {
         if s.is_empty() {
             // TODO: Make an error here
             // Error(
         }
 
+        let source = s.to_string();
+
         let mut offsets = Vec::new();
         let mut pos = 0;
         for line in s.lines() {
             offsets.push(pos);
+            // pos += line.chars().count() + 1;
+            //
+            // NOTE: This intentionally in bytes. The correct stuff is done in
+            // self.line_and_col later
             pos += line.len() + 1;
         }
 
-        Ok(Self { offsets })
+        Ok(Self { source, offsets })
     }
 
-    fn line_and_col(&self, offset: usize) -> (usize, usize) {
+    fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
+        // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
             let curr = window[0];
             let next = window[1];
-            if next > offset {
-                return (line, offset - curr);
+            if next > offset_byte {
+                return (
+                    line,
+                    // Return the number of characters between the locations (which is the column)
+                    self.source[curr..offset_byte].chars().count(),
+                );
             }
 
             line += 1;
         }
 
-        (line, offset - self.offsets.last().unwrap())
+        (
+            line,
+            // Return the number of characters between the locations (which is the column)
+            self.source[*self.offsets.last().unwrap()..offset_byte]
+                .chars()
+                .count(),
+        )
     }
 
     // range takes in start and end offsets and returns start/end line/column.
-    fn range(&self, start: usize, end: usize) -> Vec<i32> {
-        let start_line = self.line_and_col(start);
-        let end_line = self.line_and_col(end);
+    fn range(&self, start_byte: usize, end_byte: usize) -> Vec<i32> {
+        let start_pos = self.line_and_col(start_byte);
+        let end_pos = self.line_and_col(end_byte);
 
-        if start_line.0 == end_line.0 {
-            vec![start_line.0 as i32, start_line.1 as i32, end_line.1 as i32]
+        if start_pos.0 == end_pos.0 {
+            vec![start_pos.0 as i32, start_pos.1 as i32, end_pos.1 as i32]
         } else {
             vec![
-                start_line.0 as i32,
-                start_line.1 as i32,
-                end_line.0 as i32,
-                end_line.1 as i32,
+                start_pos.0 as i32,
+                start_pos.1 as i32,
+                end_pos.0 as i32,
+                end_pos.1 as i32,
             ]
         }
     }
@@ -276,14 +368,14 @@ impl Ord for PackedRange {
 }
 
 /// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
-pub struct LsifEmitter {}
+pub struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
 ///
 /// You can see the original version in the tree_sitter_highlight crate.
-impl LsifEmitter {
+impl ScipEmitter {
     pub fn new() -> Self {
-        LsifEmitter {}
+        ScipEmitter {}
     }
 
     pub fn render<F>(
@@ -297,7 +389,7 @@ impl LsifEmitter {
     {
         let mut doc = Document::new();
 
-        let line_manager = LineManager::new(source)?;
+        let line_manager = OffsetManager::new(source)?;
 
         let mut highlights = vec![];
         for event in highlighter {
@@ -311,12 +403,16 @@ impl LsifEmitter {
                 HighlightEvent::Source { .. } if highlights.is_empty() => {}
 
                 // When a `start`->`end` has some highlights
-                HighlightEvent::Source { start, end } => {
-                    let mut occurence = Occurrence::new();
-                    occurence.range = line_manager.range(start, end);
-                    occurence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
+                HighlightEvent::Source {
+                    start: start_byte,
+                    end: end_byte,
+                } => {
+                    let mut occurrence = Occurrence::new();
+                    occurrence.range = line_manager.range(start_byte, end_byte);
+                    occurrence.syntax_kind =
+                        get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
 
-                    doc.occurrences.push(occurence);
+                    doc.occurrences.push(occurrence);
                 }
             }
         }
@@ -335,9 +431,9 @@ pub struct FileRange {
 }
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurences = doc.get_occurrences().to_owned();
-    occurences.sort_by_key(|o| PackedRange::from_vec(&o.range));
-    let mut occurences = VecDeque::from(occurences);
+    let mut occurrences = doc.occurrences.clone();
+    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
+    let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
 
@@ -354,34 +450,53 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
 
     for (idx, line) in line_iterator {
         result += "  ";
-        result += &line.replace("\t", " ");
+        result += &line.replace('\t', " ");
         result += "\n";
 
-        while let Some(occ) = occurences.pop_front() {
-            if occ.syntax_kind == SyntaxKind::UnspecifiedSyntaxKind {
+        while let Some(occ) = occurrences.pop_front() {
+            if occ.syntax_kind.enum_value_or_default() == SyntaxKind::UnspecifiedSyntaxKind {
                 continue;
             }
 
             let range = PackedRange::from_vec(&occ.range);
-            if range.start_line != range.end_line {
-                continue;
+            let is_single_line = range.start_line == range.end_line;
+            let end_col = if is_single_line {
+                range.end_col
+            } else {
+                line.len() as i32
+            };
+
+            match range.start_line.cmp(&(idx as i32)) {
+                std::cmp::Ordering::Less => continue,
+                std::cmp::Ordering::Greater => {
+                    occurrences.push_front(occ);
+                    break;
+                }
+                std::cmp::Ordering::Equal => {
+                    let length = (end_col - range.start_col) as usize;
+                    let multiline_suffix = if is_single_line {
+                        "".to_string()
+                    } else {
+                        format!(
+                            " {}:{}..{}:{}",
+                            range.start_line, range.start_col, range.end_line, range.end_col
+                        )
+                    };
+                    let symbol_suffix = if occ.symbol.is_empty() {
+                        "".to_owned()
+                    } else {
+                        format!(" {}", occ.symbol)
+                    };
+                    let _ = writeln!(
+                        result,
+                        "//{}{} {:?}{multiline_suffix} {}",
+                        " ".repeat(range.start_col as usize),
+                        "^".repeat(length),
+                        occ.syntax_kind,
+                        symbol_suffix,
+                    );
+                }
             }
-
-            if range.start_line < idx as i32 {
-                continue;
-            } else if range.start_line > idx as i32 {
-                occurences.push_front(occ);
-                break;
-            }
-
-            let length = (range.end_col - range.start_col) as usize;
-
-            result.push_str(&format!(
-                "//{}{} {:?}\n",
-                " ".repeat(range.start_col as usize),
-                "^".repeat(length),
-                occ.syntax_kind
-            ));
         }
     }
 
@@ -468,9 +583,12 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            println!("Filetype: {filetype}");
-
-            let document = index_language(filetype, &contents).unwrap();
+            let indexed = index_language(filetype, &contents);
+            if indexed.is_err() {
+                // assert failure
+                panic!("unknown filetype {:?}", filetype);
+            }
+            let document = indexed.unwrap();
             insta::assert_snapshot!(
                 filepath
                     .to_str()

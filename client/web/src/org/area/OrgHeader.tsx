@@ -1,22 +1,16 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
-import { gql, useQuery } from '@apollo/client'
-import { Location } from 'history'
-import { match } from 'react-router'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
-import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { useEventBus } from '../emitter'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaPageProps } from './OrgArea'
+import { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext {
     isSourcegraphDotCom: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
@@ -24,38 +18,14 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 
 export interface OrgSummary {
     membersSummary: { membersCount: number; invitesCount: number }
-    repoCount: { total: { totalCount: number } }
     extServices: { totalCount: number }
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org' | 'featureFlags'> {
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
-    newMembersInviteEnabled: boolean
-    getStartedInfo: OrgSummary | undefined
 }
 
-export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
-    isActive?: (match: match | null, location: Location, props: OrgAreaHeaderContext) => boolean
-}
-
-const GET_STARTED_INFO_QUERY = gql`
-    query GetStartedInfo($organization: ID!) {
-        membersSummary: orgMembersSummary(organization: $organization) {
-            membersCount
-            invitesCount
-        }
-        repoCount: node(id: $organization) {
-            ... on Org {
-                total: repositories(cloned: true, notCloned: true) {
-                    totalCount(precise: true)
-                }
-            }
-        }
-        extServices: externalServices(namespace: $organization) {
-            totalCount
-        }
-    }
-`
+export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
@@ -66,89 +36,50 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     batchChangesWebhookLogsEnabled,
     org,
     navItems,
-    match,
     className = '',
     isSourcegraphDotCom,
-    newMembersInviteEnabled,
-    featureFlags,
 }) => {
-    const emitter = useEventBus()
-
-    useEffect(() => {
-        const unsubscribe = emitter.subscribe('refreshOrgHeader', () => {
-            refetch({ organization: org.id }).catch(() => eventLogger.log('OrgHeaderSummaryrefreshError'))
-        })
-
-        return () => {
-            emitter.unSubscribe('refreshOrgHeader', unsubscribe)
-        }
-    })
-    const { data, refetch } = useQuery<GetStartedInfoResult, GetStartedInfoVariables>(GET_STARTED_INFO_QUERY, {
-        variables: { organization: org.id },
-    })
-
-    const context = {
+    const context: OrgAreaHeaderContext = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
-        newMembersInviteEnabled,
-        featureFlags,
-        getStartedInfo: data ? (data as OrgSummary) : undefined,
     }
+
+    const url = `/organizations/${org.name}`
 
     return (
         <div className={className}>
             <div className="container">
                 {org && (
                     <>
-                        <PageHeader
-                            path={[
-                                {
-                                    icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
-                                    text: (
-                                        <span className="align-middle">
-                                            {org.displayName ? (
-                                                <>
-                                                    {org.displayName} ({org.name})
-                                                </>
-                                            ) : (
-                                                org.name
-                                            )}
-                                        </span>
-                                    ),
-                                },
-                            ]}
-                            className="mb-3"
-                        />
-                        <div className="d-flex align-items-end justify-content-between">
+                        <PageHeader className="mb-3">
+                            <PageHeader.Heading as="h2" styleAs="h1">
+                                <PageHeader.Breadcrumb
+                                    icon={() => <OrgAvatar org={org.name} size="lg" className="mr-3" />}
+                                >
+                                    <span className="align-middle">
+                                        {org.displayName ? (
+                                            <>
+                                                {org.displayName} ({org.name})
+                                            </>
+                                        ) : (
+                                            org.name
+                                        )}
+                                    </span>
+                                </PageHeader.Breadcrumb>
+                            </PageHeader.Heading>
+                        </PageHeader>
+                        <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({
-                                        to,
-                                        label,
-                                        exact,
-                                        icon: ItemIcon,
-                                        condition = () => true,
-                                        isActive,
-                                        dynamicLabel,
-                                    }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true, dynamicLabel }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
-                                                <NavLink
-                                                    to={match.url + to}
-                                                    className="nav-link"
-                                                    activeClassName="active"
-                                                    exact={exact}
-                                                    isActive={
-                                                        isActive
-                                                            ? (match, location) => isActive(match, location, context)
-                                                            : undefined
-                                                    }
-                                                >
+                                                <NavLink to={url + to} className="nav-link" end={exact}>
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
@@ -172,7 +103,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                     </Button>
                                 </div>
                             )}
-                        </div>
+                        </nav>
                     </>
                 )}
             </div>

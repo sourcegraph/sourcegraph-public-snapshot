@@ -1,65 +1,66 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-.streaming-search-results {
+.container {
     width: 100%;
     display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        'infobar  sidebar'
+        'contents sidebar';
+    column-gap: 1rem;
     height: min-content;
-    padding-top: 0.5rem;
+    padding: 0.5rem 1rem 0 1rem;
 
-    @media (--md-breakpoint-down) {
-        grid-template-columns: auto;
-        grid-template-rows: auto auto 1fr;
+    &--with-sidebar-hidden {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            'infobar'
+            'contents';
     }
 
-    &__sidebar {
-        grid-column: 1;
-        grid-row: 1 / span 3;
+    @media (--md-breakpoint-down) {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            'infobar'
+            'sidebar'
+            'contents';
+    }
+}
+
+.sidebar {
+    grid-area: sidebar;
+
+    .container--with-sidebar-hidden & {
+        display: none;
 
         @media (--md-breakpoint-down) {
-            grid-column: 1;
-            grid-row: 3;
-            display: none;
-
-            &--show {
+            &--show-mobile {
                 display: block;
             }
         }
     }
 
-    &__infobar {
-        grid-column: 2;
-        grid-row: 1;
-        padding-right: 1rem;
-        padding-bottom: 0.25rem;
+    @media (--md-breakpoint-down) {
+        display: none;
 
-        @media (--md-breakpoint-down) {
-            grid-column: 1;
-            grid-row: 1;
-            padding-left: 1rem;
+        &--show-mobile {
+            display: block;
         }
     }
+}
 
-    &__container {
-        // Hack!! Fixes some possible nested scrolling on diff searches
-        // due to size calculations on diff results. The parent will scroll
-        // instead so this doesn't really hide anything.
-        overflow-y: hidden;
+.infobar {
+    grid-area: infobar;
+    margin-bottom: 0.25rem;
+}
 
-        overflow-x: hidden;
-        grid-column: 2;
-        grid-row: 3;
+.contents {
+    grid-area: contents;
+}
 
-        @media (--md-breakpoint-down) {
-            grid-column: 1;
-            grid-row: 4;
-            padding-left: 1rem;
-        }
-    }
-
-    &__content-centered {
-        max-width: 65rem;
-        margin: auto;
-    }
+.alert-area {
+    max-width: 65rem;
+    margin: auto;
 }

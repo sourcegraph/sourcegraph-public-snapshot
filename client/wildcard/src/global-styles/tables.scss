@@ -1,0 +1,40 @@
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
+table {
+    border-collapse: collapse; // Prevent double borders
+}
+
+th {
+    // Matches default `<td>` alignment by inheriting from the `<body>`, or the
+    // closest parent with a set `text-align`.
+    text-align: inherit;
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
+
+.table {
+    --table-cell-padding: 0.625rem;
+    --table-border-width: 1px;
+    --table-color: var(--body-color);
+    --table-border-color: var(--border-color);
+
+    width: 100%;
+    margin-bottom: var(--spacer);
+    color: var(--table-color);
+
+    th,
+    td {
+        padding: var(--table-cell-padding);
+        vertical-align: top;
+        border-top: var(--table-border-width) solid var(--table-border-color);
+    }
+
+    thead th {
+        vertical-align: bottom;
+        border-bottom: calc(2 * var(--table-border-width)) solid var(--table-border-color);
+    }
+
+    tbody + tbody {
+        border-top: calc(2 * var(--table-border-width)) solid var(--table-border-color);
+    }
+}

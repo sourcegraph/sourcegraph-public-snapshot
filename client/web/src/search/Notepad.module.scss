@@ -1,4 +1,5 @@
 .root {
+    z-index: 100;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -34,7 +35,7 @@
         margin: 0;
     }
 
-    ul {
+    ol {
         padding: 0;
         margin: 0;
         list-style: none;

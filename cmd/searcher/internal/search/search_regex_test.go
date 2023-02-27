@@ -7,17 +7,18 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
 
 	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -26,6 +27,16 @@ func BenchmarkSearchRegex_large_fixed(b *testing.B) {
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
 			Pattern: "error handler",
+		},
+	})
+}
+
+func BenchmarkSearchRegex_rare_fixed(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern: "REBOOT_CMD",
 		},
 	})
 }
@@ -76,6 +87,18 @@ func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
 			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
+	})
+}
+
+func BenchmarkSearchRegex_large_capture_group(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "(TODO|FIXME)",
 			IsRegExp:        true,
 			IsCaseSensitive: true,
 		},
@@ -151,6 +174,18 @@ func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
 			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
+	})
+}
+
+func BenchmarkSearchRegex_small_capture_group(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "(TODO|FIXME)",
 			IsRegExp:        true,
 			IsCaseSensitive: true,
 		},
@@ -333,7 +368,7 @@ func TestMaxMatches(t *testing.T) {
 
 	totalMatches := 0
 	for _, match := range fileMatches {
-		totalMatches += match.MatchCount
+		totalMatches += match.MatchCount()
 	}
 
 	if totalMatches != maxMatches {
@@ -365,9 +400,8 @@ func TestPathMatches(t *testing.T) {
 	}
 
 	rg, err := compile(&protocol.PatternInfo{
-		Pattern:                "",
-		IncludePatterns:        []string{"a", "b"},
-		PathPatternsAreRegExps: true,
+		Pattern:         "",
+		IncludePatterns: []string{"a", "b"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -390,8 +424,9 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	FetchTar: fetchTarFromGithub,
-	Path:     "/tmp/search_test/store",
+	FetchTar:       fetchTarFromGithub,
+	Path:           "/tmp/search_test/store",
+	ObservationCtx: &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
@@ -405,7 +440,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,12 +479,7 @@ func TestRegexSearch(t *testing.T) {
 				patternMatchesContent: true,
 				limit:                 5,
 			},
-			wantFm: []protocol.FileMatch{
-				{
-					Path:       "a.go",
-					MatchCount: 1,
-				},
-			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 	}
 	for _, tt := range tests {
@@ -465,6 +495,64 @@ func TestRegexSearch(t *testing.T) {
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
+		})
+	}
+}
+
+func Test_locsToRanges(t *testing.T) {
+	cases := []struct {
+		buf    string
+		locs   [][]int
+		ranges []protocol.Range
+	}{{
+		// simple multimatch
+		buf:  "0.2.4.6.8.",
+		locs: [][]int{{0, 2}, {4, 8}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{2, 0, 2},
+		}, {
+			Start: protocol.Location{4, 0, 4},
+			End:   protocol.Location{8, 0, 8},
+		}},
+	}, {
+		// multibyte match
+		buf:  "0.2.🔧.8.",
+		locs: [][]int{{2, 8}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{8, 0, 5},
+		}},
+	}, {
+		// match crosses newlines and ends on a newline
+		buf:  "0.2.4.6.\n9.11.14.17",
+		locs: [][]int{{2, 9}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{9, 1, 0},
+		}},
+	}, {
+		// match starts on a newline
+		buf:  "0.2.4.6.\n9.11.14.17",
+		locs: [][]int{{8, 11}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{8, 0, 8},
+			End:   protocol.Location{11, 1, 2},
+		}},
+	}, {
+		// match crosses a few lines and has multibyte chars
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{0, 25}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{25, 2, 3},
+		}},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := locsToRanges([]byte(tc.buf), tc.locs)
+			require.Equal(t, tc.ranges, got)
 		})
 	}
 }

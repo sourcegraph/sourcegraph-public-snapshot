@@ -25,16 +25,17 @@ type Report struct {
 
 // Target denotes a generate task that can be run by `sg generate`
 type Target struct {
-	Name   string
-	Help   string
-	Runner Runner
+	Name      string
+	Help      string
+	Runner    Runner
+	Completer func() (options []string)
 }
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.
 // If arguments are to be to passed down the script, they should be incorporated
 // in the script variable.
 func RunScript(header string, script string) Runner {
-	return Runner(func(ctx context.Context, args []string) *Report {
+	return func(ctx context.Context, args []string) *Report {
 		start := time.Now()
 		out, err := run.BashInRoot(ctx, script, nil)
 		return &Report{
@@ -42,5 +43,5 @@ func RunScript(header string, script string) Runner {
 			Err:      err,
 			Duration: time.Since(start),
 		}
-	})
+	}
 }

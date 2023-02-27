@@ -37,11 +37,11 @@ export function sanitizeClass(value: string): string {
  * E.g: " a  b  c  " => " a b c "
  */
 export function dedupeWhitespace(value: string): string {
-    return value.replace(/\s+/g, ' ')
+    return value.replace(/\s+/g, ' ').trim()
 }
 
 /**
- * Checkes whether a given string is quoted.
+ * Checks whether a given string is quoted.
  *
  * @param value string to check against
  */

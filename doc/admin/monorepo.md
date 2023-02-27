@@ -3,7 +3,7 @@
 Sourcegraph can be used on Git [monorepos](https://trunkbaseddevelopment.com/monorepos/) and provides functionality that developers may be missing:
 
 - Indexed code search across projects in the monorepo.
-- Code intelligence across projects in the monorepo.
+- Code navigation across projects in the monorepo.
 
 The tools on a developer's local machine often can't cope with the scale of a monorepo. For example, a developer often cannot load the whole monorepo into their IDE, and therefore has to do without code exploration functionality useful when doing cross-project work. Sourcegraph brings this functionality back to developers, enabling them to work efficiently at the day-to-day task of understanding code.
 

@@ -2,29 +2,63 @@ package tracer
 
 import (
 	"fmt"
-	"io"
-	"os"
-	"reflect"
-	"strconv"
-	"sync"
+	"sync/atomic"
+	"text/template"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go"
-	jaegercfg "github.com/uber/jaeger-client-go/config"
-	jaegermetrics "github.com/uber/jaeger-lib/metrics"
+	"github.com/sourcegraph/log"
+	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
+	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
+	"go.opentelemetry.io/otel"
+	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
+	w3cpropagator "go.opentelemetry.io/otel/propagation"
+	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
-	ddopentracing "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
-	ddtracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func init() {
+// options control the behavior of a TracerType
+type options struct {
+	TracerType
+	externalURL string
+	// these values are not configurable by site config
+	resource log.Resource
+}
+
+type TracerType string
+
+const (
+	None TracerType = "none"
+
+	// Jaeger exports traces over the Jaeger thrift protocol.
+	Jaeger TracerType = "jaeger"
+
+	// OpenTelemetry exports traces over OTLP.
+	OpenTelemetry TracerType = "opentelemetry"
+)
+
+// DefaultTracerType is the default tracer type if not explicitly set by the user and
+// some trace policy is enabled.
+const DefaultTracerType = OpenTelemetry
+
+// isSetByUser returns true if the TracerType is one supported by the schema
+// should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
+func (t TracerType) isSetByUser() bool {
+	switch t {
+	case Jaeger, OpenTelemetry:
+		return true
+	}
+	return false
+}
+
+// Init should be called from the main function of service
+func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
 	//
@@ -32,241 +66,95 @@ func init() {
 	// import for sourcegraph binaries which would have less surprising
 	// behaviour.
 	if _, err := maxprocs.Set(); err != nil {
-		log15.Error("automaxprocs failed", "error", err)
-	}
-	if r := os.Getenv("MUX_ANALYTICS_TRACE_RATE"); r != "" {
-		rate, err := strconv.ParseFloat(r, 64)
-		if err != nil {
-			log15.Error("Failed to parse MUX_ANALYTICS_TRACE_RATE", "error", err)
-			return
-		}
-		MUX_ANALYTICS_TRACE_RATE = rate
+		logger.Error("automaxprocs failed", log.Error(err))
 	}
 
-}
-
-var MUX_ANALYTICS_TRACE_RATE = 0.1
-
-// options control the behavior of a TracerType
-type options struct {
-	TracerType
-	externalURL string
-	debug       bool
-	// these values are not configurable by site config
-	serviceName string
-	version     string
-	env         string
-}
-
-type TracerType string
-
-const (
-	None    TracerType = "none"
-	Datadog TracerType = "datadog"
-	Ot      TracerType = "opentracing"
-)
-
-// isSetByUser returns true if the TracerType is one supported by the schema
-// should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
-func (t TracerType) isSetByUser() bool {
-	switch t {
-	case Datadog, Ot:
-		return true
+	// Resource mirrors the initialization used by our OpenTelemetry logger.
+	resource := log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
 	}
-	return false
-}
 
-// Init should be called from the main function of service
-func Init(c conftypes.WatchableSiteConfig) {
-	opts := &options{}
-	opts.serviceName = env.MyName
+	// Additionally set a dev namespace
 	if version.IsDev(version.Version()) {
-		opts.env = "dev"
-	}
-	if d := os.Getenv("DD_ENV"); d != "" {
-		opts.env = d
-	}
-	opts.version = version.Version()
-
-	initTracer(opts, c)
-}
-
-// initTracer is a helper that should be called exactly once (from Init).
-func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
-	globalTracer := newSwitchableTracer()
-	opentracing.SetGlobalTracer(globalTracer)
-
-	// initial tracks if it's our first run of conf.Watch. This is used to
-	// prevent logging "changes" when it's the first run.
-	initial := true
-
-	// Initially everything is disabled since we haven't read conf yet.
-	oldOpts := options{
-		serviceName: opts.serviceName,
-		version:     opts.version,
-		env:         opts.env,
-		// the values below may change
-		TracerType:  None,
-		debug:       false,
-		externalURL: "",
+		resource.Namespace = "dev"
 	}
 
-	// Watch loop
-	go c.Watch(func() {
-		siteConfig := c.SiteConfig()
+	// Set up initial configurations
+	debugMode := &atomic.Bool{}
+	provider := newOtelTracerProvider(resource)
 
-		samplingStrategy := ot.TraceNone
-		shouldLog := false
-		setTracer := None
-		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
-			switch tracingConfig.Sampling {
-			case "all":
-				samplingStrategy = ot.TraceAll
-				setTracer = Ot
-			case "selective":
-				samplingStrategy = ot.TraceSelective
-				setTracer = Ot
-			}
-			if t := TracerType(tracingConfig.Type); t.isSetByUser() {
-				setTracer = t
-			}
-			shouldLog = tracingConfig.Debug
-		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
-			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
-		}
-		initial = false
-		ot.SetTracePolicy(samplingStrategy)
+	// Create and set up global tracers from provider. We will be making updates to these
+	// tracers through the debugMode ref and underlying provider.
+	otTracer, otelTracerProvider := newBridgeTracers(logger, provider, debugMode)
+	opentracing.SetGlobalTracer(otTracer)
+	otel.SetTracerProvider(otelTracerProvider)
 
-		opts := options{
-			externalURL: siteConfig.ExternalURL,
-			TracerType:  setTracer,
-			debug:       shouldLog,
-			serviceName: opts.serviceName,
-			version:     opts.version,
-			env:         opts.env,
-		}
+	// Initially everything is disabled since we haven't read conf yet - start a goroutine
+	// that watches for updates to configure the undelrying provider and debugMode.
+	go c.Watch(newConfWatcher(logger, c, provider, newOtelSpanProcessor, debugMode))
 
-		if opts == oldOpts {
-			// Nothing changed
-			return
+	// Contribute validation for tracing package
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) conf.Problems {
+		tracing := c.SiteConfig().ObservabilityTracing
+		if tracing == nil || tracing.UrlTemplate == "" {
+			return nil
 		}
-		prevTracer := oldOpts.TracerType
-		oldOpts = opts
-
-		t, closer, err := newTracer(&opts, prevTracer)
-		if err != nil {
-			log15.Warn("Could not initialize tracer", "tracer", opts.TracerType, "error", err.Error())
-			return
+		if _, err := template.New("").Parse(tracing.UrlTemplate); err != nil {
+			return conf.NewSiteProblems(fmt.Sprintf("observability.tracing.traceURL is not a valid template: %s", err.Error()))
 		}
-		globalTracer.set(t, closer, opts.debug)
+		return nil
 	})
 }
 
-// TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Closer, error) {
-	if opts.TracerType == None {
-		log15.Info("tracing disabled")
-		if prevTracer == Datadog {
-			ddtracer.Stop()
-		}
-		return opentracing.NoopTracer{}, nil, nil
-	}
-	if opts.TracerType == Datadog {
-		log15.Info("Datadog: tracing enabled")
-		tracer := ddopentracing.New(ddtracer.WithService(opts.serviceName),
-			ddtracer.WithDebugMode(opts.debug),
-			ddtracer.WithServiceVersion(opts.version), ddtracer.WithEnv(opts.env))
-		return tracer, nil, nil
-	}
-	if prevTracer == Datadog {
-		ddtracer.Stop()
-	}
-
-	log15.Info("opentracing: enabled")
-	cfg, err := jaegercfg.FromEnv()
-	cfg.ServiceName = opts.serviceName
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
-	}
-	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: opts.version}, opentracing.Tag{Key: "service.env", Value: opts.env})
-	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
-		// Default sampler configuration for when it is not specified via
-		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-		// enough to connect Sourcegraph to Jaeger without any env vars.
-		cfg.Sampler.Type = jaeger.SamplerTypeConst
-		cfg.Sampler.Param = 1
-	}
-	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(log15Logger{}),
-		jaegercfg.Metrics(jaegermetrics.NullFactory),
+// newBridgeTracers creates an opentracing.Tracer that exports all OpenTracing traces,
+// allowing us to continue leveraging the OpenTracing API (which is a predecessor to
+// OpenTelemetry tracing) without making changes to existing tracing code. The returned
+// opentracing.Tracer and oteltrace.TracerProvider should be set as global defaults for
+// their respective libraries.
+//
+// All configuration should be sourced directly from the environment using the specification
+// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
+func newBridgeTracers(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) (opentracing.Tracer, oteltrace.TracerProvider) {
+	// Ensure propagation between services continues to work. This is also done by another
+	// project that uses the OpenTracing bridge:
+	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
+	compositePropagator := w3cpropagator.NewCompositeTextMapPropagator(
+		jaegerpropagator.Jaeger{},
+		otpropagator.OT{},
+		w3cpropagator.TraceContext{},
+		w3cpropagator.Baggage{},
 	)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
-	}
+	otel.SetTextMapPropagator(compositePropagator)
 
-	return tracer, closer, nil
-}
+	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
+	// otelTracerProvider for the inverse.
+	otBridgeTracer := otelbridge.NewBridgeTracer()
+	otBridgeTracer.SetTextMapPropagator(compositePropagator)
+	otelTracerProvider := otelbridge.NewTracerProvider(otBridgeTracer, provider)
+	otBridgeTracer.SetOpenTelemetryTracer(
+		otelTracerProvider.Tracer("sourcegraph/internal/tracer.opentracing-bridge"))
 
-type log15Logger struct{}
+	// Set up logging
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		if debugMode.Load() {
+			otelLogger.Warn("error encountered", log.Error(err))
+		} else {
+			otelLogger.Debug("error encountered", log.Error(err))
+		}
+	}))
+	bridgeLogger := logger.AddCallerSkip(2).Scoped("ot.bridge", "OpenTracing to OpenTelemetry compatibility layer")
+	otBridgeTracer.SetWarningHandler(func(msg string) {
+		if debugMode.Load() {
+			bridgeLogger.Warn(msg)
+		} else {
+			bridgeLogger.Debug(msg)
+		}
+	})
 
-func (l log15Logger) Error(msg string) { log15.Error(msg) }
-
-func (l log15Logger) Infof(msg string, args ...any) {
-	log15.Info(fmt.Sprintf(msg, args...))
-}
-
-// move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-// switchableTracer implements opentracing.Tracer. The underlying opentracer used is switchable (set via
-// the `set` method).
-type switchableTracer struct {
-	mu           sync.RWMutex
-	opentracer   opentracing.Tracer
-	tracerCloser io.Closer
-	log          bool
-}
-
-// move to OpenTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newSwitchableTracer() *switchableTracer {
-	return &switchableTracer{opentracer: opentracing.NoopTracer{}}
-}
-
-func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: StartSpan", "operationName", operationName, "opentracer", fmt.Sprintf("%T", t.opentracer))
-	}
-	return t.opentracer.StartSpan(operationName, opts...)
-}
-
-func (t *switchableTracer) Inject(sm opentracing.SpanContext, format any, carrier any) error {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: Inject", "opentracer", fmt.Sprintf("%T", t.opentracer))
-	}
-	return t.opentracer.Inject(sm, format, carrier)
-}
-
-func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanContext, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.opentracer))
-	}
-	return t.opentracer.Extract(format, carrier)
-}
-
-func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, log bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if tc := t.tracerCloser; tc != nil {
-		// Close the old tracerCloser outside the critical zone
-		go tc.Close()
-	}
-
-	t.tracerCloser = tracerCloser
-	t.opentracer = tracer
-	t.log = log
+	// Wrap each tracer in additional logging
+	return newLoggedOTTracer(logger, otBridgeTracer, debugMode),
+		newLoggedOtelTracerProvider(logger, otelTracerProvider, debugMode)
 }

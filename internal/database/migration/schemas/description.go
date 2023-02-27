@@ -1,5 +1,11 @@
 package schemas
 
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
+
 type SchemaDescription struct {
 	Extensions []string
 	Enums      []EnumDescription
@@ -79,4 +85,58 @@ type TriggerDescription struct {
 type ViewDescription struct {
 	Name       string
 	Definition string
+}
+
+func Canonicalize(schemaDescription SchemaDescription) {
+	for i := range schemaDescription.Tables {
+		sortColumnsByName(schemaDescription.Tables[i].Columns)
+		sortIndexes(schemaDescription.Tables[i].Indexes)
+		sortConstraints(schemaDescription.Tables[i].Constraints)
+		sortTriggers(schemaDescription.Tables[i].Triggers)
+	}
+
+	sortEnums(schemaDescription.Enums)
+	sortFunctions(schemaDescription.Functions)
+	sortSequences(schemaDescription.Sequences)
+	sortTables(schemaDescription.Tables)
+	sortViews(schemaDescription.Views)
+}
+
+type Namer interface{ GetName() string }
+
+func (d EnumDescription) GetName() string       { return d.Name }
+func (d FunctionDescription) GetName() string   { return d.Name }
+func (d SequenceDescription) GetName() string   { return d.Name }
+func (d TableDescription) GetName() string      { return d.Name }
+func (d ColumnDescription) GetName() string     { return d.Name }
+func (d IndexDescription) GetName() string      { return d.Name }
+func (d ConstraintDescription) GetName() string { return d.Name }
+func (d TriggerDescription) GetName() string    { return d.Name }
+func (d ViewDescription) GetName() string       { return d.Name }
+
+type Normalizer[T any] interface{ Normalize() T }
+
+var whitespacePattern = lazyregexp.New(`\s+`)
+
+func (d FunctionDescription) Normalize() FunctionDescription {
+	d.Definition = strings.TrimSpace(whitespacePattern.ReplaceAllString(d.Definition, " "))
+	return d
+}
+
+func (d TableDescription) Normalize() TableDescription {
+	d.Comment = ""
+	return d
+}
+
+func (d ColumnDescription) Normalize() ColumnDescription {
+	d.Comment = ""
+	return d
+}
+
+func Normalize[T any](v T) T {
+	if normalizer, ok := any(v).(Normalizer[T]); ok {
+		return normalizer.Normalize()
+	}
+
+	return v
 }

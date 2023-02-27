@@ -4,8 +4,7 @@ import * as H from 'history'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-// eslint-disable-next-line no-restricted-imports
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
@@ -16,7 +15,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
 }
 
@@ -39,7 +37,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-4">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'shared/ActionItem',

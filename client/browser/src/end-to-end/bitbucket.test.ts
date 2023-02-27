@@ -137,7 +137,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com' && restConfig.testUserPassword) {
-            await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+            await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
         }
 
         await bitbucketLogin(driver)
@@ -152,7 +152,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.ensureHasExternalService({
                 kind: ExternalServiceKind.BITBUCKETSERVER,
@@ -184,7 +184,8 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
         getDriver: () => driver,
         url: `${BITBUCKET_BASE_URL}/projects/SOURCEGRAPH/repos/jsonrpc2/browse/call_opt.go?until=4fb7cd90793ee6ab445f466b900e6bffb9b63d78&untilPath=call_opt.go`,
         repoName: `${REPO_PATH_PREFIX}/SOURCEGRAPH/jsonrpc2`,
+        commitID: '4fb7cd90793ee6ab445f466b900e6bffb9b63d78',
         sourcegraphBaseUrl,
-        lineSelector: '.line',
+        getLineSelector: lineNumber => `.line:nth-child(${lineNumber})`,
     })
 })

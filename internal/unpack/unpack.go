@@ -34,6 +34,11 @@ type Opts struct {
 	// the whole unpack.
 	SkipInvalid bool
 
+	// SkipDuplicates makes unpacking skip any files that couldn't be extracted
+	// because of os.FileExist errors. In practice, this means the first file
+	// wins if the tar contains two or more entries with the same filename.
+	SkipDuplicates bool
+
 	// Filter filters out files that do not match the given predicate.
 	Filter func(path string, file fs.FileInfo) bool
 }
@@ -62,6 +67,9 @@ func Zip(r io.ReaderAt, size int64, dir string, opt Opts) error {
 
 		err = extractZipFile(f, dir)
 		if err != nil {
+			if opt.SkipDuplicates && errors.Is(err, os.ErrExist) {
+				continue
+			}
 			return err
 		}
 	}
@@ -69,38 +77,63 @@ func Zip(r io.ReaderAt, size int64, dir string, opt Opts) error {
 	return nil
 }
 
+// copied https://sourcegraph.com/github.com/golang/go@52d9e41ac303cfed4c4cfe86ec6d663a18c3448d/-/blob/src/compress/gzip/gunzip.go?L20-21
+const (
+	gzipID1 = 0x1f
+	gzipID2 = 0x8b
+)
+
 // Tgz unpacks the contents of the given gzip compressed tarball under dir.
 //
 // File permissions in the tarball are not respected; all files are marked read-write.
 func Tgz(r io.Reader, dir string, opt Opts) error {
-	// Since we fallback to untar the input reader if it isn't
-	// a gzipped tar, we need to seek back the bytes already read
-	// from gzip.NewReader() trying to read a gzip header, so make
-	// sure we have an io.ReadSeeker.
-	tgz, ok := r.(io.ReadSeeker)
-	if !ok {
-		bs, err := io.ReadAll(r)
-		if err != nil {
-			return err
-		}
-		tgz = bytes.NewReader(bs)
-	}
-
-	gzr, err := gzip.NewReader(tgz)
-	if err != nil {
-		if err == gzip.ErrHeader || err == gzip.ErrChecksum {
-			// Some archives aren't compressed at all, despite the tgz extension.
-			// Try to untar them without gzip decompression.
-			if _, err = tgz.Seek(0, io.SeekStart); err != nil {
-				return err
-			}
-			return Tar(tgz, dir, opt)
-		}
+	// We read the first two bytes to check if theyre equal to the gzip magic numbers 1f0b.
+	// If not, it may be a tar file with an incorrect file extension. We build a biReader from
+	// the two bytes + the remaining io.Reader argument, as reading the io.Reader is a
+	// destructive operation.
+	var gzipMagicBytes [2]byte
+	if _, err := io.ReadAtLeast(r, gzipMagicBytes[:], 2); err != nil {
 		return err
 	}
 
+	r = &biReader{bytes.NewReader(gzipMagicBytes[:]), r}
+
+	// Some archives aren't compressed at all, despite the tgz extension.
+	// Try to untar them without gzip decompression.
+	if gzipMagicBytes[0] != gzipID1 || gzipMagicBytes[1] != gzipID2 {
+		return Tar(r, dir, opt)
+	}
+
+	gzr, err := gzip.NewReader(r)
+	if err != nil {
+		return err
+	}
 	defer gzr.Close()
+
 	return Tar(gzr, dir, opt)
+}
+
+// ListTgzUnsorted lists the contents of an .tar.gz archive without unpacking
+// the contents anywhere. Equivalent tarballs may return different slices
+// since the output is not sorted.
+func ListTgzUnsorted(r io.Reader) ([]string, error) {
+	gzipReader, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	tarReader := tar.NewReader(gzipReader)
+	files := []string{}
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return files, err
+		}
+		files = append(files, header.Name)
+	}
+	return files, nil
 }
 
 // Tar unpacks the contents of the specified tarball under dir.
@@ -135,6 +168,9 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 
 		err = extractTarFile(tr, header, dir)
 		if err != nil {
+			if opt.SkipDuplicates && errors.Is(err, os.ErrExist) {
+				continue
+			}
 			return err
 		}
 	}
@@ -147,9 +183,9 @@ func extractTarFile(tr *tar.Reader, h *tar.Header, dir string) error {
 
 	// We need to be able to traverse directories and read/modify files.
 	if mode.IsDir() {
-		mode |= 0700
+		mode |= 0o700
 	} else if mode.IsRegular() {
-		mode |= 0600
+		mode |= 0o600
 	}
 
 	switch h.Typeflag {
@@ -184,14 +220,14 @@ func extractZipFile(f *zip.File, dir string) error {
 
 	switch {
 	case mode.IsDir():
-		return os.MkdirAll(path, mode|0700)
+		return os.MkdirAll(path, mode|0o700)
 	case mode.IsRegular():
 		r, err := f.Open()
 		if err != nil {
 			return errors.Wrap(err, "failed to open zip file for reading")
 		}
 		defer r.Close()
-		return writeFile(path, r, int64(f.UncompressedSize64), mode|0600)
+		return writeFile(path, r, int64(f.UncompressedSize64), mode|0o600)
 	case mode&os.ModeSymlink != 0:
 		target, err := readZipFile(f)
 		if err != nil {
@@ -285,7 +321,7 @@ func writeHardLink(path string, target string) error {
 }
 
 func withDir(path string, fn func() error) error {
-	err := os.MkdirAll(filepath.Dir(path), 0770)
+	err := os.MkdirAll(filepath.Dir(path), 0o770)
 	if err != nil {
 		return err
 	}

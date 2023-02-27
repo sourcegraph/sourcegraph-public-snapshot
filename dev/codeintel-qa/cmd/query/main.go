@@ -102,7 +102,7 @@ loop:
 			break loop
 
 		case <-time.After(time.Second):
-			if verbose {
+			if !verbose {
 				continue
 			}
 

@@ -17,7 +17,7 @@ export function initSentry(): void {
     if (
         typeof Sentry !== 'undefined' &&
         window.context.sentryDSN &&
-        (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
+        (process.env.NODE_ENV === 'production' || process.env.ENABLE_SENTRY)
     ) {
         const { sentryDSN, version } = window.context
 
@@ -26,6 +26,8 @@ export function initSentry(): void {
         Sentry.onLoad(() => {
             Sentry.init({
                 dsn: sentryDSN,
+                // TODO frontend platform team, follow-up to https://github.com/sourcegraph/sourcegraph/pull/38411
+                // tunnel: '/-/debug/sentry_tunnel',
                 release: 'frontend@' + version,
                 beforeSend(event, hint) {
                     // Use `originalException` to check if we want to ignore the error.

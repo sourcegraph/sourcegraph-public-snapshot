@@ -1,13 +1,12 @@
 import React from 'react'
 
+import { mdiCheck, mdiAlert, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import AlertIcon from 'mdi-react/AlertIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isDefined } from '@sourcegraph/common'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Text, Icon } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     LsifIndexFields,
     CodeIntelIndexerFields,
@@ -15,7 +14,7 @@ import {
     LSIFUploadState,
     LSIFIndexState,
 } from '../../../../graphql-operations'
-import { TelemetricRedirect } from '../../../../tracking/TelemetricRedirect'
+import { TelemetricLink } from '../../../../tracking/TelemetricLink'
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
@@ -32,6 +31,7 @@ export interface IndexerSummaryProps {
         uploads: LsifUploadFields[]
         indexes: LsifIndexFields[]
         indexer?: CodeIntelIndexerFields
+        additionalIndexer: string[]
     }
     className?: string
     now?: () => Date
@@ -74,17 +74,17 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                 </div>
 
                 <div className="px-2 py-1">
-                    <p className="mb-1">{summary.indexer?.name || summary.name} precise intelligence</p>
+                    <Text className="mb-1">{summary.indexer?.name || summary.name} precise intelligence</Text>
 
                     {lastUpdated && (
-                        <p className="mb-1 text-muted">
+                        <Text className="mb-1 text-muted">
                             Last updated: <Timestamp date={lastUpdated} now={now} />
-                        </p>
+                        </Text>
                     )}
 
                     {summary.uploads.length + summary.indexes.length === 0 ? (
                         summary.indexer?.url ? (
-                            <TelemetricRedirect
+                            <TelemetricLink
                                 to={summary.indexer.url}
                                 label="Set up for this repository"
                                 alwaysShowLabel={true}
@@ -100,36 +100,72 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                         )
                     ) : (
                         <>
-                            {failedUploads.length === 0 && failedIndexes.length === 0 && (
-                                <p className="mb-1 text-muted">
-                                    <CheckIcon size={16} className="text-success" /> Looks good!
-                                </p>
+                            {failedUploads.length === 0 &&
+                                failedIndexes.length === 0 &&
+                                summary.additionalIndexer.length === 0 && (
+                                    <Text className="mb-1 text-muted">
+                                        <Icon
+                                            className="text-success"
+                                            svgPath={mdiCheck}
+                                            inline={false}
+                                            aria-hidden={true}
+                                            height={16}
+                                            width={16}
+                                        />{' '}
+                                        Looks good!
+                                    </Text>
+                                )}
+                            {summary.additionalIndexer.length > 0 && (
+                                <Text className="mb-1 text-muted">
+                                    <Icon
+                                        svgPath={mdiInformationOutline}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
+                                    Additional coverage available
+                                </Text>
                             )}
                             {failedUploads.length > 0 && (
-                                <p className="mb-1 text-muted">
-                                    <AlertIcon size={16} className="text-danger" />{' '}
-                                    <TelemetricRedirect
-                                        to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
+                                <Text className="mb-1 text-muted">
+                                    <Icon
+                                        className="text-danger"
+                                        svgPath={mdiAlert}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
+                                    <TelemetricLink
+                                        to={`/${repoName}/-/code-graph/uploads?filters=errored`}
                                         label="Latest upload processing"
                                         alwaysShowLabel={true}
                                         eventName="CodeIntelligenceUploadErrorInvestigated"
                                         className={telemetricRedirectClassName}
                                     />{' '}
                                     failed
-                                </p>
+                                </Text>
                             )}
                             {failedIndexes.length > 0 && (
-                                <p className="mb-1 text-muted">
-                                    <AlertIcon size={16} className="text-danger" />{' '}
-                                    <TelemetricRedirect
-                                        to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
+                                <Text className="mb-1 text-muted">
+                                    <Icon
+                                        className="text-danger"
+                                        svgPath={mdiAlert}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
+                                    <TelemetricLink
+                                        to={`/${repoName}/-/code-graph/indexes?filters=errored`}
                                         label="Latest indexing"
                                         alwaysShowLabel={true}
                                         eventName="CodeIntelligenceIndexErrorInvestigated"
                                         className={telemetricRedirectClassName}
                                     />{' '}
                                     failed
-                                </p>
+                                </Text>
                             )}
                         </>
                     )}

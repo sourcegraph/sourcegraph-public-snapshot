@@ -2,21 +2,22 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,11 +31,11 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
 		hasAccess := func() error {
-			if backend.CheckOrgAccess(ctx, r.db, org.ID) == nil {
+			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
 			}
 
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
 				if err == nil {
 					return nil
@@ -47,7 +48,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		}
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
-			if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
@@ -81,11 +82,11 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	//              And all invited users by email
 	if !forceAccess && envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, db, orgID)
+		err := auth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false
 			// allow invited user to view org details
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
 				if err == nil {
 					hasAccess = true
@@ -107,8 +108,6 @@ type OrgResolver struct {
 	db  database.DB
 	org *types.Org
 }
-
-func NewOrg(db database.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
 
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
@@ -138,30 +137,81 @@ func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
 
 func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
-func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.CreatedAt} }
+func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
-func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
-	// 🚨 SECURITY: Only org members can list other org members.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
-		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
-		}
+func (o *OrgResolver) Members(ctx context.Context, args struct {
+	graphqlutil.ConnectionResolverArgs
+	Query *string
+}) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
+	// 🚨 SECURITY: Verify listing users is allowed.
+	if err := checkMembersAccess(ctx, o.db); err != nil {
 		return nil, err
 	}
 
-	memberships, err := o.db.OrgMembers().GetByOrgID(ctx, o.org.ID)
+	connectionStore := &membersConnectionStore{
+		db:    o.db,
+		orgID: o.org.ID,
+		query: args.Query,
+	}
+
+	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+}
+
+type membersConnectionStore struct {
+	db    database.DB
+	orgID int32
+	query *string
+}
+
+func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	query := ""
+	if s.query != nil {
+		query = *s.query
+	}
+
+	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
 	if err != nil {
 		return nil, err
 	}
-	users := make([]*types.User, len(memberships))
-	for i, membership := range memberships {
-		user, err := o.db.Users().GetByID(ctx, membership.UserID)
-		if err != nil {
-			return nil, err
-		}
-		users[i] = user
+
+	totalCount := int32(result)
+
+	return &totalCount, nil
+}
+
+func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
+	users, err := s.db.Users().ListByOrg(ctx, s.orgID, args, s.query)
+	if err != nil {
+		return nil, err
 	}
-	return &staticUserConnectionResolver{db: o.db, users: users}, nil
+
+	var userResolvers []*UserResolver
+	for _, user := range users {
+		userResolvers = append(userResolvers, NewUserResolver(s.db, user))
+	}
+
+	return userResolvers, nil
+}
+
+func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.OrderBy) (*string, error) {
+	if node == nil {
+		return nil, errors.New(`node is nil`)
+	}
+
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+
+	id := string(nodeID)
+
+	return &id, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -171,7 +221,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
 	// because they may contain secrets or other sensitive data.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -192,7 +242,7 @@ func (o *OrgResolver) SettingsCascade() *settingsCascade {
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -211,7 +261,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == auth.ErrNotAuthenticated || err == auth.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -220,7 +270,7 @@ func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
@@ -231,48 +281,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return false, nil
-	}
-	enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
-	if err != nil {
-		return false, err
-	} else if !enabled {
-		return false, nil
-	}
-	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
-		return false, nil
-	}
-	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
-	if err != nil {
-		return false, err
-	}
-	if len(orgServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: actor.UID})
-	if err != nil {
-		return false, err
-	}
-	if len(userServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	for _, os := range orgServices {
-		for _, us := range userServices {
-			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
-				if os.CreatedAt.After(us.UpdatedAt) {
-					return true, nil
-				}
-			}
-		}
-	}
-	return false, nil
 }
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
@@ -288,7 +296,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	DisplayName *string
 	StatsID     *string
 }) (*OrgResolver, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -306,7 +314,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		// we do not throw errors here as this is best effort
 		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
-			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+			r.logger.Warn("Cannot update orgs open beta stats", log.String("id", *args.StatsID), log.Int32("orgID", newOrg.ID), log.Error(err))
 		}
 	}
 
@@ -330,11 +338,11 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
-	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := r.db.Orgs().Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -357,36 +365,32 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
+	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
-	log15.Info("removing user from org", "user", userID, "org", orgID)
-	if err := database.OrgMembers(r.db).Remove(ctx, orgID, userID); err != nil {
+	r.logger.Info("removing user from org", log.Int32("userID", userID), log.Int32("orgID", orgID))
+	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
-	if err != nil {
-		log15.Warn("schemaResolver.RemoveUserFromOrganization.SchedulePermsSync",
-			"userID", userID,
-			"error", err,
-		)
-	}
+	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
+
 	return nil, nil
 }
 
 func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false
 	}
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSameUser(ctx, userID); err != nil {
 		return false
 	}
 	return true
@@ -404,13 +408,13 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 
 	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, errors.Errorf("Must be a member of the organization to add members", err)
 		}
 	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -422,57 +426,8 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	// Schedule permission sync for newly added user
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
-	if err != nil {
-		log15.Warn("schemaResolver.AddUserToOrganization.SchedulePermsSync",
-			"userID", userToInvite.ID,
-			"error", err,
-		)
-	}
+	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
+
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
-	Stats JSONCString
-}) (*graphql.ID, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-	if args == nil || !json.Valid([]byte(args.Stats)) {
-		return nil, errors.New("must supply valid json")
-	}
-
-	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
-	if err != nil {
-		return nil, err
-	}
-
-	graphqlID := graphql.ID(id)
-	return &graphqlID, nil
-}
-
-type ListOrgRepositoriesArgs struct {
-	First              *int32
-	Query              *string
-	After              *string
-	Cloned             bool
-	NotCloned          bool
-	Indexed            bool
-	NotIndexed         bool
-	ExternalServiceIDs *[]*graphql.ID
-	OrderBy            *string
-	Descending         bool
-}
-
-func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.orgRepositoryResolver == nil {
-		return nil, errors.New("listing organization repositories is not supported")
-	}
-	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
-}
-
-type OrgRepositoryResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }

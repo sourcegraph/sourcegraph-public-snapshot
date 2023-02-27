@@ -15,12 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
+}
+
+func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(db, gitserverClient, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -40,6 +45,7 @@ type Test struct {
 	Variables      map[string]any
 	ExpectedResult string
 	ExpectedErrors []*gqlerrors.QueryError
+	Label          string
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -52,7 +58,11 @@ func RunTests(t *testing.T, tests []*Test) {
 	}
 
 	for i, test := range tests {
-		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
+		testName := strconv.Itoa(i + 1)
+		if test.Label != "" {
+			testName = fmt.Sprintf("%s/%s", testName, test.Label)
+		}
+		t.Run(testName, func(t *testing.T) {
 			t.Helper()
 			RunTest(t, test)
 		})
@@ -81,11 +91,11 @@ func RunTest(t *testing.T, test *Test) {
 	// Verify JSON to avoid red herring errors.
 	got, err := formatJSON(result.Data)
 	if err != nil {
-		t.Fatalf("got: invalid JSON: %s", err)
+		t.Fatalf("got: invalid JSON: %s\n\n%v", err, result.Data)
 	}
 	want, err := formatJSON([]byte(test.ExpectedResult))
 	if err != nil {
-		t.Fatalf("want: invalid JSON: %s", err)
+		t.Fatalf("want: invalid JSON: %s\n\n%s", err, test.ExpectedResult)
 	}
 
 	require.JSONEq(t, string(want), string(got))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -17,9 +18,6 @@ import (
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
-	// RepoName is the repository name to look up.
-	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
-	RepoName api.RepoName
 	// The ID of the repo to lookup the schedule for.
 	ID api.RepoID
 }
@@ -41,19 +39,6 @@ type RepoQueueState struct {
 	Total    int
 	Updating bool
 	Priority int
-}
-
-// RepoExternalServicesRequest is a request for the external services
-// associated with a repository.
-type RepoExternalServicesRequest struct {
-	// ID of the repository being queried.
-	ID api.RepoID
-}
-
-// RepoExternalServicesResponse is returned in response to an
-// RepoExternalServicesRequest.
-type RepoExternalServicesResponse struct {
-	ExternalServices []api.ExternalService
 }
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
@@ -242,8 +227,10 @@ type RepoUpdateResponse struct {
 	ID api.RepoID `json:"id"`
 	// Name of the repo that got an update request.
 	Name string `json:"name"`
-	// URL of the repo that got an update request.
-	URL string `json:"url"`
+}
+
+func (a *RepoUpdateResponse) String() string {
+	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s}", a.ID, a.Name)
 }
 
 // ChangesetSyncRequest is a request to sync a number of changesets
@@ -259,9 +246,12 @@ type ChangesetSyncResponse struct {
 // PermsSyncRequest is a request to sync permissions. The provided options are used to
 // sync all provided users and repos - to use different options, make a separate request.
 type PermsSyncRequest struct {
-	UserIDs []int32                 `json:"user_ids"`
-	RepoIDs []api.RepoID            `json:"repo_ids"`
-	Options authz.FetchPermsOptions `json:"options"`
+	UserIDs           []int32                           `json:"user_ids"`
+	RepoIDs           []api.RepoID                      `json:"repo_ids"`
+	Options           authz.FetchPermsOptions           `json:"options"`
+	Reason            database.PermissionsSyncJobReason `json:"reason"`
+	TriggeredByUserID int32                             `json:"triggered_by_user_id"`
+	ProcessAfter      time.Time                         `json:"process_after"`
 }
 
 // PermsSyncResponse is a response to sync permissions.
@@ -275,11 +265,33 @@ type PermsSyncResponse struct {
 // updating an external service so that admins don't have to wait until the next sync
 // run to see their repos being synced.
 type ExternalServiceSyncRequest struct {
-	ExternalService api.ExternalService
+	ExternalServiceID int64
 }
 
 // ExternalServiceSyncResult is a result type of an external service's sync request.
 type ExternalServiceSyncResult struct {
-	ExternalService api.ExternalService
-	Error           string
+	Error string
+}
+
+type ExternalServiceNamespacesArgs struct {
+	Kind   string
+	Config string
+}
+
+type ExternalServiceNamespacesResult struct {
+	Namespaces []*types.ExternalServiceNamespace
+	Error      string
+}
+
+type ExternalServiceRepositoriesArgs struct {
+	Kind         string
+	Query        string
+	Config       string
+	First        int32
+	ExcludeRepos []string
+}
+
+type ExternalServiceRepositoriesResult struct {
+	Repos []*types.Repo
+	Error string
 }
