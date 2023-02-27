@@ -51,7 +51,7 @@
 }
 
 .own-items {
-    padding: 0.125rem 0.25rem;
+    padding: 0.125rem 0.5rem 0.125rem 0; // Assymetic padding to account for the avatar
     display: flex;
     align-items: baseline;
     overflow: hidden;
@@ -63,6 +63,13 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.own-item-empty {
+    // Same height and margin as a user avatar
+    min-height: 1.5rem;
+    margin-left: 0.5rem;
+    align-items: center;
 }
 
 .own-more {

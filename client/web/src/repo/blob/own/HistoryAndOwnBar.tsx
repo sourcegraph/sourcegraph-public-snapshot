@@ -15,6 +15,7 @@ import { GitCommitNode } from '../../commits/GitCommitNode'
 import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 
 import styles from './HistoryAndOwnBar.module.scss'
+import classNames from 'classnames'
 
 export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
@@ -83,6 +84,10 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                         </div>
 
                         <div className={styles.ownItems}>
+                            {ownership.nodes.length === 0 && (
+                                <div className={classNames(styles.ownItem, styles.ownItemEmpty)}>No owner found</div>
+                            )}
+
                             {ownership.nodes.slice(0, 2).map((ownership, index) => (
                                 // There will only be 2 owners max and they won't change, so
                                 // it's safe to use the index as a key.
