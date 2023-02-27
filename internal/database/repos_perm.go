@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -13,6 +14,16 @@ import (
 )
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+
+const userRepoPermsFlagName = "unified-user-repo-perms"
+
+func UnifiedUserRepoPermsEnabled(ctx context.Context, db DB) bool {
+	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
+	if featureFlag == nil || err != nil {
+		return false
+	}
+	return featureFlag.Bool.Value
+}
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
@@ -49,17 +60,25 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 		authenticatedUserID = currentUser.ID
 		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
+	unifiedPermsEnabled := false
+	if !bypassAuthz {
+		// if we bypass authz, it does not make sense to check for the feature flag value
+		unifiedPermsEnabled = UnifiedUserRepoPermsEnabled(ctx, db)
+	}
+
+	fmt.Println("authzQuey conds", bypassAuthz, usePermissionsUserMapping, authenticatedUserID, unifiedPermsEnabled)
 
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
 		authz.Read, // Note: We currently only support read for repository permissions.
+		unifiedPermsEnabled,
 	)
 	return q, nil
 }
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms, unifiedPermsEnabled bool) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
 		return sqlf.Sprintf(`
@@ -70,9 +89,23 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 `)
 	}
 
+	unrestrictedReposUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		format := `
+		EXISTS (
+			SELECT
+			FROM user_repo_permissions
+			WHERE repo_id = repo.id AND user_id IS NULL
+		)
+		OR
+		`
+		unrestrictedReposUnifiedSQL = sqlf.Sprintf(format)
+	}
+
 	const unrestrictedReposSQL = `
 (
 	-- Unrestricted repos are visible to all users
+	%s
 	EXISTS (
 		SELECT
 		FROM repo_permissions
@@ -81,7 +114,7 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
-	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
+	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL, unrestrictedReposUnifiedSQL)
 	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
@@ -105,17 +138,34 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
+	// TODO: test this out
+	restrictedRepositoriesUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		const format = `
+		EXISTS (
+			SELECT repo_id FROM user_repo_permissions
+			WHERE
+				repo_id = repo.id
+			AND user_id = %s
+		) OR `
+		restrictedRepositoriesUnifiedSQL = sqlf.Sprintf(format, authenticatedUserID)
+	}
+
 	const restrictedRepositoriesSQL = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
+(
+	-- Restricted repositories require checking permissions
+	%s
+    (
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	)
 )
 `
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, restrictedRepositoriesUnifiedSQL, authenticatedUserID, perms.String())
 
 	conditions = append(conditions, restrictedRepositoriesQuery)
 
