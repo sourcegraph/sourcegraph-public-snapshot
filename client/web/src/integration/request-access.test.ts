@@ -30,6 +30,9 @@ describe('RequestAccess', () => {
                 currentUser: null,
             }),
         })
+        testContext.overrideJsContext({
+            currentUser: undefined,
+        })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
         const selector = await driver.page.waitForSelector('a[href="/request-access"]')
         await selector?.click()
@@ -48,6 +51,9 @@ describe('RequestAccess', () => {
             CurrentAuthState: () => ({
                 currentUser: null,
             }),
+        })
+        testContext.overrideJsContext({
+            currentUser: undefined,
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
         // TODO: replace with driver.page.goto(driver.sourcegraphBaseUrl + '/request-access/done') once PR is merged and dogfood is updated
