@@ -12,13 +12,12 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go"
+	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/opentracing/opentracing-go/ext"
-	opentrancingLog "github.com/opentracing/opentracing-go/log"
+	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -47,55 +46,15 @@ var (
 
 type requestTracer struct {
 	DB     database.DB
+	tracer *otel.Tracer
 	logger log.Logger
-}
-
-func (t *requestTracer) traceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any) (context.Context, func([]*gqlerrors.QueryError)) {
-	span, spanCtx := opentracing.StartSpanFromContext(ctx, "GraphQL request")
-	span.SetTag("graphql.query", queryString)
-
-	if operationName != "" {
-		span.SetTag("graphql.operationName", operationName)
-	}
-
-	if len(variables) != 0 {
-		span.LogFields(opentrancingLog.Object("graphql.variables", variables))
-	}
-
-	return spanCtx, func(errs []*gqlerrors.QueryError) {
-		if len(errs) > 0 {
-			msg := errs[0].Error()
-			if len(errs) > 1 {
-				msg += fmt.Sprintf(" (and %d more errors)", len(errs)-1)
-			}
-			ext.Error.Set(span, true)
-			span.SetTag("graphql.error", msg)
-		}
-		span.Finish()
-	}
-}
-
-func (t *requestTracer) traceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Validate Query")
-
-	return func(errs []*gqlerrors.QueryError) {
-		if len(errs) > 0 {
-			msg := errs[0].Error()
-			if len(errs) > 1 {
-				msg += fmt.Sprintf(" (and %d more errors)", len(errs)-1)
-			}
-			ext.Error.Set(span, true)
-			span.SetTag("graphql.error", msg)
-		}
-		span.Finish()
-	}
 }
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
 	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
-		ctx, finish = t.traceQuery(ctx, queryString, operationName, variables)
+		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
@@ -225,7 +184,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
 	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
-		finish = t.traceValidation(ctx)
+		finish = t.tracer.TraceValidation(ctx)
 	}
 	return func(queryErrors []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -604,7 +563,10 @@ func NewSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
 		graphql.Tracer(&requestTracer{
-			DB:     db,
+			DB: db,
+			tracer: &otel.Tracer{
+				Tracer: oteltracer.Tracer("GraphQL"),
+			},
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
