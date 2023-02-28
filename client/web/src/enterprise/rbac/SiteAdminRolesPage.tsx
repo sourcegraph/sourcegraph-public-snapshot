@@ -16,7 +16,7 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 
-import { RoleNode } from './components/Role'
+import { RoleNode } from './components/RoleNode'
 import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
