@@ -550,6 +550,23 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 
 		runTests(t)
 	})
+
+	t.Run("Unified permissions table should be respected if feature flag is on and legacy permissions are deleted", func(t *testing.T) {
+		execQuery(t, ctx, db, sqlf.Sprintf("TRUNCATE user_permissions"))
+		execQuery(t, ctx, db, sqlf.Sprintf("TRUNCATE repo_permissions"))
+
+		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: true,
+		}}}
+		conf.Mock(cfg)
+
+		// Always reset the configuration so that it doesn't interfere with other tests
+		defer func() {
+			conf.Mock(nil)
+		}()
+
+		runTests(t)
+	})
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
