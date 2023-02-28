@@ -93,7 +93,7 @@ func NewHandler(
 
 	// Initialize the gRPC server
 	grpcServer := defaults.NewServer(rootLogger)
-	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
+	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,

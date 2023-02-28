@@ -146,7 +146,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	grpcServer := defaults.NewServer(logger)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: &gitserver,
 	})
 
