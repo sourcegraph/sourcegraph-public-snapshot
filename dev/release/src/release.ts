@@ -432,10 +432,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
         argNames: ['candidate'],
         run: async (config, candidate) => {
-            const release = await getActiveRelease(config)
-            ensureReleaseBranchUpToDate(release.branch)
             const client = await getAuthenticatedGitHubClient()
             await validateNoReleaseBlockers(client)
+
+            const release = await getActiveRelease(config)
+            ensureReleaseBranchUpToDate(release.branch)
 
             const warnMsg =
                 'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
