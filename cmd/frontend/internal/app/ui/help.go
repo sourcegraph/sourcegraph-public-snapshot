@@ -60,8 +60,6 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 
 	// For App, add UTM parameters to the docs url.
 	if sourcegraphAppMode {
-		// Add to query params, keeping existing ones
-		// Add ?utm_source=app&utm_medium=app&utm_campaign=app
 		q := dest.Query()
 		q.Set("utm_source", "sg_app")
 		q.Set("utm_medium", "referral")
