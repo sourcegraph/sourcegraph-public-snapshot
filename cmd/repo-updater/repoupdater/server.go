@@ -411,26 +411,13 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	protoReq := proto.ExternalServiceNamespacesRequest{
-		Kind:   req.Kind,
-		Config: req.Config,
-	}
 
-	result, err := s.externalServiceNamespaces(r.Context(), &protoReq)
+	result, err := s.externalServiceNamespaces(r.Context(), req.ToProto())
 	if err != nil {
 		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
 	}
-
-	namespaces := make([]*types.ExternalServiceNamespace, 0, len(result.Namespaces))
-	for _, ns := range result.Namespaces {
-		namespaces = append(namespaces, &types.ExternalServiceNamespace{
-			ID:         int(ns.GetId()),
-			Name:       ns.GetName(),
-			ExternalID: ns.GetExternalId(),
-		})
-	}
-	s.respond(w, http.StatusOK, &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces})
+	s.respond(w, http.StatusOK, protocol.ExternalServiceNamespacesResultFromProto(result))
 }
 
 func (s *Server) externalServiceNamespaces(ctx context.Context, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
@@ -502,29 +489,12 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		return
 	}
 
-	protoReq := proto.ExternalServiceRepositoriesRequest{
-		Kind:         req.Kind,
-		Query:        req.Query,
-		Config:       req.Config,
-		First:        req.First,
-		ExcludeRepos: req.ExcludeRepos,
-	}
-	result, err := s.externalServiceRepositories(r.Context(), &protoReq)
+	result, err := s.externalServiceRepositories(r.Context(), req.ToProto())
 	if err != nil {
 		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
 	}
-
-	repos := make([]*types.ExternalServiceRepository, 0, len(result.Repos))
-	for _, repo := range result.Repos {
-		repos = append(repos, &types.ExternalServiceRepository{
-			ID:         api.RepoID(repo.GetId()),
-			Name:       api.RepoName(repo.GetName()),
-			ExternalID: repo.GetExternalId(),
-		})
-	}
-
-	s.respond(w, http.StatusOK, &protocol.ExternalServiceRepositoriesResult{Repos: repos})
+	s.respond(w, http.StatusOK, protocol.ExternalServiceRepositoriesResultFromProto(result))
 }
 
 func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {

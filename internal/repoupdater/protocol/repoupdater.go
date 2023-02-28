@@ -457,14 +457,29 @@ type ExternalServiceNamespacesArgs struct {
 
 func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespacesRequest {
 	return &proto.ExternalServiceNamespacesRequest{
-		Kind:   e.Kind,
-		Config: e.Config,
+		ExternalServiceId: e.ExternalServiceID,
+		Kind:              e.Kind,
+		Config:            e.Config,
 	}
 }
 
 type ExternalServiceNamespacesResult struct {
 	Namespaces []*types.ExternalServiceNamespace
 	Error      string
+}
+
+func ExternalServiceNamespacesResultFromProto(p *proto.ExternalServiceNamespacesResponse) *ExternalServiceNamespacesResult {
+	namespaces := make([]*types.ExternalServiceNamespace, 0, len(p.GetNamespaces()))
+	for _, ns := range p.GetNamespaces() {
+		namespaces = append(namespaces, &types.ExternalServiceNamespace{
+			ID:         int(ns.GetId()),
+			Name:       ns.GetName(),
+			ExternalID: ns.GetExternalId(),
+		})
+	}
+	return &ExternalServiceNamespacesResult{
+		Namespaces: namespaces,
+	}
 }
 
 type ExternalServiceRepositoriesArgs struct {
@@ -478,15 +493,28 @@ type ExternalServiceRepositoriesArgs struct {
 
 func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceRepositoriesRequest {
 	return &proto.ExternalServiceRepositoriesRequest{
-		Kind:         a.Kind,
-		Query:        a.Query,
-		Config:       a.Config,
-		First:        a.First,
-		ExcludeRepos: a.ExcludeRepos,
+		ExternalServiceId: a.ExternalServiceID,
+		Kind:              a.Kind,
+		Query:             a.Query,
+		Config:            a.Config,
+		First:             a.First,
+		ExcludeRepos:      a.ExcludeRepos,
 	}
 }
 
 type ExternalServiceRepositoriesResult struct {
 	Repos []*types.ExternalServiceRepository
 	Error string
+}
+
+func ExternalServiceRepositoriesResultFromProto(p *proto.ExternalServiceRepositoriesResponse) *ExternalServiceRepositoriesResult {
+	repos := make([]*types.ExternalServiceRepository, 0, len(p.GetRepos()))
+	for _, repo := range p.GetRepos() {
+		repos = append(repos, &types.ExternalServiceRepository{
+			ID:         api.RepoID(repo.GetId()),
+			Name:       api.RepoName(repo.GetName()),
+			ExternalID: repo.GetExternalId(),
+		})
+	}
+	return &ExternalServiceRepositoriesResult{Repos: repos}
 }
