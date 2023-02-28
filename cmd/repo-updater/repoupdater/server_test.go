@@ -937,7 +937,7 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 		},
 	}
 
-	const idDoesNotExist int64 = 99
+	var idDoesNotExist int64 = 99
 
 	testCases := []struct {
 		name              string
