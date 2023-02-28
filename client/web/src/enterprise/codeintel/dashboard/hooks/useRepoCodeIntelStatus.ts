@@ -28,12 +28,15 @@ interface UseRepoCodeIntelStatusResult {
     loading: boolean
 }
 
+const POLL_INTERVAL = 1000 * 60 * 5 // 5 minutes
+
 export const useRepoCodeIntelStatus = (variables: RepoCodeIntelStatusVariables): UseRepoCodeIntelStatusResult => {
     const { data, error, loading } = useQuery<RepoCodeIntelStatusResult, RepoCodeIntelStatusVariables>(
         repoCodeIntelStatusQuery,
         {
             variables,
-            fetchPolicy: 'cache-and-network',
+            fetchPolicy: 'cache-and-network', // Cache when loaded, refetch in background
+            pollInterval: POLL_INTERVAL, // Refetch every 5 minutes (if left open)
         }
     )
 
