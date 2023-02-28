@@ -1,0 +1,17 @@
+.columns {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    margin-top: 1.75rem;
+}
+
+.or {
+    display: flex;
+    flex-direction: column;
+    margin: 0 1.75rem;
+    align-items: center;
+}
+
+.or-line {
+    border-right: 1px solid var(--border-color);
+    flex: 1;
+}
