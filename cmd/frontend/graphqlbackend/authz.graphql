@@ -169,6 +169,14 @@ extend type Query {
         Optional filter for PermissionsSyncJobState.
         """
         state: PermissionsSyncJobState
+        """
+        Type of search for permissions sync jobs: user or repository.
+        """
+        searchType: PermissionsSyncJobsSearchType
+        """
+        Term used to search for permissions sync jobs.
+        """
+        query: String
     ): PermissionsSyncJobsConnection!
 
     """
@@ -401,7 +409,7 @@ Permissions sync jobs.
 """
 type PermissionsSyncJobsConnection implements Connection {
     """
-    Permission sync jobs.
+    Permissions sync jobs.
     """
     nodes: [PermissionsSyncJob!]!
     """
@@ -415,7 +423,15 @@ type PermissionsSyncJobsConnection implements Connection {
 }
 
 """
-State types of permission sync jobs.
+Type of search for permissions sync jobs: user or repository.
+"""
+enum PermissionsSyncJobsSearchType {
+    USER
+    REPOSITORY
+}
+
+"""
+State types of permissions sync jobs.
 """
 enum PermissionsSyncJobState {
     QUEUED
@@ -427,13 +443,13 @@ enum PermissionsSyncJobState {
 }
 
 """
-Compound type for a permission sync job trigger reason.
-Consists of a reason group (PermissionSyncJobReasonGroup) and a reason itself, providing details
+Compound type for a permissions sync job trigger reason.
+Consists of a reason group (PermissionsSyncJobReasonGroup) and a reason itself, providing details
 about why/how the sync was triggered.
 """
 type PermissionsSyncJobReasonWithGroup {
     """
-    PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
+    PermissionsSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
     """
     group: PermissionsSyncJobReasonGroup!
     """
@@ -484,7 +500,7 @@ enum PermissionsSyncJobReasonGroup {
 """
 Union type for a subject of a permission sync job (repository or user).
 """
-union PermissionSyncJobSubject = User | Repository
+union PermissionsSyncJobSubject = User | Repository
 
 """
 Permission sync job priority.
@@ -588,7 +604,7 @@ type PermissionsSyncJob implements Node {
     """
     Subject of a permission sync job (repository or user).
     """
-    subject: PermissionSyncJobSubject!
+    subject: PermissionsSyncJobSubject!
     """
     Priority of a permission sync job.
     """

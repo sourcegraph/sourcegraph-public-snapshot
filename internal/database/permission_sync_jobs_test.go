@@ -137,12 +137,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		{
 			name:     "ID",
 			opts:     ListPermissionSyncJobOpts{ID: jobs[0].ID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "RepoID",
 			opts:     ListPermissionSyncJobOpts{RepoID: jobs[0].RepositoryID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "UserID",
@@ -183,6 +183,26 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			name:     "Reason and ReasonGroup filtering (reason filtering wins)",
 			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync, ReasonGroup: PermissionsSyncJobReasonGroupSchedule},
 			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "Search doesn't work without SearchType",
+			opts:     ListPermissionSyncJobOpts{Query: "where's the search type, Lebowski?"},
+			wantJobs: jobs,
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search",
+			opts:     ListPermissionSyncJobOpts{Query: "1", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: jobs[:1],
 		},
 	}
 
