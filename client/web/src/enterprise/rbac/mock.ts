@@ -1,6 +1,7 @@
 import { groupBy } from 'lodash'
 
 import { AllPermissionsResult, PermissionNamespace, AllRolesResult } from '../../graphql-operations'
+
 import { PermissionsMap } from './backend'
 
 export const mockPermissions: AllPermissionsResult = {

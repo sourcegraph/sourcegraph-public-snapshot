@@ -1,14 +1,14 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { noop } from 'lodash'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-
 import { DELETE_ROLE } from '../backend'
 import { mockRoles, mockPermissionsMap } from '../mock'
+
 import { RoleNode } from './RoleNode'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>

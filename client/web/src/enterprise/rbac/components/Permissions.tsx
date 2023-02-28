@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
-import { groupBy } from 'lodash'
 import { mdiMapSearch } from '@mdi/js'
+import { groupBy } from 'lodash'
 
 import { Icon, Text, Checkbox, Grid, Form } from '@sourcegraph/wildcard'
 
@@ -25,6 +25,10 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
     allPermissions,
 }) => {
     const rolePermissions = role.permissions.nodes
+    // We create a map for the role permissions using their ID, so we can perform an easy lookup when rendering
+    // the list of all permissions.
+    const rolePermissionsMap = useMemo(() => groupBy(rolePermissions, 'id'), [rolePermissions])
+
     // We display EmptyPermissionList when the role has no permissions assigned to it.
     if (rolePermissions.length === 0) {
         return <EmptyPermissionList />
@@ -33,10 +37,6 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
     // Permissions are grouped by their namespace in the UI. We do this to get all unique namespaces
     // on the Sourcegraph instance.
     const allNamespaces = Object.values(PermissionNamespace)
-
-    // We create a map for the role permissions using their ID, so we can perform an easy lookup when rendering
-    // the list of all permissions.
-    const rolePermissionsMap = useMemo(() => groupBy(rolePermissions, 'id'), [rolePermissions])
     return (
         <>
             {allNamespaces.map(namespace => {
@@ -45,13 +45,13 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
                     <Form key={namespace}>
                         <Text className="font-weight-bold">{namespace}</Text>
                         <Grid columnCount={4}>
-                            {namespacePermissions.map(ap => {
-                                const isChecked = Boolean(rolePermissionsMap[ap.id])
+                            {namespacePermissions.map(permission => {
+                                const isChecked = Boolean(rolePermissionsMap[permission.id])
                                 return (
                                     <Checkbox
-                                        key={ap.id}
-                                        label={ap.action}
-                                        id={ap.displayName}
+                                        key={permission.id}
+                                        label={permission.action}
+                                        id={permission.displayName}
                                         defaultChecked={isChecked}
                                     />
                                 )

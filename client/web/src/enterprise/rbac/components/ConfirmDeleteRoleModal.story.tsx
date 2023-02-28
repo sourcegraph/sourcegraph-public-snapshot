@@ -1,14 +1,14 @@
 import React from 'react'
 
+import { ApolloError } from '@apollo/client'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import { ApolloError } from '@apollo/client'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-
 import { mockRoles } from '../mock'
+
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -23,7 +23,7 @@ export default config
 const mockOnConfirm = (event: React.FormEvent) => {
     event.preventDefault()
 }
-const [_, batchChangeAdminRole] = mockRoles.roles.nodes
+const batchChangeAdminRole = mockRoles.roles.nodes[1]
 
 export const ConfirmDeleteRoleModalStory: Story = () => (
     <WebStory>

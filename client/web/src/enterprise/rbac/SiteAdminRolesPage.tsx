@@ -5,6 +5,7 @@ import { groupBy } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, Icon } from '@sourcegraph/wildcard'
+
 import {
     ConnectionContainer,
     ConnectionError,
@@ -14,10 +15,10 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
-
-import { RoleNode } from './components/RoleNode'
-import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
 import { PageTitle } from '../../components/PageTitle'
+
+import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
+import { RoleNode } from './components/RoleNode'
 
 export interface SiteAdminRolesPageProps extends TelemetryProps {}
 
@@ -57,7 +58,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         }
 
         return result
-    }, [data, permissionsLoading])
+    }, [data, permissionsLoading, permissionsError])
 
     return (
         <div className="site-admin-roles-page">

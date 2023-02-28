@@ -8,8 +8,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../components/WebStory'
 
 import { ALL_PERMISSIONS, ROLES_QUERY, DELETE_ROLE } from './backend'
-import { SiteAdminRolesPage } from './SiteAdminRolesPage'
 import { mockPermissions, mockRoles } from './mock'
+import { SiteAdminRolesPage } from './SiteAdminRolesPage'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

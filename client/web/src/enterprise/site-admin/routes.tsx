@@ -2,11 +2,11 @@ import { Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),

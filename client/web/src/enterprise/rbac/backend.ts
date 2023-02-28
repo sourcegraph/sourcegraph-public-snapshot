@@ -1,7 +1,8 @@
 import { MutationTuple, QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+
+import { useShowMorePagination, UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     DeleteRoleVariables,
     DeleteRoleResult,
@@ -90,7 +91,7 @@ export const ALL_PERMISSIONS = gql`
     ${permissionFragment}
 `
 
-export const useRolesConnection = () =>
+export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult, RoleFields> =>
     useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
         query: ROLES_QUERY,
         variables: {

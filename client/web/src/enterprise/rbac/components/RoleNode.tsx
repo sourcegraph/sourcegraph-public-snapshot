@@ -5,10 +5,11 @@ import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
 import { logger } from '@sourcegraph/common'
 import { Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { PermissionList } from './Permissions'
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
+
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
+import { PermissionList } from './Permissions'
 
 import styles from './RoleNode.module.scss'
 
@@ -31,6 +32,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         },
         [isExpanded]
     )
+    const openModal = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setShowConfirmDeleteModal(true)
+    }, [])
+    const closeModal = useCallback(() => {
+        setShowConfirmDeleteModal(false)
+    }, [])
     const onDelete = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
@@ -43,15 +51,8 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                 logger.error(error)
             }
         },
-        [deleteRole, name, afterDelete]
+        [deleteRole, name, afterDelete, closeModal, node.id]
     )
-    const openModal = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setShowConfirmDeleteModal(true)
-    }, [])
-    const closeModal = useCallback(() => {
-        setShowConfirmDeleteModal(false)
-    }, [])
 
     return (
         <li className={styles.roleNode}>

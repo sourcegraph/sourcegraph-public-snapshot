@@ -1,10 +1,11 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { mockPermissionsMap, mockRoles } from '../mock'
 
 import { PermissionList } from './Permissions'
-import { mockPermissionsMap, mockRoles } from '../mock'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -15,7 +16,7 @@ const config: Meta = {
 
 export default config
 
-const [systemRole, _, roleWithNoPermission] = mockRoles.roles.nodes
+const [systemRole, roleWithOnePermission, roleWithNoPermission] = mockRoles.roles.nodes
 
 export const NoPermissions: Story = () => (
     <WebStory>
@@ -28,6 +29,18 @@ export const NoPermissions: Story = () => (
 )
 
 NoPermissions.storyName = 'No permissions assigned'
+
+export const OnePermissionAssigned: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider>
+                <PermissionList role={roleWithOnePermission} allPermissions={mockPermissionsMap} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+OnePermissionAssigned.storyName = 'One permission assigned'
 
 export const AllPermissionsAssigned: Story = () => (
     <WebStory>
