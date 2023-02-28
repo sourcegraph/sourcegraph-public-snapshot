@@ -44,7 +44,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
-	WithRateLimiter(urn string, rateLimit int)
+	WithRateLimiter(urn string, rateLimit float64)
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -60,7 +60,7 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	}
 }
 
-func (c *ClientAdapter) WithRateLimiter(urn string, rateLimit int) {
+func (c *ClientAdapter) WithRateLimiter(urn string, rateLimit float64) {
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rl.SetLimit(rate.Limit(rateLimit / 3600.0))
 	c.V3Client.WithRateLimiter(rl)

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -165,11 +166,9 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 // This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Account, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
-	client = client.WithAuthenticator(token)
+	logger := log.Scoped("fetchUserPermsByToken", "Fetch user perms by token")
+	urn := fmt.Sprintf("url:%s,clientID:%s,accountID:%s", account.ServiceID, account.ClientID, account.AccountID)
+	client := &ClientAdapter{V3Client: github.NewV3Client(logger, urn, p.codeHost.BaseURL, token, httpcli.ExternalDoer)}
 
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Github == nil || authProvider.Github.ClientID != account.ClientID {
@@ -177,7 +176,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Ac
 		}
 
 		if authProvider.Github.RateLimit != 0 {
-			client.WithRateLimiter(fmt.Sprintf("url:%s,clientID:%s,accountID:%s", account.ServiceID, account.ClientID, account.AccountID), authProvider.Github.RateLimit)
+			client.WithRateLimiter(urn, authProvider.Github.RateLimit)
 		}
 		break
 	}
@@ -253,8 +252,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Ac
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
-
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
