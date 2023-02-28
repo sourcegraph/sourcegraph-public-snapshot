@@ -1,13 +1,13 @@
 export function isChrome(): boolean {
-    return !!window.navigator.userAgent.match(/chrome|chromium|crios/i)
+    return typeof window !== 'undefined' && !!window.navigator.userAgent.match(/chrome|chromium|crios/i)
 }
 
 export function isSafari(): boolean {
-    return !!window.navigator.userAgent.match(/safari/i) && !isChrome()
+    return typeof window !== 'undefined' && !!window.navigator.userAgent.match(/safari/i) && !isChrome()
 }
 
 export function isFirefox(): boolean {
-    return window.navigator.userAgent.includes('Firefox')
+    return typeof window !== 'undefined' && window.navigator.userAgent.includes('Firefox')
 }
 
 export function getBrowserName(): 'chrome' | 'safari' | 'firefox' | 'other' {
@@ -19,5 +19,5 @@ export function getBrowserName(): 'chrome' | 'safari' | 'firefox' | 'other' {
  * is accessed only when the function is called
  */
 export function isMacPlatform(): boolean {
-    return window.navigator.platform.includes('Mac')
+    return typeof window !== 'undefined' && window.navigator.platform.includes('Mac')
 }
