@@ -458,9 +458,9 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			externalServiceID = &id
 		}
 
-		args := protocol.ExternalServiceNamespacesArgs{ExternalServiceID: externalServiceID, Kind: r.args.Kind, Config: config}
+		namespacesArgs := protocol.ExternalServiceNamespacesArgs{ExternalServiceID: externalServiceID, Kind: r.args.Kind, Config: config}
 
-		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, args)
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, namespacesArgs)
 		if err != nil {
 			r.err = err
 			return
