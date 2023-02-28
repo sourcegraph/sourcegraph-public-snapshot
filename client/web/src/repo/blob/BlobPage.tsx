@@ -58,7 +58,6 @@ import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
-import { isPackageRepoName } from '../packages/isPackageRepoName'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -77,6 +76,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -123,12 +123,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
-    const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
+    const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
     const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
         enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
     }))
-    const isPackage = useMemo(() => isPackageRepoName(repoName), [repoName])
+    const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
+
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const lineOrRange = useMemo(
