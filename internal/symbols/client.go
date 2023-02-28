@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
-	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -26,6 +25,7 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -45,7 +45,7 @@ func LoadConfig() {
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
 		HTTPClient:          defaultDoer,
-		HTTPLimiter:         parallel.NewRun(500),
+		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
 	}
 }
@@ -71,7 +71,7 @@ type Client struct {
 	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter *parallel.Run
+	HTTPLimiter limiter.Limiter
 
 	// SubRepoPermsChecker is function to return the checker to use. It needs to be a
 	// function since we expect the client to be set at runtime once we have a
@@ -492,12 +492,10 @@ func (c *Client) httpPost(
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 
-	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
-		c.HTTPLimiter.Acquire()
-		defer c.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
-	}
+	span.LogKV("event", "Waiting on HTTP limiter")
+	c.HTTPLimiter.Acquire()
+	defer c.HTTPLimiter.Release()
+	span.LogKV("event", "Acquired HTTP limiter")
 
 	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Symbols Client"),

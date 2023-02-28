@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
@@ -22,7 +22,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
@@ -50,7 +50,7 @@ import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
-import { useExperimentalFeatures, useNotepad } from '../../stores'
+import { useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -64,14 +64,14 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
-import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchStencil } from './backend'
+import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
+import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -123,15 +123,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
-    const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
-    const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
-        features => features.enableLazyBlobSyntaxHighlighting ?? false
-    )
+    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
+        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+    }))
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
-
-    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
-    const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -288,22 +284,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         )
     )
 
-    // Fetches stencil ranges for the current document.  Only used for
-    // link-driven keyboard navigatio.
-    const stencil = useObservable(
-        useMemo(() => {
-            if (!enableLinkDrivenCodeNavigation) {
-                return of(undefined)
-            }
-
-            return fetchStencil({
-                repoName,
-                revision,
-                filePath,
-            })
-        }, [enableLinkDrivenCodeNavigation, filePath, repoName, revision])
-    )
-
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
         ? // Fallback to formatted blob whilst we do not have the highlighted blob
           highlightedBlobInfoOrError || formattedBlobInfoOrError
@@ -363,38 +343,33 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!window.context.enableLegacyExtensions ? (
-                <>
-                    {window.context.isAuthenticatedUser && (
-                        <RepoHeaderContributionPortal
-                            position="right"
-                            priority={112}
-                            id="open-in-editor-action"
-                            repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                        >
-                            {({ actionType }) => (
-                                <OpenInEditorActionItem
-                                    platformContext={props.platformContext}
-                                    externalServiceType={props.repoServiceType}
-                                    actionType={actionType}
-                                    source="repoHeader"
-                                />
-                            )}
-                        </RepoHeaderContributionPortal>
+            {window.context.isAuthenticatedUser && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={112}
+                    id="open-in-editor-action"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <OpenInEditorActionItem
+                            platformContext={props.platformContext}
+                            externalServiceType={props.repoServiceType}
+                            actionType={actionType}
+                            source="repoHeader"
+                        />
                     )}
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={111}
-                        id="toggle-blame-action"
-                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                    >
-                        {({ actionType }) => (
-                            <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
-                        )}
-                    </RepoHeaderContributionPortal>
-                </>
-            ) : null}
-
+                </RepoHeaderContributionPortal>
+            )}
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={111}
+                id="toggle-blame-action"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                )}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -433,15 +408,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && (
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={20}
-                    id="toggle-ownership-panel"
-                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                >
-                    {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
-                </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && repoID && (
+                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
             )}
         </>
     )
@@ -579,7 +547,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
+                        blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}
@@ -591,8 +559,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
-                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
             )}

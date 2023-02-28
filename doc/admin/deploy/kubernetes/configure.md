@@ -25,7 +25,7 @@
 
 # Configure Sourcegraph with Kustomize
 
-This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components, and does not work with non-Kustomize deployment types.
+This guide will demonstrate how to customize a Kubernetes deployment (**non-Helm**) using Kustomize components.
 
 <div class="getting-started">
   <a class="btn text-center" href="./index">Installation</a>
@@ -46,7 +46,7 @@ Following these guidelines will help you create a seamless deployment and avoid 
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services (tracing services and cAdvisor are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services ([tracing services](#tracing) and [cAdvisor](#deploy-cadvisor) are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -587,16 +587,12 @@ To use an **existing** storage class provided by other cloud providers:
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
   ```yaml
-  # instances/$INSTANCE_NAME/kustomization.yaml
-  components:
-    # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/name-update
-  # ...
-  configMapGenerator:
-    - name: sourcegraph-kustomize-env
-      behavior: merge
-      literals:
-        - STORAGECLASS_NAME=sourcegraph # [ACTION] Set storage class name here
+  # instances/$INSTANCE_NAME/buildConfig.yaml
+  kind: SourcegraphBuildConfig
+  metadata:
+    name: sourcegraph-kustomize-config
+  data:
+    STORAGECLASS_NAME: sourcegraph # [ACTION] Set storage class name here
   ```
 
   The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.

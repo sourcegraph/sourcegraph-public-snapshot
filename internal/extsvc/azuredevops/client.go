@@ -17,14 +17,33 @@ import (
 )
 
 const (
-	azureDevOpsServicesURL = "https://dev.azure.com/"
-	// TODO: @varsanojidan look into which API version/s we want to support.
+	azureDevOpsServicesURL  = "https://dev.azure.com/"
 	apiVersion              = "7.0"
 	continuationTokenHeader = "x-ms-continuationtoken"
 )
 
 // Client used to access an AzureDevOps code host via the REST API.
-type Client struct {
+type Client interface {
+	WithAuthenticator(a auth.Authenticator) (Client, error)
+	Authenticator() auth.Authenticator
+	GetURL() *url.URL
+	IsAzureDevOpsServices() bool
+	AbandonPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
+	CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error)
+	GetPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
+	GetPullRequestStatuses(ctx context.Context, args PullRequestCommonArgs) ([]PullRequestBuildStatus, error)
+	UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error)
+	CreatePullRequestCommentThread(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error)
+	CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error)
+	GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error)
+	ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error)
+	ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error)
+	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
+	GetProject(ctx context.Context, org, project string) (Project, error)
+	GetAuthorizedProfile(ctx context.Context) (Profile, error)
+}
+
+type client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
@@ -40,7 +59,7 @@ type Client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
 	u, err := urlx.Parse(url)
 	if err != nil {
 		return nil, err
@@ -50,7 +69,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 		httpClient = httpcli.ExternalDoer
 	}
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
@@ -61,7 +80,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 // do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
 //
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
+func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
 	u := c.URL
 	if urlOverride != "" {
 		u, err = url.Parse(urlOverride)
@@ -113,12 +132,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 // Note that using an unsupported Authenticator implementation may result in
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
-func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
+func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 	if _, ok := a.(*auth.BasicAuth); !ok {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return &Client{
+	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		auth:       a,
@@ -126,12 +145,28 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 	}, nil
 }
 
+func (c *client) Authenticator() auth.Authenticator {
+	return c.auth
+}
+
+func (c *client) GetURL() *url.URL {
+	return c.URL
+}
+
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
 // Services (https://dev.azure.com
-func (c *Client) IsAzureDevOpsServices() bool {
+func (c *client) IsAzureDevOpsServices() bool {
 	return c.URL.String() == azureDevOpsServicesURL
 }
 
 func (e *httpError) Error() string {
 	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+}
+
+func (e *httpError) Unauthorized() bool {
+	return e.StatusCode == http.StatusUnauthorized
+}
+
+func (e *httpError) NotFound() bool {
+	return e.StatusCode == http.StatusNotFound
 }

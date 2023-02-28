@@ -621,6 +621,20 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
     )
 }
 
+export const SITE_UPGRADE_READINESS = gql`
+    query SiteUpgradeReadiness {
+        site {
+            upgradeReadiness {
+                schemaDrift
+                requiredOutOfBandMigrations {
+                    id
+                    description
+                }
+            }
+        }
+    }
+`
+
 /**
  * Fetches all out-of-band migrations.
  */

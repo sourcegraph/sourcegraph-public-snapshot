@@ -15,7 +15,6 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
     // integration(ish) tests for scenarios not covered by providers tests
     const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
-        getScriptURLForExtension: () => undefined,
     })
     const initialSettings: SettingsCascade<object> = {
         subjects: [],

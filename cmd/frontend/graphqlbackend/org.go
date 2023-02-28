@@ -143,8 +143,8 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
 }) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
-	// 🚨 SECURITY: Only org members can list other org members.
-	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
+	// 🚨 SECURITY: Verify listing users is allowed.
+	if err := checkMembersAccess(ctx, o.db); err != nil {
 		return nil, err
 	}
 

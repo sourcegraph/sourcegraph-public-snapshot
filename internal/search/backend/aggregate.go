@@ -163,11 +163,9 @@ func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 
 		if len(f.firstEvent) == 0 {
 			f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
-		}
-
-		// Protect against too large aggregates. This should be the exception and only
-		// happen for queries yielding an extreme number of results.
-		if f.maxSizeBytes >= 0 && f.collectSender.sizeBytes > uint64(f.maxSizeBytes) {
+		} else if f.maxSizeBytes >= 0 && f.collectSender.sizeBytes > uint64(f.maxSizeBytes) {
+			// Protect against too large aggregates. This should be the exception and only
+			// happen for queries yielding an extreme number of results.
 			f.stopCollectingAndFlush(zoekt.FlushReasonMaxSize)
 		}
 	} else {
