@@ -47,17 +47,17 @@ In Kustomize, this directory is referred to as an [overlay](https://kubectl.docs
 
 ### **Step 3**: Set up the configuration files
 
-1\. Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`.
-
 The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
+
+Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`:
 
 ```bash
   $ mv instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
 ```
 
-2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`.
-
 The `buildConfig.yaml` file is used to configure components included in your `kustomization` file when required.
+
+Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`:
 
 ```bash
   $ mv instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
@@ -98,7 +98,7 @@ See our [configurations guide](configure.md) for the full list of available stor
 
 If you cannot create a new storage class and/or want to use an existing one with SSDs:
 
-1\. Include the `storage-class/name-update` component under the components list
+**1.** Include the `storage-class/name-update` component under the components list
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
@@ -108,7 +108,7 @@ If you cannot create a new storage class and/or want to use an existing one with
       - ../../components/storage-class/name-update
   ```
 
-2\. Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
+**2.** Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
 
 For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
 
@@ -201,10 +201,10 @@ We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexi
 
 ## Learn more
 
-- [Migrate from deploy-sourcegraph to deploy-sourcegraph-k8s](kustomize/migrate.md)
 - Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)
   - [Minikube](../single-node/minikube.md)
-- [Troubleshooting](troubleshoot.md)
+- [Migration guide](kustomize/migrate.md) on migrating from [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)
 - [Other deployment options](../index.md)
+- [Troubleshooting](troubleshoot.md)

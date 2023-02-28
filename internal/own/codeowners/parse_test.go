@@ -266,8 +266,7 @@ README.md  @docs
 			Pattern: "LICENSE",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "legal"},
-				// Note: To match GitLab parsing, we should not consider this as email.
-				{Email: "this_does_not_match"},
+				{Handle: "this_does_not_match"},
 				{Email: "janedoe@gitlab.com"},
 			},
 			LineNumber: 29,

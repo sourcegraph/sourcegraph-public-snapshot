@@ -46,7 +46,7 @@ func TestClient_ForkRepository(t *testing.T) {
 	t.Cleanup(save)
 
 	input := ForkRepositoryInput{
-		Name: "sgtestazurefork",
+		Name: "sgtestazureforks2",
 		Project: ForkRepositoryInputProject{
 			ID: "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
 		},
