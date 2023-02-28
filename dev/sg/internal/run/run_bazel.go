@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/rjeczalik/notify"
 	"github.com/sourcegraph/conc/pool"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
@@ -29,26 +33,30 @@ type IBazel struct {
 	cancel  func()
 }
 
-// binLocation returns the path on disk where Bazel is putting the binary
-// associated with a given target.
-func binLocation(target string) (string, error) {
+func outputPath() ([]byte, error) {
 	// Get the output directory from Bazel, which varies depending on which OS
 	// we're running against.
 	cmd := exec.Command("bazel", "info", "output_path")
-	b, err := cmd.Output()
+	return cmd.Output()
+}
+
+// binLocation returns the path on disk where Bazel is putting the binary
+// associated with a given target.
+func binLocation(target string) (string, error) {
+	baseOutput, err := outputPath()
 	if err != nil {
 		return "", err
 	}
 	// Trim "bazel-out" because the next bazel query will include it.
-	outputPath := strings.TrimSuffix(strings.TrimSpace(string(b)), "bazel-out")
+	outputPath := strings.TrimSuffix(strings.TrimSpace(string(baseOutput)), "bazel-out")
 
 	// Get the binary from the specific target.
-	cmd = exec.Command("bazel", "cquery", target, "--output=files")
-	b, err = cmd.Output()
+	cmd := exec.Command("bazel", "cquery", target, "--output=files")
+	baseOutput, err = cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	binPath := strings.TrimSpace(string(b))
+	binPath := strings.TrimSpace(string(baseOutput))
 
 	return fmt.Sprintf("%s%s", outputPath, binPath), nil
 }
@@ -71,6 +79,7 @@ func (ib *IBazel) Start(ctx context.Context, dir string) error {
 		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
 	}
 
+	println("💈", "ibazel", strings.Join(args, " "))
 	sc.cancel = ib.cancel
 	sc.Cmd = cmd
 	sc.Cmd.Dir = dir
@@ -85,6 +94,7 @@ func (ib *IBazel) Start(ctx context.Context, dir string) error {
 	}
 	sc.outEg = eg
 
+	// Bazel out directory should exist here before returning
 	return sc.Start()
 }
 
@@ -94,6 +104,10 @@ func (ib *IBazel) Stop() error {
 }
 
 func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...BazelCommand) error {
+	if len(cmds) == 0 {
+		// no Bazel commands so we return
+		return nil
+	}
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -122,6 +136,28 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 
 func (bc *BazelCommand) BinLocation() (string, error) {
 	return binLocation(bc.Target)
+}
+
+func waitForOutputPath(ctx context.Context, bin string) error {
+
+	ticker := time.NewTicker(1 * time.Second)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			// Does bin exist yet?
+			_, err := os.Stat(bin)
+			if err != nil && os.IsNotExist(err) {
+				fmt.Printf("Waiting for binary from bin at %s", bin)
+			} else {
+				// location exists, so we don't have to wait anymore
+				return nil
+			}
+		}
+
+	}
 }
 
 func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
@@ -160,14 +196,28 @@ func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
 }
 
 func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
+	// The binary might not exist yet so we have to wait until it does
+	//
+	// WAIT
+	binLocation, err := bc.BinLocation()
+	if err != nil {
+		return err
+	}
+	err = waitForOutputPath(ctx, binLocation)
+	if err != nil {
+		return err
+	}
+	// Now run it
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running 💈 %s...", bc.Name))
 
 	// Run the binary for the first time.
 	cancel, err := bc.start(ctx, dir, parentEnv)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to start Bazel command %q", bc.Name)
 	}
 
+	// TODO: Watch currently fails when there exist no binary, this is because the Bazel binLocation
+	// is the intended path but not the actual path
 	// Restart when the binary change.
 	wantRestart, err := bc.watch(ctx)
 	if err != nil {
@@ -191,6 +241,7 @@ func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[str
 }
 
 func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[string]string) (func(), error) {
+	println("🐝")
 	binLocation, err := bc.BinLocation()
 	if err != nil {
 		return nil, err
