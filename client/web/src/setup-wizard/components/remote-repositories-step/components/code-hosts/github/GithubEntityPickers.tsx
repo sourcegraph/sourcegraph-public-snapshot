@@ -14,7 +14,12 @@ import {
     MultiComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
-import { GetGitHubOrganizationsResult, GetGitHubOrganizationsVariables } from '../../../../../../graphql-operations'
+import {
+    GetGitHubOrganizationsResult,
+    GetGitHubOrganizationsVariables,
+    GetGitHubRepositoriesResult,
+    GetGitHubRepositoriesVariables,
+} from '../../../../../../graphql-operations'
 
 const GET_GITHUB_ORGANIZATIONS = gql`
     query GetGitHubOrganizations($token: String!) {
@@ -63,12 +68,12 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
             <MultiComboboxInput
                 value={searchTerm}
                 disabled={disabled}
-                placeholder="Search orgnaization"
+                placeholder="Search organization"
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
             <small className="text-muted pl-2">
-                Pick at least one organization and we clone all repositories that this organzization has
+                Pick at least one organization and we clone all repositories that this organization has
             </small>
 
             <MultiComboboxList items={filteredSuggestions} className="mt-2">
@@ -86,25 +91,57 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
     )
 }
 
-const DEMO_REPOS_SUGGESTIONS = [
-    'sourcegraph/sourcegraph',
-    'sourcegraph/about',
-    'personal/my-project',
-    'peraonal/university-labs',
-    'facebook/react',
-]
+const GET_GITHUB_REPOSITORIES = gql`
+    query GetGitHubRepositories($first: Int!, $token: String!, $query: String!, $excludeRepositories: [String!]!) {
+        externalServiceRepositories(
+            kind: GITHUB
+            url: "https://github.com"
+            first: $first
+            token: $token
+            query: $query
+            excludeRepos: $excludeRepositories
+        ) {
+            nodes {
+                id
+                name
+            }
+        }
+    }
+`
 
 interface GithubRepositoriesPickerProps {
+    token: string
+    disabled: boolean
     repositories: string[]
     onChange: (repositories: string[]) => void
 }
 
 export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props => {
-    const { repositories, onChange } = props
+    const { token, disabled, repositories, onChange } = props
 
     const [searchTerm, setSearchTerm] = useState('')
+    const {
+        data: currentData,
+        previousData,
+        loading,
+        error,
+    } = useQuery<GetGitHubRepositoriesResult, GetGitHubRepositoriesVariables>(GET_GITHUB_REPOSITORIES, {
+        skip: disabled,
+        variables: {
+            token,
+            first: 10,
+            query: searchTerm,
+            excludeRepositories: repositories,
+        },
+    })
 
-    const suggestions = DEMO_REPOS_SUGGESTIONS.filter(item => !repositories.find(selectedItem => selectedItem === item))
+    const data = currentData ?? previousData
+    const suggestions = (data?.externalServiceRepositories?.nodes ?? []).map(item => formatRepositoryName(item.name))
+
+    // Render only non-selected repositories and repositories that match search term value
+    const filteredSuggestions = suggestions.filter(
+        repoName => !repositories.includes(repoName) && repoName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <MultiCombobox
@@ -116,11 +153,13 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             <MultiComboboxInput
                 value={searchTerm}
                 placeholder="Search repository"
+                disabled={disabled}
+                status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
             <small className="text-muted pl-2">Pick at least one repository</small>
 
-            <MultiComboboxList items={suggestions} className="mt-2">
+            <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>
                     items.map((item, index) => (
                         <MultiComboboxOption key={item} value={item} index={index}>
@@ -129,6 +168,16 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
                     ))
                 }
             </MultiComboboxList>
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
         </MultiCombobox>
     )
+}
+
+/**
+ * Format GitHub repository URLs and return repository name (URL withouth code host prefix)
+ * For example: "github.com/sourcegraph/about" will become "sourcegraph/about"
+ */
+function formatRepositoryName(url: string): string {
+    return url.slice(Math.max(0, url.indexOf('/') + 1))
 }

@@ -284,7 +284,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add selected repositories"
                     onChange={handleRepositoriesModeChange}
                 >
-                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange} />
+                    <GithubRepositoriesPicker
+                        token={accessTokenField.input.value}
+                        disabled={accessTokenField.meta.validState !== 'VALID'}
+                        repositories={repositories}
+                        onChange={handleRepositoriesChange}
+                    />
                 </RadioGroupSection>
             </section>
         </>
