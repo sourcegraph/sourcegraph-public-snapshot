@@ -9,6 +9,7 @@ import { tap } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -33,7 +34,13 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { PreciseIndexesVariables, PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import {
+    IndexerListResult,
+    IndexerListVariables,
+    PreciseIndexesVariables,
+    PreciseIndexFields,
+    PreciseIndexState,
+} from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
@@ -49,6 +56,12 @@ import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
+export const INDEXER_LIST = gql`
+    query IndexerList {
+        indexerKeys
+    }
+`
+
 export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
@@ -61,52 +74,50 @@ export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     useReindexPreciseIndexes?: typeof defaultUseReindexPreciseIndexes
 }
 
-const filters: FilteredConnectionFilter[] = [
-    {
-        id: 'filters',
-        label: 'State',
-        type: 'select',
-        values: [
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all indexes',
-                args: {},
-            },
-            {
-                label: 'Completed',
-                value: 'completed',
-                tooltip: 'Show completed indexes only',
-                args: { states: PreciseIndexState.COMPLETED },
-            },
+const STATE_FILTER: FilteredConnectionFilter = {
+    id: 'filters',
+    label: 'State',
+    type: 'select',
+    values: [
+        {
+            label: 'All',
+            value: 'all',
+            tooltip: 'Show all indexes',
+            args: {},
+        },
+        {
+            label: 'Completed',
+            value: 'completed',
+            tooltip: 'Show completed indexes only',
+            args: { states: PreciseIndexState.COMPLETED },
+        },
 
-            {
-                label: 'Queued',
-                value: 'queued',
-                tooltip: 'Show queued indexes only',
-                args: {
-                    states: [
-                        PreciseIndexState.UPLOADING_INDEX,
-                        PreciseIndexState.QUEUED_FOR_INDEXING,
-                        PreciseIndexState.QUEUED_FOR_PROCESSING,
-                    ].join(','),
-                },
+        {
+            label: 'Queued',
+            value: 'queued',
+            tooltip: 'Show queued indexes only',
+            args: {
+                states: [
+                    PreciseIndexState.UPLOADING_INDEX,
+                    PreciseIndexState.QUEUED_FOR_INDEXING,
+                    PreciseIndexState.QUEUED_FOR_PROCESSING,
+                ].join(','),
             },
-            {
-                label: 'In progress',
-                value: 'in-progress',
-                tooltip: 'Show in-progress indexes only',
-                args: { states: [PreciseIndexState.INDEXING, PreciseIndexState.PROCESSING].join(',') },
-            },
-            {
-                label: 'Errored',
-                value: 'errored',
-                tooltip: 'Show errored indexes only',
-                args: { states: [PreciseIndexState.INDEXING_ERRORED, PreciseIndexState.PROCESSING_ERRORED].join(',') },
-            },
-        ],
-    },
-]
+        },
+        {
+            label: 'In progress',
+            value: 'in-progress',
+            tooltip: 'Show in-progress indexes only',
+            args: { states: [PreciseIndexState.INDEXING, PreciseIndexState.PROCESSING].join(',') },
+        },
+        {
+            label: 'Errored',
+            value: 'errored',
+            tooltip: 'Show errored indexes only',
+            args: { states: [PreciseIndexState.INDEXING_ERRORED, PreciseIndexState.PROCESSING_ERRORED].join(',') },
+        },
+    ],
+}
 
 export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseIndexesPageProps> = ({
     authenticatedUser,
@@ -134,6 +145,35 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             [repo, queryCommitGraph, apolloClient]
         )
     )
+
+    const { data: indexerData } = useQuery<IndexerListResult, IndexerListVariables>(INDEXER_LIST, {})
+
+    const filters = useMemo<FilteredConnectionFilter[]>(() => {
+        const indexerFilter: FilteredConnectionFilter = {
+            id: 'filters-indexer',
+            label: 'Indexer',
+            type: 'select',
+            values: [
+                {
+                    label: 'All',
+                    value: 'all',
+                    args: {},
+                },
+            ],
+        }
+
+        const keys = (indexerData?.indexerKeys || []).filter(key => Boolean(key))
+
+        for (const key of keys) {
+            indexerFilter.values.push({
+                label: key,
+                value: key,
+                args: { indexerKey: key },
+            })
+        }
+
+        return [STATE_FILTER, indexerFilter]
+    }, [indexerData?.indexerKeys])
 
     // Poke filtered connection to refresh
     const refresh = useMemo(() => new Subject<undefined>(), [])
@@ -169,6 +209,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 query: args.query,
                 states: (args as any).states,
                 isLatestForRepo: (args as any).isLatestForRepo,
+                indexerKey: (args as any).indexerKey,
             }
 
             setArgs(stashArgs)
@@ -302,6 +343,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         listComponent="div"
                         inputClassName="ml-2 flex-1"
                         listClassName="mb-3"
+                        formClassName={styles.form}
                         noun="precise index"
                         pluralNoun="precise indexes"
                         querySubject={querySubject}
