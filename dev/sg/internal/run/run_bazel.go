@@ -108,6 +108,7 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 		// no Bazel commands so we return
 		return nil
 	}
+
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -127,6 +128,15 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 	for _, bc := range cmds {
 		bc := bc
 		p.Go(func(ctx context.Context) error {
+			loc, err := bc.BinLocation()
+			if err != nil {
+				return err
+			}
+			// The binary for this command might not exist yet, so we wait until it does
+			// before starting it.
+			if err := waitForFileToExist(ctx, loc); err != nil {
+				return err
+			}
 			return bc.Start(ctx, repoRoot, parentEnv)
 		})
 	}
@@ -138,8 +148,11 @@ func (bc *BazelCommand) BinLocation() (string, error) {
 	return binLocation(bc.Target)
 }
 
-func waitForOutputPath(ctx context.Context, bin string) error {
-
+func waitForFileToExist(ctx context.Context, bin string) error {
+	// We can't use notify, since the directory/file has to exist.
+	// On a brand new install or after running `bazel clean` the
+	// binary locations do not exist, so we need to resort to some
+	// polling with the use of a Ticker.
 	ticker := time.NewTicker(1 * time.Second)
 
 	for {
@@ -150,13 +163,12 @@ func waitForOutputPath(ctx context.Context, bin string) error {
 			// Does bin exist yet?
 			_, err := os.Stat(bin)
 			if err != nil && os.IsNotExist(err) {
-				fmt.Printf("Waiting for binary from bin at %s", bin)
+				continue
 			} else {
 				// location exists, so we don't have to wait anymore
 				return nil
 			}
 		}
-
 	}
 }
 
@@ -196,18 +208,6 @@ func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
 }
 
 func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
-	// The binary might not exist yet so we have to wait until it does
-	//
-	// WAIT
-	binLocation, err := bc.BinLocation()
-	if err != nil {
-		return err
-	}
-	err = waitForOutputPath(ctx, binLocation)
-	if err != nil {
-		return err
-	}
-	// Now run it
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Running 💈 %s...", bc.Name))
 
 	// Run the binary for the first time.
