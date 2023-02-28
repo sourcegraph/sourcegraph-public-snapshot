@@ -60,7 +60,7 @@ var _ Runner = &firecrackerRunner{}
 func NewFirecrackerRunner(
 	cmd command.Command,
 	logger command.Logger,
-	dir string,
+	workspaceDevice string,
 	vmName string,
 	options FirecrackerOptions,
 	dockerAuthConfig types.DockerAuthConfig,
@@ -69,7 +69,7 @@ func NewFirecrackerRunner(
 	return &firecrackerRunner{
 		cmd:              cmd,
 		vmName:           vmName,
-		workspaceDevice:  dir,
+		workspaceDevice:  workspaceDevice,
 		internalLogger:   log.Scoped("firecracker-runner", ""),
 		cmdLogger:        logger,
 		options:          options,

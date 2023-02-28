@@ -64,7 +64,7 @@ func TestDockerRunner_Setup(t *testing.T) {
 					require.Len(t, dockerAuthEntries, 1)
 					f, err := os.ReadFile(filepath.Join(dockerRunner.TempDir(), entries[0].Name(), dockerAuthEntries[0].Name()))
 					require.NoError(t, err)
-					assert.Equal(t, test.expectedDockerAuth, string(f))
+					assert.JSONEq(t, test.expectedDockerAuth, string(f))
 				}
 			}
 		})
