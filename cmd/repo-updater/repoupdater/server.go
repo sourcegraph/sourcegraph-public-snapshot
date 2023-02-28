@@ -565,6 +565,7 @@ func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.Ext
 	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
 }
 
+// codeToStatus translates the grpc status codes used in this package to http status codes.
 func codeToStatus(code codes.Code) int {
 	switch code {
 	case codes.NotFound:
