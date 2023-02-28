@@ -120,10 +120,8 @@ func extractDisplayName(attributes scim.ResourceAttributes) (displayName string)
 		} else if name["givenName"] != nil && name["familyName"] != nil {
 			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
 		}
-	} else if attributes["userName"] != nil {
-		displayName = attributes["userName"].(string)
 	}
-	return
+	return attributes["userName"].(string)
 }
 
 // containsErrCannotCreateUserError returns true if the given error contains at least one database.ErrCannotCreateUser.
