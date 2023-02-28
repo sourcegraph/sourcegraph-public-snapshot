@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useLocation, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -59,7 +59,6 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
-    const location = useLocation()
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
