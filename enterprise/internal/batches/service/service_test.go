@@ -393,7 +393,7 @@ func TestService(t *testing.T) {
 			NumResets:              0,
 			NumFailures:            0,
 			FailureMessage:         nil,
-			PreviousFailureMessage: strPtr("Failed test"),
+			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
