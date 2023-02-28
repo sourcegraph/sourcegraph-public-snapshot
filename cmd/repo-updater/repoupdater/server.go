@@ -412,14 +412,31 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		return
 	}
 
-	externalSvc := &types.ExternalService{
-		Kind:   req.Kind,
-		Config: extsvc.NewUnencryptedConfig(req.Config),
+	var (
+		externalSvc *types.ExternalService
+		err         error
+		result      *protocol.ExternalServiceNamespacesResult
+	)
+
+	if req.ExternalServiceID != nil {
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
+		if err != nil {
+			result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
+			if errcode.IsNotFound(err) {
+				s.respond(w, http.StatusNotFound, result)
+			} else {
+				s.respond(w, http.StatusInternalServerError, result)
+			}
+			return
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   req.Kind,
+			Config: extsvc.NewUnencryptedConfig(req.Config),
+		}
 	}
 
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
-	var result *protocol.ExternalServiceNamespacesResult
 
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
@@ -485,14 +502,31 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		return
 	}
 
-	externalSvc := &types.ExternalService{
-		Kind:   req.Kind,
-		Config: extsvc.NewUnencryptedConfig(req.Config),
+	var (
+		externalSvc *types.ExternalService
+		err         error
+		result      *protocol.ExternalServiceRepositoriesResult
+	)
+
+	if req.ExternalServiceID != nil {
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
+		if err != nil {
+			result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
+			if errcode.IsNotFound(err) {
+				s.respond(w, http.StatusNotFound, result)
+			} else {
+				s.respond(w, http.StatusInternalServerError, result)
+			}
+			return
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   req.Kind,
+			Config: extsvc.NewUnencryptedConfig(req.Config),
+		}
 	}
 
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
-	var result *protocol.ExternalServiceRepositoriesResult
 
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
