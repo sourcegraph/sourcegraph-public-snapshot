@@ -130,7 +130,6 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		if err != nil {
 			return err
 		}
-
 	}
 
 	events, err := e.ch.Events()
