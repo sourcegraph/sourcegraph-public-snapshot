@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { mdiBlockHelper } from '@mdi/js'
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -93,40 +94,48 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
 
     return (
         <li className="list-group-item px-0 py-2">
-            <div className={styles.node}>
-                <div>
-                    <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
-                    {packageRepository ? (
-                        <>
-                            <RepoLink repoName={node.name} to={packageRepository.url} />
-                            <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
-                        </>
-                    ) : (
-                        <>{node.name}</>
-                    )}
+            <div>
+                <div className={styles.node}>
+                    <div>
+                        <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
+                        {packageRepository ? (
+                            <>
+                                <RepoLink repoName={node.name} to={packageRepository.url} />
+                                <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
+                            </>
+                        ) : (
+                            <>{node.name}</>
+                        )}
+                    </div>
+                    <div>
+                        <Button variant="danger" outline={false} size="sm">
+                            <Icon aria-hidden={true} svgPath={mdiBlockHelper} className="mr-1" />
+                            Block
+                        </Button>
+                    </div>
                 </div>
+                {packageRepository && (
+                    <div>
+                        {packageRepository.mirrorInfo.lastError && (
+                            <div className={styles.alertWrapper}>
+                                <Alert variant="warning">
+                                    <Text className="font-weight-bold">Error syncing package:</Text>
+                                    <Code className={styles.alertContent}>
+                                        {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                                    </Code>
+                                </Alert>
+                            </div>
+                        )}
+                        {packageRepository.mirrorInfo.isCorrupted && (
+                            <div className={styles.alertWrapper}>
+                                <Alert variant="danger">
+                                    Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
+                                </Alert>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-            {packageRepository && (
-                <div>
-                    {packageRepository.mirrorInfo.lastError && (
-                        <div className={styles.alertWrapper}>
-                            <Alert variant="warning">
-                                <Text className="font-weight-bold">Error syncing package:</Text>
-                                <Code className={styles.alertContent}>
-                                    {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                                </Code>
-                            </Alert>
-                        </div>
-                    )}
-                    {packageRepository.mirrorInfo.isCorrupted && (
-                        <div className={styles.alertWrapper}>
-                            <Alert variant="danger">
-                                Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
-                            </Alert>
-                        </div>
-                    )}
-                </div>
-            )}
         </li>
     )
 }
