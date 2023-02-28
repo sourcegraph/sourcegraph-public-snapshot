@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	gqlGoErrors "github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -52,7 +50,7 @@ type requestTracer struct {
 	logger log.Logger
 }
 
-func (t *requestTracer) traceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any) (context.Context, func([]*gqlGoErrors.QueryError)) {
+func (t *requestTracer) traceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any) (context.Context, func([]*gqlerrors.QueryError)) {
 	span, spanCtx := opentracing.StartSpanFromContext(ctx, "GraphQL request")
 	span.SetTag("graphql.query", queryString)
 
@@ -64,7 +62,7 @@ func (t *requestTracer) traceQuery(ctx context.Context, queryString string, oper
 		span.LogFields(opentrancingLog.Object("graphql.variables", variables))
 	}
 
-	return spanCtx, func(errs []*gqlGoErrors.QueryError) {
+	return spanCtx, func(errs []*gqlerrors.QueryError) {
 		if len(errs) > 0 {
 			msg := errs[0].Error()
 			if len(errs) > 1 {
@@ -77,10 +75,10 @@ func (t *requestTracer) traceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (t *requestTracer) traceValidation(ctx context.Context) func([]*gqlGoErrors.QueryError) {
+func (t *requestTracer) traceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
 	span, _ := opentracing.StartSpanFromContext(ctx, "Validate Query")
 
-	return func(errs []*gqlGoErrors.QueryError) {
+	return func(errs []*gqlerrors.QueryError) {
 		if len(errs) > 0 {
 			msg := errs[0].Error()
 			if len(errs) > 1 {
@@ -93,9 +91,9 @@ func (t *requestTracer) traceValidation(ctx context.Context) func([]*gqlGoErrors
 	}
 }
 
-func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlGoErrors.QueryError)) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish func([]*gqlGoErrors.QueryError)
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		ctx, finish = t.traceQuery(ctx, queryString, operationName, variables)
 	}
@@ -209,7 +207,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -224,8 +222,8 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 	}
 }
 
-func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlGoErrors.QueryError) {
-	var finish func([]*gqlGoErrors.QueryError)
+func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		finish = t.traceValidation(ctx)
 	}
