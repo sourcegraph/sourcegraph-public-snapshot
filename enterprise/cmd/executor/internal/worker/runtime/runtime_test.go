@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 )
@@ -19,7 +20,7 @@ func TestNewRuntime(t *testing.T) {
 	tests := []struct {
 		name         string
 		mockFunc     func(runner *fakeCmdRunner)
-		expectedName string
+		expectedName runtime.Name
 		hasError     bool
 	}{
 		{
@@ -29,7 +30,7 @@ func TestNewRuntime(t *testing.T) {
 				runner.On("LookPath", "git").Return("", nil)
 				runner.On("LookPath", "src").Return("", nil)
 			},
-			expectedName: "docker",
+			expectedName: runtime.NameDocker,
 		},
 		{
 			name: "No Runtime",
@@ -53,8 +54,8 @@ func TestNewRuntime(t *testing.T) {
 				logger,
 				nil,
 				nil,
-				command.Options{},
 				workspace.CloneOptions{},
+				command.DockerOptions{},
 				runner,
 			)
 			if test.hasError {
@@ -73,6 +74,12 @@ func TestNewRuntime(t *testing.T) {
 type fakeCmdRunner struct {
 	mock.Mock
 }
+
+func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
+	panic("not needed")
+}
+
+var _ util.CmdRunner = &fakeCmdRunner{}
 
 func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
 	calledArgs := f.Called(ctx, name, args)
