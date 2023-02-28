@@ -17,20 +17,15 @@ client/shared/src/search/**/* @fkling
 
 client/shared/src/search/query/**/* @fkling
 
-client/web/src/enterprise/batches/**/* @eseliger
-client/web/src/enterprise/batches/**/* @courier-new
-client/web/src/enterprise/batches/**/* @BolajiOlajide
+client/web/src/enterprise/batches/**/* @eseliger @courier-new @BolajiOlajide
 
 client/web/src/enterprise/code-monitoring/**/* @limitedmage
 
 client/web/src/enterprise/codeintel/**/* @efritz
 
-client/web/src/enterprise/executors/**/* @efritz
-client/web/src/enterprise/executors/**/* @eseliger
+client/web/src/enterprise/executors/**/* @efritz @eseliger
 
-client/web/src/integration/batches* @eseliger
-client/web/src/integration/batches* @courier-new
-client/web/src/integration/batches* @BolajiOlajide
+client/web/src/integration/batches* @eseliger @courier-new @BolajiOlajide
 client/web/src/integration/search* @limitedmage
 client/web/src/integration/code-monitoring* @limitedmage
 
@@ -42,8 +37,7 @@ cmd/frontend/graphqlbackend/observability.go @bobheadxi
 cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
 cmd/frontend/graphqlbackend/*search*.go @keegancsmith
 cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
-cmd/frontend/graphqlbackend/batches.go @eseliger
-cmd/frontend/graphqlbackend/batches.go @courier-new
+cmd/frontend/graphqlbackend/batches.go @eseliger @courier-new
 cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
 cmd/frontend/graphqlbackend/codeintel.go @efritz
 cmd/frontend/graphqlbackend/oobmigrations.go @efritz
@@ -51,11 +45,9 @@ cmd/frontend/graphqlbackend/oobmigrations.go @efritz
 cmd/frontend/internal/search/** @keegancsmith
 cmd/frontend/internal/search/**/* @camdencheek
 
-cmd/gitserver/server/* @indradhanush
-cmd/gitserver/server/* @sashaostrikov
+cmd/gitserver/server/* @indradhanush @sashaostrikov
 
-cmd/repo-updater/* @indradhanush
-cmd/repo-updater/* @sashaostrikov
+cmd/repo-updater/* @indradhanush @sashaostrikov
 
 cmd/searcher/**/* @keegancsmith
 
@@ -78,8 +70,7 @@ dev/gqltest/**/* @unknwon
 doc/**/admin/** @sourcegraph/delivery
 doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
 
-doc/batch_changes/**/* @eseliger
-doc/batch_changes/**/* @courier-new
+doc/batch_changes/**/* @eseliger @courier-new
 
 doc/code_navigation/**/* @efritz
 
@@ -105,8 +96,7 @@ enterprise/cmd/frontend/internal/authz/**/* @unknwon
 
 enterprise/cmd/frontend/internal/codeintel/**/* @efritz
 
-enterprise/cmd/frontend/internal/executorqueue/**/* @efritz
-enterprise/cmd/frontend/internal/executorqueue/**/* @eseliger
+enterprise/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
 
 enterprise/cmd/frontend/internal/licensing/**/* @unknwon
 
@@ -122,8 +112,7 @@ enterprise/cmd/worker/**/* @efritz
 
 enterprise/cmd/worker/internal/batches/**/* @eseliger
 
-enterprise/cmd/worker/internal/executorqueue/**/* @efritz
-enterprise/cmd/worker/internal/executorqueue/**/* @eseliger
+enterprise/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
 
 enterprise/cmd/worker/internal/executors/**/* @efritz
 
@@ -135,8 +124,7 @@ enterprise/internal/batches/**/* @eseliger
 
 enterprise/internal/cloud/**/* @unknwon @michaellzc
 
-enterprise/internal/codeintel/**/* @efritz
-enterprise/internal/codeintel/**/* @Strum355
+enterprise/internal/codeintel/**/* @efritz @Strum355
 
 enterprise/internal/database/external_services* @unknwon
 enterprise/internal/database/perms_store* @unknwon
@@ -193,8 +181,7 @@ internal/extsvc/**/* @eseliger
 
 internal/extsvc/auth/**/* @unknwon
 
-internal/gitserver/* @indradhanush
-internal/gitserver/* @sashaostrikov
+internal/gitserver/* @indradhanush @sashaostrikov
 
 internal/goroutine/**/* @efritz
 
@@ -218,15 +205,11 @@ internal/rcache/** @keegancsmith
 
 internal/redispool/** @keegancsmith
 
-internal/repos/* @indradhanush
-internal/repos/* @sashaostrikov
+internal/repos/* @indradhanush @sashaostrikov
 
-internal/search/**/* @keegancsmith
-internal/search/**/* @camdencheek
+internal/search/**/* @keegancsmith @camdencheek
 
-internal/src-cli/**/* @eseliger
-internal/src-cli/**/* @BolajiOlajide
-internal/src-cli/**/* @courier-new
+internal/src-cli/**/* @eseliger @BolajiOlajide @courier-new
 
 internal/symbols/** @keegancsmith
 
@@ -250,12 +233,8 @@ lib/codeintel/**/* @efritz
 
 lib/errors/**/* @sourcegraph/dev-experience
 
-lib/servicecatalog/**/* @sourcegraph/cloud
-lib/servicecatalog/**/* @sourcegraph/security
+lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
 
-monitoring/**/* @bobheadxi
-monitoring/**/* @slimsag
-monitoring/**/* @sourcegraph/delivery
+monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
 monitoring/frontend.go @efritz
-monitoring/precise_code_intel_* @efritz
-monitoring/precise_code_intel_* @sourcegraph/code-intelligence
+monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence

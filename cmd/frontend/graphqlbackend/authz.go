@@ -25,7 +25,7 @@ type AuthzResolver interface {
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
 	AuthzProviderTypes(ctx context.Context) ([]string, error)
-	PermissionSyncJobs(ctx context.Context, args ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionSyncJobResolver], error)
+	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
@@ -118,4 +118,17 @@ type PermissionsInfoResolver interface {
 	SyncedAt() *gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	Unrestricted() bool
+	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
+}
+
+type PermissionsInfoRepositoryResolver interface {
+	ID() graphql.ID
+	Repository() *RepositoryResolver
+	Reason() string
+	UpdatedAt() *gqlutil.DateTime
+}
+
+type PermissionsInfoRepositoriesArgs struct {
+	graphqlutil.ConnectionResolverArgs
+	Query *string
 }

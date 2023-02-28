@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "limiter",
+    srcs = [
+        "limiter.go",
+        "mutable.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/limiter",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "limiter_test",
+    srcs = ["mutable_test.go"],
+    embed = [":limiter"],
+)

@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -39,10 +38,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,7 +52,8 @@ const git = "git"
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
-	defaultLimiter = parallel.NewRun(500)
+	defaultLimiter = limiter.New(500)
+	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -75,7 +75,7 @@ var _ Client = &clientImplementor{}
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		addrs:       NewGitserverAddressesFromConf,
+		conns:       conns.get,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -92,9 +92,9 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		addrs:       func() GitserverAddresses { return newTestGitserverAddresses(addrs) },
+		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
-		HTTPLimiter: parallel.NewRun(500),
+		HTTPLimiter: limiter.New(500),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -177,7 +177,7 @@ func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
 	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter *parallel.Run
+	HTTPLimiter limiter.Limiter
 
 	// userAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
@@ -189,9 +189,8 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// addrs is a function that returns the current set of gitserver addresses.
-	// It is called each time a request is made. It must be safe for concurrent use.
-	addrs func() GitserverAddresses
+	// conns is a function that returns the current set of gitserver addresses and connections
+	conns func() *GitserverConns
 
 	// operations are used for internal observability
 	operations *operations
@@ -317,7 +316,7 @@ type Client interface {
 	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
-	// The caller should always close the reader after use
+	// The caller should always close the reader after use.
 	NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -394,11 +393,6 @@ type Client interface {
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
-	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
-	// at path. If the path is not an LFS pointer, the file contents from git
-	// are returned instead.
-	LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (io.ReadCloser, error)
-
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 	// their associated repository or commit are unresolvable.
@@ -433,11 +427,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.addrs().Addresses
+	return c.conns().Addresses
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.addrs().AddrForRepo(c.userAgent, repo)
+	return c.conns().AddrForRepo(c.userAgent, repo)
+}
+
+func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
+	return c.conns().ConnForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -529,6 +527,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
+		conn, err := c.execer.ConnForRepo(repoName)
+		if err != nil {
+			return nil, err
+		}
+		client := proto.NewGitserverServiceClient(conn)
+
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
@@ -536,17 +540,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
-		addr := c.execer.AddrForRepo(repoName)
 
-		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
-		if err != nil {
-			return nil, err
-		}
+		ctx, cancel := context.WithCancel(ctx)
 
-		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
-			conn.Close()
+			cancel()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
@@ -559,7 +558,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return msg.GetData(), nil
 		})
 
-		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+		return &readCloseWrapper{r: r, closeFn: cancel}, err
 
 	} else {
 		req := &protocol.ExecRequest{
@@ -596,7 +595,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 
 type readCloseWrapper struct {
 	r       io.Reader
-	closeFn func() error
+	closeFn func()
 }
 
 func (r *readCloseWrapper) Read(p []byte) (int, error) {
@@ -628,7 +627,8 @@ func (r *readCloseWrapper) Read(p []byte) (int, error) {
 }
 
 func (r *readCloseWrapper) Close() error {
-	return r.closeFn()
+	r.closeFn()
+	return nil
 }
 
 type CommandStatusError struct {
@@ -667,14 +667,11 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	addrForRepo := c.AddrForRepo(repoName)
-
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := grpc.DialContext(ctx, addrForRepo, defaults.DialOptions()...)
+		conn, err := c.ConnForRepo(repoName)
 		if err != nil {
 			return false, err
 		}
-		defer conn.Close()
 
 		client := proto.NewGitserverServiceClient(conn)
 		cs, err := client.Search(ctx, args.ToProto())
@@ -699,6 +696,8 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 			}
 		}
 	}
+
+	addrForRepo := c.AddrForRepo(repoName)
 
 	protocol.RegisterGob()
 	var buf bytes.Buffer
@@ -1274,11 +1273,9 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req = req.WithContext(ctx)
 
-	if c.HTTPLimiter != nil {
-		c.HTTPLimiter.Acquire()
-		defer c.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
-	}
+	c.HTTPLimiter.Acquire()
+	defer c.HTTPLimiter.Release()
+	span.LogKV("event", "Acquired HTTP limiter")
 
 	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Gitserver Client"),
@@ -1294,24 +1291,6 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		return "", err
 	}
 	defer resp.Body.Close()
-	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
-	if resp.StatusCode == http.StatusNotFound {
-		resp.Body.Close()
-		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
-			Repo:         req.Repo,
-			BaseCommit:   req.BaseCommit,
-			Patch:        string(req.Patch),
-			TargetRef:    req.TargetRef,
-			UniqueRef:    req.UniqueRef,
-			CommitInfo:   req.CommitInfo,
-			Push:         req.Push,
-			GitApplyArgs: req.GitApplyArgs,
-		})
-		if err != nil {
-			return "", err
-		}
-		defer resp.Body.Close()
-	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

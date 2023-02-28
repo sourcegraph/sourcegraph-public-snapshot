@@ -8,17 +8,15 @@ import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@source
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -29,7 +27,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
+import { useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -48,10 +46,8 @@ export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
-        ThemeProps,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps {
@@ -66,7 +62,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         authenticatedUser,
         telemetryService,
         isSourcegraphDotCom,
-        extensionsController,
         searchAggregationEnabled,
         codeMonitoringEnabled,
     } = props
@@ -97,8 +92,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
-    const extensionHostAPI =
-        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
@@ -119,7 +112,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )
 
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
+    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
     // Log view event on first load
     useEffect(

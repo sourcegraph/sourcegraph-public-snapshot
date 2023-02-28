@@ -7,6 +7,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -29,7 +30,6 @@ import {
     SymbolsVariables,
     SymbolKind as SymbolKindEnum,
 } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
@@ -65,9 +65,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                 <NavLink
                     to={node.url}
                     onClick={onHandleClick}
-                    className={({ isActive }) =>
-                        classNames('test-symbol-link', styles.link, isActive && styles.linkActive)
-                    }
+                    className={classNames('test-symbol-link', styles.link, isActive && styles.linkActive)}
                 >
                     <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">

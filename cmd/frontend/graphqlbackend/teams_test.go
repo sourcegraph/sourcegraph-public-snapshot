@@ -1175,8 +1175,8 @@ func TestMembersAdd(t *testing.T) {
 		Context: ctx,
 		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
 			addTeamMembers(teamName: "team", members: [
-				$existingAndAddedId,
-				$addedId
+				{ userID: $existingAndAddedId },
+				{ userID: $addedId }
 			]) {
 				members {
 					nodes {
@@ -1199,8 +1199,8 @@ func TestMembersAdd(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"existingAndAddedId": string(relay.MarshalID("TeamMember", userExistingAndAddedID)),
-			"addedId":            string(relay.MarshalID("TeamMember", userAddedID)),
+			"existingAndAddedId": string(relay.MarshalID("User", userExistingAndAddedID)),
+			"addedId":            string(relay.MarshalID("User", userAddedID)),
 		},
 	})
 }
@@ -1234,7 +1234,7 @@ func TestMembersRemove(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation RemoveTeamMembers($r1: ID!, $r2: ID!, $r3: ID!) {
-			removeTeamMembers(teamName: "team", members: [$r1, $r2, $r3]) {
+			removeTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }]) {
 				members {
 					nodes {
 						... on User {
@@ -1256,9 +1256,9 @@ func TestMembersRemove(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"r1": string(relay.MarshalID("TeamMember", removedIDs[0])),
-			"r2": string(relay.MarshalID("TeamMember", removedIDs[1])),
-			"r3": string(relay.MarshalID("TeamMember", removedIDs[2])),
+			"r1": string(relay.MarshalID("User", removedIDs[0])),
+			"r2": string(relay.MarshalID("User", removedIDs[1])),
+			"r3": string(relay.MarshalID("User", removedIDs[2])),
 		},
 	})
 }
@@ -1293,7 +1293,7 @@ func TestMembersSet(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation SetTeamMembers($r1: ID!, $r2: ID!, $r3: ID!, $r4: ID!) {
-			setTeamMembers(teamName: "team", members: [$r1, $r2, $r3, $r4]) {
+			setTeamMembers(teamName: "team", members: [{ userID: $r1 }, { userID: $r2 }, { userID: $r3 }, { userID: $r4 }]) {
 				members {
 					nodes {
 						... on User {
@@ -1316,10 +1316,10 @@ func TestMembersSet(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"r1": string(relay.MarshalID("TeamMember", setIDs[0])),
-			"r2": string(relay.MarshalID("TeamMember", setIDs[1])),
-			"r3": string(relay.MarshalID("TeamMember", setIDs[2])),
-			"r4": string(relay.MarshalID("TeamMember", setIDs[3])),
+			"r1": string(relay.MarshalID("User", setIDs[0])),
+			"r2": string(relay.MarshalID("User", setIDs[1])),
+			"r3": string(relay.MarshalID("User", setIDs[2])),
+			"r4": string(relay.MarshalID("User", setIDs[3])),
 		},
 	})
 }

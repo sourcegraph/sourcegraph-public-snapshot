@@ -1,40 +1,22 @@
-# Aspect recommended Bazel flags for all projects
-# Aspect's ".bazelrc flags you should enable" blog post: https://blog.aspect.dev/bazelrc-flags
-# Docs for Bazel flags: https://bazel.build/docs/user-manual & https://bazel.build/reference/command-line-reference
-
-####################################################################################################
-# Performance
-# --
-# Miscellaneous settings that improve performance
-####################################################################################################
-
-# Set this flag to exclude targets that have their timeout set to eternal from running on CI.
-# This keeps your CI from being slowed down by individual test targets that should be optimized
+# We recommend enforcing a policy that keeps your CI from being slowed down
+# by individual test targets that should be optimized
 # or split up into multiple test targets with sharding or manually.
+# Set this flag to exclude targets that have their timeout set to eternal (>15m) from running on CI.
 # Docs: https://bazel.build/docs/user-manual#test-timeout-filters
-## build --test_timeout_filters=-eternal
-
-####################################################################################################
-# Tests
-# --
-# Settings that affect tests
-####################################################################################################
+build --test_timeout_filters=-eternal
 
 # Set this flag to enable re-tries of failed tests on CI.
 # When any test target fails, try one or more times. This applies regardless of whether the "flaky"
-# tag appears on the target definition. This is a tradeoff: legitimately failing tests will take
-# longer to report, but we can paper over flaky tests that pass most of the time. Not recommended
-# for local builds so that the flakiness is observed during development and thus is more likely to
-# get fixed. Note that when passing after the first attempt, Bazel will give a special "FLAKY"
-# status.
+# tag appears on the target definition.
+# This is a tradeoff: legitimately failing tests will take longer to report,
+# but we can paper over flaky tests that pass most of the time.
+# The alternative is to mark every flaky test with the `flaky = True` attribute, but this requires
+# the buildcop to make frequent code edits.
+# Not recommended for local builds so that the flakiness is observed during development and thus
+# is more likely to get fixed.
+# Note that when passing after the first attempt, Bazel will give a special "FLAKY" status.
 # Docs: https://bazel.build/docs/user-manual#flaky-test-attempts
-## build --flaky_test_attempts=2
-
-####################################################################################################
-# Output
-# --
-# Customize Bazel invocation output for CI
-####################################################################################################
+build --flaky_test_attempts=2
 
 # Announce all announces command options read from the bazelrc file(s) when starting up at the
 # beginning of each Bazel invocation. This is very useful on CI to be able to inspect what Bazel rc
@@ -47,31 +29,25 @@ build --announce_rc
 # Docs: https://bazel.build/docs/user-manual#show-timestamps
 build --show_timestamps
 
-# Only show progress every 60 seconds on CI.
-# Docs: https://bazel.build/reference/command-line-reference#flag--progress_report_interval
-build --progress_report_interval=60
-
-# Only show progress every 60 seconds on CI.
+# Only show progress every 5 seconds on CI.
 # https://bazel.build/reference/command-line-reference#flag--show_progress_rate_limit
-build --show_progress_rate_limit=60
+build --show_progress_rate_limit=5
 
-# Don't use cursor controls in its screen output.
+# Use cursor controls in screen output.
 # Docs: https://bazel.build/docs/user-manual#curses
-build --curses=no
+build --curses=yes
 
-# Use colors to highlight its output on the screen. Set to `no` if your CI does not display colors.
+# Use colors to highlight output on the screen. Set to `no` if your CI does not display colors.
 # Docs: https://bazel.build/docs/user-manual#color
 build --color=yes
 
-# The terminal width in columns. Configure this to override the default value for your CI.
+# The terminal width in columns. Configure this to override the default value based on what your CI system renders.
 # Docs: https://github.com/bazelbuild/bazel/blob/1af61b21df99edc2fc66939cdf14449c2661f873/src/main/java/com/google/devtools/build/lib/runtime/UiOptions.java#L151
-## build --terminal_columns=80
+build --terminal_columns=143
 
-####################################################################################################
-# Remote cache
-# --
-# Generic remote cache configuration
-####################################################################################################
+######################################
+# Generic remote cache configuration #
+######################################
 
 # Only download remote outputs of top level targets to the local machine.
 # Docs: https://bazel.build/reference/command-line-reference#flag--remote_download_toplevel

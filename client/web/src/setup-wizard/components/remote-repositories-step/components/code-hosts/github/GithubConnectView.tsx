@@ -20,6 +20,8 @@ import {
     getDefaultInputProps,
     useFieldAPI,
     useControlledField,
+    ErrorAlert,
+    FORM_ERROR,
 } from '@sourcegraph/wildcard'
 
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
@@ -32,7 +34,7 @@ import styles from './GithubConnectView.module.scss'
 
 const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
     displayName: codeHostExternalServices.github.defaultDisplayName,
-    configuration: `
+    config: `
 {
     "url": "https://github.com",
     "token": ""
@@ -67,7 +69,7 @@ export const GithubConnectView: FC<GithubConnectViewProps> = props => {
             await onSubmit({
                 kind: ExternalServiceKind.GITHUB,
                 displayName: values.displayName,
-                config: values.configuration,
+                config: values.config,
             })
 
             // Reset initial values after successful connect action
@@ -121,7 +123,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
 
     const configuration = useField({
         formApi: form.formAPI,
-        name: 'configuration',
+        name: 'config',
     })
 
     return (
@@ -160,6 +162,11 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                         externalServiceOptions={codeHostExternalServices.github}
                     />
                 </TabPanel>
+                <>
+                    {form.formAPI.submitErrors && (
+                        <ErrorAlert className="w-100 mt-4" error={form.formAPI.submitErrors[FORM_ERROR]} />
+                    )}
+                </>
             </TabPanels>
 
             {children(form.formAPI)}
@@ -261,7 +268,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add all repositories from selected organizations or users"
                     onChange={handleOrganizationsModeChange}
                 >
-                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange} />
+                    <GithubOrganizationsPicker
+                        token={accessTokenField.input.value}
+                        disabled={accessTokenField.meta.validState !== 'VALID'}
+                        organizations={organizations}
+                        onChange={handleOrganizationsChange}
+                    />
                 </RadioGroupSection>
 
                 <RadioGroupSection
@@ -272,7 +284,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add selected repositories"
                     onChange={handleRepositoriesModeChange}
                 >
-                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange} />
+                    <GithubRepositoriesPicker
+                        token={accessTokenField.input.value}
+                        disabled={accessTokenField.meta.validState !== 'VALID'}
+                        repositories={repositories}
+                        onChange={handleRepositoriesChange}
+                    />
                 </RadioGroupSection>
             </section>
         </>

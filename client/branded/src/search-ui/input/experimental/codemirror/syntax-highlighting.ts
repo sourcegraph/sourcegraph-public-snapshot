@@ -7,32 +7,24 @@ import { isFilterOfType } from '@sourcegraph/shared/src/search/query/utils'
 
 import { decoratedTokens, queryTokens } from '../../codemirror/parsedQuery'
 
-const validFilter = Decoration.mark({ class: 'sg-filter' })
-const invalidFilter = Decoration.mark({ class: 'sg-filter sg-invalid-filter' })
-const contextFilter = Decoration.mark({ class: 'sg-context-filter', inclusiveEnd: false })
+const validFilter = Decoration.mark({ class: 'sg-query-token-filter' })
+const invalidFilter = Decoration.mark({ class: 'sg-query-token-filter sg-query-token-filter-invalid' })
+const contextFilter = Decoration.mark({ class: 'sg-query-token-filter-context', inclusiveEnd: false })
 
 export const filterHighlight = [
     EditorView.baseTheme({
-        '.sg-filter': {
+        '.sg-query-token-filter': {
             backgroundColor: 'var(--oc-blue-0)',
             borderRadius: '3px',
             padding: '0px',
         },
-        '.sg-invalid-filter': {
+        '.sg-query-token-filter-invalid': {
             backgroundColor: 'var(--oc-red-1)',
             borderColor: 'var(--oc-red-2)',
         },
-        '.sg-context-filter': {
+        '.sg-query-token-filter-context': {
             borderRadius: '3px',
             border: '1px solid var(--border-color)',
-        },
-        '.sg-clear-filter > button': {
-            border: 'none',
-            backgroundColor: 'transparent',
-            padding: 0,
-            width: 'var(--icon-inline-size)',
-            height: 'var(--icon-inline-size)',
-            color: 'var(--icon-color)',
         },
     }),
     EditorView.decorations.compute([decoratedTokens, 'selection'], state => {

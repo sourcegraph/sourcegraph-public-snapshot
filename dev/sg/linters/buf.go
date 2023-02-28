@@ -34,6 +34,10 @@ var bufFormat = &linter{
 			return errors.Wrapf(err, "finding .proto files")
 		}
 
+		if len(protoFiles) == 0 {
+			return errors.New("no .proto files found")
+		}
+
 		bufArgs := []string{
 			"format",
 			"--diff",
@@ -128,6 +132,10 @@ var bufLint = &linter{
 			return errors.Wrapf(err, "finding buf module files")
 		}
 
+		if len(bufModules) == 0 {
+			return errors.New("no buf modules found")
+		}
+
 		for _, file := range bufModules {
 			file, err := filepath.Rel(rootDir, file)
 			if err != nil {
@@ -185,8 +193,7 @@ var bufGenerate = &linter{
 		}
 
 		if len(generatedFiles) == 0 {
-			// no generated files, nothing to check
-			return nil
+			return errors.New("no generated files found")
 		}
 
 		gitArgs := []string{
