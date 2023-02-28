@@ -10,6 +10,8 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -403,71 +406,85 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
 	var req protocol.ExternalServiceNamespacesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	protoReq := proto.ExternalServiceNamespacesRequest{
+		Kind:   req.Kind,
+		Config: req.Config,
+	}
 
+	result, err := s.externalServiceNamespaces(r.Context(), &protoReq)
+	if err != nil {
+		httpCode := http.StatusInternalServerError
+		switch status.Code(err) {
+		case codes.InvalidArgument:
+			httpCode = http.StatusBadRequest
+		case codes.Unavailable:
+			httpCode = http.StatusServiceUnavailable
+		case codes.Unimplemented:
+			httpCode = http.StatusNotImplemented
+		}
+		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
+	}
+
+	var namespaces []*types.ExternalServiceNamespace
+	for _, ns := range result.Namespaces {
+		namespaces = append(namespaces, &types.ExternalServiceNamespace{
+			ID:         int(ns.GetId()),
+			Name:       ns.GetName(),
+			ExternalID: ns.GetExternalId(),
+		})
+	}
+	s.respond(w, http.StatusOK, &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces})
+}
+
+func (s *Server) externalServiceNamespaces(ctx context.Context, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
+
+	genericSourcer := s.NewGenericSourcer(logger)
 	externalSvc := &types.ExternalService{
 		Kind:   req.Kind,
 		Config: extsvc.NewUnencryptedConfig(req.Config),
 	}
-
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
-	var result *protocol.ExternalServiceNamespacesResult
-
-	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
-		logger.Error("server.query-external-service-namespaces", log.Error(err))
-		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
-		s.respond(w, http.StatusBadRequest, result)
-		return
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
-		s.respond(w, http.StatusServiceUnavailable, result)
-		return
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
-
 	if !ok {
-		result = &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource}
-		s.respond(w, http.StatusNotImplemented, result)
-		return
+		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
 	results := make(chan repos.SourceNamespaceResult)
-
 	go func() {
 		discoverableSrc.ListNamespaces(ctx, results)
 		close(results)
 	}()
 
 	var sourceErrs error
-	namespaces := make([]*types.ExternalServiceNamespace, 0)
+	namespaces := make([]*proto.ExternalServiceNamespace, 0)
 
 	for res := range results {
 		if res.Err != nil {
 			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
-		namespaces = append(namespaces, res.Namespace)
+		namespaces = append(namespaces, &proto.ExternalServiceNamespace{
+			Id:         int64(res.Namespace.ID),
+			Name:       res.Namespace.Name,
+			ExternalId: res.Namespace.ExternalID,
+		})
 	}
 
-	if sourceErrs != nil {
-		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
-	} else {
-		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}
-	}
-	s.respond(w, http.StatusOK, result)
+	return &proto.ExternalServiceNamespacesResponse{Namespaces: namespaces}, sourceErrs
 }
 
 func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *http.Request) {
