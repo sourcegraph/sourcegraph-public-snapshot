@@ -9,9 +9,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -21,14 +22,14 @@ import (
 )
 
 type handler struct {
-	nameSet       *janitor.NameSet
-	logStore      command.ExecutionLogEntryStore
-	filesStore    workspace.FilesStore
-	options       Options
-	cloneOptions  workspace.CloneOptions
-	operations    *command.Operations
-	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
-	jobRuntime    runtime.Runtime
+	nameSet      *janitor.NameSet
+	cmd          command.Command
+	logStore     command.ExecutionLogEntryStore
+	filesStore   workspace.FilesStore
+	options      Options
+	cloneOptions workspace.CloneOptions
+	operations   *command.Operations
+	jobRuntime   runtime.Runtime
 }
 
 var (
@@ -43,7 +44,7 @@ var (
 // with keeping our heartbeats due to machine load. We'll continue to check this condition on the
 // polling interval
 func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error) {
-	if !h.options.CommandOptions.FirecrackerOptions.Enabled {
+	if !h.options.RunnerOptions.FirecrackerOptions.Enabled {
 		return true, nil, nil
 	}
 
@@ -81,7 +82,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(h.logStore, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
@@ -118,7 +119,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Create the runner that will actually run the commands.
 	logger.Info("Setting up runner")
-	runner, err := h.jobRuntime.NewRunner(ctx, commandLogger, name, ws.Path(), job)
+	runtimeRunner, err := h.jobRuntime.NewRunner(ctx, commandLogger, runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig})
 	if err != nil {
 		return err
 	}
@@ -126,14 +127,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
-		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
+		if teardownErr := runtimeRunner.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)
 		}
 	}()
 
 	// Get the commands we will execute.
 	logger.Info("Creating commands")
-	commands, err := h.jobRuntime.GetCommands(ws, job.DockerSteps)
+	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job.DockerSteps)
 	if err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// Run all the things.
 	logger.Info("Running commands")
 	for _, spec := range commands {
-		if err := runner.Run(ctx, spec); err != nil {
+		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			return err
 		}
 	}
@@ -151,14 +152,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) error {
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) (err error) {
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
 	logger.Info("Creating workspace")
 
-	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	ws, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
+	ws, err := h.prepareWorkspace(ctx, h.cmd, job, commandLogger)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
@@ -171,29 +171,19 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
 
-	options := command.Options{
-		ExecutorName:       name,
-		DockerOptions:      h.options.CommandOptions.DockerOptions,
-		FirecrackerOptions: h.options.CommandOptions.FirecrackerOptions,
-		ResourceOptions:    h.options.CommandOptions.ResourceOptions,
-	}
-	// If the job has docker auth config set, prioritize that over the env var.
-	if len(job.DockerAuthConfig.Auths) > 0 {
-		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
-	}
-	runner := h.runnerFactory(ws.Path(), commandLogger, options, h.operations)
+	run := runner.NewRunner(h.cmd, ws.Path(), name, commandLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operations)
 
 	logger.Info("Setting up VM")
 
 	// Setup Firecracker VM (if enabled)
-	if err := runner.Setup(ctx); err != nil {
+	if err := run.Setup(ctx); err != nil {
 		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
-		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
+		if teardownErr := run.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)
 		}
 	}()
@@ -206,18 +196,20 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		} else {
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
-		dockerStepCommand := command.Spec{
-			Key:        key,
+		dockerStepCommand := runner.Spec{
+			CommandSpec: command.Spec{
+				Key:       key,
+				Dir:       dockerStep.Dir,
+				Env:       dockerStep.Env,
+				Operation: h.operations.Exec,
+			},
 			Image:      dockerStep.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
-			Dir:        dockerStep.Dir,
-			Env:        dockerStep.Env,
-			Operation:  h.operations.Exec,
 		}
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
 
-		if err := runner.Run(ctx, dockerStepCommand); err != nil {
+		if err := run.Run(ctx, dockerStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
@@ -231,17 +223,19 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 			key = fmt.Sprintf("step.src.%d", i)
 		}
 
-		cliStepCommand := command.Spec{
-			Key:       key,
-			Command:   append([]string{"src"}, cliStep.Commands...),
-			Dir:       cliStep.Dir,
-			Env:       cliStep.Env,
-			Operation: h.operations.Exec,
+		cliStepCommand := runner.Spec{
+			CommandSpec: command.Spec{
+				Key:       key,
+				Command:   append([]string{"src"}, cliStep.Commands...),
+				Dir:       cliStep.Dir,
+				Env:       cliStep.Env,
+				Operation: h.operations.Exec,
+			},
 		}
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
-		if err := runner.Run(ctx, cliStepCommand); err != nil {
+		if err := run.Run(ctx, cliStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}

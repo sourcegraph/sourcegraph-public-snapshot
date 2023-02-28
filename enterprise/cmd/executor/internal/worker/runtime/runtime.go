@@ -5,8 +5,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,9 +20,15 @@ type Runtime interface {
 	// PrepareWorkspace sets up the workspace for the Job.
 	PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error)
 	// NewRunner creates a runner that will execute the steps.
-	NewRunner(ctx context.Context, logger command.Logger, vmName string, path string, job types.Job) (command.Runner, error)
-	// GetCommands builds and returns the commands that the runner will execute.
-	GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.Spec, error)
+	NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error)
+	// NewRunnerSpecs builds and returns the commands that the runner will execute.
+	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
+}
+
+type RunnerOptions struct {
+	Name             string
+	Path             string
+	DockerAuthConfig types.DockerAuthConfig
 }
 
 // New creates the runtime based on the configured environment.
@@ -29,8 +36,8 @@ func New(
 	logger log.Logger,
 	ops *command.Operations,
 	filesStore workspace.FilesStore,
-	commandOpts command.Options,
 	cloneOpts workspace.CloneOptions,
+	dockerOpts command.DockerOptions,
 	runner util.CmdRunner,
 ) (Runtime, error) {
 	err := util.ValidateDockerTools(runner)
@@ -46,8 +53,8 @@ func New(
 		return &dockerRuntime{
 			operations:   ops,
 			filesStore:   filesStore,
-			commandOpts:  commandOpts,
 			cloneOptions: cloneOpts,
+			dockerOpts:   dockerOpts,
 		}, nil
 	}
 	return nil, ErrNoRuntime

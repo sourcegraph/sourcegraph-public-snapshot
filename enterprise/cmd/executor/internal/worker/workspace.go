@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
@@ -14,18 +14,18 @@ import (
 // that repository will be cloned (through the frontend API) into the workspace.
 func (h *handler) prepareWorkspace(
 	ctx context.Context,
-	commandRunner command.Runner,
+	cmd command.Command,
 	job types.Job,
 	commandLogger command.Logger,
 ) (workspace.Workspace, error) {
-	if h.options.CommandOptions.FirecrackerOptions.Enabled {
+	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
 		return workspace.NewFirecrackerWorkspace(
 			ctx,
 			h.filesStore,
 			job,
-			h.options.CommandOptions.ResourceOptions.DiskSpace,
+			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
 			h.options.KeepWorkspaces,
-			commandRunner,
+			cmd,
 			commandLogger,
 			h.cloneOptions,
 			h.operations,
@@ -36,7 +36,7 @@ func (h *handler) prepareWorkspace(
 		ctx,
 		h.filesStore,
 		job,
-		commandRunner,
+		cmd,
 		commandLogger,
 		h.cloneOptions,
 		h.operations,

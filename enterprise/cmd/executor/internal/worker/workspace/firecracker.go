@@ -11,7 +11,7 @@ import (
 
 	"github.com/c2h5oh/datasize"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,7 +27,7 @@ func NewFirecrackerWorkspace(
 	job types.Job,
 	diskSpace string,
 	keepWorkspace bool,
-	commandRunner command.Runner,
+	cmd command.Command,
 	logger command.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
@@ -55,7 +55,7 @@ func NewFirecrackerWorkspace(
 	}()
 
 	if job.RepositoryName != "" {
-		if err := cloneRepo(ctx, tmpMountDir, job, commandRunner, cloneOpts, operations); err != nil {
+		if err := cloneRepo(ctx, tmpMountDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			return nil, err
 		}
 	}
@@ -89,7 +89,7 @@ func (w firecrackerWorkspace) ScriptFilenames() []string {
 }
 
 func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.logger.Log("teardown.fs", nil)
+	handle := w.logger.LogEntry("teardown.fs", nil)
 	defer func() {
 		// We always finish this with exit code 0 even if it errored, because workspace
 		// cleanup doesn't fail the execution job. We can deal with it separately.
@@ -130,7 +130,7 @@ func setupLoopDevice(
 	keepWorkspace bool,
 	logger command.Logger,
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
-	handle := logger.Log("setup.fs.workspace", nil)
+	handle := logger.LogEntry("setup.fs.workspace", nil)
 	defer func() {
 		if err != nil {
 			// add the error to the bottom of the step's log output,

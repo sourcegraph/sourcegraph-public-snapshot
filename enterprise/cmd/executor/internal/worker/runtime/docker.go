@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type dockerRuntime struct {
+	cmd          command.Command
 	operations   *command.Operations
 	filesStore   workspace.FilesStore
-	commandOpts  command.Options
 	cloneOptions workspace.CloneOptions
+	dockerOpts   command.DockerOptions
 }
 
 func (d *dockerRuntime) Name() Name {
@@ -23,37 +25,28 @@ func (d *dockerRuntime) Name() Name {
 
 func (d *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
 	// We can pass empty options as they are not used in the Docker path.
-	hostRunner := command.NewRunner("", logger, command.Options{}, nil)
 	return workspace.NewDockerWorkspace(
 		ctx,
 		d.filesStore,
 		job,
-		hostRunner,
+		d.cmd,
 		logger,
 		d.cloneOptions,
 		d.operations,
 	)
 }
 
-func (d *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, vmName string, path string, job types.Job) (command.Runner, error) {
-	options := command.Options{
-		DockerOptions:   d.commandOpts.DockerOptions,
-		ResourceOptions: d.commandOpts.ResourceOptions,
-	}
-	// If the job has docker auth config set, prioritize that over the env var.
-	if len(job.DockerAuthConfig.Auths) > 0 {
-		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
-	}
-	runner := command.NewRunner(path, logger, options, d.operations)
-	if err := runner.Setup(ctx); err != nil {
+func (d *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
+	r := runner.NewDockerRunner(d.cmd, logger, options.Path, d.dockerOpts, options.DockerAuthConfig)
+	if err := r.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup docker runner")
 	}
 
-	return runner, nil
+	return r, nil
 }
 
-func (d *dockerRuntime) GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.Spec, error) {
-	commandSpecs := make([]command.Spec, len(steps))
+func (d *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
+	runnerSpecs := make([]runner.Spec, len(steps))
 	for i, step := range steps {
 		var key string
 		if len(step.Key) != 0 {
@@ -62,16 +55,18 @@ func (d *dockerRuntime) GetCommands(ws workspace.Workspace, steps []types.Docker
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
 
-		commandSpecs[i] = command.Spec{
-			Key:        key,
+		runnerSpecs[i] = runner.Spec{
+			CommandSpec: command.Spec{
+				Key:       key,
+				Command:   nil,
+				Dir:       step.Dir,
+				Env:       step.Env,
+				Operation: d.operations.Exec,
+			},
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
-			Command:    nil,
-			Dir:        step.Dir,
-			Env:        step.Env,
-			Operation:  d.operations.Exec,
 		}
 	}
 
-	return commandSpecs, nil
+	return runnerSpecs, nil
 }

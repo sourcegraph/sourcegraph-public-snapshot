@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +31,8 @@ func cloneRepo(
 	ctx context.Context,
 	workspaceDir string,
 	job types.Job,
-	commandRunner command.Runner,
+	cmd command.Command,
+	logger command.Logger,
 	options CloneOptions,
 	operations *command.Operations,
 ) (err error) {
@@ -165,7 +166,7 @@ func cloneRepo(
 	})
 
 	for _, spec := range gitCommands {
-		if err = commandRunner.Run(ctx, spec); err != nil {
+		if err = cmd.Run(ctx, logger, spec); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
 		}
 	}

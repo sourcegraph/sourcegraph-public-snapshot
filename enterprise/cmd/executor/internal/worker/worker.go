@@ -14,9 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -60,8 +61,7 @@ type Options struct {
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions
 
-	// CommandOptions configures the behavior of runtime commands.
-	CommandOptions command.Options
+	RunnerOptions runner.Options
 
 	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
 	// the /metrics path.
@@ -107,13 +107,12 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	//}
 
 	h := &handler{
-		nameSet:       nameSet,
-		logStore:      queueClient,
-		filesStore:    filesClient,
-		options:       options,
-		operations:    commandOps,
-		runnerFactory: command.NewRunner,
-		cloneOptions:  cloneOptions,
+		nameSet:      nameSet,
+		logStore:     queueClient,
+		filesStore:   filesClient,
+		options:      options,
+		cloneOptions: cloneOptions,
+		operations:   commandOps,
 		// TODO: uncomment when firecracker runtime is complete
 		//jobRuntime:    jobRuntime,
 	}

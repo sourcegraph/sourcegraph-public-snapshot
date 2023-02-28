@@ -1,4 +1,4 @@
-package command
+package runner
 
 import (
 	"context"
@@ -10,22 +10,27 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type firecrackerRunner struct {
-	vmName          string
-	workspaceDevice string
-	cmdLogger       command.Logger
-	options         FirecrackerOptions
+	cmd              command.Command
+	vmName           string
+	workspaceDevice  string
+	internalLogger   log.Logger
+	cmdLogger        command.Logger
+	options          FirecrackerOptions
+	dockerAuthConfig types.DockerAuthConfig
 	// tmpDir is used to store temporary files used for firecracker execution.
 	tmpDir     string
-	operations *Operations
+	operations *command.Operations
 }
 
 type FirecrackerOptions struct {
@@ -52,14 +57,29 @@ type FirecrackerOptions struct {
 
 var _ Runner = &firecrackerRunner{}
 
-func NewFirecrackerRunner(dir string, logger command.Logger, vmName string, options FirecrackerOptions, operations *Operations) Runner {
+func NewFirecrackerRunner(
+	cmd command.Command,
+	logger command.Logger,
+	dir string,
+	vmName string,
+	options FirecrackerOptions,
+	dockerAuthConfig types.DockerAuthConfig,
+	operations *command.Operations,
+) Runner {
 	return &firecrackerRunner{
-		vmName:          vmName,
-		workspaceDevice: dir,
-		cmdLogger:       logger,
-		options:         options,
-		operations:      operations,
+		cmd:              cmd,
+		vmName:           vmName,
+		workspaceDevice:  dir,
+		internalLogger:   log.Scoped("firecracker-runner", ""),
+		cmdLogger:        logger,
+		options:          options,
+		dockerAuthConfig: dockerAuthConfig,
+		operations:       operations,
 	}
+}
+
+func (r *firecrackerRunner) TempDir() string {
+	return r.tmpDir
 }
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
@@ -89,8 +109,8 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 
 	// If docker auth config is present, write it.
 	var dockerConfigPath string
-	if len(r.options.DockerOptions.DockerAuthConfig.Auths) > 0 {
-		d, err := json.Marshal(r.options.DockerOptions.DockerAuthConfig)
+	if len(r.dockerAuthConfig.Auths) > 0 {
+		d, err := json.Marshal(r.dockerAuthConfig)
 		if err != nil {
 			return "", err
 		}
@@ -98,7 +118,7 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 		if err != nil {
 			return "", err
 		}
-		if err := os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
+		if err = os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
 			return "", err
 		}
 	}
@@ -117,7 +137,7 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 	}
 
 	// Start the VM and wait for the SSH server to become available.
-	startCommand := r.newCommand(
+	startCommandSpec := r.newCommandSpec(
 		"setup.firecracker.start",
 		command.Flatten(
 			"ignite", "run",
@@ -134,19 +154,21 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 			sanitizeImage(r.options.Image),
 		),
 		[]string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
+		r.operations.SetupFirecrackerStart,
 	)
 
-	if err = startCommand.Run(ctx); err != nil {
+	if err = r.cmd.Run(ctx, r.cmdLogger, startCommandSpec); err != nil {
 		return "", errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if r.options.VMStartupScriptPath != "" {
-		startupScriptCommand := r.newCommand(
+		startupScriptCommandSpec := r.newCommandSpec(
 			"setup.startup-script",
 			command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
 			nil,
+			r.operations.SetupStartupScript,
 		)
-		if err = startupScriptCommand.Run(ctx); err != nil {
+		if err = r.cmd.Run(ctx, r.cmdLogger, startupScriptCommandSpec); err != nil {
 			return "", errors.Wrap(err, "failed to run startup script")
 		}
 	}
@@ -247,7 +269,7 @@ func firecrackerResourceFlags(options command.ResourceOptions) []string {
 }
 
 func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile, dockerConfigPath string) []string {
-	copyfiles := make([]string, 0, 2)
+	copyfiles := make([]string, 0, 3)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
@@ -286,38 +308,38 @@ func sanitizeImage(image string) string {
 var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return r.teardownFirecracker(ctx)
-}
-
-// teardownFirecracker issues a stop and a remove request for the Firecracker VM with
-// the given name and removes the tmpDir.
-func (r *firecrackerRunner) teardownFirecracker(ctx context.Context) error {
-	removeCommand := r.newCommand{
+	removeCommandSpec := r.newCommandSpec(
 		"teardown.firecracker.remove",
 		command.Flatten("ignite", "rm", "-f", r.vmName),
-	}
-	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
-		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
+		nil,
+		r.operations.TeardownFirecrackerRemove,
+	)
+	if err := r.cmd.Run(ctx, r.cmdLogger, removeCommandSpec); err != nil {
+		r.internalLogger.Error("Failed to remove firecracker vm", log.String("name", r.vmName), log.Error(err))
 	}
 
-	if err := os.RemoveAll(tmpDir); err != nil {
-		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "tmpDir", tmpDir, "err", err)
+	if err := os.RemoveAll(r.tmpDir); err != nil {
+		r.internalLogger.Error(
+			"Failed to remove firecracker vm",
+			log.String("name", r.vmName),
+			log.String("tmpDir", r.tmpDir),
+			log.Error(err),
+		)
 	}
 
 	return nil
 }
 
-func (r *firecrackerRunner) newCommand(key string, cmd []string, env []string) command.Command {
-	return command.Command{
+func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []string, operations *observation.Operation) command.Spec {
+	return command.Spec{
 		Key:       key,
 		Command:   cmd,
 		Env:       env,
-		CmdRunner: nil,
-		Logger:    r.cmdLogger,
+		Operation: operations,
 	}
 }
 
-func (r *firecrackerRunner) Run(ctx context.Context) error {
-	firecrackerCommand := command.NewFirecrackerCommand(r.cmdLogger, nil, r.vmName, r.options.DockerOptions)
-	return firecrackerCommand.Run(ctx)
+func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
+	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
+	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
 }

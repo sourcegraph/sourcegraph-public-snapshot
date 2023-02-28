@@ -14,7 +14,7 @@ const loopDevPath = "/var/lib/firecracker/loop-devices"
 const mountpointsPath = "/var/lib/firecracker/mountpoints"
 
 // MakeLoopFile defaults to makeTemporaryLoopFile and can be replaced for testing
-// with determinstic paths.
+// with deterministic paths.
 var MakeLoopFile = makeTemporaryLoopFile
 
 func makeTemporaryLoopFile(prefix string) (*os.File, error) {
@@ -25,7 +25,7 @@ func makeTemporaryLoopFile(prefix string) (*os.File, error) {
 }
 
 // MakeTempDirectory defaults to makeTemporaryDirectory and can be replaced for testing
-// with determinstic workspace/scripts directories.
+// with deterministic workspace/scripts directories.
 var MakeTempDirectory = MakeTemporaryDirectory
 
 func MakeTemporaryDirectory(prefix string) (string, error) {
@@ -40,7 +40,7 @@ func MakeTemporaryDirectory(prefix string) (string, error) {
 }
 
 // MakeMountDirectory defaults to makeTemporaryMountDirectory and can be replaced for testing
-// with determinstic workspace/scripts directories.
+// with deterministic workspace/scripts directories.
 var MakeMountDirectory = MakeTemporaryMountDirectory
 
 func MakeTemporaryMountDirectory(prefix string) (string, error) {

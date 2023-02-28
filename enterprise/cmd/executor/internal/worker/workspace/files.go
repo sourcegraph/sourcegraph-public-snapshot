@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -126,7 +126,7 @@ func writeFiles(ctx context.Context, store FilesStore, job types.Job, workspaceF
 		return nil
 	}
 
-	handle := logger.Log("setup.fs.extras", nil)
+	handle := logger.LogEntry("setup.fs.extras", nil)
 	defer func() {
 		if err == nil {
 			handle.Finalize(0)
