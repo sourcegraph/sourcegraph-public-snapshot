@@ -418,10 +418,8 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		result      *protocol.ExternalServiceNamespacesResult
 	)
 
-	externalServiceID := req.ExternalServiceID
-
-	if externalServiceID != nil {
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *externalServiceID)
+	if req.ExternalServiceID != nil {
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
 		if err != nil {
 			result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 			if errcode.IsNotFound(err) {
@@ -505,10 +503,8 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		result      *protocol.ExternalServiceRepositoriesResult
 	)
 
-	externalServiceID := req.ExternalServiceID
-
-	if externalServiceID != nil {
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *externalServiceID)
+	if req.ExternalServiceID != nil {
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
 		if err != nil {
 			result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
 			if errcode.IsNotFound(err) {

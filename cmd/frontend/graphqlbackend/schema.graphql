@@ -1300,9 +1300,10 @@ type Query {
     """
     externalServiceNamespaces(
         """
-        The id of the external service whose configuration will be used to create request parameters.
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
         If no external service exists which provides the necessary request parameters then leave ID nil and
-        provide kind, token and url.
+        provide kind, remote code host token and url.
         """
         id: ID
         """
@@ -1323,9 +1324,10 @@ type Query {
     """
     externalServiceRepositories(
         """
-        The id of the external service whose configuration will be used to create request parameters.
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
         If no external service exists which provides the necessary request parameters then leave ID nil and
-        provide kind, token and url.
+        provide kind, remote code host token and url.
         """
         id: ID
         """
