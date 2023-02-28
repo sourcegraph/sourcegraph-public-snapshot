@@ -7,6 +7,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -27,7 +28,6 @@ import {
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './UserNavItem.module.scss'
 

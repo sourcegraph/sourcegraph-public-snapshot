@@ -2,13 +2,13 @@ import { useEffect } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { LegacyRoute } from './LegacyRouteContext'
+import { LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
-import { getExperimentalFeatures } from './stores'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -66,19 +66,7 @@ export const routes: readonly LayoutRouteProps[] = (
         },
         {
             path: PageRoutes.SearchConsole,
-            element: (
-                <LegacyRoute
-                    render={props => {
-                        const { showMultilineSearchConsole } = getExperimentalFeatures()
-
-                        return showMultilineSearchConsole ? (
-                            <SearchConsolePage {...props} />
-                        ) : (
-                            <Navigate replace={true} to={PageRoutes.Search} />
-                        )
-                    }}
-                />
-            ),
+            element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
         },
         {
             path: PageRoutes.SignIn,
@@ -176,3 +164,13 @@ export const routes: readonly LayoutRouteProps[] = (
         },
     ] as readonly (LayoutRouteProps | undefined)[]
 ).filter(Boolean) as readonly LayoutRouteProps[]
+
+function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
+    const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)
+
+    return showMultilineSearchConsole ? (
+        <SearchConsolePage {...props} />
+    ) : (
+        <Navigate replace={true} to={PageRoutes.Search} />
+    )
+}
