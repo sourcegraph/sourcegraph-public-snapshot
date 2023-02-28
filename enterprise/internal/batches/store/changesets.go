@@ -791,6 +791,7 @@ SET
 	reconciler_state = %s,
 	num_resets = 0,
 	num_failures = 0,
+	-- Copy over and reset the previous failure message
 	previous_failure_message = changesets.failure_message,
 	failure_message = NULL,
 	syncer_error = NULL,
