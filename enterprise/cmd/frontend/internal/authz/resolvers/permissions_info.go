@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,7 +22,7 @@ type permissionsInfoResolver struct {
 	db           edb.EnterpriseDB
 	ossDB        database.DB
 	userID       int32
-	repoID       int32
+	repoID       api.RepoID
 	perms        authz.Perms
 	syncedAt     time.Time
 	updatedAt    time.Time
@@ -55,7 +56,7 @@ var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolver
 	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
 }
 
-func (r *permissionsInfoResolver) Repositories(ctx context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
+func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
 	if r.userID == 0 {
 		return nil, nil
 	}

@@ -549,7 +549,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	return &permissionsInfoResolver{
 		db:           r.db,
 		ossDB:        r.ossDB,
-		repoID:       int32(repoID),
+		repoID:       repoID,
 		perms:        p.Perm,
 		syncedAt:     p.SyncedAt,
 		updatedAt:    p.UpdatedAt,

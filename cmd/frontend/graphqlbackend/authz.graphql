@@ -374,7 +374,7 @@ type PermissionsInfoRepositoryNode {
     """
     The repository corresponding to the permission.
     """
-    repository: Repository!
+    repository: Repository
     """
     The reason why the current user has permission to access the repository.
     """
