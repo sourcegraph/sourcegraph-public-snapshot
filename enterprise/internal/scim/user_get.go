@@ -53,6 +53,8 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 			if totalCount >= params.StartIndex && len(resources) < params.Count {
 				resources = append(resources, resource)
 			}
+			// No `break` here: the loop needs to continue even when `len(resources) >= params.Count`
+			// because we want to put the total number of filtered users into `totalCount`.
 		}
 	}
 	if err != nil {
