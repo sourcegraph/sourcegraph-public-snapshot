@@ -38,9 +38,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
 
     return (
         <div {...attributes} className={classNames(className, styles.root)}>
-            <Text className="mb-2">
-                Connect remote code hosts where your source code lives.
-            </Text>
+            <Text className="mb-2">Connect remote code hosts where your source code lives.</Text>
 
             <section className={styles.content}>
                 <Container className={styles.contentNavigation}>
