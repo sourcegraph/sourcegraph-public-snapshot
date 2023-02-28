@@ -2,7 +2,10 @@ import { MutationTuple, QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
-import { useShowMorePagination, UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     DeleteRoleVariables,
     DeleteRoleResult,
