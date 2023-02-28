@@ -26,7 +26,8 @@ type dataRetentionHandler struct {
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
 	doArchive := conf.ExperimentalFeatures().InsightsDataRetention
-	if doArchive == nil || !*doArchive {
+	// If the setting is not set we run retention by default.
+	if doArchive != nil && !*doArchive {
 		return nil
 	}
 

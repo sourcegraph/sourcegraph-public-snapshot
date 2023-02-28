@@ -89,8 +89,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                         >
                             Sourcegraph Enterprise
                         </Link>
-                        . See
-                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        . See <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"

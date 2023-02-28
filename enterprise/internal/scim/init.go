@@ -18,13 +18,13 @@ import (
 
 // Init sets SCIMHandler to a real handler.
 func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
-	s.SCIMHandler = NewHandler(ctx, db, observationCtx)
+	s.SCIMHandler = newHandler(ctx, db, observationCtx)
 
 	return nil
 }
 
-// NewHandler creates and returns a new SCIM 2.0 handler.
-func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
+// newHandler creates and returns a new SCIM 2.0 handler.
+func newHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
 	config := scim.ServiceProviderConfig{
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,

@@ -1,19 +1,17 @@
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 
-import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
 import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, throttleTime } from 'rxjs/operators'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface CachedResults {
@@ -39,7 +37,6 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
@@ -55,11 +52,10 @@ export function useCachedSearchResults(
         () =>
             transformSearchQuery({
                 query,
-                extensionHostAPIPromise: extensionHostAPI,
                 enableGoImportsSearchQueryTransform,
                 eventLogger,
             }),
-        [query, extensionHostAPI, enableGoImportsSearchQueryTransform]
+        [query, enableGoImportsSearchQueryTransform]
     )
 
     const results = useObservable(

@@ -830,12 +830,17 @@ func Zoekt() *monitoring.Dashboard {
 							NextSteps: `
 								If you are running out of memory map areas, you could resolve this by:
 
+								    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
+								if your corpus of repositories has a high percentage of small, rarely updated repositories. See
+								[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
 								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-								    - Increase the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
-								a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
-								See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+								    - Increasing the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
+								a process can use. The default value of max_map_count is usually 65536. We recommend to set this value to 2x the number
+								of repos to be indexed per Zoekt instance. This means, if you want to index 240k repositories with 3 Zoekt instances,
+								set max_map_count to (240000 / 3) * 2 = 160000. The exact instructions for tuning this parameter can differ depending
+								on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 							`,
 						},
 					},

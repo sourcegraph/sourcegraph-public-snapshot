@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -1444,6 +1447,11 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(bbcs.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
+	case extsvc.TypeAzureDevOps:
+		m := new(adobatches.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &azuredevops.PullRequest{}
 		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")
