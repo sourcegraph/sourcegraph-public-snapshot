@@ -1388,8 +1388,8 @@ dependencies = [
  "pin-project-lite",
  "rand",
  "ref-cast",
- "rocket_codegen 0.5.0-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rocket_http 0.5.0-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket_codegen 0.5.0-rc.1",
+ "rocket_http 0.5.0-rc.1",
  "serde",
  "serde_json",
  "state",
@@ -1426,8 +1426,8 @@ dependencies = [
  "pin-project-lite",
  "rand",
  "ref-cast",
- "rocket_codegen 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
- "rocket_http 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
+ "rocket_codegen 0.5.0-rc.1",
+ "rocket_http 0.5.0-rc.1",
  "serde",
  "serde_json",
  "state",
@@ -1452,7 +1452,7 @@ dependencies = [
  "indexmap",
  "proc-macro2",
  "quote",
- "rocket_http 0.5.0-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket_http 0.5.0-rc.1",
  "syn",
  "unicode-xid",
 ]
@@ -1467,7 +1467,7 @@ dependencies = [
  "indexmap",
  "proc-macro2",
  "quote",
- "rocket_http 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
+ "rocket_http 0.5.0-rc.1",
  "syn",
  "unicode-xid",
 ]
@@ -1608,6 +1608,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "scip"
+version = "0.1.1"
+source = "git+https://github.com/sourcegraph/scip?branch=main#3050326a91551abf4e6f690af6a471a160581ba4"
+dependencies = [
+ "protobuf",
+]
+
+[[package]]
 name = "scoped-tls"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1699,12 +1707,12 @@ dependencies = [
  "paste",
  "pretty_assertions",
  "protobuf",
- "rocket 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
- "scip",
+ "rocket 0.5.0-rc.1",
+ "scip 0.1.0 (git+https://github.com/sourcegraph/scip#7ff845ef5b78772f65463542d5f384967d329b2c)",
  "serde",
  "serde_json",
  "sg-macros",
- "syntect",
+ "syntect 4.7.0 (git+https://github.com/sourcegraph/syntect)",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
@@ -1900,6 +1908,27 @@ dependencies = [
 [[package]]
 name = "syntect"
 version = "4.7.0"
+source = "git+https://github.com/sourcegraph/syntect?branch=main#7e02c5b4085e6d935b960b8106cdd85da04532d2"
+dependencies = [
+ "bincode",
+ "bitflags",
+ "flate2",
+ "fnv",
+ "lazy_static",
+ "once_cell",
+ "onig",
+ "plist",
+ "regex-syntax",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "walkdir",
+ "yaml-rust",
+]
+
+[[package]]
+name = "syntect"
+version = "4.7.0"
 source = "git+https://github.com/sourcegraph/syntect#7e02c5b4085e6d935b960b8106cdd85da04532d2"
 dependencies = [
  "bincode",
@@ -1922,13 +1951,13 @@ dependencies = [
 name = "syntect_server"
 version = "1.0.1"
 dependencies = [
- "rocket 0.5.0-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket 0.5.0-rc.1",
  "rustyline",
- "scip",
+ "scip 0.1.1 (git+https://github.com/sourcegraph/scip?branch=main#3050326a91551abf4e6f690af6a471a160581ba4)",
  "serde",
  "serde_json",
  "sg-syntax",
- "syntect",
+ "syntect 4.7.0 (git+https://github.com/sourcegraph/syntect?branch=main)",
 ]
 
 [[package]]

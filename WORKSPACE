@@ -83,6 +83,18 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "rules_rust",
+    sha256 = "aaaa4b9591a5dad8d8907ae2dbe6e0eb49e6314946ce4c7149241648e56a1277",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/rules_rust-v0.16.1.tar.gz"],
+)
+
+http_archive(
+    name = "cargo_raze",
+    sha256 = "c664e258ea79e7e4ec2f2b57bca8b1c37f11c8d5748e02b8224810da969eb681",
+    strip_prefix = "cargo-raze-0.11.0",
+    url = "https://github.com/google/cargo-raze/archive/v0.11.0.tar.gz",
+)
 # Node toolchain setup ==========================
 load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
 
@@ -172,3 +184,51 @@ gazelle_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
+
+# rust toolchain setup
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+  edition = "2021",
+  versions = [
+    "1.63.0"
+  ],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+# git_repository(
+#     name = "com_github_syntect",
+#     remote = "https://github.com/sourcegraph/syntect",
+#     commit = "7e02c5b4085e6d935b960b8106cdd85da04532d2",
+#     shallow_since = "2022-08-22",
+# )
+
+crates_repository(
+    name = "crate_index",
+    cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
+    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    manifests = [
+      "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
+      "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
+      "//docker-images/syntax-highlighter:Cargo.toml",
+    ],
+    # repo_mapping = {
+    #   "@crate_index__syntect-4.7.0": "@com_github_syntect"
+    # },
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
+#
+# load("@cargo_raze//:repositories.bzl", "cargo_raze_repositories")
+#
+# cargo_raze_repositories()
+#
+# load("@cargo_raze//:transitive_deps.bzl", "cargo_raze_transitive_deps")
+#
+# cargo_raze_transitive_deps()
