@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var MOCK_API_URL string
+
 type Provider struct {
 	db database.DB
 
@@ -34,7 +36,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	return nil, nil
 }
 
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	l := log.Scoped("azuredevops.FetchuserPerms", "logger for azuredevops provider")
 
 	l.Debug("starting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", account.UserID)))
@@ -62,9 +64,16 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, oauthContext)
 
+	var apiURL string
+	if MOCK_API_URL != "" {
+		apiURL = MOCK_API_URL
+	} else {
+		apiURL = azuredevops.AZURE_DEV_OPS_API_URL
+	}
+
 	client, err := azuredevops.NewClient(
 		p.ServiceID()+account.AccountID,
-		azuredevops.AZURE_DEV_OPS_API_URL,
+		apiURL,
 		oauthToken,
 		nil,
 	)
