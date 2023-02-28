@@ -29,7 +29,13 @@ export const ConfirmDeleteRoleModalStory: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <ConfirmDeleteRoleModal loading={false} error={undefined} role={batchChangeAdminRole} onCancel={noop} onConfirm={mockOnConfirm} />
+                <ConfirmDeleteRoleModal
+                    loading={false}
+                    error={undefined}
+                    role={batchChangeAdminRole}
+                    onCancel={noop}
+                    onConfirm={mockOnConfirm}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -41,7 +47,13 @@ export const ConfirmDeleteRoleModalStoryLoading: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <ConfirmDeleteRoleModal loading={true} error={undefined} role={batchChangeAdminRole} onCancel={noop} onConfirm={mockOnConfirm} />
+                <ConfirmDeleteRoleModal
+                    loading={true}
+                    error={undefined}
+                    role={batchChangeAdminRole}
+                    onCancel={noop}
+                    onConfirm={mockOnConfirm}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -55,7 +67,13 @@ export const ConfirmDeleteRoleModalStoryWithError: Story = () => {
         <WebStory>
             {() => (
                 <MockedTestProvider>
-                    <ConfirmDeleteRoleModal loading={false} error={error} role={batchChangeAdminRole} onCancel={noop} onConfirm={mockOnConfirm} />
+                    <ConfirmDeleteRoleModal
+                        loading={false}
+                        error={error}
+                        role={batchChangeAdminRole}
+                        onCancel={noop}
+                        onConfirm={mockOnConfirm}
+                    />
                 </MockedTestProvider>
             )}
         </WebStory>

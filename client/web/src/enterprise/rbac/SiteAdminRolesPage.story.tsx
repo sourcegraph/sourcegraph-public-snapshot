@@ -27,7 +27,7 @@ const mocks = new WildcardMockLink([
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: mockPermissions },
-        nMatches: Number.POSITIVE_INFINITY
+        nMatches: Number.POSITIVE_INFINITY,
     },
     {
         request: {
@@ -35,7 +35,7 @@ const mocks = new WildcardMockLink([
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: mockRoles },
-        nMatches: Number.POSITIVE_INFINITY
+        nMatches: Number.POSITIVE_INFINITY,
     },
     {
         request: {
@@ -43,8 +43,8 @@ const mocks = new WildcardMockLink([
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: { deleteRole: { alwaysNil: null } } },
-        nMatches: Number.POSITIVE_INFINITY
-    }
+        nMatches: Number.POSITIVE_INFINITY,
+    },
 ])
 
 export const RolesPage: Story = () => (

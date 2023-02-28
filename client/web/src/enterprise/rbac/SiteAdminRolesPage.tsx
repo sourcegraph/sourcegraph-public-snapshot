@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
 
@@ -20,7 +19,7 @@ import { RoleNode } from './components/RoleNode'
 import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
-export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
+export interface SiteAdminRolesPageProps extends TelemetryProps {}
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
@@ -66,11 +65,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 path={[{ text: 'Roles' }]}
                 headingElement="h2"
-                description={
-                    <>
-                        Roles represent a set of permissions that are granted to a user.
-                    </>
-                }
+                description={<>Roles represent a set of permissions that are granted to a user.</>}
                 className="mb-3"
                 actions={
                     <Button variant="primary">

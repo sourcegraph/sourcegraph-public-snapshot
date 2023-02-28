@@ -4,25 +4,25 @@ import { AllPermissionsResult, PermissionNamespace, AllRolesResult } from '../..
 import { PermissionsMap } from './backend'
 
 export const mockPermissions: AllPermissionsResult = {
-        permissions: {
-            nodes: [
-                {
-                    __typename: 'Permission',
-                    id: 'perm-1',
-                    namespace: PermissionNamespace.BATCH_CHANGES,
-                    action: 'WRITE',
-                    displayName: 'BATCH_CHANGES#WRITE'
-                },
-                {
-                    __typename: 'Permission',
-                    id: 'perm-2',
-                    namespace: PermissionNamespace.BATCH_CHANGES,
-                    action: 'READ',
-                    displayName: 'BATCH_CHANGES#READ'
-                }
-            ]
-        }
-    }
+    permissions: {
+        nodes: [
+            {
+                __typename: 'Permission',
+                id: 'perm-1',
+                namespace: PermissionNamespace.BATCH_CHANGES,
+                action: 'WRITE',
+                displayName: 'BATCH_CHANGES#WRITE',
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-2',
+                namespace: PermissionNamespace.BATCH_CHANGES,
+                action: 'READ',
+                displayName: 'BATCH_CHANGES#READ',
+            },
+        ],
+    },
+}
 
 export const mockRoles: AllRolesResult = {
     roles: {
@@ -30,7 +30,7 @@ export const mockRoles: AllRolesResult = {
         totalCount: 5,
         pageInfo: {
             hasNextPage: true,
-            endCursor: 'role-3'
+            endCursor: 'role-3',
         },
         nodes: [
             {
@@ -39,8 +39,8 @@ export const mockRoles: AllRolesResult = {
                 name: 'Site Administrator',
                 system: true,
                 permissions: {
-                    nodes: mockPermissions.permissions.nodes
-                }
+                    nodes: mockPermissions.permissions.nodes,
+                },
             },
             {
                 __typename: 'Role',
@@ -54,10 +54,10 @@ export const mockRoles: AllRolesResult = {
                             id: 'perm-1',
                             namespace: PermissionNamespace.BATCH_CHANGES,
                             action: 'READ',
-                            displayName: 'BATCH_CHANGES#WRITE'
-                        }
-                    ]
-                }
+                            displayName: 'BATCH_CHANGES#WRITE',
+                        },
+                    ],
+                },
             },
             {
                 __typename: 'Role',
@@ -65,11 +65,11 @@ export const mockRoles: AllRolesResult = {
                 name: 'Operator',
                 system: false,
                 permissions: {
-                    nodes: []
-                }
-            }
-        ]
-    }
+                    nodes: [],
+                },
+            },
+        ],
+    },
 }
 
 export const mockPermissionsMap = groupBy(mockPermissions.permissions.nodes, 'namespace') as PermissionsMap
