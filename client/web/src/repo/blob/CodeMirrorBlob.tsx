@@ -277,7 +277,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
             codeFoldingExtension(),
-            tokenSelectionExtension(),
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
@@ -290,7 +290,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
             search({
@@ -320,6 +319,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // any existing state should be discarded.
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
+
+            if (navigateToLineOnAnyClick) {
+                /**
+                 * `navigateToLineOnAnyClick` is `true` when CodeMirrorBlob is rendered in the references panel.
+                 * We don't need code intel and keyboard navigation in the references panel blob: https://github.com/sourcegraph/sourcegraph/pull/41615.
+                 */
+                return
+            }
 
             // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
