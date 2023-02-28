@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -169,7 +170,17 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Ac
 		return nil, errors.Wrap(err, "get client")
 	}
 	client = client.WithAuthenticator(token)
-	client.WithRateLimiter(fmt.Sprintf("url:%s,clientID:%s,accountID:%s", account.ServiceID, account.ClientID, account.AccountID))
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github == nil || authProvider.Github.ClientID != account.ClientID {
+			continue
+		}
+
+		if authProvider.Github.RateLimit != 0 {
+			client.WithRateLimiter(fmt.Sprintf("url:%s,clientID:%s,accountID:%s", account.ServiceID, account.ClientID, account.AccountID), authProvider.Github.RateLimit)
+		}
+		break
+	}
 
 	accountID := extsvc.AccountID(account.AccountID)
 

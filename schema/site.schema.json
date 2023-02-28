@@ -2093,6 +2093,11 @@
           "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
           "default": false,
           "type": "boolean"
+        },
+        "rateLimit": {
+            "type": "integer",
+            "default": 5000,
+            "description": "Number of requests per hour for user accounts connected using this authentication provider"
         }
       }
     },

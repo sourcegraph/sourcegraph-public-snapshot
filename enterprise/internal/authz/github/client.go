@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 )
 
 // 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
@@ -43,7 +44,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
-	WithRateLimiter(urn string)
+	WithRateLimiter(urn string, rateLimit int)
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -59,8 +60,8 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	}
 }
 
-func (c *ClientAdapter) WithRateLimiter(urn string) {
+func (c *ClientAdapter) WithRateLimiter(urn string, rateLimit int) {
 	rl := ratelimit.DefaultRegistry.Get(urn)
-	rl.SetLimit(5000.0 / 3600.0)
+	rl.SetLimit(rate.Limit(rateLimit / 3600.0))
 	c.V3Client.WithRateLimiter(rl)
 }

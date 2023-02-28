@@ -63,6 +63,9 @@ type MockClient struct {
 	// WithAuthenticatorFunc is an instance of a mock function object
 	// controlling the behavior of the method WithAuthenticator.
 	WithAuthenticatorFunc *ClientWithAuthenticatorFunc
+	// WithRateLimiterFunc is an instance of a mock function object
+	// controlling the behavior of the method WithRateLimiter.
+	WithRateLimiterFunc *ClientWithRateLimiterFunc
 }
 
 // NewMockClient creates a new mock of the client interface. All methods
@@ -131,6 +134,11 @@ func NewMockClient() *MockClient {
 		},
 		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
 			defaultHook: func(auth.Authenticator) (r0 client) {
+				return
+			},
+		},
+		WithRateLimiterFunc: &ClientWithRateLimiterFunc{
+			defaultHook: func(string) {
 				return
 			},
 		},
@@ -206,6 +214,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.WithAuthenticator")
 			},
 		},
+		WithRateLimiterFunc: &ClientWithRateLimiterFunc{
+			defaultHook: func(string) {
+				panic("unexpected invocation of MockClient.WithRateLimiter")
+			},
+		},
 	}
 }
 
@@ -226,6 +239,7 @@ type surrogateMockClient interface {
 	ListTeamMembers(context.Context, string, string, int) ([]*github.Collaborator, bool, error)
 	ListTeamRepositories(context.Context, string, string, int) ([]*github.Repository, bool, int, error)
 	WithAuthenticator(auth.Authenticator) client
+	WithRateLimiter(string)
 }
 
 // NewMockClientFrom creates a new mock of the MockClient interface. All
@@ -270,6 +284,9 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 		},
 		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
 			defaultHook: i.WithAuthenticator,
+		},
+		WithRateLimiterFunc: &ClientWithRateLimiterFunc{
+			defaultHook: i.WithRateLimiter,
 		},
 	}
 }
@@ -1786,4 +1803,103 @@ func (c ClientWithAuthenticatorFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientWithAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ClientWithRateLimiterFunc describes the behavior when the WithRateLimiter
+// method of the parent MockClient instance is invoked.
+type ClientWithRateLimiterFunc struct {
+	defaultHook func(string)
+	hooks       []func(string)
+	history     []ClientWithRateLimiterFuncCall
+	mutex       sync.Mutex
+}
+
+// WithRateLimiter delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) WithRateLimiter(v0 string) {
+	m.WithRateLimiterFunc.nextHook()(v0)
+	m.WithRateLimiterFunc.appendCall(ClientWithRateLimiterFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the WithRateLimiter
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientWithRateLimiterFunc) SetDefaultHook(hook func(string)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithRateLimiter method of the parent MockClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientWithRateLimiterFunc) PushHook(hook func(string)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientWithRateLimiterFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(string) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientWithRateLimiterFunc) PushReturn() {
+	f.PushHook(func(string) {
+		return
+	})
+}
+
+func (f *ClientWithRateLimiterFunc) nextHook() func(string) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientWithRateLimiterFunc) appendCall(r0 ClientWithRateLimiterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientWithRateLimiterFuncCall objects
+// describing the invocations of this function.
+func (f *ClientWithRateLimiterFunc) History() []ClientWithRateLimiterFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientWithRateLimiterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientWithRateLimiterFuncCall is an object that describes an invocation
+// of method WithRateLimiter on an instance of MockClient.
+type ClientWithRateLimiterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientWithRateLimiterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientWithRateLimiterFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
