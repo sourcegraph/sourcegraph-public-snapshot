@@ -84,8 +84,8 @@ func TestFlushCollectSender(t *testing.T) {
 	if len(results) == 0 {
 		t.Fatal("no results returned from search")
 	}
-	if results[0].Stats.FlushReason != zoekt.FlushReasonTimerExpired {
-		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonTimerExpired, results[0].Stats.FlushReason)
+	if results[0].Stats.FlushReason != zoekt.FlushReasonFinalFlush {
+		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonFinalFlush, results[0].Stats.FlushReason)
 	}
 
 	// Check that the results were streamed in the expected order

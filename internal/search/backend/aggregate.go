@@ -162,7 +162,7 @@ func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 		}
 
 		if len(f.firstEvent) == 0 {
-			f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
+			f.stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
 		} else if f.maxSizeBytes >= 0 && f.collectSender.sizeBytes > uint64(f.maxSizeBytes) {
 			// Protect against too large aggregates. This should be the exception and only
 			// happen for queries yielding an extreme number of results.
@@ -179,7 +179,7 @@ func (f *flushCollectSender) SendDone(endpoint string) {
 	f.mu.Lock()
 	delete(f.firstEvent, endpoint)
 	if len(f.firstEvent) == 0 {
-		f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
+		f.stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
 	}
 	f.mu.Unlock()
 }
@@ -209,10 +209,4 @@ func (f *flushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
 
 	// Stop timer goroutine if it is still running.
 	close(f.timerCancel)
-}
-
-func (f *flushCollectSender) Flush() {
-	f.mu.Lock()
-	f.stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
-	f.mu.Unlock()
 }
