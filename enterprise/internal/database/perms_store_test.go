@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -3427,9 +3426,9 @@ func setupTestPerms(t *testing.T, db database.DB, clock func() time.Time) *perms
 	return s
 }
 
-func testPermsStore_ListUserPermissions(db database.DB, logger log.Logger) func(*testing.T) {
+func testPermsStore_ListUserPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := perms(logger, db, clock)
+		s := perms(logtest.Scoped(t), db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
@@ -3573,7 +3572,7 @@ func testPermsStore_ListUserPermissions(db database.DB, logger log.Logger) func(
 			},
 		}
 
-		for tIndex, test := range tests {
+		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
 				results, err := s.ListUserPermissions(ctx, int32(test.UserID), test.Args)
 				if err != nil {
@@ -3581,12 +3580,12 @@ func testPermsStore_ListUserPermissions(db database.DB, logger log.Logger) func(
 				}
 
 				if len(test.WantResults) != len(results) {
-					t.Fatalf("Test %d. Results mismatch. Want: %d Got: %d", tIndex, len(test.WantResults), len(results))
+					t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
 				}
 
 				for index, result := range results {
 					if diff := cmp.Diff(test.WantResults[index], &listUserPermissionsResult{RepoId: int32(result.Repo.ID), Reason: result.Reason}); diff != "" {
-						t.Fatalf("Test %d. Results %d mismatch (-want +got):\n%s", tIndex, index, diff)
+						t.Fatalf("Results %d mismatch (-want +got):\n%s", index, diff)
 					}
 				}
 			})
