@@ -75,7 +75,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
-	github.com/graph-gophers/graphql-go v1.3.0
+	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/golang-lru v0.5.4
