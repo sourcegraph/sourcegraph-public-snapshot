@@ -2,13 +2,13 @@ import * as React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Route, Routes, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { TeamAreaTeamFields } from '../../graphql-operations'
 import { RouteV6Descriptor } from '../../util/contributions'
@@ -61,8 +61,6 @@ export interface TeamAreaRouteContext {
 export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticatedUser }) => {
     const { teamName } = useParams<{ teamName: string }>()
 
-    const location = useLocation()
-
     const { data, loading, error, refetch } = useTeam(teamName!)
 
     if (loading) {
@@ -89,15 +87,13 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
     }
 
     return (
-        <ErrorBoundary location={location}>
-            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                <Routes>
-                    <Route path="" element={<TeamProfilePage {...context} />} />
-                    <Route path="members" element={<TeamMembersPage {...context} />} />
-                    <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} />
-                    <Route element={<NotFoundPage />} />
-                </Routes>
-            </React.Suspense>
-        </ErrorBoundary>
+        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+            <Routes>
+                <Route path="" element={<TeamProfilePage {...context} />} errorElement={<RouteError />} />
+                <Route path="members" element={<TeamMembersPage {...context} />} errorElement={<RouteError />} />
+                <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} errorElement={<RouteError />} />
+                <Route element={<NotFoundPage />} />
+            </Routes>
+        </React.Suspense>
     )
 }

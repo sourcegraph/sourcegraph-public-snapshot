@@ -831,8 +831,9 @@ type User struct {
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User
-	Emails         []string
-	SCIMExternalID string
+	Emails          []string
+	SCIMExternalID  string
+	SCIMAccountData string
 }
 
 type SystemRole string

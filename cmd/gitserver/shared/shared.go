@@ -19,7 +19,6 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -150,7 +149,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
 		Server: &gitserver,
 	})
-	reflection.Register(grpcServer)
 
 	gitserver.RegisterMetrics(observationCtx, db)
 

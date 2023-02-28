@@ -35,7 +35,6 @@ export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
 export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 export { type SettingsCascade, type SettingsSubject, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -43,6 +42,7 @@ export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/sear
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 
 // Copies of non-reusable code
 

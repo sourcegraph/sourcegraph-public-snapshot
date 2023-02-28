@@ -17,7 +17,6 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -182,7 +181,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	defer cancel()
 
 	grpcServer := defaults.NewServer(logger)
-	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
 		Service: sService,
 	})

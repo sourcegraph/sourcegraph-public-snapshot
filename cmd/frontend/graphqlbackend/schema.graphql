@@ -1300,6 +1300,13 @@ type Query {
     """
     externalServiceNamespaces(
         """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
         The kind of the external service.
         """
         kind: ExternalServiceKind!
@@ -1316,6 +1323,13 @@ type Query {
     Lists all repositories for a given external service connection.
     """
     externalServiceRepositories(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
         """
         The kind of the external service.
         """

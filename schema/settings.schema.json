@@ -63,14 +63,6 @@
             "pointer": true
           }
         },
-        "codeNavigation": {
-          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
-          "type": "string",
-          "enum": ["selection-driven", "link-driven"],
-          "!go": {
-            "pointer": true
-          }
-        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
@@ -264,11 +256,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "preloadGoToDefinition": {
-          "description": "Preload definitions for available tokens in the visible viewport.",
-          "type": "boolean",
-          "default": false
         },
         "symbolKindTags": {
           "description": "Show the initial letter of the symbol kind instead of icons.",

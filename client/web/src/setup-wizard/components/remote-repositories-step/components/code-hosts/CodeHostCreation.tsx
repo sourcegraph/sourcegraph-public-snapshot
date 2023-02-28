@@ -12,6 +12,7 @@ import {
     AddExternalServiceInput,
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
+    GetCodeHostsResult,
 } from '../../../../../graphql-operations'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../queries'
@@ -90,7 +91,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
                 cache.modify({
                     fields: {
-                        externalServices(codeHosts) {
+                        externalServices(codeHosts: GetCodeHostsResult['externalServices']) {
                             const newCodeHost = cache.writeFragment({
                                 data: data.addExternalService,
                                 fragment: CODE_HOST_FRAGMENT,

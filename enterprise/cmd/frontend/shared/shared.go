@@ -91,7 +91,7 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 
 	// Inititalize executor last, as we require code intel and batch changes services to be
 	// already populated on the enterpriseServices object.
-	if err := executor.Init(ctx, observationCtx, db, conf, &enterpriseServices); err != nil {
+	if err := executor.Init(observationCtx, db, conf, &enterpriseServices); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
