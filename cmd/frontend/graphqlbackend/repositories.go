@@ -205,11 +205,6 @@ func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countpt
 		return i32ptr(int32(0)), nil
 	}
 
-	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
-	if envvar.SourcegraphDotComMode() {
-		return i32ptr(int32(0)), nil
-	}
-
 	count, err := s.db.Repos().Count(ctx, s.opt)
 	return i32ptr(int32(count)), err
 }
