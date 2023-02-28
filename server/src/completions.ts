@@ -5,6 +5,7 @@ import {
 	Completion,
 	WSCompletionResponse,
 	WSCompletionResponseCompletion,
+	WSCompletionResponseError,
 	WSCompletionsRequest,
 } from '@sourcegraph/cody-common'
 
@@ -28,7 +29,7 @@ const cushmanBasic = new OpenAIBackend(
 	langKeywordStopStrings
 )
 
-export async function wsHandleGetCompletions(ws: WebSocket, req: WSCompletionsRequest): Promise<void> {
+export async function wsHandleGetCompletions(socket: WebSocket, req: WSCompletionsRequest): Promise<void> {
 	try {
 		const completed = [cushmanBasic.getCompletions(req.args)].map(completionPromise =>
 			completionPromise
@@ -75,9 +76,9 @@ export async function wsHandleGetCompletions(ws: WebSocket, req: WSCompletionsRe
 					}
 
 					return new Promise<void>(resolve => {
-						ws.send(JSON.stringify(response), err => {
+						socket.send(JSON.stringify(response), err => {
 							if (err) {
-								console.error(`failed to send websocket getCompletions response: ${err}`)
+								console.error(`failed to send websocket getCompletions response: ${err?.toString()}`)
 								return
 							}
 							resolve()
@@ -93,9 +94,13 @@ export async function wsHandleGetCompletions(ws: WebSocket, req: WSCompletionsRe
 			requestId: req.requestId,
 			kind: 'done',
 		}
-		ws.send(JSON.stringify(doneMsg))
-	} catch (error: any) {
-		const errMsg: WSCompletionResponse = { requestId: req.requestId, kind: 'error', error: error.toString() }
-		ws.send(JSON.stringify(errMsg))
+		socket.send(JSON.stringify(doneMsg))
+	} catch (error) {
+		const errMsg: WSCompletionResponseError = {
+			requestId: req.requestId,
+			kind: 'error',
+			error: error?.toString() ?? 'null or undefined error',
+		}
+		socket.send(JSON.stringify(errMsg))
 	}
 }

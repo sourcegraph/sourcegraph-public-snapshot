@@ -119,15 +119,15 @@ class ChatController {
 
 	renderMessages(messages, messageInProgress) {
 		const visibleMessages = messages.filter(message => !message.hidden)
-		const messageElements = visibleMessages.map((message, idx) => {
-			return getMessageBubble(
+		const messageElements = visibleMessages.map((message, idx) =>
+			getMessageBubble(
 				message.speaker,
 				message.displayText,
 				message.timestamp,
 				message.contextFiles,
 				idx === visibleMessages.length - 1
 			)
-		})
+		)
 
 		const messageInProgressElement = messageInProgress
 			? getMessageInProgressBubble(

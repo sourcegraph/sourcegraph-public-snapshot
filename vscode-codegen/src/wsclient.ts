@@ -4,15 +4,18 @@ import { WebSocket } from 'ws'
 import { WSResponse } from '@sourcegraph/cody-common'
 
 export class WSClient<TRequest, TResponse extends WSResponse> {
-	static async new<T1, T2 extends WSResponse>(addr: string, accessToken: string): Promise<WSClient<T1, T2> | null> {
+	public static async new<T1, T2 extends WSResponse>(
+		addr: string,
+		accessToken: string
+	): Promise<WSClient<T1, T2> | null> {
 		try {
 			const options = { headers: { authorization: `Bearer ${accessToken}` } }
-			const ws = new WebSocket(httpToWSURL(addr), options)
-			const c = new WSClient<T1, T2>(ws, options)
-			await c.waitForConnection(30 * 1000) // 30 seconds
-			return c
+			const socket = new WebSocket(httpToWSURL(addr), options)
+			const client = new WSClient<T1, T2>(socket, options)
+			await client.waitForConnection(30 * 1000) // 30 seconds
+			return client
 		} catch (error) {
-			vscode.window.showWarningMessage(
+			void vscode.window.showWarningMessage(
 				'Could not connect to the Cody backend. Check that you have set the correct access token.'
 			)
 			console.error(error)
@@ -25,13 +28,14 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 		[id: number]: (resp: TResponse) => boolean
 	} = {}
 
-	constructor(private ws: WebSocket, private options: { headers: { authorization: string } }) {
+	constructor(private socket: WebSocket, private options: { headers: { authorization: string } }) {
 		this.addHandlers()
 	}
 
-	private addHandlers() {
-		this.ws.on('message', rawMsg => {
-			const msg: TResponse = JSON.parse(rawMsg.toString())
+	private addHandlers(): void {
+		this.socket.on('message', rawMsg => {
+			// eslint-disable-next-line @typescript-eslint/no-base-to-string
+			const msg: TResponse = JSON.parse(rawMsg.toString()) as TResponse
 			if (!msg.requestId) {
 				return
 			}
@@ -44,13 +48,13 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 				delete this.responseListeners[msg.requestId]
 			}
 		})
-		this.ws.on('error', err => {
-			console.error(`websocket error: ${err}`)
+		this.socket.on('error', err => {
+			console.error(`websocket error: ${err.toString()}`)
 		})
 	}
 
-	async ensureConnected(): Promise<void> {
-		const readyState = this.ws.readyState
+	private async ensureConnected(): Promise<void> {
+		const readyState = this.socket.readyState
 		switch (readyState) {
 			case WebSocket.OPEN:
 				return
@@ -59,32 +63,26 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 				return
 			case WebSocket.CLOSED:
 			case WebSocket.CLOSING:
-				console.log(`reconnecting to ${this.ws.url}`)
-				this.ws = new WebSocket(this.ws.url, this.options)
+				console.log(`reconnecting to ${this.socket.url}`)
+				this.socket = new WebSocket(this.socket.url, this.options)
 				this.addHandlers()
 				await this.waitForConnection(30 * 1000)
 				return
 			default:
-				throw new Error(`unrecognized websocket ready state: ${readyState}`)
+				throw new Error(`unreachable websocket ready state: ${readyState as number}`)
 		}
 	}
 
 	private async waitForConnection(openTimeout: number): Promise<void> {
-		await Promise.race([
-			new Promise<void>(resolve =>
-				this.ws.on('open', () => {
-					resolve()
-				})
-			),
-			new Promise<void>((_, reject) => {
-				setTimeout(() => {
-					reject(`Failed to create websocket connection, timed out in ${openTimeout}ms`)
-				}, openTimeout)
-			}),
-		])
+		return new Promise<void>((resolve, reject) => {
+			this.socket.on('open', resolve)
+			setTimeout(() => {
+				reject(new Error(`Failed to create websocket connection, timed out in ${openTimeout}ms`))
+			}, openTimeout)
+		})
 	}
 
-	async sendRequest(req: TRequest, handleResponse: (resp: TResponse) => boolean): Promise<() => void> {
+	public async sendRequest(req: TRequest, handleResponse: (resp: TResponse) => boolean): Promise<() => void> {
 		const requestId = this.nextRequestId++
 		this.responseListeners[requestId] = handleResponse
 		const reqWithId = {
@@ -93,9 +91,9 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 		}
 		await this.ensureConnected()
 
-		this.ws.send(JSON.stringify(reqWithId), async err => {
+		this.socket.send(JSON.stringify(reqWithId), err => {
 			if (err) {
-				throw new Error(`failed to send websocket request: ${err}`)
+				console.error(`failed to send websocket request: ${err.toString()}`)
 			}
 		})
 

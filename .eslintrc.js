@@ -42,6 +42,7 @@ const config = {
 		'no-useless-concat': 'warn',
 		'no-useless-escape': 'warn',
 		'@typescript-eslint/no-var-requires': 'warn',
+		'no-void': ['warn', { allowAsStatement: true }],
 		'@typescript-eslint/no-require-imports': 'warn',
 		radix: 'warn',
 		'@typescript-eslint/restrict-template-expressions': 'warn',

@@ -1,6 +1,10 @@
 import { InflatedHistoryItem } from './history'
 export * from './history'
 
+// FIXME: When OpenAI's logit_bias uses a more precise type than 'object',
+// specify JSON-able objects as { [prop: string]: JSONSerialiable | undefined }
+export type JSONSerializable = null | string | number | boolean | object | JSONSerializable[]
+
 export interface ReferenceInfo {
 	text: string
 	filename: string
@@ -9,7 +13,7 @@ export interface ReferenceInfo {
 export interface LLMDebugInfo {
 	elapsedMillis: number
 	prompt: string
-	llmOptions: any
+	llmOptions: JSONSerializable
 }
 
 export interface Message {
@@ -91,7 +95,7 @@ export interface WSCompletionResponseError extends WSResponse {
 }
 export interface WSCompletionResponseMetadata extends WSResponse {
 	kind: 'metadata'
-	metadata: any
+	metadata: JSONSerializable
 }
 export interface WSCompletionResponseDone extends WSResponse {
 	kind: 'done'

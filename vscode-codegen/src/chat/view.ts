@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import path from 'path'
 
+import fetch from 'node-fetch'
 import * as vscode from 'vscode'
 
 import { Feedback, Message } from '@sourcegraph/cody-common'
@@ -10,7 +11,6 @@ import { EmbeddingsClient } from '../embeddings-client'
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
 import { WSChatClient } from './ws'
-import fetch from 'node-fetch'
 
 export interface ChatMessage extends Omit<Message, 'text'> {
 	displayText: string

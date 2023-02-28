@@ -3,6 +3,7 @@ import { parse } from 'url'
 
 import * as bodyParser from 'body-parser'
 import express from 'express'
+import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { WebSocketServer } from 'ws'
 
 import {
@@ -19,7 +20,6 @@ import { authenticate, getUsers, User } from './auth'
 import { wsHandleGetCompletions } from './completions'
 import { getInfo } from './info'
 import { ClaudeBackend } from './prompts/claude'
-import { GoogleSpreadsheet } from 'google-spreadsheet'
 
 const anthropicApiKey = process.env.ANTHROPIC_API_KEY
 if (!anthropicApiKey) {
