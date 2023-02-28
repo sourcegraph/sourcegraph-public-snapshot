@@ -6,13 +6,13 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
-type File struct {
+type Ruleset struct {
 	proto *codeownerspb.File
 	rules []*CompiledRule
 }
 
-func NewFile(proto *codeownerspb.File) *File {
-	f := &File{
+func NewRuleset(proto *codeownerspb.File) *Ruleset {
+	f := &Ruleset{
 		proto: proto,
 	}
 	for _, r := range proto.GetRule() {
@@ -24,7 +24,7 @@ func NewFile(proto *codeownerspb.File) *File {
 // FindOwners returns the Owners associated with given path as per this CODEOWNERS file.
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.
-func (x *File) FindOwners(path string) []*codeownerspb.Owner {
+func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
 	for i := len(x.rules) - 1; i >= 0; i-- {
 		rule := x.rules[i]
 		if rule.match(path) {

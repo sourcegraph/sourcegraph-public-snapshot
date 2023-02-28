@@ -94,7 +94,7 @@ func TestFileOwnersMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := codeowners.NewFile(&codeownerspb.File{
+			file := codeowners.NewRuleset(&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{Pattern: pattern, Owner: owner},
 				},
@@ -196,7 +196,7 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := codeowners.NewFile(&codeownerspb.File{
+			file := codeowners.NewRuleset(&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{Pattern: pattern, Owner: owner},
 				},
@@ -211,7 +211,7 @@ func TestFileOwnersNoMatch(t *testing.T) {
 
 func TestFileOwnersOrder(t *testing.T) {
 	wantOwner := []*codeownerspb.Owner{{Handle: "some-path-owner"}}
-	file := codeowners.NewFile(&codeownerspb.File{
+	file := codeowners.NewRuleset(&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "/top-level-directory/",

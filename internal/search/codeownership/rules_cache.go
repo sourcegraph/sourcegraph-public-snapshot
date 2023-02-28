@@ -18,7 +18,7 @@ type RulesKey struct {
 }
 
 type RulesCache struct {
-	rules      map[RulesKey]*codeowners.File
+	rules      map[RulesKey]*codeowners.Ruleset
 	ownService own.Service
 
 	mu sync.RWMutex
@@ -26,12 +26,12 @@ type RulesCache struct {
 
 func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	return RulesCache{
-		rules:      make(map[RulesKey]*codeowners.File),
+		rules:      make(map[RulesKey]*codeowners.Ruleset),
 		ownService: own.NewService(gs, db),
 	}
 }
 
-func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.File, error) {
+func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	c.mu.RLock()
 	key := RulesKey{repoName, commitID}
 	if _, ok := c.rules[key]; ok {
@@ -43,9 +43,9 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoN
 	defer c.mu.Unlock()
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
-		file, err := c.ownService.OwnersFile(ctx, repoName, commitID)
+		file, err := c.ownService.RulesetForRepo(ctx, repoName, commitID)
 		if err != nil {
-			emptyRuleset := codeowners.NewFile(&codeownerspb.File{})
+			emptyRuleset := codeowners.NewRuleset(&codeownerspb.File{})
 			c.rules[key] = emptyRuleset
 			return emptyRuleset, err
 		}
