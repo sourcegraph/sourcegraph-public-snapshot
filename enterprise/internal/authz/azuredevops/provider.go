@@ -86,7 +86,17 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	var repos []azuredevops.Repository
 
+	seenOrgs := map[string]struct{}{}
 	for _, org := range p.orgs {
+		// The list of orgs may have duplicates if there are multiple Azure DevOps code host
+		// connections that have the same org in their config. As a result, skip this org if we
+		// already listed its repositories in this iteration of permissions syncing.
+		if _, ok := seenOrgs[org]; ok {
+			continue
+		}
+
+		seenOrgs[org] = struct{}{}
+
 		l.Debug("listing repos",
 			log.String("org", fmt.Sprintf("%#v", org)),
 		)
@@ -121,7 +131,17 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		repos = append(repos, r...)
 	}
 
+	seenProjects := map[string]struct{}{}
 	for _, project := range p.projects {
+		// The list of projects may have duplicates if there are multiple Azure DevOps code host
+		// connections that have the same project in their config. As a result, skip this project if
+		// we already listed its repositories in this iteration of permissions syncing.
+		if _, ok := seenProjects[project]; ok {
+			continue
+		}
+
+		seenProjects[project] = struct{}{}
+
 		r, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 			ProjectOrOrgName: project,
 		})
@@ -182,10 +202,7 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 	return nil
 }
 
-func newAuthzProvider(db database.DB, conn *types.AzureDevOpsConnection) (*Provider, error) {
-	if conn.AzureDevOpsConnection == nil {
-		return nil, nil
-	}
+func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error) {
 
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
@@ -198,23 +215,34 @@ func newAuthzProvider(db database.DB, conn *types.AzureDevOpsConnection) (*Provi
 
 	return &Provider{
 		db:       db,
-		urn:      conn.URN,
+		urn:      "azuredevops:authzprovider",
 		codeHost: extsvc.NewCodeHost(u, extsvc.TypeAzureDevOps),
-		orgs:     conn.Orgs,
-		projects: conn.Projects,
+		orgs:     orgs,
+		projects: projects,
 	}, nil
 }
 
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
 	initResults := &authztypes.ProviderInitResult{}
+	orgs, projects := []string{}, []string{}
+
+	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
+	// orgs and projects in every permissions sync iteration.
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c)
-		if err != nil {
-			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
-			initResults.Problems = append(initResults.Problems, err.Error())
-		} else if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+		if c.AzureDevOpsConnection == nil {
+			continue
 		}
+
+		orgs = append(orgs, c.Orgs...)
+		projects = append(projects, c.Projects...)
+	}
+
+	p, err := newAuthzProvider(db, orgs, projects)
+	if err != nil {
+		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
+		initResults.Problems = append(initResults.Problems, err.Error())
+	} else if p != nil {
+		initResults.Providers = append(initResults.Providers, p)
 	}
 
 	return initResults
