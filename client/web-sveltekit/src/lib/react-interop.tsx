@@ -25,18 +25,9 @@ export const ReactAdapter: FC<PropsWithChildren<{ route: string }>> = ({ route, 
         () =>
             createSvelteKitRouter([
                 {
-                    // By having a top-level "catch-all" path with an empty error element we avoid
-                    // briefly showing React Routers default error message when we navigate to a
-                    // route outside of this component.
-                    path: '*',
-                    errorElement: <div />,
-                    children: [
-                        {
-                            path: route,
-                            // React.Suspense seems necessary to render the components without error
-                            element: <React.Suspense fallback={true}>{children}</React.Suspense>,
-                        },
-                    ],
+                    path: route,
+                    // React.Suspense seems necessary to render the components without error
+                    element: <React.Suspense fallback={true}>{children}</React.Suspense>,
                 },
             ]),
         [route, children]

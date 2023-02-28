@@ -18,15 +18,10 @@
     } from '$lib/shared'
     import type { Observable } from 'rxjs'
     import ReactComponent from '$lib/ReactComponent.svelte'
+    import { eventLogger } from '$lib/logger'
 
     export let data: PageData
 
-    // TODO: Hook up to telemetry service
-    const telemetryService = {
-        log: () => undefined,
-        logViewEvent: () => undefined,
-        logPageView: () => undefined,
-    }
     const isSourcegraphDotCom = !!PUBLIC_DOTCOM
 
     function fetchHighlightedFileLineRanges(parameters: FetchFileParameters, force?: boolean): Observable<string[][]> {
@@ -35,7 +30,7 @@
 
     $: props = {
         fetchHighlightedFileLineRanges,
-        telemetryService,
+        telemetryService: eventLogger,
         isSourcegraphDotCom,
         // FIXME: Terrible hack to avoid having to create a complete context object
         platformContext: data.platformContext as any,
@@ -48,4 +43,4 @@
     } satisfies GlobalNotebooksAreaProps
 </script>
 
-<ReactComponent route="notebooks/*" component={GlobalNotebooksArea} {props} />
+<ReactComponent route="/notebooks/*" component={GlobalNotebooksArea} {props} />
