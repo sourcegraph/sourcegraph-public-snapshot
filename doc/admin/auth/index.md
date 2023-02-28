@@ -159,8 +159,7 @@ Then add the following lines to your site configuration:
       "clientSecret": "replace-with-the-oauth-client-secret",
       "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs` or `allowOrgsMap`, any GitHub user can sign up.
       "allowOrgs": ["your-org-name"], // Restrict logins and sign-ups if enabled to members of these orgs.
-      "allowOrgsMap": { "orgName": ["your-team-name"]}, // Restrict logins and sign-ups if enabled to members of teams that belong to a given org.
-      "rateLimit": 5000.0 // Limits the number of requests per hour for accounts authenticated using this authentication provider.
+      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and sign-ups if enabled to members of teams that belong to a given org.
     }
   ]
 }
@@ -239,6 +238,20 @@ When combined with `"allowSignup": false` or unset, an admin should first create
       }
     }
   ```
+
+### How to apply rate limits to permissions syncing using GitHub auth provider
+
+A rate limit can be configured for individual users signed in with an auth provider. This limit is applied to each user individually, for example: if a rate limit of 5000 requests per hour is set, a permissions sync for a single user account cannot exceed 5000 requests per hour.
+
+To apply a rate limit, add a `rateLimit` to the auth provider config:
+
+```json
+  {
+      "type": "github",
+      // ...
+      "rateLimit": 5000.0
+  }
+```
 
 
 ## GitLab

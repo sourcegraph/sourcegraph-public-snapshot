@@ -20,9 +20,6 @@ Here, rate limits can be configured on various levels of interaction, namely
 1. Authentication provider
 1. User
 
-These rate limits are applied in a cascading manner, based on the following illustration:
-![All user connections belong to an Auth Provider. All Auth providers and code host connections belong to a URL](./rate_limit.png)
-
 All rate limited requests are made to a specific host URL. If a rate limit is set for a host URL, then the total number of all requests made to this URL cannot exceed the rate limit.
 
 The systems in Sourcegraph that make requests to this URL are the code host connection, used to discover and fetch repositories, as well as determining user access in some cases.
