@@ -35,7 +35,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	reposStore := ReposWith(logger, db)
 
 	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1"})
+	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
 	require.NoError(t, err)
 	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			wantJobs: jobs,
 		},
 		{
-			name:     "SearchType alone works as a filter by sync job subject",
+			name:     "SearchType alone works as a filter by sync job subject (repository)",
 			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
 			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
 		},
@@ -203,6 +203,21 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			name:     "Repo name search",
 			opts:     ListPermissionSyncJobOpts{Query: "1", SearchType: PermissionsSyncSearchTypeRepo},
 			wantJobs: jobs[:1],
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject (user)",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:3],
+		},
+		{
+			name:     "User display name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "3", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "User name search",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[2:3],
 		},
 	}
 

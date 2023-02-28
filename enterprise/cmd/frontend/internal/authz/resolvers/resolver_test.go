@@ -2208,11 +2208,14 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 
 	permissionSyncJobStore.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) ([]*database.PermissionSyncJob, error) {
 		if opts.SearchType == database.PermissionsSyncSearchTypeRepo && opts.Query == "repo" {
-			return jobs, nil
+			return jobs[:4], nil
+		}
+		if opts.SearchType == database.PermissionsSyncSearchTypeUser && opts.Query == "user" {
+			return jobs[3:], nil
 		}
 		return []*database.PermissionSyncJob{}, nil
 	})
-	permissionSyncJobStore.CountFunc.SetDefaultReturn(len(jobs), nil)
+	permissionSyncJobStore.CountFunc.SetDefaultReturn(len(jobs)/2, nil)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
 	// Mocking repository database queries.
@@ -2234,7 +2237,7 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 			Schema:  parsedSchema,
 			Query: `
 query {
-  permissionsSyncJobs(first: 6, query: "repo", searchType: REPOSITORY) {
+  permissionsSyncJobs(first: 3, query: "repo", searchType: REPOSITORY) {
 	totalCount
 	nodes {
 		id
@@ -2245,7 +2248,7 @@ query {
 			ExpectedResult: `
 {
 	"permissionsSyncJobs": {
-		"totalCount": 6,
+		"totalCount": 3,
 		"nodes": [
 			{
 				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjE="
@@ -2255,7 +2258,32 @@ query {
 			},
 			{
 				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjM="
-			},
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("search by user name", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 3, query: "user", searchType: USER) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 3,
+		"nodes": [
 			{
 				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ="
 			},
