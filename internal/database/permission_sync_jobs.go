@@ -464,7 +464,7 @@ type ListPermissionSyncJobOpts struct {
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
-	conds := []*sqlf.Query{}
+	conds := make([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
 		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
@@ -504,7 +504,13 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
 		}
 	}
-	// TODO(sashaostrikov) process User search
+	if opts.SearchType == PermissionsSyncSearchTypeUser {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
+		if opts.Query != "" {
+			searchTerm := "%" + opts.Query + "%"
+			conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", searchTerm, searchTerm))
+		}
+	}
 	return conds
 }
 
@@ -535,8 +541,11 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 
 	joinClause := sqlf.Sprintf("")
 	if opts.Query != "" {
-		if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
 			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
 		}
 	}
 
