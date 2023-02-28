@@ -14,20 +14,11 @@
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:
     - GitServerClient
-- filename: enterprise/cmd/executor/internal/command/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
-      interfaces:
-        - ExecutionLogEntryStore
-        - Logger
-        - LogEntry
-        - commandRunner
 - filename: enterprise/cmd/executor/internal/worker/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - ExecutionLogEntryStore
-        - Runner
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
       interfaces:
         - FilesStore

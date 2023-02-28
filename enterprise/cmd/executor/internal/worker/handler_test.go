@@ -12,10 +12,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -72,23 +73,12 @@ func TestHandle(t *testing.T) {
 	filesStore := NewMockFilesStore()
 
 	h := &handler{
+		nameSet:    janitor.NewNameSet(),
+		cmd:        new(fakeCommand),
 		logStore:   NewMockExecutionLogEntryStore(),
 		filesStore: filesStore,
-		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
-		runnerFactory: func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner {
-			if dir == "" {
-				// The handler allocates a temporary runner to invoke the git commands,
-				// which do not have a specific directory to run in. We don't need to
-				// check those (again) as they were already confirmed in the workspace
-				// specific unit tests. We'll just give it a blackhole runner so we don't
-				// have to deal with more output during assertions.
-				return NewMockRunner()
-			}
-
-			return runner
-		},
 	}
 
 	if err := h.Handle(context.Background(), logtest.Scoped(t), job); err != nil {
@@ -186,27 +176,16 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	filesStore.GetFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("echo foo"))), nil)
 
 	h := &handler{
+		nameSet:    janitor.NewNameSet(),
+		cmd:        new(fakeCommand),
 		logStore:   NewMockExecutionLogEntryStore(),
 		filesStore: filesStore,
-		nameSet:    janitor.NewNameSet(),
 		options: Options{
 			// Do not clean directory after handler has run. We want to check if files were actually written.
 			// t.TempDir() will clean up after the test.
 			KeepWorkspaces: true,
 		},
 		operations: command.NewOperations(&observation.TestContext),
-		runnerFactory: func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner {
-			if dir == "" {
-				// The handler allocates a temporary runner to invoke the git commands,
-				// which do not have a specific directory to run in. We don't need to
-				// check those (again) as they were already confirmed in the workspace
-				// specific unit tests. We'll just give it a blackhole runner so we don't
-				// have to deal with more output during assertions.
-				return NewMockRunner()
-			}
-
-			return runner
-		},
 	}
 
 	if err := h.Handle(context.Background(), logtest.Scoped(t), job); err != nil {
@@ -278,4 +257,15 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	dockerScriptFile2Content, err := io.ReadAll(dockerScriptFile2)
 	require.NoError(t, err)
 	assert.Equal(t, workspace.ScriptPreamble+"\n\nyarn\ninstall\n", string(dockerScriptFile2Content))
+}
+
+type fakeCommand struct {
+	mock.Mock
+}
+
+var _ command.Command = &fakeCommand{}
+
+func (f *fakeCommand) Run(ctx context.Context, cmdLogger command.Logger, spec command.Spec) error {
+	args := f.Called(ctx, cmdLogger, spec)
+	return args.Error(0)
 }
