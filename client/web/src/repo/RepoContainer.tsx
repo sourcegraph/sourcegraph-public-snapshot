@@ -37,6 +37,7 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
+import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -137,7 +138,7 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: FC<RepoContainerProps> = props => {
-    const { extensionsController, globbing, repoContainerRoutes, authenticatedUser } = props
+    const { extensionsController, globbing, repoContainerRoutes, authenticatedUser, selectedSearchContextSpec } = props
 
     const location = useLocation()
 
@@ -259,16 +260,22 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
+    const [enableExperimentalQueryInput] = useExperimentalQueryInput()
+    const queryPrefix = useMemo(
+        () =>
+            enableExperimentalQueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : '',
+        [enableExperimentalQueryInput, selectedSearchContextSpec]
+    )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
-        let query = searchQueryForRepoRevision(repoName, globbing, revision)
+        let query = queryPrefix + searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
             query = `${query.trimEnd()} file:${escapeSpaces(globbing ? filePath : '^' + escapeRegExp(filePath))}`
         }
         onNavbarQueryChange({
             query,
         })
-    }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
+    }, [revision, filePath, repoName, onNavbarQueryChange, globbing, queryPrefix])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 
