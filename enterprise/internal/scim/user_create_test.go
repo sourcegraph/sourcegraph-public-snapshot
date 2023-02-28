@@ -68,7 +68,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			assert.NoError(t, err)
 			newUser, err := db.Users().GetByID(context.Background(), 5)
 			assert.NoError(t, err)
-			tc.testFunc(t, newUser.Username, userRes.Attributes["userName"].(string), err)
+			tc.testFunc(t, newUser.Username, userRes.Attributes[AttrUserName].(string), err)
 			_ = db.Users().Delete(context.Background(), 5)
 		})
 	}
@@ -78,13 +78,13 @@ func TestUserResourceHandler_Create(t *testing.T) {
 // createUserResourceAttributes creates a scim.ResourceAttributes object with the given username.
 func createUserResourceAttributes(username string) scim.ResourceAttributes {
 	return scim.ResourceAttributes{
-		"userName": username,
-		"name": map[string]interface{}{
-			"givenName":  "First",
-			"middleName": "Middle",
-			"familyName": "Last",
+		AttrUserName: username,
+		AttrName: map[string]interface{}{
+			AttrNameGiven:  "First",
+			AttrNameMiddle: "Middle",
+			AttrNameFamily: "Last",
 		},
-		"emails": []interface{}{
+		AttrEmails: []interface{}{
 			map[string]interface{}{
 				"value":   "a@b.c",
 				"primary": true,

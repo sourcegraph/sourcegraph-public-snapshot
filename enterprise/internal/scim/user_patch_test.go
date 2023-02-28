@@ -26,22 +26,22 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 			name:   "patch username with replace operation",
 			userId: "1",
 			operations: []scim.PatchOperation{
-				{Op: "replace", Path: createPath("userName", nil), Value: "user6"},
+				{Op: "replace", Path: createPath(AttrUserName, nil), Value: "user6"},
 			},
 			testFunc: func(user scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user6", user.Attributes["userName"])
+				assert.Equal(t, "user6", user.Attributes[AttrUserName])
 			},
 		},
 		{
 			name:   "patch username with add operation",
 			userId: "1",
 			operations: []scim.PatchOperation{
-				{Op: "add", Path: createPath("userName", nil), Value: "user7"},
+				{Op: "add", Path: createPath(AttrUserName, nil), Value: "user7"},
 			},
 			testFunc: func(user scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user7", user.Attributes["userName"])
+				assert.Equal(t, "user7", user.Attributes[AttrUserName])
 			},
 		},
 		// TODO: Temporarily disabled test, it's failing on CI for some reason. Figure out what's wrong later.
@@ -49,11 +49,11 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		//	name:   "replace multiple",
 		//	userId: "4",
 		//	operations: []scim.PatchOperation{
-		//		{Op: "replace", Path: nil, Value: map[string]interface{}{"userName": "user4-mod@company.com", "active": false}},
+		//		{Op: "replace", Path: nil, Value: map[string]interface{}{AttrUserName: "user4-mod@company.com", "active": false}},
 		//	},
 		//	testFunc: func(userRes scim.Resource, err error) {
 		//		assert.NoError(t, err)
-		//		assert.Equal(t, "user4-mod@company.com", userRes.Attributes["userName"])
+		//		assert.Equal(t, "user4-mod@company.com", userRes.Attributes[AttrUserName])
 		//		users, _ := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{4}})
 		//		user := users[0]
 		//		assert.Equal(t, "user4-mod", user.Username)

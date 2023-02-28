@@ -34,14 +34,14 @@ func fromAccountData(scimAccountData string) (scim.ResourceAttributes, error) {
 	// TODO: Need manual processing of this data?
 	//var data scim.ResourceAttributes
 	//data = scim.ResourceAttributes{
-	//	"userName":   accountData.Username,
-	//	"name": map[string]interface{}{
-	//		"givenName":  scim.ResourceAttributes.name.firstName,
-	//		"middleName": scim.ResourceAttributes.middleName,
-	//		"familyName": scim.ResourceAttributes.lastName,
-	//		"formatted":  user.DisplayName,
+	//	AttrUserName:   accountData.Username,
+	//	AttrName: map[string]interface{}{
+	//		AttrNameGiven:  scim.ResourceAttributes.name.firstName,
+	//		AttrNameMiddle: scim.ResourceAttributes.middleName,
+	//		AttrNameFamily: scim.ResourceAttributes.lastName,
+	//		AttrNameFormatted:  user.DisplayName,
 	//	},
-	//	"emails":      emailMap,
+	//	AttrEmails:      emailMap,
 	//	"active":      true,
 	//}
 	return attributes, err

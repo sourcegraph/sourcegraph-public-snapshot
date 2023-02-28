@@ -41,24 +41,24 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	}
 
 	// Assert that usernames are correct
-	if user1.Attributes["userName"] != "user1" {
-		t.Errorf("expected username = 'user1', got %s", user1.Attributes["userName"])
+	if user1.Attributes[AttrUserName] != "user1" {
+		t.Errorf("expected username = 'user1', got %s", user1.Attributes[AttrUserName])
 	}
-	if user2.Attributes["userName"] != "user2" {
-		t.Errorf("expected username = 'user2', got %s", user2.Attributes["userName"])
+	if user2.Attributes[AttrUserName] != "user2" {
+		t.Errorf("expected username = 'user2', got %s", user2.Attributes[AttrUserName])
 	}
 
 	// Assert that names are correct
-	if user1.Attributes["displayName"] != "First Last" {
-		t.Errorf("expected First Last, got %s", user1.Attributes["displayName"])
+	if user1.Attributes[AttrDisplayName] != "First Last" {
+		t.Errorf("expected First Last, got %s", user1.Attributes[AttrDisplayName])
 	}
-	if user2.Attributes["displayName"] != "First Middle Last" {
-		t.Errorf("expected First Middle Last, got %s", user2.Attributes["displayName"])
+	if user2.Attributes[AttrDisplayName] != "First Middle Last" {
+		t.Errorf("expected First Middle Last, got %s", user2.Attributes[AttrDisplayName])
 	}
 
 	// Assert that emails are correct
-	if user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"] != "a@example.com" {
-		t.Errorf("expected empty email, got %s", user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"])
+	if user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"] != "a@example.com" {
+		t.Errorf("expected empty email, got %s", user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"])
 	}
 }
 

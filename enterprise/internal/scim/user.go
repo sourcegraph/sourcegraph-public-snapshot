@@ -18,6 +18,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	AttrUserName      = "userName"
+	AttrDisplayName   = "displayName"
+	AttrName          = "name"
+	AttrNameFormatted = "formatted"
+	AttrNameGiven     = "givenName"
+	AttrNameMiddle    = "middleName"
+	AttrNameFamily    = "familyName"
+	AttrEmails        = "emails"
+)
+
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
 type UserResourceHandler struct {
 	ctx              context.Context
@@ -75,7 +86,7 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 // updateUser updates a user in the database. This is meant to be used in a transaction.
 func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
 	usernameUpdate := ""
-	requestedUsername := extractStringAttribute(newUser.Attributes, "userName")
+	requestedUsername := extractStringAttribute(newUser.Attributes, AttrUserName)
 	if requestedUsername != oldUser.Username {
 		usernameUpdate, err = getUniqueUsername(ctx, db.Users(), requestedUsername)
 		if err != nil {

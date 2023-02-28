@@ -26,7 +26,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// Make sure the username is unique, then create user with/without an external account ID
 	var user *types.User
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
-		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), extractStringAttribute(attributes, "userName"))
+		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), extractStringAttribute(attributes, AttrUserName))
 		if err != nil {
 			return err
 		}
@@ -90,10 +90,10 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 // extractPrimaryEmail extracts the primary email address from the given attributes.
 // Tries to get the (first) email address marked as primary, otherwise uses the first email address it finds.
 func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string) {
-	if attributes["emails"] == nil {
+	if attributes[AttrEmails] == nil {
 		return
 	}
-	emails := attributes["emails"].([]interface{})
+	emails := attributes[AttrEmails].([]interface{})
 	for _, emailRaw := range emails {
 		email := emailRaw.(map[string]interface{})
 		if email["primary"] == true {
@@ -108,20 +108,27 @@ func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail strin
 }
 
 // extractDisplayName extracts the user's display name from the given attributes.
+// Ii defaults to the username if no display name is available.
 func extractDisplayName(attributes scim.ResourceAttributes) (displayName string) {
-	if attributes["displayName"] != nil {
-		displayName = attributes["displayName"].(string)
-	} else if attributes["formatted"] != nil {
-		displayName = attributes["displayName"].(string)
-	} else if attributes["name"] != nil {
-		name := attributes["name"].(map[string]interface{})
-		if name["formatted"] != nil {
-			displayName = name["formatted"].(string)
-		} else if name["givenName"] != nil && name["familyName"] != nil {
-			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
+	if attributes[AttrDisplayName] != nil {
+		displayName = attributes[AttrDisplayName].(string)
+	} else if attributes[AttrName] != nil {
+		name := attributes[AttrName].(map[string]interface{})
+		if name[AttrNameFormatted] != nil {
+			displayName = name[AttrNameFormatted].(string)
+		} else if name[AttrNameGiven] != nil && name[AttrNameFamily] != nil {
+			if name[AttrNameMiddle] != nil {
+				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameMiddle].(string) + " " + name[AttrNameFamily].(string)
+			} else {
+				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameFamily].(string)
+			}
 		}
 	}
-	return attributes["userName"].(string)
+	// Fallback to username
+	if displayName == "" {
+		displayName = attributes[AttrUserName].(string)
+	}
+	return
 }
 
 // containsErrCannotCreateUserError returns true if the given error contains at least one database.ErrCannotCreateUser.

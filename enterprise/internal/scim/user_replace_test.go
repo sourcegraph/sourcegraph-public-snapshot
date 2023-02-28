@@ -25,18 +25,18 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 			name:   "replace username",
 			userId: "1",
 			attrs: scim.ResourceAttributes{
-				"userName": "user6",
+				AttrUserName: "user6",
 			},
 			testFunc: func(user scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user6", user.Attributes["userName"])
+				assert.Equal(t, "user6", user.Attributes[AttrUserName])
 			},
 		},
 		{
 			name:   "replace emails",
 			userId: "1",
 			attrs: scim.ResourceAttributes{
-				"emails": []interface{}{
+				AttrEmails: []interface{}{
 					map[string]interface{}{
 						"value":   "email@address.test",
 						"primary": true,
@@ -45,7 +45,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 			},
 			testFunc: func(user scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Nil(t, user.Attributes["userName"])
+				assert.Nil(t, user.Attributes[AttrUserName])
 			},
 		},
 	}

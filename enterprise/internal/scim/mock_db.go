@@ -97,7 +97,7 @@ func getMockDB() *database.MockDB {
 				if err != nil {
 					return 0, err
 				}
-				userName := decrypted.(map[string]interface{})["userName"]
+				userName := decrypted.(map[string]interface{})[AttrUserName]
 				if userName != nil {
 					user.SCIMExternalID = userName.(string)
 				}

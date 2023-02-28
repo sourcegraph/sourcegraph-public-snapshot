@@ -114,20 +114,20 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 		// TODO: Failed to convert account data to SCIM resource attributes. Maybe log this?
 		resourceAttributes = scim.ResourceAttributes{}
 	}
-	if resourceAttributes["name"] == nil {
-		resourceAttributes["name"] = map[string]interface{}{}
+	if resourceAttributes[AttrName] == nil {
+		resourceAttributes[AttrName] = map[string]interface{}{}
 	}
 	resourceAttributes["externalId"] = user.SCIMExternalID
-	resourceAttributes["name"].(map[string]interface{})["formatted"] = user.DisplayName
-	resourceAttributes["displayName"] = user.DisplayName
+	resourceAttributes[AttrName].(map[string]interface{})[AttrNameFormatted] = user.DisplayName
+	resourceAttributes[AttrDisplayName] = user.DisplayName
 	resourceAttributes["active"] = true
 
 	// Fall back to username and primary email in the user object if not set in account data
-	if resourceAttributes["userName"] == nil || resourceAttributes["userName"].(string) == "" {
-		resourceAttributes["userName"] = user.Username
+	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
+		resourceAttributes[AttrUserName] = user.Username
 	}
-	if (resourceAttributes["emails"] == nil || len(resourceAttributes["emails"].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
-		resourceAttributes["emails"] = []interface{}{
+	if (resourceAttributes[AttrEmails] == nil || len(resourceAttributes[AttrEmails].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+		resourceAttributes[AttrEmails] = []interface{}{
 			map[string]interface{}{
 				"value":   user.Emails[0],
 				"primary": true,
