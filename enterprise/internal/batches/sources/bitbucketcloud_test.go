@@ -219,7 +219,7 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 
 		err := s.LoadChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -277,7 +277,7 @@ func TestBitbucketCloudSource_CreateChangeset(t *testing.T) {
 		exists, err := s.CreateChangeset(ctx, cs)
 		assert.True(t, exists)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 
 	t.Run("success with fork", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestBitbucketCloudSource_CreateChangeset(t *testing.T) {
 		exists, err := s.CreateChangeset(ctx, cs)
 		assert.True(t, exists)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -324,7 +324,7 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -342,7 +342,7 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -360,10 +360,10 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -383,7 +383,7 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -402,7 +402,7 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -421,10 +421,10 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -444,7 +444,7 @@ func TestBitbucketCloudSource_CreateComment(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CreateComment(ctx, cs, "comment")
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -462,7 +462,7 @@ func TestBitbucketCloudSource_CreateComment(t *testing.T) {
 			return &bitbucketcloud.Comment{}, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CreateComment(ctx, cs, "comment")
 		assert.Nil(t, err)
 	})
@@ -484,7 +484,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		target := ChangesetNotMergeableError{}
@@ -505,7 +505,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -524,7 +524,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -552,10 +552,10 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 					return pr, nil
 				})
 
-				annotateChangesetWithPullRequest(cs, pr)
+				annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 				err := s.MergeChangeset(ctx, cs, tc.squash)
 				assert.Nil(t, err)
-				assertChangesetMatchesPullRequest(t, cs, pr)
+				assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 			})
 		}
 	})
@@ -843,7 +843,7 @@ func TestBitbucketCloudSource_setChangesetMetadata(t *testing.T) {
 	assert.ErrorContains(t, err, "setting changeset metadata")
 }
 
-func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
+func assertBitbucketCloudChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
 	t.Helper()
 
 	// We're not thoroughly testing setChangesetMetadata() et al in this
@@ -893,7 +893,7 @@ func mockBitbucketCloudPullRequest(repo *bitbucketcloud.Repo) *bitbucketcloud.Pu
 	}
 }
 
-func annotateChangesetWithPullRequest(cs *Changeset, pr *bitbucketcloud.PullRequest) {
+func annotateBitbucketCloudChangesetWithPullRequest(cs *Changeset, pr *bitbucketcloud.PullRequest) {
 	cs.Metadata = &bbcs.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    []*bitbucketcloud.PullRequestStatus{},
@@ -919,10 +919,10 @@ func mockAnnotatePullRequestError(client *MockBitbucketCloudClient) error {
 // mockAnnotatePullRequestSuccess configures the mock client to be able to
 // return a valid, empty set of statuses.
 func mockAnnotatePullRequestSuccess(client *MockBitbucketCloudClient) {
-	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockEmptyResultSet(), nil)
+	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockBitbucketCloudEmptyResultSet(), nil)
 }
 
-func mockEmptyResultSet() *bitbucketcloud.PaginatedResultSet {
+func mockBitbucketCloudEmptyResultSet() *bitbucketcloud.PaginatedResultSet {
 	return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []any, error) {
 		return &bitbucketcloud.PageToken{}, nil, nil
 	})

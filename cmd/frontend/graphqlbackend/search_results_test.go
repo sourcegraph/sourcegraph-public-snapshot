@@ -309,9 +309,9 @@ func TestSearchResultsHydration(t *testing.T) {
 		Checksum:     []byte{0, 1, 2},
 	}}
 
-	z := &searchbackend.FakeSearcher{
-		Repos:  []*zoekt.RepoListEntry{zoektRepo},
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := &searchbackend.FakeStreamer{
+		Repos:   []*zoekt.RepoListEntry{zoektRepo},
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	}
 
 	// Act in a user context
@@ -536,9 +536,9 @@ func TestEvaluateAnd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
-			z := &searchbackend.FakeSearcher{
-				Repos:  zoektRepos,
-				Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
+			z := &searchbackend.FakeStreamer{
+				Repos:   zoektRepos,
+				Results: []*zoekt.SearchResult{{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}}},
 			}
 
 			ctx := context.Background()
@@ -637,11 +637,11 @@ func TestSubRepoFiltering(t *testing.T) {
 	}
 
 	zoektFileMatches := generateZoektMatches(3)
-	mockZoekt := &searchbackend.FakeSearcher{
+	mockZoekt := &searchbackend.FakeStreamer{
 		Repos: []*zoekt.RepoListEntry{},
-		Result: &zoekt.SearchResult{
+		Results: []*zoekt.SearchResult{{
 			Files: zoektFileMatches,
-		},
+		}},
 	}
 
 	for _, tt := range tts {

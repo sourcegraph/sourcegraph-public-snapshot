@@ -1081,7 +1081,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	}
 	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeSearcher{}
+	zoekt := &searchbackend.FakeStreamer{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -1183,7 +1183,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeSearcher{}
+	zoekt := &searchbackend.FakeStreamer{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -1251,7 +1251,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeSearcher{}
+	zoekt := &searchbackend.FakeStreamer{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -1414,7 +1414,7 @@ func RunRepoSubsetTextSearch(
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
 	q query.Q,
-	zoekt *searchbackend.FakeSearcher,
+	zoekt *searchbackend.FakeStreamer,
 	searcherURLs *endpoint.Map,
 	mode search.GlobalSearchMode,
 	useFullDeadline bool,

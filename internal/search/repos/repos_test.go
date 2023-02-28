@@ -474,6 +474,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	repoB := types.MinimalRepo{ID: 2, Name: "example.com/2"}
 	repoC := types.MinimalRepo{ID: 3, Name: "example.com/3"}
 	repoD := types.MinimalRepo{ID: 4, Name: "example.com/4"}
+	repoE := types.MinimalRepo{ID: 5, Name: "example.com/5"}
 
 	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -484,11 +485,19 @@ func TestRepoHasFileContent(t *testing.T) {
 
 	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
-		return []types.MinimalRepo{repoA, repoB, repoC, repoD}, nil
+		return []types.MinimalRepo{repoA, repoB, repoC, repoD, repoE}, nil
 	})
 
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
+
+	mockGitserver := gitserver.NewMockClient()
+	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, _ string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if name == repoE.Name {
+			return "", &gitdomain.RevisionNotFoundError{}
+		}
+		return "", nil
+	})
 
 	unindexedCorpus := map[string]map[string]map[string]struct{}{
 		string(repoC.Name): {
@@ -535,6 +544,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			mkHead(repoB),
 			mkHead(repoC),
 			mkHead(repoD),
+			mkHead(repoE),
 		},
 	}, {
 		name: "bad path",
@@ -566,6 +576,17 @@ func TestRepoHasFileContent(t *testing.T) {
 		matchingRepos: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoC),
+		},
+	}, {
+		name: "one negated unindexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Negated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoD),
+			mkHead(repoE),
 		},
 	}, {
 		name: "path but no content",
@@ -606,7 +627,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				Minimal: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, gitserver.NewMockClient(), endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,

@@ -13,17 +13,19 @@ import (
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.
 func (x *File) FindOwners(path string) []*Owner {
-	var owners []*Owner
-	for _, rule := range x.GetRule() {
+	rules := x.GetRule()
+	for i := len(rules) - 1; i >= 0; i-- {
+		rule := rules[i]
+
 		glob, err := compile(rule.GetPattern())
 		if err != nil {
 			continue
 		}
 		if glob.match(path) {
-			owners = rule.GetOwner()
+			return rule.GetOwner()
 		}
 	}
-	return owners
+	return nil
 }
 
 const separator = "/"

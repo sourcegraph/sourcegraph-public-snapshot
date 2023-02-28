@@ -462,7 +462,7 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 
 // triggerPermissionsSync is a helper that attempts to schedule a new permissions
 // sync for the given user.
-func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason database.PermissionSyncJobReason) {
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason database.PermissionsSyncJobReason) {
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
 		Reason:  reason,

@@ -201,9 +201,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** Whether the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
-    enableLegacyExtensions?: boolean
-
     /** Contains information about the product license. */
     licenseInfo?: {
         currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'

@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
@@ -18,7 +18,7 @@ type RulesKey struct {
 
 type RulesCache struct {
 	rules      map[RulesKey]*codeownerspb.File
-	ownService backend.OwnService
+	ownService own.Service
 
 	mu sync.RWMutex
 }
@@ -26,7 +26,7 @@ type RulesCache struct {
 func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	return RulesCache{
 		rules:      make(map[RulesKey]*codeownerspb.File),
-		ownService: backend.NewOwnService(gs, db),
+		ownService: own.NewService(gs, db),
 	}
 }
 

@@ -11,9 +11,7 @@
     gap: 0.5rem;
     align-items: center;
     position: sticky;
-    // Calculated value since we already have sticky footer element for
-    // the core wizard UI.
-    bottom: 51px;
+    bottom: 0;
     margin-top: auto;
     padding: 0.5rem 1rem;
     background-color: var(--color-bg-1);
