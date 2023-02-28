@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"sort"
 	"strings"
 	"time"
@@ -2086,7 +2085,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 		}
 
 		if args.Query != "" {
-			conds = append(conds, sqlf.Sprintf("lower(repo.name) LIKE %s", "%"+strings.ToLower(args.Query)+"%"))
+			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+args.Query+"%"))
 		}
 	}
 
@@ -2109,32 +2108,12 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 		var reason UserRepoPermissionReason
 		var updatedAt time.Time
 
-		scanRepo := database.BuildRepoScanner(func(rows *sql.Rows, r *types.Repo, metadata *json.RawMessage, blocked *dbutil.NullJSONRawMessage, kvps *database.RepoKVPs, sources *dbutil.NullJSONRawMessage) error {
-			return rows.Scan(
-				&r.ID,
-				&r.Name,
-				&r.Private,
-				&dbutil.NullString{S: &r.ExternalRepo.ID},
-				&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-				&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-				&dbutil.NullString{S: &r.URI},
-				&dbutil.NullString{S: &r.Description},
-				&r.Fork,
-				&r.Archived,
-				&dbutil.NullInt{N: &r.Stars},
-				&r.CreatedAt,
-				&dbutil.NullTime{Time: &r.UpdatedAt},
-				&dbutil.NullTime{Time: &r.DeletedAt},
-				metadata,
-				blocked,
-				kvps,
-				sources,
-				&dbutil.NullTime{Time: &updatedAt},
-				&reason,
-			)
-		})
-
-		if err := scanRepo(s.logger, rows, &repo); err != nil {
+		if err := rows.Scan(
+			&repo.ID,
+			&repo.Name,
+			&dbutil.NullTime{Time: &updatedAt},
+			&reason,
+		); err != nil {
 			return nil, err
 		}
 
@@ -2154,28 +2133,7 @@ const reposPermissionInfoQueryFmt = `
 WITH accessible_repos AS (
 	SELECT
 		repo.id,
-		repo.name,
-		repo.private,
-		repo.external_id,
-		repo.external_service_type,
-		repo.external_service_id,
-		repo.uri,
-		repo.description,
-		repo.fork,
-		repo.archived,
-		repo.stars,
-		repo.created_at,
-		repo.updated_at,
-		repo.deleted_at,
-		repo.metadata,
-		repo.blocked,
-		(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id),
-		(
-			SELECT	json_agg(json_build_object('CloneURL', esr.clone_url, 'ID', esr.external_service_id, 'Kind', LOWER(svcs.kind)))
-			FROM external_service_repos AS esr
-			JOIN external_services AS svcs ON esr.external_service_id = svcs.id
-			WHERE esr.repo_id = repo.id AND svcs.deleted_at IS NULL
-		)
+		repo.name
 	FROM repo
 	WHERE 
 		repo.deleted_at IS NULL 
@@ -2188,7 +2146,7 @@ SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
 	CASE 
-		WHEN up.user_id IS NOT NULL THEN 'Permission Sync' 
+		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync' 
 		ELSE 'Unrestricted' -- If no user_permissions entry is found then the accessible repo must be unrestricted
 	END AS permission_reason
 FROM
@@ -2207,8 +2165,8 @@ type UserRepoPermissionReason string
 
 // UserRepoPermissionReason constants.
 const (
-	UserRepoPermissionReasonAuthzBypass    UserRepoPermissionReason = "Authentication Bypassed"
-	UserRepoPermissionReasonSiteAdmin      UserRepoPermissionReason = "Site Admin"
-	UserRepoPermissionReasonUnrestricted   UserRepoPermissionReason = "Unrestricted"
-	UserRepoPermissionReasonPermissionSync UserRepoPermissionReason = "Permission Sync"
+	UserRepoPermissionReasonAuthzBypass     UserRepoPermissionReason = "Authentication Bypassed"
+	UserRepoPermissionReasonSiteAdmin       UserRepoPermissionReason = "Site Admin"
+	UserRepoPermissionReasonUnrestricted    UserRepoPermissionReason = "Unrestricted"
+	UserRepoPermissionReasonPermissionsSync UserRepoPermissionReason = "Permissions Sync"
 )
