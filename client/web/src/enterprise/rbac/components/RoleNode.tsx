@@ -77,7 +77,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
 
                 {node.system && (
                     <Tooltip
-                        content="System roles are required by Sourcegraph instance. They cannot be deleted."
+                        content="System roles are required by Sourcegraph. They cannot be deleted."
                         placement="topStart"
                     >
                         <Text className={styles.roleNodeSystemText}>System</Text>
@@ -86,7 +86,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
             </div>
 
             {!node.system && (
-                <Tooltip content={node.system ? 'System roles cannot be deleted.' : 'Delete this role.'}>
+                <Tooltip content="Deleting a role is an irreversible action.">
                     <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm">
                         <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
