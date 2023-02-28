@@ -290,17 +290,21 @@ func (s *store) InsertPathRanks(
 }
 
 const insertPathRanksQuery = `
-WITH input_ranks AS (
+WITH
+input_ranks AS (
 	SELECT
-		id,
-		(SELECT id FROM repo WHERE name = repository) AS repository_id,
-		document_path AS path,
-		count
-	FROM codeintel_ranking_path_counts_inputs
+		pci.id,
+		r.id AS repository_id,
+		pci.document_path AS path,
+		pci.count
+	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
 	WHERE
-		graph_key = %s AND
-		NOT processed
-	ORDER BY graph_key, repository, id
+		pci.graph_key = %s AND
+		NOT pci.processed AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
+	ORDER BY pci.graph_key, pci.repository, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
