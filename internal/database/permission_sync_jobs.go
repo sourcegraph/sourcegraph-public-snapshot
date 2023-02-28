@@ -541,10 +541,10 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 
 	joinClause := sqlf.Sprintf("")
 	if opts.Query != "" {
-		if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
 			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
-		}
-		if opts.SearchType == PermissionsSyncSearchTypeUser {
+		case PermissionsSyncSearchTypeUser:
 			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
 		}
 	}
