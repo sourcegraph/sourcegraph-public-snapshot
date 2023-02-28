@@ -29,6 +29,7 @@ var excludedFilePaths = []string{
 	"/__fixtures__",
 	"/testdata",
 	"/mocks",
+	"/vendor",
 }
 
 func isEmbeddableFile(fileName string, content string) bool {
