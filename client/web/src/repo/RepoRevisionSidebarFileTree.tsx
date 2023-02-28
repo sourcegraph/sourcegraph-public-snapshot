@@ -75,10 +75,6 @@ type FileTreeEntry = Extract<
 >['entries'][number]
 
 interface Props {
-    // Instead of showing a `..` indicator and only loading the current dirs
-    // entries, it will use the Ancestors query to load all entries of all
-    // parent directories.
-    alwaysLoadAncestors: boolean
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -90,7 +86,7 @@ interface Props {
     telemetryService: TelemetryService
 }
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
+    const { telemetryService, onExpandParent } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
@@ -122,7 +118,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const [expandedIds, setExpandedIds] = useState<number[]>(defaultExpandedIds)
 
     const navigate = useNavigate()
-    // const location = useLocation()
 
     const [defaultVariables] = useState({
         repoName: props.repoName,
@@ -135,7 +130,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         variables: {
             ...defaultVariables,
             filePath: initialFilePath,
-            ancestors: alwaysLoadAncestors,
+            ancestors: false,
         },
     })
 
@@ -154,18 +149,13 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             return
         }
 
-        const nextTreeData = appendTreeData(
-            createTreeData(alwaysLoadAncestors ? '' : initialFilePath),
-            entries,
-            rootTreeUrl,
-            alwaysLoadAncestors
-        )
+        const nextTreeData = appendTreeData(createTreeData(initialFilePath), entries, rootTreeUrl)
 
         setTreeData(nextTreeData)
         // Eagerly update the ref so that the selected path syncing can
         // use the new data before the tree is re-rendered.
         treeDataRef.current = nextTreeData
-    }, [alwaysLoadAncestors, data, initialFilePath, treeData])
+    }, [data, initialFilePath, treeData])
 
     const client = useApolloClient()
     const fetchEntries = useCallback(
@@ -182,14 +172,14 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                 return
             }
 
-            const nextTreeData = appendTreeData(treeDataRef.current, entries, rootTreeUrl, alwaysLoadAncestors)
+            const nextTreeData = appendTreeData(treeDataRef.current, entries, rootTreeUrl)
 
             setTreeData(nextTreeData)
             // Eagerly update the ref so that the selected path syncing can
             // use the new data before the tree is re-rendered.
             treeDataRef.current = nextTreeData
         },
-        [alwaysLoadAncestors, client]
+        [client]
     )
 
     const onLoadData = useCallback(
@@ -525,17 +515,12 @@ function createTreeData(root: string): TreeData {
     }
 }
 
-function appendTreeData(
-    tree: TreeData,
-    entries: FileTreeEntry[],
-    rootTreeUrl: string,
-    alwaysLoadAncestors: boolean
-): TreeData {
+function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: string): TreeData {
     tree = { ...tree, nodes: [...tree.nodes], pathToId: new Map(tree.pathToId) }
 
     const isNewTree = tree.nodes.length === 0
     if (isNewTree) {
-        insertRootNode(tree, rootTreeUrl, alwaysLoadAncestors)
+        insertRootNode(tree, rootTreeUrl)
     }
 
     // Bookkeeping for single child expansion:
@@ -664,7 +649,7 @@ function appendTreeData(
     return tree
 }
 
-function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors: boolean): void {
+function insertRootNode(tree: TreeData, rootTreeUrl: string): void {
     const root: TreeNode = {
         name: tree.rootPath,
         id: 0,
@@ -680,7 +665,7 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
     tree.nodes.push(root)
     tree.pathToId.set(tree.rootPath, 0)
 
-    if (!alwaysLoadAncestors && tree.rootPath !== '') {
+    if (tree.rootPath !== '') {
         const id = tree.nodes.length
         const parentPathName = getParentPath(tree.rootPath)
         const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()!
