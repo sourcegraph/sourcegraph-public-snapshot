@@ -37,8 +37,8 @@ export const ProgressBar: FC<{}> = () => {
 
     const formatNumber = (num: string | number): string => num.toLocaleString('en-US')
 
-    const items = useMemo(() => {
-        return [
+    const items = useMemo(
+        () => [
             {
                 value: data?.repositoryStats.total,
                 description: 'Repositories',
@@ -66,8 +66,9 @@ export const ProgressBar: FC<{}> = () => {
                 description: 'Failed',
                 color: 'text-danger',
             },
-        ]
-    }, [data])
+        ],
+        [data]
+    )
 
     const statusMessage: JSX.Element = useMemo(() => {
         let codeHostMessage
@@ -114,7 +115,7 @@ export const ProgressBar: FC<{}> = () => {
             {statusMessage}
 
             {items.map(item => (
-                <Text className="mb-0 mr-3" size="small">
+                <Text className="mb-0 mr-3" size="small" key={item.description}>
                     <span className={classNames('font-weight-bold', item?.color)}>{formatNumber(item.value ?? 0)}</span>{' '}
                     {item.description}
                 </Text>
