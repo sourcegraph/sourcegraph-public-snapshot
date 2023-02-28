@@ -54,6 +54,7 @@ export async function build(): Promise<void> {
         sourcemap: true,
         outdir: distributionPath,
     })
+    await ctx.rebuild()
     if (process.env.WATCH) {
         await ctx.watch()
     }
