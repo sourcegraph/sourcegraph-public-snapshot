@@ -153,7 +153,7 @@ func main() {
 						Required: false,
 					},
 				},
-				Action: makeActionHandler(run.RunTestVM),
+				Action: makeActionHandler(run.TestVM),
 			},
 		},
 	}

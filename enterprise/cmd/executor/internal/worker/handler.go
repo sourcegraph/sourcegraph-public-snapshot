@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
@@ -23,6 +24,7 @@ import (
 
 type handler struct {
 	nameSet      *janitor.NameSet
+	cmdRunner    util.CmdRunner
 	cmd          command.Command
 	logStore     command.ExecutionLogEntryStore
 	filesStore   workspace.FilesStore
@@ -48,7 +50,7 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueabl
 		return true, nil, nil
 	}
 
-	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.options.VMPrefix, false)
+	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.cmdRunner, h.options.VMPrefix, false)
 	if err != nil {
 		return false, nil, err
 	}

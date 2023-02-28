@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
@@ -13,20 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// RunTestVM is the CLI action handler for the test-vm command. It spawns a firecracker
+// TestVM is the CLI action handler for the test-vm command. It spawns a firecracker
 // VM for testing purposes.
 //
 // TODO: Add a command to get rid of VM without calling ignite, this way we can inline or replace ignite later
 // more easily.
 // TODO: Add a command to attach to the VM without calling ignite, this way we can inline or replace ignite later
 // more easily.
-func RunTestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func TestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	repoName := cliCtx.String("repo")
 	revision := cliCtx.String("revision")
 	nameOnly := cliCtx.Bool("name-only")
@@ -62,10 +65,13 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	// VM janitor.
 	name := fmt.Sprintf("%s-%s", "executor-test-vm", vmNameSuffix.String())
 
-	commandLogger := command.NewWriterLogger(logOutput)
+	commandLogger := &writerLogger{w: logOutput}
 	operations := command.NewOperations(&observation.TestContext)
 
-	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
+	cmd := &command.RealCommand{
+		CmdRunner: nil,
+		Logger:    log.Scoped("executor-test-vm", ""),
+	}
 	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
 		ctx,
 		// No need for files store in the test.
@@ -78,7 +84,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 		config.FirecrackerDiskSpace,
 		// Always keep the workspace in this debug command.
 		true,
-		hostRunner,
+		cmd,
 		commandLogger,
 		// TODO: get git service path from config.
 		workspace.CloneOptions{
@@ -95,16 +101,44 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	fopts := firecrackerOptions(config)
 	fopts.Enabled = true
 
-	runner := command.NewRunner(firecrackerWorkspace.Path(), commandLogger, command.Options{
+	firecrackerRunner := runner.NewFirecrackerRunner(cmd, commandLogger, firecrackerWorkspace.Path(), name, fopts, types.DockerAuthConfig{}, operations)
+	runner1 := command.NewRunner(firecrackerWorkspace.Path(), commandLogger, command.Options{
 		ExecutorName:       name,
 		ResourceOptions:    resourceOptions(config),
 		DockerOptions:      dockerOptions(config),
 		FirecrackerOptions: fopts,
 	}, operations)
 
-	if err := runner.Setup(ctx); err != nil {
+	if err = firecrackerRunner.Setup(ctx); err != nil {
 		return "", err
 	}
 
 	return name, nil
+}
+
+type writerLogger struct {
+	w io.Writer
+}
+
+func (*writerLogger) Flush() error { return nil }
+
+func (l *writerLogger) LogEntry(key string, command []string) command.LogEntry {
+	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
+	return &writerLogEntry{w: l.w}
+}
+
+type writerLogEntry struct {
+	w io.Writer
+}
+
+func (l *writerLogEntry) Write(p []byte) (n int, err error) {
+	return fmt.Fprint(l.w, string(p))
+}
+
+func (*writerLogEntry) Close() error { return nil }
+
+func (*writerLogEntry) Finalize(exitCode int) {}
+
+func (*writerLogEntry) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
+	return internalexecutor.ExecutionLogEntry{}
 }
