@@ -86,9 +86,10 @@ interface Props {
     repoName: string
     revision: string
     telemetryService: TelemetryService
+    autoFocusKey?: string
 }
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
+    const { telemetryService, onExpandParent, alwaysLoadAncestors, autoFocusKey } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
@@ -339,6 +340,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
     return (
         <Tree<TreeNode>
+            autoFocusKey={autoFocusKey}
             data={treeData.nodes}
             aria-label="file tree"
             selectedIds={selectedIds}

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -32,9 +32,24 @@ interface Props<N extends TreeNode>
     // because we can not rely on the .length property to know if we're still
     // loading children.
     loadedIds?: Set<number>
+
+    autoFocusKey?: string
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, autoFocusKey, ...rest } = props
+
+    const treeViewRef = useRef<HTMLUListElement>(null)
+    useEffect(() => {
+        if (autoFocusKey && treeViewRef.current) {
+            const element =
+                treeViewRef.current.querySelector("[tabindex]:not([tabindex='-1'])") ||
+                treeViewRef.current.querySelector('.tree-leaf-list-item--selected')
+
+            if (element instanceof HTMLElement) {
+                element.focus()
+            }
+        }
+    }, [autoFocusKey])
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -133,6 +148,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
     return (
         <TreeView
             {...rest}
+            ref={treeViewRef}
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}

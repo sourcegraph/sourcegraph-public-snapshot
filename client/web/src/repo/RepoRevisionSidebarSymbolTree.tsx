@@ -20,6 +20,7 @@ interface Props {
     onClick: () => void
     selectedSymbolUrl: string | null
     setSelectedSymbolUrl: (url: string | null) => void
+    autoFocusKey?: string
 }
 type SymbolNode = (Omit<SymbolNodeFields, 'children'> & TreeNode) | (Omit<SymbolPlaceholder, 'children'> & TreeNode)
 
@@ -28,6 +29,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     onClick,
     selectedSymbolUrl,
     setSelectedSymbolUrl,
+    autoFocusKey,
 }) => {
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
@@ -116,6 +118,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     return (
         <Tree<SymbolNode>
             data={treeData}
+            autoFocusKey={autoFocusKey}
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}

@@ -1441,24 +1441,6 @@ const handleKeyDown =
                 expandOnKeyboardSelect && dispatch({ type: treeTypes.toggle, id, lastInteractedWith: id })
                 return
             default:
-                if (event.key.length === 1) {
-                    let currentId = getNextAccessible(data, id, expandedIds)
-                    while (currentId !== id) {
-                        if (currentId == null) {
-                            currentId = data[0].children[0]
-                            continue
-                        }
-                        if (data[currentId].name[0].toLowerCase() === event.key.toLowerCase()) {
-                            dispatch({
-                                type: treeTypes.focus,
-                                id: currentId,
-                                lastInteractedWith: id,
-                            })
-                            return
-                        }
-                        currentId = getNextAccessible(data, currentId, expandedIds)
-                    }
-                }
                 return
         }
     }
