@@ -99,6 +99,7 @@ export const build = async (): Promise<void> => {
     }
     if (!omitSlowDeps) {
         const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
         await ctx.dispose()
     }
 }
