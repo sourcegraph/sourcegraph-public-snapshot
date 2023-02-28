@@ -35,7 +35,7 @@ import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, Wildc
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { ComponentsComposer } from './components/ComponentsComposer'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import { Layout } from './Layout'
@@ -278,6 +278,7 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             createBrowserRouter([
                 {
                     element: <LegacyRoute render={props => <Layout {...props} />} />,
+                    errorElement: <RouteError />,
                     children: props.routes.filter(isTruthy),
                 },
             ]),
