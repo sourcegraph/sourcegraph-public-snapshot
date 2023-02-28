@@ -1738,7 +1738,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     repository text NOT NULL,
     document_path text NOT NULL,
-    graph_key text NOT NULL
+    graph_key text NOT NULL,
+    last_scanned_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1790,7 +1791,8 @@ CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_names text[] NOT NULL,
-    graph_key text NOT NULL
+    graph_key text NOT NULL,
+    last_scanned_at timestamp with time zone
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -4995,6 +4997,8 @@ CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_pa
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
 
+CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id);
+
 CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name);
 
 CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id);
@@ -5004,6 +5008,8 @@ CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_r
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository);
 
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository, id) INCLUDE (document_path) WHERE (NOT processed);
+
+CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
