@@ -105,6 +105,10 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	if s.args.State != nil {
 		opts.State = *s.args.State
 	}
+	if s.args.Query != nil && s.args.SearchType != nil {
+		opts.Query = *s.args.Query
+		opts.SearchType = *s.args.SearchType
+	}
 	return opts
 }
 
