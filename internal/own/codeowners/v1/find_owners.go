@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/becheran/wildmatch-go"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -60,27 +60,22 @@ type anyMatch struct{}
 func (p anyMatch) String() string      { return "*" }
 func (p anyMatch) Match(_ string) bool { return true }
 
-// asteriskPattern is a pattern that may contain * glob wildcard.
 type asteriskPattern struct {
 	glob     string
-	compiled *regexp.Regexp
+	compiled *wildmatch.WildMatch
 }
 
-func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
-	quoted := regexp.QuoteMeta(pattern)
-	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
-	compiled, err := regexp.Compile("^" + regular + "$")
-	if err != nil {
-		return asteriskPattern{}, err
-	}
-	return asteriskPattern{glob: pattern, compiled: compiled}, nil
+// asteriskPattern is a pattern that may contain * glob wildcard.
+func makeAsteriskPattern(pattern string) asteriskPattern {
+	// TODO: This also matches `?` for single characters, which we don't need.
+	// We can later switch it out by a more optimized version for our use-case
+	// but for now this is giving us a good boost already.
+	compiled := wildmatch.NewWildMatch(pattern)
+	return asteriskPattern{glob: pattern, compiled: compiled}
 }
 func (p asteriskPattern) String() string { return p.glob }
 func (p asteriskPattern) Match(part string) bool {
-	if p.compiled == nil {
-		return false
-	}
-	return p.compiled.FindString(part) != ""
+	return p.compiled.IsMatch(part)
 }
 
 // compile translates a text representation of a glob pattern
@@ -102,11 +97,7 @@ func compile(pattern string) (globPattern, error) {
 			glob = append(glob, anyMatch{})
 		default:
 			if strings.Contains(part, "*") {
-				p, err := makeAsteriskPattern(part)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to interpret %q within %q", part, pattern)
-				}
-				glob = append(glob, p)
+				glob = append(glob, makeAsteriskPattern(part))
 			} else {
 				glob = append(glob, exactMatch(part))
 			}
