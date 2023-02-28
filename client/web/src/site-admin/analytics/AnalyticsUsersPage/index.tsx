@@ -19,6 +19,7 @@ import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 import { USERS_STATISTICS } from './queries'
 
 import styles from './AnalyticsUsersPage.module.scss'
+import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 
 export const AnalyticsUsersPage: FC = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
@@ -38,7 +39,7 @@ export const AnalyticsUsersPage: FC = () => {
             return []
         }
         const { users } = data.site.analytics
-        const legends: ValueLegendListProps['items'] = [
+        let legends: ValueLegendListProps['items'] = [
             {
                 value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
@@ -60,6 +61,25 @@ export const AnalyticsUsersPage: FC = () => {
                 tooltip: 'The number of user licenses your current account is provisioned for.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(
+            window.context.sourcegraphDotComMode,
+            window.context.allowSignup,
+            window.context.experimentalFeatures
+        )
+        if (isRequestAccessAllowed) {
+            legends = [
+                ...legends.slice(0, 1),
+                {
+                    value: data.pendingAccessRequests.totalCount,
+                    description: 'Pending requests',
+                    color: 'var(--cyan)',
+                    position: 'right',
+                    tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+                },
+                ...legends.slice(1),
+            ]
+        }
 
         const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, uniqueOrPercentage, 30)
 
