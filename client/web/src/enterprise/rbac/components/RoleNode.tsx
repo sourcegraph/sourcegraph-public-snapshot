@@ -10,7 +10,7 @@ import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 
-import styles from './Roles.module.scss'
+import styles from './RoleNode.module.scss'
 
 interface RoleNodeProps {
     node: RoleFields
