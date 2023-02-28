@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -50,7 +49,7 @@ import (
 )
 
 var (
-	printLogo, _ = strconv.ParseBool(env.Get("LOGO", defaultPrintLogo(), "print Sourcegraph logo upon startup"))
+	printLogo = env.MustGetBool("LOGO", deploy.IsDeployTypeSingleProgram(deploy.Type()), "print Sourcegraph logo upon startup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -65,14 +64,6 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
-
-func defaultPrintLogo() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
-		return "true"
-	}
-	return "false"
-}
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
@@ -227,6 +218,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterpriseServices.InsightsAggregationResolver,
 		enterpriseServices.WebhooksResolver,
 		enterpriseServices.RBACResolver,
+		enterpriseServices.OwnResolver,
 	)
 	if err != nil {
 		return err
@@ -260,6 +252,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
+
+	// We only want to run this task once Sourcegraph is ready to serve user requests.
+	goroutine.Go(func() { bg.AppReady(logger) })
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil

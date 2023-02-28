@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail, mdiMicrosoftAzureDevops } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 
@@ -12,6 +12,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
@@ -24,25 +25,36 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
     isSourcegraphDotCom: boolean
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
+    const { isSourcegraphDotCom, context, authenticatedUser } = props
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
+    const isRequestAccessAllowed = checkRequestAccessAllowed(
+        isSourcegraphDotCom,
+        context.allowSignup,
+        context.experimentalFeatures
+    )
 
-    if (props.authenticatedUser) {
+    if (authenticatedUser) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
     }
 
     const [[builtInAuthProvider], nonBuiltinAuthProviders] = partition(
-        props.context.authProviders,
+        context.authProviders,
         provider => provider.isBuiltin
     )
 
@@ -102,6 +114,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
                                 {provider.serviceType === 'bitbucketCloud' && (
                                     <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}
+                                {provider.serviceType === 'azuredevops' && (
+                                    <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
                                 )}{' '}
                                 Continue with {provider.displayName}
                             </Button>
@@ -120,26 +135,30 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         </div>
                     )}
                 </div>
-                {props.context.allowSignup ? (
+                {context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph?{' '}
-                        {props.isSourcegraphDotCom ? (
-                            <Link
-                                to="https://signup.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() =>
-                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedOut' })
-                                }
-                            >
-                                Sign up
-                            </Link>
-                        ) : (
-                            <Link to="/sign-up">Sign up</Link>
+                        New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
+                        {isSourcegraphDotCom && (
+                            <>
+                                To use Sourcegraph on private repositories,
+                                <Link
+                                    to="https://signup.sourcegraph.com"
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                                    }
+                                >
+                                    get Sourcegraph Enterprise
+                                </Link>
+                                .
+                            </>
                         )}
                     </Text>
+                ) : isRequestAccessAllowed ? (
+                    <Text className="text-muted">
+                        Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
+                    </Text>
                 ) : (
-                    <Text className="text-muted">Need an account? Contact your site admin</Text>
+                    <Text className="text-muted">Need an account? Contact your site admin.</Text>
                 )}
             </div>
         )
@@ -149,7 +168,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             <PageTitle title="Sign in" />
             <HeroPage
                 icon={SourcegraphIcon}
-                iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconLinkTo={context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
                 title="Sign in to Sourcegraph"

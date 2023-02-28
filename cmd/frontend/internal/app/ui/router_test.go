@@ -146,6 +146,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// request-access
+		{
+			path:      "/request-access",
+			wantRoute: uirouter.RouteRequestAccess,
+			wantVars:  map[string]string{},
+		},
+
 		// settings
 		{
 			path:      "/settings",

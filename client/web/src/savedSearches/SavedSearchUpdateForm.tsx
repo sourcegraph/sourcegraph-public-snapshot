@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -15,7 +15,6 @@ import {
 } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -26,7 +25,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends NamespaceProps, ThemeProps {
+interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     searchId: string

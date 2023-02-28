@@ -69,7 +69,7 @@ const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const useShowMorePagination = <TResult, TVariables, TData>({
+export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,

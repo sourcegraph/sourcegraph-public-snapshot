@@ -211,19 +211,26 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 </span>
               </div>
             </div>
+            <div
+              aria-live="assertive"
+              class="alert alertWarning mt-3 mb-3"
+              role="alert"
+            >
+              License tags contain unknown values (marked red), please check if the tags are correct.
+            </div>
             <div>
               Tags: 
               <div
-                class="badge secondary mr-1"
+                class="badge danger mr-1"
               >
                 a
               </div>
             </div>
             <div
-              class="form-inline mt-2 d-block"
+              class="form-inline mt-2"
             >
               <div
-                class="input-group"
+                class="input-group flex-1"
               >
                 <div
                   class="container loader-input loaderInput"

@@ -1,9 +1,10 @@
-import { FC, useContext, useMemo, useEffect } from 'react'
+import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -15,13 +16,12 @@ import {
     Label,
     useForm,
     useField,
-    useObservable,
     useDebounce,
     getDefaultInputProps,
 } from '@sourcegraph/wildcard'
 
+import { GetExampleRepositoryResult, GetExampleRepositoryVariables } from '../../../../../../../graphql-operations'
 import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
-import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
 
@@ -35,7 +35,7 @@ interface CodeInsightExampleFormValues {
 }
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
-    repositories: ['github.com/sourcegraph/sourcegraph'],
+    repositories: [],
     query: 'TODO',
 }
 
@@ -44,7 +44,7 @@ interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttri
 export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
     const { telemetryService, ...otherProps } = props
 
-    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+    const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -55,6 +55,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
     const repositories = useField({
         name: 'repositories',
         formApi: form.formAPI,
+        disabled: repositoryValueLoading,
         validators: {
             sync: insightRepositoriesValidator,
         },
@@ -68,16 +69,14 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
     const debouncedQuery = useDebounce(query.input.value, 1000)
     const debouncedRepositories = useDebounce(repositories.input.value, 1000)
 
-    const derivedRepositoryURL = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
-
     const { onChange: setRepositoryValue } = repositories.input
 
     useEffect(() => {
         // This is to prevent resetting the name in an endless loop
-        if (derivedRepositoryURL) {
-            setRepositoryValue([derivedRepositoryURL])
+        if (repositoryUrl) {
+            setRepositoryValue([repositoryUrl])
         }
-    }, [setRepositoryValue, derivedRepositoryURL])
+    }, [setRepositoryValue, repositoryUrl])
 
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
@@ -95,7 +94,10 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
         telemetryService.log('InsightsGetStartedPrimaryCTAClick')
     }
 
-    const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+    const hasValidLivePreview =
+        !repositoryValueLoading && repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+
+    const { status: repositoryStatus, ...repositoryProps } = getDefaultInputProps(repositories)
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
@@ -126,9 +128,10 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
                 </Label>
                 <RepositoriesField
                     id="repositories-id"
-                    description="Find and choose up to 1 repository to run insight"
+                    description="Find and choose at least 1 repository to run insight"
                     placeholder="Search repositories..."
-                    {...getDefaultInputProps(repositories)}
+                    status={repositoryValueLoading ? 'loading' : repositoryStatus}
+                    {...repositoryProps}
                 />
             </form>
 
@@ -165,3 +168,50 @@ const CalloutArrow: FC<{ className?: string }> = props => (
         <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
     </Text>
 )
+
+export const GET_EXAMPLE_REPOSITORY = gql`
+    query GetExampleRepository {
+        todoRepo: search(patternType: literal, version: V2, query: "select:repo TODO count:1") {
+            results {
+                repositories {
+                    name
+                }
+            }
+        }
+        firstRepo: search(patternType: literal, version: V2, query: "select:repo count:1") {
+            results {
+                repositories {
+                    name
+                }
+            }
+        }
+    }
+`
+
+interface UseExampleRepositoryUrlReturn {
+    repositoryUrl?: string
+    loading: boolean
+}
+
+function useExampleRepositoryUrl(): UseExampleRepositoryUrlReturn {
+    const { data, loading, error } = useQuery<GetExampleRepositoryResult, GetExampleRepositoryVariables>(
+        GET_EXAMPLE_REPOSITORY,
+        { fetchPolicy: 'cache-and-network' }
+    )
+
+    if (loading || !data) {
+        return { loading: true }
+    }
+
+    if (error) {
+        return { repositoryUrl: 'github.com/sourcegraph/sourcegraph', loading: false }
+    }
+
+    const firstRepository = data.firstRepo?.results?.repositories[0]?.name
+    const todoRepository = data.todoRepo?.results?.repositories[0]?.name
+
+    return {
+        loading: false,
+        repositoryUrl: todoRepository ?? firstRepository ?? 'github.com/sourcegraph/sourcegraph',
+    }
+}

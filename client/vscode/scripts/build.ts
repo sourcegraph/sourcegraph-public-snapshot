@@ -141,8 +141,11 @@ export async function build(): Promise<void> {
 
     const ctxs = await Promise.all(buildPromises)
 
+    await Promise.all(ctxs.map(ctx => ctx.rebuild()))
+
     if (process.env.WATCH) {
         await Promise.all(ctxs.map(ctx => ctx.watch()))
     }
+
     await Promise.all(ctxs.map(ctx => ctx.dispose()))
 }

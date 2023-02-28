@@ -1,7 +1,7 @@
 import { Suspense, FC, memo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useParams, useNavigate } from 'react-router-dom-v5-compat'
+import { useParams, useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'

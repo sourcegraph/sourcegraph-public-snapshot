@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -44,7 +44,7 @@ func TestWithSelect(t *testing.T) {
 		return string(s)
 	}
 
-	autogold.Want("dedupe paths for select:file.directory", `[
+	autogold.Expect(`[
   {
     "Path": "pokeman/",
     "ChunkMatches": null,
@@ -59,7 +59,7 @@ func TestWithSelect(t *testing.T) {
   }
 ]`).Equal(t, test("file.directory"))
 
-	autogold.Want("dedupe paths select:file", `[
+	autogold.Expect(`[
   {
     "Path": "pokeman/charmandar",
     "ChunkMatches": null,
@@ -80,7 +80,7 @@ func TestWithSelect(t *testing.T) {
   }
 ]`).Equal(t, test("file"))
 
-	autogold.Want("don't dedupe file matches for select:content", `[
+	autogold.Expect(`[
   {
     "Path": "pokeman/charmandar",
     "ChunkMatches": [

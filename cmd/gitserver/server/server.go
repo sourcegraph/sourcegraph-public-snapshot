@@ -51,7 +51,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -340,8 +340,8 @@ type Server struct {
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
 	// s.acquireClonableLimiter() instead of using these directly.
-	cloneLimiter     *mutablelimiter.Limiter
-	cloneableLimiter *mutablelimiter.Limiter
+	cloneLimiter     *limiter.MutableLimiter
+	cloneableLimiter *limiter.MutableLimiter
 
 	// rpsLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -517,8 +517,8 @@ func (s *Server) Handler() http.Handler {
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
-	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
-	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
+	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
+	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
@@ -627,7 +627,7 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	for {
-		gitserverAddrs := currentGitserverAddresses()
+		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
@@ -641,7 +641,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	var previousAddrs string
 	var previousPinned string
 	for {
-		gitServerAddrs := currentGitserverAddresses()
+		gitServerAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
@@ -668,20 +668,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
-	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName, gitServerAddrs)
-}
-
-func currentGitserverAddresses() gitserver.GitServerAddresses {
-	cfg := conf.Get()
-	gitServerAddrs := gitserver.GitServerAddresses{
-		Addresses: cfg.ServiceConnectionConfig.GitServers,
-	}
-	if cfg.ExperimentalFeatures != nil {
-		gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
-	}
-
-	return gitServerAddrs
+func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -795,7 +783,7 @@ var (
 	})
 )
 
-func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batchSize, perSecond int, fullSync bool) error {
 	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
@@ -888,10 +876,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
-			if err != nil {
-				return err
-			}
+			addr := s.addrForRepo(repo.Name, gitServerAddrs)
 			if !s.hostnameMatch(addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
@@ -415,56 +415,56 @@ func Test_buildDrilldownQuery(t *testing.T) {
 		mode        types.SearchAggregationMode
 	}{
 		{
-			want:        autogold.Want("author_no_whitespace", "type:commit author:^Drilldown$ findme"),
+			want:        autogold.Expect("type:commit author:^Drilldown$ findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("repo_no_whitespace", "repo:^Drilldown$ findme"),
+			want:        autogold.Expect("repo:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("path_no_whitespace", "file:^Drilldown$ findme"),
+			want:        autogold.Expect("file:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.PATH_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("author_with_whitespace", "type:commit author:(^Drill down$) findme"),
+			want:        autogold.Expect("type:commit author:(^Drill down$) findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("repo_with_whitespace", "repo:(^Drill down$) findme"),
+			want:        autogold.Expect("repo:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("path_with_whitespace", "file:(^Drill down$) findme"),
+			want:        autogold.Expect("file:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.PATH_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("capturegroup_with_whitespace", "case:yes /fin(?:d m)e/"),
+			want:        autogold.Expect("case:yes /fin(?:d m)e/"),
 			query:       "/fin(.*)e/",
 			drilldown:   "d m",
 			patternType: "standard",
 			mode:        types.CAPTURE_GROUP_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("capturegroup_without_whitespace", "case:yes /fin(?:dm)e/"),
+			want:        autogold.Expect("case:yes /fin(?:dm)e/"),
 			query:       "/fin(.*)e/",
 			drilldown:   "dm",
 			patternType: "standard",
@@ -472,7 +472,7 @@ func Test_buildDrilldownQuery(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.query, func(t *testing.T) {
 			got, err := buildDrilldownQuery(test.mode, test.query, test.drilldown, test.patternType)
 			if err != nil {
 				t.Fatal(err)

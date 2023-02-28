@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { snippet } from '@codemirror/autocomplete'
 import {
     EditorSelection,
     EditorState,
@@ -122,6 +123,7 @@ export interface CompletionAction {
      * If present this component is rendered as part of the footer.
      */
     info?: CustomRenderer<Action>
+    asSnippet?: boolean
 }
 export type Action = CommandAction | GoToAction | CompletionAction
 
@@ -134,8 +136,8 @@ class SuggestionView {
     private container: HTMLDivElement
     private root: Root
 
-    private onSelect = (option: Option): void => {
-        applyAction(this.view, option.action, option)
+    private onSelect = (option: Option, action?: Action): void => {
+        applyAction(this.view, action ?? option.action, option)
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
@@ -347,7 +349,7 @@ class RegisteredSource {
                 )
             }
 
-            if (effect.is(startCompletion)) {
+            if (effect.is(startCompletionEffect)) {
                 source = source.query(transaction.state)
             }
         }
@@ -455,7 +457,7 @@ class SuggestionsState {
             if (effect.is(setSelectedEffect)) {
                 state = new SuggestionsState(state.source, state.open, effect.value)
             }
-            if (effect.is(hideCompletion)) {
+            if (effect.is(hideCompletionEffect)) {
                 state = new SuggestionsState(state.source, false, state.selectedOption)
             }
         }
@@ -488,8 +490,8 @@ const suggestionsConfig = Facet.define<Config, Config>({
 })
 
 const setSelectedEffect = StateEffect.define<number>()
-const startCompletion = StateEffect.define<void>()
-const hideCompletion = StateEffect.define<void>()
+const startCompletionEffect = StateEffect.define<void>()
+const hideCompletionEffect = StateEffect.define<void>()
 const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
@@ -536,24 +538,32 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
     switch (action.type) {
         case 'completion':
             {
-                const text = action.insertValue ?? option.label
-                const changeSet = view.state.changeByRange(range => {
-                    if (range === view.state.selection.main) {
-                        return {
-                            changes: {
-                                from: action.from,
-                                to: action.to ?? view.state.selection.main.head,
-                                insert: text,
-                            },
-                            range: EditorSelection.cursor(action.from + text.length),
+                const to = action.to ?? view.state.selection.main.to
+                const value = action.insertValue ?? option.label
+                if (action.asSnippet) {
+                    const apply = snippet(value)
+                    // {label: value} is just a dummy value to be able to use
+                    // snippet(...)
+                    apply(view, { label: value }, action.from, to)
+                } else {
+                    const changeSet = view.state.changeByRange(range => {
+                        if (range === view.state.selection.main) {
+                            return {
+                                changes: {
+                                    from: action.from,
+                                    to,
+                                    insert: value,
+                                },
+                                range: EditorSelection.cursor(action.from + value.length),
+                            }
                         }
-                    }
-                    return { range }
-                })
-                view.dispatch({
-                    ...changeSet,
-                    effects: changeSet.effects.concat(setModeEffect.of(null)),
-                })
+                        return { range }
+                    })
+                    view.dispatch({
+                        ...changeSet,
+                        effects: changeSet.effects.concat(setModeEffect.of(null)),
+                    })
+                }
             }
             break
         case 'command':
@@ -582,7 +592,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
     {
         key: 'Mod-Space',
         run(view) {
-            view.dispatch({ effects: startCompletion.of() })
+            startCompletion(view)
             return true
         },
     },
@@ -611,7 +621,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
         key: 'Escape',
         run(view) {
             if (view.state.field(suggestionsStateField).open) {
-                view.dispatch({ effects: hideCompletion.of() })
+                view.dispatch({ effects: hideCompletionEffect.of() })
                 return true
             }
             return false
@@ -629,7 +639,7 @@ export const suggestionSources = Facet.define<Source>({
                 update.view.hasFocus &&
                 update.view.state.field(suggestionsStateField).result.empty()
             ) {
-                update.view.dispatch({ effects: startCompletion.of() })
+                startCompletion(update.view)
             }
         }),
         Prec.highest(keymap.of(defaultKeyboardBindings)),
@@ -647,3 +657,10 @@ export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalC
     suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]
+
+/**
+ * Load and show suggestions.
+ */
+export function startCompletion(view: EditorView): void {
+    view.dispatch({ effects: startCompletionEffect.of() })
+}

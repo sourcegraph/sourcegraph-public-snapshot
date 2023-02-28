@@ -376,6 +376,26 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		InvalidatedSessionsAt: invalidatedSessionsAt,
 		Searchable:            searchable,
 	}
+
+	{
+		// Assign roles to the created user. We do this in here to ensure role assign occurs in the same transaction as user creation occurs.
+		// This ensures we don't have "zombie" users (users with no role assigned to them).
+		// All users on a Sourcegraph instance must have the `USER` role, however depending on the value of user.SiteAdmin,
+		// we assign them the `SITE_ADMINISTRATOR` role.
+		roles := []types.SystemRole{types.UserSystemRole}
+		if user.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
+		}
+
+		db := NewDBWith(u.logger, u)
+		if err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roles,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	{
 		// Run hooks.
 		//
@@ -784,7 +804,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 
 		userRoleStore := tx.UserRoles()
 		if isSiteAdmin {
-			_, err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+			err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
 				UserID: id,
 				Role:   types.SiteAdministratorSystemRole,
 			})
@@ -918,6 +938,8 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Usernames specifies a list of usernames to include.
+	Usernames []string
 	// Only show users inside this org
 	OrgID int32
 
@@ -1084,6 +1106,10 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			}
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
+	}
+
+	if len(opt.Usernames) > 0 {
+		conds = append(conds, sqlf.Sprintf("u.username = ANY(%s)", pq.Array(opt.Usernames)))
 	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))

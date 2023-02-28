@@ -328,41 +328,27 @@ func TestPermissionCount(t *testing.T) {
 	})
 }
 
-func TestPermissionFetchAll(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.Permissions()
-
-	_, _, totalPerms := seedPermissionDataForList(ctx, t, store, db)
-
-	perms, err := store.FetchAll(ctx)
-
-	require.NoError(t, err)
-	require.Len(t, perms, totalPerms)
-}
-
 func seedPermissionDataForList(ctx context.Context, t *testing.T, store PermissionStore, db DB) (*types.Role, *types.User, int) {
 	t.Helper()
 
 	perms, totalPerms := createTestPermissions(ctx, t, store)
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 	role, err := createTestRole(ctx, "TEST-ROLE", false, t, db.Roles())
 	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perms[0].ID,
 	})
 	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perms[1].ID,
 	})
 	require.NoError(t, err)
 
-	_, err = db.UserRoles().Assign(ctx, AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})

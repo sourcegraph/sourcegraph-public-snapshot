@@ -5,22 +5,21 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
-import { UserAvatar } from '../user/UserAvatar'
 
 import { ExternalsAuth } from './ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends ThemeProps, TelemetryProps {
+interface Props extends TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -30,6 +29,7 @@ interface Props extends ThemeProps, TelemetryProps {
         'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
     isSourcegraphDotCom: boolean
+    isLightTheme: boolean
 }
 
 const SourceToTitleMap = {

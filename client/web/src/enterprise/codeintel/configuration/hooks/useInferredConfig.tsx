@@ -14,7 +14,9 @@ export const INFERRED_CONFIGURATION = gql`
     fragment RepositoryInferredIndexConfigurationFields on Repository {
         __typename
         indexConfiguration {
-            inferredConfiguration
+            inferredConfiguration {
+                configuration
+            }
         }
     }
 `
@@ -31,7 +33,9 @@ export const useInferredConfig = (id: string): UseInferredConfigResult => {
     })
 
     const inferredConfiguration =
-        (data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.inferredConfiguration) || ''
+        (data?.node?.__typename === 'Repository' &&
+            data.node.indexConfiguration?.inferredConfiguration?.configuration) ||
+        ''
 
     return {
         inferredConfiguration,

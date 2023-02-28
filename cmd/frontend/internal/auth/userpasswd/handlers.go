@@ -56,7 +56,7 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
-		if pc, _ := getProviderConfig(); !pc.AllowSignup {
+		if pc, _ := GetProviderConfig(); !pc.AllowSignup {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
@@ -119,7 +119,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := checkEmailFormat(creds.Email); err != nil {
+	if err := CheckEmailFormat(creds.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -165,69 +165,44 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		}
 	}
 
-	var usr *types.User
-	err := db.WithTransact(r.Context(), func(tx database.DB) (err error) {
-		usr, err = tx.Users().Create(r.Context(), newUserData)
-		if err != nil {
-			var (
-				message    string
-				statusCode int
-			)
-			switch {
-			case database.IsUsernameExists(err):
-				message = "Username is already in use. Try a different username."
-				statusCode = http.StatusConflict
-			case database.IsEmailExists(err):
-				message = "Email address is already in use. Try signing into that account instead, or use a different email address."
-				statusCode = http.StatusConflict
-			case errcode.PresentationMessage(err) != "":
-				message = errcode.PresentationMessage(err)
-				statusCode = http.StatusConflict
-			default:
-				// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
-				// information.
-				message = defaultErrorMessage
-				statusCode = http.StatusInternalServerError
-			}
-			logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-			http.Error(w, message, statusCode)
-
-			if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-				logger.Warn("Failed to log event SignUpFailed", log.Error(err))
-			}
-			return err
-		}
-
-		roles := []types.SystemRole{types.UserSystemRole}
-		if usr.SiteAdmin {
-			roles = append(roles, types.SiteAdministratorSystemRole)
-		}
-
-		if _, err = tx.UserRoles().BulkAssignSystemRolesToUser(r.Context(), database.BulkAssignSystemRolesToUserOpts{
-			UserID: usr.ID,
-			Roles:  roles,
-		}); err != nil {
-			logger.Error("Error assigning role to user", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-			http.Error(w, "Unable to assign system role to user", http.StatusBadRequest)
-			return err
-		}
-
-		if err = tx.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
-			UserID: usr.ID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
-		}
-
-		return nil
-	})
-
+	usr, err := db.Users().Create(r.Context(), newUserData)
 	if err != nil {
-		// It's okay to simply return here because any error that occur in the transaction above,
-		// will result in `http.Error` been called to respond to the request early. This will also
-		// result in the transaction being rolled back.
+		var (
+			message    string
+			statusCode int
+		)
+		switch {
+		case database.IsUsernameExists(err):
+			message = "Username is already in use. Try a different username."
+			statusCode = http.StatusConflict
+		case database.IsEmailExists(err):
+			message = "Email address is already in use. Try signing into that account instead, or use a different email address."
+			statusCode = http.StatusConflict
+		case errcode.PresentationMessage(err) != "":
+			message = errcode.PresentationMessage(err)
+			statusCode = http.StatusConflict
+		default:
+			// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
+			// information.
+			message = defaultErrorMessage
+			statusCode = http.StatusInternalServerError
+		}
+		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
+		http.Error(w, message, statusCode)
+
+		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
+		}
+
 		return
+	}
+
+	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+		UserID: usr.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
@@ -254,7 +229,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 }
 
-func checkEmailFormat(email string) error {
+func CheckEmailFormat(email string) error {
 	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
 	if len(email) > 320 {
 		return errors.Newf("maximum email length is 320, got %d", len(email))

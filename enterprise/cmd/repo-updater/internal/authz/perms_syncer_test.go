@@ -9,12 +9,12 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func init() {
@@ -151,11 +150,14 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	})
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -179,7 +181,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []syncjobs.ProviderStatus{{
+	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "SUCCESS",
@@ -302,6 +304,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		}
 		return []*extsvc.Account{&extAccount}, nil
 	})
+	featureFlags := database.NewMockFeatureFlagStore()
 
 	subRepoPerms := edb.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
@@ -312,6 +315,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -334,7 +338,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []syncjobs.ProviderStatus{{
+	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "ERROR",
@@ -375,11 +379,14 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -464,6 +471,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	reposStore := repos.NewMockStore()
 
@@ -552,12 +560,15 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -620,6 +631,8 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 	subRepoPerms := edb.NewMockSubRepoPermsStore()
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -627,6 +640,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -662,8 +676,11 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	mockRepos := database.NewMockRepoStore()
+	mockFeatureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
+	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
 
 	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -742,7 +759,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
-		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -773,7 +790,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
-		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -818,7 +835,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 	perms := edb.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
-	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), p.RepoID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -911,8 +928,8 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 
 		s := NewPermsSyncer(logtest.Scoped(t), db, nil, nil, timeutil.Now, nil)
 
-		syncGroups := map[requestType]group.ContextGroup{
-			requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(1),
+		syncGroups := map[requestType]*pool.ContextPool{
+			requestTypeUser: pool.New().WithContext(ctx).WithMaxGoroutines(1),
 		}
 
 		request1 := &syncRequest{

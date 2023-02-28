@@ -127,7 +127,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     <Label htmlFor="repositories-id">Repositories</Label>
                     <RepositoriesField
                         id="repositories-id"
-                        description="Find and choose up to 1 repository to run insight"
+                        description="Find and choose at least 1 repository to run insight"
                         placeholder="Search repositories..."
                         {...getDefaultInputProps(repositories)}
                     />
@@ -173,7 +173,11 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
+                    <ComputeInsightMapPicker
+                        series={validSeries}
+                        value={groupBy.input.value}
+                        onChange={groupBy.input.onChange}
+                    />
                 </FormGroup>
 
                 <hr aria-hidden={true} className="my-4 w-100" />

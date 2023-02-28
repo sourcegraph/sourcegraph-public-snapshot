@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -19,12 +19,15 @@ export function GlobalContributions(props: Props): null {
     const location = useLocation()
     const navigate = useNavigate()
 
-    // Location may be used by the hover contributions after they are
-    // initialized. To avoid stale location, we need to keep it in a ref.
+    // Location and navigate may be used by the hover contributions after they
+    // are initialized and closed over. To avoid stale data, we keep them in
+    // refs.
     const locationRef = useRef(location)
+    const navigateRef = useRef(navigate)
     useEffect(() => {
         locationRef.current = location
-    }, [location])
+        navigateRef.current = navigate
+    }, [location, navigate])
 
     const [error, setError] = useState<null | Error>(null)
 
@@ -38,10 +41,12 @@ export function GlobalContributions(props: Props): null {
     useEffect(() => {
         const subscriptions = new Subscription()
         if (extensionsController !== null) {
+            const historyOrNavigate: NavigateFunction = ((to: any, options: any): void =>
+                navigateRef.current?.(to, options)) as any
             subscriptions.add(
                 registerHoverContributions({
                     platformContext,
-                    historyOrNavigate: navigate,
+                    historyOrNavigate,
                     getLocation: () => locationRef.current,
                     extensionsController,
                     locationAssign: globalThis.location.assign.bind(globalThis.location),
@@ -49,7 +54,7 @@ export function GlobalContributions(props: Props): null {
             )
         }
         return () => subscriptions.unsubscribe()
-    }, [extensionsController, navigate, platformContext])
+    }, [extensionsController, platformContext])
 
     // Throw error to the <ErrorBoundary />
     if (error) {

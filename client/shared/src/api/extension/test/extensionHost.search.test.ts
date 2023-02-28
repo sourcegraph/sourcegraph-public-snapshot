@@ -10,7 +10,6 @@ import { initializeExtensionHostTest } from './test-helpers'
 
 const noopMain = pretendRemote<ClientAPI>({
     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
-    getScriptURLForExtension: () => undefined,
 })
 const initialSettings: SettingsCascade<object> = { subjects: [], final: {} }
 

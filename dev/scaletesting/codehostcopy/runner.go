@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -161,7 +161,7 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	defer progress.Destroy()
 	var done int64
 
-	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
+	p := pool.NewWithResults[error]().WithMaxGoroutines(concurrency)
 
 	repoIter := r.source.Iterator()
 	for !repoIter.Done() && repoIter.Err() == nil {
@@ -172,7 +172,7 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 
 		for _, rr := range repos {
 			repo := rr
-			g.Go(func() error {
+			p.Go(func() error {
 				// Create the repo on destination.
 				if !repo.Created {
 					toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
@@ -218,7 +218,7 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 		return repoIter.Err()
 	}
 
-	errs := g.Wait()
+	errs := p.Wait()
 	for _, e := range errs {
 		if e != nil {
 			return e

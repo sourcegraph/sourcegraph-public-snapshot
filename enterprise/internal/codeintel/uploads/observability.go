@@ -32,6 +32,7 @@ type operations struct {
 	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -61,10 +62,21 @@ type operations struct {
 	// Tags
 	getListTags *observation.Operation
 
-	numUploadsRead         prometheus.Counter
-	numBytesUploaded       prometheus.Counter
-	numStaleRecordsDeleted prometheus.Counter
-	numBytesDeleted        prometheus.Counter
+	// Ranking
+	exportRankingGraph *observation.Operation
+	mapRankingGraph    *observation.Operation
+	reduceRankingGraph *observation.Operation
+
+	numUploadsRead                   prometheus.Counter
+	numBytesUploaded                 prometheus.Counter
+	numStaleRecordsDeleted           prometheus.Counter
+	numDefinitionsInserted           prometheus.Counter
+	numReferencesInserted            prometheus.Counter
+	numStaleDefinitionRecordsDeleted prometheus.Counter
+	numStaleReferenceRecordsDeleted  prometheus.Counter
+	numMetadataRecordsDeleted        prometheus.Counter
+	numInputRecordsDeleted           prometheus.Counter
+	numBytesDeleted                  prometheus.Counter
 }
 
 var (
@@ -122,6 +134,30 @@ func newOperations(observationCtx *observation.Context) *operations {
 		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
 		"The number of stale upload records removed from GCS.",
 	)
+	numDefinitionsInserted := counter(
+		"src_codeintel_uploads_ranking_num_definitions_inserted_total",
+		"The number of definition records inserted into Postgres.",
+	)
+	numReferencesInserted := counter(
+		"src_codeintel_uploads_ranking_num_references_inserted_total",
+		"The number of reference records inserted into Postgres.",
+	)
+	numStaleDefinitionRecordsDeleted := counter(
+		"src_codeintel_uploads_num_stale_definition_records_deleted_total",
+		"The number of stale definition records removed from Postgres.",
+	)
+	numStaleReferenceRecordsDeleted := counter(
+		"src_codeintel_uploads_num_stale_reference_records_deleted_total",
+		"The number of stale reference records removed from Postgres.",
+	)
+	numMetadataRecordsDeleted := counter(
+		"src_codeintel_uploads_num_metadata_records_deleted_total",
+		"The number of stale metadata records removed from Postgres.",
+	)
+	numInputRecordsDeleted := counter(
+		"src_codeintel_uploads_num_input_records_deleted_total",
+		"The number of stale input records removed from Postgres.",
+	)
 	numBytesDeleted := counter(
 		"src_codeintel_uploads_ranking_bytes_deleted_total",
 		"The number of bytes deleted from GCS.",
@@ -145,6 +181,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -174,10 +211,21 @@ func newOperations(observationCtx *observation.Context) *operations {
 		// Tags
 		getListTags: op("GetListTags"),
 
-		numUploadsRead:         numUploadsRead,
-		numBytesUploaded:       numBytesUploaded,
-		numStaleRecordsDeleted: numStaleRecordsDeleted,
-		numBytesDeleted:        numBytesDeleted,
+		// Ranking
+		exportRankingGraph: op("ExportRankingGraph"),
+		mapRankingGraph:    op("MapRankingGraph"),
+		reduceRankingGraph: op("ReduceRankingGraph"),
+
+		numUploadsRead:                   numUploadsRead,
+		numBytesUploaded:                 numBytesUploaded,
+		numStaleRecordsDeleted:           numStaleRecordsDeleted,
+		numDefinitionsInserted:           numDefinitionsInserted,
+		numReferencesInserted:            numReferencesInserted,
+		numStaleDefinitionRecordsDeleted: numStaleDefinitionRecordsDeleted,
+		numStaleReferenceRecordsDeleted:  numStaleReferenceRecordsDeleted,
+		numMetadataRecordsDeleted:        numMetadataRecordsDeleted,
+		numInputRecordsDeleted:           numInputRecordsDeleted,
+		numBytesDeleted:                  numBytesDeleted,
 	}
 }
 

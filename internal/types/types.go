@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -134,6 +135,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 		ids = append(ids, src.ExternalServiceID())
 	}
 	return ids
+}
+
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
 }
 
 // BlockedRepoError is returned by a Repo IsBlocked method.
@@ -620,6 +629,20 @@ type ExternalServiceSyncJob struct {
 	ReposDeleted    int32
 	ReposModified   int32
 	ReposUnmodified int32
+}
+
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1555,6 +1578,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
@@ -1859,3 +1883,30 @@ type TeamMember struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type CodeownersFile struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	RepoID   api.RepoID
+	Contents string
+	Proto    *codeownerspb.File
+}
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID             int32
+	Name           string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          string
+	AdditionalInfo string
+	Status         AccessRequestStatus
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)
