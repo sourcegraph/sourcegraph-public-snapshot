@@ -167,7 +167,9 @@ func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observat
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor")
+	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
+		return true
+	}))
 	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, resetterMetrics
 }
