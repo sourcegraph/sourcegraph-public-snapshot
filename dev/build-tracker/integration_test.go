@@ -221,50 +221,51 @@ func TestSlackNotification(t *testing.T) {
 
 	client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
 
-	num := 160000
+	// Each child test needs to increment this number, otherwise notifications will be overwritten
+	buildNumber := 160000
 	url := "http://www.google.com"
 	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
 	pipelineID := "sourcegraph"
 	exit := 999
 	msg := "this is a test"
-	t.Run("send new notification", func(t *testing.T) {
-		build := &build.Build{
-			Build: buildkite.Build{
-				Message: &msg,
-				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
-				},
-				Pipeline: &buildkite.Pipeline{
-					ID:   &pipelineID,
-					Name: &pipelineID,
-				},
-				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
-				},
-				Number: &num,
-				URL:    &url,
-				Commit: &commit,
+	b := &build.Build{
+		Build: buildkite.Build{
+			Message: &msg,
+			WebURL:  &url,
+			Creator: &buildkite.Creator{
+				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
 			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
+			Pipeline: &buildkite.Pipeline{
+				ID:   &pipelineID,
 				Name: &pipelineID,
-			}},
-			Steps: map[string]*build.Step{
-				":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-				":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
-				":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
-				":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
 			},
+			Author: &buildkite.Author{
+				Name:  "William Bezuidenhout",
+				Email: "william.bezuidenhout@sourcegraph.com",
+			},
+			Number: &buildNumber,
+			URL:    &url,
+			Commit: &commit,
+		},
+		Pipeline: &build.Pipeline{buildkite.Pipeline{
+			Name: &pipelineID,
+		}},
+	}
+	t.Run("send new notification", func(t *testing.T) {
+		b.Steps = map[string]*build.Step{
+			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
+			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
+			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
 		}
 
-		info := toBuildNotification(build)
+		info := toBuildNotification(b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
 		}
 
-		notification := client.GetNotification(build.GetNumber())
+		notification := client.GetNotification(b.GetNumber())
 		if notification == nil {
 			t.Fatalf("expected not nil notificaiton after new notification")
 		}
@@ -276,31 +277,13 @@ func TestSlackNotification(t *testing.T) {
 		}
 	})
 	t.Run("update notification", func(t *testing.T) {
-		b := &build.Build{
-			Build: buildkite.Build{
-				Message: &msg,
-				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
-				},
-				Pipeline: &buildkite.Pipeline{
-					ID:   &pipelineID,
-					Name: &pipelineID,
-				},
-				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
-				},
-				Number: &num,
-				URL:    &url,
-				Commit: &commit,
-			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
-			}},
-			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-			},
+		// setup the build
+		msg := "notification gets updated"
+		b.Message = &msg
+		buildNumber++
+		b.Number = &buildNumber
+		b.Steps = map[string]*build.Step{
+			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
 		}
 
 		// post a new notification
@@ -314,7 +297,7 @@ func TestSlackNotification(t *testing.T) {
 			t.Errorf("expected not nil notification after new message")
 		}
 		// now update the notification with additional jobs that failed
-		b.Steps[":alarm_clock: delayed job"] = build.NewStepFromJob(newJob(t, ":clock: delayed job", exit))
+		b.AddJob(newJob(t, ":alarm_clock: delayed job", exit))
 		info = toBuildNotification(b)
 		err = client.Send(info)
 		if err != nil {
@@ -328,7 +311,125 @@ func TestSlackNotification(t *testing.T) {
 			t.Errorf("expected new and updated notifications to differ - new '%v' updated '%v'", newNotification, updatedNotification)
 		}
 	})
+	t.Run("send 3 notifications with more and more failures", func(t *testing.T) {
+		// setup the build
+		msg := "3 notifications with more and more failures"
+		b.Message = &msg
+		buildNumber++
+		b.Number = &buildNumber
+		b.Steps = map[string]*build.Step{
+			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+		}
+
+		// post a new notification
+		info := toBuildNotification(b)
+		err := client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+		newNotification := client.GetNotification(b.GetNumber())
+		if newNotification == nil {
+			t.Errorf("expected not nil notification after new message")
+		}
+
+		b.AddJob(newJob(t, ":alarm: outlier", 1))
+		info = toBuildNotification(b)
+		err = client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+
+		// now add a bunch
+		for i := 0; i < 5; i++ {
+			b.AddJob(newJob(t, fmt.Sprintf(":alarm_clock: delayed job %d", i), exit))
+		}
+		info = toBuildNotification(b)
+		err = client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+	})
+	t.Run("send a failed build that gets fixed later", func(t *testing.T) {
+		// setup the build
+		msg := "failed then fixed later"
+		b.Message = &msg
+		buildNumber++
+		b.Number = &buildNumber
+		b.Steps = map[string]*build.Step{
+			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
+			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
+		}
+
+		// post a new notification
+		info := toBuildNotification(b)
+		err := client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+		newNotification := client.GetNotification(b.GetNumber())
+		if newNotification == nil {
+			t.Errorf("expected not nil notification after new message")
+		}
+
+		// now fix all the Steps by adding a passed job
+		for _, s := range b.Steps {
+			b.AddJob(newJob(t, s.Name, 0))
+		}
+		info = toBuildNotification(b)
+		if info.BuildStatus != string(build.BuildFixed) {
+			t.Errorf("all jobs are fixed, build status should be fixed")
+		}
+		err = client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+	})
+	t.Run("send a failed build that gets fixed later", func(t *testing.T) {
+		// setup the build
+		msg := "mixed of failed and fixed jobs"
+		b.Message = &msg
+		buildNumber++
+		b.Number = &buildNumber
+		b.Steps = map[string]*build.Step{
+			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
+			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
+			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
+			":five: fake step":  build.NewStepFromJob(newJob(t, ":five: fake step", exit)),
+			":six: fake step":   build.NewStepFromJob(newJob(t, ":six: fake step", exit)),
+		}
+
+		// post a new notification
+		info := toBuildNotification(b)
+		err := client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+		newNotification := client.GetNotification(b.GetNumber())
+		if newNotification == nil {
+			t.Errorf("expected not nil notification after new message")
+		}
+
+		// now fix half the Steps by adding a passed job
+		count := 0
+		for _, s := range b.Steps {
+			if count < 3 {
+				b.AddJob(newJob(t, s.Name, 0))
+			}
+			count++
+		}
+		info = toBuildNotification(b)
+		if info.BuildStatus != string(build.BuildFailed) {
+			t.Errorf("some jobs are still failed so overall build status should be Failed")
+		}
+		err = client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+	})
 }
+
 func TestServerNotify(t *testing.T) {
 	flag.Parse()
 	if !*RunSlackIntegrationTest {

@@ -211,6 +211,7 @@ func createStepsSection(status string, items []JobLine, showLimit int) string {
 		if item.LogURL() != "" {
 			line += fmt.Sprintf("- <%s|logs>", item.LogURL())
 		}
+		line += "\n"
 		section += line
 	}
 
@@ -309,7 +310,7 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 
 func generateSlackHeader(info *BuildNotification) string {
 	if len(info.Failed) == 0 && len(info.Fixed) > 0 {
-		return fmt.Sprintf(":green_circle: Build %d fixed", info.BuildNumber)
+		return fmt.Sprintf(":large_green_circle: Build %d fixed", info.BuildNumber)
 	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", info.BuildNumber)
 	switch info.ConsecutiveFailure {

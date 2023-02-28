@@ -249,7 +249,7 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		info.Fixed = append(info.Fixed, j)
 	}
 	for _, j := range groups[build.JobFailed] {
-		info.Failed = append(info.Fixed, j)
+		info.Failed = append(info.Failed, j)
 	}
 
 	if len(groups[build.JobFailed]) > 0 {
