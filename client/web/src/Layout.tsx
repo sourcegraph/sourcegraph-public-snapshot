@@ -145,7 +145,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard />
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} />
             </Suspense>
         )
     }
