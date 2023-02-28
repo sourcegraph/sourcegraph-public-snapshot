@@ -47,7 +47,13 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstu
 }
 
 func (r *RepositoryResolver) commitFromID(args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := NewGitCommitResolver(r, commitID)
+	var inputRev *string
+	if false {
+		value := "v1.2.3"
+		inputRev = &value
+	}
+
+	resolver := NewGitCommitResolver(r, commitID, inputRev)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
