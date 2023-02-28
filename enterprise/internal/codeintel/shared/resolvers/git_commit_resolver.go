@@ -23,10 +23,11 @@ type GitCommitResolver struct {
 // NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *GitCommitResolver {
+func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID, inputRev *string) *GitCommitResolver {
 	return &GitCommitResolver{
 		oid:          GitObjectID(id),
 		repoResolver: repo,
+		inputRev:     inputRev,
 	}
 }
 
