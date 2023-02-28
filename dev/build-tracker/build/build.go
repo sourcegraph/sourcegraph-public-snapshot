@@ -32,8 +32,8 @@ type Build struct {
 }
 
 type Step struct {
-	Name string
-	Jobs []*Job
+	Name string `json:"steps"`
+	Jobs []*Job `json:"jobs"`
 }
 
 // Implement the notify.JobLine interface
@@ -55,6 +55,21 @@ const (
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
 )
+
+func (b *Build) AddJob(j *Job) error {
+	stepName := j.GetName()
+	if stepName == "" {
+		return fmt.Errorf("job name is empty")
+	}
+	step, ok := b.Steps[stepName]
+	// We don't know about this step, so it must be a new one
+	if !ok {
+		step = NewStep(stepName)
+		b.Steps[step.Name] = step
+	}
+	step.Jobs = append(step.Jobs, j)
+	return nil
+}
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
@@ -137,11 +152,13 @@ type Event struct {
 }
 
 func (b *Event) WrappedBuild() *Build {
-	return &Build{
+	build := &Build{
 		Build:    b.Build,
 		Pipeline: b.WrappedPipeline(),
 		Steps:    make(map[string]*Step),
 	}
+
+	return build
 }
 
 func (b *Event) WrappedJob() *Job {
@@ -231,29 +248,22 @@ func (s *Store) Add(event *Event) {
 
 	// Keep track of the job, if there is one
 	newJob := event.WrappedJob()
-	stepName := newJob.GetName()
-	if stepName != "" {
-		step, ok := build.Steps[stepName]
-		// We don't know about this step, so it must be a new one
-		if !ok {
-			step = NewStep(stepName)
-			build.Steps[step.Name] = step
-		}
-		step.Jobs = append(step.Jobs, newJob)
-		s.logger.Debug("job added to step",
-			log.Int("buildNumber", event.BuildNumber()),
-			log.Object("step", log.String("name", step.Name),
-				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
-				log.Int("totalJobs", len(step.Jobs)),
-			),
-			log.Int("totalSteps", len(step.Jobs)),
-		)
-	} else {
+	err := build.AddJob(newJob)
+	if err != nil {
 		s.logger.Warn("job for step has no name - not added",
 			log.Int("buildNumber", event.BuildNumber()),
 			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
+	} else {
+		s.logger.Debug("job added to step",
+			log.Int("buildNumber", event.BuildNumber()),
+			log.Object("step", log.String("name", newJob.GetName()),
+				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
+			),
+			log.Int("totalSteps", len(build.Steps)),
+		)
+
 	}
 
 }

@@ -82,6 +82,8 @@ func TestGetBuild(t *testing.T) {
 		}
 
 		expected := event.WrappedBuild()
+		expected.AddJob(event.WrappedJob())
+
 		server.store.Add(&event)
 
 		server.handleGetBuild(rec, req)

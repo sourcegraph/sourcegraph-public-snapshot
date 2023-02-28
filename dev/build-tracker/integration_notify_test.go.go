@@ -31,6 +31,17 @@ func (l *TestJobLine) LogURL() string {
 	return l.url
 }
 
+func newJob(t *testing.T, name string, exit int) *build.Job {
+	t.Helper()
+
+	return &build.Job{
+		Job: buildkite.Job{
+			Name:       &name,
+			ExitStatus: &exit,
+		},
+	}
+}
+
 func TestLargeAmountOfFailures(t *testing.T) {
 	num := 160000
 	commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
@@ -217,7 +228,6 @@ func TestSlackNotification(t *testing.T) {
 	exit := 999
 	msg := "this is a test"
 	t.Run("send new notification", func(t *testing.T) {
-		j := newJob(t, "1223", 1223)
 		build := &build.Build{
 			Build: buildkite.Build{
 				Message: &msg,
@@ -289,7 +299,7 @@ func TestSlackNotification(t *testing.T) {
 				Name: &pipelineID,
 			}},
 			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(":one: fake step", exit)),
+				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
 			},
 		}
 
@@ -304,7 +314,7 @@ func TestSlackNotification(t *testing.T) {
 			t.Errorf("expected not nil notification after new message")
 		}
 		// now update the notification with additional jobs that failed
-		b.Steps[":alarm_clock: delayed job"] = build.NewStepFromJob(newJob(":clock: delayed job", exit))
+		b.Steps[":alarm_clock: delayed job"] = build.NewStepFromJob(newJob(t, ":clock: delayed job", exit))
 		info = toBuildNotification(b)
 		err = client.Send(info)
 		if err != nil {
@@ -362,7 +372,7 @@ func TestServerNotify(t *testing.T) {
 			Name: &pipelineID,
 		}},
 		Steps: map[string]*build.Step{
-			":one: fake step": build.NewStepFromJob(newJob(":one: fake step", exit)),
+			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
 		},
 	}
 
