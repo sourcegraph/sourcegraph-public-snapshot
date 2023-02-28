@@ -107,8 +107,9 @@ func (r *Resolver) AssignPermissionsToRole(ctx context.Context, args gql.AssignP
 		return nil, err
 	}
 
-	opts := database.BulkAssignPermissionsToRoleOpts{}
-	opts.RoleID = roleID
+	opts := database.SyncPermissionsToRoleOpts{
+		RoleID: roleID,
+	}
 
 	for _, p := range args.Permissions {
 		pID, err := unmarshalPermissionID(p)
@@ -118,7 +119,7 @@ func (r *Resolver) AssignPermissionsToRole(ctx context.Context, args gql.AssignP
 		opts.Permissions = append(opts.Permissions, pID)
 	}
 
-	if _, err = r.db.RolePermissions().BulkAssignPermissionsToRole(ctx, opts); err != nil {
+	if err = r.db.RolePermissions().SyncPermissionsToRole(ctx, opts); err != nil {
 		return nil, err
 	}
 

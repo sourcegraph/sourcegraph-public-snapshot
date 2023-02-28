@@ -50,7 +50,11 @@ type BulkOperationOpts struct {
 	Permissions []int32
 }
 
-type BulkAssignPermissionsToRoleOpts BulkOperationOpts
+type (
+	BulkAssignPermissionsToRoleOpts  BulkOperationOpts
+	BulkRevokePermissionsForRoleOpts BulkOperationOpts
+	SyncPermissionsToRoleOpts        BulkOperationOpts
+)
 
 type RolePermissionStore interface {
 	basestore.ShareableStore
@@ -63,6 +67,8 @@ type RolePermissionStore interface {
 	BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error
 	// BulkAssignToSystemRole is used to assign a permission to multiple system roles.
 	BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error
+	// BulkRevokePermissionsForRole revokes bulk permissions assigned to a role.
+	BulkRevokePermissionsForRole(ctx context.Context, opts BulkRevokePermissionsForRoleOpts) error
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
@@ -71,6 +77,9 @@ type RolePermissionStore interface {
 	GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error)
 	// Revoke deletes the permission and role relationship from the database.
 	Revoke(ctx context.Context, opts RevokeRolePermissionOpts) error
+	// SyncPermissionsToRole is used to sync all permissions assigned to a role. It removes any permission not
+	// included in the options and assigns permissions that aren't yet assigned in the database.
+	SyncPermissionsToRole(ctx context.Context, opts SyncPermissionsToRoleOpts) error
 	// WithTransact creates a transaction for the RolePermissionStore.
 	WithTransact(context.Context, func(RolePermissionStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -131,6 +140,25 @@ func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermis
 	}
 
 	return nil
+}
+
+func (rp *rolePermissionStore) BulkRevokePermissionsForRole(ctx context.Context, opts BulkRevokePermissionsForRoleOpts) error {
+	var preds []*sqlf.Query
+
+	var rps []*sqlf.Query
+	for _, permission := range opts.Permissions {
+		rps = append(rps, sqlf.Sprintf("%s", permission))
+	}
+
+	preds = append(preds, sqlf.Sprintf("role_id = %s", opts.RoleID))
+	preds = append(preds, sqlf.Sprintf("permission_id IN ( %s )", sqlf.Join(rps, ", ")))
+
+	q := sqlf.Sprintf(
+		deleteRolePermissionQueryFmtStr,
+		sqlf.Join(preds, " AND "),
+	)
+
+	return rp.Exec(ctx, q)
 }
 
 func scanRolePermission(sc dbutil.Scanner) (*types.RolePermission, error) {
@@ -242,15 +270,72 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 	return nil
 }
 
-func (rp *rolePermissionStore) BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error {
+func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts SyncPermissionsToRoleOpts) error {
 	if opts.RoleID == 0 {
 		return errors.New("missing role id")
 	}
 
-	if len(opts.Permissions) == 0 {
-		return errors.New("missing permissions")
-	}
+	return rp.WithTransact(ctx, func(tx RolePermissionStore) error {
+		// look up the current permissions assigned to the role
+		rolePermissions, err := tx.GetByRoleID(ctx, GetRolePermissionOpts{RoleID: opts.RoleID})
+		if err != nil {
+			return err
+		}
 
+		var rpMap = make(map[int32]int, len(rolePermissions))
+		for _, rolePermission := range rolePermissions {
+			rpMap[rolePermission.PermissionID] = 0
+		}
+
+		var toBeDeleted []int32
+		var toBeAdded []int32
+
+		// figure out permissions that need to be added. Permissions that are received from `opts`
+		// and do not exist in the databse are new and should be added.
+		for _, perm := range opts.Permissions {
+			if _, ok := rpMap[perm]; !ok {
+				rpMap[perm] += 1
+			}
+			continue
+		}
+
+		// figure out permissions that need to be deleted. Permissions in the database that don't exist
+		// in `opts` should be deleted.
+		for perm, count := range rpMap {
+			if count == 1 {
+				toBeAdded = append(toBeAdded, perm)
+			} else {
+				toBeDeleted = append(toBeDeleted, perm)
+			}
+		}
+
+		// If we have new permissions to be added, we add them into the database. This operation is wrapped in
+		// a transaction, so if an error occurs, the transaction will be reverted.
+		if len(toBeAdded) > 0 {
+			if err = tx.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
+				RoleID:      opts.RoleID,
+				Permissions: toBeAdded,
+			}); err != nil {
+				return err
+			}
+		}
+
+		// If we have permissions to be deleted, we remove them from the database. This operation is wrapped in
+		// a transaction, so if an error occurs, the transaction will be reverted.
+		if len(toBeDeleted) > 0 {
+			if err = tx.BulkRevokePermissionsForRole(ctx, BulkRevokePermissionsForRoleOpts{
+				RoleID:      opts.RoleID,
+				Permissions: toBeDeleted,
+			}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (rp *rolePermissionStore) BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error {
 	var rps []*sqlf.Query
 	for _, permission := range opts.Permissions {
 		rps = append(rps, sqlf.Sprintf("( %s, %s )", opts.RoleID, permission))
