@@ -448,7 +448,18 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			return
 		}
 
-		args := protocol.ExternalServiceNamespacesArgs{Kind: r.args.Kind, Config: config}
+		var externalServiceID *int64
+		if r.args.ID != nil {
+			id, err := UnmarshalExternalServiceID(*r.args.ID)
+			if err != nil {
+				r.err = err
+				return
+			}
+			externalServiceID = &id
+		}
+
+		args := protocol.ExternalServiceNamespacesArgs{ExternalServiceID: externalServiceID, Kind: r.args.Kind, Config: config}
+
 		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, args)
 		if err != nil {
 			r.err = err
@@ -512,7 +523,17 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 			first = *r.args.First
 		}
 
-		reposArgs := protocol.ExternalServiceRepositoriesArgs{Kind: r.args.Kind, Query: r.args.Query, Config: config, First: first, ExcludeRepos: r.args.ExcludeRepos}
+		var externalServiceID *int64
+		if r.args.ID != nil {
+			id, err := UnmarshalExternalServiceID(*r.args.ID)
+			if err != nil {
+				r.err = err
+				return
+			}
+			externalServiceID = &id
+		}
+
+		reposArgs := protocol.ExternalServiceRepositoriesArgs{ExternalServiceID: externalServiceID, Kind: r.args.Kind, Query: r.args.Query, Config: config, First: first, ExcludeRepos: r.args.ExcludeRepos}
 		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, reposArgs)
 		if err != nil {
 			r.err = err

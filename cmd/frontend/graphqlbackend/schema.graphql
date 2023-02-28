@@ -1300,6 +1300,12 @@ type Query {
     """
     externalServiceNamespaces(
         """
+        The id of the external service whose configuration will be used to create request parameters.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, token and url.
+        """
+        id: ID
+        """
         The kind of the external service.
         """
         kind: ExternalServiceKind!
@@ -1316,6 +1322,12 @@ type Query {
     Lists all repositories for a given external service connection.
     """
     externalServiceRepositories(
+        """
+        The id of the external service whose configuration will be used to create request parameters.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, token and url.
+        """
+        id: ID
         """
         The kind of the external service.
         """
