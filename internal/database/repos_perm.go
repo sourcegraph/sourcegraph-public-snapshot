@@ -107,9 +107,25 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 `)
 	}
 
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
+
+	unrestrictedReposUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		format := `
+		EXISTS (
+			SELECT
+			FROM user_repo_permissions
+			WHERE repo_id = repo.id AND user_id IS NULL
+		)
+		OR
+		`
+		unrestrictedReposUnifiedSQL = sqlf.Sprintf(format)
+	}
+
 	const unrestrictedReposSQL = `
 (
 	-- Unrestricted repos are visible to all users
+	%s
 	EXISTS (
 		SELECT
 		FROM repo_permissions
@@ -118,7 +134,7 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
-	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
+	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL, unrestrictedReposUnifiedSQL)
 	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
@@ -142,17 +158,33 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
+	restrictedRepositoriesUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		const format = `
+		EXISTS (
+			SELECT repo_id FROM user_repo_permissions
+			WHERE
+				repo_id = repo.id
+			AND user_id = %s
+		) OR `
+		restrictedRepositoriesUnifiedSQL = sqlf.Sprintf(format, authenticatedUserID)
+	}
+
 	const restrictedRepositoriesSQL = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
+(
+	-- Restricted repositories require checking permissions
+	%s
+    (
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	)
 )
 `
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, restrictedRepositoriesUnifiedSQL, authenticatedUserID, perms.String())
 
 	conditions = append(conditions, restrictedRepositoriesQuery)
 
