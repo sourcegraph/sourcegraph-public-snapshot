@@ -4002,6 +4002,16 @@ CREATE SEQUENCE temporary_settings_id_seq
 
 ALTER SEQUENCE temporary_settings_id_seq OWNED BY temporary_settings.id;
 
+CREATE TABLE testci_two (
+    id uuid NOT NULL,
+    test text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE testci_two IS 'This is just a test to see if CI would catch migraion';
+
+COMMENT ON COLUMN testci_two.test IS 'just for test';
+
 CREATE VIEW tracking_changeset_specs_and_changesets AS
  SELECT changeset_specs.id AS changeset_spec_id,
     COALESCE(changesets.id, (0)::bigint) AS changeset_id,
