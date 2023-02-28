@@ -3322,6 +3322,20 @@ Stores per-user temporary settings used in the UI, for example, which modals hav
 
 **user_id**: The ID of the user the settings will be saved for.
 
+# Table "public.testci"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ id         | uuid                     |           | not null | 
+ test       | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+
+```
+
+This is just a test to see if CI would catch migraion
+
+**test**: just for test
+
 # Table "public.user_credentials"
 ```
         Column         |           Type           | Collation | Nullable |                   Default                    
