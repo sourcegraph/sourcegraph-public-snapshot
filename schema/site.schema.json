@@ -483,6 +483,13 @@
           "!go": {
             "pointer": true
           }
+        },
+        "accessRequests.enabled": {
+          "description": "Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": { "pointer": true },
+          "group": "AccessRequests",
+          "default": true
         }
       },
       "examples": [

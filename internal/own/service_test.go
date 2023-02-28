@@ -1,4 +1,4 @@
-package backend_test
+package own_test
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -54,7 +54,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+			got, err := own.NewService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -75,7 +75,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+	got, err := own.NewService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
@@ -83,7 +83,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 func TestResolveOwnersWithType(t *testing.T) {
 	t.Run("no owners returns empty", func(t *testing.T) {
 		git := gitserver.NewMockClient()
-		got, err := backend.NewOwnService(git, database.NewMockDB()).ResolveOwnersWithType(context.Background(), nil)
+		got, err := own.NewService(git, database.NewMockDB()).ResolveOwnersWithType(context.Background(), nil)
 		require.NoError(t, err)
 		assert.Empty(t, got)
 	})
@@ -94,7 +94,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(git, db)
+		ownService := own.NewService(git, db)
 
 		mockUserStore.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
 		mockTeamStore.GetTeamByNameFunc.SetDefaultReturn(nil, database.TeamNotFoundError{})
@@ -115,7 +115,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(git, db)
+		ownService := own.NewService(git, db)
 
 		handle := "person"
 		testUser := newTestUser(handle)
@@ -140,7 +140,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		testUser := newTestUser("person")
@@ -164,7 +164,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		handle := "team"
 		testTeam := newTestTeam(handle)
@@ -189,7 +189,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		email := "superman"
 		mockUserStore.GetByVerifiedEmailFunc.PushReturn(nil, database.MockUserNotFoundErr)
@@ -209,7 +209,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		userHandle := "userWithHandle"
 		userEmail := "userWithEmail"
@@ -269,7 +269,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		testUser := newTestUser("person")
@@ -303,7 +303,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		var myError = errors.New("you shall not pass")
@@ -323,7 +323,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := backend.NewOwnService(gitserver.NewMockClient(), db)
+		ownService := own.NewService(gitserver.NewMockClient(), db)
 
 		owners := []*codeownerspb.Owner{
 			{},

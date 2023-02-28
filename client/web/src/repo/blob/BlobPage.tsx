@@ -64,7 +64,6 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
-import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
@@ -72,6 +71,7 @@ import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
+import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -428,15 +428,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && (
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={20}
-                    id="toggle-ownership-panel"
-                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                >
-                    {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
-                </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && repoID && (
+                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
             )}
         </>
     )

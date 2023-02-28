@@ -218,7 +218,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
 		if err != nil {
 			return perms, errors.Wrap(err, "list repos for user")
 		}

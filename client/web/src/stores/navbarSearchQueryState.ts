@@ -45,11 +45,12 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
 
     submitSearch: (parameters, updates = []) => {
         const {
-            queryState: { query },
+            queryState,
             searchCaseSensitivity: caseSensitive,
             searchPatternType: patternType,
             searchMode: searchMode,
         } = get()
+        const query = parameters.query ?? queryState.query
         const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
             submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType, searchMode })
