@@ -60,6 +60,8 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	}
 }
 
+// WithRateLimiter applies the given rateLimit (in requests per hour) to the client
+// with the provided urn.
 func (c *ClientAdapter) WithRateLimiter(urn string, rateLimit float64) {
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rl.SetLimit(rate.Limit(rateLimit / 3600.0))
