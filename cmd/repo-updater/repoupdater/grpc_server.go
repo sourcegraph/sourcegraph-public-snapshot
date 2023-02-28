@@ -156,10 +156,12 @@ func (s *RepoUpdaterServiceServer) SyncExternalService(ctx context.Context, req 
 }
 
 func (s *RepoUpdaterServiceServer) ExternalServiceNamespaces(ctx context.Context, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
-	return s.Server.externalServiceNamespaces(ctx, req)
+	logger := s.Server.Logger.With(log.String("ExternalServiceKind", req.Kind))
+	return s.Server.externalServiceNamespaces(ctx, logger, req)
 }
 
 // ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
 func (s *RepoUpdaterServiceServer) ExternalServiceRepositories(ctx context.Context, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {
-	return s.Server.externalServiceRepositories(ctx, req)
+	logger := s.Server.Logger.With(log.String("ExternalServiceKind", req.Kind))
+	return s.Server.externalServiceRepositories(ctx, logger, req)
 }
