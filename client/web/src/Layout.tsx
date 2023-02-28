@@ -6,6 +6,7 @@ import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-route
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
@@ -28,8 +29,6 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { useExperimentalFeatures } from './stores'
-import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -77,11 +76,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
 
-    const { setupWizard } = useExperimentalFeatures()
+    const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
+        setupWizard: features.setupWizard,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings
+        fuzzyFinder: features.fuzzyFinder ?? true,
+    }))
     const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    // enable fuzzy finder by default unless it's explicitly disabled in settings
-    const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
 

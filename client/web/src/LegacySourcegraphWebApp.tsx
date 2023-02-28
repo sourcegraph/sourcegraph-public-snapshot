@@ -55,7 +55,7 @@ import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -142,7 +142,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
                 authenticatedUserSubject,
             ]).subscribe(([settingsCascade, authenticatedUser]) => {
-                setExperimentalFeaturesFromSettings(settingsCascade)
                 setQueryStateFromSettings(settingsCascade)
                 this.setState({
                     settingsCascade,
