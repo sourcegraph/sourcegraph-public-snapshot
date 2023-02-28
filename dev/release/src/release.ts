@@ -50,9 +50,12 @@ import {
     ensureSrcCliUpToDate,
     formatDate,
     getAllUpgradeGuides,
-    getLatestTag, getReleaseBlockers, releaseBlockerUri,
+    getLatestTag,
+    getReleaseBlockers,
+    releaseBlockerUri,
     timezoneLink,
-    updateUpgradeGuides, validateNoReleaseBlockers,
+    updateUpgradeGuides,
+    validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
 
