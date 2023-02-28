@@ -58,3 +58,9 @@
     position: relative;
     width: 80%;
 }
+
+@media only screen and (max-device-width: 480px) {
+    #spectaql #sidebar {
+        display: none;
+    }
+}
