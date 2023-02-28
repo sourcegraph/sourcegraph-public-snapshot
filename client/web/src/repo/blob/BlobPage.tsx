@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
@@ -66,7 +66,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchStencil } from './backend'
+import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -123,17 +123,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const { enableCodeMirror, experimentalCodeNavigation, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(
-        features => ({
-            enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-            experimentalCodeNavigation: features.codeNavigation,
-            enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
-        })
-    )
+    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
+        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+    }))
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
-
-    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
-    const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -288,22 +282,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 ),
             [repoName, revision, filePath, enableCodeMirror, mode]
         )
-    )
-
-    // Fetches stencil ranges for the current document.  Only used for
-    // link-driven keyboard navigatio.
-    const stencil = useObservable(
-        useMemo(() => {
-            if (!enableLinkDrivenCodeNavigation) {
-                return of(undefined)
-            }
-
-            return fetchStencil({
-                repoName,
-                revision,
-                filePath,
-            })
-        }, [enableLinkDrivenCodeNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -569,7 +547,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
+                        blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}
@@ -581,8 +559,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
-                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
             )}

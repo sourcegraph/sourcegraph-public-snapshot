@@ -19,13 +19,13 @@ import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -33,18 +33,16 @@ import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
-import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
+import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -70,11 +68,6 @@ export interface BlobProps
     // When navigateToLineOnAnyClick=true, the code intel popover is disabled
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
-
-    // Enables experimental navigation by rendering links for all interactive tokens.
-    enableLinkDrivenCodeNavigation?: boolean
-    // Enables experimental navigation by making interactive tokens selectable on click.
-    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -104,8 +97,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
-
-    stencil?: BlobStencilFields[]
 
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
@@ -181,8 +172,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
-        enableLinkDrivenCodeNavigation,
-        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -231,8 +220,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
         [isBlameVisible, blameHunks, isLightTheme]
     )
-
-    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -288,13 +275,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
-                enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
-            enableLinkDrivenCodeNavigation
-                ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
-                : [],
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
@@ -303,12 +286,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
             search({
@@ -339,7 +320,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
-            if (!enableSelectionDrivenCodeNavigation) {
+            if (navigateToLineOnAnyClick) {
+                /**
+                 * `navigateToLineOnAnyClick` is `true` when CodeMirrorBlob is rendered in the references panel.
+                 * We don't need code intel and keyboard navigation in the references panel blob: https://github.com/sourcegraph/sourcegraph/pull/41615.
+                 */
                 return
             }
 
@@ -361,7 +346,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 }
             }
         }
-    }, [blobInfo, extensions, enableSelectionDrivenCodeNavigation, locationRef])
+    }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
 
     // Propagate props changes to extensions
     useEffect(() => {

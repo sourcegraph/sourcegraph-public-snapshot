@@ -7,15 +7,7 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
-    BlobFileFields,
-    BlobResult,
-    BlobStencilFields,
-    BlobVariables,
-    HighlightResponseFormat,
-    StencilResult,
-    StencilVariables,
-} from '../../graphql-operations'
+import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
 
 /**
  * Makes sure that default values are applied consistently for the cache key and the `fetchBlob` function.
@@ -147,52 +139,3 @@ export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
      */
     return HighlightResponseFormat.HTML_HIGHLIGHT
 }
-
-interface FetchStencilOptions {
-    repoName: string
-    revision: string
-    filePath: string
-}
-
-export const fetchStencil = memoizeObservable((options: FetchStencilOptions): Observable<BlobStencilFields[]> => {
-    const { repoName, revision, filePath } = applyDefaultValuesToFetchBlobOptions(options)
-
-    return requestGraphQL<StencilResult, StencilVariables>(
-        gql`
-            query Stencil($repoName: String!, $revision: String!, $filePath: String!) {
-                repository(name: $repoName) {
-                    commit(rev: $revision) {
-                        blob(path: $filePath) {
-                            lsif {
-                                stencil {
-                                    ...BlobStencilFields
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            fragment BlobStencilFields on Range {
-                start {
-                    line
-                    character
-                }
-                end {
-                    line
-                    character
-                }
-            }
-        `,
-        { repoName, revision, filePath }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.repository?.commit) {
-                throw new Error('Commit not found')
-            }
-
-            return data.repository.commit.blob?.lsif?.stencil || []
-        })
-    )
-}, makeRepoURI)
