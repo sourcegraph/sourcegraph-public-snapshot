@@ -434,9 +434,10 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 		if errcode.IsUnauthorized(err) {
 			s.respond(w, http.StatusUnauthorized, result)
-		} else {
-			s.respond(w, http.StatusServiceUnavailable, result)
+			return
 		}
+
+		s.respond(w, http.StatusServiceUnavailable, result)
 		return
 	}
 
