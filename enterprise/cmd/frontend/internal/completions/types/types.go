@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,7 +40,13 @@ func (m Message) GetPrompt(humanPromptPrefix, assistantPromptPrefix string) (str
 
 	if len(m.Text) == 0 {
 		// Important: no trailing space (affects output quality)
-		return fmt.Sprintf("%s:", humanPromptPrefix), nil
+		return prefix, nil
 	}
-	return fmt.Sprintf("%s: %s", prefix, m.Text), nil
+	return fmt.Sprintf("%s %s", prefix, m.Text), nil
+}
+
+type SendCompletionEvent func(event CompletionEvent) error
+
+type CompletionStreamClient interface {
+	Stream(ctx context.Context, requestParams CompletionRequestParameters, sendEvent SendCompletionEvent) error
 }

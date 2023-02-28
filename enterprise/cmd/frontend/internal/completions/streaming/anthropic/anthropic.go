@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
@@ -29,17 +30,26 @@ type AnthropicCompletionsRequestParameters struct {
 	Stream            bool     `json:"stream"`
 }
 
-func AnthropicCompletionStream(
-	ctx context.Context,
-	accessToken string,
-	requestParams types.CompletionRequestParameters,
-) (<-chan types.CompletionEvent, <-chan error, error) {
-	eventsChannel := make(chan types.CompletionEvent, 8)
-	errChannel := make(chan error, 1)
+type anthropicCompletionStreamClient struct {
+	cli         httpcli.Doer
+	accessToken string
+}
 
+func NewAnthropicCompletionStreamClient(cli httpcli.Doer, accessToken string) types.CompletionStreamClient {
+	return &anthropicCompletionStreamClient{
+		cli:         cli,
+		accessToken: accessToken,
+	}
+}
+
+func (a *anthropicCompletionStreamClient) Stream(
+	ctx context.Context,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+) error {
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	payload := AnthropicCompletionsRequestParameters{
@@ -54,14 +64,13 @@ func AnthropicCompletionStream(
 	}
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	req, err := http.NewRequest("POST", API_URL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", API_URL, bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	req = req.WithContext(ctx)
 
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
@@ -69,44 +78,45 @@ func AnthropicCompletionStream(
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client", CLIENT_ID)
-	req.Header.Set("X-API-Key", accessToken)
+	req.Header.Set("X-API-Key", a.accessToken)
 
-	go func() {
-		resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := a.cli.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return errors.Errorf("Anthropic API failed with: %s", string(respBody))
+	}
+
+	dec := NewDecoder(resp.Body)
+	for dec.Scan() {
+		data := dec.Data()
+
+		// Check for special sentinel value used by the Anthropic API to
+		// indicate that the stream is done.
+		if bytes.Equal(data, DONE_BYTES) {
+			return nil
+		}
+
+		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
+		// non-documented data over the stream, like timestamps.
+		if !bytes.HasPrefix(data, []byte("{")) {
+			continue
+		}
+
+		var event types.CompletionEvent
+		if err := json.Unmarshal(data, &event); err != nil {
+			return errors.Errorf("failed to decode event payload: %w", err)
+		}
+
+		err = sendEvent(event)
 		if err != nil {
-			errChannel <- err
-			return
+			return err
 		}
-		defer resp.Body.Close()
-		defer close(eventsChannel)
-		defer close(errChannel)
+	}
 
-		dec := NewDecoder(resp.Body)
-		for dec.Scan() {
-			data := dec.Data()
-
-			// Check for special sentinel value used by the Anthropic API to
-			// indicate that the stream is done.
-			if bytes.Equal(data, DONE_BYTES) {
-				return
-			}
-
-			// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
-			// non-documented data over the stream, like timestamps.
-			if !bytes.HasPrefix(data, []byte("{")) {
-				continue
-			}
-
-			var event types.CompletionEvent
-			if err := json.Unmarshal(data, &event); err != nil {
-				errChannel <- errors.Errorf("failed to decode event payload: %w", err)
-				return
-			}
-			eventsChannel <- event
-		}
-
-		errChannel <- dec.Err()
-	}()
-
-	return eventsChannel, errChannel, nil
+	return dec.Err()
 }

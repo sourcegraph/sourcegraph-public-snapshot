@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,12 +29,10 @@ type streamHandler struct {
 	logger log.Logger
 }
 
-type completionStreamProvider func(ctx context.Context, accessToken string, requestParams types.CompletionRequestParameters) (<-chan types.CompletionEvent, <-chan error, error)
-
-func getCompletionStreamProvider(provider string) (completionStreamProvider, error) {
+func getCompletionStreamClient(provider string, accessToken string) (types.CompletionStreamClient, error) {
 	switch provider {
 	case "anthropic":
-		return anthropic.AnthropicCompletionStream, nil
+		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -67,19 +66,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
+	completionStreamClient, err := getCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	completionStreamProvider, err := getCompletionStreamProvider(completionsConfig.Provider)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	events, errEvents, err := completionStreamProvider(ctx, completionsConfig.AccessToken, requestParams)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -88,19 +81,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Always send a final done event so clients know the stream is shutting down.
 	defer eventWriter.Event("done", map[string]any{})
 
-LOOP:
-	for {
-		select {
-		case event, ok := <-events:
-			if !ok {
-				break LOOP
-			}
-			eventWriter.Event("completion", event)
-		case err = <-errEvents:
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
+	err = completionStreamClient.Stream(ctx, requestParams, func(event types.CompletionEvent) error { return eventWriter.Event("completion", event) })
+	if err != nil {
+		eventWriter.Event("error", map[string]string{"error": err.Error()})
+		return
 	}
 }
