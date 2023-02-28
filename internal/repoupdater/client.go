@@ -25,6 +25,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -410,6 +411,28 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 		return MockExternalServiceNamespaces(ctx, args)
 	}
 
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceNamespaces(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		namespaces := make([]*types.ExternalServiceNamespace, len(resp.GetNamespaces()))
+		for _, ns := range resp.GetNamespaces() {
+			namespaces = append(namespaces, &types.ExternalServiceNamespace{
+				ID:         int(ns.GetId()),
+				Name:       ns.GetName(),
+				ExternalID: ns.GetExternalId(),
+			})
+		}
+		return &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}, nil
+	}
+
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
 	if err != nil {
 		return nil, err
@@ -430,6 +453,31 @@ var MockExternalServiceRepositories func(ctx context.Context, args protocol.Exte
 func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
 	if MockExternalServiceRepositories != nil {
 		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceRepositories(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		repos := make([]*types.ExternalServiceRepository, len(resp.GetRepos()))
+		for _, repo := range resp.GetRepos() {
+			repos = append(repos, &types.ExternalServiceRepository{
+				ID:         api.RepoID(repo.GetId()),
+				Name:       api.RepoName(repo.GetName()),
+				ExternalID: repo.GetExternalId(),
+			})
+		}
+
+		return &protocol.ExternalServiceRepositoriesResult{
+			Repos: repos,
+		}, nil
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-repositories", args)

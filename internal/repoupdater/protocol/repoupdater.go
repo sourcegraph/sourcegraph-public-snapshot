@@ -454,6 +454,13 @@ type ExternalServiceNamespacesArgs struct {
 	Config string
 }
 
+func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespacesRequest {
+	return &proto.ExternalServiceNamespacesRequest{
+		Kind:   e.Kind,
+		Config: e.Config,
+	}
+}
+
 type ExternalServiceNamespacesResult struct {
 	Namespaces []*types.ExternalServiceNamespace
 	Error      string
@@ -465,6 +472,16 @@ type ExternalServiceRepositoriesArgs struct {
 	Config       string
 	First        int32
 	ExcludeRepos []string
+}
+
+func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceRepositoriesRequest {
+	return &proto.ExternalServiceRepositoriesRequest{
+		Kind:         a.Kind,
+		Query:        a.Query,
+		Config:       a.Config,
+		First:        a.First,
+		ExcludeRepos: a.ExcludeRepos,
+	}
 }
 
 type ExternalServiceRepositoriesResult struct {
