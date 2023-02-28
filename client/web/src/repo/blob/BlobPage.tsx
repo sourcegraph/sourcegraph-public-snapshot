@@ -123,12 +123,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(
-        features => ({
-            enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-            enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
-        })
-    )
+    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
+        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+    }))
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const lineOrRange = useMemo(
