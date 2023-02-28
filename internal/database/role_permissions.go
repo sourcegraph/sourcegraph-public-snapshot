@@ -282,9 +282,9 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 			return err
 		}
 
-		var rpMap = make(map[int32]int, len(rolePermissions))
+		var rolePermsMap = make(map[int32]int, len(rolePermissions))
 		for _, rolePermission := range rolePermissions {
-			rpMap[rolePermission.PermissionID] = 0
+			rolePermsMap[rolePermission.PermissionID] = 1
 		}
 
 		var toBeDeleted []int32
@@ -293,18 +293,27 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 		// figure out permissions that need to be added. Permissions that are received from `opts`
 		// and do not exist in the databse are new and should be added.
 		for _, perm := range opts.Permissions {
-			if _, ok := rpMap[perm]; !ok {
-				rpMap[perm] += 1
+			count, ok := rolePermsMap[perm]
+			if ok {
+				// if the role <> permission association exists in the database, we simply increment the count.
+				rolePermsMap[perm] = count + 1
+			} else {
+				// If the role <> permission association exists in the database but isn't provided in the arguments,
+				// we initialize it in the map, by assigning a count of zero.
+				rolePermsMap[perm] = 0
 			}
-			continue
 		}
 
-		// figure out permissions that need to be deleted. Permissions in the database that don't exist
-		// in `opts` should be deleted.
-		for perm, count := range rpMap {
-			if count == 1 {
+		// New role permission associations that
+		for perm, count := range rolePermsMap {
+			switch count {
+			// Count is zero when the role <> permission association doesn't exist in the database, but is
+			// present in `opts.Permissions`.
+			case 0:
 				toBeAdded = append(toBeAdded, perm)
-			} else {
+			// Count is one when the role <> permission association exists in the database, but not in
+			// `opts.Permissions`.
+			case 1:
 				toBeDeleted = append(toBeDeleted, perm)
 			}
 		}

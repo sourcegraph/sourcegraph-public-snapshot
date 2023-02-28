@@ -98,10 +98,6 @@ func (r *Resolver) AssignPermissionsToRole(ctx context.Context, args gql.AssignP
 		return nil, err
 	}
 
-	if len(args.Permissions) == 0 {
-		return nil, errors.New("permissions are required")
-	}
-
 	roleID, err := unmarshalRoleID(args.Role)
 	if err != nil {
 		return nil, err
