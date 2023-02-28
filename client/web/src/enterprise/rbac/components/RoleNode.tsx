@@ -51,7 +51,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                 logger.error(error)
             }
         },
-        [deleteRole, name, afterDelete, closeModal, node.id]
+        [deleteRole, afterDelete, closeModal, node.id]
     )
 
     return (
