@@ -8,16 +8,18 @@ export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): strin
     switch (codeHostType) {
         case ExternalServiceKind.GITHUB:
             return mdiGithub
-        case ExternalServiceKind.GITLAB:
-            return mdiGitlab
         case ExternalServiceKind.BITBUCKETCLOUD:
             return mdiBitbucket
+        case ExternalServiceKind.BITBUCKETSERVER:
+            return mdiBitbucket
+        case ExternalServiceKind.GITLAB:
+            return mdiGitlab
+        case ExternalServiceKind.GITOLITE:
+            return mdiGit
         case ExternalServiceKind.AWSCODECOMMIT:
             return mdiAws
         case ExternalServiceKind.AZUREDEVOPS:
             return mdiGit
-        case ExternalServiceKind.BITBUCKETSERVER:
-            return mdiBitbucket
         default:
             // TODO: Add support for other code host
             return ''
@@ -32,8 +34,14 @@ export const getCodeHostName = (codeHostType: ExternalServiceKind | null): strin
             return 'GitLab'
         case ExternalServiceKind.BITBUCKETCLOUD:
             return 'BitBucket.org'
+        case ExternalServiceKind.BITBUCKETSERVER:
+            return 'BitBucket Server'
         case ExternalServiceKind.AWSCODECOMMIT:
             return 'AWS Code Commit'
+        case ExternalServiceKind.GITOLITE:
+            return 'Gitolite'
+        case ExternalServiceKind.GERRIT:
+            return 'Gerrit'
 
         default:
             // TODO: Add support for other code host

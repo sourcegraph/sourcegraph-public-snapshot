@@ -27,7 +27,7 @@ const CORE_STEPS: StepConfiguration[] = [
     },
 ]
 
-const SOURCEGRAPH_STEPS = [
+const SOURCEGRAPH_APP_STEPS = [
     {
         id: 'local-repositories',
         name: 'Add local repositories',
@@ -45,7 +45,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const { isSourcegraphApp } = props
 
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
-    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_STEPS : CORE_STEPS), [isSourcegraphApp])
+    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
         (step: StepConfiguration): void => {
@@ -87,7 +87,7 @@ function LocalRepositoriesStep(props: any): ReactElement {
 function SyncRepositoriesStep(props: any): ReactElement {
     return (
         <section {...props}>
-            <Text>
+            <Text className="mb-2">
                 It may take a few moments to clone and index each repository. Repository statuses are displayed below.
             </Text>
             <SiteAdminRepositoriesContainer />
