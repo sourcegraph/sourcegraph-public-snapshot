@@ -76,9 +76,6 @@ const buildFilterStateFromParams = ({ search }: Location): FilterState => {
     const language = queryParameters.get('language') || 'all'
 
     if (show === 'suggestions') {
-        // Clean up URL
-        queryParameters.delete('indexState')
-
         return {
             show,
             language,
@@ -234,11 +231,11 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         )}
                     </Alert>
 
-                    <Container>
+                    <Container className={styles.summaryContainer}>
                         <DataSummary items={summaryItems} className={styles.summary} />
                         <div>
                             <div className="text-muted">
-                                <small>
+                                <small className="d-block">
                                     {data.summary.lastIndexScan ? (
                                         <>
                                             This repository was scanned for auto-indexing{' '}
@@ -249,10 +246,10 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                                     )}
                                 </small>
                                 <small className="d-block">
-                                    {data.summary.lastIndexScan ? (
+                                    {data.summary.lastUploadRetentionScan ? (
                                         <>
                                             The indexes of this repository were last considered for expiration{' '}
-                                            <Timestamp date={data.summary.lastIndexScan} />.
+                                            <Timestamp date={data.summary.lastUploadRetentionScan} />.
                                         </>
                                     ) : (
                                         <> The indexes of this repository have never been considered for expiration.</>
@@ -262,7 +259,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         </div>
                     </Container>
 
-                    <Container className="mt-3">
+                    <Container className="my-3">
                         <div className="d-flex justify-content-end">
                             <div className={styles.filterContainer}>
                                 <div>

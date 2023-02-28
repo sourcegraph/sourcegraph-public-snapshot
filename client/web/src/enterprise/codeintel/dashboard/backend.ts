@@ -136,17 +136,3 @@ export const repoCodeIntelStatusQuery = gql`
     ${repoCodeIntelStatusSummaryFragment}
     ${repoCodeIntelStatusCommitGraphFragment}
 `
-
-export const graphMetadataQue = gql`
-    query CodeIntelligenceCommitGraphMetadata($repository: ID!) {
-        node(id: $repository) {
-            __typename
-            ... on Repository {
-                codeIntelligenceCommitGraph {
-                    stale
-                    updatedAt
-                }
-            }
-        }
-    }
-`

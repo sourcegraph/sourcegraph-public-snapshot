@@ -56,8 +56,8 @@ export const DashboardTree: React.FunctionComponent<DashboardTreeProps> = ({ ind
 
     const filteredTreeData = buildTreeData(filteredRoots)
 
-    if (filteredTreeData.length === 0 || filteredTreeData.length === 1) {
-        // TODO, always 1 because of root
+    // We always have the root node
+    if (filteredTreeData.length === 1) {
         return <Text className="text-muted">No data to display.</Text>
     }
 
@@ -85,6 +85,11 @@ export const DashboardTree: React.FunctionComponent<DashboardTreeProps> = ({ ind
                         displayName={displayName}
                         indexesByIndexerNameForRoot={groupBy(filteredIndexesForRoot, getIndexerKey)}
                         availableIndexersForRoot={filteredSuggestedIndexersForRoot}
+                        numDescendentSuccess={
+                            // TODO: Check matches summary num
+                            filteredIndexesForDescendents.filter(index => INDEX_COMPLETED_STATES.has(index.state))
+                                .length
+                        }
                         numDescendentErrors={
                             filteredIndexesForDescendents.filter(index => INDEX_FAILURE_STATES.has(index.state)).length
                         }
@@ -108,6 +113,7 @@ interface TreeNodeProps {
     indexesByIndexerNameForRoot: Map<string, PreciseIndexFields[]>
     availableIndexersForRoot: SuggestedIndexWithRoot[]
     numDescendentErrors: number
+    numDescendentSuccess: number
     numDescendentConfigurable: number
     onClick: (event: React.MouseEvent) => {}
 }
@@ -119,6 +125,7 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
     indexesByIndexerNameForRoot,
     availableIndexersForRoot,
     numDescendentErrors,
+    numDescendentSuccess,
     numDescendentConfigurable,
     onClick,
 }) => (
@@ -132,20 +139,27 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
                 aria-hidden={true}
             />
             {displayName}
-            {isBranch && !isExpanded && (numDescendentConfigurable > 0 || numDescendentErrors > 0) && (
-                <>
-                    {numDescendentConfigurable > 0 && (
-                        <Badge variant="primary" className="ml-2" pill={true} small={true}>
-                            {numDescendentConfigurable}
-                        </Badge>
-                    )}
-                    {numDescendentErrors > 0 && (
-                        <Badge variant="danger" className="ml-2" pill={true} small={true}>
-                            {numDescendentErrors}
-                        </Badge>
-                    )}
-                </>
-            )}
+            {isBranch &&
+                !isExpanded &&
+                (numDescendentConfigurable > 0 || numDescendentErrors > 0 || numDescendentSuccess > 0) && (
+                    <>
+                        {numDescendentConfigurable > 0 && (
+                            <Badge variant="primary" className="ml-2" pill={true} small={true}>
+                                {numDescendentConfigurable}
+                            </Badge>
+                        )}
+                        {numDescendentErrors > 0 && (
+                            <Badge variant="danger" className="ml-2" pill={true} small={true}>
+                                {numDescendentErrors}
+                            </Badge>
+                        )}
+                        {numDescendentSuccess > 0 && (
+                            <Badge variant="success" className="ml-2" pill={true} small={true}>
+                                {numDescendentSuccess}
+                            </Badge>
+                        )}
+                    </>
+                )}
         </div>
 
         <div className="d-flex align-items-center">
