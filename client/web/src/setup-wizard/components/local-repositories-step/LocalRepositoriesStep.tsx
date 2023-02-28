@@ -5,7 +5,8 @@ import classNames from 'classnames'
 
 import { Button, Container, Icon, Input, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { CustomNextButton } from '../setup-steps'
+import { ProgressBar } from '../ProgressBar'
+import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -113,6 +114,10 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                     </li>
                 </ul>
             </Container>
+
+            <FooterWidget>
+                <ProgressBar />
+            </FooterWidget>
 
             <CustomNextButton label="Skip" disabled={false} />
         </div>
