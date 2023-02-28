@@ -50,9 +50,9 @@ import {
     ensureSrcCliUpToDate,
     formatDate,
     getAllUpgradeGuides,
-    getLatestTag,
+    getLatestTag, getReleaseBlockers, releaseBlockerUri,
     timezoneLink,
-    updateUpgradeGuides,
+    updateUpgradeGuides, validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
 
@@ -358,9 +358,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
             const latestBuildMessage = `Latest release build: ${latestTag}. See the build status on <${latestBuildURL}|Buildkite>`
-            const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
-            const blockingIssues = await listIssues(githubClient, blockingQuery)
-            const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+
+            const blockingIssues = await getReleaseBlockers(githubClient)
             const blockingMessage =
                 blockingIssues.length === 0
                     ? 'There are no release-blocking issues'
@@ -373,7 +372,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const message = `:mega: *${release.version.version} Release Status Update*
 
 * Tracking issue: ${trackingIssue.url}
-* ${blockingMessage}: ${blockingIssuesURL}
+* ${blockingMessage}: ${releaseBlockerUri()}
 * ${latestBuildMessage}`
             if (!config.dryRun.slack) {
                 await postMessage(message, config.metadata.slackAnnounceChannel)
@@ -435,6 +434,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: async (config, candidate) => {
             const release = await getActiveRelease(config)
             ensureReleaseBranchUpToDate(release.branch)
+            const client = await getAuthenticatedGitHubClient()
+            await validateNoReleaseBlockers(client)
 
             const warnMsg =
                 'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
@@ -459,7 +460,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const releaseTag = `v${release.version.version}`
 
             try {
-                const client = await getAuthenticatedGitHubClient()
                 // passing the tag as branch so that only the specified tag is shallow cloned
                 const { workdir } = await cloneRepo(client, owner, repo, {
                     revision: candidate,
@@ -527,6 +527,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 release.version.version,
                 await batchChanges.sourcegraphCLIConfig()
             )
+
+            await validateNoReleaseBlockers(await getAuthenticatedGitHubClient())
 
             // default values
             const notPatchRelease = release.version.patch === 0
