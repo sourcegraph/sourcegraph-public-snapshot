@@ -21,7 +21,8 @@
     "vscode": "^1.74.0"
   },
   "scripts": {
-    "vsce:package": "ts-node scripts/build.ts && vsce package --no-dependencies -o dist/kodj.vsix",
+    "bundle": "ts-node --transpileOnly scripts/bundle.ts",
+    "vsce:package": "pnpm run --silent bundle && vsce package --no-dependencies -o dist/kodj.vsix",
     "test": "node ./out/test/runTest.js",
     "unittest": "mocha ./out/test/unittest"
   },

@@ -6,7 +6,6 @@ import * as esbuild from 'esbuild'
 
 const minify = process.env.NODE_ENV === 'production'
 const outdir = path.join(__dirname, '../dist')
-const isTest = !!process.env.IS_TEST
 
 const SHARED_CONFIG: Required<Pick<esbuild.BuildOptions, 'outdir' | 'minify' | 'sourcemap'>> = {
 	outdir,
@@ -27,9 +26,6 @@ async function build(): Promise<void> {
 		platform: 'node',
 		external: ['vscode'],
 		/// / TODO(sqs) banner: { js: 'global.Buffer = require("buffer").Buffer' },
-		define: {
-			'process.env.IS_TEST': isTest ? 'true' : 'false',
-		},
 		...SHARED_CONFIG,
 		outdir: path.join(SHARED_CONFIG.outdir, 'node'),
 	})

@@ -16,6 +16,15 @@
 				"isDefault": true
 			},
 			"runOptions": { "runOn": "folderOpen" }
+		},
+		{
+			"label": "vscode-codegen: bundle",
+			"type": "npm",
+			"script": "bundle",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
 		}
 	]
 }

@@ -4,5 +4,6 @@
 		"rootDir": "src",
 		"outDir": "out",
 	},
+	"include": ["src"],
 	"exclude": ["scripts", "out", "dist"],
 }

@@ -7,7 +7,7 @@
 			"request": "launch",
 			"args": ["--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen"],
 			"outFiles": ["${workspaceFolder}/vscode-codegen/out/**/*.js"],
-			"preLaunchTask": "${defaultBuildTask}",
+			"preLaunchTask": "vscode-codegen: bundle",
 			"env": {
 				"NODE_ENV": "development"
 			}
