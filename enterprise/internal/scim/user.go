@@ -138,6 +138,7 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 	// Process requested username
 	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
 	if err != nil {
+		// Empty username after normalization. Generate a random one, it's the best we can do.
 		normalizedUsername, err = auth.AddRandomSuffix("")
 		if err != nil {
 			return "", scimerrors.ScimErrorBadParams([]string{"invalid username"})
