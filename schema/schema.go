@@ -974,8 +974,8 @@ type GitHubAuthProvider struct {
 	// Hidden description: Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.
 	Hidden bool `json:"hidden,omitempty"`
 	// RateLimit description: Number of requests per hour for user accounts connected using this authentication provider
-	RateLimit float64 `json:"rateLimit,omitempty"`
-	Type      string  `json:"type"`
+	RateLimit *float64 `json:"rateLimit,omitempty"`
+	Type      string   `json:"type"`
 	// Url description: URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url,omitempty"`
 }

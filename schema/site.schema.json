@@ -2225,7 +2225,10 @@
         "rateLimit": {
           "type": "number",
           "default": 5000.0,
-          "description": "Number of requests per hour for user accounts connected using this authentication provider"
+          "description": "Number of requests per hour for user accounts connected using this authentication provider",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

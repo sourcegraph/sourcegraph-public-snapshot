@@ -175,8 +175,12 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Ac
 			continue
 		}
 
-		if authProvider.Github.RateLimit != 0 {
-			client.WithRateLimiter(urn, authProvider.Github.RateLimit)
+		rateLimit := 5000.0
+		if authProvider.Github.RateLimit != nil {
+			rateLimit = *authProvider.Github.RateLimit
+		}
+		if authProvider.Github.RateLimit != nil {
+			client.WithRateLimiter(urn, rateLimit)
 		}
 		break
 	}
