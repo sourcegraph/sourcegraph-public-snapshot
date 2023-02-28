@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -35,12 +37,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -136,6 +141,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		},
 	}
 
+	serviceServer := &repoupdater.RepoUpdaterServiceServer{
+		Server: server,
+	}
+
 	// Attempt to perform an initial sync with all external services
 	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
 		// This is not a fatal error since the syncer has been added to the server above
@@ -207,6 +216,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		m,
 		otel.GetTracerProvider(),
 	)(server.Handler())
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	reflection.Register(grpcServer)
+
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	globals.WatchExternalURL()
 

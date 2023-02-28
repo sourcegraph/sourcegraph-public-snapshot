@@ -115,3 +115,7 @@
   interfaces:
     - UserEmailsService
     - ReposService
+- filename: enterprise/internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
+  interfaces:
+    - JobTokenStore

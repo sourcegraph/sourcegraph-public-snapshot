@@ -449,6 +449,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 }
 
 type externalServiceNamespacesArgs struct {
+	ID    *graphql.ID
 	Kind  string
 	Token string
 	Url   string
@@ -473,6 +474,38 @@ type externalServiceNamespaceConnectionResolver struct {
 	nodes      []*types.ExternalServiceNamespace
 	totalCount int32
 	err        error
+}
+
+type externalServiceRepositoriesArgs struct {
+	ID           *graphql.ID
+	Kind         string
+	Token        string
+	Url          string
+	Query        string
+	ExcludeRepos []string
+	First        *int32
+}
+
+func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceRepositoryConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceRepositoryConnectionResolver{
+		db:                r.db,
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}, nil
+}
+
+type externalServiceRepositoryConnectionResolver struct {
+	args              *externalServiceRepositoriesArgs
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once  sync.Once
+	nodes []*types.ExternalServiceRepository
+	err   error
 }
 
 // NewSourceConfiguration returns a configuration string for defining a Source for discovery.

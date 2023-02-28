@@ -46,36 +46,6 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 	}
 }
 
-func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
-	var req protocol.V1CreateCommitFromPatchRequest
-	var resp protocol.CreateCommitFromPatchResponse
-	var status int
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		resp := new(protocol.CreateCommitFromPatchResponse)
-		resp.SetError("", "", "", errors.Wrap(err, "decoding V1CreateCommitFromPatchRequest"))
-		status = http.StatusBadRequest
-	} else {
-		binaryReq := protocol.CreateCommitFromPatchRequest{
-			Repo:         req.Repo,
-			BaseCommit:   req.BaseCommit,
-			Patch:        []byte(req.Patch),
-			TargetRef:    req.TargetRef,
-			UniqueRef:    req.UniqueRef,
-			CommitInfo:   req.CommitInfo,
-			Push:         req.Push,
-			GitApplyArgs: req.GitApplyArgs,
-		}
-		status, resp = s.createCommitFromPatch(r.Context(), binaryReq)
-	}
-
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
 	logger := s.Logger.Scoped("createCommitFromPatch", "").
 		With(

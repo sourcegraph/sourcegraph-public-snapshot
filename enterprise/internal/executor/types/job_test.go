@@ -1,4 +1,4 @@
-package executor
+package types
 
 import (
 	"encoding/json"
@@ -61,6 +61,7 @@ func TestJob_MarshalJSON(t *testing.T) {
 			expected: `{
 		"version": 2,
 		"id": 1,
+		"token": "",
 		"repositoryName": "my-repo",
 		"repositoryDirectory": "foo/bar",
 		"commit": "xyz",
@@ -131,6 +132,7 @@ func TestJob_MarshalJSON(t *testing.T) {
 			},
 			expected: `{
 		"id": 1,
+		"token": "",
 		"repositoryName": "my-repo",
 		"repositoryDirectory": "foo/bar",
 		"commit": "xyz",

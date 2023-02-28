@@ -1002,6 +1002,7 @@ Foreign-key constraints:
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr" btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
@@ -1307,6 +1308,24 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **queue_name**: The queue name that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
+
+# Table "public.executor_job_tokens"
+```
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea                    |           | not null | 
+ job_id       | bigint                   |           | not null | 
+ queue        | text                     |           | not null | 
+ repo_id      | bigint                   |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
+    "executor_job_tokens_job_id_queue_repo_id_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo_id)
+    "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
+
+```
 
 # Table "public.executor_secret_access_logs"
 ```

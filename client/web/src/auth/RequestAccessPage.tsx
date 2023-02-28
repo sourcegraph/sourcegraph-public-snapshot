@@ -113,7 +113,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setAdditionalInfo(event.target.value)}
                     className="mb-4"
                     value={additionalInfo}
-                    placeholder="Use this field to provide extra info for your request access"
+                    placeholder="Use this field to provide extra info for your access request"
                 />
             </Label>
 

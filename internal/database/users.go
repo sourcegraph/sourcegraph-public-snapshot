@@ -134,6 +134,15 @@ type userNotFoundErr struct {
 	args []any
 }
 
+func IsUserNotFoundErr(err error) bool {
+	_, ok := err.(userNotFoundErr)
+	return ok
+}
+
+func NewUserNotFoundErr(args ...any) userNotFoundErr {
+	return userNotFoundErr{args: args}
+}
+
 func (err userNotFoundErr) Error() string {
 	return fmt.Sprintf("user not found: %v", err.args)
 }
@@ -1222,7 +1231,8 @@ SELECT u.id,
        u.tos_accepted,
        u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
-       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id,
+       (SELECT account_data FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_account_data
   FROM users u %s`
 
 // getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
@@ -1236,14 +1246,15 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 // scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
-	var displayName, avatarURL, scimExternalID sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
+	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
 	u.DisplayName = displayName.String
 	u.AvatarURL = avatarURL.String
 	u.SCIMExternalID = scimExternalID.String
+	u.SCIMAccountData = scimAccountData.String
 	return &u, nil
 }
 
