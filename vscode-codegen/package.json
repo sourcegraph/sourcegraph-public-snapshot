@@ -1,8 +1,9 @@
 {
   "name": "kodj",
   "displayName": "Kodj",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "hpargecruos",
+  "license": "Enterprise",
   "description": "",
   "categories": [
     "Other"
@@ -20,14 +21,11 @@
     "vscode": "^1.74.0"
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "vsce:package": "ts-node scripts/build.ts && vsce package --no-dependencies -o dist/kodj.vsix",
     "test": "node ./out/test/runTest.js",
     "unittest": "mocha ./out/test/unittest"
   },
-  "main": "./out/extension.js",
+  "main": "./dist/node/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -226,7 +224,10 @@
     "@types/vscode": "^1.74.0",
     "@types/ws": "^8.5.3",
     "@vscode/test-electron": "^2.2.0",
-    "glob": "^8.0.3"
+    "@vscode/vsce": "^2.18.0",
+    "esbuild": "^0.17.10",
+    "glob": "^8.0.3",
+    "ts-node": "^10.9.1"
   },
   "dependencies": {
     "@sourcegraph/cody-common": "workspace:*",

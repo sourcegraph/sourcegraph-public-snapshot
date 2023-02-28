@@ -77,3 +77,18 @@ Run the VS Code extension:
    ```
 
    - Note: You may find it more convenient to use a separate user profile for VS Code (or the Insiders build) so that you can continue using the released version of Cody in your usual editing workflow.
+
+### Publishing the [VS Code extension](vscode-codegen/)
+
+Increment the `version` in [`vscode-codegen/package.json`](vscode-codegen/package.json) and then run:
+
+```shell
+cd vscode-codegen
+pnpm run vsce:package
+
+# To try the packaged extension locally, disable any other installations of it and then run:
+#   code --install-extension dist/kodj.vsix
+
+# To publish the packaged extension to the VS Code Extension Marketplace:
+pnpm exec vsce publish --packagePath dist/kodj.vsix
+```
