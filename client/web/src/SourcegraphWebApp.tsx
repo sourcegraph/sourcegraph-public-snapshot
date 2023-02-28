@@ -3,7 +3,6 @@ import 'focus-visible'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
-import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
@@ -30,16 +29,16 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
-import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import { Layout } from './Layout'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
+import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
@@ -48,8 +47,6 @@ import { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
-
-import styles from './LegacySourcegraphWebApp.module.scss'
 
 export interface StaticSourcegraphWebAppContext {
     setSelectedSearchContextSpec: (spec: string) => void
@@ -285,30 +282,9 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
         [props.routes]
     )
 
-    // TODO: move into a standalone component and reuse it between `SourcegraphWebApp` and `LegacySourcegraphWebApp`.
-    if (window.pageError && window.pageError.statusCode !== 404) {
-        const statusCode = window.pageError.statusCode
-        const statusText = window.pageError.statusText
-        const errorMessage = window.pageError.error
-        const errorID = window.pageError.errorID
-
-        let subtitle: JSX.Element | undefined
-        if (errorID) {
-            subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
-        }
-        if (errorMessage) {
-            subtitle = (
-                <div className={styles.error}>
-                    {subtitle}
-                    {subtitle && <hr className="my-3" />}
-                    <pre>{errorMessage}</pre>
-                </div>
-            )
-        } else {
-            subtitle = <div className={styles.error}>{subtitle}</div>
-        }
-
-        return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
+    const pageError = window.pageError
+    if (pageError && pageError.statusCode !== 404) {
+        return <PageError pageError={pageError} />
     }
 
     if (graphqlClient === null || temporarySettingsStorage === null) {
