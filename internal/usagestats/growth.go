@@ -80,11 +80,11 @@ SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('
     `
 	const accessRequestsQuery = `
 	SELECT
-			COUNT(*) FILTER (WHERE status LIKE 'PENDING') AS pending_access_requests,
-			COUNT(*) FILTER (WHERE status LIKE 'APPROVED') AS approved_access_requests,
-			COUNT(*) FILTER (WHERE status LIKE 'REJECTED') AS rejected_access_requests
+		COUNT(*) FILTER (WHERE status = 'PENDING') AS pending_access_requests,
+		COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved_access_requests,
+		COUNT(*) FILTER (WHERE status = 'REJECTED') AS rejected_access_requests
 	FROM access_requests
-	WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $1::timestamp)
+	WHERE created_at >= DATE_TRUNC('month', $1::timestamp)
 	`
 	var (
 		createdUsers     int
