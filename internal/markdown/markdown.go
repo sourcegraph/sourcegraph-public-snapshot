@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"fmt"
+	"net/url"
 	"regexp" //nolint:depguard // bluemonday requires this pkg
 	"strings"
 	"sync"
@@ -17,12 +18,14 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
+
+	logg "log"
 )
 
 var (
-	once     sync.Once
-	policy   *bluemonday.Policy
-	renderer goldmark.Markdown
+	once   sync.Once
+	policy *bluemonday.Policy
+	md     goldmark.Markdown
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
@@ -57,7 +60,8 @@ func Render(content string) (string, error) {
 		}
 		chroma.StandardTypes = sourcegraphTypes
 
-		renderer = goldmark.New(
+		md = goldmark.New(
+			// goldmark.WithRenderer(&Renderer{goldmark.DefaultRenderer()}),
 			goldmark.WithExtensions(
 				extension.GFM,
 				highlighting.NewHighlighting(
@@ -69,7 +73,9 @@ func Render(content string) (string, error) {
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),
-				parser.WithASTTransformers(util.Prioritized(mdTransformFunc(mdLinkHeaders), 1)),
+				parser.WithASTTransformers(
+					util.Prioritized(mdTransformFunc(mdLinkHeaders), 1),
+				),
 			),
 			goldmark.WithRendererOptions(
 				// HTML sanitization is handled by bluemonday
@@ -79,7 +85,7 @@ func Render(content string) (string, error) {
 	})
 
 	var buf strings.Builder
-	if err := renderer.Convert([]byte(content), &buf); err != nil {
+	if err := md.Convert([]byte(content), &buf); err != nil {
 		return "", err
 	}
 	return policy.Sanitize(buf.String()), nil
@@ -122,8 +128,32 @@ func mdWalk(n ast.Node) {
 
 		n.InsertBefore(n, n.FirstChild(), anchorLink)
 		return
+	case *ast.Image:
+		logg.Printf("# ast.Image")
+		transformImgSrc(n)
+		return
 	}
 	for child := n.FirstChild(); child != nil; child = child.NextSibling() {
 		mdWalk(child)
 	}
+}
+
+func transformImgSrc(n *ast.Image) error {
+	dst := string(n.Destination)
+	dstURL, err := url.Parse(dst)
+	if err != nil {
+		return err
+	}
+	if dstURL.Scheme == "" && dstURL.Host == "" {
+		n.Destination = []byte(getImageURL(dst))
+	}
+	return nil
+}
+
+func getImageURL(relativeURL string) string {
+	logg.Printf("# getImageURL %s", relativeURL)
+	normalizedURL := strings.TrimPrefix(relativeURL, "./")
+	// https: //github.com/qdrant/qdrant/blob/master/lib/collection/docs/collection-struct.mmd.png?raw=true
+
+	return "https://github.com/qdrant/qdrant/blob/master/lib/collection/" + normalizedURL + "?raw=true"
 }
