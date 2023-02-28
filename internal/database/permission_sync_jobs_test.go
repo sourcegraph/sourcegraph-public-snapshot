@@ -190,6 +190,11 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			wantJobs: jobs,
 		},
 		{
+			name:     "SearchType alone works as a filter by sync job subject",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
 			name:     "Repo name search, case-insensitivity",
 			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
 			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},

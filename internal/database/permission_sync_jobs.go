@@ -498,12 +498,13 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("cancel = false"))
 	}
 
-	if opts.Query != "" {
-		if opts.SearchType == PermissionsSyncSearchTypeRepo {
+	if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
+		if opts.Query != "" {
 			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
 		}
-		// TODO(sashaostrikov) process User search
 	}
+	// TODO(sashaostrikov) process User search
 	return conds
 }
 
