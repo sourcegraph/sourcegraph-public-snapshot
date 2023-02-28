@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * "useState" like hook that syncs state with URL search parameters.

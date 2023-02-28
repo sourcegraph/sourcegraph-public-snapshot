@@ -23,7 +23,6 @@ export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     telemetryService: NOOP_TELEMETRY_SERVICE,
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     platformContext: NOOP_PLATFORM_CONTEXT,
-    isLightTheme: true,
     overlayPosition: { top: 16, left: 16 },
     onAlertDismissed: action('onAlertDismissed'),
     settingsCascade: EMPTY_SETTINGS_CASCADE,

@@ -1,7 +1,7 @@
 package graphqlbackend
 
 import (
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"context"
 	"sort"
@@ -64,7 +64,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		return recentCommitters[i].name < recentCommitters[j].name
 	})
 
-	autogold.Want("calls", []args{
+	autogold.Expect([]args{
 		{
 			repoName: "golang/go",
 			opt: gitserver.CommitsOptions{
@@ -91,7 +91,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		},
 	}).Equal(t, calls)
 
-	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
+	autogold.Expect([]*invitableCollaboratorResolver{
 		{
 			name:      "golang/go-jane",
 			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",

@@ -277,9 +277,9 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fakeZoekt := &searchbackend.FakeSearcher{
-				Result: &zoekt.SearchResult{Files: tt.args.results},
-				Repos:  zoektRepos,
+			fakeZoekt := &searchbackend.FakeStreamer{
+				Results: []*zoekt.SearchResult{{Files: tt.args.results}},
+				Repos:   zoektRepos,
 			}
 
 			var resultTypes result.Types
@@ -570,6 +570,11 @@ func TestZoektSearchOptions(t *testing.T) {
 				cfg := conf.Get()
 				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
 				conf.Mock(cfg)
+
+				defer func() {
+					cfg.ExperimentalFeatures.Ranking = nil
+					conf.Mock(cfg)
+				}()
 			}
 
 			got := tt.options.ToSearch(tt.context)

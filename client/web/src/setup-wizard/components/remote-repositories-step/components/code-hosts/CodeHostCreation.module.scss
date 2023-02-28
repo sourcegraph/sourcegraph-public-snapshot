@@ -1,0 +1,19 @@
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--text-muted);
+}
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-bg-1);
+    border-top: 1px solid var(--border-color);
+}

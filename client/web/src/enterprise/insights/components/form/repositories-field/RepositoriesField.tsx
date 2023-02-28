@@ -94,7 +94,7 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
                 onPaste={handleInputPaste}
             />
 
-            {error && (
+            {error && status === 'error' && (
                 <small role="alert" aria-live="polite" className={styles.errorMessage}>
                     <ErrorMessage error={error} />
                 </small>

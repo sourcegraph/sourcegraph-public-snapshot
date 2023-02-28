@@ -8,8 +8,8 @@ import { Omit } from 'utility-types'
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { LineOrPositionOrRange } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/deprecated-theme-utils'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,

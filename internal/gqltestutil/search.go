@@ -37,13 +37,17 @@ func (rs SearchRepositoryResults) Exists(names ...string) []string {
 	return missing
 }
 
-func (rs SearchRepositoryResults) String() string {
+func (rs SearchRepositoryResults) Names() []string {
 	var names []string
 	for _, r := range rs {
 		names = append(names, r.Name)
 	}
 	sort.Strings(names)
-	return fmt.Sprintf("%q", names)
+	return names
+}
+
+func (rs SearchRepositoryResults) String() string {
+	return fmt.Sprintf("%q", rs.Names())
 }
 
 // SearchRepositories search repositories with given query.

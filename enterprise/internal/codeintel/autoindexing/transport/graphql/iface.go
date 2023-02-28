@@ -53,6 +53,7 @@ type UploadsService interface {
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadshared.UploadsWithRepositoryNamespace, err error)
 	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
+	GetIndexers(ctx context.Context, opts uploadshared.GetIndexersOptions) ([]string, error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)

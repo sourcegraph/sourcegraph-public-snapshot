@@ -27,8 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -221,19 +219,9 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			lsifContentType = "application/x-ndjson+lsif"
 			scipContentType = "application/x-protobuf+scip"
 		)
-		var (
-			groupedBundleData  *precise.GroupedBundleDataChans
-			correlatedSCIPData lsifstore.ProcessedSCIPData
-		)
 		if upload.ContentType == lsifContentType {
-			if groupedBundleData, err = conversion.Correlate(ctx, r, upload.Root, getChildren); err != nil {
-				return errors.Wrap(err, "conversion.Correlate")
-			}
-		} else if upload.ContentType == scipContentType {
-			if correlatedSCIPData, err = correlateSCIP(ctx, r, upload.Root, getChildren); err != nil {
-				return errors.Wrap(err, "conversion.Correlate")
-			}
-		} else {
+			return errors.New("LSIF support is deprecated")
+		} else if upload.ContentType != scipContentType {
 			return errors.Newf("unsupported content type %q", upload.ContentType)
 		}
 
@@ -259,35 +247,23 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		if upload.ContentType == lsifContentType {
-			// Note: this is writing to a different database than the block below, so we need to use a
-			// different transaction context (managed by the writeData function).
-			if err := writeData(ctx, h.lsifStore, upload, groupedBundleData, trace); err != nil {
-				if isUniqueConstraintViolation(err) {
-					// If this is a unique constraint violation, then we've previously processed this same
-					// upload record up to this point, but failed to perform the transaction below. We can
-					// safely assume that the entire index's data is in the codeintel database, as it's
-					// parsed deterministically and written atomically.
-					logger.Warn("LSIF data already exists for upload record")
-					trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
-				} else {
-					return err
-				}
-			}
-		} else if upload.ContentType == scipContentType {
-			// Note: this is writing to a different database than the block below, so we need to use a
-			// different transaction context (managed by the writeData function).
-			if err := writeSCIPData(ctx, h.lsifStore, upload, correlatedSCIPData, trace); err != nil {
-				if isUniqueConstraintViolation(err) {
-					// If this is a unique constraint violation, then we've previously processed this same
-					// upload record up to this point, but failed to perform the transaction below. We can
-					// safely assume that the entire index's data is in the codeintel database, as it's
-					// parsed deterministically and written atomically.
-					logger.Warn("SCIP data already exists for upload record")
-					trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
-				} else {
-					return err
-				}
+		correlatedSCIPData, err := correlateSCIP(ctx, r, upload.Root, getChildren)
+		if err != nil {
+			return errors.Wrap(err, "conversion.Correlate")
+		}
+
+		// Note: this is writing to a different database than the block below, so we need to use a
+		// different transaction context (managed by the writeData function).
+		if err := writeSCIPData(ctx, h.lsifStore, upload, correlatedSCIPData, trace); err != nil {
+			if isUniqueConstraintViolation(err) {
+				// If this is a unique constraint violation, then we've previously processed this same
+				// upload record up to this point, but failed to perform the transaction below. We can
+				// safely assume that the entire index's data is in the codeintel database, as it's
+				// parsed deterministically and written atomically.
+				logger.Warn("SCIP data already exists for upload record")
+				trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
+			} else {
+				return err
 			}
 		}
 
@@ -303,31 +279,19 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			if upload.ContentType == lsifContentType {
-				trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(groupedBundleData.Packages)))
-				// Update package and package reference data to support cross-repo queries.
-				if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
-					return errors.Wrap(err, "store.UpdatePackages")
-				}
-				trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(groupedBundleData.Packages)))
-				if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
-					return errors.Wrap(err, "store.UpdatePackageReferences")
-				}
-			} else if upload.ContentType == scipContentType {
-				packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
-				if err != nil {
-					return err
-				}
+			packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
+			if err != nil {
+				return err
+			}
 
-				trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(packages)))
-				// Update package and package reference data to support cross-repo queries.
-				if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
-					return errors.Wrap(err, "store.UpdatePackages")
-				}
-				trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(packages)))
-				if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
-					return errors.Wrap(err, "store.UpdatePackageReferences")
-				}
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(packages)))
+			// Update package and package reference data to support cross-repo queries.
+			if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
+				return errors.Wrap(err, "store.UpdatePackages")
+			}
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(packages)))
+			if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
+				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to
@@ -428,50 +392,6 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 			log.NamedError("err", err),
 			log.String("filename", uploadFilename))
 	}
-
-	return nil
-}
-
-// writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore lsifstore.LsifStore, upload codeinteltypes.Upload, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
-	tx, err := lsifStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if err := tx.WriteMeta(ctx, upload.ID, groupedBundleData.Meta); err != nil {
-		return errors.Wrap(err, "store.WriteMeta")
-	}
-	count, err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDocuments")
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(count)))
-
-	count, err = tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteResultChunks")
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numResultChunks", int64(count)))
-
-	count, err = tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteDefinitions")
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDefinitions", int64(count)))
-
-	count, err = tx.WriteReferences(ctx, upload.ID, groupedBundleData.References)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteReferences")
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numReferences", int64(count)))
-
-	count, err = tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations)
-	if err != nil {
-		return errors.Wrap(err, "store.WriteImplementations")
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numImplementations", int64(count)))
 
 	return nil
 }

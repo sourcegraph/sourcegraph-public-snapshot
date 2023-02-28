@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'

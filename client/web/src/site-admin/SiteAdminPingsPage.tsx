@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
@@ -15,18 +15,19 @@ import {
     defaultEditorTheme,
     jsonHighlighting,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends ThemeProps {}
+interface Props {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ isLightTheme }) => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+    const isLightTheme = useIsLightTheme()
     const latestPing = useObservable(
         useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )
@@ -36,10 +37,12 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
-    const [jsonEditorContainer, setJSONEditorContainer] = useState<HTMLDivElement | null>(null)
+    const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
+    const editorRef = useRef<EditorView | null>(null)
 
     useCodeMirror(
-        jsonEditorContainer,
+        editorRef,
+        jsonEditorContainerRef,
         useMemo(() => JSON.stringify(latestPing, undefined, 4), [latestPing]),
         useMemo(
             () => [
@@ -82,7 +85,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
             ) : isEmpty(latestPing) ? (
                 <Text>No recent ping data to display.</Text>
             ) : (
-                <div ref={setJSONEditorContainer} className="mb-1 border rounded" />
+                <div ref={jsonEditorContainerRef} className="mb-1 border rounded" />
             )}
             <H3>Critical telemetry</H3>
             <Text>

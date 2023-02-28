@@ -33,6 +33,7 @@ type operations struct {
 	hasRepository                           *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -79,6 +80,15 @@ type operations struct {
 
 	reindexUploads    *observation.Operation
 	reindexUploadByID *observation.Operation
+
+	// Ranking
+	vacuumStaleDefinitionsAndReferences       *observation.Operation
+	vacuumStaleGraphs                         *observation.Operation
+	insertDefinitionsAndReferencesForDocument *observation.Operation
+	insertDefinitionsForRanking               *observation.Operation
+	insertReferencesForRanking                *observation.Operation
+	insertPathCountInputs                     *observation.Operation
+	insertPathRanks                           *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -127,6 +137,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		hasRepository:                           op("HasRepository"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -174,5 +185,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		reindexUploads:    op("ReindexUploads"),
 		reindexUploadByID: op("ReindexUploadByID"),
+
+		// Ranking
+		vacuumStaleDefinitionsAndReferences:       op("VacuumStaleDefinitionsAndReferences"),
+		vacuumStaleGraphs:                         op("VacuumStaleGraphs"),
+		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
+		insertDefinitionsForRanking:               op("InsertDefinitionsForRanking"),
+		insertReferencesForRanking:                op("InsertReferencesForRanking"),
+		insertPathCountInputs:                     op("InsertPathCountInputs"),
+		insertPathRanks:                           op("InsertPathRanks"),
 	}
 }

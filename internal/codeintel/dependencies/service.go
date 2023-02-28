@@ -46,9 +46,6 @@ type ListDependencyReposOpts struct {
 	After int
 	// Limit limits the size of the results set to be returned.
 	Limit int
-	// MostRecentlyUpdated sorts by when a package was updated (either created or
-	// a new version added).
-	MostRecentlyUpdated bool
 }
 
 func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (_ []PackageRepoReference, total int, err error) {
@@ -58,7 +55,6 @@ func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRe
 		log.Bool("exactOnly", opts.ExactNameOnly),
 		log.Int("after", opts.After),
 		log.Int("limit", opts.Limit),
-		log.Bool("mostRecentlyUpdated", opts.MostRecentlyUpdated),
 	}})
 	defer endObservation(1, observation.Args{})
 

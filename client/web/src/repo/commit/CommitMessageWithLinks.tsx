@@ -31,14 +31,13 @@ export const CommitMessageWithLinks = ({
         'data-testid': 'git-commit-node-message-subject',
         className,
         onClick,
-        rel: 'noreferrer noopener',
-        target: '_blank',
         to,
     }
 
     const github = externalURLs ? externalURLs.find(url => url.serviceKind === ExternalServiceKind.GITHUB) : null
     const matches = [...message.matchAll(GH_ISSUE_NUMBER_IN_COMMIT)]
     if (github && matches.length > 0) {
+        const url = githubRepoUrl(github.url)
         let remainingMessage = message
         let skippedCharacters = 0
         const linkSegments: React.ReactNode[] = []
@@ -51,18 +50,50 @@ export const CommitMessageWithLinks = ({
             const index = remainingMessage.indexOf(issueNumber, match.index - skippedCharacters)
             const before = remainingMessage.slice(0, index)
 
-            linkSegments.push(<Link {...commitLinkProps}>{before}</Link>)
-            linkSegments.push(<Link to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
+            linkSegments.push(
+                <Link key={linkSegments.length} {...commitLinkProps}>
+                    {before}
+                </Link>
+            )
+            linkSegments.push(
+                <Link
+                    target="blank"
+                    rel="noreferrer noopener"
+                    key={linkSegments.length}
+                    to={`${url}/pull/${issueNumber.replace('#', '')}`}
+                >
+                    {issueNumber}
+                </Link>
+            )
 
             const nextIndex = index + issueNumber.length
             remainingMessage = remainingMessage.slice(index + issueNumber.length)
             skippedCharacters += nextIndex
         }
 
-        linkSegments.push(<Link {...commitLinkProps}>{remainingMessage}</Link>)
+        linkSegments.push(
+            <Link key={linkSegments.length} {...commitLinkProps}>
+                {remainingMessage}
+            </Link>
+        )
 
         return <>{linkSegments}</>
     }
 
     return <Link {...commitLinkProps}>{message}</Link>
+}
+
+// Some places return an URL to objects within a repo, e.g.:
+//
+// https://github.com/sourcegraph/sourcegraph/commit/ad1ea519e5a31bb868be947107bcf43f4f9fc672
+//
+// This function removes those unwanted parts
+const GITHUB_URL_SCHEMA = /^(https?:\/\/[^/]+\/[^/]+\/[^/]+)(.+)$/
+function githubRepoUrl(url: string): string {
+    const match = url.match(GITHUB_URL_SCHEMA)
+    if (match?.[1]) {
+        return match[1]
+    }
+
+    return url
 }

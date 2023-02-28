@@ -12,7 +12,6 @@ import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/op
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
 import { requestGraphQL } from '../../../../../backend/graphql'
@@ -34,11 +33,12 @@ interface JSONSchema {
     $id: string
 }
 
-export interface Props extends ThemeProps {
+export interface Props {
     className?: string
     batchChangeNamespace?: { id: Scalars['ID']; __typename: 'User' | 'Org' }
     batchChangeName: string
     value: string | undefined
+    isLightTheme: boolean
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     autoFocus?: boolean

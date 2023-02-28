@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -25,14 +25,11 @@ type AuthzResolver interface {
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
 	AuthzProviderTypes(ctx context.Context) ([]string, error)
-	PermissionsSyncJobs(ctx context.Context, args *PermissionsSyncJobsArgs) (PermissionsSyncJobsConnection, error)
+	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
 	UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error)
-
-	// Node types
-	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type RepositoryIDArgs struct {
@@ -121,34 +118,17 @@ type PermissionsInfoResolver interface {
 	SyncedAt() *gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	Unrestricted() bool
+	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
 }
 
-type PermissionsSyncJobsArgs struct {
-	Status *string
-	First  int32
+type PermissionsInfoRepositoryResolver interface {
+	ID() graphql.ID
+	Repository() *RepositoryResolver
+	Reason() string
+	UpdatedAt() *gqlutil.DateTime
 }
 
-type PermissionsSyncJobsConnection interface {
-	Nodes() []PermissionsSyncJobResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
-}
-
-type PermissionsSyncJobResolver interface {
-	Node
-
-	JobID() int32
-	Type() string
-	Status() string
-	Message() string
-	CompletedAt() *gqlutil.DateTime
-
-	Providers() ([]PermissionsProviderStateResolver, error)
-}
-
-type PermissionsProviderStateResolver interface {
-	Type() string
-	ID() string
-	Status() string
-	Message() string
+type PermissionsInfoRepositoriesArgs struct {
+	graphqlutil.ConnectionResolverArgs
+	Query *string
 }

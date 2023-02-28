@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -116,7 +116,6 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 globbing={globbing}
                                 repo={repo}
                                 repoName={repoName}
-                                useActionItemsBar={context.useActionItemsBar}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}
                             />

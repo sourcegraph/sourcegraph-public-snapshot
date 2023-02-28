@@ -5,9 +5,17 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configtelemetry"
+	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/otel"
+	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
@@ -33,33 +41,34 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 	}
 	receiverFactory, signalReceiverConfig := newReceiver(receiverURL)
 
-	// Set up shared configuration for creating signal exporters and receivers - telemetry
-	// fields are required.
-	var (
-		signalExporterCreateSettings = component.ExporterCreateSettings{
-			TelemetrySettings: component.TelemetrySettings{
-				Logger:         zap.NewNop(),
-				TracerProvider: otel.GetTracerProvider(),
-			},
-		}
-		signalReceiverCreateSettings = component.ReceiverCreateSettings{
-			TelemetrySettings: component.TelemetrySettings{
-				Logger:         zap.NewNop(),
-				TracerProvider: otel.GetTracerProvider(),
-			},
-		}
-	)
+	// Set up shared configuration for creating signal exporters and receivers. Telemetry
+	// settigns are required on all factories, and all fields of this struct are required.
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.NewNop(),
+
+		TracerProvider: otel.GetTracerProvider(),
+
+		MeterProvider: mustPrometheusMetricsProvider(logger),
+		MetricsLevel:  configtelemetry.LevelBasic,
+	}
+	componentName := "otlpadapter"
 
 	// otelSignals declares the signals we support redirection for.
 	var otelSignals = []adaptedSignal{
 		{
 			PathPrefix: "/v1/traces",
 			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateTracesExporter(ctx, signalExporterCreateSettings, signalExporterConfig)
+				exporter, err := exporterFactory.CreateTracesExporter(ctx, exporter.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeTraces, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalExporterConfig)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateTracesExporter")
 				}
-				receiver, err := receiverFactory.CreateTracesReceiver(ctx, signalReceiverCreateSettings, signalReceiverConfig, exporter)
+				receiver, err := receiverFactory.CreateTracesReceiver(ctx, receiver.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeTraces, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalReceiverConfig, exporter)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateTracesReceiver")
 				}
@@ -70,11 +79,17 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 		{
 			PathPrefix: "/v1/metrics",
 			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateMetricsExporter(ctx, signalExporterCreateSettings, signalExporterConfig)
+				exporter, err := exporterFactory.CreateMetricsExporter(ctx, exporter.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeMetrics, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalExporterConfig)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateMetricsExporter")
 				}
-				receiver, err := receiverFactory.CreateMetricsReceiver(ctx, signalReceiverCreateSettings, signalReceiverConfig, exporter)
+				receiver, err := receiverFactory.CreateMetricsReceiver(ctx, receiver.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeMetrics, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalReceiverConfig, exporter)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateMetricsReceiver")
 				}
@@ -85,11 +100,17 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 		{
 			PathPrefix: "/v1/logs",
 			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateLogsExporter(ctx, signalExporterCreateSettings, signalExporterConfig)
+				exporter, err := exporterFactory.CreateLogsExporter(ctx, exporter.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeLogs, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalExporterConfig)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateLogsExporter")
 				}
-				receiver, err := receiverFactory.CreateLogsReceiver(ctx, signalReceiverCreateSettings, signalReceiverConfig, exporter)
+				receiver, err := receiverFactory.CreateLogsReceiver(ctx, receiver.CreateSettings{
+					ID:                component.NewIDWithName(component.DataTypeLogs, componentName),
+					TelemetrySettings: telemetrySettings,
+				}, signalReceiverConfig, exporter)
 				if err != nil {
 					return nil, errors.Wrap(err, "CreateLogsReceiver")
 				}
@@ -104,4 +125,16 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 		otelSignal := otelSignal // copy
 		otelSignal.Register(ctx, logger, r, receiverURL)
 	}
+}
+
+// mustPrometheusMetricsProvider creates a metric provider that uses the default
+// Prometheus metrics registerer to report metrics. If it fails to create one,
+// an error is logged and a no-op metrics provider is used.
+func mustPrometheusMetricsProvider(l log.Logger) metric.MeterProvider {
+	prom, err := otelprometheus.New(otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
+	if err != nil {
+		l.Error("failed to register prometheus metrics for otlpadapter", log.Error(err))
+		return metric.NewNoopMeterProvider()
+	}
+	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(prom))
 }

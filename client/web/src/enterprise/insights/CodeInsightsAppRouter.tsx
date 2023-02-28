@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from 'react'
 
 import { gql, useLazyQuery } from '@apollo/client'
-import { Route, Routes, Navigate } from 'react-router-dom-v5-compat'
+import { Route, Routes, Navigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

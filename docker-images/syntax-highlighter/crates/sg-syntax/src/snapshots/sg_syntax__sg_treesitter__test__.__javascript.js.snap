@@ -1,0 +1,584 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "dump_document(&document, &contents)"
+---
+  var a = 'a';
+//^^^ IdentifierKeyword 
+//    ^ Identifier 
+//        ^ StringLiteral 
+//         ^ StringLiteral 
+//          ^ StringLiteral 
+  
+  var b = function() {};
+//^^^ IdentifierKeyword 
+//    ^ IdentifierFunction 
+//        ^^^^^^^^ IdentifierKeyword 
+  
+  var c = () => {};
+//^^^ IdentifierKeyword 
+//    ^ IdentifierFunction 
+  
+  var d = async () => {};
+//^^^ IdentifierKeyword 
+//    ^ IdentifierFunction 
+//        ^^^^^ IdentifierKeyword 
+  
+  module.e = 'e';
+//^^^^^^ Identifier 
+//       ^ Identifier 
+//           ^ StringLiteral 
+//            ^ StringLiteral 
+//             ^ StringLiteral 
+  
+  module.f = function() {};
+//^^^^^^ Identifier 
+//       ^ IdentifierFunction 
+//           ^^^^^^^^ IdentifierKeyword 
+  
+  module.g = async function() {};
+//^^^^^^ Identifier 
+//       ^ IdentifierFunction 
+//           ^^^^^ IdentifierKeyword 
+//                 ^^^^^^^^ IdentifierKeyword 
+  
+  module.h = () => {};
+//^^^^^^ Identifier 
+//       ^ IdentifierFunction 
+  
+  function i() {
+//^^^^^^^^ IdentifierKeyword 
+//         ^ IdentifierFunction 
+  }
+  
+  class Person {
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+    static foo = bar;
+//  ^^^^^^ IdentifierKeyword 
+//         ^^^ Identifier 
+//               ^^^ Identifier 
+  
+    getName() {
+//  ^^^^^^^ IdentifierFunction 
+    }
+  }
+  
+  foo(function callback() {
+//^^^ IdentifierFunction 
+//    ^^^^^^^^ IdentifierKeyword 
+//             ^^^^^^^^ IdentifierFunction 
+  })
+  
+  
+  c();
+//^ IdentifierFunction 
+  module.e();
+//^^^^^^ Identifier 
+//       ^ IdentifierFunction 
+  
+  export function keywords() {
+//^^^^^^ IdentifierKeyword 
+//       ^^^^^^^^ IdentifierKeyword 
+//                ^^^^^^^^ IdentifierFunction 
+    do {} while (a);
+//  ^^ IdentifierKeyword 
+//        ^^^^^ IdentifierKeyword 
+//               ^ Identifier 
+  
+    try {} catch (e) {} finally {}
+//  ^^^ IdentifierKeyword 
+//         ^^^^^ IdentifierKeyword 
+//                ^ Identifier 
+//                      ^^^^^^^ IdentifierKeyword 
+  
+    throw e
+//  ^^^^^ IdentifierKeyword 
+//        ^ Identifier 
+  }
+  
+  class A {}
+//^^^^^ IdentifierKeyword 
+//      ^ Identifier 
+  const ABC = 1
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//            ^ NumericLiteral 
+  const AB_C1 = 2
+//^^^^^ IdentifierKeyword 
+//      ^^^^^ Identifier 
+//              ^ NumericLiteral 
+  const {AB_C2_D3} = x
+//^^^^^ IdentifierKeyword 
+//       ^^^^^^^^ Identifier 
+//                   ^ Identifier 
+  
+  module.exports = function(one, two) {
+//^^^^^^ Identifier 
+//       ^^^^^^^ IdentifierFunction 
+//                 ^^^^^^^^ IdentifierKeyword 
+//                          ^^^ Identifier 
+//                               ^^^ Identifier 
+  
+    if (something()) {
+//  ^^ IdentifierKeyword 
+//      ^^^^^^^^^ IdentifierFunction 
+      let module = null, one = 1;
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^ IdentifierBuiltin 
+//                       ^^^ Identifier 
+//                             ^ NumericLiteral 
+  
+      console.log(module, one, two);
+//    ^^^^^^^ Identifier 
+//            ^^^ IdentifierFunction 
+//                ^^^^^^ Identifier 
+//                        ^^^ Identifier 
+//                             ^^^ Identifier 
+    }
+  
+    console.log(module, one, two);
+//  ^^^^^^^ Identifier 
+//          ^^^ IdentifierFunction 
+//              ^^^^^^ Identifier 
+//                      ^^^ Identifier 
+//                           ^^^ Identifier 
+  };
+  
+  console.log(module, one, two);
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^ Identifier 
+//                    ^^^ Identifier 
+//                         ^^^ Identifier 
+  
+  function one({two: three}, [four]) {
+//^^^^^^^^ IdentifierKeyword 
+//         ^^^ IdentifierFunction 
+//              ^^^ Identifier 
+//                   ^^^^^ Identifier 
+//                            ^^^^ Identifier 
+  
+    console.log(two, three, four)
+//  ^^^^^^^ Identifier 
+//          ^^^ IdentifierFunction 
+//              ^^^ Identifier 
+//                   ^^^^^ Identifier 
+//                          ^^^^ Identifier 
+  }
+  
+  //1. Variables
+//^^^^^^^^^^^^^^ Comment 
+  let name = "Sourcegraph";
+//^^^ IdentifierKeyword 
+//    ^^^^ Identifier 
+//           ^ StringLiteral 
+//            ^^^^^^^^^^^ StringLiteral 
+//                       ^ StringLiteral 
+  const age = 2;
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//            ^ NumericLiteral 
+  var skills = ["language model", "natural language processing"];
+//^^^ IdentifierKeyword 
+//    ^^^^^^ Identifier 
+//              ^ StringLiteral 
+//               ^^^^^^^^^^^^^^ StringLiteral 
+//                             ^ StringLiteral 
+//                                ^ StringLiteral 
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                                            ^ StringLiteral 
+  
+  //2. Data types
+//^^^^^^^^^^^^^^^ Comment 
+  const number = 10;
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//               ^^ NumericLiteral 
+  const float = 10.5;
+//^^^^^ IdentifierKeyword 
+//      ^^^^^ Identifier 
+//              ^^^^ NumericLiteral 
+  const string = "hello";
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//               ^ StringLiteral 
+//                ^^^^^ StringLiteral 
+//                     ^ StringLiteral 
+  const boolean = true;
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^ Identifier 
+//                ^^^^ IdentifierBuiltin 
+  const array = [1, 2, 3];
+//^^^^^ IdentifierKeyword 
+//      ^^^^^ Identifier 
+//               ^ NumericLiteral 
+//                  ^ NumericLiteral 
+//                     ^ NumericLiteral 
+  const object = {key: "value"};
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//                ^^^ IdentifierAttribute 
+//                     ^ StringLiteral 
+//                      ^^^^^ StringLiteral 
+//                           ^ StringLiteral 
+  const symbol = Symbol();
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//               ^^^^^^ IdentifierFunction 
+  
+  //3. Conditional statements
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  if (age > 1) {
+//^^ IdentifierKeyword 
+//    ^^^ Identifier 
+//          ^ NumericLiteral 
+    console.log(`${name} is ${age} years old.`);
+//  ^^^^^^^ Identifier 
+//          ^^^ IdentifierFunction 
+//              ^ StringLiteral 
+//               ^^ StringLiteralEscape 
+//                 ^^^^ Identifier 
+//                     ^ StringLiteralEscape 
+//                      ^^^^ StringLiteral 
+//                          ^^ StringLiteralEscape 
+//                            ^^^ Identifier 
+//                               ^ StringLiteralEscape 
+//                                ^^^^^^^^^^^^ StringLiteral 
+  } else {
+//  ^^^^ IdentifierKeyword 
+    console.log(`${name} is a baby.`);
+//  ^^^^^^^ Identifier 
+//          ^^^ IdentifierFunction 
+//              ^ StringLiteral 
+//               ^^ StringLiteralEscape 
+//                 ^^^^ Identifier 
+//                     ^ StringLiteralEscape 
+//                      ^^^^^^^^^^^^ StringLiteral 
+  }
+  
+  //4. Loop
+//^^^^^^^^^ Comment 
+  for (let i = 0; i < skills.length; i++) {
+//^^^ IdentifierKeyword 
+//     ^^^ IdentifierKeyword 
+//         ^ Identifier 
+//             ^ NumericLiteral 
+//                ^ Identifier 
+//                    ^^^^^^ Identifier 
+//                           ^^^^^^ Identifier 
+//                                   ^ Identifier 
+    console.log(skills[i]);
+//  ^^^^^^^ Identifier 
+//          ^^^ IdentifierFunction 
+//              ^^^^^^ Identifier 
+//                     ^ Identifier 
+  }
+  
+  //5. Functions
+//^^^^^^^^^^^^^^ Comment 
+  function greet(name) {
+//^^^^^^^^ IdentifierKeyword 
+//         ^^^^^ IdentifierFunction 
+//               ^^^^ Identifier 
+    return `Hello, ${name}!`;
+//  ^^^^^^ IdentifierKeyword 
+//         ^^^^^^^^ StringLiteral 
+//                 ^^ StringLiteralEscape 
+//                   ^^^^ Identifier 
+//                       ^ StringLiteralEscape 
+//                        ^^ StringLiteral 
+  }
+  console.log(greet(name));
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^ IdentifierFunction 
+//                  ^^^^ Identifier 
+  
+  //6. Arrow functions
+//^^^^^^^^^^^^^^^^^^^^ Comment 
+  const multiply = (a, b) => a * b;
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^^ IdentifierFunction 
+//                  ^ Identifier 
+//                     ^ Identifier 
+//                           ^ Identifier 
+//                               ^ Identifier 
+  console.log(multiply(2, 3));
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^^^ IdentifierFunction 
+//                     ^ NumericLiteral 
+//                        ^ NumericLiteral 
+  
+  //7. Object methods
+//^^^^^^^^^^^^^^^^^^^ Comment 
+  const person = {
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+    name: "John",
+//  ^^^^ IdentifierAttribute 
+//        ^ StringLiteral 
+//         ^^^^ StringLiteral 
+//             ^ StringLiteral 
+    age: 30,
+//  ^^^ IdentifierAttribute 
+//       ^^ NumericLiteral 
+    sayHello() {
+//  ^^^^^^^^ IdentifierFunction 
+      console.log(`Hello, my name is ${this.name}.`);
+//    ^^^^^^^ Identifier 
+//            ^^^ IdentifierFunction 
+//                ^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                   ^^ StringLiteralEscape 
+//                                     ^^^^ IdentifierBuiltin 
+//                                         ^ StringLiteral 
+//                                          ^^^^ Identifier 
+//                                              ^ StringLiteralEscape 
+//                                               ^^ StringLiteral 
+    }
+  };
+  person.sayHello();
+//^^^^^^ Identifier 
+//       ^^^^^^^^ IdentifierFunction 
+  
+  //8. Destructuring
+//^^^^^^^^^^^^^^^^^^ Comment 
+  const { name: personName, age: personAge } = person;
+//^^^^^ IdentifierKeyword 
+//        ^^^^ Identifier 
+//              ^^^^^^^^^^ Identifier 
+//                          ^^^ Identifier 
+//                               ^^^^^^^^^ Identifier 
+//                                             ^^^^^^ Identifier 
+  console.log(personName, personAge);
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^^^^^ Identifier 
+//                        ^^^^^^^^^ Identifier 
+  
+  //9. Spread operator
+//^^^^^^^^^^^^^^^^^^^^ Comment 
+  const newSkills = [...skills, "JavaScript"];
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^^^ Identifier 
+//                      ^^^^^^ Identifier 
+//                              ^ StringLiteral 
+//                               ^^^^^^^^^^ StringLiteral 
+//                                         ^ StringLiteral 
+  console.log(newSkills);
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^^^^ Identifier 
+  
+  //10. Rest operator
+//^^^^^^^^^^^^^^^^^^^ Comment 
+  function sum(...numbers) {
+//^^^^^^^^ IdentifierKeyword 
+//         ^^^ IdentifierFunction 
+//                ^^^^^^^ Identifier 
+    let result = 0;
+//  ^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//               ^ NumericLiteral 
+    for (const number of numbers) {
+//  ^^^ IdentifierKeyword 
+//       ^^^^^ IdentifierKeyword 
+//             ^^^^^^ Identifier 
+//                    ^^ IdentifierKeyword 
+//                       ^^^^^^^ Identifier 
+      result += number;
+//    ^^^^^^ Identifier 
+//              ^^^^^^ Identifier 
+    }
+    return result;
+//  ^^^^^^ IdentifierKeyword 
+//         ^^^^^^ Identifier 
+  }
+  console.log(sum(1, 2, 3, 4));
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^ IdentifierFunction 
+//                ^ NumericLiteral 
+//                   ^ NumericLiteral 
+//                      ^ NumericLiteral 
+//                         ^ NumericLiteral 
+  
+  //11. Classes
+//^^^^^^^^^^^^^ Comment 
+  class Animal {
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+    constructor(name, type) {
+//  ^^^^^^^^^^^ IdentifierFunction 
+//              ^^^^ Identifier 
+//                    ^^^^ Identifier 
+      this.name = name;
+//    ^^^^ IdentifierBuiltin 
+//         ^^^^ Identifier 
+//                ^^^^ Identifier 
+      this.type = type;
+//    ^^^^ IdentifierBuiltin 
+//         ^^^^ Identifier 
+//                ^^^^ Identifier 
+    }
+    sayHello() {
+//  ^^^^^^^^ IdentifierFunction 
+      console.log(`Hello, I am ${this.name} and I am a ${this.type}.`);
+//    ^^^^^^^ Identifier 
+//            ^^^ IdentifierFunction 
+//                ^^^^^^^^^^^^^ StringLiteral 
+//                             ^^ StringLiteralEscape 
+//                               ^^^^ IdentifierBuiltin 
+//                                   ^ StringLiteral 
+//                                    ^^^^ Identifier 
+//                                        ^ StringLiteralEscape 
+//                                         ^^^^^^^^^^^^ StringLiteral 
+//                                                     ^^ StringLiteralEscape 
+//                                                       ^^^^ IdentifierBuiltin 
+//                                                           ^ StringLiteral 
+//                                                            ^^^^ Identifier 
+//                                                                ^ StringLiteralEscape 
+//                                                                 ^^ StringLiteral 
+    }
+  }
+  const cat = new Animal("Tom", "cat");
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//            ^^^ IdentifierKeyword 
+//                ^^^^^^ Identifier 
+//                       ^ StringLiteral 
+//                        ^^^ StringLiteral 
+//                           ^ StringLiteral 
+//                              ^ StringLiteral 
+//                               ^^^ StringLiteral 
+//                                  ^ StringLiteral 
+  cat.sayHello();
+//^^^ Identifier 
+//    ^^^^^^^^ IdentifierFunction 
+  
+  //12. Inheritance
+//^^^^^^^^^^^^^^^^^ Comment 
+  class Dog extends Animal {
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//          ^^^^^^^ IdentifierKeyword 
+//                  ^^^^^^ Identifier 
+    constructor(name, breed) {
+//  ^^^^^^^^^^^ IdentifierFunction 
+//              ^^^^ Identifier 
+//                    ^^^^^ Identifier 
+      super(name, "dog");
+//    ^^^^^ IdentifierBuiltin 
+//          ^^^^ Identifier 
+//                ^ StringLiteral 
+//                 ^^^ StringLiteral 
+//                    ^ StringLiteral 
+      this.breed = breed;
+//    ^^^^ IdentifierBuiltin 
+//         ^^^^^ Identifier 
+//                 ^^^^^ Identifier 
+    }
+    sayHello() {
+//  ^^^^^^^^ IdentifierFunction 
+      console.log(`Hello, I am ${this.name} and I am a ${this.breed} breed ${this.type}.`);
+//    ^^^^^^^ Identifier 
+//            ^^^ IdentifierFunction 
+//                ^^^^^^^^^^^^^ StringLiteral 
+//                             ^^ StringLiteralEscape 
+//                               ^^^^ IdentifierBuiltin 
+//                                   ^ StringLiteral 
+//                                    ^^^^ Identifier 
+//                                        ^ StringLiteralEscape 
+//                                         ^^^^^^^^^^^^ StringLiteral 
+//                                                     ^^ StringLiteralEscape 
+//                                                       ^^^^ IdentifierBuiltin 
+//                                                           ^ StringLiteral 
+//                                                            ^^^^^ Identifier 
+//                                                                 ^ StringLiteralEscape 
+//                                                                  ^^^^^^^ StringLiteral 
+//                                                                         ^^ StringLiteralEscape 
+//                                                                           ^^^^ IdentifierBuiltin 
+//                                                                               ^ StringLiteral 
+//                                                                                ^^^^ Identifier 
+//                                                                                    ^ StringLiteralEscape 
+//                                                                                     ^^ StringLiteral 
+    }
+  }
+  const dog = new Dog("Max", "Labrador");
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//            ^^^ IdentifierKeyword 
+//                ^^^ Identifier 
+//                    ^ StringLiteral 
+//                     ^^^ StringLiteral 
+//                        ^ StringLiteral 
+//                           ^ StringLiteral 
+//                            ^^^^^^^^ StringLiteral 
+//                                    ^ StringLiteral 
+  dog.sayHello();
+//^^^ Identifier 
+//    ^^^^^^^^ IdentifierFunction 
+  
+  //13. Template literals
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  const message = `${name} is a ${age}-year-old ${skills[0]}.`;
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^ Identifier 
+//                ^ StringLiteral 
+//                 ^^ StringLiteralEscape 
+//                   ^^^^ Identifier 
+//                       ^ StringLiteralEscape 
+//                        ^^^^^^ StringLiteral 
+//                              ^^ StringLiteralEscape 
+//                                ^^^ Identifier 
+//                                   ^ StringLiteralEscape 
+//                                    ^^^^^^^^^^ StringLiteral 
+//                                              ^^ StringLiteralEscape 
+//                                                ^^^^^^ Identifier 
+//                                                      ^ StringLiteral 
+//                                                       ^ NumericLiteral 
+//                                                        ^ StringLiteral 
+//                                                         ^ StringLiteralEscape 
+//                                                          ^^ StringLiteral 
+  console.log(message);
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^^ Identifier 
+  
+  //14. Ternary operator
+//^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  const result = (age > 18) ? "Adult" : "Child";
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+//                ^^^ Identifier 
+//                      ^^ NumericLiteral 
+//                            ^ StringLiteral 
+//                             ^^^^^ StringLiteral 
+//                                  ^ StringLiteral 
+//                                      ^ StringLiteral 
+//                                       ^^^^^ StringLiteral 
+//                                            ^ StringLiteral 
+  console.log(result);
+//^^^^^^^ Identifier 
+//        ^^^ IdentifierFunction 
+//            ^^^^^^ Identifier 
+  
+  //15. Map
+//^^^^^^^^^ Comment 
+  const numbers = [1, 2, 3, 4];
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^ Identifier 
+//                 ^ NumericLiteral 
+//                    ^ NumericLiteral 
+//                       ^ NumericLiteral 
+//                          ^ NumericLiteral 
+  const doubledNumbers = numbers.map(number => number * 2);
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^^^^^^^^ Identifier 
+//                       ^^^^^^^ Identifier 
+//                               ^^^ IdentifierFunction 
+//                                   ^^^^^^ Identifier 
+//                                             ^^^^^^ Identifier 
+//                                                      ^ NumericLiteral 
+
