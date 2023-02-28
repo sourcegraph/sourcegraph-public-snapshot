@@ -65,7 +65,7 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc[*btypes.Changeset] {
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
 func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) error {
-	// Reset the error message.
+	// Copy over and reset the previous error message.
 	ch.PreviousFailureMessage = ch.FailureMessage
 	ch.FailureMessage = nil
 
