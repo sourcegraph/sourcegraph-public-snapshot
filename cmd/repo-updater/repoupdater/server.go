@@ -422,7 +422,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
 	}
 
-	var namespaces []*types.ExternalServiceNamespace
+	namespaces := make([]*types.ExternalServiceNamespace, 0, len(result.Namespaces))
 	for _, ns := range result.Namespaces {
 		namespaces = append(namespaces, &types.ExternalServiceNamespace{
 			ID:         int(ns.GetId()),
@@ -515,7 +515,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
 	}
 
-	repos := make([]*types.ExternalServiceRepository, len(result.Repos))
+	repos := make([]*types.ExternalServiceRepository, 0, len(result.Repos))
 	for _, repo := range result.Repos {
 		repos = append(repos, &types.ExternalServiceRepository{
 			ID:         api.RepoID(repo.GetId()),
