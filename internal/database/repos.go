@@ -378,7 +378,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	res := make([]*types.SearchedRepo, 0, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
-		var kvps repoKVPs
+		var kvps RepoKVPs
 		if err := rows.Scan(
 			&r.ID,
 			&r.Name,
@@ -401,11 +401,11 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
 }
 
-type repoKVPs struct {
+type RepoKVPs struct {
 	kvps map[string]*string
 }
 
-func (r *repoKVPs) Scan(value any) error {
+func (r *RepoKVPs) Scan(value any) error {
 	switch b := value.(type) {
 	case []byte:
 		return json.Unmarshal(b, &r.kvps)
@@ -474,13 +474,107 @@ var repoColumns = []string{
 	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 }
 
-func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
-	var sources dbutil.NullJSONRawMessage
-	var metadata json.RawMessage
-	var blocked dbutil.NullJSONRawMessage
-	var kvps repoKVPs
+type RepoRowScanner = func(rows *sql.Rows, repo *types.Repo, metadata *json.RawMessage, blocked *dbutil.NullJSONRawMessage, kvps *RepoKVPs, sources *dbutil.NullJSONRawMessage) error
 
-	err = rows.Scan(
+func BuildRepoScanner(rowScanner RepoRowScanner) func(logger log.Logger, rows *sql.Rows, r *types.Repo) error {
+	return func(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
+		var sources dbutil.NullJSONRawMessage
+		var metadata json.RawMessage
+		var blocked dbutil.NullJSONRawMessage
+		var kvps RepoKVPs
+
+		err = rowScanner(rows, r, &metadata, &blocked, &kvps, &sources)
+		if err != nil {
+			return err
+		}
+
+		if blocked.Raw != nil {
+			r.Blocked = &types.RepoBlock{}
+			if err = json.Unmarshal(blocked.Raw, r.Blocked); err != nil {
+				return err
+			}
+		}
+
+		r.KeyValuePairs = kvps.kvps
+
+		type sourceInfo struct {
+			ID       int64
+			CloneURL string
+			Kind     string
+		}
+		r.Sources = make(map[string]*types.SourceInfo)
+
+		if sources.Raw != nil {
+			var srcs []sourceInfo
+			if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
+				return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+			}
+			for _, src := range srcs {
+				urn := extsvc.URN(src.Kind, src.ID)
+				r.Sources[urn] = &types.SourceInfo{
+					ID:       urn,
+					CloneURL: src.CloneURL,
+				}
+			}
+		}
+
+		typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+		if !ok {
+			logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
+			return nil
+		}
+		switch typ {
+		case extsvc.TypeGitHub:
+			r.Metadata = new(github.Repository)
+		case extsvc.TypeGitLab:
+			r.Metadata = new(gitlab.Project)
+		case extsvc.TypeAzureDevOps:
+			r.Metadata = new(azuredevops.Repository)
+		case extsvc.TypeGerrit:
+			r.Metadata = new(gerrit.Project)
+		case extsvc.TypeBitbucketServer:
+			r.Metadata = new(bitbucketserver.Repo)
+		case extsvc.TypeBitbucketCloud:
+			r.Metadata = new(bitbucketcloud.Repo)
+		case extsvc.TypeAWSCodeCommit:
+			r.Metadata = new(awscodecommit.Repository)
+		case extsvc.TypeGitolite:
+			r.Metadata = new(gitolite.Repo)
+		case extsvc.TypePerforce:
+			r.Metadata = new(perforce.Depot)
+		case extsvc.TypePhabricator:
+			r.Metadata = new(phabricator.Repo)
+		case extsvc.TypePagure:
+			r.Metadata = new(pagure.Project)
+		case extsvc.TypeOther:
+			r.Metadata = new(extsvc.OtherRepoMetadata)
+		case extsvc.TypeJVMPackages:
+			r.Metadata = new(reposource.MavenMetadata)
+		case extsvc.TypeNpmPackages:
+			r.Metadata = new(reposource.NpmMetadata)
+		case extsvc.TypeGoModules:
+			r.Metadata = &struct{}{}
+		case extsvc.TypePythonPackages:
+			r.Metadata = &struct{}{}
+		case extsvc.TypeRustPackages:
+			r.Metadata = &struct{}{}
+		case extsvc.TypeRubyPackages:
+			r.Metadata = &struct{}{}
+		default:
+			logger.Warn("unknown service type", log.String("type", typ))
+			return nil
+		}
+
+		if err = json.Unmarshal(metadata, r.Metadata); err != nil {
+			return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
+		}
+
+		return nil
+	}
+}
+
+var scanRepo = BuildRepoScanner(func(rows *sql.Rows, r *types.Repo, metadata *json.RawMessage, blocked *dbutil.NullJSONRawMessage, kvps *RepoKVPs, sources *dbutil.NullJSONRawMessage) error {
+	return rows.Scan(
 		&r.ID,
 		&r.Name,
 		&r.Private,
@@ -495,98 +589,12 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&r.CreatedAt,
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
-		&metadata,
-		&blocked,
-		&kvps,
-		&sources,
+		metadata,
+		blocked,
+		kvps,
+		sources,
 	)
-	if err != nil {
-		return err
-	}
-
-	if blocked.Raw != nil {
-		r.Blocked = &types.RepoBlock{}
-		if err = json.Unmarshal(blocked.Raw, r.Blocked); err != nil {
-			return err
-		}
-	}
-
-	r.KeyValuePairs = kvps.kvps
-
-	type sourceInfo struct {
-		ID       int64
-		CloneURL string
-		Kind     string
-	}
-	r.Sources = make(map[string]*types.SourceInfo)
-
-	if sources.Raw != nil {
-		var srcs []sourceInfo
-		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
-			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
-		}
-		for _, src := range srcs {
-			urn := extsvc.URN(src.Kind, src.ID)
-			r.Sources[urn] = &types.SourceInfo{
-				ID:       urn,
-				CloneURL: src.CloneURL,
-			}
-		}
-	}
-
-	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
-	if !ok {
-		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
-		return nil
-	}
-	switch typ {
-	case extsvc.TypeGitHub:
-		r.Metadata = new(github.Repository)
-	case extsvc.TypeGitLab:
-		r.Metadata = new(gitlab.Project)
-	case extsvc.TypeAzureDevOps:
-		r.Metadata = new(azuredevops.Repository)
-	case extsvc.TypeGerrit:
-		r.Metadata = new(gerrit.Project)
-	case extsvc.TypeBitbucketServer:
-		r.Metadata = new(bitbucketserver.Repo)
-	case extsvc.TypeBitbucketCloud:
-		r.Metadata = new(bitbucketcloud.Repo)
-	case extsvc.TypeAWSCodeCommit:
-		r.Metadata = new(awscodecommit.Repository)
-	case extsvc.TypeGitolite:
-		r.Metadata = new(gitolite.Repo)
-	case extsvc.TypePerforce:
-		r.Metadata = new(perforce.Depot)
-	case extsvc.TypePhabricator:
-		r.Metadata = new(phabricator.Repo)
-	case extsvc.TypePagure:
-		r.Metadata = new(pagure.Project)
-	case extsvc.TypeOther:
-		r.Metadata = new(extsvc.OtherRepoMetadata)
-	case extsvc.TypeJVMPackages:
-		r.Metadata = new(reposource.MavenMetadata)
-	case extsvc.TypeNpmPackages:
-		r.Metadata = new(reposource.NpmMetadata)
-	case extsvc.TypeGoModules:
-		r.Metadata = &struct{}{}
-	case extsvc.TypePythonPackages:
-		r.Metadata = &struct{}{}
-	case extsvc.TypeRustPackages:
-		r.Metadata = &struct{}{}
-	case extsvc.TypeRubyPackages:
-		r.Metadata = &struct{}{}
-	default:
-		logger.Warn("unknown service type", log.String("type", typ))
-		return nil
-	}
-
-	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
-		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
-	}
-
-	return nil
-}
+})
 
 // ReposListOptions specifies the options for listing repositories.
 //
