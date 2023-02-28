@@ -24,11 +24,10 @@ func TestDockerRunner_Setup(t *testing.T) {
 		expectedErr        error
 	}{
 		{
-			name:             "Setup",
-			dockerAuthConfig: types.DockerAuthConfig{},
+			name: "Setup default",
 		},
 		{
-			name: "Setup",
+			name: "Setup docker auth",
 			dockerAuthConfig: types.DockerAuthConfig{
 				Auths: map[string]types.DockerAuthConfigAuth{
 					"index.docker.io": {

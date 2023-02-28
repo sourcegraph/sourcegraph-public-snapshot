@@ -12,11 +12,12 @@ import (
 // code paths for local development (via shell + docker) as well as production
 // usage (via Firecracker).
 type Runner interface {
-	// TempDir returns the path to a temporary directory that can be used to.
-	TempDir() string
-
 	// Setup prepares the runner to invoke a series of commands.
 	Setup(ctx context.Context) error
+
+	// TempDir returns the path to a temporary directory that can be used to.
+	// Mostly used for unit testing.
+	TempDir() string
 
 	// Teardown disposes of any resources created in Setup.
 	Teardown(ctx context.Context) error
