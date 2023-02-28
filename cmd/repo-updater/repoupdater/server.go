@@ -442,19 +442,35 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 }
 
 func (s *Server) externalServiceNamespaces(ctx context.Context, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
+	var externalSvc *types.ExternalService
+	if req.ExternalServiceId != nil {
+		var err error
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   req.Kind,
+			Config: extsvc.NewUnencryptedConfig(req.Config),
+		}
+	}
+
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
 	genericSourcer := s.NewGenericSourcer(logger)
-	externalSvc := &types.ExternalService{
-		Kind:   req.Kind,
-		Config: extsvc.NewUnencryptedConfig(req.Config),
-	}
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
+		if errcode.IsUnauthorized(err) {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
@@ -528,12 +544,24 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
-	externalSvc := &types.ExternalService{
-		Kind:   req.Kind,
-		Config: extsvc.NewUnencryptedConfig(req.Config),
+	var externalSvc *types.ExternalService
+	if req.ExternalServiceId != nil {
+		var err error
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   req.Kind,
+			Config: extsvc.NewUnencryptedConfig(req.Config),
+		}
 	}
+
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
@@ -542,12 +570,15 @@ func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.Ext
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
+		if errcode.IsUnauthorized(err) {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
 	if !ok {
-		return nil, status.Error(codes.Unimplemented, err.Error())
+		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
 	results := make(chan repos.SourceResult)

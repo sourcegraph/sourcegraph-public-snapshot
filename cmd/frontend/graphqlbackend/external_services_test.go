@@ -1085,16 +1085,53 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		ID: 1, Name: organizationName, ExternalID: externalID,
 	}
 
-	query := func(kind string) string {
-		return fmt.Sprintf(
-			`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
-							nodes{
-								id
-								name
-								externalID
-							} } } `,
-			kind, "https://remote.com", "abc")
+	query := `query ExternalServiceNamespaces(
+								$id: ID,
+								$kind:ExternalServiceKind!,
+								$url:String!,
+								$token:String!)
+						{
+							externalServiceNamespaces(id: $id, kind: $kind, url: $url, token: $token) {
+								nodes{
+									id
+									name
+									externalID
+								} } }`
+
+	mockExternalServiceNamespaces := func(t *testing.T, ns []*types.ExternalServiceNamespace, err error) {
+		t.Helper()
+
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
+				Namespaces: ns,
+				Error:      errStr,
+			}
+			return &res, err
+		}
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 	}
+
+	githubExternalServiceConfig := `
+	{
+		"url": "https://github.com",
+		"token": "secret-token",
+		"repos": ["org/repo1", "owner/repo2"]
+	}`
+
+	githubExternalService := types.ExternalService{
+		ID:           1,
+		Kind:         extsvc.KindGitHub,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+	}
+
+	id := relay.MarshalID("ExternalServiceNamespace", namespace)
+	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
 		users := database.NewMockUserStore()
@@ -1103,20 +1140,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		id := relay.MarshalID("ExternalServiceNamespace", namespace)
-
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: []*types.ExternalServiceNamespace{&namespace},
-				Error:      "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
-
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  query(extsvc.KindGitHub),
+			Query:  query,
 			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
 				"nodes": [
 					{
@@ -1126,6 +1153,11 @@ func TestExternalServiceNamespaces(t *testing.T) {
 					}
 			]}}`, id, organizationName, externalID),
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+			},
 		})
 	})
 	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
@@ -1135,18 +1167,11 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: []*types.ExternalServiceNamespace{&namespace},
-				Error:      "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindGitHub),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
@@ -1156,6 +1181,11 @@ func TestExternalServiceNamespaces(t *testing.T) {
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+			},
 		})
 	})
 	t.Run("repoupdater returns an error", func(t *testing.T) {
@@ -1165,26 +1195,25 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: []*types.ExternalServiceNamespace{&namespace},
-				Error:      "",
-			}
-			return &res, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials")
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		expectedErr := "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindGitHub),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:    []any{"externalServiceNamespaces", "nodes"},
-					Message: "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials",
+					Message: expectedErr,
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindGitHub,
+				"url":   "remote.com",
+				"token": "mytoken",
+			},
 		})
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
@@ -1194,18 +1223,11 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: []*types.ExternalServiceNamespace{&namespace},
-				Error:      "",
-			}
-			return &res, nil
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
 
 		RunTest(t, &Test{
 			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          query(extsvc.KindBitbucketServer),
+			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
@@ -1214,6 +1236,100 @@ func TestExternalServiceNamespaces(t *testing.T) {
 				},
 			},
 			Context: ctx,
+			Variables: map[string]any{
+				"kind":  extsvc.KindBitbucketServer,
+				"url":   "remote.com",
+				"token": "mytoken",
+			},
+		})
+	})
+	t.Run("pass existing external service ID - as an admin with access to the external service", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		id := relay.MarshalID("ExternalServiceNamespace", namespace)
+
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  query,
+			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
+				"nodes": [
+					{
+						"id": "%s",
+						"name": "%s",
+						"externalID": "%s"
+					}
+			]}}`, id, organizationName, externalID),
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
+			},
+		})
+	})
+	t.Run("pass existing external service ID - external service not found", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		expectedErr := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceNamespaces", "nodes"},
+					Message: expectedErr,
+				},
+			},
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
+			},
+		})
+	})
+	t.Run("pass existing external service ID - unsupported extsvc kind returns error", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		expectedErr := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceNamespaces", "nodes"},
+					Message: expectedErr,
+				},
+			},
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
+			},
 		})
 	})
 }
@@ -1251,13 +1367,14 @@ func TestExternalServiceRepositories(t *testing.T) {
 	graphqlID2 := relay.MarshalID("ExternalServiceRepository", types.ExternalServiceRepository{ID: repo2.ID, Name: repo2.Name, ExternalID: repo2.ExternalRepo.ID})
 	queryFn := func(excludeReposStr string) string {
 		return fmt.Sprintf(`query ExternalServiceRepositories(
+								$id:ID,
 								$kind:ExternalServiceKind!,
 								$url:String!,
 								$token:String!,
 								$query:String!,
 								$first:Int)
 						{
-							externalServiceRepositories(kind: $kind, url: $url, token: $token, query: $query, first: $first, excludeRepos: %s) {
+							externalServiceRepositories(id: $id, kind: $kind, url: $url, token: $token, query: $query, first: $first, excludeRepos: %s) {
 								nodes{
 									id
 									name
@@ -1297,6 +1414,22 @@ func TestExternalServiceRepositories(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
 	}
+
+	githubExternalServiceConfig := `
+	{
+		"url": "https://github.com",
+		"token": "secret-token",
+		"repos": ["org/repo1", "owner/repo2"]
+	}`
+
+	githubExternalService := types.ExternalService{
+		ID:           1,
+		Kind:         extsvc.KindGitHub,
+		CloudDefault: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+	}
+
+	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
 		users := database.NewMockUserStore()
@@ -1462,6 +1595,96 @@ func TestExternalServiceRepositories(t *testing.T) {
 				"kind":  extsvc.KindBitbucketServer,
 				"url":   "remote.com",
 				"token": "mytoken",
+				"query": "",
+				"first": 2,
+			},
+		})
+	})
+	t.Run("pass external service id - as an admin with access to the external service", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  query,
+			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
+				"nodes": [
+					%s,
+					%s
+			]}}`, res1, res2),
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
+				"query": "",
+				"first": 2,
+			},
+		})
+	})
+	t.Run("pass external service id - external service not found", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		expectedError := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
+		mockExternalServiceRepos(t, nil, errors.New(expectedError))
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceRepositories", "nodes"},
+					Message: expectedError,
+				},
+			},
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
+				"query": "",
+				"first": 2,
+			},
+		})
+	})
+	t.Run("pass external service id - unsupported extsvc kind returns error", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		expectedError := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		mockExternalServiceRepos(t, nil, errors.New(expectedError))
+
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          query,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:    []any{"externalServiceRepositories", "nodes"},
+					Message: expectedError,
+				},
+			},
+			Context: ctx,
+			Variables: map[string]any{
+				"id":    string(externalServiceGraphqlID),
+				"kind":  extsvc.KindGitHub,
+				"url":   "",
+				"token": "",
 				"query": "",
 				"first": 2,
 			},

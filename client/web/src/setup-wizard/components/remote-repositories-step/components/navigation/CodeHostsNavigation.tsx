@@ -1,6 +1,6 @@
 import { FC, ReactElement } from 'react'
 
-import { useQuery } from '@apollo/client'
+import { QueryResult } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -8,11 +8,11 @@ import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@source
 
 import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
-import { GET_CODE_HOSTS } from '../../queries'
 
 import styles from './CodeHostsNavigation.module.scss'
 
 interface CodeHostsNavigationProps {
+    codeHostQueryResult: QueryResult<GetCodeHostsResult>
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
     className?: string
@@ -20,11 +20,8 @@ interface CodeHostsNavigationProps {
 }
 
 export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
-    const { activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
-
-    const { data, loading, error, refetch } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
-        fetchPolicy: 'cache-and-network',
-    })
+    const { codeHostQueryResult, activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
+    const { data, loading, error, refetch } = codeHostQueryResult
 
     if (error && !loading) {
         return (

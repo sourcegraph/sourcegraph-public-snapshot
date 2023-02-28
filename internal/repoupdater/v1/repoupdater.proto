@@ -182,8 +182,9 @@ message SyncExternalServiceRequest {
 message SyncExternalServiceResponse {}
 
 message ExternalServiceNamespacesRequest {
-  string kind = 1;
-  string config = 2;
+  optional int64 external_service_id = 1;
+  string kind = 2;
+  string config = 3;
 }
 
 message ExternalServiceNamespacesResponse {
@@ -198,11 +199,12 @@ message ExternalServiceNamespace {
 }
 
 message ExternalServiceRepositoriesRequest {
-  string kind = 1;
-  string query = 2;
-  string config = 3;
-  int32 first = 4;
-  repeated string exclude_repos = 5;
+    optional int64 external_service_id = 1;
+  string kind = 2;
+  string query = 3;
+  string config = 4;
+  int32 first = 5;
+  repeated string exclude_repos = 6;
 }
 
 message ExternalServiceRepositoriesResponse {
