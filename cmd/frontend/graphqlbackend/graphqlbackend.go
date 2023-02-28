@@ -21,7 +21,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	opentrancingLog "github.com/opentracing/opentracing-go/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -50,7 +49,6 @@ var (
 
 type requestTracer struct {
 	DB     database.DB
-	tracer oteltrace.Tracer
 	logger log.Logger
 }
 
