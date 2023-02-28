@@ -3,6 +3,7 @@ package codeowners
 import (
 	"bufio"
 	"io"
+	"net/mail"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -39,15 +40,8 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 			LineNumber:  lineNumber,
 		}
 		for _, ownerText := range owners {
-			var o codeownerspb.Owner
-			if strings.HasPrefix(ownerText, "@") {
-				o.Handle = strings.TrimPrefix(ownerText, "@")
-			} else {
-				// Note: we assume owner text is an email if it does not
-				// start with an `@` which would make it a handle.
-				o.Email = ownerText
-			}
-			r.Owner = append(r.Owner, &o)
+			o := ParseOwner(ownerText)
+			r.Owner = append(r.Owner, o)
 		}
 		rs = append(rs, &r)
 	}
@@ -55,6 +49,18 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 		return nil, err
 	}
 	return &codeownerspb.File{Rule: rs}, nil
+}
+
+func ParseOwner(ownerText string) *codeownerspb.Owner {
+	var o codeownerspb.Owner
+	if strings.HasPrefix(ownerText, "@") {
+		o.Handle = strings.TrimPrefix(ownerText, "@")
+	} else if a, err := mail.ParseAddress(ownerText); err == nil {
+		o.Email = a.Address
+	} else {
+		o.Handle = ownerText
+	}
+	return &o
 }
 
 // parsing implements matching and parsing primitives for CODEOWNERS files

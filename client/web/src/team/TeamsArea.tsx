@@ -1,13 +1,13 @@
 import * as React from 'react'
 
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { RouteError } from '../components/ErrorBoundary'
 import { NotFoundPage } from '../components/HeroPage'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
@@ -32,23 +32,20 @@ export interface Props {
  */
 const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [enableTeams] = useFeatureFlag('search-ownership')
-    const location = useLocation()
 
     // No teams on sourcegraph.com
     if (!enableTeams || props.isSourcegraphDotCom) {
         return <NotFoundPage pageType="team" />
     }
     return (
-        <ErrorBoundary location={location}>
-            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                <Routes>
-                    <Route path="new" element={<NewTeamPage />} />
-                    <Route path="" element={<TeamListPage {...props} />} />
-                    <Route path=":teamName/*" element={<TeamArea {...props} />} />
-                    <Route element={<NotFoundPage pageType="team" />} />
-                </Routes>
-            </React.Suspense>
-        </ErrorBoundary>
+        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+            <Routes>
+                <Route path="new" element={<NewTeamPage />} errorElement={<RouteError />} />
+                <Route path="" element={<TeamListPage {...props} />} errorElement={<RouteError />} />
+                <Route path=":teamName/*" element={<TeamArea {...props} />} errorElement={<RouteError />} />
+                <Route element={<NotFoundPage pageType="team" />} errorElement={<RouteError />} />
+            </Routes>
+        </React.Suspense>
     )
 }
 

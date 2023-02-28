@@ -14,23 +14,44 @@ import (
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 
-// AuthzQueryConds returns a query clause for enforcing repository permissions.
-// It uses `repo` as the table name to filter out repository IDs and should be
-// used as an AND condition in a complete SQL query.
-func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+type BypassAuthzReason = string
+
+const (
+	BypassAuthzReasonSiteAdmin       BypassAuthzReason = "Site Admin"
+	BypassAuthzReasonIsInternal      BypassAuthzReason = "Internal Request"
+	BypassAuthzReasonNoAuthzProvider BypassAuthzReason = "No Authz Provider Configured"
+)
+
+type AuthzQueryParameters struct {
+	BypassAuthz               bool
+	BypassAuthzReason         BypassAuthzReason
+	UsePermissionsUserMapping bool
+	AuthenticatedUserID       int32
+}
+
+func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
+	return authzQuery(
+		p.BypassAuthz,
+		p.UsePermissionsUserMapping,
+		p.AuthenticatedUserID,
+		authz.Read, // Note: We currently only support read for repository permissions.
+	)
+}
+
+func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryParameters, err error) {
+	params = &AuthzQueryParameters{}
 	authzAllowByDefault, authzProviders := authz.GetProviders()
-	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
+	params.UsePermissionsUserMapping = globals.PermissionsUserMapping().Enabled
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
 	// provider(s) and permissions user mapping are configured.
-	if usePermissionsUserMapping {
+	if params.UsePermissionsUserMapping {
 		if len(authzProviders) > 0 {
 			return nil, errPermissionsUserMappingConflict
 		}
 		authzAllowByDefault = false
 	}
 
-	authenticatedUserID := int32(0)
 	a := actor.FromContext(ctx)
 
 	// Authz is bypassed when the request is coming from an internal actor or
@@ -40,22 +61,38 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	//
 	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
 	// so correctness is important here.
-	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
-	if !bypassAuthz && a.IsAuthenticated() {
+	if a.IsInternal() {
+		params.BypassAuthz = true
+		params.BypassAuthzReason = BypassAuthzReasonIsInternal
+	} else if authzAllowByDefault && len(authzProviders) == 0 {
+		params.BypassAuthz = true
+		params.BypassAuthzReason = BypassAuthzReasonNoAuthzProvider
+	} else if a.IsAuthenticated() {
 		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
-		authenticatedUserID = currentUser.ID
-		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
+		params.AuthenticatedUserID = currentUser.ID
+		params.BypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
+
+		if params.BypassAuthz {
+			params.BypassAuthzReason = BypassAuthzReasonSiteAdmin
+		}
 	}
 
-	q := authzQuery(bypassAuthz,
-		usePermissionsUserMapping,
-		authenticatedUserID,
-		authz.Read, // Note: We currently only support read for repository permissions.
-	)
-	return q, nil
+	return params, err
+}
+
+// AuthzQueryConds returns a query clause for enforcing repository permissions.
+// It uses `repo` as the table name to filter out repository IDs and should be
+// used as an AND condition in a complete SQL query.
+func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+	params, err := GetAuthzQueryParameters(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return params.ToAuthzQuery(), nil
 }
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
@@ -70,9 +107,25 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 `)
 	}
 
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
+
+	unrestrictedReposUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		format := `
+		EXISTS (
+			SELECT
+			FROM user_repo_permissions
+			WHERE repo_id = repo.id AND user_id IS NULL
+		)
+		OR
+		`
+		unrestrictedReposUnifiedSQL = sqlf.Sprintf(format)
+	}
+
 	const unrestrictedReposSQL = `
 (
 	-- Unrestricted repos are visible to all users
+	%s
 	EXISTS (
 		SELECT
 		FROM repo_permissions
@@ -81,7 +134,7 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
-	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
+	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL, unrestrictedReposUnifiedSQL)
 	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
@@ -105,17 +158,33 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
+	restrictedRepositoriesUnifiedSQL := sqlf.Sprintf("")
+	if unifiedPermsEnabled {
+		const format = `
+		EXISTS (
+			SELECT repo_id FROM user_repo_permissions
+			WHERE
+				repo_id = repo.id
+			AND user_id = %s
+		) OR `
+		restrictedRepositoriesUnifiedSQL = sqlf.Sprintf(format, authenticatedUserID)
+	}
+
 	const restrictedRepositoriesSQL = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
+(
+	-- Restricted repositories require checking permissions
+	%s
+    (
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	)
 )
 `
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, restrictedRepositoriesUnifiedSQL, authenticatedUserID, perms.String())
 
 	conditions = append(conditions, restrictedRepositoriesQuery)
 

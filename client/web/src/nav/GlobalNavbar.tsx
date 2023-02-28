@@ -24,7 +24,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
+import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -170,7 +170,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [showSearchContext])
 
-    const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
+    const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
     const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()

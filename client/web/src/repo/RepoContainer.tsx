@@ -31,7 +31,7 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
@@ -382,50 +382,51 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 </RepoHeaderContributionPortal>
             )}
 
-            <ErrorBoundary location={location}>
-                <Suspense fallback={null}>
-                    <Routes>
-                        {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
-                            <Route
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={repoSplat + path}
-                                element={
-                                    /**
-                                     * `repoContainerRoutes` depend on `repo`. We render these routes only when
-                                     * the `repo` value is resolved. If repo resolves to error due to empty repository
-                                     * then we return Empty Repository.
-                                     */
-                                    repo && condition({ ...repoContainerContext, repo }) ? (
-                                        render({ ...repoContainerContext, repo })
-                                    ) : isEmptyRepo ? (
-                                        <EmptyRepo />
-                                    ) : null
-                                }
-                            />
-                        ))}
-                        <Route
-                            path={repoSplat + repoSettingsAreaPath}
-                            // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
-                            element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
-                        />
+            <Suspense fallback={null}>
+                <Routes>
+                    {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
                         <Route
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            path="*"
+                            path={repoSplat + path}
+                            errorElement={<RouteError />}
                             element={
-                                isEmptyRepo ? (
+                                /**
+                                 * `repoContainerRoutes` depend on `repo`. We render these routes only when
+                                 * the `repo` value is resolved. If repo resolves to error due to empty repository
+                                 * then we return Empty Repository.
+                                 */
+                                repo && condition({ ...repoContainerContext, repo }) ? (
+                                    render({ ...repoContainerContext, repo })
+                                ) : isEmptyRepo ? (
                                     <EmptyRepo />
-                                ) : (
-                                    <RepoRevisionContainer
-                                        {...repoRevisionContainerContext}
-                                        {...childBreadcrumbSetters}
-                                        routes={props.repoRevisionContainerRoutes}
-                                    />
-                                )
+                                ) : null
                             }
                         />
-                    </Routes>
-                </Suspense>
-            </ErrorBoundary>
+                    ))}
+                    <Route
+                        path={repoSplat + repoSettingsAreaPath}
+                        errorElement={<RouteError />}
+                        // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
+                        element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
+                    />
+                    <Route
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                        path="*"
+                        errorElement={<RouteError />}
+                        element={
+                            isEmptyRepo ? (
+                                <EmptyRepo />
+                            ) : (
+                                <RepoRevisionContainer
+                                    {...repoRevisionContainerContext}
+                                    {...childBreadcrumbSetters}
+                                    routes={props.repoRevisionContainerRoutes}
+                                />
+                            )
+                        }
+                    />
+                </Routes>
+            </Suspense>
         </div>
     )
 }

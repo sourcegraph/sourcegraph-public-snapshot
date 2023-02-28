@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/check-indentation */
-import { useEffect, useMemo, useState } from 'react'
+import React, { forwardRef, MutableRefObject, RefObject, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
@@ -30,72 +30,83 @@ if (process.env.INTEGRATION_TESTS) {
  * Hook for rendering and updating a CodeMirror instance.
  */
 export function useCodeMirror(
-    container: HTMLDivElement | null,
+    editorRef: MutableRefObject<EditorView | null>,
+    containerRef: RefObject<HTMLDivElement | null>,
     value: string,
-    extensions?: EditorStateConfig['extensions'],
-    options?: {
-        /**
-         * When 'value' changes, trigger a transaction to update it. This is `true` by default.
-         * However, if other parts of the editor state should be changed when the value changes,
-         * you can set this to `false` and use the `replaceValue` function to update the value
-         * in a custom transaction.
-         */
-        updateValueOnChange?: boolean
-
-        /**
-         * When 'extension' changes, trigger a transaction to update it. This is `true` by default.
-         * Set this to  `false` to have more control over how to update the editor. This is
-         * useful for example when the caller wants to update the editor with `setState`.
-         */
-        updateOnExtensionChange?: boolean
-    }
-): EditorView | undefined {
-    const [view, setView] = useState<EditorView>()
-
-    useEffect(() => {
-        if (!container) {
-            return
-        }
-
-        const view = new EditorView({
-            state: EditorState.create({ doc: value, extensions }),
-            parent: container,
-        })
-        setView(view)
-        return () => {
-            setView(undefined)
-            view.destroy()
-        }
-        // Extensions and value are updated via transactions below
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [container])
-
+    extensions?: EditorStateConfig['extensions']
+): void {
     // Update editor value if necessary. This also sets the intial value of the
     // editor.
     useEffect(() => {
-        if (view && options?.updateValueOnChange !== false) {
-            const changes = replaceValue(view, value ?? '')
+        if (editorRef.current) {
+            const changes = replaceValue(editorRef.current, value ?? '')
 
             if (changes) {
-                view.dispatch({ changes })
+                editorRef.current.dispatch({ changes })
             }
         }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value, options?.updateValueOnChange])
+    }, [editorRef, value])
 
     useEffect(() => {
-        if (view && extensions && options?.updateOnExtensionChange !== false) {
-            view.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
+        if (editorRef.current && extensions) {
+            editorRef.current.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
         }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [extensions, options?.updateOnExtensionChange])
+    }, [editorRef, extensions])
 
-    return view
+    // Create editor if necessary
+    useEffect(() => {
+        if (!editorRef.current && containerRef.current) {
+            editorRef.current = new EditorView({
+                state: EditorState.create({ doc: value, extensions }),
+                parent: containerRef.current,
+            })
+        }
+    }, [editorRef, containerRef, value, extensions])
+
+    // Clean up editor on unmount
+    useEffect(
+        () => () => {
+            editorRef.current?.destroy()
+            editorRef.current = null
+        },
+        [editorRef]
+    )
 }
+
+export interface Editor {
+    focus(): void
+}
+
+/**
+ * Simple React component around useCodeMirror. Use this if you have a simple setup and/or need
+ * to render an editor conditionally.
+ */
+export const CodeMirrorEditor = React.memo(
+    forwardRef<Editor, { value: string; extensions?: Extension }>(({ value, extensions }, ref) => {
+        const containerRef = useRef<HTMLDivElement | null>(null)
+        const editorRef = useRef<EditorView | null>(null)
+        useCodeMirror(editorRef, containerRef, value, extensions)
+
+        useImperativeHandle(
+            ref,
+            () => ({
+                focus() {
+                    const editor = editorRef.current
+                    if (editor && !editor.hasFocus) {
+                        editor.focus()
+                        editor.dispatch({
+                            selection: { anchor: editor.state.doc.length },
+                            scrollIntoView: true,
+                        })
+                    }
+                },
+            }),
+            []
+        )
+
+        return <div ref={containerRef} />
+    })
+)
 
 /**
  * Create a {@link ChangeSpec} for replacing the current editor value. Returns `undefined` if the

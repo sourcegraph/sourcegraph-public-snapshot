@@ -34,7 +34,7 @@ import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } fro
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { ComponentsComposer } from './components/ComponentsComposer'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import { Layout } from './Layout'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
@@ -44,7 +44,7 @@ import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -210,7 +210,6 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
         subscriptions.add(
             combineLatest([from(platformContext.settings), authenticatedUserSubject]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
-                    setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
@@ -276,6 +275,7 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             createBrowserRouter([
                 {
                     element: <LegacyRoute render={props => <Layout {...props} />} />,
+                    errorElement: <RouteError />,
                     children: props.routes.filter(isTruthy),
                 },
             ]),
