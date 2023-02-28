@@ -10,9 +10,9 @@ A Gerrit instance can be connected to Sourcegraph as follows:
 ## Configure Gerrit as a code host connection
 
 1. In the **Site Admin** settings area, select **Manage code hosts** from the options on the left and select the **Add code host** option.
-![The Manage code hosts section in the Site Admin settings area.](./manage_code_hosts.png)
+![The Manage code hosts section in the Site Admin settings area.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-manage-code-hosts.png)
 2. On the following screen, select **Gerrit** as the code host of choice.
-![Gerrit as a code host option in the list](./select_gerrit.png)
+![Gerrit as a code host option in the list](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-select.png)
 3. Next you will have to provide a configuration for the Gerrit code host connection. Here is an example configuration:
 ```json
 {
@@ -30,7 +30,7 @@ A Gerrit instance can be connected to Sourcegraph as follows:
 5. Select **Add Repositories** to create the connection and Sourcegraph will start mirroring the specified projects.
 
 If you added the `"authorization": {}` option to the configuration, and this is the first Gerrit code host connection you have created for this Gerrit instance, you might see a warning like this:
-![Warning indicating that an authentication provider is required for a code host connection](./auth_warning.png)
+![Warning indicating that an authentication provider is required for a code host connection](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-auth-warning.png)
 
 Simply follow the steps in the next section to configure a Gerrit authentication provider.
 
@@ -40,7 +40,7 @@ If the `"authorization": {}` option has been set on a Gerrit code host connectio
 
 1. In the **Site Admin** settings area, select **Site configuration** from the options on the left.
 2. Add a Gerrit configuration to the list of `"auth.providers"`.
-![Add a Gerrit configuration to the list of configured authentication providers](./gerrit_auth.png)
+![Add a Gerrit configuration to the list of configured authentication providers](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-auth.png)
 3. Here is an example configuration:
 ```json
 {
@@ -59,7 +59,7 @@ With an active Gerrit code host connection with the `"authorization": {}` option
 As a user:
 
 1. Visit your user settings page and select **Account security** from the options on the left.
-![A user's Account security page](./account_security.png)
+![A user's Account security page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-account-security.png)
 1. Gerrit should appear in the list of accounts you are able to connect. If it does not appear, try refreshing the page.
 1. Select the **Add** option next to Gerrit.
 1. Provide your Gerrit username and HTTP password. If you are unsure of how to generate an HTTP password, see [the Gerrit HTTP documentation](https://gerrit-documentation.storage.googleapis.com/Documentation/2.14.2/user-upload.html#http).
