@@ -4972,6 +4972,8 @@ CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_r
 
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository);
 
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository, id) INCLUDE (document_path) WHERE (NOT processed);
+
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
