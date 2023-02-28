@@ -262,6 +262,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
 
+	// We only want to run this task once Sourcegraph is ready to serve user requests.
+	goroutine.Go(func() { bg.AppReady(logger) })
+
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
