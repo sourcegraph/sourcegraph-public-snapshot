@@ -418,15 +418,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 
 	result, err := s.externalServiceNamespaces(r.Context(), &protoReq)
 	if err != nil {
-		httpCode := http.StatusInternalServerError
-		switch status.Code(err) {
-		case codes.InvalidArgument:
-			httpCode = http.StatusBadRequest
-		case codes.Unavailable:
-			httpCode = http.StatusServiceUnavailable
-		case codes.Unimplemented:
-			httpCode = http.StatusNotImplemented
-		}
+		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
 	}
 
@@ -519,15 +511,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	}
 	result, err := s.externalServiceRepositories(r.Context(), &protoReq)
 	if err != nil {
-		httpCode := http.StatusInternalServerError
-		switch status.Code(err) {
-		case codes.InvalidArgument:
-			httpCode = http.StatusBadRequest
-		case codes.Unavailable:
-			httpCode = http.StatusServiceUnavailable
-		case codes.Unimplemented:
-			httpCode = http.StatusNotImplemented
-		}
+		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
 	}
 
@@ -609,6 +593,25 @@ func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.Ext
 	}
 
 	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
+}
+
+func codeToStatus(code codes.Code) int {
+	switch code {
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.Internal:
+		return http.StatusInternalServerError
+	case codes.InvalidArgument:
+		return http.StatusBadRequest
+	case codes.PermissionDenied:
+		return http.StatusUnauthorized
+	case codes.Unavailable:
+		return http.StatusServiceUnavailable
+	case codes.Unimplemented:
+		return http.StatusNotImplemented
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 var mockNewGenericSourcer func() repos.Sourcer
