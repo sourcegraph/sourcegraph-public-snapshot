@@ -354,6 +354,9 @@ SELECT
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
 `
 
+// TODO - configure via envvar
+const vacuumBatchSize = 1000
+
 func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
 	numStaleDefinitionRecordsDeleted int,
 	numStaleReferenceRecordsDeleted int,
@@ -362,7 +365,7 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, vacuumBatchSize, graphKey, vacuumBatchSize))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -382,32 +385,45 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 
 const vacuumStaleDefinitionsAndReferencesQuery = `
 WITH
-locked_definitions AS (
-	SELECT id
-	FROM codeintel_ranking_definitions
-	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
+visible_uploads AS (
+	SELECT uvt.upload_id
+	FROM lsif_uploads_visible_at_tip uvt
+	WHERE uvt.is_default_branch
 ),
-locked_references AS (
-	SELECT id
-	FROM codeintel_ranking_references
-	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
+locked_definitions AS (
+	SELECT rd.id, rd.upload_id
+	FROM codeintel_ranking_definitions rd
+	WHERE rd.graph_key = %s
+	ORDER BY rd.last_scanned_at ASC NULLS LAST
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+updated_definitions AS (
+	UPDATE codeintel_ranking_definitions
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE ld.upload_id IN (SELECT vu.upload_id FROM visible_uploads vu))
 ),
 deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
-	WHERE id IN (SELECT id FROM locked_definitions)
+	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE ld.upload_id NOT IN (SELECT vu.upload_id FROM visible_uploads vu))
 	RETURNING 1
+),
+locked_references AS (
+	SELECT rr.id, rr.upload_id
+	FROM codeintel_ranking_references rr
+	WHERE rr.graph_key = %s
+	ORDER BY rr.last_scanned_at ASC NULLS LAST
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+updated_references AS (
+	UPDATE codeintel_ranking_references
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE lr.upload_id IN (SELECT vu.upload_id FROM visible_uploads vu))
 ),
 deleted_references AS (
 	DELETE FROM codeintel_ranking_references
-	WHERE id IN (SELECT id FROM locked_references)
+	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE lr.upload_id NOT IN (SELECT vu.upload_id FROM visible_uploads vu))
 	RETURNING 1
 )
 SELECT
