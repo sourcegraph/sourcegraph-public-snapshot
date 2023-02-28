@@ -199,7 +199,7 @@ message ExternalServiceNamespace {
 }
 
 message ExternalServiceRepositoriesRequest {
-    optional int64 external_service_id = 1;
+  optional int64 external_service_id = 1;
   string kind = 2;
   string query = 3;
   string config = 4;
