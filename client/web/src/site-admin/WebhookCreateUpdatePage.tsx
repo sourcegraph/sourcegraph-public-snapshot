@@ -1,16 +1,16 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, {FC, useCallback, useMemo, useState} from 'react'
 
 import classNames from 'classnames'
-import { parse as parseJSONC } from 'jsonc-parser'
-import { noop } from 'lodash'
-import { useNavigate } from 'react-router-dom'
+import {parse as parseJSONC} from 'jsonc-parser'
+import {noop} from 'lodash'
+import {useNavigate} from 'react-router-dom'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import {useMutation, useQuery} from '@sourcegraph/http-client'
+import {Alert, Button, ButtonLink, ErrorAlert, Form, H2, Input, Select} from '@sourcegraph/wildcard'
 
-import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
-import { defaultExternalServices } from '../components/externalServices/externalServices'
-import { ConnectionLoading } from '../components/FilteredConnection/ui'
+import {EXTERNAL_SERVICES} from '../components/externalServices/backend'
+import {defaultExternalServices} from '../components/externalServices/externalServices'
+import {ConnectionLoading} from '../components/FilteredConnection/ui'
 import {
     CreateWebhookResult,
     CreateWebhookVariables,
@@ -21,9 +21,9 @@ import {
     UpdateWebhookVariables,
     WebhookFields,
 } from '../graphql-operations'
-import { generateSecret } from '../util/security'
+import {generateSecret} from '../util/security'
 
-import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
+import {CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY} from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
 
@@ -214,8 +214,8 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     className={classNames(styles.first, 'flex-1 mb-0')}
                                     message={
                                         webhook.codeHostKind &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ? (
-                                            <small>Bitbucket Cloud doesn't support secrets.</small>
+                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ||  webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS ? (
+                                            <small>Code Host doesn't support secrets.</small>
                                         ) : (
                                             <small>Randomly generated. Alter as required.</small>
                                         )
@@ -223,7 +223,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     label={<span className="small">Secret</span>}
                                     disabled={
                                         webhook.codeHostKind !== null &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                        (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ||  webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
                                     }
                                     pattern="^[a-zA-Z0-9]+$"
                                     onChange={event => {
@@ -298,6 +298,8 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
             return true
         case ExternalServiceKind.GITLAB:
             return true
+        case ExternalServiceKind.AZUREDEVOPS:
+            return true
         default:
             return false
     }
@@ -305,7 +307,7 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
 
 function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+        webhook.codeHostKind !== null && (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD || webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
             ? null
             : webhook.secret
 
@@ -321,7 +323,7 @@ function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebho
 
 function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+        webhook.codeHostKind !== null && (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD || webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
             ? null
             : webhook.secret
     return {

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -94,7 +93,7 @@ func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 	switch codeHostKind {
 	case extsvc.KindGitHub, extsvc.KindGitLab, extsvc.KindBitbucketServer:
 		return nil
-	case extsvc.KindBitbucketCloud:
+	case extsvc.KindBitbucketCloud, extsvc.KindAzureDevOps:
 		if secret != nil {
 			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
 		}

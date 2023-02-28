@@ -139,6 +139,9 @@ func handler(logger log.Logger, db database.DB, wh *Router) http.HandlerFunc {
 			// Bitbucket Cloud does not support secrets for webhooks
 			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
 			return
+		case extsvc.KindAzureDevOps:
+			wh.HandleAzureDevOpsWebhook(logger, w, r, webhook.CodeHostURN)
+			return
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
@@ -151,6 +154,7 @@ func (wr *Router) Dispatch(ctx context.Context, eventType string, codeHostKind s
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
 
+	fmt.Printf("HANDLERS: %+v\n", wr.handlers)
 	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
 		wr.Logger.Warn("No handler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
 		return nil
