@@ -202,7 +202,7 @@ message ExternalServiceRepositoriesRequest {
   string query = 2;
   string config = 3;
   int32 first = 4;
-  repeated string excluded_repos = 5;
+  repeated string exclude_repos = 5;
 }
 
 message ExternalServiceRepositoriesResponse {

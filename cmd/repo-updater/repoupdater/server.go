@@ -488,44 +488,66 @@ func (s *Server) externalServiceNamespaces(ctx context.Context, req *proto.Exter
 }
 
 func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
 	var req protocol.ExternalServiceRepositoriesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	protoReq := proto.ExternalServiceRepositoriesRequest{
+		Kind:         req.Kind,
+		Query:        req.Query,
+		Config:       req.Config,
+		First:        req.First,
+		ExcludeRepos: req.ExcludeRepos,
+	}
+	result, err := s.externalServiceRepositories(r.Context(), &protoReq)
+	if err != nil {
+		httpCode := http.StatusInternalServerError
+		switch status.Code(err) {
+		case codes.InvalidArgument:
+			httpCode = http.StatusBadRequest
+		case codes.Unavailable:
+			httpCode = http.StatusServiceUnavailable
+		case codes.Unimplemented:
+			httpCode = http.StatusNotImplemented
+		}
+		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
+	}
+
+	repos := make([]*types.ExternalServiceRepository, len(result.Repos))
+	for _, repo := range result.Repos {
+		repos = append(repos, &types.ExternalServiceRepository{
+			ID:         api.RepoID(repo.GetId()),
+			Name:       api.RepoName(repo.GetName()),
+			ExternalID: repo.GetExternalId(),
+		})
+	}
+
+	s.respond(w, http.StatusOK, &protocol.ExternalServiceRepositoriesResult{Repos: repos})
+}
+
+func (s *Server) externalServiceRepositories(ctx context.Context, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
+
 	externalSvc := &types.ExternalService{
 		Kind:   req.Kind,
 		Config: extsvc.NewUnencryptedConfig(req.Config),
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
-	var result *protocol.ExternalServiceRepositoriesResult
-
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
-		logger.Error("server.query-external-service-repositories", log.Error(err))
-		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
-		s.respond(w, http.StatusBadRequest, result)
-		return
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
-		s.respond(w, http.StatusServiceUnavailable, result)
-		return
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
 	if !ok {
-		result = &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource}
-		s.respond(w, http.StatusNotImplemented, result)
-		return
+		return nil, status.Error(codes.Unimplemented, err.Error())
 	}
 
 	results := make(chan repos.SourceResult)
@@ -536,27 +558,26 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	}
 
 	go func() {
-		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.ExcludeRepos, results)
+		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.GetExcludeRepos(), results)
 		close(results)
 	}()
 
 	var sourceErrs error
-	repositories := make([]*types.ExternalServiceRepository, 0)
+	repositories := make([]*proto.ExternalServiceRepository, 0)
 
 	for res := range results {
 		if res.Err != nil {
 			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
-		repositories = append(repositories, res.Repo.ToExternalServiceRepository())
+		repositories = append(repositories, &proto.ExternalServiceRepository{
+			Id:         int32(res.Repo.ID),
+			Name:       string(res.Repo.Name),
+			ExternalId: res.Repo.ExternalRepo.ID,
+		})
 	}
 
-	if sourceErrs != nil {
-		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories, Error: sourceErrs.Error()}
-	} else {
-		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories}
-	}
-	s.respond(w, http.StatusOK, result)
+	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
 }
 
 var mockNewGenericSourcer func() repos.Sourcer
