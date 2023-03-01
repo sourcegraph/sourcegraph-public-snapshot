@@ -66,6 +66,7 @@ func NewContextDetectionEmbeddingJobWorkerStore(observationCtx *observation.Cont
 		OrderByExpression: sqlf.Sprintf("context_detection_embedding_jobs.queued_at, context_detection_embedding_jobs.id"),
 		StalledMaxAge:     time.Second * 5,
 		MaxNumResets:      5,
+		MaxNumRetries:     1,
 	})
 }
 
