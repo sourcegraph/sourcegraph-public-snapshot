@@ -490,9 +490,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		mockServerURL = mockServer.URL
 
-		wantPermissions := &authz.ExternalUserPermissions{
-			// This order is important. We fetch all the orgs first. And then all the projects.
-			Exacts: []extsvc.RepoID{"1", "3", "2", "4"},
+		// In the provider initialisation code, we put stuff in a map to deduplicate orgs /
+		// projects, before putting them back into a slice. As a result the ordering is no longer
+		// guaranteed.
+		//
+		// So we need to put the expected permissions in a map to be able to cmp.Diff against it.
+		wantPermissions := map[extsvc.RepoID]struct{}{
+			"1": struct{}{},
+			"2": struct{}{},
+			"3": struct{}{},
+			"4": struct{}{},
 		}
 
 		permissions, err := p.FetchUserPerms(
@@ -509,7 +516,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatalf("External list reops API should have been called only 4 times, but got called %d times", serverInvokedCount)
 		}
 
-		if diff := cmp.Diff(wantPermissions, permissions); diff != "" {
+		gotPermissions := map[extsvc.RepoID]struct{}{}
+		for _, id := range permissions.Exacts {
+			gotPermissions[id] = struct{}{}
+		}
+
+		if diff := cmp.Diff(wantPermissions, gotPermissions); diff != "" {
 			t.Errorf("Mismatched perms, (-want, +got)\n%s", diff)
 		}
 	})

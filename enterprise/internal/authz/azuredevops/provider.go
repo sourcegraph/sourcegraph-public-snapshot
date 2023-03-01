@@ -56,11 +56,11 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	// Nothing fancy, just some data restructuring to convert the map back to a slice now that we
 	// have a unique list of orgs and projects.
 	uniqueOrgs, uniqueProjects := []string{}, []string{}
-	for name, _ := range orgs {
+	for name := range orgs {
 		uniqueOrgs = append(uniqueOrgs, name)
 	}
 
-	for name, _ := range projects {
+	for name := range projects {
 		uniqueProjects = append(uniqueProjects, name)
 	}
 
