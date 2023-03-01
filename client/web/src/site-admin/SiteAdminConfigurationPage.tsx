@@ -483,7 +483,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
         this.setState({
             enabledCompletions:
-                !Boolean(oldConfiguration?.completions?.enabled) && Boolean(newConfiguration?.completions?.enabled),
+                !oldConfiguration?.completions?.enabled && Boolean(newConfiguration?.completions?.enabled),
         })
 
         if (restartToApply) {
