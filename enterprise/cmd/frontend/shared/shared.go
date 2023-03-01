@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
@@ -56,6 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
 	"repos.webhooks": webhooks.Init,
+	"embeddings":     embeddings.Init,
 	"rbac":           rbac.Init,
 	"own":            own.Init,
 }

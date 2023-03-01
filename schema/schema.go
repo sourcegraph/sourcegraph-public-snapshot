@@ -575,6 +575,20 @@ type EmailTemplates struct {
 	SetPassword *EmailTemplate `json:"setPassword,omitempty"`
 }
 
+// Embeddings description: Configuration for embeddings service.
+type Embeddings struct {
+	// AccessToken description: The access token used to authenticate with the external embedding API service.
+	AccessToken string `json:"accessToken"`
+	// Dimensions description: The dimensionality of the embedding vectors.
+	Dimensions int `json:"dimensions"`
+	// Enabled description: Toggles whether embedding service is enabled.
+	Enabled bool `json:"enabled"`
+	// Model description: The model used for embedding.
+	Model string `json:"model"`
+	// Url description: The url to the external embedding API service.
+	Url string `json:"url"`
+}
+
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
@@ -2368,6 +2382,8 @@ type SiteConfiguration struct {
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
 	EmailTemplates *EmailTemplates `json:"email.templates,omitempty"`
+	// Embeddings description: Configuration for embeddings service.
+	Embeddings *Embeddings `json:"embeddings,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
@@ -2576,6 +2592,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "email.address")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
+	delete(m, "embeddings")
 	delete(m, "encryption.keys")
 	delete(m, "executors.accessToken")
 	delete(m, "executors.batcheshelperImage")

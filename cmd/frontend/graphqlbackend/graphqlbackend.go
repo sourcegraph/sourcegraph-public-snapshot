@@ -382,39 +382,39 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil, nil)
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
 }
 
 func NewSchema(
@@ -432,6 +432,7 @@ func NewSchema(
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
 	webhooksResolver WebhooksResolver,
+	embeddingsResolver EmbeddingsResolver,
 	rbacResolver RBACResolver,
 	ownResolver OwnResolver,
 ) (*graphql.Schema, error) {
@@ -538,6 +539,12 @@ func NewSchema(
 		}
 	}
 
+	if embeddingsResolver != nil {
+		EnterpriseResolvers.embeddingsResolver = embeddingsResolver
+		resolver.EmbeddingsResolver = embeddingsResolver
+		schemas = append(schemas, embeddingsSchema)
+	}
+
 	if rbacResolver != nil {
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
@@ -599,6 +606,7 @@ type schemaResolver struct {
 	NotebooksResolver
 	InsightsAggregationResolver
 	WebhooksResolver
+	EmbeddingsResolver
 	RBACResolver
 	OwnResolver
 }
@@ -703,6 +711,7 @@ var EnterpriseResolvers = struct {
 	notebooksResolver           NotebooksResolver
 	InsightsAggregationResolver InsightsAggregationResolver
 	webhooksResolver            WebhooksResolver
+	embeddingsResolver          EmbeddingsResolver
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
 }{}

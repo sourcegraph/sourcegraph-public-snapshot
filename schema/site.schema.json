@@ -1827,6 +1827,36 @@
           "type": "string"
         }
       }
+    },
+    "embeddings": {
+      "description": "Configuration for embeddings service.",
+      "type": "object",
+      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether embedding service is enabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "dimensions": {
+          "description": "The dimensionality of the embedding vectors.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "model": {
+          "description": "The model used for embedding.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external embedding API service.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to the external embedding API service.",
+          "type": "string",
+          "format": "uri"
+        }
+      }
     }
   },
   "definitions": {

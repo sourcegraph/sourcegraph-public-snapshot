@@ -1083,6 +1083,28 @@ Indexes:
 
 **transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
 
+# Table "public.context_detection_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                           Default                            
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------------
+ id                | integer                  |           | not null | nextval('context_detection_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "context_detection_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.critical_and_site_config"
 ```
       Column       |           Type           | Collation | Nullable |                       Default                        
@@ -3064,6 +3086,30 @@ Triggers:
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ revision          | text                     |           | not null | 
+Indexes:
+    "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
 
 ```
 

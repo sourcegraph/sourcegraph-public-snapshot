@@ -90,7 +90,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, own))
+	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, own))
 	if err != nil {
 		t.Fatal(err)
 	}
