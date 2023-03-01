@@ -570,6 +570,11 @@ func TestZoektSearchOptions(t *testing.T) {
 				cfg := conf.Get()
 				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
 				conf.Mock(cfg)
+
+				defer func() {
+					cfg.ExperimentalFeatures.Ranking = nil
+					conf.Mock(cfg)
+				}()
 			}
 
 			got := tt.options.ToSearch(tt.context)

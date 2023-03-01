@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/conc/pool"
 )
 
 // validate calculates statistics regarding orgs, teams, users, and repos on the GitHub instance.
@@ -48,7 +47,7 @@ func validate(ctx context.Context) {
 	writeInfo(out, "Total teams on instance: %d", remoteTeams)
 	writeInfo(out, "Total users on instance: %d", len(remoteUsers))
 
-	g := group.New().WithMaxConcurrency(1000)
+	p := pool.New().WithMaxGoroutines(1000)
 
 	var orgRepoCount int64
 	var teamRepoCount int64
@@ -58,7 +57,7 @@ func validate(ctx context.Context) {
 		cI := i
 		cR := r
 
-		g.Go(func() {
+		p.Go(func() {
 			writeInfo(out, "Processing repo %d", cI)
 		retryRepoContributors:
 			contributors, res, err := gh.Repositories.ListContributors(ctx, cR.Owner, cR.Name, &github.ListContributorsOptions{
@@ -97,7 +96,7 @@ func validate(ctx context.Context) {
 			atomic.AddInt64(&orgRepoCount, 1)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	writeInfo(out, "Total org-scoped repos: %d", orgRepoCount)
 	writeInfo(out, "Total team-scoped repos: %d", teamRepoCount)

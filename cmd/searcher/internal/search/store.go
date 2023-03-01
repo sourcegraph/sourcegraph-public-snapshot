@@ -25,8 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -96,7 +96,7 @@ type Store struct {
 	cache diskcache.Store
 
 	// fetchLimiter limits concurrent calls to FetchTar.
-	fetchLimiter *mutablelimiter.Limiter
+	fetchLimiter *limiter.MutableLimiter
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
@@ -112,7 +112,7 @@ type FilterFunc func(hdr *tar.Header) bool
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
-		s.fetchLimiter = mutablelimiter.New(15)
+		s.fetchLimiter = limiter.NewMutable(15)
 		s.cache = diskcache.NewStore(s.Path, "store",
 			diskcache.WithBackgroundTimeout(s.BackgroundTimeout),
 			diskcache.WithBeforeEvict(s.zipCache.delete),

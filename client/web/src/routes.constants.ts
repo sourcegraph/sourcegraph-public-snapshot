@@ -21,6 +21,7 @@ export enum PageRoutes {
     RepoContainer = '/*',
     SetupWizard = '/setup',
     InstallGitHubAppSuccess = '/install-github-app-success',
+    Teams = '/teams/*',
 }
 
 export enum EnterprisePageRoutes {

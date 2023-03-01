@@ -44,7 +44,6 @@ interface Mocks
         | 'updateSettings'
         | 'getGraphQLClient'
         | 'requestGraphQL'
-        | 'getScriptURLForExtension'
         | 'clientApplication'
         | 'showMessage'
         | 'showInputBox'
@@ -55,7 +54,6 @@ const NOOP_MOCKS: Mocks = {
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     getGraphQLClient: () => Promise.reject(new Error('Mocks#getGraphQLClient not implemented')),
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
-    getScriptURLForExtension: () => undefined,
     clientApplication: 'sourcegraph',
 }
 
