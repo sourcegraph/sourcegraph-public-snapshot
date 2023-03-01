@@ -519,7 +519,7 @@ func gitserverAddr(environ []string) (string, error) {
 
 	// Detect 'go test' and setup default addresses in that case.
 	p, err := os.Executable()
-	if err == nil && strings.HasSuffix(p, ".test") {
+	if err == nil && (strings.HasSuffix(filepath.Base(p), "_test") || strings.HasSuffix(p, ".test")) {
 		return "gitserver:3178", nil
 	}
 

@@ -23,6 +23,7 @@ go_test(
     name = "app-token_test",
     srcs = ["main_test.go"],
     embed = [":app-token_lib"],
+    env = {"BUILDKITE": "true"},
     deps = [
         "//internal/httptestutil",
         "@com_github_dnaeon_go_vcr//cassette",
