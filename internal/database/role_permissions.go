@@ -143,15 +143,23 @@ func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermis
 }
 
 func (rp *rolePermissionStore) BulkRevokePermissionsForRole(ctx context.Context, opts BulkRevokePermissionsForRoleOpts) error {
+	if opts.RoleID == 0 {
+		return errors.New("missing role id")
+	}
+
+	if len(opts.Permissions) == 0 {
+		return errors.New("missing permissions")
+	}
+
 	var preds []*sqlf.Query
 
-	var rps []*sqlf.Query
+	var permissionIDs []*sqlf.Query
 	for _, permission := range opts.Permissions {
-		rps = append(rps, sqlf.Sprintf("%s", permission))
+		permissionIDs = append(permissionIDs, sqlf.Sprintf("%s", permission))
 	}
 
 	preds = append(preds, sqlf.Sprintf("role_id = %s", opts.RoleID))
-	preds = append(preds, sqlf.Sprintf("permission_id IN ( %s )", sqlf.Join(rps, ", ")))
+	preds = append(preds, sqlf.Sprintf("permission_id IN ( %s )", sqlf.Join(permissionIDs, ", ")))
 
 	q := sqlf.Sprintf(
 		deleteRolePermissionQueryFmtStr,
@@ -345,6 +353,14 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 }
 
 func (rp *rolePermissionStore) BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error {
+	if opts.RoleID == 0 {
+		return errors.New("missing role id")
+	}
+
+	if len(opts.Permissions) == 0 {
+		return errors.New("missing permissions")
+	}
+
 	var rps []*sqlf.Query
 	for _, permission := range opts.Permissions {
 		rps = append(rps, sqlf.Sprintf("( %s, %s )", opts.RoleID, permission))

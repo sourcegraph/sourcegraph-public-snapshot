@@ -173,9 +173,11 @@ extend type Mutation {
     createRole(name: String!, permissions: [ID!]!): Role!
 
     """
-    Assign permissions to a role.
+    Sync permissions for role. This updates the permissions assigned to a role based on the `permissions` passed
+    in the argument. Permissions already assigned to the role that aren't part of the arguments of this mutation
+    will be revoked for the role.
     """
-    assignPermissionsToRole(role: ID!, permissions: [ID!]!): EmptyResponse!
+    syncPermissionsForRole(role: ID!, permissions: [ID!]!): EmptyResponse!
 }
 
 extend type User {
