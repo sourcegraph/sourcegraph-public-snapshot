@@ -1631,44 +1631,98 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 				},
 			},
 		},
-		"only include events by name": {
-			now: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC), // Thursday
+		"return zeroes on missing events": {
+			now: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 			events: []*Event{
 				{
 					UserID:    1,
 					Name:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Name:      "mice",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
 					Name:      "ram",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "ram",
+					Name:      "crane",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "coyote",
+					Name:      "wolf",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    4,
 					Name:      "coyote",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"cat", "dog"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"cat": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+				"dog": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"only include events by name": {
+			now: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 			},
 			queryEventNames: []string{"horse", "ram"},

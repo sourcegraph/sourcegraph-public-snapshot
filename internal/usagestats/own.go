@@ -36,5 +36,6 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 		return nil, err
 	}
 	stats.ReposCount = &reposCount
+	db.
 	return &stats, nil
 }
