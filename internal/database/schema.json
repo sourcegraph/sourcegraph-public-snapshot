@@ -24162,7 +24162,7 @@
           "Comment": ""
         },
         {
-          "Name": "modified",
+          "Name": "modified_at",
           "Index": 15,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
@@ -24175,7 +24175,7 @@
           "Comment": ""
         },
         {
-          "Name": "published",
+          "Name": "published_at",
           "Index": 14,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
@@ -24253,7 +24253,7 @@
           "Comment": ""
         },
         {
-          "Name": "withdrawn",
+          "Name": "withdrawn_at",
           "Index": 16,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,

@@ -4243,9 +4243,9 @@ CREATE TABLE vulnerabilities (
     severity text NOT NULL,
     cvss_vector text NOT NULL,
     cvss_score text NOT NULL,
-    published timestamp with time zone NOT NULL,
-    modified timestamp with time zone,
-    withdrawn timestamp with time zone
+    published_at timestamp with time zone NOT NULL,
+    modified_at timestamp with time zone,
+    withdrawn_at timestamp with time zone
 );
 
 CREATE SEQUENCE vulnerabilities_id_seq

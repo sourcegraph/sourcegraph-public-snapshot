@@ -3793,24 +3793,24 @@ Triggers:
 
 # Table "public.vulnerabilities"
 ```
-   Column    |           Type           | Collation | Nullable |                   Default                   
--------------+--------------------------+-----------+----------+---------------------------------------------
- id          | integer                  |           | not null | nextval('vulnerabilities_id_seq'::regclass)
- source_id   | text                     |           | not null | 
- summary     | text                     |           | not null | 
- details     | text                     |           | not null | 
- cpes        | text[]                   |           | not null | 
- cwes        | text[]                   |           | not null | 
- aliases     | text[]                   |           | not null | 
- related     | text[]                   |           | not null | 
- data_source | text                     |           | not null | 
- urls        | text[]                   |           | not null | 
- severity    | text                     |           | not null | 
- cvss_vector | text                     |           | not null | 
- cvss_score  | text                     |           | not null | 
- published   | timestamp with time zone |           | not null | 
- modified    | timestamp with time zone |           |          | 
- withdrawn   | timestamp with time zone |           |          | 
+    Column    |           Type           | Collation | Nullable |                   Default                   
+--------------+--------------------------+-----------+----------+---------------------------------------------
+ id           | integer                  |           | not null | nextval('vulnerabilities_id_seq'::regclass)
+ source_id    | text                     |           | not null | 
+ summary      | text                     |           | not null | 
+ details      | text                     |           | not null | 
+ cpes         | text[]                   |           | not null | 
+ cwes         | text[]                   |           | not null | 
+ aliases      | text[]                   |           | not null | 
+ related      | text[]                   |           | not null | 
+ data_source  | text                     |           | not null | 
+ urls         | text[]                   |           | not null | 
+ severity     | text                     |           | not null | 
+ cvss_vector  | text                     |           | not null | 
+ cvss_score   | text                     |           | not null | 
+ published_at | timestamp with time zone |           | not null | 
+ modified_at  | timestamp with time zone |           |          | 
+ withdrawn_at | timestamp with time zone |           |          | 
 Indexes:
     "vulnerabilities_pkey" PRIMARY KEY, btree (id)
     "vulnerabilities_source_id" UNIQUE, btree (source_id)
