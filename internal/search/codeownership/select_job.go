@@ -35,8 +35,11 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	)
 	dedup := result.NewDeduper()
 
-	ownService := own.NewService(clients.Gitserver, clients.DB)
-	cache := NewCache(ownService)
+	// TODO: Very dirty hack to keep a warm cache between searches.
+	serviceOnce.Do(func() {
+		ownService = own.NewService(clients.Gitserver, clients.DB)
+		cache = NewCache(ownService)
+	})
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		event.Results, err = getCodeOwnersFromMatches(ctx, cache, ownService, event.Results)
