@@ -537,6 +537,16 @@ type CodeIntelRepositoryBadge struct {
 	ForNerds *bool `json:"forNerds,omitempty"`
 }
 
+// Completions description: Configuration for the completions service.
+type Completions struct {
+	// AccessToken description: The access token used to authenticate with the external completions provider.
+	AccessToken string `json:"accessToken"`
+	// Enabled description: Toggles whether completions are enabled.
+	Enabled bool `json:"enabled"`
+	// Provider description: The external completions provider.
+	Provider string `json:"provider"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -2356,6 +2366,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// Completions description: Configuration for the completions service.
+	Completions *Completions `json:"completions,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -2580,6 +2592,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "completions")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")
 	delete(m, "defaultRateLimit")

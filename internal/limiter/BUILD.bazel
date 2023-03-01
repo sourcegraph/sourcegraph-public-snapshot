@@ -12,6 +12,9 @@ go_library(
 
 go_test(
     name = "limiter_test",
-    srcs = ["mutable_test.go"],
+    srcs = [
+        "limiter_test.go",
+        "mutable_test.go",
+    ],
     embed = [":limiter"],
 )

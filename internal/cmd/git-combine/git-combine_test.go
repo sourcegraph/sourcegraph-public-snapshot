@@ -24,7 +24,18 @@ func TestCombine(t *testing.T) {
 
 set -ex
 
+mkdir origin
+cd origin
+git init
+echo "foobar" > README.md
+git add README.md
+git commit -m "initial commit"
+echo "foobar" >> README.md
+git add README.md
+git commit -m "second commit"
+
 repo=$(git rev-parse --show-toplevel)
+cd ..
 
 mkdir -p "$DIR"
 cd "$DIR"

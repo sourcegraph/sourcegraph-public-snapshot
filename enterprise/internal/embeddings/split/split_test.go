@@ -3,7 +3,7 @@ package split
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestSplitIntoEmbeddableChunks(t *testing.T) {
@@ -19,5 +19,5 @@ Line
 Line
 `
 	chunks := SplitIntoEmbeddableChunks(content, "", SplitOptions{ChunkTokensThreshold: 4, ChunkEarlySplitTokensThreshold: 1})
-	autogold.Equal(t, chunks)
+	autogold.ExpectFile(t, chunks)
 }

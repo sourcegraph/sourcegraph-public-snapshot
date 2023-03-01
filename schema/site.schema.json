@@ -1857,6 +1857,28 @@
           "format": "uri"
         }
       }
+    },
+    "completions": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "required": ["enabled", "model", "accessToken", "provider"],
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether completions are enabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external completions provider.",
+          "type": "string"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The external completions provider.",
+          "default": "anthropic",
+          "enum": ["anthropic"]
+        }
+      }
     }
   },
   "definitions": {
