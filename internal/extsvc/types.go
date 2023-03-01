@@ -600,7 +600,7 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
 func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
-	// 1. Not defined: We fall back to default specified in code.
+	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
@@ -613,8 +613,8 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
-		// 5000 per hour is the default enforced by GitHub on their end
-		limit = rate.Limit(5000.0 / 3600.0)
+		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}

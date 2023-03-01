@@ -42,6 +42,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
+	SetWaitForRateLimit(wait bool)
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -55,4 +56,8 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	return &ClientAdapter{
 		V3Client: c.V3Client.WithAuthenticator(auther),
 	}
+}
+
+func (c *ClientAdapter) SetWaitForRateLimit(wait bool) {
+	c.V3Client.WaitForRateLimit = wait
 }

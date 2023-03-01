@@ -59,7 +59,8 @@ type V3Client struct {
 	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
 
-	waitForRateLimit bool
+	// If true, the client will wait and retry a request if external rate limits are encountered
+	WaitForRateLimit bool
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -126,7 +127,6 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		resource:         resource,
-		waitForRateLimit: true,
 	}
 }
 
@@ -210,9 +210,12 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 
 	var resp *httpResponseState
 	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	if err != nil {
+		return nil, err
+	}
 
 	// Retry request after waiting
-	if c.waitForRateLimit && resp.statusCode == http.StatusForbidden {
+	if c.WaitForRateLimit && resp.statusCode == http.StatusForbidden {
 		remaining, reset, retry, known := c.rateLimitMonitor.Get()
 
 		if !known {
