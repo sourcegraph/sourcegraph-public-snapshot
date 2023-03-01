@@ -2260,7 +2260,7 @@ type AutoIndexJobDescription {
     A hash of the root and indexer values.
 
     This value can be used to quickly compare whether or not explicit configuration and inferred configuration
-    refer to the same "project" in a given repository. See `AutoIndexJobDescription.comparisonKey`.
+    refer to the same "project" in a given repository. See `RootWithKey.comparisonKey`.
     """
     comparisonKey: String!
 
