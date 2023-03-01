@@ -982,7 +982,20 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
-
+  codeintel-worker:
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+    target: //enterprise/cmd/precise-code-intel-worker
+  executor-template: &executor_template_bazel
+    target: //enterprise/cmd/executor
+    env:
+      EXECUTOR_QUEUE_NAME: TEMPLATE
+      TMPDIR: $HOME/.sourcegraph/executor-temp
+  codeintel-executor:
+    <<: *executor_template_bazel
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      TMPDIR: $HOME/.sourcegraph/indexer-temp
 
 
 #
@@ -1106,6 +1119,38 @@ commandsets:
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
+  codeintel-bazel: &codeintel_bazel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    bazelCommands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - github-proxy
+      - codeintel-worker
+      - codeintel-executor
+    commands:
+      - web
+      - blobstore
+      - docsite
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - caddy
+      - jaeger
+      - grafana
+      - prometheus
+
   codeintel: &codeintel_set
     requiresDevPrivate: true
     checks:
@@ -1140,6 +1185,8 @@ commandsets:
 
   enterprise-codeintel:
     <<: *codeintel_set
+  enterprise-codeintel-bazel:
+    <<: *codeintel_bazel_set
 
   enterprise-codeinsights:
     requiresDevPrivate: true
