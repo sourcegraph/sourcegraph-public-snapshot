@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -290,17 +291,21 @@ func (s *store) InsertPathRanks(
 }
 
 const insertPathRanksQuery = `
-WITH input_ranks AS (
+WITH
+input_ranks AS (
 	SELECT
-		id,
-		(SELECT id FROM repo WHERE name = repository) AS repository_id,
-		document_path AS path,
-		count
-	FROM codeintel_ranking_path_counts_inputs
+		pci.id,
+		r.id AS repository_id,
+		pci.document_path AS path,
+		pci.count
+	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
 	WHERE
-		graph_key = %s AND
-		NOT processed
-	ORDER BY graph_key, repository, id
+		pci.graph_key = %s AND
+		NOT pci.processed AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
+	ORDER BY pci.graph_key, pci.repository, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -350,6 +355,12 @@ SELECT
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
 `
 
+// TODO - configure via envvar
+const vacuumBatchSize = 1000
+
+// TODO - configure via envvar
+var threshold = time.Duration(1) * time.Hour
+
 func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
 	numStaleDefinitionRecordsDeleted int,
 	numStaleReferenceRecordsDeleted int,
@@ -358,7 +369,11 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleDefinitionsAndReferencesQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -379,31 +394,49 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 const vacuumStaleDefinitionsAndReferencesQuery = `
 WITH
 locked_definitions AS (
-	SELECT id
-	FROM codeintel_ranking_definitions
+	SELECT
+		rd.id,
+		rd.upload_id,
+		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rd.upload_id AND uvt.is_default_branch) AS safe
+	FROM codeintel_ranking_definitions rd
 	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
+		rd.graph_key = %s AND
+		(rd.last_scanned_at IS NULL OR NOW() - rd.last_scanned_at >= %s * '1 hour'::interval)
+	ORDER BY rd.last_scanned_at ASC NULLS FIRST
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
 ),
-locked_references AS (
-	SELECT id
-	FROM codeintel_ranking_references
-	WHERE
-		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
-		graph_key = %s
-	ORDER BY id
-	FOR UPDATE
+updated_definitions AS (
+	UPDATE codeintel_ranking_definitions
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE ld.safe)
 ),
 deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
-	WHERE id IN (SELECT id FROM locked_definitions)
+	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
 	RETURNING 1
+),
+locked_references AS (
+	SELECT
+		rr.id,
+		rr.upload_id,
+		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rr.upload_id AND uvt.is_default_branch) AS safe
+	FROM codeintel_ranking_references rr
+	WHERE
+		rr.graph_key = %s AND
+		(rr.last_scanned_at IS NULL OR NOW() - rr.last_scanned_at >= %s * '1 hour'::interval)
+	ORDER BY rr.last_scanned_at ASC NULLS FIRST
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+updated_references AS (
+	UPDATE codeintel_ranking_references
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE lr.safe)
 ),
 deleted_references AS (
 	DELETE FROM codeintel_ranking_references
-	WHERE id IN (SELECT id FROM locked_references)
+	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE NOT lr.safe)
 	RETURNING 1
 )
 SELECT

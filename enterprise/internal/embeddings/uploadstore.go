@@ -34,8 +34,6 @@ func (c *EmbeddingsUploadStoreConfig) Load() {
 	c.Backend = strings.ToLower(c.Get("EMBEDDINGS_UPLOAD_BACKEND", "blobstore", "The target file service for embeddings. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("EMBEDDINGS_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("EMBEDDINGS_UPLOAD_BUCKET", "embeddings", "The name of the bucket to store embeddings in.")
-	// TODO: We don't want embeddings to expire
-	// c.TTL = c.GetInterval("EMBEDDINGS_UPLOAD_TTL", "168h", "The maximum age of an upload before deletion.")
 
 	if c.Backend != "blobstore" && c.Backend != "s3" && c.Backend != "gcs" {
 		c.AddError(errors.Errorf("invalid backend %q for EMBEDDINGS_UPLOAD_BACKEND: must be S3, GCS, or Blobstore", c.Backend))

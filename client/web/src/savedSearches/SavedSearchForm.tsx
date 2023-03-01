@@ -5,6 +5,7 @@ import { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -24,7 +25,6 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './SavedSearchForm.module.scss'
 

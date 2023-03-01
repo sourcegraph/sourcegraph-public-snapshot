@@ -6,7 +6,8 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { WebStory } from '../../../components/WebStory'
 import { FetchOwnershipResult } from '../../../graphql-operations'
 
-import { FETCH_OWNERS, FileOwnershipPanel } from './FileOwnershipPanel'
+import { FileOwnershipPanel } from './FileOwnershipPanel'
+import { FETCH_OWNERS } from './grapqlQueries'
 
 const response: FetchOwnershipResult = {
     node: {
@@ -71,7 +72,7 @@ const mockResponse: MockedResponse<FetchOwnershipResult> = {
 }
 
 const config: Meta = {
-    title: 'web/repo/blob/FileOwnership',
+    title: 'web/repo/blob/own/FileOwnership',
     parameters: {
         chromatic: { disableSnapshot: false },
     },

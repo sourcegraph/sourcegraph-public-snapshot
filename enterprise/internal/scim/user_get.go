@@ -3,7 +3,6 @@ package scim
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
@@ -12,30 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Get returns the resource corresponding with the given identifier.
 func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	user, err := getUserFromDB(r.Context(), h.db.Users(), idStr)
 	if err != nil {
-		return scim.Resource{}, errors.New("invalid id")
+		return scim.Resource{}, err
 	}
-
-	// Get users
-	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
-		UserIDs: []int32{int32(id)},
-	})
-	if err != nil {
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
-	}
-	if len(users) == 0 {
-		return scim.Resource{}, scimerrors.ScimErrorResourceNotFound(idStr)
-	}
-
-	resource := h.convertUserToSCIMResource(users[0])
-
-	return resource, nil
+	return h.convertUserToSCIMResource(user), nil
 }
 
 // GetAll returns a paginated list of resources.
@@ -69,6 +53,8 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 			if totalCount >= params.StartIndex && len(resources) < params.Count {
 				resources = append(resources, resource)
 			}
+			// No `break` here: the loop needs to continue even when `len(resources) >= params.Count`
+			// because we want to put the total number of filtered users into `totalCount`.
 		}
 	}
 	if err != nil {
@@ -116,51 +102,42 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
 func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert names
-	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
-
 	// Convert external ID
 	externalIDOptional := optional.String{}
 	if user.SCIMExternalID != "" {
 		externalIDOptional = optional.NewString(user.SCIMExternalID)
 	}
 
-	// Convert emails
-	emailMap := make([]interface{}, 0, len(user.Emails))
-	for _, email := range user.Emails {
-		emailMap = append(emailMap, map[string]interface{}{"value": email})
+	// Convert account data – if it doesn't exist, never mind
+	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
+	if err != nil {
+		// TODO: Failed to convert account data to SCIM resource attributes. Maybe log this?
+		resourceAttributes = scim.ResourceAttributes{}
+	}
+	if resourceAttributes[AttrName] == nil {
+		resourceAttributes[AttrName] = map[string]interface{}{}
+	}
+	resourceAttributes["externalId"] = user.SCIMExternalID
+	resourceAttributes[AttrName].(map[string]interface{})[AttrNameFormatted] = user.DisplayName
+	resourceAttributes[AttrDisplayName] = user.DisplayName
+	resourceAttributes["active"] = true
+
+	// Fall back to username and primary email in the user object if not set in account data
+	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
+		resourceAttributes[AttrUserName] = user.Username
+	}
+	if (resourceAttributes[AttrEmails] == nil || len(resourceAttributes[AttrEmails].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+		resourceAttributes[AttrEmails] = []interface{}{
+			map[string]interface{}{
+				"value":   user.Emails[0],
+				"primary": true,
+			},
+		}
 	}
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional,
-		Attributes: scim.ResourceAttributes{
-			"userName":   user.Username,
-			"externalId": user.SCIMExternalID,
-			"name": map[string]interface{}{
-				"givenName":  firstName,
-				"middleName": middleName,
-				"familyName": lastName,
-				"formatted":  user.DisplayName,
-			},
-			"displayName": user.DisplayName,
-			"emails":      emailMap,
-			"active":      true,
-		},
-	}
-}
-
-// displayNameToPieces splits a display name into first, middle, and last name.
-func displayNameToPieces(displayName string) (first, middle, last string) {
-	pieces := strings.Fields(displayName)
-	switch len(pieces) {
-	case 0:
-		return "", "", ""
-	case 1:
-		return pieces[0], "", ""
-	case 2:
-		return pieces[0], "", pieces[1]
-	default:
-		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
+		ExternalID: externalIDOptional, // TODO: Get this from account data instead
+		Attributes: resourceAttributes,
 	}
 }
