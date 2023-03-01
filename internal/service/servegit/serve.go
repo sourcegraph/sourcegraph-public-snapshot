@@ -193,7 +193,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 	)
 	go func() {
 		defer close(repoC)
-		reposRootIsRepo, walkErr = s.walk(root, repoC)
+		reposRootIsRepo, walkErr = s.Walk(root, repoC)
 	}()
 
 	var repos []Repo
@@ -229,7 +229,10 @@ func (s *Serve) Repos() ([]Repo, error) {
 	return repos, nil
 }
 
-func (s *Serve) walk(root string, repoC chan<- Repo) (bool, error) {
+// Walk is the core repos finding routine. This is only exported for use in
+// app-discover-repos, normally you should use Repos instead which does
+// additional work.
+func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	var reposRootIsRepo atomic.Bool
 
 	// We use fastwalk since it is much faster. Notes for people used to
