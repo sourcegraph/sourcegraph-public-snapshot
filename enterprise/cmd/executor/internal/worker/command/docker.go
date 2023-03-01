@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 // ScriptsPath is the location relative to the executor workspace where the executor
@@ -12,9 +14,10 @@ const ScriptsPath = ".sourcegraph-executor"
 
 // DockerOptions are the options that are specific to running a container.
 type DockerOptions struct {
-	ConfigPath     string
-	AddHostGateway bool
-	Resources      ResourceOptions
+	DockerAuthConfig types.DockerAuthConfig
+	ConfigPath       string
+	AddHostGateway   bool
+	Resources        ResourceOptions
 }
 
 // ResourceOptions are the resource limits that can be applied to a container or VM.
