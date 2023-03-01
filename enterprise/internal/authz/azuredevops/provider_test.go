@@ -3,7 +3,6 @@ package azuredevops
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -29,6 +28,46 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	// Ignore the error. Confident that the value of this will parse successfully.
 	baseURL, _ := urlx.Parse("https://dev.azure.com")
 
+	setup := func() {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "unique-id",
+							ClientSecret: "strongsecret",
+							Type:         "azureDevOps",
+						},
+					},
+				},
+			},
+		})
+	}
+
+	passLicensingCheck := func(_ licensing.Feature) error { return nil }
+	account := &extsvc.Account{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: extsvc.TypeAzureDevOps,
+			ServiceID:   "https://dev.azure.com/",
+			AccountID:   "1",
+		},
+		AccountData: extsvc.AccountData{
+			AuthData: extsvc.NewUnencryptedData([]byte(`
+{}`)),
+		},
+	}
+
+	expectedProviders := []authz.Provider{
+		&Provider{
+			db: db,
+			codeHost: &extsvc.CodeHost{
+				ServiceID:   "https://dev.azure.com/",
+				ServiceType: "azuredevops",
+				BaseURL:     baseURL,
+			},
+		},
+	}
+
 	type input struct {
 		mockCheckFeature func(licensing.Feature) error
 		connection       *schema.AzureDevOpsConnection
@@ -46,9 +85,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name     string
-		setup    func()
-		teardown func()
+		name  string
+		setup func()
 		input
 		output
 	}{
@@ -68,10 +106,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		{
 			name: "malformed auth data",
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
-				connection: &schema.AzureDevOpsConnection{},
+				mockCheckFeature: passLicensingCheck,
+				connection:       &schema.AzureDevOpsConnection{},
 				account: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: extsvc.TypeAzureDevOps,
@@ -84,87 +120,31 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
-				error: "failed to load external account data from database with external account with ID: 0: unexpected end of JSON input",
+				providers: expectedProviders,
+				error:     "failed to load external account data from database with external account with ID: 0: unexpected end of JSON input",
 			},
 		},
 		{
 			name: "no auth providers configured",
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
-				connection: &schema.AzureDevOpsConnection{},
-				account: &extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeAzureDevOps,
-						ServiceID:   "https://dev.azure.com/",
-						AccountID:   "1",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: extsvc.NewUnencryptedData([]byte(`{}`)),
-					},
-				},
+				mockCheckFeature: passLicensingCheck,
+				connection:       &schema.AzureDevOpsConnection{},
+				account:          account,
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
-				error: "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config: No authprovider configured for AzureDevOps, check site configuration.",
+				providers: expectedProviders,
+				error:     "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config: No authprovider configured for AzureDevOps, check site configuration.",
 			},
 		},
 		{
-			name: "auth provider config with orgs",
-			setup: func() {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						AuthProviders: []schema.AuthProviders{
-							{
-								AzureDevOps: &schema.AzureDevOpsAuthProvider{
-									ClientID:     "unique-id",
-									ClientSecret: "strongsecret",
-									Type:         "azureDevOps",
-								},
-							},
-						},
-					},
-				})
-			},
-			teardown: func() { conf.Mock(nil) },
+			name:  "auth provider config with orgs",
+			setup: setup,
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
+				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					Orgs: []string{"solarsystem"},
 				},
-				account: &extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeAzureDevOps,
-						ServiceID:   "https://dev.azure.com/",
-						AccountID:   "1",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: extsvc.NewUnencryptedData([]byte(`
-{}`)),
-					},
-				},
+				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					response := azuredevops.ListRepositoriesResponse{
 						Value: []azuredevops.Repository{
@@ -180,21 +160,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						Count: 1,
 					}
 
-					json.NewEncoder(w).Encode(response)
-					return
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						w.Write([]byte(err.Error()))
+					}
 				})),
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
+				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{
 						"1",
@@ -203,41 +176,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		},
 		{
-			name: "auth provider config with projects",
-			setup: func() {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						AuthProviders: []schema.AuthProviders{
-							{
-								AzureDevOps: &schema.AzureDevOpsAuthProvider{
-									ClientID:     "unique-id",
-									ClientSecret: "strongsecret",
-									Type:         "azureDevOps",
-								},
-							},
-						},
-					},
-				})
-			},
-			teardown: func() { conf.Mock(nil) },
+			name:  "auth provider config with projects",
+			setup: setup,
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
+				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					Projects: []string{"solar/system"},
 				},
-				account: &extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeAzureDevOps,
-						ServiceID:   "https://dev.azure.com/",
-						AccountID:   "1",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: extsvc.NewUnencryptedData([]byte(`
-{}`)),
-					},
-				},
+				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					response := azuredevops.ListRepositoriesResponse{
 						Value: []azuredevops.Repository{
@@ -258,58 +204,22 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
+				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				},
 			},
 		},
 		{
-			name: "auth provider config with both orgs and projects",
-			setup: func() {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						AuthProviders: []schema.AuthProviders{
-							{
-								AzureDevOps: &schema.AzureDevOpsAuthProvider{
-									ClientID:     "unique-id",
-									ClientSecret: "strongsecret",
-									Type:         "azureDevOps",
-								},
-							},
-						},
-					},
-				})
-			},
-			teardown: func() { conf.Mock(nil) },
+			name:  "auth provider config with both orgs and projects",
+			setup: setup,
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
+				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					Orgs:     []string{"solarsystem"},
 					Projects: []string{"solar/system"},
 				},
-				account: &extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeAzureDevOps,
-						ServiceID:   "https://dev.azure.com/",
-						AccountID:   "1",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: extsvc.NewUnencryptedData([]byte(`
-{}`)),
-					},
-				},
+				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					response := azuredevops.ListRepositoriesResponse{
 						Value: []azuredevops.Repository{},
@@ -343,66 +253,27 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
+				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
 			},
 		},
-
 		{
-			name: "auth provider config with both orgs and projects, ignores 4xx API responses",
-			setup: func() {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						AuthProviders: []schema.AuthProviders{
-							{
-								AzureDevOps: &schema.AzureDevOpsAuthProvider{
-									ClientID:     "unique-id",
-									ClientSecret: "strongsecret",
-									Type:         "azureDevOps",
-								},
-							},
-						},
-					},
-				})
-			},
-			teardown: func() { conf.Mock(nil) },
+			name:  "auth provider config with both orgs and projects, ignores 4xx API responses",
+			setup: setup,
 			input: input{
-				mockCheckFeature: func(_ licensing.Feature) error {
-					return nil
-				},
+				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					Orgs:     []string{"solarsystem", "simulate-401", "simulate-403", "simulate-404"},
 					Projects: []string{"solar/system", "testorg/simulate-401", "testorg/simulate-403", "testorg/simulate-404"},
 				},
-				account: &extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeAzureDevOps,
-						ServiceID:   "https://dev.azure.com/",
-						AccountID:   "1",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: extsvc.NewUnencryptedData([]byte(`
-{}`)),
-					},
-				},
+				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					response := azuredevops.ListRepositoriesResponse{
 						Value: []azuredevops.Repository{},
 						Count: 1,
 					}
-
-					fmt.Println(r.URL.Path)
 
 					if strings.HasPrefix(r.URL.Path, "/solarsystem") {
 						response.Value = append(response.Value, azuredevops.Repository{
@@ -436,16 +307,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: []authz.Provider{
-					&Provider{
-						db: db,
-						codeHost: &extsvc.CodeHost{
-							ServiceID:   "https://dev.azure.com/",
-							ServiceType: "azuredevops",
-							BaseURL:     baseURL,
-						},
-					},
-				},
+				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -461,9 +323,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				tc.setup()
 			}
 
-			if tc.teardown != nil {
-				defer tc.teardown()
-			}
+			defer func() {
+				MOCK_API_URL = ""
+				conf.Mock(nil)
+			}()
 
 			licensing.MockCheckFeature = tc.mockCheckFeature
 			result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
@@ -522,4 +385,132 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 		})
 	}
+
+	//  This test is different than the other ones because we test with multiple code host
+	//  connections and want to test for things like number of times the API call was made. Instead
+	//  of trying to retro-fit all the other tests, it is cleaner to have this as a separate test at
+	//  the cost of a little bit of code duplication.
+	t.Run("auth provider config with multiple code host connections", func(t *testing.T) {
+		// Setup mocks.
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "unique-id",
+							ClientSecret: "strongsecret",
+							Type:         "azureDevOps",
+						},
+					},
+				},
+			},
+		})
+
+		defer func() {
+			MOCK_API_URL = ""
+			conf.Mock(nil)
+		}()
+
+		licensing.MockCheckFeature = passLicensingCheck
+
+		result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
+			{
+				URN: "1",
+				AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+					Orgs:     []string{"solarsystem"},
+					Projects: []string{"solar/system"},
+				},
+			},
+			{
+				URN: "2",
+				AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+					Orgs:     []string{"solarsystem", "milkyway"},
+					Projects: []string{"solar/system", "milky/way"},
+				},
+			},
+		})
+
+		if len(result.Providers) == 0 {
+			t.Fatal("No providers found, expected one")
+		}
+
+		p := result.Providers[0]
+
+		serverInvokedCount := 0
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverInvokedCount += 1
+			response := azuredevops.ListRepositoriesResponse{
+				Value: []azuredevops.Repository{},
+				Count: 1,
+			}
+
+			if strings.HasPrefix(r.URL.Path, "/solarsystem") {
+				response.Value = append(response.Value, azuredevops.Repository{
+					ID:   "1",
+					Name: "one",
+					Project: azuredevops.Project{
+						ID:   "1",
+						Name: "mercury",
+					},
+				})
+			} else if strings.HasPrefix(r.URL.Path, "/solar/system") {
+				response.Value = append(response.Value, azuredevops.Repository{
+					ID:   "2",
+					Name: "two",
+					Project: azuredevops.Project{
+						ID:   "2",
+						Name: "venus",
+					},
+				})
+			} else if strings.HasPrefix(r.URL.Path, "/milkyway") {
+				response.Value = append(response.Value, azuredevops.Repository{
+					ID:   "3",
+					Name: "three",
+					Project: azuredevops.Project{
+						ID:   "3",
+						Name: "earth",
+					},
+				})
+			} else if strings.HasPrefix(r.URL.Path, "/milky/way") {
+				response.Value = append(response.Value, azuredevops.Repository{
+					ID:   "4",
+					Name: "four",
+					Project: azuredevops.Project{
+						ID:   "4",
+						Name: "mars",
+					},
+				})
+			}
+
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+			}
+		}))
+
+		MOCK_API_URL = mockServer.URL
+
+		wantPermissions := &authz.ExternalUserPermissions{
+			// This order is important. We fetch all the orgs first. And then all the projects.
+			Exacts: []extsvc.RepoID{"1", "3", "2", "4"},
+		}
+
+		permissions, err := p.FetchUserPerms(
+			context.Background(),
+			account,
+			authz.FetchPermsOptions{},
+		)
+
+		if err != nil {
+			t.Fatalf("Unexpected error, (-want, +got)\n%s", err)
+		}
+
+		if serverInvokedCount != 4 {
+			t.Fatalf("External list reops API should have been called only 4 times, but got called %d times", serverInvokedCount)
+		}
+
+		if diff := cmp.Diff(wantPermissions, permissions); diff != "" {
+			t.Errorf("Mismatched perms, (-want, +got)\n%s", diff)
+		}
+	})
 }
