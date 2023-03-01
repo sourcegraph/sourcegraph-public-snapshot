@@ -73,7 +73,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
 
-            <div className="d-flex flex-column">
+            <div className="d-flex flex-column justify-content-center">
                 <div className="d-flex align-items-center">
                     <Text className="font-weight-bold m-0">{roleName}</Text>
 
@@ -86,7 +86,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     </Tooltip>
                 )}
                 </div>
-                {error && <ErrorAlert error={error} />}
+                {error && <ErrorAlert className="mt-1" error={error} />}
             </div>
 
             {!node.system && (
