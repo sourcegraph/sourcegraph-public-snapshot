@@ -10,6 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
+type dockerWorkspace struct {
+	path            string
+	scriptFilenames []string
+	workspaceDir    string
+	logger          command.Logger
+}
+
 // NewDockerWorkspace creates a new workspace for docker-based execution. A path on
 // the host will be used to set up the workspace, clone the repo and put script files.
 func NewDockerWorkspace(
@@ -45,13 +52,6 @@ func NewDockerWorkspace(
 		workspaceDir:    workspaceDir,
 		logger:          logger,
 	}, nil
-}
-
-type dockerWorkspace struct {
-	path            string
-	scriptFilenames []string
-	workspaceDir    string
-	logger          command.Logger
 }
 
 func (w dockerWorkspace) Path() string {
