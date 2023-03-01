@@ -10,6 +10,7 @@ import (
 	"context"
 	"sync"
 
+	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -29,6 +30,9 @@ type MockRepoEmbeddingJobsStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *RepoEmbeddingJobsStoreDoneFunc
+	// ExecFunc is an instance of a mock function object controlling the
+	// behavior of the method Exec.
+	ExecFunc *RepoEmbeddingJobsStoreExecFunc
 	// GetLastCompletedRepoEmbeddingJobFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// GetLastCompletedRepoEmbeddingJob.
@@ -65,6 +69,11 @@ func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 		},
 		DoneFunc: &RepoEmbeddingJobsStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		ExecFunc: &RepoEmbeddingJobsStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (r0 error) {
 				return
 			},
 		},
@@ -116,6 +125,11 @@ func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.Done")
 			},
 		},
+		ExecFunc: &RepoEmbeddingJobsStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				panic("unexpected invocation of MockRepoEmbeddingJobsStore.Exec")
+			},
+		},
 		GetLastCompletedRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreGetLastCompletedRepoEmbeddingJobFunc{
 			defaultHook: func(context.Context, api.RepoID) (*RepoEmbeddingJob, error) {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob")
@@ -157,6 +171,9 @@ func NewMockRepoEmbeddingJobsStoreFrom(i RepoEmbeddingJobsStore) *MockRepoEmbedd
 		},
 		DoneFunc: &RepoEmbeddingJobsStoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		ExecFunc: &RepoEmbeddingJobsStoreExecFunc{
+			defaultHook: i.Exec,
 		},
 		GetLastCompletedRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreGetLastCompletedRepoEmbeddingJobFunc{
 			defaultHook: i.GetLastCompletedRepoEmbeddingJob,
@@ -499,6 +516,111 @@ func (c RepoEmbeddingJobsStoreDoneFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoEmbeddingJobsStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RepoEmbeddingJobsStoreExecFunc describes the behavior when the Exec
+// method of the parent MockRepoEmbeddingJobsStore instance is invoked.
+type RepoEmbeddingJobsStoreExecFunc struct {
+	defaultHook func(context.Context, *sqlf.Query) error
+	hooks       []func(context.Context, *sqlf.Query) error
+	history     []RepoEmbeddingJobsStoreExecFuncCall
+	mutex       sync.Mutex
+}
+
+// Exec delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRepoEmbeddingJobsStore) Exec(v0 context.Context, v1 *sqlf.Query) error {
+	r0 := m.ExecFunc.nextHook()(v0, v1)
+	m.ExecFunc.appendCall(RepoEmbeddingJobsStoreExecFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Exec method of the
+// parent MockRepoEmbeddingJobsStore instance is invoked and the hook queue
+// is empty.
+func (f *RepoEmbeddingJobsStoreExecFunc) SetDefaultHook(hook func(context.Context, *sqlf.Query) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Exec method of the parent MockRepoEmbeddingJobsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RepoEmbeddingJobsStoreExecFunc) PushHook(hook func(context.Context, *sqlf.Query) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoEmbeddingJobsStoreExecFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *sqlf.Query) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoEmbeddingJobsStoreExecFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *sqlf.Query) error {
+		return r0
+	})
+}
+
+func (f *RepoEmbeddingJobsStoreExecFunc) nextHook() func(context.Context, *sqlf.Query) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoEmbeddingJobsStoreExecFunc) appendCall(r0 RepoEmbeddingJobsStoreExecFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoEmbeddingJobsStoreExecFuncCall objects
+// describing the invocations of this function.
+func (f *RepoEmbeddingJobsStoreExecFunc) History() []RepoEmbeddingJobsStoreExecFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoEmbeddingJobsStoreExecFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoEmbeddingJobsStoreExecFuncCall is an object that describes an
+// invocation of method Exec on an instance of MockRepoEmbeddingJobsStore.
+type RepoEmbeddingJobsStoreExecFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *sqlf.Query
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoEmbeddingJobsStoreExecFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoEmbeddingJobsStoreExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
