@@ -123,11 +123,6 @@ const config = {
       splitChunks: false,
     }),
   },
-  // entry: { ... SET BY BAZEL RULE ... }
-  // TODO(bazel): why is this sest by webpack_bundle() but not webpack_dev_server()?
-  entry: {
-    app: './client/web/src/enterprise/main.js',
-  },
   devServer: {
     port: 8080,
   },
