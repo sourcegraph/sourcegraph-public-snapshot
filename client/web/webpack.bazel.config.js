@@ -123,6 +123,7 @@ const config = {
       splitChunks: false,
     }),
   },
+  // entry: { ... SET BY BAZEL RULE ... }
   devServer: {
     port: 8080,
   },
