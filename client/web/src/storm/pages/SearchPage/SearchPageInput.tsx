@@ -22,13 +22,13 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
-import { Notices } from '../../../../global/Notices'
-import { useLegacyRouteContext } from '../../../../LegacyRouteContext'
-import { submitSearch } from '../../../../search/helpers'
-import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../../search/input/lazy'
-import { useRecentSearches } from '../../../../search/input/useRecentSearches'
-import { useExperimentalQueryInput } from '../../../../search/useExperimentalSearchInput'
-import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../../stores'
+import { Notices } from '../../../global/Notices'
+import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { submitSearch } from '../../../search/helpers'
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../search/input/lazy'
+import { useRecentSearches } from '../../../search/input/useRecentSearches'
+import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -86,7 +86,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = parameters.query ?? props.queryState.query
+            const query = parameters.query ?? queryState.query
 
             if (canSubmitSearch(query, selectedSearchContextSpec)) {
                 submitSearch({
@@ -106,7 +106,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         },
         [
             queryState.query,
-            props.queryState.query,
             selectedSearchContextSpec,
             navigate,
             location,

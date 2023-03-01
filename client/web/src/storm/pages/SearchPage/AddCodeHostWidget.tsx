@@ -5,8 +5,8 @@ import classNames from 'classnames'
 
 import { H3, Text, Link, Icon } from '@sourcegraph/wildcard'
 
-import { MarketingBlock } from '../../../../components/MarketingBlock'
-import { useLegacyRouteContext } from '../../../../LegacyRouteContext'
+import { MarketingBlock } from '../../../components/MarketingBlock'
+import { useLegacyRouteContext } from '../../../LegacyRouteContext'
 
 import styles from './AddCodeHostWidget.module.scss'
 

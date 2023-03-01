@@ -5,9 +5,9 @@ import classNames from 'classnames'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, H2 } from '@sourcegraph/wildcard'
 
-import { BrandLogo } from '../../../../components/branding/BrandLogo'
-import { useLegacyRouteContext } from '../../../../LegacyRouteContext'
-import { PageRoutes } from '../../../../routes.constants'
+import { BrandLogo } from '../../../components/branding/BrandLogo'
+import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { PageRoutes } from '../../../routes.constants'
 
 import styles from './SearchPageFooter.module.scss'
 
