@@ -109,9 +109,10 @@ func TryUnmarshalExternalServiceID(externalServiceID *graphql.ID) (*int64, error
 		if err != nil {
 			return nil, err
 		}
+		return &id, nil
 	}
 
-	return &id, err
+	return nil, nil
 }
 
 func (r *externalServiceResolver) ID() graphql.ID {

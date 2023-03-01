@@ -137,9 +137,6 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// GetUploadsByIDsAllowDeleted.
 	GetUploadsByIDsAllowDeletedFunc *StoreGetUploadsByIDsAllowDeletedFunc
-	// GetUploadsForRankingFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadsForRanking.
-	GetUploadsForRankingFunc *StoreGetUploadsForRankingFunc
 	// GetVisibleUploadsMatchingMonikersFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// GetVisibleUploadsMatchingMonikers.
@@ -153,24 +150,10 @@ type MockStore struct {
 	// HasRepositoryFunc is an instance of a mock function object
 	// controlling the behavior of the method HasRepository.
 	HasRepositoryFunc *StoreHasRepositoryFunc
-	// InsertDefinitionsForRankingFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// InsertDefinitionsForRanking.
-	InsertDefinitionsForRankingFunc *StoreInsertDefinitionsForRankingFunc
 	// InsertDependencySyncingJobFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertDependencySyncingJob.
 	InsertDependencySyncingJobFunc *StoreInsertDependencySyncingJobFunc
-	// InsertPathCountInputsFunc is an instance of a mock function object
-	// controlling the behavior of the method InsertPathCountInputs.
-	InsertPathCountInputsFunc *StoreInsertPathCountInputsFunc
-	// InsertPathRanksFunc is an instance of a mock function object
-	// controlling the behavior of the method InsertPathRanks.
-	InsertPathRanksFunc *StoreInsertPathRanksFunc
-	// InsertReferencesForRankingFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// InsertReferencesForRanking.
-	InsertReferencesForRankingFunc *StoreInsertReferencesForRankingFunc
 	// InsertUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method InsertUpload.
 	InsertUploadFunc *StoreInsertUploadFunc
@@ -180,10 +163,6 @@ type MockStore struct {
 	// MarkQueuedFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkQueued.
 	MarkQueuedFunc *StoreMarkQueuedFunc
-	// ProcessStaleExportedUploadsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// ProcessStaleExportedUploads.
-	ProcessStaleExportedUploadsFunc *StoreProcessStaleExportedUploadsFunc
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *StoreReconcileCandidatesFunc
@@ -246,13 +225,6 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// UpdateUploadsVisibleToCommits.
 	UpdateUploadsVisibleToCommitsFunc *StoreUpdateUploadsVisibleToCommitsFunc
-	// VacuumStaleDefinitionsAndReferencesFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// VacuumStaleDefinitionsAndReferences.
-	VacuumStaleDefinitionsAndReferencesFunc *StoreVacuumStaleDefinitionsAndReferencesFunc
-	// VacuumStaleGraphsFunc is an instance of a mock function object
-	// controlling the behavior of the method VacuumStaleGraphs.
-	VacuumStaleGraphsFunc *StoreVacuumStaleGraphsFunc
 	// WorkerutilStoreFunc is an instance of a mock function object
 	// controlling the behavior of the method WorkerutilStore.
 	WorkerutilStoreFunc *StoreWorkerutilStoreFunc
@@ -407,11 +379,6 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
-			defaultHook: func(context.Context, string, string, int) (r0 []shared.ExportedUpload, r1 error) {
-				return
-			},
-		},
 		GetVisibleUploadsMatchingMonikersFunc: &StoreGetVisibleUploadsMatchingMonikersFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (r0 shared.PackageReferenceScanner, r1 int, r2 error) {
 				return
@@ -432,28 +399,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, int, []shared.RankingDefinitions) (r0 error) {
-				return
-			},
-		},
 		InsertDependencySyncingJobFunc: &StoreInsertDependencySyncingJobFunc{
 			defaultHook: func(context.Context, int) (r0 int, r1 error) {
-				return
-			},
-		},
-		InsertPathCountInputsFunc: &StoreInsertPathCountInputsFunc{
-			defaultHook: func(context.Context, string, int) (r0 int, r1 int, r2 error) {
-				return
-			},
-		},
-		InsertPathRanksFunc: &StoreInsertPathRanksFunc{
-			defaultHook: func(context.Context, string, int) (r0 float64, r1 float64, r2 error) {
-				return
-			},
-		},
-		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, shared.RankingReferences) (r0 error) {
 				return
 			},
 		},
@@ -469,11 +416,6 @@ func NewMockStore() *MockStore {
 		},
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
 			defaultHook: func(context.Context, int, *int64) (r0 error) {
-				return
-			},
-		},
-		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
-			defaultHook: func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -569,16 +511,6 @@ func NewMockStore() *MockStore {
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) (r0 error) {
-				return
-			},
-		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
-				return
-			},
-		},
-		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -739,11 +671,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetUploadsByIDsAllowDeleted")
 			},
 		},
-		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
-			defaultHook: func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
-				panic("unexpected invocation of MockStore.GetUploadsForRanking")
-			},
-		},
 		GetVisibleUploadsMatchingMonikersFunc: &StoreGetVisibleUploadsMatchingMonikersFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (shared.PackageReferenceScanner, int, error) {
 				panic("unexpected invocation of MockStore.GetVisibleUploadsMatchingMonikers")
@@ -764,29 +691,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.HasRepository")
 			},
 		},
-		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, int, []shared.RankingDefinitions) error {
-				panic("unexpected invocation of MockStore.InsertDefinitionsForRanking")
-			},
-		},
 		InsertDependencySyncingJobFunc: &StoreInsertDependencySyncingJobFunc{
 			defaultHook: func(context.Context, int) (int, error) {
 				panic("unexpected invocation of MockStore.InsertDependencySyncingJob")
-			},
-		},
-		InsertPathCountInputsFunc: &StoreInsertPathCountInputsFunc{
-			defaultHook: func(context.Context, string, int) (int, int, error) {
-				panic("unexpected invocation of MockStore.InsertPathCountInputs")
-			},
-		},
-		InsertPathRanksFunc: &StoreInsertPathRanksFunc{
-			defaultHook: func(context.Context, string, int) (float64, float64, error) {
-				panic("unexpected invocation of MockStore.InsertPathRanks")
-			},
-		},
-		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, shared.RankingReferences) error {
-				panic("unexpected invocation of MockStore.InsertReferencesForRanking")
 			},
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
@@ -802,11 +709,6 @@ func NewStrictMockStore() *MockStore {
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
 			defaultHook: func(context.Context, int, *int64) error {
 				panic("unexpected invocation of MockStore.MarkQueued")
-			},
-		},
-		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
-			defaultHook: func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
-				panic("unexpected invocation of MockStore.ProcessStaleExportedUploads")
 			},
 		},
 		ReconcileCandidatesFunc: &StoreReconcileCandidatesFunc{
@@ -902,16 +804,6 @@ func NewStrictMockStore() *MockStore {
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 				panic("unexpected invocation of MockStore.UpdateUploadsVisibleToCommits")
-			},
-		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
-			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.VacuumStaleDefinitionsAndReferences")
-			},
-		},
-		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
-			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.VacuumStaleGraphs")
 			},
 		},
 		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
@@ -1013,9 +905,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
 			defaultHook: i.GetUploadsByIDsAllowDeleted,
 		},
-		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
-			defaultHook: i.GetUploadsForRanking,
-		},
 		GetVisibleUploadsMatchingMonikersFunc: &StoreGetVisibleUploadsMatchingMonikersFunc{
 			defaultHook: i.GetVisibleUploadsMatchingMonikers,
 		},
@@ -1028,20 +917,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		HasRepositoryFunc: &StoreHasRepositoryFunc{
 			defaultHook: i.HasRepository,
 		},
-		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: i.InsertDefinitionsForRanking,
-		},
 		InsertDependencySyncingJobFunc: &StoreInsertDependencySyncingJobFunc{
 			defaultHook: i.InsertDependencySyncingJob,
-		},
-		InsertPathCountInputsFunc: &StoreInsertPathCountInputsFunc{
-			defaultHook: i.InsertPathCountInputs,
-		},
-		InsertPathRanksFunc: &StoreInsertPathRanksFunc{
-			defaultHook: i.InsertPathRanks,
-		},
-		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: i.InsertReferencesForRanking,
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
 			defaultHook: i.InsertUpload,
@@ -1051,9 +928,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
 			defaultHook: i.MarkQueued,
-		},
-		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
-			defaultHook: i.ProcessStaleExportedUploads,
 		},
 		ReconcileCandidatesFunc: &StoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
@@ -1111,12 +985,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: i.UpdateUploadsVisibleToCommits,
-		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
-			defaultHook: i.VacuumStaleDefinitionsAndReferences,
-		},
-		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
-			defaultHook: i.VacuumStaleGraphs,
 		},
 		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
 			defaultHook: i.WorkerutilStore,
@@ -4402,120 +4270,6 @@ func (c StoreGetUploadsByIDsAllowDeletedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreGetUploadsForRankingFunc describes the behavior when the
-// GetUploadsForRanking method of the parent MockStore instance is invoked.
-type StoreGetUploadsForRankingFunc struct {
-	defaultHook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)
-	hooks       []func(context.Context, string, string, int) ([]shared.ExportedUpload, error)
-	history     []StoreGetUploadsForRankingFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadsForRanking delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) GetUploadsForRanking(v0 context.Context, v1 string, v2 string, v3 int) ([]shared.ExportedUpload, error) {
-	r0, r1 := m.GetUploadsForRankingFunc.nextHook()(v0, v1, v2, v3)
-	m.GetUploadsForRankingFunc.appendCall(StoreGetUploadsForRankingFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetUploadsForRanking
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreGetUploadsForRankingFunc) SetDefaultHook(hook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadsForRanking method of the parent MockStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreGetUploadsForRankingFunc) PushHook(hook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetUploadsForRankingFunc) SetDefaultReturn(r0 []shared.ExportedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadsForRankingFunc) PushReturn(r0 []shared.ExportedUpload, r1 error) {
-	f.PushHook(func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetUploadsForRankingFunc) nextHook() func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetUploadsForRankingFunc) appendCall(r0 StoreGetUploadsForRankingFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetUploadsForRankingFuncCall objects
-// describing the invocations of this function.
-func (f *StoreGetUploadsForRankingFunc) History() []StoreGetUploadsForRankingFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetUploadsForRankingFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetUploadsForRankingFuncCall is an object that describes an
-// invocation of method GetUploadsForRanking on an instance of MockStore.
-type StoreGetUploadsForRankingFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.ExportedUpload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetUploadsForRankingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // StoreGetVisibleUploadsMatchingMonikersFunc describes the behavior when
 // the GetVisibleUploadsMatchingMonikers method of the parent MockStore
 // instance is invoked.
@@ -4973,120 +4727,6 @@ func (c StoreHasRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreInsertDefinitionsForRankingFunc describes the behavior when the
-// InsertDefinitionsForRanking method of the parent MockStore instance is
-// invoked.
-type StoreInsertDefinitionsForRankingFunc struct {
-	defaultHook func(context.Context, string, int, []shared.RankingDefinitions) error
-	hooks       []func(context.Context, string, int, []shared.RankingDefinitions) error
-	history     []StoreInsertDefinitionsForRankingFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertDefinitionsForRanking delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 int, v3 []shared.RankingDefinitions) error {
-	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertDefinitionsForRanking method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, []shared.RankingDefinitions) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDefinitionsForRanking method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, int, []shared.RankingDefinitions) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int, []shared.RankingDefinitions) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertDefinitionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int, []shared.RankingDefinitions) error {
-		return r0
-	})
-}
-
-func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, int, []shared.RankingDefinitions) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreInsertDefinitionsForRankingFunc) appendCall(r0 StoreInsertDefinitionsForRankingFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreInsertDefinitionsForRankingFuncCall
-// objects describing the invocations of this function.
-func (f *StoreInsertDefinitionsForRankingFunc) History() []StoreInsertDefinitionsForRankingFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreInsertDefinitionsForRankingFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreInsertDefinitionsForRankingFuncCall is an object that describes an
-// invocation of method InsertDefinitionsForRanking on an instance of
-// MockStore.
-type StoreInsertDefinitionsForRankingFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []shared.RankingDefinitions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreInsertDefinitionsForRankingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreInsertDefinitionsForRankingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // StoreInsertDependencySyncingJobFunc describes the behavior when the
 // InsertDependencySyncingJob method of the parent MockStore instance is
 // invoked.
@@ -5196,348 +4836,6 @@ func (c StoreInsertDependencySyncingJobFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreInsertDependencySyncingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreInsertPathCountInputsFunc describes the behavior when the
-// InsertPathCountInputs method of the parent MockStore instance is invoked.
-type StoreInsertPathCountInputsFunc struct {
-	defaultHook func(context.Context, string, int) (int, int, error)
-	hooks       []func(context.Context, string, int) (int, int, error)
-	history     []StoreInsertPathCountInputsFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertPathCountInputs delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertPathCountInputs(v0 context.Context, v1 string, v2 int) (int, int, error) {
-	r0, r1, r2 := m.InsertPathCountInputsFunc.nextHook()(v0, v1, v2)
-	m.InsertPathCountInputsFunc.appendCall(StoreInsertPathCountInputsFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertPathCountInputs method of the parent MockStore instance is invoked
-// and the hook queue is empty.
-func (f *StoreInsertPathCountInputsFunc) SetDefaultHook(hook func(context.Context, string, int) (int, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertPathCountInputs method of the parent MockStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreInsertPathCountInputsFunc) PushHook(hook func(context.Context, string, int) (int, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreInsertPathCountInputsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertPathCountInputsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, int) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreInsertPathCountInputsFunc) nextHook() func(context.Context, string, int) (int, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreInsertPathCountInputsFunc) appendCall(r0 StoreInsertPathCountInputsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreInsertPathCountInputsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreInsertPathCountInputsFunc) History() []StoreInsertPathCountInputsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreInsertPathCountInputsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreInsertPathCountInputsFuncCall is an object that describes an
-// invocation of method InsertPathCountInputs on an instance of MockStore.
-type StoreInsertPathCountInputsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreInsertPathCountInputsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreInsertPathCountInputsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreInsertPathRanksFunc describes the behavior when the InsertPathRanks
-// method of the parent MockStore instance is invoked.
-type StoreInsertPathRanksFunc struct {
-	defaultHook func(context.Context, string, int) (float64, float64, error)
-	hooks       []func(context.Context, string, int) (float64, float64, error)
-	history     []StoreInsertPathRanksFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertPathRanks delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) InsertPathRanks(v0 context.Context, v1 string, v2 int) (float64, float64, error) {
-	r0, r1, r2 := m.InsertPathRanksFunc.nextHook()(v0, v1, v2)
-	m.InsertPathRanksFunc.appendCall(StoreInsertPathRanksFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the InsertPathRanks
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreInsertPathRanksFunc) SetDefaultHook(hook func(context.Context, string, int) (float64, float64, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertPathRanks method of the parent MockStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreInsertPathRanksFunc) PushHook(hook func(context.Context, string, int) (float64, float64, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreInsertPathRanksFunc) SetDefaultReturn(r0 float64, r1 float64, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (float64, float64, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertPathRanksFunc) PushReturn(r0 float64, r1 float64, r2 error) {
-	f.PushHook(func(context.Context, string, int) (float64, float64, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreInsertPathRanksFunc) nextHook() func(context.Context, string, int) (float64, float64, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreInsertPathRanksFunc) appendCall(r0 StoreInsertPathRanksFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreInsertPathRanksFuncCall objects
-// describing the invocations of this function.
-func (f *StoreInsertPathRanksFunc) History() []StoreInsertPathRanksFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreInsertPathRanksFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreInsertPathRanksFuncCall is an object that describes an invocation of
-// method InsertPathRanks on an instance of MockStore.
-type StoreInsertPathRanksFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 float64
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 float64
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreInsertPathRanksFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreInsertPathRanksFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreInsertReferencesForRankingFunc describes the behavior when the
-// InsertReferencesForRanking method of the parent MockStore instance is
-// invoked.
-type StoreInsertReferencesForRankingFunc struct {
-	defaultHook func(context.Context, string, int, shared.RankingReferences) error
-	hooks       []func(context.Context, string, int, shared.RankingReferences) error
-	history     []StoreInsertReferencesForRankingFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertReferencesForRanking delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2 int, v3 shared.RankingReferences) error {
-	r0 := m.InsertReferencesForRankingFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertReferencesForRankingFunc.appendCall(StoreInsertReferencesForRankingFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertReferencesForRanking method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, shared.RankingReferences) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertReferencesForRanking method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, string, int, shared.RankingReferences) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreInsertReferencesForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int, shared.RankingReferences) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertReferencesForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int, shared.RankingReferences) error {
-		return r0
-	})
-}
-
-func (f *StoreInsertReferencesForRankingFunc) nextHook() func(context.Context, string, int, shared.RankingReferences) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreInsertReferencesForRankingFunc) appendCall(r0 StoreInsertReferencesForRankingFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreInsertReferencesForRankingFuncCall
-// objects describing the invocations of this function.
-func (f *StoreInsertReferencesForRankingFunc) History() []StoreInsertReferencesForRankingFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreInsertReferencesForRankingFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreInsertReferencesForRankingFuncCall is an object that describes an
-// invocation of method InsertReferencesForRanking on an instance of
-// MockStore.
-type StoreInsertReferencesForRankingFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 shared.RankingReferences
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreInsertReferencesForRankingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreInsertReferencesForRankingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreInsertUploadFunc describes the behavior when the InsertUpload method
@@ -5859,123 +5157,6 @@ func (c StoreMarkQueuedFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreMarkQueuedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreProcessStaleExportedUploadsFunc describes the behavior when the
-// ProcessStaleExportedUploads method of the parent MockStore instance is
-// invoked.
-type StoreProcessStaleExportedUploadsFunc struct {
-	defaultHook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)
-	hooks       []func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)
-	history     []StoreProcessStaleExportedUploadsFuncCall
-	mutex       sync.Mutex
-}
-
-// ProcessStaleExportedUploads delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) ProcessStaleExportedUploads(v0 context.Context, v1 string, v2 int, v3 func(ctx context.Context, objectPrefix string) error) (int, error) {
-	r0, r1 := m.ProcessStaleExportedUploadsFunc.nextHook()(v0, v1, v2, v3)
-	m.ProcessStaleExportedUploadsFunc.appendCall(StoreProcessStaleExportedUploadsFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// ProcessStaleExportedUploads method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreProcessStaleExportedUploadsFunc) SetDefaultHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ProcessStaleExportedUploads method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreProcessStaleExportedUploadsFunc) PushHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreProcessStaleExportedUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreProcessStaleExportedUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreProcessStaleExportedUploadsFunc) nextHook() func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreProcessStaleExportedUploadsFunc) appendCall(r0 StoreProcessStaleExportedUploadsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreProcessStaleExportedUploadsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreProcessStaleExportedUploadsFunc) History() []StoreProcessStaleExportedUploadsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreProcessStaleExportedUploadsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreProcessStaleExportedUploadsFuncCall is an object that describes an
-// invocation of method ProcessStaleExportedUploads on an instance of
-// MockStore.
-type StoreProcessStaleExportedUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 func(ctx context.Context, objectPrefix string) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreProcessStaleExportedUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreProcessStaleExportedUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreReconcileCandidatesFunc describes the behavior when the
@@ -8077,233 +7258,6 @@ func (c StoreUpdateUploadsVisibleToCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateUploadsVisibleToCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreVacuumStaleDefinitionsAndReferencesFunc describes the behavior when
-// the VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance is invoked.
-type StoreVacuumStaleDefinitionsAndReferencesFunc struct {
-	defaultHook func(context.Context, string) (int, int, error)
-	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreVacuumStaleDefinitionsAndReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumStaleDefinitionsAndReferences delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockStore) VacuumStaleDefinitionsAndReferences(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.VacuumStaleDefinitionsAndReferencesFunc.nextHook()(v0, v1)
-	m.VacuumStaleDefinitionsAndReferencesFunc.appendCall(StoreVacuumStaleDefinitionsAndReferencesFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance is invoked and the hook queue is empty.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) nextHook() func(context.Context, string) (int, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) appendCall(r0 StoreVacuumStaleDefinitionsAndReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// StoreVacuumStaleDefinitionsAndReferencesFuncCall objects describing the
-// invocations of this function.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) History() []StoreVacuumStaleDefinitionsAndReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumStaleDefinitionsAndReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumStaleDefinitionsAndReferencesFuncCall is an object that
-// describes an invocation of method VacuumStaleDefinitionsAndReferences on
-// an instance of MockStore.
-type StoreVacuumStaleDefinitionsAndReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumStaleDefinitionsAndReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumStaleDefinitionsAndReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreVacuumStaleGraphsFunc describes the behavior when the
-// VacuumStaleGraphs method of the parent MockStore instance is invoked.
-type StoreVacuumStaleGraphsFunc struct {
-	defaultHook func(context.Context, string) (int, int, error)
-	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreVacuumStaleGraphsFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumStaleGraphs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumStaleGraphs(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.VacuumStaleGraphsFunc.nextHook()(v0, v1)
-	m.VacuumStaleGraphsFunc.appendCall(StoreVacuumStaleGraphsFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the VacuumStaleGraphs
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreVacuumStaleGraphsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumStaleGraphs method of the parent MockStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreVacuumStaleGraphsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumStaleGraphsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumStaleGraphsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreVacuumStaleGraphsFunc) nextHook() func(context.Context, string) (int, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumStaleGraphsFunc) appendCall(r0 StoreVacuumStaleGraphsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVacuumStaleGraphsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreVacuumStaleGraphsFunc) History() []StoreVacuumStaleGraphsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumStaleGraphsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumStaleGraphsFuncCall is an object that describes an invocation
-// of method VacuumStaleGraphs on an instance of MockStore.
-type StoreVacuumStaleGraphsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumStaleGraphsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumStaleGraphsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreWorkerutilStoreFunc describes the behavior when the WorkerutilStore

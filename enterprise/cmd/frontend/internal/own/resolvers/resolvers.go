@@ -35,11 +35,16 @@ type ownResolver struct {
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	file, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
+	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
-	owners := file.FindOwners(blob.Path())
+	// No data found.
+	if rs == nil {
+		return &ownershipConnectionResolver{db: r.db}, nil
+	}
+
+	owners := rs.FindOwners(blob.Path())
 	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
 	if err != nil {
 		return nil, err
