@@ -205,7 +205,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
 		resourceAttributes[AttrUserName] = user.Username
 	}
-	if (resourceAttributes[AttrEmails] == nil || len(resourceAttributes[AttrEmails].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+	if emails, ok := resourceAttributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && user.Emails != nil && len(user.Emails) > 0 {
 		resourceAttributes[AttrEmails] = []interface{}{
 			map[string]interface{}{
 				"value":   user.Emails[0],
