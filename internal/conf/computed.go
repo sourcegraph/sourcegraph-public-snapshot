@@ -266,6 +266,11 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	return *val
 }
 
+func EmbeddingsEnabled() bool {
+	embeddingsConfig := Get().Embeddings
+	return embeddingsConfig != nil && embeddingsConfig.Enabled
+}
+
 func ProductResearchPageEnabled() bool {
 	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
 		return *enabled

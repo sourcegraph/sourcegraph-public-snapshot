@@ -158,6 +158,8 @@ type JSContext struct {
 
 	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
 
+	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
+
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -302,6 +304,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+
+		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
