@@ -17,6 +17,7 @@ type patternPart interface {
 	// Match is true if given file or directory name on the path matches
 	// this part of the glob pattern.
 	Match(string) bool
+	Eq(patternPart) bool
 }
 
 // anySubPath is indicated by ** in glob patterns, and matches arbitrary
@@ -25,6 +26,10 @@ type anySubPath struct{}
 
 func (p anySubPath) String() string      { return "**" }
 func (p anySubPath) Match(_ string) bool { return true }
+func (p anySubPath) Eq(another patternPart) bool {
+	_, ok := another.(anySubPath)
+	return ok
+}
 
 // exactMatch is indicated by an exact name of directory or a file within
 // the glob pattern, and matches that exact part of the path only.
@@ -32,13 +37,18 @@ type exactMatch string
 
 func (p exactMatch) String() string         { return string(p) }
 func (p exactMatch) Match(part string) bool { return string(p) == part }
+func (p exactMatch) Eq(another patternPart) bool {
+	q, ok := another.(exactMatch)
+	return ok && string(p) == string(q)
+}
 
 // anyMatch is indicated by * in a glob pattern, and matches any single file
 // or directory on the path.
 type anyMatch struct{}
 
-func (p anyMatch) String() string      { return "*" }
-func (p anyMatch) Match(_ string) bool { return true }
+func (p anyMatch) String() string              { return "*" }
+func (p anyMatch) Match(_ string) bool         { return true }
+func (p anyMatch) Eq(another patternPart) bool { _, ok := another.(anyMatch); return ok }
 
 type asteriskPattern struct {
 	glob     string
@@ -56,6 +66,10 @@ func makeAsteriskPattern(pattern string) asteriskPattern {
 func (p asteriskPattern) String() string { return p.glob }
 func (p asteriskPattern) Match(part string) bool {
 	return p.compiled.IsMatch(part)
+}
+func (p asteriskPattern) Eq(another patternPart) bool {
+	q, ok := another.(asteriskPattern)
+	return ok && p.glob == q.glob
 }
 
 // compile translates a text representation of a glob pattern

@@ -51,6 +51,46 @@ func Parse(codeownersFile io.Reader) (*Ruleset, error) {
 	return NewRuleset(&codeownerspb.File{Rule: rs}), nil
 }
 
+func ParseTrie(codeownersFile io.Reader) (PatternForist, error) {
+	scanner := bufio.NewScanner(codeownersFile)
+	var forist PatternForist
+	p := new(parsing)
+	lineNumber := int32(0)
+	for scanner.Scan() {
+		p.nextLine(scanner.Text())
+		lineNumber++
+		if p.isBlank() {
+			continue
+		}
+		if p.matchSection() {
+			continue
+		}
+		pattern, owners, ok := p.matchRule()
+		if !ok {
+			return nil, errors.Errorf("failed to match rule: %s", p.line)
+		}
+		// Need to handle this error once, codeownerspb.File supports
+		// error metadata.
+		r := codeownerspb.Rule{
+			Pattern:     unescape(pattern),
+			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
+			LineNumber:  lineNumber,
+		}
+		for _, ownerText := range owners {
+			o := ParseOwner(ownerText)
+			r.Owner = append(r.Owner, o)
+		}
+		glob, err := compile(pattern)
+		if err == nil {
+			(&forist).Add(glob.parts, &r)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return forist, nil
+}
+
 func ParseOwner(ownerText string) *codeownerspb.Owner {
 	var o codeownerspb.Owner
 	if strings.HasPrefix(ownerText, "@") {
