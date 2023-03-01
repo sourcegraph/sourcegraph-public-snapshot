@@ -217,6 +217,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterpriseServices.ComputeResolver,
 		enterpriseServices.InsightsAggregationResolver,
 		enterpriseServices.WebhooksResolver,
+		enterpriseServices.EmbeddingsResolver,
 		enterpriseServices.RBACResolver,
 		enterpriseServices.OwnResolver,
 	)
@@ -288,6 +289,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
+			NewCompletionsStreamHandler:     enterprise.NewCompletionsStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
