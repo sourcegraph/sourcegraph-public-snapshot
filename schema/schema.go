@@ -1947,7 +1947,9 @@ type Settings struct {
 	AlertsCodeHostIntegrationMessaging string `json:"alerts.codeHostIntegrationMessaging,omitempty"`
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
-	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
+	// AlertsShowMajorMinorUpdates description: Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.
+	AlertsShowMajorMinorUpdates bool `json:"alerts.showMajorMinorUpdates,omitempty"`
+	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will be shown if `alerts.showMajorMinorUpdatess` is true.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// BasicCodeIntelGlobalSearchesEnabled description: Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.
 	BasicCodeIntelGlobalSearchesEnabled bool `json:"basicCodeIntel.globalSearchesEnabled,omitempty"`
@@ -2059,6 +2061,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "alerts.codeHostIntegrationMessaging")
 	delete(m, "alerts.hideObservabilitySiteAlerts")
+	delete(m, "alerts.showMajorMinorUpdates")
 	delete(m, "alerts.showPatchUpdates")
 	delete(m, "basicCodeIntel.globalSearchesEnabled")
 	delete(m, "basicCodeIntel.includeArchives")
