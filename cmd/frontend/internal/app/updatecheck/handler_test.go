@@ -906,6 +906,115 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 	}`)
 }
 
+func TestSerializeOwn(t *testing.T) {
+	pr := &pingRequest{
+		ClientSiteID:         "0101-0101",
+		DeployType:           "server",
+		ClientVersionString:  "3.12.6",
+		AuthProviders:        []string{"foo", "bar"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		BuiltinSignupAllowed: true,
+		HasExtURL:            false,
+		UniqueUsers:          123,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
+		OwnUsage: json.RawMessage(`{
+			"feature_flag_on": true,
+			"repos_count": {
+				"total": 42,
+				"with_ingested_ownership": 15
+			},
+			"select_file_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"file_has_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"ownership_panel_opened": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			}
+		}`),
+	}
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": null,
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": {
+			"feature_flag_on": true,
+			"repos_count": {
+				"total": 42,
+				"with_ingested_ownership": 15
+			},
+			"select_file_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"file_has_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"ownership_panel_opened": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			}
+		},
+		"search_usage": null,
+		"growth_statistics": null,
+		"saved_searches": null,
+		"homepage_panels": null,
+		"search_onboarding": null,
+		"repositories": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
 func compareJSON(t *testing.T, actual []byte, expected string) {
 	var o1 any
 	if err := json.Unmarshal(actual, &o1); err != nil {
