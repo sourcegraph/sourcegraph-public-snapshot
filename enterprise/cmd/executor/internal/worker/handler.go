@@ -154,6 +154,36 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	return nil
 }
 
+func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
+	fields := map[string]any{
+		"duration_ms":    duration.Milliseconds(),
+		"recordID":       job.RecordID(),
+		"repositoryName": job.RepositoryName,
+		"commit":         job.Commit,
+		"numDockerSteps": len(job.DockerSteps),
+		"numCliSteps":    len(job.CliSteps),
+	}
+
+	if err != nil {
+		fields["error"] = err.Error()
+	}
+
+	return honey.NewEventWithFields("executor", fields)
+}
+
+func union(a, b map[string]string) map[string]string {
+	c := make(map[string]string, len(a)+len(b))
+
+	for k, v := range a {
+		c[k] = v
+	}
+	for k, v := range b {
+		c[k] = v
+	}
+
+	return c
+}
+
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) (err error) {
@@ -247,34 +277,39 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 	return nil
 }
 
-func union(a, b map[string]string) map[string]string {
-	c := make(map[string]string, len(a)+len(b))
-
-	for k, v := range a {
-		c[k] = v
-	}
-	for k, v := range b {
-		c[k] = v
-	}
-
-	return c
-}
-
-func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
-	fields := map[string]any{
-		"duration_ms":    duration.Milliseconds(),
-		"recordID":       job.RecordID(),
-		"repositoryName": job.RepositoryName,
-		"commit":         job.Commit,
-		"numDockerSteps": len(job.DockerSteps),
-		"numCliSteps":    len(job.CliSteps),
-	}
-
-	if err != nil {
-		fields["error"] = err.Error()
+// prepareWorkspace creates and returns a temporary directory in which acts the workspace
+// while processing a single job. It is up to the caller to ensure that this directory is
+// removed after the job has finished processing. If a repository name is supplied, then
+// that repository will be cloned (through the frontend API) into the workspace.
+func (h *handler) prepareWorkspace(
+	ctx context.Context,
+	cmd command.Command,
+	job types.Job,
+	commandLogger command.Logger,
+) (workspace.Workspace, error) {
+	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
+		return workspace.NewFirecrackerWorkspace(
+			ctx,
+			h.filesStore,
+			job,
+			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
+			h.options.KeepWorkspaces,
+			cmd,
+			commandLogger,
+			h.cloneOptions,
+			h.operations,
+		)
 	}
 
-	return honey.NewEventWithFields("executor", fields)
+	return workspace.NewDockerWorkspace(
+		ctx,
+		h.filesStore,
+		job,
+		cmd,
+		commandLogger,
+		h.cloneOptions,
+		h.operations,
+	)
 }
 
 func newVMName(vmPrefix string) string {
