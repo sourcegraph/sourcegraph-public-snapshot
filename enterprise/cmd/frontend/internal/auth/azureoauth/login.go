@@ -105,7 +105,7 @@ func callbackHandler(config *oauth2.Config, success http.Handler) http.Handler {
 
 		// Custom values in the POST body required by the API to get an access token. See:
 		// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#http-request-body---authorize-app
-		clientAssertionType := oauth2.SetAuthURLParam("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+		clientAssertionType := oauth2.SetAuthURLParam("client_assertion_type", azuredevops.ClientAssertionType)
 		clientAssertion := oauth2.SetAuthURLParam("client_assertion", config.ClientSecret)
 		grantType := oauth2.SetAuthURLParam("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
 		assertion := oauth2.SetAuthURLParam("assertion", authCode)

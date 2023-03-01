@@ -22,6 +22,7 @@ import (
 
 const (
 	AzureDevOpsApiUrl       = "https://dev.azure.com/"
+	ClientAssertionType     = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 	apiVersion              = "7.0"
 	continuationTokenHeader = "x-ms-continuationtoken"
 )
@@ -177,11 +178,11 @@ func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
 		if authProvider.AzureDevOps != nil {
 			authURL, err := url.JoinPath(VisualStudioAppUrl, "oauth2/authorize")
 			if err != nil {
-				continue
+				return nil, err
 			}
 			tokenURL, err := url.JoinPath(VisualStudioAppUrl, "oauth2/token")
 			if err != nil {
-				continue
+				return nil, err
 			}
 
 			redirectURL, err := GetRedirectURL(nil)
@@ -207,7 +208,7 @@ func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
 				// working for Azure Dev Ops this is a good place to start looking by writing a
 				// custom implementation that only sends the key-value pairs that the API expects.
 				CustomQueryParams: map[string]string{
-					"client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+					"client_assertion_type": ClientAssertionType,
 					"client_assertion":      url.QueryEscape(p.ClientSecret),
 					"grant_type":            "refresh_token",
 					"assertion":             url.QueryEscape(refreshToken),
