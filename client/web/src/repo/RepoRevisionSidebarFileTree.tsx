@@ -134,6 +134,22 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         },
     })
 
+    const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
+        const rootTreeUrl = data?.repository?.commit?.tree?.url
+        const entries = data?.repository?.commit?.tree?.entries
+
+        if (rootTreeUrl === undefined || entries === undefined) {
+            return
+        }
+
+        const nextTreeData = appendTreeData(currentTreeData, entries, rootTreeUrl)
+
+        setTreeData(nextTreeData)
+        // Eagerly update the ref so that the selected path syncing can
+        // use the new data before the tree is re-rendered.
+        treeDataRef.current = nextTreeData
+    }, [])
+
     // Initialize the treeData from the initial query
     // We use a layout effect here because the data can be available in the first render pass and
     // we want to avoid showing a loading indicator in that case.
@@ -142,20 +158,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             return
         }
 
-        const rootTreeUrl = data?.repository?.commit?.tree?.url
-        const entries = data?.repository?.commit?.tree?.entries
-
-        if (rootTreeUrl === undefined || entries === undefined) {
-            return
-        }
-
-        const nextTreeData = appendTreeData(createTreeData(initialFilePath), entries, rootTreeUrl)
-
-        setTreeData(nextTreeData)
-        // Eagerly update the ref so that the selected path syncing can
-        // use the new data before the tree is re-rendered.
-        treeDataRef.current = nextTreeData
-    }, [data, initialFilePath, treeData])
+        updateTreeData(createTreeData(initialFilePath), data)
+    }, [data, initialFilePath, treeData, updateTreeData])
 
     const client = useApolloClient()
     const fetchEntries = useCallback(
@@ -165,21 +169,13 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                 variables,
             })
 
-            const rootTreeUrl = result.data?.repository?.commit?.tree?.url
-            const entries = result.data?.repository?.commit?.tree?.entries
-
-            if (rootTreeUrl === undefined || entries === undefined || treeDataRef.current === null) {
+            if (!treeDataRef.current) {
                 return
             }
 
-            const nextTreeData = appendTreeData(treeDataRef.current, entries, rootTreeUrl)
-
-            setTreeData(nextTreeData)
-            // Eagerly update the ref so that the selected path syncing can
-            // use the new data before the tree is re-rendered.
-            treeDataRef.current = nextTreeData
+            updateTreeData(treeDataRef.current, result.data)
         },
-        [client]
+        [client, updateTreeData]
     )
 
     const onLoadData = useCallback(
