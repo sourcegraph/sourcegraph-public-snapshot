@@ -1,15 +1,17 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro", "rust_test")
 
-rust_binary(
-    name = "sg-macros",
-    aliases = aliases(),
-    deps = all_crate_deps(
-        normal = True,
-    ),
-    proc_macro_deps = all_crate_deps(
-        proc_macro = True,
-    ),
+rust_proc_macro(
+  name = "sg-macros",
+  srcs = ["src/lib.rs"],
+  aliases = aliases(),
+  deps = all_crate_deps(
+      normal = True,
+  ),
+  proc_macro_deps = all_crate_deps(
+      proc_macro = True,
+  ),
+  visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
 )
 
 rust_test(
