@@ -422,7 +422,7 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 			return nil, err
 		}
 
-		namespaces := make([]*types.ExternalServiceNamespace, len(resp.GetNamespaces()))
+		namespaces := make([]*types.ExternalServiceNamespace, 0, len(resp.GetNamespaces()))
 		for _, ns := range resp.GetNamespaces() {
 			namespaces = append(namespaces, &types.ExternalServiceNamespace{
 				ID:         int(ns.GetId()),

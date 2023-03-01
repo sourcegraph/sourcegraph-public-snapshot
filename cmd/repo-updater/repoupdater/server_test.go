@@ -1040,7 +1040,11 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			}
 			t.Cleanup(func() { mockNewGenericSourcer = nil })
 
-			srv := httptest.NewServer(s.Handler())
+			grpcServer := defaults.NewServer(logger)
+			proto.RegisterRepoUpdaterServiceServer(grpcServer, &RepoUpdaterServiceServer{Server: s})
+			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+
+			srv := httptest.NewServer(handler)
 			defer srv.Close()
 
 			cli := repoupdater.NewClient(srv.URL)
@@ -1056,9 +1060,15 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			}
 
 			res, err := cli.ExternalServiceNamespaces(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
+			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 				t.Fatalf("have err: %q, want: %q", have, want)
 			}
+
+			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
+				t.Fatalf("have err: %q, want: %q", have, want)
+			}
+			res.Error = ""
+			tc.result.Error = ""
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
 				t.Fatalf("response mismatch(-have, +want): %s", diff)
@@ -1314,9 +1324,15 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			}
 
 			res, err := cli.ExternalServiceRepositories(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
+			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 				t.Fatalf("have err: %q, want: %q", have, want)
 			}
+
+			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
+				t.Fatalf("have err: %q, want: %q", have, want)
+			}
+			res.Error = ""
+			tc.result.Error = ""
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
 				t.Fatalf("response mismatch(-have, +want): %s", diff)
