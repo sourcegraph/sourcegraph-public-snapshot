@@ -1741,6 +1741,9 @@ type OwnershipUsageStatistics struct {
 
 	// Activity of using a `file:has.owners` predicate in search.
 	FileHasOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owners_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
 }
 
 type OwnershipUsageReposCounts struct {

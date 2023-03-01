@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	_ "embed"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -16,6 +17,12 @@ var (
 		FROM repo AS r
 		LEFT JOIN codeowners AS o
 		ON r.id = o.repo_id;`
+)
+
+const (
+	selectFileOwnersEventName   = "select:file.owners"
+	fileHasOwnerEventName       = "file:has.owner"
+	ownershipPanelOpenEventName = "ownershipPanelOpen"
 )
 
 func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.OwnershipUsageStatistics, error) {
@@ -36,6 +43,15 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 		return nil, err
 	}
 	stats.ReposCount = &reposCount
-	db.
+	activity, err := db.EventLogs().OwnershipFeatureActivity(ctx, time.Now(),
+		selectFileOwnersEventName,
+		fileHasOwnerEventName,
+		ownershipPanelOpenEventName)
+	if err != nil {
+		return nil, err
+	}
+	stats.SelectFileOwnersSearch = activity[selectFileOwnersEventName]
+	stats.FileHasOwnersSearch = activity[fileHasOwnerEventName]
+	stats.OwnershipPanelOpened = activity[ownershipPanelOpenEventName]
 	return &stats, nil
 }
