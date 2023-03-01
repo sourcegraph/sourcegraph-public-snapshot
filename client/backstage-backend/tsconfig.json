@@ -3,24 +3,13 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2020",
-    "lib": [
-      "esnext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "sourceRoot": "src",
     "baseUrl": "./src",
     "paths": {
-      "@sourcegraph/*": [
-        "../*"
-      ],
-      "*": [
-        "types/*",
-        "../../shared/src/types/*",
-        "../../common/src/types/*",
-        "*"
-      ]
+      "@sourcegraph/*": ["../*"],
+      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
     },
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -28,28 +17,19 @@
     "jsx": "react-jsx",
     "declaration": true,
     "outDir": "dist/types",
-    "rootDir": "./src"
+    "rootDir": "./src",
   },
   "references": [
     {
-      "path": "../build-config"
+      "path": "../build-config",
     },
     {
-      "path": "../http-client"
+      "path": "../http-client",
     },
     {
-      "path": "../shared"
-    }
+      "path": "../shared",
+    },
   ],
-  "include": [
-    "**/*",
-    "**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "../../node_modules",
-    "dist",
-    "**/*.test.ts",
-    "scripts"
-  ]
+  "include": ["**/*", "**/*.d.ts"],
+  "exclude": ["node_modules", "../../node_modules", "dist", "**/*.test.ts", "scripts"],
 }

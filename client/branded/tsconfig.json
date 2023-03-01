@@ -6,49 +6,37 @@
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "../observability-client/src/types/*",
-        "src/types/*",
-        "*"
-      ]
+      "*": ["../observability-client/src/types/*", "src/types/*", "*"],
     },
     "rootDir": ".",
-    "outDir": "./out"
+    "outDir": "./out",
   },
-  "include": [
-    "**/*",
-    ".*",
-    "./src/**/*.json"
-  ],
-  "exclude": [
-    "../../node_modules",
-    "./node_modules",
-    "./out"
-  ],
+  "include": ["**/*", ".*", "./src/**/*.json"],
+  "exclude": ["../../node_modules", "./node_modules", "./out"],
   "references": [
     {
-      "path": "../client-api"
+      "path": "../client-api",
     },
     {
-      "path": "../codeintellify"
+      "path": "../codeintellify",
     },
     {
-      "path": "../common"
+      "path": "../common",
     },
     {
-      "path": "../extension-api-types"
+      "path": "../extension-api-types",
     },
     {
-      "path": "../observability-client"
+      "path": "../observability-client",
     },
     {
-      "path": "../shared"
+      "path": "../shared",
     },
     {
-      "path": "../testing"
+      "path": "../testing",
     },
     {
-      "path": "../wildcard"
-    }
-  ]
+      "path": "../wildcard",
+    },
+  ],
 }
