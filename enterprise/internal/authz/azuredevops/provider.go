@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 	authztypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
@@ -51,7 +53,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	uniqueOrgs := maps.Keys(orgs)
 	uniqueProjects := maps.Keys(projects)
 
-	p, err := newAuthzProvider(db, uniqueOrgs, uniqueProjects)
+	p, err := newAuthzProvider(db, conns, uniqueOrgs, uniqueProjects)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
@@ -62,7 +64,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error) {
+func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects []string) (*Provider, error) {
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -75,6 +77,7 @@ func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error
 	return &Provider{
 		db:       db,
 		urn:      "azuredevops:authzprovider",
+		conns:    conns,
 		codeHost: extsvc.NewCodeHost(u, extsvc.TypeAzureDevOps),
 		orgs:     orgs,
 		projects: projects,
@@ -86,6 +89,8 @@ type Provider struct {
 
 	urn      string
 	codeHost *extsvc.CodeHost
+
+	conns []*types.AzureDevOpsConnection
 
 	// orgs is the list of orgs as configured in the code host connection.
 	orgs []string
@@ -246,7 +251,36 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-// TODO: Implement this in a follow up PR.
 func (p *Provider) ValidateConnection(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	allErrors := []string{}
+	for _, conn := range p.conns {
+		client, err := azuredevops.NewClient(
+			p.ServiceID(),
+			azuredevops.AzureDevOpsApiUrl,
+			&auth.BasicAuth{
+				Username: conn.Username,
+				Password: conn.Token,
+			},
+			nil,
+		)
+
+		if err != nil {
+			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))
+		}
+
+		_, err = client.GetAuthorizedProfile(ctx)
+		if err != nil {
+			allErrors = append(allErrors, err.Error())
+		}
+	}
+
+	if len(allErrors) > 0 {
+		msg := strings.Join(allErrors, "\n")
+		return errors.Newf("ValidateConnection failed for Azure DevOps with the following errors: %s", msg)
+	}
+
 	return nil
 }
