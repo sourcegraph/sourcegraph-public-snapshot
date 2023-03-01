@@ -1,3 +1,0 @@
-# Requirements
-
-Coming soon!
