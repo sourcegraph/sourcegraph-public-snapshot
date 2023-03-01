@@ -28,7 +28,10 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
             name
             url
         }
-        revision
+        revision {
+            oid
+            abbreviatedOID
+        }
     }
 `
 

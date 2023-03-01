@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -81,6 +83,10 @@ type repoEmbeddingJobResolver struct {
 	db              database.DB
 	gitserverClient gitserver.Client
 	job             *repobg.RepoEmbeddingJob
+	// cache results because they are used by multiple fields
+	once         sync.Once
+	repoResolver *graphqlbackend.RepositoryResolver
+	err          error
 }
 
 func (r *repoEmbeddingJobResolver) ID() graphql.ID {
@@ -143,17 +149,36 @@ func (r *repoEmbeddingJobResolver) Cancel() bool {
 	return r.job.Cancel
 }
 
-func (r *repoEmbeddingJobResolver) Repo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	repo, err := r.db.Repos().Get(ctx, r.job.RepoID)
-	if err != nil {
-		// Skip resolving repository if it does not exist.
-		return nil, nil
-	}
-	return graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
+func (r *repoEmbeddingJobResolver) compute(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	r.once.Do(func() {
+		repo, err := r.db.Repos().Get(ctx, r.job.RepoID)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				// Skip resolving repository if it does not exist.
+				r.repoResolver, r.err = nil, nil
+				return
+			}
+			r.repoResolver, r.err = nil, err
+			return
+		}
+		r.repoResolver, r.err = graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
+	})
+	return r.repoResolver, r.err
 }
 
-func (r *repoEmbeddingJobResolver) Revision() string {
-	return string(r.job.Revision)
+func (r *repoEmbeddingJobResolver) Repo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return r.compute(ctx)
+}
+
+func (r *repoEmbeddingJobResolver) Revision(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
+	repoResolver, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if repoResolver == nil {
+		return nil, nil
+	}
+	return graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, r.job.Revision, nil), nil
 }
 
 func marshalRepoEmbeddingJobID(id int) graphql.ID {

@@ -63,5 +63,5 @@ type RepoEmbeddingJobResolver interface {
 	WorkerHostname() string
 	Cancel() bool
 	Repo(ctx context.Context) (*RepositoryResolver, error)
-	Revision() string
+	Revision(ctx context.Context) (*GitCommitResolver, error)
 }

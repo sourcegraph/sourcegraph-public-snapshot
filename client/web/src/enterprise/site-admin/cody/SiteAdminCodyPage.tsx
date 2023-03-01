@@ -12,6 +12,7 @@ import {
     H3,
     Validator,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -94,8 +95,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
             <PageHeader path={[{ text: 'Cody' }]} className="mb-3" headingElement="h2" />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
-                {/* eslint-disable-next-line react/forbid-elements */}
-                <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
+                <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
                     <Label htmlFor="repositories-id" className="mt-1">
                         Repositories
                     </Label>
@@ -120,7 +120,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                             </Button>
                         </div>
                     </div>
-                </form>
+                </Form>
                 {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert

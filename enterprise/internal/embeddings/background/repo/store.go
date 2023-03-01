@@ -68,7 +68,7 @@ func NewRepoEmbeddingJobWorkerStore(observationCtx *observation.Context, dbHandl
 		ColumnExpressions: repoEmbeddingJobsColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanRepoEmbeddingJob),
 		OrderByExpression: sqlf.Sprintf("repo_embedding_jobs.queued_at, repo_embedding_jobs.id"),
-		StalledMaxAge:     time.Second * 5,
+		StalledMaxAge:     time.Second * 60,
 		MaxNumResets:      5,
 		MaxNumRetries:     1,
 	})

@@ -38,9 +38,9 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                 <RepoEmbeddingJobStateBadge state={state} />
             </div>
             <div className="d-flex flex-column ml-3">
-                {repo ? (
-                    <Link to={`${repo.url}@${revision}`}>
-                        {repo.name}@{revision.slice(0, 7)}
+                {repo && revision ? (
+                    <Link to={`${repo.url}@${revision.oid}`}>
+                        {repo.name}@{revision.abbreviatedOID}
                     </Link>
                 ) : (
                     <div>Unknown repository</div>
