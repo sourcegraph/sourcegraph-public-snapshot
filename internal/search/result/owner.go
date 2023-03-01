@@ -85,7 +85,7 @@ func (om *OwnerMatch) Key() Key {
 		Commit:   om.CommitID,
 	}
 	if om.ResolvedOwner != nil {
-		k.OwnerMetadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
+		k.OwnerMetadata = om.ResolvedOwner.Type() + om.ResolvedOwner.Identifier()
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev
