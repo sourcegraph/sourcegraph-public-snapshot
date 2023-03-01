@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
 
@@ -21,6 +22,7 @@ type BazelCommand struct {
 	Description     string                            `yaml:"description"`
 	Target          string                            `yaml:"target"`
 	Args            string                            `yaml:"args"`
+	PreCmd          string                            `yaml:"precmd"`
 	Env             map[string]string                 `yaml:"env"`
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
 }
@@ -108,7 +110,7 @@ func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[str
 
 	commandCtx, cancel := context.WithCancel(ctx)
 	sc.cancel = cancel
-	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", binLocation)
+	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, binLocation))
 	sc.Cmd.Dir = dir
 
 	secretsEnv, err := getSecrets(ctx, bc.Name, bc.ExternalSecrets)

@@ -911,6 +911,65 @@ bazelCommands:
     target: //cmd/searcher
   github-proxy:
     target: //cmd/github-proxy
+  frontend:
+    description: Enterprise frontend
+    target: //enterprise/cmd/frontend
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      # frontend processes need this to be so that the paths to the assets are rendered correctly
+      WEBPACK_DEV_SERVER: 1
+  worker:
+    target: //enterprise/cmd/worker
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+  repo-updater:
+    target: //enterprise/cmd/repo-updater
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+    env:
+      ENTERPRISE: 1
+  symbols:
+    # TODO build ctags thing
+    target: //enterprise/cmd/symbols
+    checkBinary: .bin/symbols
+    env:
+      CTAGS_COMMAND: dev/universal-ctags-dev
+      CTAGS_PROCESSES: 2
+      USE_ROCKSKIP: 'false'
+  gitserver-template: &gitserver_bazel_template
+    target: //enterprise/cmd/gitserver
+    env: &gitserverenv
+      HOSTNAME: 127.0.0.1:3178
+  # This is only here to stay backwards-compatible with people's custom
+  # `sg.config.overwrite.yaml` files
+  gitserver:
+    <<: *gitserver_bazel_template
+  gitserver-0:
+    <<: *gitserver_bazel_template
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+  gitserver-1:
+    <<: *gitserver_bazel_template
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
+
+
 
 #
 # CommandSets ################################################################
@@ -921,10 +980,10 @@ commandsets:
     # open-source version doesn't require the dev-private repository
     requiresDevPrivate: false
     checks:
-      # - docker
-      # - redis
-      # - postgres
-      # - git
+      - docker
+      - redis
+      - postgres
+      - git
     bazelCommands:
       - oss-frontend
       - oss-worker
@@ -943,7 +1002,6 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - docsite
-
   oss:
     # open-source version doesn't require the dev-private repository
     requiresDevPrivate: false
@@ -970,6 +1028,32 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
 
+  enterprise-bazel: &enterprise_bazel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    bazelCommands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - github-proxy
+    commands:
+      - web
+      - blobstore
+      - docsite
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - caddy
   enterprise: &enterprise_set
     requiresDevPrivate: true
     checks:
