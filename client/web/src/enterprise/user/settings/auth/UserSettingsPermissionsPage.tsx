@@ -44,8 +44,8 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
 > = ({ user }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'), [])
 
-    const [{ q }, setSearchQuery] = useURLSyncedState({ q: '' })
-    const debouncedQ = useDebounce(q, 300)
+    const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
+    const debouncedQuery = useDebounce(query, 300)
 
     const { connection, data, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
         UserPermissionsInfoResult,
@@ -55,7 +55,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
         query: UserPermissionsInfoQuery,
         variables: {
             userID: user.id,
-            query: debouncedQ,
+            query: debouncedQuery,
         },
         getConnection: ({ data }) => {
             if (data?.node?.__typename === 'User') {
@@ -69,10 +69,10 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
     })
 
     useEffect(() => {
-        if (debouncedQ !== variables.query) {
-            refetch({ ...variables, query: debouncedQ })
+        if (debouncedQuery !== variables.query) {
+            refetch({ ...variables, query: debouncedQuery })
         }
-    }, [debouncedQ, refetch, variables])
+    }, [debouncedQuery, refetch, variables])
 
     const permissionsInfo = data?.node?.__typename === 'User' ? (data.node as IUser).permissionsInfo : undefined
 
@@ -132,8 +132,8 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                         type="search"
                         placeholder="Search repositories..."
                         name="query"
-                        value={q}
-                        onChange={event => setSearchQuery({ q: event.currentTarget.value })}
+                        value={query}
+                        onChange={event => setSearchQuery({ query: event.currentTarget.value })}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
@@ -189,7 +189,7 @@ const TableColumns: IColumn<INode>[] = [
     },
 ]
 
-const PermissionReasonBadgeProps: { [k: string]: BadgeProps } = {
+const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
     'Permissions Sync': {
         variant: 'success',
         tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
