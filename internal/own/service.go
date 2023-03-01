@@ -19,9 +19,9 @@ import (
 // Service gives access to code ownership data.
 // At this point only data from CODEOWNERS file is presented, if available.
 type Service interface {
-	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
+	// RulesetForRepo returns a CODEOWNERS file ruleset from a given repository at given commit ID.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
+	RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error)
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
@@ -65,9 +65,9 @@ var codeownersLocations = []string{
 	"docs/CODEOWNERS",
 }
 
-// OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
-// the possible codeownersLocations. It returns nil if no match is found.
-func (s *service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+// RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
+// from one of the possible codeownersLocations. It returns nil if no match is found.
+func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,

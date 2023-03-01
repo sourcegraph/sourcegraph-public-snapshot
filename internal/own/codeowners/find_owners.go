@@ -1,4 +1,4 @@
-package v1
+package codeowners
 
 import (
 	"math/big"
@@ -8,25 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// FindOwners returns the Owners associated with given path as per this CODEOWNERS file.
-// Rules are evaluated in order: Returned owners come from the rule which pattern matches
-// given path, that is the furthest down the file.
-func (x *File) FindOwners(path string) []*Owner {
-	rules := x.GetRule()
-	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i]
-
-		glob, err := compile(rule.GetPattern())
-		if err != nil {
-			continue
-		}
-		if glob.match(path) {
-			return rule.GetOwner()
-		}
-	}
-	return nil
-}
 
 const separator = "/"
 
