@@ -592,7 +592,7 @@ export const buildCloudTrialURL = (
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters
  */
-export const addSourcegraphApOutboundUrlParameters = (url: string, campaign?: string): string => {
+export const addSourcegraphAppOutboundUrlParameters = (url: string, campaign?: string): string => {
     const urlObject = new URL(url)
     urlObject.searchParams.append('utm_source', 'sg_app')
     urlObject.searchParams.append('utm_medium', 'referral')
@@ -601,27 +601,32 @@ export const addSourcegraphApOutboundUrlParameters = (url: string, campaign?: st
         urlObject.searchParams.append('utm_campaign', campaign)
     }
 
-    // urlObject.searchParams.append('app_version', version)
-    urlObject.searchParams.append('app_os', detectOS())
+    const os = detectOS()
+    if (os) {
+        urlObject.searchParams.append('app_os', os)
+    }
 
     return urlObject.toString()
 }
 
 /*
  * Detect the user's OS, for analytics purposes and not for feature detection.
- * Do not rely on this for any feature functionality.
+ * Do not rely on this for any feature functionality. Returns undefined if unknown.
  */
-function detectOS() {
+function detectOS(): 'windows' | 'mac' | 'linux' | undefined {
     const userAgent = window.navigator.userAgent
+
     if (userAgent.includes('Windows')) {
         return 'windows'
-    } else if (userAgent.includes('Mac')) {
-        return 'darwin'
-    } else if (userAgent.includes('Linux')) {
-        return 'linux'
-    } else {
-        return 'unknown'
     }
+    if (userAgent.includes('Mac')) {
+        return 'mac'
+    }
+    if (userAgent.includes('Linux')) {
+        return 'linux'
+    }
+
+    return undefined
 }
 
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */
