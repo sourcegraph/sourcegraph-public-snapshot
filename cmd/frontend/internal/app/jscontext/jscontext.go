@@ -75,6 +75,16 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
+type Permissions struct {
+	Typename    string     `json:"__typename"`
+	ID          graphql.ID `json:"id"`
+	DisplayName *string    `json:"displayName"`
+}
+
+type PermissionsConnection struct {
+	Typename string        `json:"__typename"`
+	Nodes    []Permissions `json:"nodes"`
+}
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -94,6 +104,7 @@ type CurrentUser struct {
 	Session        *UserSession                 `json:"session"`
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Permissions    *PermissionsConnection       `json:"permissions"`
 }
 
 // JSContext is made available to JavaScript code via the

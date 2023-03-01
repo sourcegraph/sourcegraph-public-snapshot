@@ -53,6 +53,12 @@ export const currentAuthStateQuery = gql`
                 id
                 contents
             }
+            permissions {
+                nodes {
+                    id
+                    displayName
+                }
+            }
         }
     }
 `

@@ -58,6 +58,7 @@ import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
+import { log } from 'console'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
@@ -340,3 +341,5 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
     ): Observable<string[][]> =>
         fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
 }
+
+console.log(authenticatedUserValue, 'authenticatedUserValue')

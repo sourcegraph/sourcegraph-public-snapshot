@@ -53,6 +53,7 @@ export interface SourcegraphContextCurrentUser
         | 'session'
         | 'emails'
         | 'latestSettings'
+        | 'permissions'
     > {}
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
