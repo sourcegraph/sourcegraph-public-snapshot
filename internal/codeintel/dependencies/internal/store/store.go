@@ -456,12 +456,12 @@ FROM package_repo_filters
 
 func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
 	var matcherJSON driver.Value
-	if filter.NameMatcher != nil {
-		matcherJSON, err = json.Marshal(filter.NameMatcher)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.NameMatcher)
-	} else if filter.VersionMatcher != nil {
-		matcherJSON, err = json.Marshal(filter.VersionMatcher)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.VersionMatcher)
+	if filter.NameFilter != nil {
+		matcherJSON, err = json.Marshal(filter.NameFilter)
+		err = errors.Wrapf(err, "error marshalling %+v", filter.NameFilter)
+	} else if filter.VersionFilter != nil {
+		matcherJSON, err = json.Marshal(filter.VersionFilter)
+		err = errors.Wrapf(err, "error marshalling %+v", filter.VersionFilter)
 	}
 	if err != nil {
 		return err

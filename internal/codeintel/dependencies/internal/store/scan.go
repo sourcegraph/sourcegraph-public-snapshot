@@ -27,8 +27,8 @@ func scanPackageFilter(s dbutil.Scanner) (shared.PackageFilter, error) {
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
 
-	if err := d.Decode(&filter.NameMatcher); err != nil {
-		return filter, d.Decode(&filter.VersionMatcher)
+	if err := d.Decode(&filter.NameFilter); err != nil {
+		return filter, d.Decode(&filter.VersionFilter)
 	}
 
 	return filter, nil

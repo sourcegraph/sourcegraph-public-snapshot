@@ -845,7 +845,7 @@ type Mutation {
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
 
-    addPackageRepoMatcher(
+    addPackageRepoFilter(
         """
         Whether the matcher should be for allowlisting or blocklisting.
         """
@@ -859,8 +859,16 @@ type Mutation {
         """
         The package repo reference matcher to persist.
         """
-        matcher: PackageVersionOrNameMatcher!
+        filter: PackageVersionOrNameFilter!
     ): EmptyResponse!
+
+    updatePackageRepoFilter(
+        id: ID!
+
+        filter: PackageVersionOrNameFilter!
+    ): EmptyResponse!
+
+    deletePackageRepoFilter(id: ID!): EmptyResponse!
 }
 
 """
@@ -1471,7 +1479,7 @@ type Query {
     or the versions of a single package repo reference,
     that match the provided matcher.
     """
-    packageReposMatches(
+    packageRepoReferencesMatchingFilter(
         """
         The ecosystem of the package repo reference this matcher should apply to.
         Maps to the external service whos config would be updated when used in the
@@ -1481,7 +1489,7 @@ type Query {
         """
         The matcher for which to return matching results.
         """
-        matcher: PackageVersionOrNameMatcher!
+        filter: PackageVersionOrNameFilter!
         """
         Returns the first n package/package version matches from the list.
         """
@@ -3700,16 +3708,16 @@ enum PackageMatchBehaviour {
 
 """
 """
-input PackageVersionOrNameMatcher {
-    nameMatcher: PackageNameMatcher
-    versionMatcher: PackageVersionMatcher
+input PackageVersionOrNameFilter {
+    nameMatcher: PackageNameFilter
+    versionMatcher: PackageVersionFilter
 }
 
-input PackageNameMatcher {
+input PackageNameFilter {
     packageGlob: String!
 }
 
-input PackageVersionMatcher {
+input PackageVersionFilter {
     packageName: String!
 
     versionGlob: String!

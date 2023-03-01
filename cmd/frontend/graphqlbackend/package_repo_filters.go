@@ -4,61 +4,51 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type packageMatcher struct {
-	NameMatcher *struct {
+type packageFilter struct {
+	NameFilter *struct {
 		PackageGlob string
 	}
-	VersionMatcher *struct {
+	VersionFilter *struct {
 		PackageName string
 		VersionGlob string
 	}
 }
 
-func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
+func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	PackageReferenceKind string
-	Matcher              packageMatcher
+	Filter               packageFilter
 	graphqlutil.ConnectionArgs
 	After *string
 },
-) (*packageRepoReferenceConnectionResolver, error) {
-	if args.Matcher.NameMatcher == nil && args.Matcher.VersionMatcher == nil {
-		return nil, errors.New("must provide either nameMatcher or versionMatcher")
+) (_ *packageRepoReferenceConnectionResolver, err error) {
+	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
+		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
 
-	if args.Matcher.NameMatcher != nil && args.Matcher.VersionMatcher != nil {
-		return nil, errors.New("cannot provide both a name matcher and version matcher")
-	}
-
-	kinds := []string{args.PackageReferenceKind}
-
-	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: kinds})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list external services")
-	}
-
-	if len(extsvcs) == 0 {
-		return nil, errors.Newf("no external service configured of kind %q", args.PackageReferenceKind)
+	if args.Filter.NameFilter != nil && args.Filter.VersionFilter != nil {
+		return nil, errors.New("cannot provide both a name filter and version filter")
 	}
 
 	var (
-		matcher     packagerepos.PackageMatcher
+		filter      packagerepos.PackageMatcher
 		nameToMatch string
 	)
-	if args.Matcher.NameMatcher != nil {
-		matcher, err = packagerepos.NewPackageNameGlob(args.Matcher.NameMatcher.PackageGlob)
+	if args.Filter.NameFilter != nil {
+		filter, err = packagerepos.NewPackageNameGlob(args.Filter.NameFilter.PackageGlob)
 	} else {
-		matcher, err = packagerepos.NewVersionGlob(args.Matcher.VersionMatcher.PackageName, args.Matcher.VersionMatcher.VersionGlob)
-		nameToMatch = args.Matcher.VersionMatcher.PackageName
+		filter, err = packagerepos.NewVersionGlob(args.Filter.VersionFilter.PackageName, args.Filter.VersionFilter.VersionGlob)
+		nameToMatch = args.Filter.VersionFilter.PackageName
 	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to compile glob")
@@ -78,7 +68,7 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
 	matchingPkgs := make([]shared.PackageRepoReference, 0, limit)
-	if args.Matcher.NameMatcher != nil {
+	if args.Filter.NameFilter != nil {
 		lastID := after
 
 	gather:
@@ -100,7 +90,7 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 			lastID = pkgs[len(pkgs)-1].ID
 
 			for _, pkg := range pkgs {
-				if matcher.Matches(string(pkg.Name), "") {
+				if filter.Matches(string(pkg.Name), "") {
 					pkg.Versions = nil
 					matchingPkgs = append(matchingPkgs, pkg)
 				}
@@ -127,7 +117,7 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 		pkg := pkgs[0]
 		versions := pkg.Versions[:0]
 		for _, version := range pkg.Versions {
-			if matcher.Matches(string(pkg.Name), version.Version) {
+			if filter.Matches(string(pkg.Name), version.Version) {
 				versions = append(versions, version)
 			}
 		}
@@ -143,18 +133,18 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *schemaResolver) AddPackageRepoMatcher(ctx context.Context, args struct {
+func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 	Behaviour            string
 	PackageReferenceKind string
-	Matcher              packageMatcher
+	Filter               packageFilter
 },
 ) (*EmptyResponse, error) {
-	if args.Matcher.NameMatcher == nil && args.Matcher.VersionMatcher == nil {
-		return nil, errors.New("must provide either nameMatcher or versionMatcher")
+	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
+		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
 
-	if args.Matcher.NameMatcher != nil && args.Matcher.VersionMatcher != nil {
-		return nil, errors.New("cannot provide both a name matcher and version matcher")
+	if args.Filter.NameFilter != nil && args.Filter.VersionFilter != nil {
+		return nil, errors.New("cannot provide both a name filter and version filter")
 	}
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
@@ -164,21 +154,31 @@ func (r *schemaResolver) AddPackageRepoMatcher(ctx context.Context, args struct 
 		ExternalService: args.PackageReferenceKind,
 	}
 
-	if args.Matcher.NameMatcher != nil {
-		filter.NameMatcher = &struct{ PackageGlob string }{
-			PackageGlob: args.Matcher.NameMatcher.PackageGlob,
+	if args.Filter.NameFilter != nil {
+		filter.NameFilter = &struct{ PackageGlob string }{
+			PackageGlob: args.Filter.NameFilter.PackageGlob,
 		}
 	} else {
-		filter.VersionMatcher = &struct {
+		filter.VersionFilter = &struct {
 			PackageName string
 			VersionGlob string
 		}{
-			PackageName: args.Matcher.VersionMatcher.PackageName,
-			VersionGlob: args.Matcher.VersionMatcher.VersionGlob,
+			PackageName: args.Filter.VersionFilter.PackageName,
+			VersionGlob: args.Filter.VersionFilter.VersionGlob,
 		}
 	}
 
-	err := depsService.CreatePackageRepoFilter(ctx, filter)
+	return &EmptyResponse{}, depsService.CreatePackageRepoFilter(ctx, filter)
+}
 
-	return &EmptyResponse{}, err
+func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *struct {
+	ID     graphql.ID
+	Filter packageFilter
+},
+) (*EmptyResponse, error) {
+	return nil, nil
+}
+
+func (r *schemaResolver) DeletePackageRepoFilter(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, nil
 }

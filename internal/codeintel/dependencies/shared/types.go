@@ -34,18 +34,18 @@ type PackageFilter struct {
 	ID              int
 	Behaviour       string
 	ExternalService string
-	NameMatcher     *struct {
+	NameFilter      *struct {
 		PackageGlob string
 	}
-	VersionMatcher *struct {
+	VersionFilter *struct {
 		PackageName string
 		VersionGlob string
 	}
 }
 
 func (f *PackageFilter) BuildMatcher() (packagerepos.PackageMatcher, error) {
-	if f.NameMatcher != nil {
-		return packagerepos.NewPackageNameGlob(f.NameMatcher.PackageGlob)
+	if f.NameFilter != nil {
+		return packagerepos.NewPackageNameGlob(f.NameFilter.PackageGlob)
 	}
-	return packagerepos.NewVersionGlob(f.VersionMatcher.PackageName, f.VersionMatcher.VersionGlob)
+	return packagerepos.NewVersionGlob(f.VersionFilter.PackageName, f.VersionFilter.VersionGlob)
 }
