@@ -211,6 +211,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
+				maxUpdateInterval := conf.Get().GitMaxRepoUpdateInterval
 
 				// This is a blocking call since the repo will be cloned synchronously by gitserver
 				// if it doesn't exist or update it if it does. The timeout of this request depends
@@ -237,14 +238,17 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				if err != nil || (resp != nil && resp.Error != "") {
 					// On error we will double the current interval so that we back off and don't
 					// get stuck with problematic repos with low intervals.
-					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
-						s.schedule.updateInterval(repo, currentInterval*2)
+					if interval, ok := s.schedule.getCurrentInterval(repo); ok {
+						interval = interval * 2
+						if maxUpdateInterval > 0 && interval.Hours() > float64(maxUpdateInterval) {
+							interval = time.Duration(maxUpdateInterval) * time.Hour
+						}
+						s.schedule.updateInterval(repo)
 					}
 				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the UpdateScheduler documentation.
 					// Update that documentation if you update this logic.
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
-					maxUpdateInterval := conf.Get().GitMaxRepoUpdateInterval
 					if maxUpdateInterval > 0 && interval.Hours() > float64(maxUpdateInterval) {
 						interval = time.Duration(maxUpdateInterval) * time.Hour
 					}
