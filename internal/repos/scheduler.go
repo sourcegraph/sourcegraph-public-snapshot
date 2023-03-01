@@ -243,7 +243,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 						if maxUpdateInterval > 0 && interval.Hours() > float64(maxUpdateInterval) {
 							interval = time.Duration(maxUpdateInterval) * time.Hour
 						}
-						s.schedule.updateInterval(repo)
+						s.schedule.updateInterval(repo, interval)
 					}
 				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the UpdateScheduler documentation.
