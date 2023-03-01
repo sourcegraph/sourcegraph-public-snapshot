@@ -180,3 +180,46 @@ func checkBodyNotEmpty(r *http.Request) error {
 	}
 	return nil
 }
+
+// convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
+func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
+	// Convert external ID
+	externalIDOptional := optional.String{}
+	if user.SCIMExternalID != "" {
+		externalIDOptional = optional.NewString(user.SCIMExternalID)
+	}
+
+	// Convert account data – if it doesn't exist, never mind
+	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
+	if err != nil {
+		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
+		resourceAttributes = scim.ResourceAttributes{
+			AttrUserName:    user.Username,
+			AttrDisplayName: user.DisplayName,
+			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
+			"externalId":    user.SCIMExternalID,
+		}
+	}
+	if resourceAttributes[AttrName] == nil {
+		resourceAttributes[AttrName] = map[string]interface{}{}
+	}
+
+	// Fall back to username and primary email in the user object if not set in account data
+	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
+		resourceAttributes[AttrUserName] = user.Username
+	}
+	if (resourceAttributes[AttrEmails] == nil || len(resourceAttributes[AttrEmails].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+		resourceAttributes[AttrEmails] = []interface{}{
+			map[string]interface{}{
+				"value":   user.Emails[0],
+				"primary": true,
+			},
+		}
+	}
+
+	return scim.Resource{
+		ID:         strconv.FormatInt(int64(user.ID), 10),
+		ExternalID: externalIDOptional, // TODO: Get this from account data instead
+		Attributes: resourceAttributes,
+	}
+}
