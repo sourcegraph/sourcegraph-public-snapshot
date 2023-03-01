@@ -78,7 +78,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
 
                 {node.system && (
                     <Tooltip
-                        content="System roles are required by Sourcegraph. They cannot be deleted."
+                        content="System roles are predefined by Sourcegraph. They cannot be deleted."
                         placement="topStart"
                     >
                         <Text className={styles.roleNodeSystemText}>System</Text>
