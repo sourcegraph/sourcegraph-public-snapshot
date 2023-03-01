@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"encoding/json"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
