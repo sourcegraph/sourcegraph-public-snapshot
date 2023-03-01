@@ -10,10 +10,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/codeownership",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/api",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/own",
+        "//internal/own/codeowners",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/search",
         "//internal/search/job",
@@ -40,7 +41,7 @@ go_test(
         "//internal/own/codeowners",
         "//internal/search/result",
         "//internal/types",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
     ],
 )

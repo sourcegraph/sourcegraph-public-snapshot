@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
@@ -57,7 +57,7 @@ func TestValidAnthropicStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Equal(t, events)
+	autogold.ExpectFile(t, events)
 }
 
 func TestInvalidAnthropicStream(t *testing.T) {
