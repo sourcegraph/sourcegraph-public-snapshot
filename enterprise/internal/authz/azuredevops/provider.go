@@ -59,9 +59,9 @@ func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error
 		return nil, err
 	}
 
-	u, err := url.Parse(azuredevops.AZURE_DEV_OPS_API_URL)
+	u, err := url.Parse(azuredevops.AzureDevOpsApiUrl)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse url: %q, this is likely a misconfigured URL in the constant azuredevops.AZURE_DEV_OPS_API_URL", azuredevops.AZURE_DEV_OPS_API_URL)
+		return nil, errors.Wrapf(err, "failed to parse url: %q, this is likely a misconfigured URL in the constant azuredevops.AzureDevOpsApiUrl", azuredevops.AzureDevOpsApiUrl)
 	}
 
 	return &Provider{
@@ -121,7 +121,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	if mockServerURL != "" {
 		apiURL = mockServerURL
 	} else {
-		apiURL = azuredevops.AZURE_DEV_OPS_API_URL
+		apiURL = azuredevops.AzureDevOpsApiUrl
 	}
 
 	client, err := azuredevops.NewClient(

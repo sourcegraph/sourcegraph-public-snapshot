@@ -120,11 +120,11 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 	azureProvider := sourceCfg.AzureDevOps
 
 	// Since this provider is for dev.azure.com only, we can hardcode the provider's URL to
-	// azuredevops.VISUAL_STUDIO_APP_URL.
-	parsedURL, err := url.Parse(azuredevops.VISUAL_STUDIO_APP_URL)
+	// azuredevops.VisualStudioAppUrl.
+	parsedURL, err := url.Parse(azuredevops.VisualStudioAppUrl)
 	if err != nil {
 		messages = append(messages, fmt.Sprintf(
-			"Failed to parse Azure DevOps URL %q. Login via this Azure instance will not work.", azuredevops.VISUAL_STUDIO_APP_URL,
+			"Failed to parse Azure DevOps URL %q. Login via this Azure instance will not work.", azuredevops.VisualStudioAppUrl,
 		))
 		return nil, messages
 	}
@@ -143,6 +143,23 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		sessionKey,
 	)
 
+	authURL, err := url.JoinPath(azuredevops.VisualStudioAppUrl, "/oauth2/authorize")
+	if err != nil {
+		messages = append(messages, fmt.Sprintf(
+			"Failed to generate auth URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppUrl): %s",
+			err.Error(),
+		))
+		return nil, messages
+	}
+
+	tokenURL, err := url.JoinPath(azuredevops.VisualStudioAppUrl, "/oauth2/token")
+	if err != nil {
+		messages = append(messages, fmt.Sprintf(
+			"Failed to generate token URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppUrl): %s", err.Error(),
+		))
+		return nil, messages
+	}
+
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
 		OAuth2Config: func() oauth2.Config {
@@ -151,8 +168,8 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 				ClientSecret: azureProvider.ClientSecret,
 				Scopes:       strings.Split(azureProvider.ApiScope, ","),
 				Endpoint: oauth2.Endpoint{
-					AuthURL:  azuredevops.VISUAL_STUDIO_APP_URL + "oauth2/authorize",
-					TokenURL: azuredevops.VISUAL_STUDIO_APP_URL + "oauth2/token",
+					AuthURL:  authURL,
+					TokenURL: tokenURL,
 					// The access_token request wants the body as application/x-www-form-urlencoded. See:
 					// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#http-request-body---authorize-app
 					AuthStyle: oauth2.AuthStyleInParams,
