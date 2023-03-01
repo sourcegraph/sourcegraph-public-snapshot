@@ -80,6 +80,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     return (
         <CodeHostEditView
             key={codehostId}
+            codeHostId={codehostId!}
             codeHostKind={data.node.kind}
             displayName={data.node.displayName}
             configuration={data.node.config}
@@ -109,6 +110,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
 }
 
 interface CodeHostEditViewProps {
+    codeHostId: string
     codeHostKind: ExternalServiceKind
     displayName: string
     configuration: string
@@ -116,7 +118,7 @@ interface CodeHostEditViewProps {
 }
 
 const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
-    const { codeHostKind, displayName, configuration, children } = props
+    const { codeHostId, codeHostKind, displayName, configuration, children } = props
 
     const handleSubmit = async (): Promise<void> => {
         // TODO Connect edit API
@@ -130,7 +132,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {
         return (
-            <GithubConnectView initialValues={initialValues} onSubmit={handleSubmit}>
+            <GithubConnectView initialValues={initialValues} externalServiceId={codeHostId} onSubmit={handleSubmit}>
                 {children}
             </GithubConnectView>
         )
