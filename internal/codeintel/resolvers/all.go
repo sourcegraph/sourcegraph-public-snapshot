@@ -22,6 +22,10 @@ type RootResolver interface {
 	AutoindexingServiceResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
+	SentinelServiceResolver
+}
+
+type SentinelServiceResolver interface {
 }
 
 type CodeNavServiceResolver interface {
