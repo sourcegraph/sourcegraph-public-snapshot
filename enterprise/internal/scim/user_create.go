@@ -123,6 +123,8 @@ func extractDisplayName(attributes scim.ResourceAttributes) (displayName string)
 				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameFamily].(string)
 			}
 		}
+	} else if attributes[AttrNickName] != nil {
+		displayName = attributes[AttrNickName].(string)
 	}
 	// Fallback to username
 	if displayName == "" {
