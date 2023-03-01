@@ -167,7 +167,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 				// for some use case but we don't want to hard fail on that either.
 				if httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden || httpErr.StatusCode == http.StatusNotFound {
 
-					logger.Debug("skipping org",
+					logger.Debug("user does not have access to this org",
 						log.String("org", org),
 						log.Int("http status code", httpErr.StatusCode),
 					)
@@ -208,7 +208,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 				// but we don't want to hard fail on that either.
 				if httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden || httpErr.StatusCode == http.StatusNotFound {
 
-					logger.Debug("skipping project",
+					logger.Debug("user does not have access to this project",
 						log.String("project", project),
 						log.Int("http status code", httpErr.StatusCode),
 					)

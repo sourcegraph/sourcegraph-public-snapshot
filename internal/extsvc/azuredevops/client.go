@@ -102,7 +102,9 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	}
 
 	// Add authentication headers for authenticated requests.
-	c.auth.Authenticate(req)
+	if err := c.auth.Authenticate(req); err != nil {
+		return "", err
+	}
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return "", err

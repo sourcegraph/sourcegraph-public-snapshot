@@ -323,10 +323,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				tc.setup()
 			}
 
-			defer func() {
+			t.Cleanup(func() {
 				mockServerURL = ""
 				conf.Mock(nil)
-			}()
+			})
 
 			licensing.MockCheckFeature = tc.mockCheckFeature
 			result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
