@@ -83,6 +83,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = completionStreamClient.Stream(ctx, requestParams, func(event types.CompletionEvent) error { return eventWriter.Event("completion", event) })
 	if err != nil {
+		h.logger.Error("error while streaming completions", log.Error(err))
 		eventWriter.Event("error", map[string]string{"error": err.Error()})
 		return
 	}
