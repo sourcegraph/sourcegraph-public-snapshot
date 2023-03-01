@@ -12,14 +12,8 @@ func NewEnterpriseSearchJobs() jobutil.EnterpriseJobs {
 
 type enterpriseJobs struct{}
 
-func (e *enterpriseJobs) SetFileHasOwnerJob(j func(child job.Job, includeOwners, excludeOwners []string) job.Job) {
-}
-
 func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
 	return search.NewFileHasOwnersJob(child, includeOwners, excludeOwners)
-}
-
-func (e *enterpriseJobs) SetSelectFileOwnerJob(j func(child job.Job) job.Job) {
 }
 
 func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job) job.Job {
