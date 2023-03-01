@@ -22,9 +22,10 @@ func LoadWebpackManifest() (m *WebpackManifest, err error) {
 		return MockLoadWebpackManifest()
 	}
 
-	manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")
+	manifestContent, err := os.ReadFile("./bazel-bin/client/web/bundle/webpack.manifest.json")
 	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest file from disk")
+		pwd, _ := os.Getwd()
+		return nil, errors.Wrapf(err, "%s, loading webpack manifest file from disk", pwd)
 	}
 	if err := json.Unmarshal(manifestContent, &m); err != nil {
 		return nil, errors.Wrap(err, "parsing manifest json")

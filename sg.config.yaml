@@ -873,6 +873,9 @@ commands:
       - schema
 
 bazelCommands:
+  oss-web:
+    target: //client/web:bundle
+    static: true
   oss-frontend:
     target: //cmd/frontend
     env:
@@ -924,6 +927,7 @@ commandsets:
       # - postgres
       # - git
     bazelCommands:
+      - oss-web
       - oss-frontend
       - oss-worker
       - oss-repo-updater
@@ -933,7 +937,7 @@ commandsets:
       - github-proxy
       - searcher
     commands:
-      - oss-web
+      # - oss-web
       - caddy
       - syntax-highlighter
       - zoekt-index-0

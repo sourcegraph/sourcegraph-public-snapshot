@@ -5,4 +5,4 @@ package assets
 
 import "net/http"
 
-var Assets = http.Dir("./ui/assets")
+var Assets = http.Dir("./bazel-bin/client/web/bundle")
