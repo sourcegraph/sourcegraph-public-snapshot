@@ -187,21 +187,50 @@ func (s *Serve) Repos() ([]Repo, error) {
 	}
 
 	var (
-		reposRootIsRepo atomic.Bool
 		repoC           = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
-		reposC          = make(chan []Repo, 1)
+		reposRootIsRepo bool
+		walkErr         error
 	)
-
-	// We collect from repoC here and send to reposC the collected repos. We
-	// need to start this before Walk since that is our sync point of knowing
-	// if we are done sending to repoC.
 	go func() {
-		var repos []Repo
-		for r := range repoC {
-			repos = append(repos, r)
-		}
-		reposC <- repos
+		defer close(repoC)
+		reposRootIsRepo, walkErr = s.walk(root, repoC)
 	}()
+
+	var repos []Repo
+	for r := range repoC {
+		repos = append(repos, r)
+	}
+
+	if walkErr != nil {
+		return nil, walkErr
+	}
+
+	// walk is not deterministic due to concurrency, so introduce determinism
+	// by sorting the results.
+	slices.SortFunc(repos, func(a, b Repo) bool {
+		return a.Name < b.Name
+	})
+
+	if !reposRootIsRepo {
+		return repos, nil
+	}
+
+	// Update all names to be relative to the parent of reposRoot. This is to
+	// give a better name than "." for repos root
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return nil, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
+	}
+	rootName := filepath.Base(abs)
+	for i := range repos {
+		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
+	}
+
+	return repos, nil
+}
+
+func (s *Serve) walk(root string, repoC chan<- Repo) (bool, error) {
+	var reposRootIsRepo atomic.Bool
 
 	// We use fastwalk since it is much faster. Notes for people used to
 	// filepath.WalkDir:
@@ -210,7 +239,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
 	//     files (so will only get dirs)
 	//   - filepath.SkipDir has the same meaning
-	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+	err := fastwalk.Walk(root, func(path string, typ os.FileMode) error {
 		if !typ.IsDir() {
 			return nil
 		}
@@ -263,35 +292,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 		// TODO: Look into whether it is useful to support git submodules
 		return filepath.SkipDir
 	})
-	close(repoC)
-	repos := <-reposC
 
-	if err != nil {
-		return nil, err
-	}
-
-	// Walk is not deterministic due to concurrency, so introduce determinism
-	// by sorting the results.
-	slices.SortFunc(repos, func(a, b Repo) bool {
-		return a.Name < b.Name
-	})
-
-	if !reposRootIsRepo.Load() {
-		return repos, nil
-	}
-
-	// Update all names to be relative to the parent of reposRoot. This is to
-	// give a better name than "." for repos root
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return nil, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
-	}
-	rootName := filepath.Base(abs)
-	for i := range repos {
-		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
-	}
-
-	return repos, nil
+	return reposRootIsRepo.Load(), err
 }
 
 func explainAddr(addr string) string {
