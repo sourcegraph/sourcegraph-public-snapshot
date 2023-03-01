@@ -203,7 +203,6 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 }
 
 func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error) {
-
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -223,9 +222,9 @@ func newAuthzProvider(db database.DB, orgs, projects []string) (*Provider, error
 }
 
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
-	initResults := &authztypes.ProviderInitResult{}
 	orgs, projects := []string{}, []string{}
 
+	isValidAzureDevOpsConn := false
 	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
 	// orgs and projects in every permissions sync iteration.
 	for _, c := range conns {
@@ -235,6 +234,14 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 
 		orgs = append(orgs, c.Orgs...)
 		projects = append(projects, c.Projects...)
+
+		isValidAzureDevOpsConn = true
+	}
+
+	initResults := &authztypes.ProviderInitResult{}
+	// There are no AzureDevOpsConnection.
+	if !isValidAzureDevOpsConn {
+		return initResults
 	}
 
 	p, err := newAuthzProvider(db, orgs, projects)
