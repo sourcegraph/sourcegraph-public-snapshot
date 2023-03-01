@@ -13,6 +13,7 @@ import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useSearchContext } from '../../../SearchContext'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -27,8 +28,9 @@ interface SearchPageContentProps {
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
-        useLegacyContext_onlyInStormRoutes()
+    const { selectedSearchContextSpec } = useSearchContext()
+
+    const { telemetryService, isSourcegraphDotCom, authenticatedUser } = useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()

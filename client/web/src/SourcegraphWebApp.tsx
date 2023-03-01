@@ -1,6 +1,6 @@
 import 'focus-visible'
 
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
@@ -9,17 +9,10 @@ import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
-import {
-    isSearchContextSpecAvailable,
-    SearchQueryStateStoreProvider,
-    getDefaultSearchContextSpec,
-} from '@sourcegraph/shared/src/search'
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
@@ -40,27 +33,19 @@ import { Layout } from './Layout'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
 import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
-import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
+import { SearchContextProvider } from './SearchContext'
 
 export interface StaticSourcegraphWebAppContext {
-    setSelectedSearchContextSpec: (spec: string) => void
     platformContext: PlatformContext
     extensionsController: ExtensionsControllerProps['extensionsController'] | null
 }
 
 export interface DynamicSourcegraphWebAppContext {
-    /**
-     * TODO: Move all the search context logic as close as possible to the components
-     * that actually need it. Remove related `useState` from the `SourcegraphWebApp` component.
-     */
-    selectedSearchContextSpec: string | undefined
-
     /**
      * TODO:
      * 1. Move `authenticatedUser` to Apollo Client.
@@ -123,81 +108,9 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
     const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
     const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
 
-    const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | undefined>()
-
-    // NOTE(2022-09-08) Inform the inlined code from
-    // sourcegraph/code-intel-extensions about the change of search context.
-    // The old extension code previously accessed this information from the
-    // 'sourcegraph' npm package, and updating the context like this was the
-    // simplest solution to mirror the old behavior while deprecating
-    // extensions on a tight deadline. It would be nice to properly pass
-    // around this via React state in the future.
-    const setWorkspaceSearchContext = useCallback((spec: string | null): void => {
-        setCodeIntelSearchContext(spec ?? undefined)
-    }, [])
-    const setSelectedSearchContextSpecWithNoChecks = useCallback(
-        (spec: string): void => {
-            _setSelectedSearchContextSpec(spec)
-            setWorkspaceSearchContext(spec)
-        },
-        [setWorkspaceSearchContext]
-    )
-    const setSelectedSearchContextSpecToDefault = useCallback((): void => {
-        if (!props.searchContextsEnabled) {
-            return
-        }
-        subscriptions.add(
-            getDefaultSearchContextSpec({ platformContext }).subscribe(spec => {
-                // Fall back to global if no default is returned.
-                setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
-            })
-        )
-    }, [props.searchContextsEnabled, setSelectedSearchContextSpecWithNoChecks, subscriptions])
-
-    const setSelectedSearchContextSpec = useCallback(
-        (spec: string): void => {
-            if (!props.searchContextsEnabled) {
-                return
-            }
-
-            // The global search context is always available.
-            if (spec === GLOBAL_SEARCH_CONTEXT_SPEC) {
-                setSelectedSearchContextSpecWithNoChecks(spec)
-            }
-
-            // Check if the wanted search context is available.
-            subscriptions.add(
-                isSearchContextSpecAvailable({
-                    spec,
-                    platformContext,
-                }).subscribe(isAvailable => {
-                    if (isAvailable) {
-                        setSelectedSearchContextSpecWithNoChecks(spec)
-                    } else if (!selectedSearchContextSpec) {
-                        // If the wanted search context is not available and
-                        // there is no currently selected search context,
-                        // set the current selection to the default search context.
-                        // Otherwise, keep the current selection.
-                        setSelectedSearchContextSpecToDefault()
-                    }
-                })
-            )
-        },
-        [
-            props.searchContextsEnabled,
-            selectedSearchContextSpec,
-            setSelectedSearchContextSpecToDefault,
-            setSelectedSearchContextSpecWithNoChecks,
-            subscriptions,
-        ]
-    )
-
     // TODO: Move all of this initialization outside React so we don't need to
     // handle the optional states everywhere
     useEffect(() => {
-        const parsedSearchURL = parseSearchURL(window.location.search)
-        const parsedSearchQuery = parsedSearchURL.query || ''
-
         getWebGraphQLClient()
             .then(graphqlClient => {
                 setGraphqlClient(graphqlClient)
@@ -238,20 +151,6 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             )
         }
 
-        if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
-            // If a context filter does not exist in the query, we have to switch the selected context
-            // to global to match the UI with the backend semantics (if no context is specified in the query,
-            // the query is run in global context).
-            setSelectedSearchContextSpecWithNoChecks(GLOBAL_SEARCH_CONTEXT_SPEC)
-        }
-        if (!parsedSearchQuery) {
-            // If no query is present (e.g. search page, settings page),
-            // select the user's default search context.
-            setSelectedSearchContextSpecToDefault()
-        }
-
-        setWorkspaceSearchContext(selectedSearchContextSpec ?? null)
-
         return () => subscriptions.unsubscribe()
 
         // We only ever want to run this hook once when the component mounts for
@@ -260,13 +159,11 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
     }, [])
 
     const staticContext = {
-        setSelectedSearchContextSpec,
         platformContext,
         extensionsController: null,
     } satisfies StaticSourcegraphWebAppContext
 
     const dynamicContext = {
-        selectedSearchContextSpec,
         authenticatedUser: resolvedAuthenticatedUser,
         viewerSubject,
         settingsCascade,
@@ -315,6 +212,7 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
                         ...props,
                     }}
                 />,
+                <SearchContextProvider searchContextsEnabled={props.searchContextsEnabled} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >

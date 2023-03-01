@@ -10,6 +10,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { getQueryStateFromLocation } from './search'
 import { useExperimentalQueryInput } from './search/useExperimentalSearchInput'
+import { useSearchContext } from './SearchContext'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 
 export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
@@ -17,15 +18,14 @@ export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 interface SearchQueryStateObserverProps {
     searchContextsEnabled: boolean
     platformContext: PlatformContext
-    selectedSearchContextSpec?: string
-    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 // Update search query state whenever the URL changes
 export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props => {
-    const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
+    const { searchContextsEnabled, platformContext } = props
 
     const location = useLocation()
+    const { setSelectedSearchContextSpec, selectedSearchContextSpec } = useSearchContext()
 
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
     selectedSearchContextSpecRef.current = selectedSearchContextSpec

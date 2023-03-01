@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo, Fragment } from 'react'
 
 import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -205,7 +205,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                             </Alert>
                         )}
                         {searchContexts.map((context, index) => (
-                            <>
+                            <Fragment key={context.id}>
                                 {/* Separate starred and unstarred contexts */}
                                 {index > 0 &&
                                     searchContexts[index - 1].viewerHasStarred &&
@@ -219,7 +219,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                     selected={context.spec === selectedSearchContextSpec}
                                     starred={context.viewerHasStarred}
                                 />
-                            </>
+                            </Fragment>
                         ))}
                     </>
                 )}

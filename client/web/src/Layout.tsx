@@ -251,8 +251,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}
-                setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
         </div>
     )

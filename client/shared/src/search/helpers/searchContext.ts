@@ -18,8 +18,6 @@ import {
 
 export interface SearchContextProps {
     searchContextsEnabled: boolean
-    selectedSearchContextSpec?: string
-    setSelectedSearchContextSpec: (spec: string) => void
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchSearchContexts: typeof fetchSearchContexts
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
@@ -32,11 +30,7 @@ export interface SearchContextProps {
 
 export type SearchContextInputProps = Pick<
     SearchContextProps,
-    | 'searchContextsEnabled'
-    | 'selectedSearchContextSpec'
-    | 'setSelectedSearchContextSpec'
-    | 'fetchSearchContexts'
-    | 'getUserSearchContextNamespaces'
+    'searchContextsEnabled' | 'fetchSearchContexts' | 'getUserSearchContextNamespaces'
 >
 
 export const isSearchContextSpecAvailable = memoizeObservable(
