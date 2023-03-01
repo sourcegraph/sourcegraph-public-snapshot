@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { mdiBlockHelper } from '@mdi/js'
+import { mdiBlockHelper, mdiCog, mdiDotsHorizontal } from '@mdi/js'
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -20,6 +20,12 @@ import {
     Text,
     Code,
     Icon,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    MenuLink,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { externalRepoIcon } from '../components/externalServices/externalServices'
@@ -45,6 +51,7 @@ import {
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { BlockPackagesModal } from './packages/BlockPackageModal'
 
 import styles from './SiteAdminPackagesPage.module.scss'
 
@@ -58,7 +65,7 @@ const ExternalServicePackageMap: Partial<
     >
 > = {
     [ExternalServiceKind.NPMPACKAGES]: {
-        label: 'NPM',
+        label: 'npm',
         value: PackageRepoReferenceKind.NPMPACKAGES,
     },
     [ExternalServiceKind.GOMODULES]: {
@@ -85,9 +92,13 @@ const ExternalServicePackageMap: Partial<
 
 interface PackageNodeProps {
     node: SiteAdminPackageFields
+    setSelectedPackage: (node: SiteAdminPackageFields) => void
 }
 
-const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
+const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({
+    node,
+    setSelectedPackage,
+}) => {
     const PackageIconComponent = externalRepoIcon({ serviceType: node.kind })
 
     const packageRepository = node.repository
@@ -108,10 +119,34 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                         )}
                     </div>
                     <div>
-                        <Button variant="danger" outline={false} size="sm">
-                            <Icon aria-hidden={true} svgPath={mdiBlockHelper} className="mr-1" />
-                            Block
-                        </Button>
+                        <Menu>
+                            <MenuButton outline={true} aria-label="Package action">
+                                <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
+                            </MenuButton>
+                            <MenuList position={Position.bottomEnd}>
+                                {packageRepository?.mirrorInfo.cloned &&
+                                    !packageRepository.mirrorInfo.lastError &&
+                                    !packageRepository.mirrorInfo.cloneInProgress && (
+                                        <MenuLink
+                                            as={Link}
+                                            to={`/${packageRepository.name}/-/settings`}
+                                            className="p-2"
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
+                                            Settings
+                                        </MenuLink>
+                                    )}
+                                <MenuItem
+                                    as={Button}
+                                    variant="danger"
+                                    onSelect={() => setSelectedPackage(node)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiBlockHelper} className="mr-1" />
+                                    Block
+                                </MenuItem>
+                            </MenuList>
+                        </Menu>
                     </div>
                 </div>
                 {packageRepository && (
@@ -152,6 +187,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
+    const [selectedPackage, setSelectedPackage] = useState<SiteAdminPackageFields | null>(null)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
@@ -163,14 +199,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         error: extSvcError,
     } = useQuery<ExternalServiceKindsResult, ExternalServiceKindsVariables>(EXTERNAL_SERVICE_KINDS, {})
 
-    const filters = useMemo<FilteredConnectionFilter[]>(() => {
-        const values = [
-            {
-                label: 'All',
-                value: 'all',
-                args: {},
-            },
-        ]
+    const ecosystemFilterValues = useMemo<FilteredConnectionFilterValue[]>(() => {
+        const values = []
 
         for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
             const packageRepoScheme = ExternalServicePackageMap[extSvc.kind]
@@ -183,15 +213,27 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
             }
         }
 
-        return [
+        return values
+    }, [extSvcs?.externalServices.nodes])
+
+    const filters = useMemo<FilteredConnectionFilter[]>(
+        () => [
             {
                 id: 'ecosystem',
                 label: 'Ecosystem',
                 type: 'select',
-                values,
+                values: [
+                    {
+                        label: 'All',
+                        value: 'all',
+                        args: {},
+                    },
+                    ...ecosystemFilterValues,
+                ],
             },
-        ]
-    }, [extSvcs])
+        ],
+        [ecosystemFilterValues]
+    )
 
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
@@ -266,75 +308,85 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
     const loading = extSvcLoading || packagesLoading
 
     return (
-        <div>
-            <PageTitle title="Packages - Admin" />
-            <PageHeader
-                path={[{ text: 'Packages' }]}
-                headingElement="h2"
-                description={
-                    <>
-                        Packages are synced from connected <Link to="/site-admin/external-services">code hosts</Link>.
-                    </>
-                }
-                className="mb-3"
-            />
-
-            <Container className="mb-3">
-                {error && !loading && <ErrorAlert error={error} />}
-                <Input
-                    type="search"
-                    className="flex-1"
-                    placeholder="Search packages..."
-                    name="query"
-                    value={searchValue}
-                    onChange={event => setSearchValue(event.currentTarget.value)}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    aria-label="Search packages..."
-                    variant="regular"
+        <>
+            {selectedPackage && (
+                <BlockPackagesModal
+                    node={selectedPackage}
+                    filters={ecosystemFilterValues}
+                    onDismiss={() => setSelectedPackage(null)}
                 />
-                <div className="d-flex align-items-end justify-content-between mt-3">
-                    <FilterControl
-                        filters={filters}
-                        values={filterValues}
-                        onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
-                            setFilterValues(values => {
-                                const newValues = new Map(values)
-                                newValues.set(filter.id, value)
-                                return newValues
-                            })
-                        }
+            )}
+            <div>
+                <PageTitle title="Packages - Admin" />
+                <PageHeader
+                    path={[{ text: 'Packages' }]}
+                    headingElement="h2"
+                    description={
+                        <>
+                            Packages are synced from connected{' '}
+                            <Link to="/site-admin/external-services">code hosts</Link>.
+                        </>
+                    }
+                    className="mb-3"
+                />
+
+                <Container className="mb-3">
+                    {error && !loading && <ErrorAlert error={error} />}
+                    <Input
+                        type="search"
+                        className="flex-1"
+                        placeholder="Search packages..."
+                        name="query"
+                        value={searchValue}
+                        onChange={event => setSearchValue(event.currentTarget.value)}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        aria-label="Search packages..."
+                        variant="regular"
                     />
-                    {connection && (
-                        <ConnectionSummary
-                            connection={connection}
-                            connectionQuery={query}
-                            hasNextPage={hasNextPage}
-                            first={DEFAULT_FIRST}
-                            noun="package"
-                            pluralNoun="packages"
-                            className="mb-0"
+                    <div className="d-flex align-items-end justify-content-between mt-3">
+                        <FilterControl
+                            filters={filters}
+                            values={filterValues}
+                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
+                                setFilterValues(values => {
+                                    const newValues = new Map(values)
+                                    newValues.set(filter.id, value)
+                                    return newValues
+                                })
+                            }
                         />
-                    )}
-                </div>
-                {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
-                {connection?.nodes && connection.nodes.length > 0 && (
-                    <ul className="list-group list-group-flush mt-2">
-                        {(connection?.nodes || []).map(node => (
-                            <PackageNode node={node} key={node.id} />
-                        ))}
-                    </ul>
-                )}
-                {connection?.nodes && connection.totalCount !== connection.nodes.length && hasNextPage && (
-                    <div>
-                        <Button variant="link" size="sm" onClick={fetchMore}>
-                            Show more
-                        </Button>
+                        {connection && (
+                            <ConnectionSummary
+                                connection={connection}
+                                connectionQuery={query}
+                                hasNextPage={hasNextPage}
+                                first={DEFAULT_FIRST}
+                                noun="package"
+                                pluralNoun="packages"
+                                className="mb-0"
+                            />
+                        )}
                     </div>
-                )}
-            </Container>
-        </div>
+                    {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
+                    {connection?.nodes && connection.nodes.length > 0 && (
+                        <ul className="list-group list-group-flush mt-2">
+                            {(connection?.nodes || []).map(node => (
+                                <PackageNode node={node} key={node.id} setSelectedPackage={setSelectedPackage} />
+                            ))}
+                        </ul>
+                    )}
+                    {connection?.nodes && connection.totalCount !== connection.nodes.length && hasNextPage && (
+                        <div>
+                            <Button variant="link" size="sm" onClick={fetchMore}>
+                                Show more
+                            </Button>
+                        </div>
+                    )}
+                </Container>
+            </div>
+        </>
     )
 }

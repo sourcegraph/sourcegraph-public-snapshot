@@ -1,0 +1,43 @@
+.modal {
+    width: 100%;
+    max-width: 35rem;
+}
+
+.header {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    padding: 0 0.5rem 0.5rem;
+
+    text-align: center;
+}
+
+.content {
+    min-height: 5rem;
+}
+
+.actions {
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    padding: 1rem 0.5rem 0;
+
+    display: flex;
+    justify-content: flex-end;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+
+    &-button {
+        align-self: stretch;
+    }
+}
+
+.list {
+    max-height: 15rem;
+    overflow-y: scroll;
+}
+
+.select {
+    width: 6rem;
+}
