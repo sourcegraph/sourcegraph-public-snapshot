@@ -17,7 +17,7 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 
-import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
+import { useRolesConnection, usePermissions, PermissionsMap, DEFAULT_PAGE_LIMIT } from './backend'
 import { RoleNode } from './components/RoleNode'
 
 export interface SiteAdminRolesPageProps extends TelemetryProps {}
@@ -79,7 +79,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
-                            first={15}
+                            first={DEFAULT_PAGE_LIMIT}
                             centered={true}
                             connection={connection}
                             noun="role"

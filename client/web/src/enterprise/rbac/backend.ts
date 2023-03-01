@@ -20,6 +20,8 @@ import {
     PermissionFields,
 } from '../../graphql-operations'
 
+export const DEFAULT_PAGE_LIMIT = 10
+
 const permissionFragment = gql`
     fragment PermissionFields on Permission {
         __typename
@@ -98,7 +100,7 @@ export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult
     useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
         query: ROLES_QUERY,
         variables: {
-            first: 15,
+            first: DEFAULT_PAGE_LIMIT,
             after: null,
         },
         options: {
