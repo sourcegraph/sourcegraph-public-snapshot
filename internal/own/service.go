@@ -55,7 +55,7 @@ func NewService(g gitserver.Client, db database.DB) Service {
 		// TODO: Potentially long living struct, we don't do cache invalidation here.
 		// Might want to remove caching here and do that externally.
 		// ownerCache: make(map[OwnerKey]codeowners.ResolvedOwner),
-		fileCache: make(map[fileCacheKey]*codeownerspb.File),
+		fileCache: make(map[fileCacheKey]*codeowners.Ruleset),
 	}
 }
 
@@ -70,7 +70,7 @@ type service struct {
 
 	// TODO: Move outside of this service.
 	mu        sync.RWMutex
-	fileCache map[fileCacheKey]*codeownerspb.File
+	fileCache map[fileCacheKey]*codeowners.Ruleset
 }
 
 type fileCacheKey struct {

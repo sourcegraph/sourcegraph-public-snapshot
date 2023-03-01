@@ -18,7 +18,7 @@ type cacheKey struct {
 
 type ResolvedOwnersFile struct {
 	resCtx         own.OwnerResolutionContext
-	file           *codeownerspb.File
+	file           *codeowners.Ruleset
 	resolvedOwners map[own.OwnerKey]codeowners.ResolvedOwner
 }
 
@@ -39,7 +39,7 @@ const RULESET_FAST_BYPASS_THRESHOLD = 10
 
 func (r *ResolvedOwnersFile) FindOwnersFiltered(path string, candidates []codeowners.ResolvedOwner) (ret []codeowners.ResolvedOwner) {
 	// If the ruleset is large, do a precheck.
-	if len(r.file.GetRule()) > RULESET_FAST_BYPASS_THRESHOLD {
+	if r.file.RuleCount() > RULESET_FAST_BYPASS_THRESHOLD {
 		// If any of the rules match a defined owner in this file, it could potentially match for a given path,
 		// so we actually do the costly comparisons of path globs.
 		if len(candidates) > 0 {
@@ -102,9 +102,9 @@ func (c *Cache) GetFromCacheOrFetch(ctx context.Context, repoID api.RepoID, repo
 	defer c.mu.Unlock()
 	// Recheck condition.
 	if _, ok := c.entries[key]; !ok {
-		file, err := c.ownService.OwnersFile(ctx, repoName, commitID)
-		if err != nil {
-			emptyRuleset := &codeownerspb.File{}
+		file, err := c.ownService.RulesetForRepo(ctx, repoName, commitID)
+		if err != nil || file == nil {
+			emptyRuleset := codeowners.NewRuleset(&codeownerspb.File{})
 			r := &ResolvedOwnersFile{
 				file:           emptyRuleset,
 				resolvedOwners: make(map[own.OwnerKey]codeowners.ResolvedOwner),
@@ -113,7 +113,7 @@ func (c *Cache) GetFromCacheOrFetch(ctx context.Context, repoID api.RepoID, repo
 			return r, err
 		}
 
-		resolvedOwners, err := c.ownService.ResolveOwnersWithType(ctx, ownersForFile(file), resCtx)
+		resolvedOwners, err := c.ownService.ResolveOwnersWithType(ctx, file.AllOwners(), resCtx)
 		// Warning: Failure here means that might always exercise a costly path, we
 		// should store the error or keep a fallback.
 		if err != nil {
@@ -129,21 +129,4 @@ func (c *Cache) GetFromCacheOrFetch(ctx context.Context, repoID api.RepoID, repo
 		c.entries[key] = r
 	}
 	return c.entries[key], nil
-}
-
-func ownersForFile(file *codeownerspb.File) (allOwners []*codeownerspb.Owner) {
-	seenOwners := make(map[string]struct{})
-
-	for _, rule := range file.GetRule() {
-		for _, owner := range rule.Owner {
-			key := owner.Handle + ":" + owner.Email
-			if _, ok := seenOwners[key]; ok {
-				continue
-			}
-			allOwners = append(allOwners, owner)
-			seenOwners[key] = struct{}{}
-		}
-	}
-
-	return allOwners
 }

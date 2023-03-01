@@ -34,6 +34,27 @@ func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
 	return nil
 }
 
+func (x *Ruleset) RuleCount() int {
+	return len(x.rules)
+}
+
+func (x *Ruleset) AllOwners() (allOwners []*codeownerspb.Owner) {
+	seenOwners := make(map[string]struct{})
+
+	for _, rule := range x.rules {
+		for _, owner := range rule.proto.Owner {
+			key := owner.Handle + ":" + owner.Email
+			if _, ok := seenOwners[key]; ok {
+				continue
+			}
+			allOwners = append(allOwners, owner)
+			seenOwners[key] = struct{}{}
+		}
+	}
+
+	return allOwners
+}
+
 type CompiledRule struct {
 	proto       *codeownerspb.Rule
 	glob        globPattern
