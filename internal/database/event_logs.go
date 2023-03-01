@@ -1338,6 +1338,76 @@ GROUP BY name, current_week
 ORDER BY name;
 `
 
+func (l *eventLogStore) OwnershipFeatureActivity(ctx context.Context, now time.Time, eventName string) (*types.OwnershipUsageStatisticsActiveUsers, error) {
+	query := sqlf.Sprintf(`
+	WITH events AS (
+		SELECT
+		`+aggregatedUserIDQueryFragment+` AS user_id,
+		`+makeDateTruncExpression("day", "%s::timestamp")+` AS day,
+		`+makeDateTruncExpression("week", "%s::timestamp")+` AS week,
+		`+makeDateTruncExpression("month", "%s::timestamp")+` AS month
+		FROM event_logs
+		WHERE timestamp >= `+makeDateTruncExpression("month", "%s::timestamp")+`
+		AND name = %s
+	)
+	(
+		SELECT DISTINCT ON (unit)
+			'month' AS unit,
+			e.month AS time_stamp,
+			COUNT(DISTINCT e.user_id) AS active_users
+		FROM events AS e
+		GROUP BY unit, time_stamp
+		ORDER BY unit, time_stamp DESC
+	)
+	UNION ALL
+	(
+	SELECT DISTINCT ON (unit)
+		'week' AS unit,
+		e.week AS time_stamp,
+		COUNT(DISTINCT e.user_id) AS active_users
+	FROM events AS e
+	GROUP BY unit, time_stamp
+	ORDER BY unit, time_stamp DESC
+	)
+	UNION ALL
+	(
+	SELECT DISTINCT ON (1)
+		'day' AS unit,
+		e.day AS time_stamp,
+		COUNT(DISTINCT e.user_id) AS active_users
+	FROM events AS e
+	GROUP BY unit, time_stamp
+	ORDER BY unit, time_stamp DESC
+	)`, now, now, now, now, eventName)
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+	var result types.OwnershipUsageStatisticsActiveUsers
+	for rows.Next() {
+		var (
+			unit        string
+			timestamp   time.Time
+			activeUsers int32
+		)
+		if err := rows.Scan(&unit, &timestamp, &activeUsers); err != nil {
+			return nil, err
+		}
+		switch unit {
+		case "day":
+			result.DAU = &activeUsers
+		case "week":
+			result.WAU = &activeUsers
+		case "month":
+			result.MAU = &activeUsers
+		default:
+			return nil, errors.Newf("unexpected unit %q, this is a bug", unit)
+		}
+	}
+	return &result, err
+}
+
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {
