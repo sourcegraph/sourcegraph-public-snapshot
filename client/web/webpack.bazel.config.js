@@ -154,11 +154,6 @@ const config = {
       resource.request = resource.request.replace(/\.scss$/, '.css')
     }),
 
-    // TODO(bazel): implement *.worker.ts support
-    new webpack.IgnorePlugin({
-      resourceRegExp: /.*\.worker\.ts/,
-    }),
-
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
