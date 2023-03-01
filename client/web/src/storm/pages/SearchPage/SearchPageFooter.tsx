@@ -6,14 +6,14 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
-import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { PageRoutes } from '../../../routes.constants'
 
 import styles from './SearchPageFooter.module.scss'
 
 export const SearchPageFooter: FC = () => {
     const isLightTheme = useIsLightTheme()
-    const { telemetryService, isSourcegraphDotCom } = useLegacyRouteContext()
+    const { telemetryService, isSourcegraphDotCom } = useLegacyContext_onlyInStormRoutes()
 
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })

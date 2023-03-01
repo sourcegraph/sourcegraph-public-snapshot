@@ -11,7 +11,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
-import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
@@ -28,7 +28,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
     const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
-        useLegacyRouteContext()
+        useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()

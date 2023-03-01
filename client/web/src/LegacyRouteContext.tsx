@@ -176,7 +176,7 @@ export const LegacyRouteContext = createContext<LegacyLayoutRouteContext | null>
  * @deprecated This can be used only in components migrated under Storm routes.
  * Please use Apollo instead to make GraphQL requests and `useSettings` to access settings.
  */
-export const useLegacyRouteContext = (): LegacyLayoutRouteContext => {
+export const useLegacyContext_onlyInStormRoutes = (): LegacyLayoutRouteContext => {
     const context = useContext(LegacyRouteContext)
     if (!context) {
         throw new Error('LegacyRoute must be used inside a LegacyRouteContext.Provider')

@@ -1,13 +1,13 @@
 import { FC } from 'react'
 
-import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 
 import { usePreloadedQueryData } from './SearchPage.loader'
 import { SearchPageContent, getShouldShowAddCodeHostWidget } from './SearchPageContent'
 
 export const SearchPage: FC = () => {
     const { data } = usePreloadedQueryData()
-    const { authenticatedUser } = useLegacyRouteContext()
+    const { authenticatedUser } = useLegacyContext_onlyInStormRoutes()
 
     const shouldShowAddCodeHostWidget = getShouldShowAddCodeHostWidget({
         isAddCodeHostWidgetEnabled: !!data?.evaluateFeatureFlag,

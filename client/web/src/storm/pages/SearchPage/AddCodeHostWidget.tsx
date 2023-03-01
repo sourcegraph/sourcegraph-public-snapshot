@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { H3, Text, Link, Icon } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 
 import styles from './AddCodeHostWidget.module.scss'
 
@@ -16,7 +16,7 @@ interface AddCodeHostWidgetProps {
 
 export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
     const { className } = props
-    const { telemetryService } = useLegacyRouteContext()
+    const { telemetryService } = useLegacyContext_onlyInStormRoutes()
 
     return (
         <MarketingBlock

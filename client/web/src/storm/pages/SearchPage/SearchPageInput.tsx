@@ -23,7 +23,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { Notices } from '../../../global/Notices'
-import { useLegacyRouteContext } from '../../../LegacyRouteContext'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { submitSearch } from '../../../search/helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../search/input/lazy'
 import { useRecentSearches } from '../../../search/input/useRecentSearches'
@@ -67,7 +67,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         selectedSearchContextSpec: dynamicSearchContextSpec,
         fetchSearchContexts,
         setSelectedSearchContextSpec,
-    } = useLegacyRouteContext()
+    } = useLegacyContext_onlyInStormRoutes()
 
     const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
 
