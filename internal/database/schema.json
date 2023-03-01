@@ -7573,6 +7573,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_scanned_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "repository",
           "Index": 4,
           "TypeName": "text",
@@ -7622,6 +7635,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_definitions_pkey ON codeintel_ranking_definitions USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_definitions_graph_key_last_scanned_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "codeintel_ranking_definitions_symbol_name",
@@ -7899,6 +7922,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_scanned_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "symbol_names",
           "Index": 3,
           "TypeName": "text[]",
@@ -7935,6 +7971,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_pkey ON codeintel_ranking_references USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_graph_key_last_scanned_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "codeintel_ranking_references_upload_id",

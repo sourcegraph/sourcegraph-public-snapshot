@@ -957,16 +957,18 @@ Triggers:
 
 # Table "public.codeintel_ranking_definitions"
 ```
-    Column     |  Type   | Collation | Nullable |                          Default                          
----------------+---------+-----------+----------+-----------------------------------------------------------
- id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
- upload_id     | integer |           | not null | 
- symbol_name   | text    |           | not null | 
- repository    | text    |           | not null | 
- document_path | text    |           | not null | 
- graph_key     | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_name     | text                     |           | not null | 
+ repository      | text                     |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
     "codeintel_ranking_definitions_upload_id" btree (upload_id)
 
@@ -1008,14 +1010,16 @@ Indexes:
 
 # Table "public.codeintel_ranking_references"
 ```
-    Column    |  Type   | Collation | Nullable |                         Default                          
---------------+---------+-----------+----------+----------------------------------------------------------
- id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
- upload_id    | integer |           | not null | 
- symbol_names | text[]  |           | not null | 
- graph_key    | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_names    | text[]                   |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
 Referenced by:
     TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
