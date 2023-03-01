@@ -284,12 +284,13 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 	}
 
 	return rp.WithTransact(ctx, func(tx RolePermissionStore) error {
-		// look up the current permissions assigned to the role
+		// look up the current permissions assigned to the role. We use this to determine which permissions to assign and revoke.
 		rolePermissions, err := tx.GetByRoleID(ctx, GetRolePermissionOpts{RoleID: opts.RoleID})
 		if err != nil {
 			return err
 		}
 
+		// We create a map of permissions for easy lookup.
 		var rolePermsMap = make(map[int32]int, len(rolePermissions))
 		for _, rolePermission := range rolePermissions {
 			rolePermsMap[rolePermission.PermissionID] = 1
@@ -299,20 +300,22 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 		var toBeAdded []int32
 
 		// figure out permissions that need to be added. Permissions that are received from `opts`
-		// and do not exist in the databse are new and should be added.
+		// and do not exist in the database are new and should be added. While those in the database that aren't
+		// part of `opts.Permissions` should be revoked.
 		for _, perm := range opts.Permissions {
 			count, ok := rolePermsMap[perm]
 			if ok {
-				// if the role <> permission association exists in the database, we simply increment the count.
+				// We increment the count of permissions that are in the map, and also part of `opts.Permissions`.
+				// These permissions won't be modified.
 				rolePermsMap[perm] = count + 1
 			} else {
-				// If the role <> permission association exists in the database but isn't provided in the arguments,
-				// we initialize it in the map, by assigning a count of zero.
+				// Permissions that aren't part of the map (do not exist in the database), should be inserted in the
+				// database.
 				rolePermsMap[perm] = 0
 			}
 		}
 
-		// New role permission associations that
+		// We loop through the map to figure out permissions that should be revoked or assigned.
 		for perm, count := range rolePermsMap {
 			switch count {
 			// Count is zero when the role <> permission association doesn't exist in the database, but is
@@ -326,8 +329,7 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 			}
 		}
 
-		// If we have new permissions to be added, we add them into the database. This operation is wrapped in
-		// a transaction, so if an error occurs, the transaction will be reverted.
+		// If we have new permissions to be added, we insert into the database via the transaction created earlier.
 		if len(toBeAdded) > 0 {
 			if err = tx.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
 				RoleID:      opts.RoleID,
@@ -337,8 +339,7 @@ func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts S
 			}
 		}
 
-		// If we have permissions to be deleted, we remove them from the database. This operation is wrapped in
-		// a transaction, so if an error occurs, the transaction will be reverted.
+		// If we have new permissions to be removed, we remove from the database via the transaction created earlier.
 		if len(toBeDeleted) > 0 {
 			if err = tx.BulkRevokePermissionsForRole(ctx, BulkRevokePermissionsForRoleOpts{
 				RoleID:      opts.RoleID,
