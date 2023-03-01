@@ -178,6 +178,18 @@ In practice, Sourcegraph OSS involves:
    </td>
   </tr>
   <tr>
+   <td># of private repositories
+   </td>
+   <td>Unlimited
+   </td>
+   <td>1
+   </td>
+   <td>Unlimited
+   </td>
+   <td>Unlimited
+   </td>
+  </tr>
+  <tr>
    <td colspan="5" ><strong>Security, compliance, and admin</strong>
    </td>
   </tr>

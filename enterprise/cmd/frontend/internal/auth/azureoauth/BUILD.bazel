@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "azureoauth",
+    srcs = [
+        "login.go",
+        "middleware.go",
+        "provider.go",
+        "session.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/azureoauth",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/auth/providers",
+        "//enterprise/cmd/frontend/internal/auth/oauth",
+        "//enterprise/internal/licensing",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
+        "//lib/errors",
+        "//schema",
+        "@com_github_dghubble_gologin//:gologin",
+        "@com_github_dghubble_gologin//oauth2",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_test(
+    name = "azureoauth_test",
+    srcs = ["provider_test.go"],
+    embed = [":azureoauth"],
+    deps = [
+        "//enterprise/cmd/frontend/internal/auth/oauth",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
