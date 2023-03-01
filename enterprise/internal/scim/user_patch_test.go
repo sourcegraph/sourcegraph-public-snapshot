@@ -44,23 +44,6 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				assert.Equal(t, "user7", user.Attributes[AttrUserName])
 			},
 		},
-		// TODO: Temporarily disabled test, it's failing on CI for some reason. Figure out what's wrong later.
-		//{
-		//	name:   "replace multiple",
-		//	userId: "4",
-		//	operations: []scim.PatchOperation{
-		//		{Op: "replace", Path: nil, Value: map[string]interface{}{AttrUserName: "user4-mod@company.com", "active": false}},
-		//	},
-		//	testFunc: func(userRes scim.Resource, err error) {
-		//		assert.NoError(t, err)
-		//		assert.Equal(t, "user4-mod@company.com", userRes.Attributes[AttrUserName])
-		//		users, _ := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{4}})
-		//		user := users[0]
-		//		assert.Equal(t, "user4-mod", user.Username)
-		//		assert.Equal(t, "user4-mod@company.com", user.SCIMExternalID)
-		//		//assert.Equal(t, false, user.Attributes["active"])
-		//	},
-		//},
 	}
 
 	for _, tc := range testCases {
