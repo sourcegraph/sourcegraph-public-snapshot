@@ -3,8 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
 import { startCase } from 'lodash'
 
-import { logger } from '@sourcegraph/common'
-import { Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
@@ -54,7 +53,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
             event.preventDefault()
             deleteRole({ variables: { role: node.id } })
         },
-        [deleteRole, afterDelete, closeModal, node.id]
+        [deleteRole, node.id]
     )
 
     return (
@@ -64,8 +63,6 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     onCancel={closeModal}
                     role={node}
                     onConfirm={onDelete}
-                    loading={loading}
-                    error={error}
                 />
             )}
             <Button
@@ -76,8 +73,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
 
-            <div className="d-flex align-items-center">
-                <Text className="font-weight-bold m-0">{roleName}</Text>
+            <div className="d-flex flex-column">
+                <div className="d-flex align-items-center">
+                    <Text className="font-weight-bold m-0">{roleName}</Text>
 
                 {node.system && (
                     <Tooltip
@@ -87,11 +85,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                         <Text className={styles.roleNodeSystemText}>System</Text>
                     </Tooltip>
                 )}
+                </div>
+                {error && <ErrorAlert error={error} />}
             </div>
 
             {!node.system && (
                 <Tooltip content="Deleting a role is an irreversible action.">
-                    <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm">
+                    <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm" className={styles.roleNodeDeleteBtn}>
                         <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </Tooltip>
