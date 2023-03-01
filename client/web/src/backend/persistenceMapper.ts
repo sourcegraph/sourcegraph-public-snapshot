@@ -5,11 +5,7 @@ import { QueryFieldPolicy } from '@sourcegraph/shared/src/graphql-operations'
  * After the implementation of the `persistLink` which will support `@persist` directive
  * hardcoded query names will be deprecated.
  */
-export const QUERIES_TO_PERSIST: (keyof QueryFieldPolicy)[] = [
-    'viewerSettings',
-    'extensionRegistry',
-    'temporarySettings',
-]
+export const QUERIES_TO_PERSIST: (keyof QueryFieldPolicy)[] = ['viewerSettings', 'temporarySettings']
 export const ROOT_QUERY_KEY = 'ROOT_QUERY'
 
 export interface CacheReference {

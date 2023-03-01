@@ -61,6 +61,8 @@ const changesetsStatsFragment = gql`
         open
         unpublished
         archived
+        isCompleted
+        percentComplete
     }
 `
 
@@ -605,7 +607,7 @@ export const CHANGESET_COUNTS_OVER_TIME = gql`
 export const useChangesetCountsOverTime = (
     batchChange: Scalars['ID'],
     includeArchived: boolean
-): QueryResult<ChangesetCountsOverTimeResult> =>
+): QueryResult<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables> =>
     useQuery<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(CHANGESET_COUNTS_OVER_TIME, {
         variables: {
             batchChange,

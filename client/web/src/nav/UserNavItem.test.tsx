@@ -6,8 +6,6 @@ import sinon from 'sinon'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { ThemePreference } from '../theme'
-
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
 describe('UserNavItem', () => {
@@ -53,12 +51,10 @@ describe('UserNavItem', () => {
             render(
                 <MemoryRouter>
                     <UserNavItem
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
                         showKeyboardShortcutsHelp={() => undefined}
-                        themePreference={ThemePreference.Light}
                         authenticatedUser={USER}
-                        showDotComMarketing={true}
+                        isSourcegraphDotCom={true}
+                        isSourcegraphApp={false}
                         codeHostIntegrationMessaging="browser-extension"
                         showFeedbackModal={() => undefined}
                     />
@@ -70,12 +66,10 @@ describe('UserNavItem', () => {
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         const result = renderWithBrandedContext(
             <UserNavItem
-                isLightTheme={true}
-                onThemePreferenceChange={() => undefined}
                 showKeyboardShortcutsHelp={() => undefined}
-                themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
-                showDotComMarketing={true}
+                isSourcegraphDotCom={true}
+                isSourcegraphApp={false}
                 codeHostIntegrationMessaging="browser-extension"
                 showFeedbackModal={() => undefined}
             />

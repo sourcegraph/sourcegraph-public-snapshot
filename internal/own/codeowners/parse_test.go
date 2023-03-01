@@ -75,48 +75,56 @@ apps/ @octocat
 				{Handle: "global-owner1"},
 				{Handle: "global-owner2"},
 			},
+			LineNumber: 8,
 		},
 		{
 			Pattern: "*.js",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "js-owner"},
 			},
+			LineNumber: 14,
 		},
 		{
 			Pattern: "*.go",
 			Owner: []*codeownerspb.Owner{
 				{Email: "docs@example.com"},
 			},
+			LineNumber: 19,
 		},
 		{
 			Pattern: "*.txt",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "octo-org/octocats"},
 			},
+			LineNumber: 25,
 		},
 		{
 			Pattern: "/build/logs/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "doctocat"},
 			},
+			LineNumber: 30,
 		},
 		{
 			Pattern: "docs/*",
 			Owner: []*codeownerspb.Owner{
 				{Email: "docs@example.com"},
 			},
+			LineNumber: 35,
 		},
 		{
 			Pattern: "apps/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "octocat"},
 			},
+			LineNumber: 39,
 		},
 		{
 			Pattern: "/docs/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "doctocat"},
 			},
+			LineNumber: 44,
 		},
 		{
 			Pattern: "/scripts/",
@@ -124,19 +132,22 @@ apps/ @octocat
 				{Handle: "doctocat"},
 				{Handle: "octocat"},
 			},
+			LineNumber: 48,
 		},
 		{
 			Pattern: "/apps/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "octocat"},
 			},
+			LineNumber: 53,
 		},
 		{
-			Pattern: "/apps/github",
-			Owner:   nil,
+			Pattern:    "/apps/github",
+			Owner:      nil,
+			LineNumber: 54,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseGitlabExample(t *testing.T) {
@@ -218,6 +229,7 @@ README.md  @docs
 			Owner: []*codeownerspb.Owner{
 				{Handle: "default-codeowner"},
 			},
+			LineNumber: 7,
 		},
 		{
 			Pattern: "*",
@@ -226,18 +238,20 @@ README.md  @docs
 				{Handle: "code"},
 				{Handle: "owners"},
 			},
+			LineNumber: 10,
 		},
 		{
 			Pattern: "*.rb",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "ruby-owner"},
-			},
+			}, LineNumber: 15,
 		},
 		{
 			Pattern: "#file_with_pound.rb",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "owner-file-with-pound"},
 			},
+			LineNumber: 18,
 		},
 		{
 			Pattern: "CODEOWNERS",
@@ -246,15 +260,16 @@ README.md  @docs
 				{Handle: "code"},
 				{Handle: "owners"},
 			},
+			LineNumber: 23,
 		},
 		{
 			Pattern: "LICENSE",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "legal"},
-				// Note: To match GitLab parsing, we should not consider this as email.
-				{Email: "this_does_not_match"},
+				{Handle: "this_does_not_match"},
 				{Email: "janedoe@gitlab.com"},
 			},
+			LineNumber: 29,
 		},
 		{
 			Pattern: "README",
@@ -262,42 +277,49 @@ README.md  @docs
 				{Handle: "group"},
 				{Handle: "group/with-nested/subgroup"},
 			},
+			LineNumber: 33,
 		},
 		{
 			Pattern: "/docs/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "all-docs"},
 			},
+			LineNumber: 37,
 		},
 		{
 			Pattern: "/docs/*",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "root-docs"},
 			},
+			LineNumber: 42,
 		},
 		{
 			Pattern: "/docs/**/*.md",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "root-docs"},
 			},
+			LineNumber: 47,
 		},
 		{
 			Pattern: "lib/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "lib-owner"},
 			},
+			LineNumber: 50,
 		},
 		{
 			Pattern: "/config/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "config-owner"},
 			},
+			LineNumber: 53,
 		},
 		{
 			Pattern: "path with spaces/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "space-owner"},
 			},
+			LineNumber: 56,
 		},
 		{
 			Pattern: "ee/docs",
@@ -305,6 +327,7 @@ README.md  @docs
 				{Handle: "docs"},
 			},
 			SectionName: "documentation",
+			LineNumber:  60,
 		},
 		{
 			Pattern: "docs",
@@ -312,6 +335,7 @@ README.md  @docs
 				{Handle: "docs"},
 			},
 			SectionName: "documentation",
+			LineNumber:  61,
 		},
 		{
 			Pattern: "README.md",
@@ -319,6 +343,7 @@ README.md  @docs
 				{Handle: "database"},
 			},
 			SectionName: "database",
+			LineNumber:  64,
 		},
 		{
 			Pattern: "model/db",
@@ -326,6 +351,7 @@ README.md  @docs
 				{Handle: "database"},
 			},
 			SectionName: "database",
+			LineNumber:  65,
 		},
 		{
 			Pattern: "README.md",
@@ -333,9 +359,10 @@ README.md  @docs
 				{Handle: "docs"},
 			},
 			SectionName: "documentation",
+			LineNumber:  69,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseAtHandle(t *testing.T) {
@@ -346,8 +373,9 @@ func TestParseAtHandle(t *testing.T) {
 		Owner: []*codeownerspb.Owner{
 			{Handle: "readme-team"},
 		},
+		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseAtHandleSupportsNesting(t *testing.T) {
@@ -358,8 +386,9 @@ func TestParseAtHandleSupportsNesting(t *testing.T) {
 		Owner: []*codeownerspb.Owner{
 			{Handle: "readme-team/readme-subteam"},
 		},
+		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseEmailHandle(t *testing.T) {
@@ -370,8 +399,9 @@ func TestParseEmailHandle(t *testing.T) {
 		Owner: []*codeownerspb.Owner{
 			{Email: "me@example.com"},
 		},
+		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseTwoHandles(t *testing.T) {
@@ -383,8 +413,9 @@ func TestParseTwoHandles(t *testing.T) {
 			{Handle: "readme-team"},
 			{Email: "me@example.com"},
 		},
+		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParsePathWithSpaces(t *testing.T) {
@@ -395,8 +426,9 @@ func TestParsePathWithSpaces(t *testing.T) {
 		Owner: []*codeownerspb.Owner{
 			{Handle: "space-owner"},
 		},
+		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseSection(t *testing.T) {
@@ -410,8 +442,9 @@ func TestParseSection(t *testing.T) {
 		Owner: []*codeownerspb.Owner{
 			{Handle: "own-pms"},
 		},
+		LineNumber: 2,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseManySections(t *testing.T) {
@@ -428,6 +461,7 @@ func TestParseManySections(t *testing.T) {
 			Owner: []*codeownerspb.Owner{
 				{Handle: "own-eng"},
 			},
+			LineNumber: 1,
 		},
 		{
 			Pattern:     "own/codeowners/*",
@@ -435,6 +469,7 @@ func TestParseManySections(t *testing.T) {
 			Owner: []*codeownerspb.Owner{
 				{Handle: "own-pms"},
 			},
+			LineNumber: 3,
 		},
 		{
 			Pattern:     "own/**/*.md",
@@ -442,27 +477,28 @@ func TestParseManySections(t *testing.T) {
 			Owner: []*codeownerspb.Owner{
 				{Handle: "own-docs"},
 			},
+			LineNumber: 5,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseEmptyString(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader(""))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseBlankString(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader("  "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseComment(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader(" # This is a comment "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseRuleWithComment(t *testing.T) {
@@ -474,9 +510,10 @@ func TestParseRuleWithComment(t *testing.T) {
 			Owner: []*codeownerspb.Owner{
 				{Handle: "and-then"},
 			},
+			LineNumber: 1,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 // Note: Should a # within [Section name] not be treated as a comment-start
@@ -493,7 +530,8 @@ func TestParseSectionWithComment(t *testing.T) {
 			Owner: []*codeownerspb.Owner{
 				{Handle: "owner"},
 			},
+			LineNumber: 2,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }

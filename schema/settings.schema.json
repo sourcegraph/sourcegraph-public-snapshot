@@ -55,42 +55,10 @@
             "pointer": true
           }
         },
-        "searchStats": {
-          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "searchStreaming": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContext": {
-          "description": "Enables the search context dropdown.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeNavigation": {
-          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
-          "type": "string",
-          "enum": ["selection-driven", "link-driven"],
           "!go": {
             "pointer": true
           }
@@ -288,11 +256,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "preloadGoToDefinition": {
-          "description": "Preload definitions for available tokens in the visible viewport.",
-          "type": "boolean",
-          "default": false
         },
         "symbolKindTags": {
           "description": "Show the initial letter of the symbol kind instead of icons.",
@@ -576,7 +539,12 @@
       }
     },
     "alerts.showPatchUpdates": {
-      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.",
+      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will be shown if `alerts.showMajorMinorUpdatess` is true.",
+      "type": "boolean",
+      "default": true
+    },
+    "alerts.showMajorMinorUpdates": {
+      "description": "Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.",
       "type": "boolean",
       "default": true
     },
@@ -593,26 +561,6 @@
       "type": "string",
       "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"
-    },
-    "extensions": {
-      "description": "The Sourcegraph extensions to use. Enable an extension by adding a property `\"my/extension\": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.",
-      "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "description": "A valid extension ID.",
-        "pattern": "^([^/]+/)?[^/]+/[^/]+$"
-      },
-      "additionalProperties": {
-        "type": "boolean",
-        "description": "`true` to enable the extension, `false` to disable the extension (if it was previously enabled)"
-      }
-    },
-    "extensions.activeLoggers": {
-      "description": "The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
     },
     "codeHost.useNativeTooltips": {
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",

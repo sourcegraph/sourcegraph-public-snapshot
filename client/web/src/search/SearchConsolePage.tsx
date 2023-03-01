@@ -18,11 +18,11 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
@@ -43,14 +43,11 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
-    const extensionHostAPI =
-        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
-    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
-        features => features.enableGoImportsSearchQueryTransform
-    )
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+    const { globbing, streamSearch, isSourcegraphDotCom } = props
+    const { enableGoImportsSearchQueryTransform, applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
+        enableGoImportsSearchQueryTransform: features.enableGoImportsSearchQueryTransform,
+        applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
+    }))
 
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
@@ -72,11 +69,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
 
         return transformSearchQuery({
             query,
-            extensionHostAPIPromise: extensionHostAPI,
             enableGoImportsSearchQueryTransform,
             eventLogger,
         })
-    }, [location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
+    }, [location.search, enableGoImportsSearchQueryTransform])
 
     const autocompletion = useMemo(
         () =>
@@ -120,7 +116,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                     <div className={styles.editor}>
                         <CodeMirrorQueryInput
                             className="d-flex flex-column overflow-hidden"
-                            isLightTheme={props.isLightTheme}
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}

@@ -45,6 +45,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
 			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
+			NewCompletionsStreamHandler:   enterpriseServices.NewCompletionsStreamHandler,
 		},
 	))
 }

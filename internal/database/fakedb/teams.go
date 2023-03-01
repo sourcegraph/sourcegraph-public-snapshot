@@ -195,13 +195,38 @@ func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamM
 }
 
 func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
-	for _, existingMember := range teams.members {
-		for _, newMember := range members {
-			if *existingMember == *newMember {
-				return errors.Newf("Member teamID=%d userID=%d already exists.", newMember.TeamID, newMember.UserID)
+	for _, newMember := range members {
+		exists := false
+		for _, existingMember := range teams.members {
+			if existingMember.UserID == newMember.UserID && existingMember.TeamID == newMember.TeamID {
+				exists = true
+				// on conflict do nothing.
+				break
 			}
 		}
+		if !exists {
+			teams.members = append(teams.members, newMember)
+		}
 	}
-	teams.members = append(teams.members, members...)
+
+	return nil
+}
+
+func (teams *Teams) DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+	for _, m := range members {
+		var index int
+		var found bool
+		for i := 0; i < len(teams.members); i++ {
+			if n := teams.members[i]; m.UserID == n.UserID && m.TeamID == n.TeamID {
+				found = true
+				index = i
+			}
+		}
+		if found {
+			maxI := len(teams.members) - 1
+			teams.members[index], teams.members[maxI] = teams.members[maxI], teams.members[index]
+			teams.members = teams.members[:maxI]
+		}
+	}
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -234,7 +235,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		return errcode.MakeNonRetryable(err)
 	}
 
-	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, webhooks.ChangesetClose, cs.Changeset)
+	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, webhooks.ChangesetClose, bgql.MarshalChangesetID(cs.Changeset.ID))
 	return nil
 }
 

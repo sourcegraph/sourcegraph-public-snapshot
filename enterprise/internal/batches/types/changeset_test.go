@@ -6,9 +6,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
-
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -127,7 +128,8 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalForkNamespace: "",
 				ExternalUpdatedAt:     time.Unix(10, 0),
 			},
-		}, "bitbucketserver": {
+		},
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				ID: 12345,
 				FromRef: bitbucketserver.Ref{
@@ -175,6 +177,50 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalUpdatedAt:   time.Unix(10, 0),
 			},
 		},
+		"azuredevops with fork": {
+			meta: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{
+					ID:            12345,
+					SourceRefName: "refs/heads/branch",
+					ForkSource: &azuredevops.ForkRef{
+						Repository: azuredevops.Repository{
+							Name: "forked-repo",
+							Project: azuredevops.Project{
+								Name: "fork",
+							},
+						},
+					},
+					CreationDate: time.Unix(10, 0),
+				},
+				Statuses: []*azuredevops.PullRequestBuildStatus{},
+			},
+			want: &Changeset{
+				ExternalID:            "12345",
+				ExternalServiceType:   extsvc.TypeAzureDevOps,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "fork",
+				ExternalForkName:      "forked-repo",
+				ExternalUpdatedAt:     time.Unix(10, 0),
+			},
+		},
+		"azuredevops without fork": {
+			meta: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{
+					ID:            12345,
+					SourceRefName: "refs/heads/branch",
+					CreationDate:  time.Unix(10, 0),
+				},
+				Statuses: []*azuredevops.PullRequestBuildStatus{},
+			},
+			want: &Changeset{
+				ExternalID:            "12345",
+				ExternalServiceType:   extsvc.TypeAzureDevOps,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "",
+				ExternalForkName:      "",
+				ExternalUpdatedAt:     time.Unix(10, 0),
+			},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			have := &Changeset{}
@@ -194,6 +240,9 @@ func TestChangeset_SetMetadata(t *testing.T) {
 func TestChangeset_Title(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]any{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
+			PullRequest: &azuredevops.PullRequest{Title: want},
+		},
 		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
 			PullRequest: &bitbucketcloud.PullRequest{Title: want},
 		},
@@ -230,6 +279,9 @@ func TestChangeset_Title(t *testing.T) {
 func TestChangeset_ExternalCreatedAt(t *testing.T) {
 	want := time.Unix(10, 0)
 	for name, meta := range map[string]any{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
+			PullRequest: &azuredevops.PullRequest{CreationDate: want},
+		},
 		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
 			PullRequest: &bitbucketcloud.PullRequest{CreatedOn: want},
 		},
@@ -263,6 +315,11 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 func TestChangeset_Body(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]any{
+		"azuredevops": &adobatches.AnnotatedPullRequest{
+			PullRequest: &azuredevops.PullRequest{
+				Description: want,
+			},
+		},
 		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
 			PullRequest: &bitbucketcloud.PullRequest{
 				Rendered: bitbucketcloud.RenderedPullRequestMarkup{
@@ -302,40 +359,71 @@ func TestChangeset_Body(t *testing.T) {
 
 func TestChangeset_URL(t *testing.T) {
 	want := "foo"
-	for name, meta := range map[string]any{
-		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
-			PullRequest: &bitbucketcloud.PullRequest{
-				Links: bitbucketcloud.Links{
-					"html": bitbucketcloud.Link{Href: want},
+	for name, meta := range map[string]struct {
+		pr   any
+		want string
+	}{
+		"azuredevops": {
+			pr: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{
+					ID: 12,
+					Repository: azuredevops.Repository{
+						Name: "repoName",
+						Project: azuredevops.Project{
+							Name: "projectName",
+						},
+						APIURL: "https://dev.azure.com/sgtestazure/projectName/_git/repositories/repoName",
+					},
+					URL: "https://dev.azure.com/sgtestazure/projectID/_apis/git/repositories/repoID/pullRequests/12",
 				},
 			},
+			want: "https://dev.azure.com/sgtestazure/projectName/_git/repoName/pullrequest/12",
 		},
-		"bitbucketserver": &bitbucketserver.PullRequest{
-			Links: struct {
-				Self []struct {
-					Href string `json:"href"`
-				} `json:"self"`
-			}{
-				Self: []struct {
-					Href string `json:"href"`
-				}{{Href: want}},
+		"bitbucketcloud": {
+			pr: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Links: bitbucketcloud.Links{
+						"html": bitbucketcloud.Link{Href: want},
+					},
+				},
 			},
+			want: want,
 		},
-		"GitHub": &github.PullRequest{
-			URL: want,
+		"bitbucketserver": {
+			pr: &bitbucketserver.PullRequest{
+				Links: struct {
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Self: []struct {
+						Href string `json:"href"`
+					}{{Href: want}},
+				},
+			},
+			want: want,
 		},
-		"GitLab": &gitlab.MergeRequest{
-			WebURL: want,
+		"GitHub": {
+			pr: &github.PullRequest{
+				URL: want,
+			},
+			want: want,
+		},
+		"GitLab": {
+			pr: &gitlab.MergeRequest{
+				WebURL: want,
+			},
+			want: want,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta}
+			c := &Changeset{Metadata: meta.pr}
 			have, err := c.URL()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != want {
-				t.Errorf("unexpected URL: have %s; want %s", have, want)
+			if have != meta.want {
+				t.Errorf("unexpected URL: have %s; want %s", have, meta.want)
 			}
 		})
 	}
@@ -353,6 +441,10 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 		meta any
 		want string
 	}{
+		"azuredevops": {
+			meta: &adobatches.AnnotatedPullRequest{},
+			want: "",
+		},
 		"bitbucketcloud": {
 			meta: &bbcs.AnnotatedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
@@ -403,6 +495,14 @@ func TestChangeset_HeadRef(t *testing.T) {
 		meta any
 		want string
 	}{
+		"azuredevops": {
+			meta: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{
+					SourceRefName: "refs/heads/foo",
+				},
+			},
+			want: "refs/heads/foo",
+		},
 		"bitbucketcloud": {
 			meta: &bbcs.AnnotatedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
@@ -455,6 +555,12 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 		meta any
 		want string
 	}{
+		"azuredevops": {
+			meta: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{},
+			},
+			want: "",
+		},
 		"bitbucketcloud": {
 			meta: &bbcs.AnnotatedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
@@ -505,6 +611,12 @@ func TestChangeset_BaseRef(t *testing.T) {
 		meta any
 		want string
 	}{
+		"azuredevops": {
+			meta: &adobatches.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{TargetRefName: "refs/heads/foo"},
+			},
+			want: "refs/heads/foo",
+		},
 		"bitbucketcloud": {
 			meta: &bbcs.AnnotatedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
@@ -557,6 +669,10 @@ func TestChangeset_Labels(t *testing.T) {
 		meta any
 		want []ChangesetLabel
 	}{
+		"azuredevops": {
+			meta: &adobatches.AnnotatedPullRequest{},
+			want: []ChangesetLabel{},
+		},
 		"bitbucketcloud": {
 			meta: &bbcs.AnnotatedPullRequest{},
 			want: []ChangesetLabel{},

@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
 
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
@@ -94,7 +96,7 @@ func (r *VirtualFileResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return highlight.IsBinary([]byte(content)), nil
+	return binary.IsBinary([]byte(content)), nil
 }
 
 var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{

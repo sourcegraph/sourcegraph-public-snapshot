@@ -7,9 +7,9 @@ import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
-import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
 import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
@@ -18,11 +18,13 @@ import {
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
+import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { languageSupport } from './languageSupport'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -59,6 +61,13 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
             }
 
             if (effect.is(setPinnedCodeIntelTooltipState)) {
+                // If the pinned occurrence is the same as the hovered or focused one, use pin the existing one
+                for (const trigger of ['hover', 'focus'] as const) {
+                    if (effect.value?.occurrence === value[trigger]?.occurrence) {
+                        return { ...value, pin: value[trigger], [trigger]: null }
+                    }
+                }
+
                 return { ...value, pin: effect.value }
             }
         }
@@ -69,6 +78,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
         return [
             showTooltip.computeN([field], state => {
                 const { hover, focus, pin } = state.field(field)
+                const isLanguageSupported = state.facet(languageSupport)
 
                 // Only show one tooltip for the occurrence at a time
                 const uniqueTooltips = [pin, focus, hover]
@@ -79,6 +89,9 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                         return acc
                     }, [] as NonNullable<CodeIntelTooltipState>[])
                     .map(({ tooltip }) => tooltip)
+                    .filter(tooltip =>
+                        tooltip instanceof CodeIntelTooltip ? (isLanguageSupported ? tooltip : null) : tooltip
+                    )
 
                 return uniqueTooltips
             }),
@@ -209,6 +222,34 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
     }
     return false
 }
+
+function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
+
+const HOVER_DEBOUNCE_TIME = 25 // ms
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
+ */
+const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -391,6 +432,12 @@ function isOffsetInHoverRange(offset: number, range: { from: number; to: number 
     return range.from <= offset && offset <= range.to
 }
 
+/**
+ * This field is used by the blob component to sync the position from the URL to
+ * the editor.
+ */
+export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
+
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
     if (!pin || !pin.line || !pin.character) {
         return null
@@ -507,12 +554,17 @@ export function codeIntelTooltipsExtension(): Extension {
             update(update: ViewUpdate) {
                 if (update.viewportChanged) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM.
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     * Ignore cases when viewport change is caused by navigating to next/previous search result
+                     * (e.g., by clicking 'Enter' when the search input field is focused).
                      */
                     view.requestMeasure({
                         read(view: EditorView) {
-                            if (!view.contentDOM.contains(document.activeElement)) {
+                            if (
+                                !view.contentDOM.contains(document.activeElement) &&
+                                !document.activeElement?.closest(`#${BLOB_SEARCH_CONTAINER_ID}`)
+                            ) {
                                 view.contentDOM.focus()
                             }
                         },

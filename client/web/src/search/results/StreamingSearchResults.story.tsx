@@ -6,7 +6,6 @@ import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
@@ -33,7 +32,6 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
     authenticatedUser: {
@@ -42,7 +40,6 @@ const defaultProps: StreamingSearchResultsProps = {
         username: 'alice',
         emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
-    isLightTheme: true,
 
     settingsCascade: {
         subjects: null,

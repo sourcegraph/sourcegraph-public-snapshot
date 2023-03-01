@@ -7,22 +7,30 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#standard-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#standard-upgrades)
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
 <!-- Add changes changes to this section before release. -->
+
+## v4.5.0 ➔ v4.5.1
+
+#### Notes:
+
+## v4.4.2 ➔ v4.5.0
+
+#### Notes:
 
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
@@ -32,7 +40,11 @@
 
 ## v4.3 ➔ v4.4.1
 
-_No notes._
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
+
+  - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
+    - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
 
 ## v4.2 ➔ v4.3.1
 

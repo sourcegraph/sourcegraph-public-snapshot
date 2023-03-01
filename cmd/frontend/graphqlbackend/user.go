@@ -210,11 +210,11 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
-func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) Searchable(ctx context.Context) bool {
+func (r *UserResolver) Searchable(_ context.Context) bool {
 	return r.user.Searchable
 }
 
@@ -526,7 +526,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
 
-func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+func (r *UserResolver) Teams(_ context.Context, _ *ListTeamsArgs) (*teamConnectionResolver, error) {
 	return &teamConnectionResolver{}, nil
 }
 

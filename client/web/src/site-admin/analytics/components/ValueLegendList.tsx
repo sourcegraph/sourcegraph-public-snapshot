@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo } from 'react'
+import React, { useMemo, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -13,7 +13,8 @@ import styles from './index.module.scss'
 interface ValueLegendItemProps {
     color?: string
     description: string
-    value: number | string
+    // Value is a number or LoadingSpinner
+    value: number | string | ReactNode
     tooltip?: string
     className?: string
     filter?: { name: string; value: string }
@@ -42,7 +43,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     }, [filter, location.search])
 
     const tooltipOnNumber =
-        formattedNumber !== unformattedNumber
+        formattedNumber !== unformattedNumber && typeof value !== 'object'
             ? isNaN(parseFloat(unformattedNumber))
                 ? unformattedNumber
                 : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
@@ -55,7 +56,13 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                         {formattedNumber}
                     </Link>
                 ) : (
-                    <Text as="span" alignment="center" style={{ color }} className={styles.count} onClick={onClick}>
+                    <Text
+                        as="span"
+                        alignment="center"
+                        style={{ color }}
+                        className={classNames(styles.count, 'cursor-pointer')}
+                        onClick={onClick}
+                    >
                         {formattedNumber}
                     </Text>
                 )}

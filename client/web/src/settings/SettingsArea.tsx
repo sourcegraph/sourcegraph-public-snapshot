@@ -2,31 +2,28 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { combineLatest, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
-import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { gqlToCascade, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
     /** The subject whose settings to edit. */
     subject: Pick<SettingsSubject, '__typename' | 'id'>
 
@@ -34,6 +31,8 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
     authenticatedUser: AuthenticatedUser | null
+
+    isLightTheme: boolean
 }
 
 interface SettingsData {
@@ -91,11 +90,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 .pipe(
                     switchMap(([{ id }]) =>
                         fetchSettingsCascade(id).pipe(
-                            switchMap(cascade =>
-                                this.getMergedSettingsJSONSchema(cascade).pipe(
-                                    map(settingsJSONSchema => ({ subjects: cascade.subjects, settingsJSONSchema }))
-                                )
-                            ),
+                            map(cascade => ({ subjects: cascade.subjects, settingsJSONSchema: settingsSchemaJSON })),
                             catchError(error => [asError(error)]),
                             map(dataOrError => ({ dataOrError }))
                         )
@@ -176,25 +171,6 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     private onUpdate = (): void => this.refreshRequests.next()
-
-    private getMergedSettingsJSONSchema(cascade: SettingsSubjects): Observable<{ $id: string }> {
-        return queryConfiguredRegistryExtensions(
-            this.props.platformContext,
-            extensionIDsFromSettings(gqlToCascade(cascade))
-        )
-            .pipe(
-                catchError(error => {
-                    logger.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
-                    return of([])
-                })
-            )
-            .pipe(
-                map(extensions => ({
-                    $id: 'mergedSettings.schema.json#',
-                    ...mergeSettingsSchemas(extensions),
-                }))
-            )
-    }
 }
 
 function fetchSettingsCascade(subject: Scalars['ID']): Observable<SettingsSubjects> {

@@ -243,7 +243,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
-            const prMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
+            const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
+            const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
             const pullRequest = await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -252,8 +253,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `changelog-${upcoming.version.version}`,
-                        title: prMessage,
-                        commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
+                        title: commitMessage,
+                        commitMessage,
+                        body: prBody,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
@@ -281,9 +283,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         repo: 'deploy-sourcegraph-helm',
                         base: 'main',
                         head: `changelog-${upcoming.version.version}`,
-                        title: prMessage,
-                        commitMessage: prMessage,
-                        body: prMessage + '\n\n ## Test plan\n\nn/a',
+                        title: commitMessage,
+                        commitMessage,
+                        body: prBody,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
@@ -334,9 +336,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 await execa('git', ['branch', release.branch])
                 await execa('git', ['push', 'origin', release.branch])
                 await postMessage(message, config.metadata.slackAnnounceChannel)
-                console.log(
-                    `To check the status of the branch, run:\nsg ci status -branch ${release.version.version} --wait\n`
-                )
+                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
@@ -495,7 +495,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             }
             const tags = getCandidateTags(localSourcegraphRepo, version)
             if (tags.length > 0) {
-                console.log(`Release candidate tags for version: ${version}\n${tags}`)
+                console.log(`Release candidate tags for version: ${chalk.blue(version)}`)
+                for (const tag of tags) {
+                    console.log(tag)
+                }
                 console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
             } else {
                 console.log(chalk.yellow('No candidates found!'))

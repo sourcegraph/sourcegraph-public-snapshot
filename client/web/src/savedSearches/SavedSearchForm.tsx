@@ -5,7 +5,7 @@ import { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -25,7 +25,6 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -38,7 +37,7 @@ export interface SavedQueryFields {
     slackWebhookURL: string | null
 }
 
-export interface SavedSearchFormProps extends NamespaceProps, ThemeProps {
+export interface SavedSearchFormProps extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
@@ -131,7 +130,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
                         <LazyQueryInput
                             className={classNames('form-control', styles.queryInput)}
-                            isLightTheme={props.isLightTheme}
                             patternType={SearchPatternType.standard}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             caseSensitive={false}

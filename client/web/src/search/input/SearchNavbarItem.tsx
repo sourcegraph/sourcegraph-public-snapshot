@@ -9,21 +9,20 @@ import { SearchBox, Toggles } from '@sourcegraph/branded'
 import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
+import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from './lazy'
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends SettingsCascadeProps,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
@@ -32,6 +31,7 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    isLightTheme: boolean
 }
 
 const selectQueryState = ({
@@ -56,9 +56,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     const { recentSearches } = useRecentSearches()
     const recentSearchesRef = useRef(recentSearches)
@@ -113,6 +113,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     if (experimentalQueryInput) {
         return (
             <Form
