@@ -65,5 +65,6 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 func (c *ClientAdapter) WithRateLimiter(urn string, rateLimit float64) {
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rl.SetLimit(rate.Limit(rateLimit / 3600.0))
+	rl.SetBurst(100)
 	c.V3Client.WithRateLimiter(rl)
 }
