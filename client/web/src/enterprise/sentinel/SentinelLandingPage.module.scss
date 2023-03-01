@@ -1,0 +1,27 @@
+.header-container {
+    display: grid;
+    grid-template-columns: 8.75rem 6.26rem 1fr;
+    align-items: center;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 34px 0 14px 0;
+    border-bottom: 1px solid #e6ebf2;
+    font-size: 32px;
+    border: none;
+}
+
+.badge {
+    margin-top: 0.25rem;
+}
+
+.try-btn {
+    margin-right: 0.85rem;
+}
+
+.btn {
+    margin-right: 0.5rem;
+}
