@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiAccount, mdiUpload } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
-import { LoadingSpinner, PageHeader, Icon, H1, Text, H3, Link, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, Icon, H1, Text, H3, Link, Button, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -24,12 +24,6 @@ export interface RepositoryOwnAreaPageProps extends BreadcrumbSetters {
 }
 const BREADCRUMB = { key: 'own', element: 'Ownership' }
 
-// Render the name of the CODEOWNERS file in CamelCase in a span with the text-uppercase class
-// so that screen readers will read it correctly.
-const CodeOwnersName = React.memo(function CodeOwnersName() {
-    return <span className="text-uppercase">CodeOwners</span>
-})
-
 export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
     repo,
@@ -38,6 +32,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb(BREADCRUMB)
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
+
+    const isAdmin = authenticatedUser?.siteAdmin
 
     if (status === 'initial') {
         return (
@@ -58,7 +54,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 description={
                     <>
                         Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
-                        <CodeOwnersName /> file. <Link to="/help/own">Learn more</Link>
+                        CODEOWNERS file. <Link to="/help/own">Learn more</Link>
                     </>
                 }
             >
@@ -71,16 +67,18 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
             <div className={styles.columns}>
                 <div>
                     <H3>
-                        Upload a <CodeOwnersName /> file
+                        {isAdmin ? <>Upload a CODEOWNERS file</> : <>Ask your site admin to upload a CODEOWNERS file</>}
                     </H3>
                     <Text>
                         Each owner must be either a Sourcegraph username, a Sourcegraph team name, or an email address.
                     </Text>
 
-                    <Button variant="primary">
-                        <Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />
-                        Upload file
-                    </Button>
+                    {isAdmin && (
+                        <Button variant="primary">
+                            <Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />
+                            Upload file
+                        </Button>
+                    )}
                 </div>
 
                 <div className={styles.or}>
@@ -90,11 +88,9 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 </div>
 
                 <div>
-                    <H3>
-                        Commit a <CodeOwnersName /> file
-                    </H3>
+                    <H3>Commit a CODEOWNERS file</H3>
                     <Text>
-                        A <CodeOwnersName /> file living in the root of your repository. Owners must be{' '}
+                        Add a <Code>CODEOWNERS</Code> file to the root of your repository. Owners must be{' '}
                         {getCodeHostName(repo)} usernames or email addresses.
                     </Text>
                 </div>
