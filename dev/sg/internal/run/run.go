@@ -751,7 +751,7 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
-	secretsEnv, err := getSecrets(ctx, cmd)
+	secretsEnv, err := getSecrets(ctx, cmd.Name, cmd.ExternalSecrets)
 	if err != nil {
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
 			cmd.Name, output.EmojiFailure, err.Error()))

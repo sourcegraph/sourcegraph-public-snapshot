@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"os/exec"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -34,7 +33,6 @@ func (ib *IBazel) Start(ctx context.Context, dir string) error {
 		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
 	}
 
-	println("💈", "ibazel", strings.Join(args, " "))
 	sc.cancel = ib.cancel
 	sc.Cmd = cmd
 	sc.Cmd.Dir = dir
