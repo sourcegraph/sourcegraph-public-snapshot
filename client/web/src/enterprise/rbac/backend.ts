@@ -110,9 +110,12 @@ export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult
         },
     })
 
-export const usePermissions = (): QueryResult<AllPermissionsResult, AllPermissionsVariables> =>
+export const usePermissions = (
+    onCompleted: (result: AllPermissionsResult) => void
+): QueryResult<AllPermissionsResult, AllPermissionsVariables> =>
     useQuery<AllPermissionsResult, AllPermissionsVariables>(ALL_PERMISSIONS, {
         fetchPolicy: 'cache-and-network',
+        onCompleted
     })
 
 export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)

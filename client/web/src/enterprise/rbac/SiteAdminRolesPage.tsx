@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
@@ -29,6 +29,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
+    const [permissions, setPermissions] = useState<PermissionsMap>({} as PermissionsMap)
+
     // Fetch paginated roles.
     const {
         connection,
@@ -39,26 +41,13 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         refetchAll,
     } = useRolesConnection()
     // We need to query all permissions from the database, so site admins can update easily if they want to.
-    const { data, error: permissionsError, loading: permissionsLoading } = usePermissions()
+    const { error: permissionsError, loading: permissionsLoading } = usePermissions((result) => {
+        const permissions = groupBy(result.permissions.nodes, 'namespace')
+        setPermissions(permissions as PermissionsMap)
+    })
 
     const loading = rolesLoading || permissionsLoading
     const error = rolesError || permissionsError
-
-    // We group permissions by namespace because that's how they're displayed in the UI. This allows
-    // for quick lookup to know when a role is assigned a permission.
-    const permissions = useMemo(() => {
-        let result = {} as PermissionsMap
-        if (permissionsLoading || permissionsError) {
-            return result
-        }
-
-        const nodes = data?.permissions.nodes
-        if (nodes?.length > 0) {
-            result = groupBy(nodes, 'namespace') as PermissionsMap
-        }
-
-        return result
-    }, [data, permissionsLoading, permissionsError])
 
     return (
         <div className="site-admin-roles-page">
