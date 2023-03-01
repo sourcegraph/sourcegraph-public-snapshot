@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -61,11 +62,9 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		KeepWorkspaces: c.KeepWorkspaces,
 		QueueName:      c.QueueName,
 		WorkerOptions:  workerOptions(c),
-		CommandOptions: command.Options{
-			ExecutorName:       c.WorkerHostname,
+		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
 			FirecrackerOptions: firecrackerOptions(c),
-			ResourceOptions:    resourceOptions(c),
 		},
 		GitServicePath: "/.executors/git",
 		QueueOptions:   queueOptions(c, queueTelemetryOptions),
@@ -103,21 +102,23 @@ func dockerOptions(c *config.Config) command.DockerOptions {
 		// host entry and route to it to the containers. This is used for LSIF
 		// uploads and should not be required anymore once we support native uploads.
 		AddHostGateway: u.Hostname() == "host.docker.internal",
+		Resources:      resourceOptions(c),
 	}
 }
 
-func firecrackerOptions(c *config.Config) command.FirecrackerOptions {
+func firecrackerOptions(c *config.Config) runner.FirecrackerOptions {
 	var dockerMirrors []string
 	if len(c.DockerRegistryMirrorURL) > 0 {
 		dockerMirrors = strings.Split(c.DockerRegistryMirrorURL, ",")
 	}
-	return command.FirecrackerOptions{
+	return runner.FirecrackerOptions{
 		Enabled:                  c.UseFirecracker,
 		Image:                    c.FirecrackerImage,
 		KernelImage:              c.FirecrackerKernelImage,
 		SandboxImage:             c.FirecrackerSandboxImage,
 		VMStartupScriptPath:      c.VMStartupScriptPath,
 		DockerRegistryMirrorURLs: dockerMirrors,
+		DockerOptions:            dockerOptions(c),
 	}
 }
 

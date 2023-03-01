@@ -102,12 +102,6 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	fopts.Enabled = true
 
 	firecrackerRunner := runner.NewFirecrackerRunner(cmd, commandLogger, firecrackerWorkspace.Path(), name, fopts, types.DockerAuthConfig{}, operations)
-	runner1 := command.NewRunner(firecrackerWorkspace.Path(), commandLogger, command.Options{
-		ExecutorName:       name,
-		ResourceOptions:    resourceOptions(config),
-		DockerOptions:      dockerOptions(config),
-		FirecrackerOptions: fopts,
-	}, operations)
 
 	if err = firecrackerRunner.Setup(ctx); err != nil {
 		return "", err

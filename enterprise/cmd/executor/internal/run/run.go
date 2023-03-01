@@ -107,9 +107,10 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 			nameSet,
 			cfg.CleanupTaskInterval,
 			janitor.NewMetrics(observationCtx),
+			runner,
 		))
 
-		mustRegisterVMCountMetric(logger, observationCtx, cfg.VMPrefix)
+		mustRegisterVMCountMetric(runner, logger, observationCtx, cfg.VMPrefix)
 	}
 
 	go func() {
@@ -129,12 +130,12 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 	return nil
 }
 
-func mustRegisterVMCountMetric(logger log.Logger, observationCtx *observation.Context, prefix string) {
+func mustRegisterVMCountMetric(runner util.CmdRunner, logger log.Logger, observationCtx *observation.Context, prefix string) {
 	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_executor_vms_total",
 		Help: "Total number of running VMs.",
 	}, func() float64 {
-		runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), prefix, false)
+		runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), runner, prefix, false)
 		if err != nil {
 			logger.Error("Failed to determine number of running VMs", log.Error(err))
 		}
