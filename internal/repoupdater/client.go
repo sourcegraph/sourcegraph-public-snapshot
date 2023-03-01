@@ -7,25 +7,35 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// DefaultClient is the default Client. Unless overwritten, it is
-// connected to the server specified by the REPO_UPDATER_URL
-// environment variable.
-var DefaultClient = NewClient(repoUpdaterURLDefault())
+var (
+	defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
-var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
+	// DefaultClient is the default Client. Unless overwritten, it is
+	// connected to the server specified by the REPO_UPDATER_URL
+	// environment variable.
+	DefaultClient = NewClient(repoUpdaterURLDefault())
+)
 
 func repoUpdaterURLDefault() string {
 	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
@@ -46,6 +56,10 @@ type Client struct {
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
+
+	// grpcClient is a function that lazily creates a grpc client.
+	// Any implementation should not recreate the client more than once.
+	grpcClient func() (proto.RepoUpdaterServiceClient, error)
 }
 
 // NewClient will initiate a new repoupdater Client with the given serverURL.
@@ -53,6 +67,18 @@ func NewClient(serverURL string) *Client {
 	return &Client{
 		URL:        serverURL,
 		HTTPClient: defaultDoer,
+		grpcClient: syncx.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
+			u, err := url.Parse(serverURL)
+			if err != nil {
+				return nil, err
+			}
+			conn, err := grpc.Dial(u.Host, defaults.DialOptions()...)
+			if err != nil {
+				return nil, err
+			}
+
+			return proto.NewRepoUpdaterServiceClient(conn), nil
+		}),
 	}
 }
 
@@ -61,6 +87,19 @@ func (c *Client) RepoUpdateSchedulerInfo(
 	ctx context.Context,
 	args protocol.RepoUpdateSchedulerInfoArgs,
 ) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+		req := &proto.RepoUpdateSchedulerInfoRequest{Id: int32(args.ID)}
+		resp, err := client.RepoUpdateSchedulerInfo(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return protocol.RepoUpdateSchedulerInfoResultFromProto(resp), nil
+	}
+
 	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
 	if err != nil {
 		return nil, err
@@ -100,6 +139,27 @@ func (c *Client) RepoLookup(
 	}()
 	if args.Repo != "" {
 		span.SetTag("Repo", string(args.Repo))
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.RepoLookup(ctx, args.ToProto())
+		if err != nil {
+			return nil, errors.Wrapf(err, "RepoLookup for %+v failed", args)
+		}
+		res := protocol.RepoLookupResultFromProto(resp)
+		switch {
+		case resp.GetErrorNotFound():
+			return res, &ErrNotFound{Repo: args.Repo, IsNotFound: true}
+		case resp.GetErrorUnauthorized():
+			return res, &ErrUnauthorized{Repo: args.Repo, NoAuthz: true}
+		case resp.GetErrorTemporarilyUnavailable():
+			return res, &ErrTemporary{Repo: args.Repo, IsTemporary: true}
+		}
+		return res, nil
 	}
 
 	resp, err := c.httpPost(ctx, "repo-lookup", args)
@@ -152,6 +212,24 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
 
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		req := proto.EnqueueRepoUpdateRequest{Repo: string(repo)}
+		resp, err := client.EnqueueRepoUpdate(ctx, &req)
+		if err != nil {
+			if st := status.Convert(err); st.Code() == codes.NotFound {
+				return nil, &repoNotFoundError{repo: string(repo), responseBody: st.Message()}
+			}
+			return nil, err
+		}
+
+		return protocol.RepoUpdateResponseFromProto(resp), nil
+	}
+
 	req := &protocol.RepoUpdateRequest{
 		Repo: repo,
 	}
@@ -197,6 +275,17 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 		return MockEnqueueChangesetSync(ctx, ids)
 	}
 
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return err
+		}
+
+		// empty response can be ignored
+		_, err = client.EnqueueChangesetSync(ctx, &proto.EnqueueChangesetSyncRequest{Ids: ids})
+		return err
+	}
+
 	req := protocol.ChangesetSyncRequest{IDs: ids}
 	resp, err := c.httpPost(ctx, "enqueue-changeset-sync", req)
 	if err != nil {
@@ -228,6 +317,17 @@ var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncReque
 func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
 	if MockSchedulePermsSync != nil {
 		return MockSchedulePermsSync(ctx, args)
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return err
+		}
+
+		// empty response can be ignored
+		_, err = client.SchedulePermsSync(ctx, args.ToProto())
+		return err
 	}
 
 	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
@@ -262,6 +362,18 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	if MockSyncExternalService != nil {
 		return MockSyncExternalService(ctx, externalServiceID)
 	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		// empty response can be ignored
+		_, err = client.SyncExternalService(ctx, &proto.SyncExternalServiceRequest{ExternalServiceId: externalServiceID})
+		return nil, err
+	}
+
 	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
@@ -299,6 +411,29 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil && result.Error != "" {
+		err = errors.New(result.Error)
+	}
+	return result, err
+}
+
+// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
+var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
+
+// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+	if MockExternalServiceRepositories != nil {
+		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	resp, err := c.httpPost(ctx, "external-service-repositories", args)
+
 	if err != nil {
 		return nil, err
 	}

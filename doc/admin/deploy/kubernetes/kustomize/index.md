@@ -13,6 +13,14 @@ An introduction to Kustomize created for Sourcegraph.
 
  Kustomize enables us to decompose our **[base](#base)** application into smaller building blocks, with multiple versions of each block preconfigured as **[components](#components)** for various use cases. This modular approach enables the mixing and matching of the building blocks to construct a customized version of the application by creating **[overlays](#overlay)**. This feature provides a high degree of flexibility and facilitates the maintenance and evolution of the application over time.
 
+ ## Quick Start
+
+ To deploy Sourcegraph into the `ns-sourcegraph`:
+
+```bash
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/base/xs?ref=v4.5.1
+```
+
 ## Build process
 
 During the build process, Kustomize will:

@@ -21,20 +21,14 @@ import {
     SearchModeProps,
     SearchContextProps,
 } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
-import {
-    useExperimentalFeatures,
-    useNavbarQueryState,
-    setSearchCaseSensitivity,
-    setSearchPatternType,
-    setSearchMode,
-} from '../../stores'
+import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -82,7 +76,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.queryState.query
+            const query = parameters.query ?? props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({

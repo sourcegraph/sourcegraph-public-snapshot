@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
@@ -18,6 +19,9 @@ import (
 
 // schemeExecutorToken is the special type of token to communicate with the executor endpoints.
 const schemeExecutorToken = "token-executor"
+
+// schemeJobToken is the special type of token to communicate with the job endpoints.
+const schemeJobToken = "Bearer"
 
 // BaseClient is an abstract HTTP API-backed data access layer. Instances of this
 // struct should not be used directly, but should be used compositionally by other
@@ -51,6 +55,9 @@ type BaseClient struct {
 }
 
 type BaseClientOptions struct {
+	// ExecutorName name of the executor host.
+	ExecutorName string
+
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
 
@@ -156,7 +163,7 @@ func NewRequest(method string, baseURL, urlPath string, payload any) (*http.Requ
 }
 
 // NewRequest creates a new http.Request where only the Authorization HTTP header is set.
-func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.Request, error) {
+func (c *BaseClient) NewRequest(jobId int, token, method, path string, payload io.Reader) (*http.Request, error) {
 	u := c.newRelativeURL(path)
 
 	r, err := http.NewRequest(method, u.String(), payload)
@@ -164,7 +171,7 @@ func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.R
 		return nil, err
 	}
 
-	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	c.addHeaders(jobId, token, r)
 	return r, nil
 }
 
@@ -179,6 +186,20 @@ func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Req
 	}
 
 	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
+}
+
+// NewJSONJobRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
+// HTTP header is set.
+func (c *BaseClient) NewJSONJobRequest(jobId int, method, path string, token string, payload any) (*http.Request, error) {
+	u := c.newRelativeURL(path)
+
+	r, err := newJSONRequest(method, u, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	c.addHeaders(jobId, token, r)
 	return r, nil
 }
 
@@ -205,4 +226,15 @@ func newJSONRequest(method string, url *url.URL, payload any) (*http.Request, er
 
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
+}
+
+func (c *BaseClient) addHeaders(jobId int, token string, r *http.Request) {
+	// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
+	if len(token) > 0 {
+		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeJobToken, token))
+	} else {
+		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	}
+	r.Header.Add("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
+	r.Header.Add("X-Sourcegraph-Executor-Name", c.options.ExecutorName)
 }

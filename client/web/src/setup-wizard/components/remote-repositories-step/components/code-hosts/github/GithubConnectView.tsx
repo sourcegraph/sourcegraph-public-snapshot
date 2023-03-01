@@ -268,7 +268,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add all repositories from selected organizations or users"
                     onChange={handleOrganizationsModeChange}
                 >
-                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange} />
+                    <GithubOrganizationsPicker
+                        token={accessTokenField.input.value}
+                        disabled={accessTokenField.meta.validState !== 'VALID'}
+                        organizations={organizations}
+                        onChange={handleOrganizationsChange}
+                    />
                 </RadioGroupSection>
 
                 <RadioGroupSection
@@ -279,7 +284,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add selected repositories"
                     onChange={handleRepositoriesModeChange}
                 >
-                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange} />
+                    <GithubRepositoriesPicker
+                        token={accessTokenField.input.value}
+                        disabled={accessTokenField.meta.validState !== 'VALID'}
+                        repositories={repositories}
+                        onChange={handleRepositoriesChange}
+                    />
                 </RadioGroupSection>
             </section>
         </>

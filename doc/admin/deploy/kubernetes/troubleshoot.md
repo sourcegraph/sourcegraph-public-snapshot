@@ -2,11 +2,7 @@
 
 If [Sourcegraph with Kubernetes](./index.md) does not start up or shows unexpected behavior, there are a variety of ways you can determine the root cause of the failure.
 
-Also refer to our [operations guide](./operations.md) for useful commands and operations.
-
-Still need additional help? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
-or <mailto:support@sourcegraph.com>, or file issues on
-our [public issue tracker](https://github.com/sourcegraph/issues/issues).
+See our [operations guide](./operations.md) for more useful commands and operations.
 
 ## Common errors
 
@@ -15,7 +11,7 @@ our [public issue tracker](https://github.com/sourcegraph/issues/issues).
 The account you are using to apply the Kubernetes configuration doesn't have sufficient permissions to create roles, which can be resolved by creating a cluster-admin role for your user with the following command:
 
 ```bash
-kubectl create clusterrolebinding cluster-admin-binding \
+$ kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
   --user $YOUR_EMAIL
   --namespace $YOUR_NAMESPACE
@@ -26,7 +22,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 Make sure a storage class named "sourcegraph" exists in your cluster within the same zone.
 
 ```bash
-kubectl get storageclass sourcegraph -o=yaml \
+$ kubectl get storageclass sourcegraph -o=yaml \
   --namespace $YOUR_NAMESPACE
 ```
 
@@ -84,8 +80,15 @@ Missing metrics indicate Sourcegraph is having issues connecting to the Kubernet
 
 #### Which metrics are using the most resources?
 
-1. Access the UI for Prometheus temporarily with `kubectl port-forward pod prometheus-$$ 9090:9090`, then go to [http://localhost:9090/](http://localhost:9090/)
-2. Run `topk(10, count by (__name__)({__name__=~".+"}))` to check the values.
+1. Access the UI for Prometheus temporarily with port-forward:
+    ```bash
+    $ kubectl port-forward svc/prometheus 9090:30090
+    ```
+2. Open [http://localhost:9090/](http://localhost:9090/) in your browser
+    ```bash
+    $ open http://localhost:9090
+    ```
+3. Run `topk(10, count by (__name__)({__name__=~".+"}))` to check the values
 
 
 #### You can't access Sourcegraph.
@@ -157,3 +160,9 @@ SYMBOLS_URL=http:symbols:3184
 <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/212374098-dc2dfe69-4d26-4f5e-a78b-37a53c19ef22.png"/>
 The issue described is related to the Code Intel hover feature, where it may get stuck in a loading state or return a 502 error with the message `Squirrel.LocalCodeIntel http status 502`. This is caused by the same issue described in [Symbols sidebar and hovers are not working](#symbols-sidebar-and-hovers-are-not-working"). See that section for solution.
 
+## Help request
+
+Still need additional help? Please contact us using one of the methods listed below:
+- Twitter [@sourcegraph](https://twitter.com/sourcegraph)
+- Email us at [support@sourcegraph.com](mailto:support@sourcegraph.com)
+- File issues with our [public issue tracker](https://github.com/sourcegraph/issues/issues)

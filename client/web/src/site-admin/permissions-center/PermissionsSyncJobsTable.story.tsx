@@ -4,6 +4,8 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
+    ExternalServiceKind,
+    PermissionsSyncJobPriority,
     PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobState,
@@ -49,6 +51,9 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/sourcegraph',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.GITHUB,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.WEBHOOK,
@@ -73,6 +78,9 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/hoursegraph',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.BITBUCKETSERVER,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.SCHEDULE,
@@ -97,14 +105,32 @@ export const FiveSyncJobsFound: Story = () => (
                                                 {
                                                     __typename: 'Repository',
                                                     name: 'sourcegraph/stillfunny',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.GITLAB,
+                                                    },
                                                 },
                                                 {
                                                     group: PermissionsSyncJobReasonGroup.MANUAL,
                                                     reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
                                                 }
                                             ),
+                                            createSyncJobMock(
+                                                '6',
+                                                PermissionsSyncJobState.CANCELED,
+                                                {
+                                                    __typename: 'Repository',
+                                                    name: 'sourcegraph/dont-sync-me',
+                                                    externalRepository: {
+                                                        serviceType: ExternalServiceKind.AWSCODECOMMIT,
+                                                    },
+                                                },
+                                                {
+                                                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
+                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
+                                                }
+                                            ),
                                         ],
-                                        totalCount: 5,
+                                        totalCount: 6,
                                         pageInfo: {
                                             hasNextPage: true,
                                             hasPreviousPage: false,
@@ -130,6 +156,9 @@ FiveSyncJobsFound.storyName = 'Five sync jobs'
 interface repo {
     __typename: 'Repository'
     name: string
+    externalRepository: {
+        serviceType: ExternalServiceKind
+    }
 }
 
 interface user {
@@ -170,5 +199,17 @@ function createSyncJobMock(
         permissionsAdded: 1337,
         permissionsRemoved: 42,
         permissionsFound: 1337 + 42,
+        failureMessage: null,
+        cancellationReason: null,
+        ranForMs: null,
+        numResets: null,
+        numFailures: null,
+        lastHeartbeatAt: null,
+        workerHostname: 'worker-hostname',
+        cancel: false,
+        priority: PermissionsSyncJobPriority.LOW,
+        noPerms: false,
+        invalidateCaches: false,
+        codeHostStates: [],
     }
 }
