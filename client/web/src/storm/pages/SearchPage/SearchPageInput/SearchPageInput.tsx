@@ -106,6 +106,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         },
         [
             queryState.query,
+            props.queryState.query,
             selectedSearchContextSpec,
             navigate,
             location,

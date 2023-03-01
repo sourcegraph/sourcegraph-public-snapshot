@@ -170,10 +170,11 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
 export const LegacyRouteContext = createContext<LegacyLayoutRouteContext | null>(null)
 
 /**
+ * DO NOT USE OUTSIDE OF STORM ROUTES!
  * A convenience hook to return the LegacyRouteContext.
  *
- * @deprecated This should not be used for new code anymore, please use Apollo instead to make
- * GraphQL requests and `useSettings` to access settings.
+ * @deprecated This can be used only in components migrated under Storm routes.
+ * Please use Apollo instead to make GraphQL requests and `useSettings` to access settings.
  */
 export const useLegacyRouteContext = (): LegacyLayoutRouteContext => {
     const context = useContext(LegacyRouteContext)
