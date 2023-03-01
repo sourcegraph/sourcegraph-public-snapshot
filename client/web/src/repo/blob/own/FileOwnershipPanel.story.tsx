@@ -37,10 +37,15 @@ const response: FetchOwnershipResult = {
                             __typename: 'Ownership',
                             owner: {
                                 __typename: 'Person',
-                                email: '',
-                                avatarURL: null,
-                                displayName: 'Bob',
-                                user: null,
+                                email: 'bob@example.com',
+                                avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
+                                displayName: 'Bob the Builder',
+                                user: {
+                                    __typename: 'User',
+                                    displayName: 'Bob the Builder',
+                                    url: '/users/bob',
+                                    username: 'bob',
+                                },
                             },
                             reasons: [
                                 {

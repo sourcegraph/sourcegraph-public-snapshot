@@ -482,3 +482,26 @@ func getRankingPathCountsInputs(
 
 	return repository, documentPath, count, nil
 }
+
+// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
+// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
+// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
+// insertVisibleAtTipNonDefaultBranch method instead.
+func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
+	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
+}
+
+func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
+	var rows []*sqlf.Query
+	for _, uploadID := range uploadIDs {
+		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
+	}
+}

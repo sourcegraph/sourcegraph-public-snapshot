@@ -248,7 +248,6 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
 	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a
-	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
