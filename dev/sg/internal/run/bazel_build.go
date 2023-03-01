@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
+// BazelBuild peforms a bazel build command with all the given targets and blocks until an
+// error is returned or the build is completed.
 func BazelBuild(ctx context.Context, dir string, targets ...string) error {
 	var cancel func()
 	ctx, cancel = context.WithCancel(ctx)
