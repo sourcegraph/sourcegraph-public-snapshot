@@ -115,8 +115,8 @@ ts_project(
 )
 
 filegroup(
-    name = "batch-yaml",
-    srcs = glob(["src/enterprise/batches/batch-spec/edit/library/*.batch.yaml"]),
+    name = "enterprise-yaml",
+    srcs = glob(["src/enterprise/**/*.yaml"]),
 )
 
 #TOOD(bazel): why is the indirect '@lezer/common' dep required here?
@@ -1500,7 +1500,7 @@ ts_project(
         "src/util/url.ts",
     ],
     data = [
-        ":batch-yaml",
+        ":enterprise-yaml",
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
@@ -1814,6 +1814,16 @@ BUNDLE_DATA_DEPS = [
     ":package_styles",
 ]
 
+ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
+    # static assets imported in .ts
+    "src/enterprise/productSubscription/ProductCertificate-background.png",
+
+    # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
+    "src/enterprise/codeintel/configuration/schema.json",
+
+    ":enterprise-yaml",
+]
+
 [
     webpack_bundle(
         name = "bundle" if prod else "bundle-dev",
@@ -1840,7 +1850,7 @@ BUNDLE_DATA_DEPS = [
 
 webpack_bundle(
     name = "bundle-enterprise",
-    srcs = BUNDLE_DATA_DEPS + [
+    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
         "//:package_json",

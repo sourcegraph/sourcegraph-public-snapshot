@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { FC, useCallback, useMemo, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -9,48 +9,35 @@ import { SearchBox, Toggles } from '@sourcegraph/branded'
 // eslint-disable-next-line no-restricted-imports
 import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
-    SearchContextInputProps,
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SubmitSearchParameters,
     canSubmitSearch,
     QueryState,
     SearchModeProps,
-    SearchContextProps,
+    getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { Notices } from '../../global/Notices'
-import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../stores'
-import { submitSearch } from '../helpers'
-import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
-import { useRecentSearches } from '../input/useRecentSearches'
-import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
+import { Notices } from '../../../global/Notices'
+import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
+import { submitSearch } from '../../../search/helpers'
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../search/input/lazy'
+import { useRecentSearches } from '../../../search/input/useRecentSearches'
+import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import styles from './SearchPageInput.module.scss'
 
-interface Props
-    extends SettingsCascadeProps<Settings>,
-        TelemetryProps,
-        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
-        Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
-    authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
-    autoFocus?: boolean
-    queryState: QueryState
-    setQueryState: (newState: QueryState) => void
-}
+// We want to prevent autofocus by default on devices with touch as their only input method.
+// Touch only devices result in the onscreen keyboard not showing until the input loses focus and
+// gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
+// where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
+const isTouchOnlyDevice =
+    !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
 const queryStateSelector = (
     state: NavbarQueryState
@@ -60,7 +47,30 @@ const queryStateSelector = (
     searchMode: state.searchMode,
 })
 
-export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+interface SearchPageInputProps {
+    queryState: QueryState
+    setQueryState: (newState: QueryState) => void
+    hardCodedSearchContextSpec?: string
+}
+
+export const SearchPageInput: FC<SearchPageInputProps> = props => {
+    const { queryState, setQueryState, hardCodedSearchContextSpec } = props
+
+    const {
+        authenticatedUser,
+        globbing,
+        isSourcegraphDotCom,
+        telemetryService,
+        platformContext,
+        searchContextsEnabled,
+        settingsCascade,
+        selectedSearchContextSpec: dynamicSearchContextSpec,
+        fetchSearchContexts,
+        setSelectedSearchContextSpec,
+    } = useLegacyContext_onlyInStormRoutes()
+
+    const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
+
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -76,9 +86,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = parameters.query ?? props.queryState.query
+            const query = parameters.query ?? queryState.query
 
-            if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
+            if (canSubmitSearch(query, selectedSearchContextSpec)) {
                 submitSearch({
                     source: 'home',
                     query,
@@ -89,14 +99,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     searchMode,
                     // In the new query input, context is either omitted (-> global)
                     // or explicitly specified.
-                    selectedSearchContextSpec: experimentalQueryInput ? undefined : props.selectedSearchContextSpec,
+                    selectedSearchContextSpec: experimentalQueryInput ? undefined : selectedSearchContextSpec,
                     ...parameters,
                 })
             }
         },
         [
-            props.queryState.query,
-            props.selectedSearchContextSpec,
+            queryState.query,
+            selectedSearchContextSpec,
             navigate,
             location,
             patternType,
@@ -116,30 +126,17 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         [submitSearchOnChangeRef]
     )
 
-    // We want to prevent autofocus by default on devices with touch as their only input method.
-    // Touch only devices result in the onscreen keyboard not showing until the input loses focus and
-    // gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
-    // where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
-    const isTouchOnlyDevice =
-        !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
-
     const suggestionSource = useLazyCreateSuggestions(
         experimentalQueryInput,
         useMemo(
             () => ({
-                platformContext: props.platformContext,
-                authenticatedUser: props.authenticatedUser,
-                fetchSearchContexts: props.fetchSearchContexts,
-                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
-                isSourcegraphDotCom: props.isSourcegraphDotCom,
+                platformContext,
+                authenticatedUser,
+                fetchSearchContexts,
+                getUserSearchContextNamespaces,
+                isSourcegraphDotCom,
             }),
-            [
-                props.platformContext,
-                props.authenticatedUser,
-                props.fetchSearchContexts,
-                props.getUserSearchContextNamespaces,
-                props.isSourcegraphDotCom,
-            ]
+            [platformContext, authenticatedUser, fetchSearchContexts, isSourcegraphDotCom]
         )
     )
 
@@ -154,8 +151,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <LazyCodeMirrorQueryInput
             patternType={patternType}
             interpretComments={false}
-            queryState={props.queryState}
-            onChange={props.setQueryState}
+            queryState={queryState}
+            onChange={setQueryState}
             onSubmit={onSubmit}
             isLightTheme={isLightTheme}
             placeholder="Search for code or files..."
@@ -169,16 +166,26 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 setCaseSensitivity={setSearchCaseSensitivity}
                 searchMode={searchMode}
                 setSearchMode={setSearchMode}
-                settingsCascade={props.settingsCascade}
-                navbarSearchQuery={props.queryState.query}
+                settingsCascade={settingsCascade}
+                navbarSearchQuery={queryState.query}
                 showCopyQueryButton={false}
                 showSmartSearchButton={false}
             />
         </LazyCodeMirrorQueryInput>
     ) : (
         <SearchBox
-            {...props}
-            showSearchContext={props.searchContextsEnabled}
+            platformContext={platformContext}
+            globbing={globbing}
+            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+            fetchSearchContexts={fetchSearchContexts}
+            selectedSearchContextSpec={selectedSearchContextSpec}
+            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+            telemetryService={telemetryService}
+            authenticatedUser={authenticatedUser}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            settingsCascade={settingsCascade}
+            searchContextsEnabled={searchContextsEnabled}
+            showSearchContext={searchContextsEnabled}
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}
@@ -186,10 +193,10 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             setCaseSensitivity={setSearchCaseSensitivity}
             searchMode={searchMode}
             setSearchMode={setSearchMode}
-            queryState={props.queryState}
-            onChange={props.setQueryState}
+            queryState={queryState}
+            onChange={setQueryState}
             onSubmit={onSubmit}
-            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+            autoFocus={!isTouchOnlyDevice}
             isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             applySuggestionsOnEnter={applySuggestionsOnEnter}
@@ -205,7 +212,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
-                <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />
+                <Notices className="my-3 text-center" location="home" settingsCascade={settingsCascade} />
             </Form>
         </div>
     )
