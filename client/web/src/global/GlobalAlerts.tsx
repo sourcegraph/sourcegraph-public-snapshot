@@ -32,6 +32,7 @@ interface Props {
 const QUERY = gql`
     query GlobalAlertsSiteFlags {
         site {
+            id
             ...SiteFlagFields
         }
     }

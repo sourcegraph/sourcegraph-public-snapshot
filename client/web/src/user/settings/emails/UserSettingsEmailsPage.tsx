@@ -37,6 +37,7 @@ type EmailActionError = undefined | ErrorLike
 const FLAGS_QUERY = gql`
     query UserSettingsEmailsSiteFlags {
         site {
+            id
             sendsEmailVerificationEmails
         }
     }
