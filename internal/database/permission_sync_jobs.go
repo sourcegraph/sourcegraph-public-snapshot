@@ -23,6 +23,13 @@ import (
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
+type PermissionsSyncSearchType string
+
+const (
+	PermissionsSyncSearchTypeUser PermissionsSyncSearchType = "USER"
+	PermissionsSyncSearchTypeRepo PermissionsSyncSearchType = "REPOSITORY"
+)
+
 type PermissionsSyncJobState string
 
 // PermissionsSyncJobState constants.
@@ -219,7 +226,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -448,12 +455,16 @@ type ListPermissionSyncJobOpts struct {
 	NotNullProcessAfter bool
 	NotCanceled         bool
 
+	// SearchType and Query are related to text search for sync jobs.
+	SearchType PermissionsSyncSearchType
+	Query      string
+
 	// Cursor-based pagination arguments.
 	PaginationArgs *PaginationArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
-	conds := []*sqlf.Query{}
+	conds := make([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
 		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
@@ -486,12 +497,27 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.NotCanceled {
 		conds = append(conds, sqlf.Sprintf("cancel = false"))
 	}
+
+	if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
+		if opts.Query != "" {
+			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
+		}
+	}
+	if opts.SearchType == PermissionsSyncSearchTypeUser {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
+		if opts.Query != "" {
+			searchTerm := "%" + opts.Query + "%"
+			conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", searchTerm, searchTerm))
+		}
+	}
 	return conds
 }
 
 const listPermissionSyncJobQueryFmtstr = `
 SELECT %s
 FROM permission_sync_jobs
+%s -- optional join with repo/user tables for search
 %s -- whereClause
 `
 
@@ -508,16 +534,25 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		conds = append(conds, pagination.Where)
 	}
 
-	var whereClause *sqlf.Query
-	if len(conds) != 0 {
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
-	} else {
-		whereClause = sqlf.Sprintf("")
+	}
+
+	joinClause := sqlf.Sprintf("")
+	if opts.Query != "" {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
+			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		}
 	}
 
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
+		joinClause,
 		whereClause,
 	)
 	q = pagination.AppendOrderToQuery(q)
@@ -544,10 +579,18 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
+%s -- whereClause
 `
 
-func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery)
+func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error) {
+	conds := opts.sqlConds()
+
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	}
+
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err

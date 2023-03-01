@@ -18,6 +18,7 @@ import {
     SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
@@ -27,13 +28,7 @@ import { submitSearch } from '../../../../search/helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../../search/input/lazy'
 import { useRecentSearches } from '../../../../search/input/useRecentSearches'
 import { useExperimentalQueryInput } from '../../../../search/useExperimentalSearchInput'
-import {
-    useExperimentalFeatures,
-    useNavbarQueryState,
-    setSearchCaseSensitivity,
-    setSearchPatternType,
-    setSearchMode,
-} from '../../../../stores'
+import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../../stores'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -91,7 +86,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = queryState.query
+            const query = parameters.query ?? props.queryState.query
 
             if (canSubmitSearch(query, selectedSearchContextSpec)) {
                 submitSearch({

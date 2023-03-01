@@ -48,6 +48,7 @@ Start Sourcegraph by running the following in a terminal:
 ```sh
 sourcegraph
 ```
+TIP: If you run `sourcegraph` from a local project directory in your terminal, App will automatically sync your files
 
 Navigate to http://localhost:3080 in your browser.
 

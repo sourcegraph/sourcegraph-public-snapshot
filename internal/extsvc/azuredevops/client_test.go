@@ -18,7 +18,7 @@ var update = flag.Bool("update", false, "update testdata")
 
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))

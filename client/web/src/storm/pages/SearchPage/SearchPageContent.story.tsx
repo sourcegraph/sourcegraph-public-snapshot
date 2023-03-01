@@ -1,20 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { useExperimentalFeatures } from '../../../stores'
 
 import { SearchPageContent } from './SearchPageContent'
 
 window.context.allowSignup = true
 
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: false })
-    return <Story />
-}
-
 const config: Meta = {
     title: 'web/search/home/SearchPageContent',
-    decorators: [decorator],
     parameters: {
         design: {
             type: 'figma',

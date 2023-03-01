@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (c *Client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error) {
+func (c *client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error) {
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s", args.Org, args.Project, args.RepoNameOrID)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
@@ -27,7 +27,7 @@ func (c *Client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Reposito
 	return repo, nil
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
+func (c *client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
 	reqURL := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", args.ProjectOrOrgName)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
@@ -43,7 +43,7 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRe
 	return repos.Value, nil
 }
 
-func (c *Client) ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error) {
+func (c *client) ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return Repository{}, errors.Wrap(err, "marshalling request")
@@ -64,7 +64,7 @@ func (c *Client) ForkRepository(ctx context.Context, org string, input ForkRepos
 	return repo, nil
 }
 
-func (c *Client) GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error) {
+func (c *client) GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error) {
 	var allRefs []Ref
 	continuationToken := ""
 	queryParams := make(url.Values)
