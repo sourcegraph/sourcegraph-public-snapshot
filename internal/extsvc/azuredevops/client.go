@@ -206,7 +206,7 @@ func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
 				// is sent in the request. This works for now, but if refreshing a token ever stops
 				// working for Azure Dev Ops this is a good place to start looking by writing a
 				// custom implementation that only sends the key-value pairs that the API expects.
-				CustomURLArgs: map[string]string{
+				CustomQueryParams: map[string]string{
 					"client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
 					"client_assertion":      url.QueryEscape(p.ClientSecret),
 					"grant_type":            "refresh_token",
