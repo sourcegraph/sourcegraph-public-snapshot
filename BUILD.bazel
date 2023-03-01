@@ -15,6 +15,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 
 # Enable only the Aspect javascript plugin for gazelle
 # gazelle:lang js
+# gazelle:lang go
 
 package(default_visibility = ["//visibility:public"])
 
