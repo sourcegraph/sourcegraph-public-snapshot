@@ -154,7 +154,6 @@ func (wr *Router) Dispatch(ctx context.Context, eventType string, codeHostKind s
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
 
-	fmt.Printf("HANDLERS: %+v\n", wr.handlers)
 	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
 		wr.Logger.Warn("No handler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
 		return nil

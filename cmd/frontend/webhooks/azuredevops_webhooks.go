@@ -5,15 +5,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (wr *Router) HandleAzureDevOpsWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
@@ -33,7 +30,7 @@ func (wr *Router) HandleAzureDevOpsWebhook(logger log.Logger, w http.ResponseWri
 	}
 	e, err := azuredevops.ParseWebhookEvent(event.EventType, payload)
 	if err != nil {
-		if errors.Is(err, webhooks.ErrObjectKindUnknown) {
+		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

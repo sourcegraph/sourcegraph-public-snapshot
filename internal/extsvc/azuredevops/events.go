@@ -24,7 +24,7 @@ func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
 	case PullRequestUpdatedEventType:
 		target = &PullRequestUpdatedEvent{}
 	default:
-		return nil, webhooks.ErrObjectKindUnknown
+		return nil, webhooks.WebHookeNotFoundErr{}
 	}
 
 	if err := json.Unmarshal(payload, target); err != nil {

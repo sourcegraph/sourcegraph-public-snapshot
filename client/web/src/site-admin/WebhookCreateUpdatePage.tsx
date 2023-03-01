@@ -213,9 +213,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                 <Input
                                     className={classNames(styles.first, 'flex-1 mb-0')}
                                     message={
-                                        (webhook.codeHostKind &&
-                                            webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD) ||
-                                        webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS ? (
+                                        webhook.codeHostKind && !codeHostSupportsSecretes(webhook.codeHostKind) ? (
                                             <small>Code Host doesn't support secrets.</small>
                                         ) : (
                                             <small>Randomly generated. Alter as required.</small>
@@ -223,17 +221,14 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     }
                                     label={<span className="small">Secret</span>}
                                     disabled={
-                                        webhook.codeHostKind !== null &&
-                                        (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ||
-                                            webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
+                                        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind)
                                     }
                                     pattern="^[a-zA-Z0-9]+$"
                                     onChange={event => {
                                         onSecretChange(event.target.value)
                                     }}
                                     value={
-                                        webhook.codeHostKind &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                        webhook.codeHostKind && !codeHostSupportsSecretes(webhook.codeHostKind)
                                             ? ''
                                             : webhook.secret || ''
                                     }
@@ -309,11 +304,7 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
 
 function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null &&
-        (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ||
-            webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
-            ? null
-            : webhook.secret
+        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind) ? null : webhook.secret
 
     return {
         // should not happen when update is called
@@ -327,15 +318,18 @@ function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebho
 
 function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null &&
-        (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ||
-            webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS)
-            ? null
-            : webhook.secret
+        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind) ? null : webhook.secret
     return {
         name: webhook.name,
         codeHostKind: webhook.codeHostKind || ExternalServiceKind.OTHER,
         codeHostURN: webhook.codeHostURN,
         secret,
     }
+}
+
+function codeHostSupportsSecretes(codeHostKind: ExternalServiceKind): boolean {
+    if (codeHostKind === ExternalServiceKind.BITBUCKETCLOUD || codeHostKind === ExternalServiceKind.AZUREDEVOPS) {
+        return false
+    }
+    return true
 }
