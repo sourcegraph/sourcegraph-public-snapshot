@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//internal/binary",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

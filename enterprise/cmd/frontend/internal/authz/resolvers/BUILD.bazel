@@ -4,6 +4,7 @@ go_library(
     name = "resolvers",
     srcs = [
         "bitbucket_projects_permission_jobs.go",
+        "permissions_info.go",
         "permissions_sync_jobs.go",
         "repositories.go",
         "resolver.go",
