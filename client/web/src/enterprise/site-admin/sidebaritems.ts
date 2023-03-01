@@ -1,6 +1,7 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
+import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -133,6 +134,17 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const codyGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Cody', icon: RobotOutlineIcon },
+    items: [
+        {
+            label: 'Cody',
+            to: '/site-admin/cody',
+        },
+    ],
+    condition: () => window.context?.embeddingsEnabled,
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
@@ -143,5 +155,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
+    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups
