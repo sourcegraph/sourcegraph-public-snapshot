@@ -117,11 +117,18 @@ export const usePermissions = (
 ): QueryResult<AllPermissionsResult, AllPermissionsVariables> =>
     useQuery<AllPermissionsResult, AllPermissionsVariables>(ALL_PERMISSIONS, {
         fetchPolicy: 'cache-and-network',
-        onCompleted
+        onCompleted,
     })
 
 export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)
 
-export const useDeleteRole = (): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE)
+export const useDeleteRole = (
+    onCompleted: () => void,
+    onError: () => void
+): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE, { onCompleted, onError })
 
 export type PermissionsMap = Record<PermissionNamespace, PermissionFields[]>
+
+// Permissions are grouped by their namespace in the UI. We do this to get all unique namespaces
+// on the Sourcegraph instance.
+export const allNamespaces = Object.values<PermissionNamespace>(PermissionNamespace)

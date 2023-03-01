@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
+import { startCase } from 'lodash'
 
 import { logger } from '@sourcegraph/common'
 import { Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -23,8 +24,6 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
 
-    const [deleteRole, { loading, error }] = useDeleteRole()
-
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
             event.preventDefault()
@@ -39,17 +38,21 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     const closeModal = useCallback(() => {
         setShowConfirmDeleteModal(false)
     }, [])
-    const onDelete = useCallback<React.FormEventHandler>(
-        async event => {
-            event.preventDefault()
 
-            try {
-                await deleteRole({ variables: { role: node.id } })
-                closeModal()
-                afterDelete()
-            } catch (error) {
-                logger.error(error)
-            }
+    const [deleteRole, { loading, error }] = useDeleteRole(() => {
+        closeModal()
+        afterDelete()
+    }, closeModal)
+
+    const roleName = useMemo(() => {
+        const lowerCaseName = node.name.replace(/_/g, ' ').toLowerCase()
+        return startCase(lowerCaseName)
+    }, [node.name])
+
+    const onDelete = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            deleteRole({ variables: { role: node.id } })
         },
         [deleteRole, afterDelete, closeModal, node.id]
     )
@@ -74,7 +77,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
             </Button>
 
             <div className="d-flex align-items-center">
-                <Text className="font-weight-bold m-0">{node.name}</Text>
+                <Text className="font-weight-bold m-0">{roleName}</Text>
 
                 {node.system && (
                     <Tooltip

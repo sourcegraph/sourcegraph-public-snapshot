@@ -6,7 +6,7 @@ import { groupBy } from 'lodash'
 import { Icon, Text, Checkbox, Grid, Form } from '@sourcegraph/wildcard'
 
 import { RoleFields, PermissionNamespace } from '../../../graphql-operations'
-import { PermissionsMap } from '../backend'
+import { PermissionsMap, allNamespaces } from '../backend'
 
 const EmptyPermissionList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center m-3 w-100">
@@ -34,9 +34,6 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
         return <EmptyPermissionList />
     }
 
-    // Permissions are grouped by their namespace in the UI. We do this to get all unique namespaces
-    // on the Sourcegraph instance.
-    const allNamespaces = Object.values(PermissionNamespace)
     return (
         <>
             {allNamespaces.map(namespace => {

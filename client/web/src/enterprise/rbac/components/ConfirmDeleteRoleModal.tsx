@@ -34,8 +34,9 @@ export const ConfirmDeleteRoleModal: React.FunctionComponent<React.PropsWithChil
                 </H3>
             </div>
             <Text>
-                Please confirm that you want to delete the role. Once deleted, all users assigned the <span className="font-weight-bold">"{role.name}"</span> role will
-                lose access to the permissions associated with the role.
+                Please confirm that you want to delete the role. Once deleted, all users assigned the{' '}
+                <span className="font-weight-bold">"{role.name}"</span> role will lose access to the permissions
+                associated with the role.
             </Text>
             {error && <ErrorAlert error={error} />}
             <Form onSubmit={onConfirm}>

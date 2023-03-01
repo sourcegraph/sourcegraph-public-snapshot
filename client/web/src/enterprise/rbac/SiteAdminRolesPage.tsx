@@ -41,7 +41,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         refetchAll,
     } = useRolesConnection()
     // We need to query all permissions from the database, so site admins can update easily if they want to.
-    const { error: permissionsError, loading: permissionsLoading } = usePermissions((result) => {
+    const { error: permissionsError, loading: permissionsLoading } = usePermissions(result => {
         const permissions = groupBy(result.permissions.nodes, 'namespace')
         setPermissions(permissions as PermissionsMap)
     })
