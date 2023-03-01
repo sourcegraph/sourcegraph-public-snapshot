@@ -7,8 +7,10 @@ import chalk from 'chalk'
 import execa from 'execa'
 import { mkdir, readFile, writeFile } from 'mz/fs'
 import fetch from 'node-fetch'
+import {SemVer} from 'semver';
 
-import { EditFunc, listIssues } from './github'
+import {getPreviousVersionSrcCli} from './git';
+import {cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues} from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
@@ -64,7 +66,7 @@ async function readLineNoCache(prompt: string): Promise<string> {
 
 export async function verifyWithInput(prompt: string): Promise<void> {
     await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
-        if (val !== 'yes') {
+        if (!(val === 'yes' || val === 'y')) {
             console.log(chalk.red('Aborting!'))
             process.exit(0)
         }
@@ -311,4 +313,18 @@ export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void>
             )} release blocking issues open!\n${releaseBlockerUri()}\nConfirm to proceed`
         )
     }
+}
+
+export async function nextSrcCliVersionWithConfirm(repoPath?: string): Promise<SemVer> {
+    if (!repoPath) {
+        const client = await getAuthenticatedGitHubClient()
+        const {workdir} = await cloneRepo(client, 'sourcegraph', 'src-cli', {revision: 'main', revisionMustExist: true})
+        repoPath = workdir
+    }
+    console.log('Attempting to detect previous src-cli version...')
+    const previous = getPreviousVersionSrcCli(repoPath)
+    console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
+    const next = previous.inc('minor')
+    await verifyWithInput(`Confirm next version of src-cli should be: ${next.version}`)
+    return next
 }

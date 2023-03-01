@@ -21,7 +21,7 @@ import {
     getReleaseDefinition,
     deactivateAllReleases,
 } from './config'
-import { getCandidateTags, getPreviousVersion } from './git'
+import {getCandidateTags, getPreviousVersion} from './git'
 import {
     cloneRepo,
     closeTrackingIssue,
@@ -50,7 +50,7 @@ import {
     formatDate,
     getAllUpgradeGuides,
     getLatestTag,
-    getReleaseBlockers,
+    getReleaseBlockers, nextSrcCliVersionWithConfirm,
     releaseBlockerUri,
     timezoneLink,
     updateUpgradeGuides,
@@ -83,6 +83,8 @@ export type StepID =
     | 'release:remove'
     | 'release:activate-release'
     | 'release:deactivate-release'
+    // src-cli
+    | 'release:src-cli'
     // util
     | 'util:clear-cache'
     | 'util:previous-version'
@@ -245,6 +247,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
+            const srcCliNext = await nextSrcCliVersionWithConfirm()
+
             const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
             const pullRequest = await createChangesets({
@@ -316,20 +320,20 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         owner: 'sourcegraph',
                         repo: 'src-cli',
                         base: 'main',
-                        head: `changelog-${upcoming.version.version}`,
+                        head: `changelog-${srcCliNext.version}`,
                         title: commitMessage,
                         body: prBody,
                         commitMessage,
                         edits: [
                             (directory: string) => {
-                                console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
+                                console.log(`Updating '${changelogFile} for ${srcCliNext.format()}'`)
                                 const changelogPath = path.join(directory, changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release
                                 const unreleasedHeader = '## Unreleased'
                                 const unreleasedSection = `${unreleasedHeader}\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n`
-                                const newSection = `${unreleasedSection}## ${upcoming.version.format()}`
+                                const newSection = `${unreleasedSection}## ${srcCliNext.format()}`
                                 changelogContents = changelogContents.replace(unreleasedHeader, newSection)
 
                                 // Update changelog
@@ -1021,6 +1025,51 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log(set.pullRequestURL)
             }
         },
+    },
+    {
+        id: 'release:src-cli',
+        description: 'Bake static content from src-cli. Only required for minor and major versions',
+        run: async config => {
+            const client = await getAuthenticatedGitHubClient()
+
+            // ok, this seems weird that we're cloning src-cli here, so read on -
+            // We have docs that live in the main src/src repo about src-cli. Each version we update these docs for any changes
+            // from the most recent version of src-cli. Cool, makes sense.
+            // The thing is that these docs are generated from src-cli itself (a literal command, src docs).
+            // So our options are either to release a new version of src-cli, wait for the github action to be complete and THEN update the src/src repo,
+            // OR we can assume that main is going to be the new version (which it is). So we will clone it and execute the
+            // commands against the binary directly, saving ourselves a lot of time.
+            const {workdir} = await cloneRepo(client, 'sourcegraph', 'src-cli', {revision: 'main', revisionMustExist: true})
+            const next = await nextSrcCliVersionWithConfirm(workdir)
+
+            await createChangesets({
+                dryRun: config.dryRun.changesets,
+                requiredCommands: ['comby', 'go'],
+                changes: [
+                    {
+                        base: 'cclark/automate-src-cli',
+                        head: `update-src-cli-to-v${next.version}`,
+
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
+                        body: `Update src-cli to ${next.version}`,
+                        title: `update src-cli to ${next.version}`,
+                        commitMessage: `updating src-cli for ${next.version}`,
+                        edits: [
+                            `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${next.version}\\"" internal/src-cli/consts.go`,
+                            `cd ${workdir}/cmd/src && go build`,
+                            `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`
+                        ],
+                    }
+                ]
+            })
+            if (!config.dryRun.changesets) {
+                // actually execute the release
+                await execa('bash', ['-c', 'yes | ./release.sh'], { stdio: 'inherit', cwd: workdir, env: {...process.env, VERSION: next.version} })
+            } else {
+                console.log(chalk.blue('Skipping src-cli release for dry run'))
+            }
+        }
     },
     {
         id: 'util:clear-cache',
