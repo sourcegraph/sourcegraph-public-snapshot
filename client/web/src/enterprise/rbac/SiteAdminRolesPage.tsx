@@ -53,7 +53,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         }
 
         const nodes = data?.permissions.nodes
-        if (nodes && nodes.length > 0) {
+        if (nodes?.length > 0) {
             result = groupBy(nodes, 'namespace') as PermissionsMap
         }
 
