@@ -8,10 +8,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"

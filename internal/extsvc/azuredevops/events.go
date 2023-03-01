@@ -2,9 +2,10 @@ package azuredevops
 
 import (
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 )
 
 var (

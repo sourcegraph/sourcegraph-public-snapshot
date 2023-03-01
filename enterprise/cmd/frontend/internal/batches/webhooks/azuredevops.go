@@ -127,7 +127,7 @@ func (h *AzureDevOpsWebhook) parseEvent(r *http.Request) (interface{}, *types.Ex
 	}
 
 	var event azuredevops.BaseEvent
-	err = json.Unmarshal(payload, event)
+	err = json.Unmarshal(payload, &event)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}

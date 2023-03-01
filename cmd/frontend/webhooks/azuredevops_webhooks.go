@@ -2,10 +2,11 @@ package webhooks
 
 import (
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"io"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 
 	"github.com/sourcegraph/log"
 
@@ -25,7 +26,11 @@ func (wr *Router) HandleAzureDevOpsWebhook(logger log.Logger, w http.ResponseWri
 	ctx := actor.WithInternalActor(r.Context())
 
 	var event azuredevops.BaseEvent
-	json.Unmarshal(payload, &event)
+	if err != nil {
+		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(payload, &event)
 	e, err := azuredevops.ParseWebhookEvent(event.EventType, payload)
 	if err != nil {
 		if errors.Is(err, webhooks.ErrObjectKindUnknown) {
