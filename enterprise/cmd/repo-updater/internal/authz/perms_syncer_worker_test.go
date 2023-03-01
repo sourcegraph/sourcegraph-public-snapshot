@@ -35,7 +35,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			ID:               99,
 			UserID:           1234,
 			InvalidateCaches: true,
-			Priority:         database.HighPriorityPermissionSync,
+			Priority:         database.HighPriorityPermissionsSync,
 			NoPerms:          true,
 		})
 
@@ -57,7 +57,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			ID:               777,
 			RepositoryID:     4567,
 			InvalidateCaches: false,
-			Priority:         database.LowPriorityPermissionSync,
+			Priority:         database.LowPriorityPermissionsSync,
 		})
 
 		wantRequest := combinedRequest{
@@ -105,18 +105,18 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	t.Cleanup(worker.Stop)
 
 	// Adding repo perms sync jobs.
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(3), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(3), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding user perms sync job, which should not be processed by current worker!
 	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.
@@ -131,7 +131,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=4 because it is a user sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateProcessing) {
+			if job.ID != 4 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -172,7 +172,7 @@ loop:
 
 		// Check that repo sync job was completed and results were saved.
 		if jobID == 2 {
-			require.Equal(t, database.PermissionSyncJobStateCompleted, job.State)
+			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
@@ -191,7 +191,7 @@ loop:
 
 		// Check that user sync job wasn't picked up by repo sync worker.
 		if jobID == 4 {
-			require.Equal(t, database.PermissionSyncJobStateQueued, job.State)
+			require.Equal(t, database.PermissionsSyncJobStateQueued, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 0, job.PermissionsAdded)
 			require.Equal(t, 0, job.PermissionsRemoved)
@@ -235,19 +235,19 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 
 	// Adding user perms sync jobs.
 	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
+		database.PermissionSyncJobOpts{Reason: database.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionsSync})
 	require.NoError(t, err)
 
 	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	err = syncJobsStore.CreateUserSyncJob(ctx, user3.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding repo perms sync job, which should not be processed by current worker!
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.
@@ -262,7 +262,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=3 because it is a repo sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateProcessing) {
+			if job.ID != 4 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -302,7 +302,7 @@ loop:
 		}
 
 		if jobID == 2 {
-			require.Equal(t, database.PermissionSyncJobStateCompleted, job.State)
+			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
@@ -322,7 +322,7 @@ loop:
 
 		// Check that repo sync job wasn't picked up by user sync worker.
 		if jobID == 4 {
-			require.Equal(t, database.PermissionSyncJobStateQueued, job.State)
+			require.Equal(t, database.PermissionsSyncJobStateQueued, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 0, job.PermissionsAdded)
 			require.Equal(t, 0, job.PermissionsRemoved)

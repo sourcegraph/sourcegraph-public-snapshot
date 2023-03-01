@@ -511,7 +511,7 @@ func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.Team
 		"team_members",
 		batch.MaxNumPostgresParameters,
 		teamMemberInsertColumns,
-		"",
+		"ON CONFLICT DO NOTHING",
 		teamMemberStringColumns,
 		func(sc dbutil.Scanner) error {
 			i++

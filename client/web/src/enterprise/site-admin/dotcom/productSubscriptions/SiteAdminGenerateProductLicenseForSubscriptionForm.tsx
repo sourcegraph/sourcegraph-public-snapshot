@@ -26,8 +26,7 @@ interface FormData {
     customer: string
     plan: string
     userCount: number
-    validDays: number
-    expiresAt: number
+    expiresAt: Date
 }
 
 const getEmptyFormData = (account: string): FormData => ({
@@ -35,8 +34,7 @@ const getEmptyFormData = (account: string): FormData => ({
     customer: account,
     plan: 'enterprise-1',
     userCount: 1,
-    validDays: 1,
-    expiresAt: addDaysAndRoundToEndOfDay(1),
+    expiresAt: endOfDay(addDays(Date.now(), 366)),
 })
 
 const DURATION_LINKS = [
@@ -102,13 +100,16 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
     const setValidDays = useCallback((validDays: number): void => {
         setFormData(formData => ({
             ...formData,
-            validDays,
             expiresAt: addDaysAndRoundToEndOfDay(validDays),
         }))
     }, [])
-    const onValidDaysChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setValidDays(Number.isNaN(event.currentTarget.valueAsNumber) ? 0 : event.currentTarget.valueAsNumber),
-        [setValidDays]
+    const onExpiresAtChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event =>
+            setFormData(formData => ({
+                ...formData,
+                expiresAt: endOfDay(event.target.valueAsDate || getEmptyFormData(subscriptionAccount).expiresAt),
+            })),
+        [subscriptionAccount]
     )
 
     const dismissAlert = useCallback(
@@ -125,7 +126,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
             license: {
                 tags: getTagsFromFormData(formData),
                 userCount: formData.userCount,
-                expiresAt: Math.ceil(formData.expiresAt / 1000),
+                expiresAt: Math.floor(formData.expiresAt.getTime() / 1000),
             },
         },
         onCompleted: onGenerate,
@@ -237,15 +238,14 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         />
                     </div>
                     <div className="form-group">
-                        <Label htmlFor="site-admin-create-product-subscription-page__validDays">Valid for (days)</Label>
+                        <Label htmlFor="site-admin-create-product-subscription-page__expiresAt">Expires At</Label>
                         <Input
-                            type="number"
-                            id="site-admin-create-product-subscription-page__validDays"
-                            disabled={disableForm}
-                            value={formData.validDays || ''}
-                            min={1}
-                            max={2000} // avoid overflowing int32
-                            onChange={onValidDaysChange}
+                            type="date"
+                            id="site-admin-create-product-subscription-page__expiresAt"
+                            min={formatDateForInput(addDaysAndRoundToEndOfDay(1))}
+                            max={formatDateForInput(addDaysAndRoundToEndOfDay(2000))}
+                            value={formatDateForInput(formData.expiresAt)}
+                            onChange={onExpiresAtChange}
                         />
                         <small className="form-text text-muted">
                             {formData.expiresAt !== null ? (
@@ -289,6 +289,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
  * generous interpretation of "valid for N days" to avoid confusion over timezones or "will it
  * expire at the beginning of the day or at the end of the day?"
  */
-function addDaysAndRoundToEndOfDay(amount: number): number {
-    return endOfDay(addDays(Date.now(), amount)).getTime()
-}
+const addDaysAndRoundToEndOfDay = (amount: number): Date => endOfDay(addDays(Date.now(), amount))
+
+const formatDateForInput = (date: Date): string => date.toISOString().slice(0, 10)

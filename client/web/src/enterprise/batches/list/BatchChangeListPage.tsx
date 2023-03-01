@@ -8,7 +8,6 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -157,13 +156,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     ) : (
                         <Button
                             as={Link}
-                            to={buildCloudTrialURL(authenticatedUser, 'batch')}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            to="https://about.sourcegraph.com"
                             variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryBatchChanges' })}
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
                         >
-                            Try Batch Changes
+                            Get Sourcegraph Enterprise
                         </Button>
                     )
                 }

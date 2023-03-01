@@ -17,6 +17,9 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -27,13 +30,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
+	v1 "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+type mockGRPCServer struct {
+	f func(*proto.EnqueueRepoUpdateRequest) (*proto.EnqueueRepoUpdateResponse, error)
+	proto.UnimplementedRepoUpdaterServiceServer
+}
+
+func (m *mockGRPCServer) EnqueueRepoUpdate(_ context.Context, req *proto.EnqueueRepoUpdateRequest) (*proto.EnqueueRepoUpdateResponse, error) {
+	return m.f(req)
+}
 
 func TestGitHubHandler(t *testing.T) {
 	ctx := context.Background()
@@ -81,6 +97,25 @@ func TestGitHubHandler(t *testing.T) {
 	}
 	handler.Register(router.Router)
 
+	gs := grpc.NewServer(defaults.ServerOptions(logger)...)
+	v1.RegisterRepoUpdaterServiceServer(gs, &mockGRPCServer{
+		f: func(req *v1.EnqueueRepoUpdateRequest) (*v1.EnqueueRepoUpdateResponse, error) {
+			repositories, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{req.Repo}})
+			if err != nil {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			if len(repositories) != 1 {
+				return nil, status.Error(codes.NotFound, fmt.Sprintf("expected 1 repo, got %v", len(repositories)))
+			}
+
+			repo := repositories[0]
+			return &proto.EnqueueRepoUpdateResponse{
+				Id:   int32(repo.ID),
+				Name: string(repo.Name),
+			}, nil
+		},
+	})
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {
 		reqBody, err := io.ReadAll(r.Body)
@@ -112,7 +147,7 @@ func TestGitHubHandler(t *testing.T) {
 		json.NewEncoder(w).Encode(res)
 	})
 
-	server := httptest.NewServer(mux)
+	server := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, mux))
 	defer server.Close()
 
 	cf := httpcli.NewExternalClientFactory()
@@ -122,10 +157,8 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoupdater.DefaultClient = &repoupdater.Client{
-		URL:        server.URL,
-		HTTPClient: doer,
-	}
+	repoupdater.DefaultClient = repoupdater.NewClient(server.URL)
+	repoupdater.DefaultClient.HTTPClient = doer
 
 	payload, err := os.ReadFile(filepath.Join("testdata", "github-push.json"))
 	if err != nil {

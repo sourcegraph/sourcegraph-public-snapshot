@@ -3,11 +3,11 @@ import React, { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Badge, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
-import { UserAvatar } from '../../../user/UserAvatar'
 
 import styles from './FileOwnershipEntry.module.scss'
 
@@ -48,8 +48,10 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                     </div>
                 </td>
                 <td>
-                    <UserAvatar user={person} className="mx-2" />
-                    <PersonLink person={person} />
+                    <div className="d-flex align-items-center">
+                        <UserAvatar user={person} className="mx-2" inline={true} />
+                        <PersonLink person={person} />
+                    </div>
                 </td>
                 <td>
                     {reasons.map(reason => (

@@ -149,10 +149,10 @@ On the day of the release, confirm there are no more release-blocking issues (as
   pnpm run release tracking:issues
   pnpm run release tracking:timeline
   ```
-- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the auto-generated changes from above.
 - [ ] Close the release.
   ```sh
   pnpm run release release:close
   ```
+- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the auto-generated changes from above.
 
 **Note:** If a patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=$MAJOR.$MINOR.1%3A+) be filled out and approved first.

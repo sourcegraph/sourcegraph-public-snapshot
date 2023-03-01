@@ -2,11 +2,11 @@ import React, { useMemo } from 'react'
 
 import { NavLink } from 'react-router-dom'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { UserAvatar } from '../UserAvatar'
 
 import { UserAreaRouteContext } from './UserArea'
 

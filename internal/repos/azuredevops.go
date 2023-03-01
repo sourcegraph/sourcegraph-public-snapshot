@@ -22,7 +22,7 @@ import (
 // in Sourcegraph via the external services configuration.
 type AzureDevOpsSource struct {
 	svc       *types.ExternalService
-	cli       *azuredevops.Client
+	cli       azuredevops.Client
 	serviceID string
 	config    schema.AzureDevOpsConnection
 	logger    log.Logger
@@ -68,7 +68,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 	return &AzureDevOpsSource{
 		svc:       svc,
 		cli:       cli,
-		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
+		serviceID: extsvc.NormalizeBaseURL(cli.GetURL()).String(),
 		config:    c,
 		logger:    logger,
 		exclude:   exclude,
@@ -143,8 +143,11 @@ func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, err
 
 func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
-
-	fullURL, err := urlx.Parse(s.cli.URL.String() + p.Name)
+	org, err := p.GetOrganization()
+	if err != nil {
+		return nil, err
+	}
+	fullURL, err := urlx.Parse(fmt.Sprintf("%s%s/%s/%s", s.cli.GetURL().String(), org, p.Project.Name, p.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +156,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 	return &types.Repo{
 		Name: api.RepoName(name),
 		URI:  name,
+		Fork: p.IsFork,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          p.ID,
 			ServiceType: extsvc.TypeAzureDevOps,
@@ -161,9 +165,10 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: fullURL.String(),
+				CloneURL: p.CloneURL,
 			},
 		},
 		Metadata: p,
+		Private:  p.Project.Visibility == "private",
 	}, nil
 }

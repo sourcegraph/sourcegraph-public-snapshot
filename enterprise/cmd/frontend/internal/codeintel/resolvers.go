@@ -14,6 +14,7 @@ type Resolver struct {
 	codenavResolver          resolverstubs.CodeNavServiceResolver
 	policiesRootResolver     resolverstubs.PoliciesServiceResolver
 	uploadsRootResolver      resolverstubs.UploadsServiceResolver
+	sentinelRootResolver     resolverstubs.SentinelServiceResolver
 }
 
 func newResolver(
@@ -21,12 +22,14 @@ func newResolver(
 	codenavResolver resolverstubs.CodeNavServiceResolver,
 	policiesRootResolver resolverstubs.PoliciesServiceResolver,
 	uploadsRootResolver resolverstubs.UploadsServiceResolver,
+	sentinelRootResolver resolverstubs.SentinelServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
 		codenavResolver:          codenavResolver,
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
+		sentinelRootResolver:     sentinelRootResolver,
 	}
 }
 

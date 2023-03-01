@@ -4,10 +4,9 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../../../../components/CallToActionBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -45,13 +44,11 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         isSourcegraphDotCom ? (
                             <Button
                                 as={Link}
-                                to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                to="https://about.sourcegraph.com"
                                 variant="primary"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryInsights' })}
+                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })}
                             >
-                                Try insights
+                                Get Sourcegraph Enterprise
                             </Button>
                         ) : null
                     }
@@ -84,18 +81,16 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
 
-                    <CloudCtaBanner variant="filled">
-                        To track Insights across your team's private repos,{' '}
+                    <CallToActionBanner variant="filled">
+                        To track Insights across your team's private repositories,{' '}
                         <Link
-                            to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Insights' })}
+                            to="https://about.sourcegraph.com"
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })}
                         >
-                            try Sourcegraph Cloud
+                            get Sourcegraph Enterprise
                         </Link>
                         .
-                    </CloudCtaBanner>
+                    </CallToActionBanner>
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
                 </main>

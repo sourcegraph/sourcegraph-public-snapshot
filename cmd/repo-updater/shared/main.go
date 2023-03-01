@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -35,12 +37,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -64,7 +69,7 @@ type EnterpriseInit func(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error)
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -136,6 +141,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		},
 	}
 
+	serviceServer := &repoupdater.RepoUpdaterServiceServer{
+		Server: server,
+	}
+
 	// Attempt to perform an initial sync with all external services
 	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
 		// This is not a fatal error since the syncer has been added to the server above
@@ -157,7 +166,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
+	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionsSyncJobReason) error
 	if enterpriseInit != nil {
 		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
@@ -174,7 +183,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}()
 
-	go syncScheduler(ctx, logger, updateScheduler, store)
+	go manageUnclonedRepos(ctx, logger, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
@@ -207,6 +216,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		m,
 		otel.GetTracerProvider(),
 	)(server.Handler())
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	reflection.Register(grpcServer)
+
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	globals.WatchExternalURL()
 
@@ -450,7 +465,7 @@ func watchSyncer(
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -506,11 +521,11 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the uncloned repositories on gitserver
+// manageUnclonedRepos will periodically list the uncloned repositories on gitserver
 // and update the scheduler with the list. It also ensures that if any of our
 // indexable repos are missing from the cloned list they will be added for
 // cloning ASAP.
-func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
+func manageUnclonedRepos(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(logger, store)
 
 	doSync := func() {

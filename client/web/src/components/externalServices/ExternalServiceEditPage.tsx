@@ -22,8 +22,6 @@ import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    isLightTheme: boolean
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 
@@ -35,7 +33,6 @@ const getExternalService = (queryResult?: ExternalServiceResult): ExternalServic
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
 export const ExternalServiceEditPage: FC<Props> = ({
-    isLightTheme,
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
@@ -169,7 +166,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             loading={combinedLoading}
                             onSubmit={onSubmit}
                             onChange={onChange}
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}

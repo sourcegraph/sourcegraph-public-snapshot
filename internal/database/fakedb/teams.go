@@ -195,14 +195,20 @@ func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamM
 }
 
 func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
-	for _, existingMember := range teams.members {
-		for _, newMember := range members {
-			if *existingMember == *newMember {
-				return errors.Newf("Member teamID=%d userID=%d already exists.", newMember.TeamID, newMember.UserID)
+	for _, newMember := range members {
+		exists := false
+		for _, existingMember := range teams.members {
+			if existingMember.UserID == newMember.UserID && existingMember.TeamID == newMember.TeamID {
+				exists = true
+				// on conflict do nothing.
+				break
 			}
 		}
+		if !exists {
+			teams.members = append(teams.members, newMember)
+		}
 	}
-	teams.members = append(teams.members, members...)
+
 	return nil
 }
 

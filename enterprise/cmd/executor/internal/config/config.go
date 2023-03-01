@@ -11,7 +11,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -49,7 +49,7 @@ type Config struct {
 	WorkerHostname                 string
 	DockerRegistryMirrorURL        string
 	DockerRegistryPrefixURL        string
-	DockerAuthConfig               executor.DockerAuthConfig
+	DockerAuthConfig               types.DockerAuthConfig
 	dockerAuthConfigStr            string
 	dockerAuthConfigUnmarshalError error
 }

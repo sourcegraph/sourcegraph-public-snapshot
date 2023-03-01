@@ -328,20 +328,6 @@ func TestPermissionCount(t *testing.T) {
 	})
 }
 
-func TestPermissionFetchAll(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.Permissions()
-
-	_, _, totalPerms := seedPermissionDataForList(ctx, t, store, db)
-
-	perms, err := store.FetchAll(ctx)
-
-	require.NoError(t, err)
-	require.Len(t, perms, totalPerms)
-}
-
 func seedPermissionDataForList(ctx context.Context, t *testing.T, store PermissionStore, db DB) (*types.Role, *types.User, int) {
 	t.Helper()
 

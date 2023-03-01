@@ -34,7 +34,7 @@ This list is not guaranteed to be complete, but rather representative of the typ
 |---|---|---|
 |Repository metadata (e.g. clone URLs, whether it is a fork or archive, etc.)|Yes||
 |User accounts|Yes (if using [SSO authentication](../auth/index.md)), No if using builtin authentication||
-|[Repository permissions](../repo/permissions.md)|Yes||
+|[Repository permissions](../permissions/index.md)|Yes||
 |[Organizations](../organizations.md)|No||
 |[User and org settings](../config/settings.md)|No|Global settings can be backed up as described above, but user- and org-level settings cannot.|
 |[Saved searches](../../code_search/how-to/saved_searches.md)|No||

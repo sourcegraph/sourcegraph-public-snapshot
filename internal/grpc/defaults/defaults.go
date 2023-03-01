@@ -5,22 +5,33 @@
 package defaults
 
 import (
+	"context"
 	"strings"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
+
+// Dial creates a client connection to the given target with the default options.
+func Dial(addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return DialContext(context.Background(), addr, additionalOpts...)
+}
+
+// DialContext creates a client connection to the given target with the default options.
+func DialContext(ctx context.Context, addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return grpc.DialContext(ctx, addr, append(DialOptions(), additionalOpts...)...)
+}
 
 // DialOptions is a set of default dial options that should be used for all
 // gRPC clients in Sourcegraph. The options can be extended with
@@ -47,6 +58,13 @@ func DialOptions() []grpc.DialOption {
 			otelgrpc.UnaryClientInterceptor(),
 		),
 	}
+}
+
+// NewServer creates a new *grpc.Server with the default options
+func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Server {
+	s := grpc.NewServer(append(ServerOptions(logger), additionalOpts...)...)
+	reflection.Register(s)
+	return s
 }
 
 // ServerOptions is a set of default server options that should be used for all

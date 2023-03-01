@@ -6,6 +6,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     createRectangle,
     createLinkClickHandler,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
@@ -117,7 +117,6 @@ interface BlameDecorationProps {
     navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-    isLightTheme: boolean
     hideRecency: boolean
 }
 
@@ -128,7 +127,6 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     onDeselect,
     firstCommitDate,
     externalURLs,
-    isLightTheme,
     hideRecency,
     navigate,
 }) => {
@@ -154,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
-    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
+    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate)
 
     if (!blameHunk) {
         return null
@@ -251,13 +249,15 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
                                     as={SourceCommitIcon}
                                     className={classNames('mr-2 flex-shrink-0', styles.icon)}
                                 />
-                                <CommitMessageWithLinks
-                                    message={blameHunk.message}
-                                    to={blameHunk.displayInfo.linkURL}
-                                    className={styles.link}
-                                    onClick={logCommitClick}
-                                    externalURLs={externalURLs}
-                                />
+                                <div>
+                                    <CommitMessageWithLinks
+                                        message={blameHunk.message}
+                                        to={blameHunk.displayInfo.linkURL}
+                                        className={styles.link}
+                                        onClick={logCommitClick}
+                                        externalURLs={externalURLs}
+                                    />
+                                </div>
                             </div>
                             {blameHunk.commit.parents.length > 0 && (
                                 <>

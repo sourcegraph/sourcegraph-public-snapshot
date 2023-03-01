@@ -82,17 +82,14 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 path={[{ text: 'Subscriptions' }]}
                 description={
                     <>
-                        <>
-                            Search your private code with{' '}
-                            <Link
-                                to="https://signup.sourcegraph.com/"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Subscriptions' })}
-                            >
-                                Sourcegraph Cloud
-                            </Link>{' '}
-                            or contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                            <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
-                        </>
+                        Search your private code with{' '}
+                        <Link
+                            to="https://about.sourcegraph.com"
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })}
+                        >
+                            Sourcegraph Enterprise
+                        </Link>
+                        . See <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"

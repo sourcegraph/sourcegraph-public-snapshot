@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccount, mdiSourceRepository, mdiCommentOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -11,6 +11,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { useChartFilters } from '../useChartFilters'
@@ -33,6 +34,34 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsOverview')
     }, [])
+
+    const userStatisticsItems = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const items = [
+            { label: 'Total users', value: data.users.totalCount },
+            {
+                label: 'Administrators',
+                value: data.site.adminUsers.totalCount,
+            },
+            {
+                label: 'Users licenses',
+                value: data.site.productSubscription.license?.userCount || 0,
+            },
+        ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(
+            window.context.sourcegraphDotComMode,
+            window.context.allowSignup,
+            window.context.experimentalFeatures
+        )
+
+        if (isRequestAccessAllowed) {
+            items.push({ label: 'Pending requests', value: data.pendingAccessRequests.totalCount || 0 })
+        }
+        return items
+    }, [data])
 
     if (error) {
         throw error
@@ -107,17 +136,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                                     title: 'Users statistics',
                                     icon: mdiAccount,
                                     link: '/site-admin/analytics/users',
-                                    items: [
-                                        { label: 'Total users', value: data.users.totalCount },
-                                        {
-                                            label: 'Administrators',
-                                            value: data.site.adminUsers.totalCount,
-                                        },
-                                        {
-                                            label: 'Users licenses',
-                                            value: data.site.productSubscription.license?.userCount || 0,
-                                        },
-                                    ],
+                                    items: userStatisticsItems,
                                 },
                                 {
                                     title: 'Code statistics',
