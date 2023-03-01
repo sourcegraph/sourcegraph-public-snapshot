@@ -24,7 +24,6 @@ export const WORKSPACES_PATH = resolveWithSymlink(ROOT_PATH, 'client')
 export const NODE_MODULES_PATH = resolveWithSymlink(ROOT_PATH, 'node_modules')
 export const MONACO_EDITOR_PATH = resolveWithSymlink(NODE_MODULES_PATH, 'monaco-editor')
 export const STATIC_ASSETS_PATH = resolveWithSymlink(ROOT_PATH, 'ui/assets')
-export const STATIC_INDEX_PATH = resolveWithSymlink(STATIC_ASSETS_PATH, 'index.html')
 
 function getWorkspaceNodeModulesPaths(): string[] {
     const workspaces = fs.readdirSync(WORKSPACES_PATH)

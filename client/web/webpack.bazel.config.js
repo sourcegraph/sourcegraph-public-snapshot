@@ -126,7 +126,7 @@ const config = {
   // entry: { ... SET BY BAZEL RULE ... }
   // TODO(bazel): why is this sest by webpack_bundle() but not webpack_dev_server()?
   entry: {
-    app: './client/web/src/main.js',
+    app: './client/web/src/enterprise/main.js',
   },
   devServer: {
     port: 8080,
