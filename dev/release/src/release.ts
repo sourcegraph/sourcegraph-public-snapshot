@@ -34,7 +34,6 @@ import {
     getAuthenticatedGitHubClient,
     getTrackingIssue,
     IssueLabel,
-    listIssues,
     localSourcegraphRepo,
     queryIssues,
     releaseName,
