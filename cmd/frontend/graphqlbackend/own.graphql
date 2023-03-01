@@ -200,6 +200,6 @@ type CodeownersIngestedFileConnection {
     nodes: [CodeownersIngestedFile!]!
 }
 
-#extend type Repository {
-#    ingestedCodeowners: CodeownersIngestedFile
-#}
+extend type Repository {
+    ingestedCodeowners: CodeownersIngestedFile
+}

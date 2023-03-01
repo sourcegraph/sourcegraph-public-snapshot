@@ -447,15 +447,15 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
-//func (r *RepositoryResolver) CodeownersIngestedFiles(ctx context.Context) (CodeownersIngestedFileResolver, error) {
-//	id := r.ID()
-//	rid, err := UnmarshalRepositoryID(id)
-//	if err != nil {
-//		return nil, err
-//	}
-//	repoID := int32(rid)
-//	return EnterpriseResolvers.ownResolver.CodeownersIngestedFiles(ctx, &CodeownersIngestedFilesArgs{RepoID: &repoID})
-//}
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	id := r.ID()
+	rid, err := UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+	repoID := int32(rid)
+	return EnterpriseResolvers.ownResolver.CodeownersIngestedFile(ctx, &CodeownersIngestedFileArgs{RepositoryID: repoID})
+}
 
 func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
