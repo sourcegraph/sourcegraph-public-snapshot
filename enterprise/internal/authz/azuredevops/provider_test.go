@@ -496,10 +496,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		//
 		// So we need to put the expected permissions in a map to be able to cmp.Diff against it.
 		wantPermissions := map[extsvc.RepoID]struct{}{
-			"1": struct{}{},
-			"2": struct{}{},
-			"3": struct{}{},
-			"4": struct{}{},
+			"1": {},
+			"2": {},
+			"3": {},
+			"4": {},
 		}
 
 		permissions, err := p.FetchUserPerms(
