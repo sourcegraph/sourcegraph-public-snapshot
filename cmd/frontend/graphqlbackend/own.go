@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
@@ -90,6 +92,7 @@ type CodeownersIngestedFileArgs struct {
 }
 
 type CodeownersIngestedFileResolver interface {
+	ID() graphql.ID
 	Contents() string
 	Repository() *RepositoryResolver
 	CreatedAt() gqlutil.DateTime

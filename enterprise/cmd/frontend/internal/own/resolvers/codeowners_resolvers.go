@@ -5,6 +5,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -179,6 +182,12 @@ type codeownersIngestedFileResolver struct {
 	db             edb.EnterpriseDB
 	codeownersFile *types.CodeownersFile
 	repository     *types.Repo
+}
+
+const codeownersIngestedFileKind = "codeowners_ingested_file"
+
+func (r *codeownersIngestedFileResolver) ID() graphql.ID {
+	return relay.MarshalID(codeownersIngestedFileKind, r.codeownersFile.RepoID)
 }
 
 func (r *codeownersIngestedFileResolver) Contents() string {
