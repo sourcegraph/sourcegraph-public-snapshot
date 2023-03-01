@@ -2,13 +2,45 @@ package result
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type OwnerMatchOwner interface {
+	Type() string
+	Identifier() string
+}
+
+type OwnerMatchPerson struct {
+	Handle string
+	Email  string
+	User   *types.User
+}
+
+func (o OwnerMatchPerson) Identifier() string {
+	return "Person:" + o.Handle + o.Email
+}
+
+func (o OwnerMatchPerson) Type() string {
+	return "person"
+}
+
+type OwnerMatchTeam struct {
+	Handle string
+	Email  string
+	Team   *types.Team
+}
+
+func (o OwnerMatchTeam) Identifier() string {
+	return "Team:" + o.Team.Name
+}
+
+func (o OwnerMatchTeam) Type() string {
+	return "team"
+}
+
 type OwnerMatch struct {
-	ResolvedOwner codeowners.ResolvedOwner
+	ResolvedOwner OwnerMatchOwner
 
 	// The following contain information about what search the owner was matched from.
 	InputRev *string           `json:"-"`
