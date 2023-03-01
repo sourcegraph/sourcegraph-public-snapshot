@@ -28,6 +28,7 @@ There are two supported installation paths (in Beta):
 - <span class="badge badge-beta">Beta</span> Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
 - <span class="badge badge-beta">Beta</span> Deploy [binaries](./deploy_executors_binary.md).
 
+[//]: # (There has been a number of confusion around this. This is a fallback deployment at the moment for customers that need K8s now.)
 [//]: # (There are two supported installation methods &#40;Experimental&#41;:)
 
 [//]: # ()
