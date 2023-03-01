@@ -133,6 +133,8 @@ type globPattern []patternPart
 // The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
 func (glob globPattern) match(filePath string) bool {
+	// TODO: We can try to see if the mattern contains static parts, and check if
+	// filePathParts includes these at all.
 	currentState := big.NewInt(0)
 	glob.markEmptyMatches(currentState)
 	filePathParts := strings.Split(strings.Trim(filePath, separator), separator)

@@ -1,6 +1,7 @@
 package codeowners
 
 import (
+	"strings"
 	"sync"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
@@ -50,4 +51,42 @@ func (r *CompiledRule) match(filePath string) bool {
 
 func (r *CompiledRule) GetOwner() []*codeownerspb.Owner {
 	return r.proto.Owner
+}
+
+func NewRuleTrie(rules []*codeownerspb.Rule) *ruleTrieNode {
+	t := &ruleTrieNode{Children: make(map[string]*ruleTrieNode)}
+	for _, r := range rules {
+		parts := []string{}
+		if !strings.HasPrefix(r.GetPattern(), separator) {
+			parts = append(parts, "**")
+		}
+		parts = append(parts, strings.Split(strings.Trim(r.GetPattern(), separator), separator)...)
+		if strings.HasSuffix(r.GetPattern(), separator) {
+			parts = append(parts, "**")
+		}
+		if len(parts) > 0 {
+			if parts[len(parts)-1] == "**" {
+				parts = append(parts, "*")
+			}
+		}
+		insertTrieNode(t, parts, &CompiledRule{proto: r})
+	}
+	return t
+}
+
+func insertTrieNode(t *ruleTrieNode, path []string, rule *CompiledRule) {
+	curr := t
+	for _, p := range path {
+		_, ok := curr.Children[p]
+		if !ok {
+			curr.Children[p] = &ruleTrieNode{Children: make(map[string]*ruleTrieNode)}
+		}
+		curr = curr.Children[p]
+	}
+	curr.Value = rule
+}
+
+type ruleTrieNode struct {
+	Children map[string]*ruleTrieNode
+	Value    *CompiledRule
 }
