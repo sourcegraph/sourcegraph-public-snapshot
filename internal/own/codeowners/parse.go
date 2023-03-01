@@ -14,7 +14,7 @@ import (
 // Parse parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
-func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
+func Parse(codeownersFile io.Reader) (*Ruleset, error) {
 	scanner := bufio.NewScanner(codeownersFile)
 	var rs []*codeownerspb.Rule
 	p := new(parsing)
@@ -48,7 +48,7 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return &codeownerspb.File{Rule: rs}, nil
+	return NewRuleset(&codeownerspb.File{Rule: rs}), nil
 }
 
 func ParseOwner(ownerText string) *codeownerspb.Owner {

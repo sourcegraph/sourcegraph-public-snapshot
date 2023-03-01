@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
@@ -17,7 +18,7 @@ type RulesKey struct {
 }
 
 type RulesCache struct {
-	rules      map[RulesKey]*codeownerspb.File
+	rules      map[RulesKey]*codeowners.Ruleset
 	ownService own.Service
 
 	mu sync.RWMutex
@@ -25,12 +26,12 @@ type RulesCache struct {
 
 func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	return RulesCache{
-		rules:      make(map[RulesKey]*codeownerspb.File),
+		rules:      make(map[RulesKey]*codeowners.Ruleset),
 		ownService: own.NewService(gs, db),
 	}
 }
 
-func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	c.mu.RLock()
 	key := RulesKey{repoName, commitID}
 	if _, ok := c.rules[key]; ok {
@@ -42,9 +43,9 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoN
 	defer c.mu.Unlock()
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
-		file, err := c.ownService.OwnersFile(ctx, repoName, commitID)
-		if err != nil {
-			emptyRuleset := &codeownerspb.File{}
+		file, err := c.ownService.RulesetForRepo(ctx, repoName, commitID)
+		if err != nil || file == nil {
+			emptyRuleset := codeowners.NewRuleset(&codeownerspb.File{})
 			c.rules[key] = emptyRuleset
 			return emptyRuleset, err
 		}

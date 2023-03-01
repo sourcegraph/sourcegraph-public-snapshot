@@ -247,6 +247,7 @@ async function getScheduledReleaseWithInput(
         )
         scheduled = await newReleaseFromInput(releaseVersion)
         addScheduledRelease(config, scheduled)
+        saveReleaseConfig(config)
     }
     return scheduled
 }

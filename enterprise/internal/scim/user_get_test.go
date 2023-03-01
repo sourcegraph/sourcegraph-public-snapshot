@@ -13,6 +13,8 @@ import (
 )
 
 func TestUserResourceHandler_Get(t *testing.T) {
+	t.Parallel()
+
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
@@ -31,53 +33,38 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	if user2.ID != "2" {
 		t.Errorf("expected ID = 2, got %s", user2.ID)
 	}
-	if user1.ExternalID.Value() != "external1" {
-		t.Errorf("expected ExternalID = 'external1', got %s", user1.ExternalID.Value())
+	if user1.ExternalID.Value() != "id1" {
+		t.Errorf("expected ExternalID = 'id1', got %s", user1.ExternalID.Value())
 	}
 	if user2.ExternalID.Value() != "" {
 		t.Errorf("expected no ExternalID, got %s", user1.ExternalID.Value())
 	}
 
 	// Assert that usernames are correct
-	if user1.Attributes["userName"] != "user1" {
-		t.Errorf("expected username = 'user1', got %s", user1.Attributes["UserName"])
+	if user1.Attributes[AttrUserName] != "user1" {
+		t.Errorf("expected username = 'user1', got %s", user1.Attributes[AttrUserName])
 	}
-	if user2.Attributes["userName"] != "user2" {
-		t.Errorf("expected username = 'user2', got %s", user2.Attributes["UserName"])
+	if user2.Attributes[AttrUserName] != "user2" {
+		t.Errorf("expected username = 'user2', got %s", user2.Attributes[AttrUserName])
 	}
 
 	// Assert that names are correct
-	if user1.Attributes["displayName"] != "First Last" {
-		t.Errorf("expected First Last, got %s", user1.Attributes["displayName"])
+	if user1.Attributes[AttrDisplayName] != "First Last" {
+		t.Errorf("expected First Last, got %s", user1.Attributes[AttrDisplayName])
 	}
-	if user2.Attributes["displayName"] != "First Middle Last" {
-		t.Errorf("expected First Middle Last, got %s", user2.Attributes["displayName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user1.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["middleName"] != "" {
-		t.Errorf("expected empty string, got %s", user1.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user1.Attributes["name"].(map[string]interface{})["familyName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user2.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["middleName"] != "Middle" {
-		t.Errorf("expected Middle, got %s", user2.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user2.Attributes["name"].(map[string]interface{})["familyName"])
+	if user2.Attributes[AttrDisplayName] != "First Middle Last" {
+		t.Errorf("expected First Middle Last, got %s", user2.Attributes[AttrDisplayName])
 	}
 
 	// Assert that emails are correct
-	if user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"] != "a@example.com" {
-		t.Errorf("expected empty email, got %s", user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"])
+	if user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"] != "a@example.com" {
+		t.Errorf("expected empty email, got %s", user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"])
 	}
 }
+
 func TestUserResourceHandler_GetAll(t *testing.T) {
+	t.Parallel()
+
 	db := getMockDB()
 
 	cases := []struct {

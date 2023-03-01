@@ -12,7 +12,7 @@ import (
 	"github.com/c2h5oh/datasize"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,7 +24,7 @@ import (
 func NewFirecrackerWorkspace(
 	ctx context.Context,
 	filesStore FilesStore,
-	job executor.Job,
+	job types.Job,
 	diskSpace string,
 	keepWorkspace bool,
 	commandRunner command.Runner,
