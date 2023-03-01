@@ -3,7 +3,7 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   using System;
-//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//^^^^^ Keyword  keyword.control.import.cs
 //      ^^^^^^ IdentifierNamespace  meta.path.cs
 //            ^ PunctuationDelimiter  punctuation.terminator.cs
   
@@ -13,7 +13,7 @@ expression: "dump_document(&document, &contents)"
   {
 //^ PunctuationBracket  punctuation.section.block.begin.cs
       public void Something()
-//    ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
+//    ^^^^^^ Keyword  storage.modifier.access.cs
 //           ^^^^ IdentifierType  storage.type.cs
 //                ^^^^^^^^^ IdentifierFunction  entity.name.function.cs
 //                         ^ PunctuationBracket  punctuation.section.parameters.begin.cs

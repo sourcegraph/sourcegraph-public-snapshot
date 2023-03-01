@@ -3,7 +3,7 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   #include <stdbool.h>
-//^^^^^^^^ IdentifierKeyword  keyword.control.import.include.c
+//^^^^^^^^ Keyword  keyword.control.import.include.c
 //        ^ IdentifierNamespace  string.quoted.other.lt-gt.include.c
 //         ^^^^^^^^^^^ StringLiteral  string.quoted.other.lt-gt.include.c
   
@@ -27,7 +27,7 @@ expression: "dump_document(&document, &contents)"
      */
   
     return x;
-//  ^^^^^^ IdentifierKeyword  keyword.control.flow.return.c
+//  ^^^^^^ Keyword  keyword.control.flow.return.c
 //          ^ PunctuationDelimiter  punctuation.terminator.c
   }
 //^ PunctuationBracket  punctuation.section.block.end.c

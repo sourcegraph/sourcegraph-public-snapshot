@@ -6,7 +6,7 @@ expression: "dump_document(&document, &contents)"
 // ^^^^^^^^ Comment  comment.line.number-sign.shell
   
   export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
-//^^^^^^ IdentifierKeyword  storage.modifier.shell
+//^^^^^^ Keyword  storage.modifier.shell
 //       ^^^^^^^^^^^^^ Identifier  variable.other.readwrite.assignment.shell
 //                    ^ IdentifierOperator  keyword.operator.assignment.shell
 //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.shell
