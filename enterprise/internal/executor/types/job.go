@@ -1,10 +1,8 @@
-package executor
+package types
 
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 // Job describes a series of steps to perform within an executor.
@@ -17,6 +15,9 @@ type Job struct {
 	// ID is the unique identifier of a job within the source queue. Note
 	// that different queues can share identifiers.
 	ID int `json:"id"`
+
+	// Token is the authentication token for the specific Job.
+	Token string `json:"Token"`
 
 	// RepositoryName is the name of the repository to be cloned into the
 	// workspace prior to job execution.
@@ -73,6 +74,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 		v2 := v2Job{
 			Version:             j.Version,
 			ID:                  j.ID,
+			Token:               j.Token,
 			RepositoryName:      j.RepositoryName,
 			RepositoryDirectory: j.RepositoryDirectory,
 			Commit:              j.Commit,
@@ -92,6 +94,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 	}
 	v1 := v1Job{
 		ID:                  j.ID,
+		Token:               j.Token,
 		RepositoryName:      j.RepositoryName,
 		RepositoryDirectory: j.RepositoryDirectory,
 		Commit:              j.Commit,
@@ -126,6 +129,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		}
 		j.Version = v2.Version
 		j.ID = v2.ID
+		j.Token = v2.Token
 		j.RepositoryName = v2.RepositoryName
 		j.RepositoryDirectory = v2.RepositoryDirectory
 		j.Commit = v2.Commit
@@ -147,6 +151,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	j.ID = v1.ID
+	j.Token = v1.Token
 	j.RepositoryName = v1.RepositoryName
 	j.RepositoryDirectory = v1.RepositoryDirectory
 	j.Commit = v1.Commit
@@ -175,6 +180,7 @@ type versionJob struct {
 type v2Job struct {
 	Version             int                             `json:"version,omitempty"`
 	ID                  int                             `json:"id"`
+	Token               string                          `json:"token"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -190,6 +196,7 @@ type v2Job struct {
 
 type v1Job struct {
 	ID                  int                             `json:"id"`
+	Token               string                          `json:"token"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -269,75 +276,6 @@ type CliStep struct {
 
 	// Env specifies a set of NAME=value pairs to supply to the src command.
 	Env []string `json:"env"`
-}
-
-type DequeueRequest struct {
-	ExecutorName string `json:"executorName"`
-	Version      string `json:"version"`
-	NumCPUs      int    `json:"numCPUs,omitempty"`
-	Memory       string `json:"memory,omitempty"`
-	DiskSpace    string `json:"diskSpace,omitempty"`
-}
-
-type AddExecutionLogEntryRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobID        int    `json:"jobId"`
-	executor.ExecutionLogEntry
-}
-
-type UpdateExecutionLogEntryRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobID        int    `json:"jobId"`
-	EntryID      int    `json:"entryId"`
-	executor.ExecutionLogEntry
-}
-
-type MarkCompleteRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobID        int    `json:"jobId"`
-}
-
-type MarkErroredRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobID        int    `json:"jobId"`
-	ErrorMessage string `json:"errorMessage"`
-}
-
-type ExecutorAPIVersion string
-
-const (
-	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
-)
-
-type HeartbeatRequest struct {
-	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
-	Version ExecutorAPIVersion `json:"version"`
-
-	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds"`
-
-	// Telemetry data.
-
-	OS              string `json:"os"`
-	Architecture    string `json:"architecture"`
-	DockerVersion   string `json:"dockerVersion"`
-	ExecutorVersion string `json:"executorVersion"`
-	GitVersion      string `json:"gitVersion"`
-	IgniteVersion   string `json:"igniteVersion"`
-	SrcCliVersion   string `json:"srcCliVersion"`
-
-	PrometheusMetrics string `json:"prometheusMetrics"`
-}
-
-type HeartbeatResponse struct {
-	KnownIDs  []int `json:"knownIds"`
-	CancelIDs []int `json:"cancelIds"`
-}
-
-// TODO: Deprecated. Can be removed in Sourcegraph 4.4.
-type CanceledJobsRequest struct {
-	KnownJobIDs  []int  `json:"knownJobIds"`
-	ExecutorName string `json:"executorName"`
 }
 
 // DockerAuthConfig represents a subset of the docker cli config with the necessary

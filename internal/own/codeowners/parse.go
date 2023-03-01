@@ -3,6 +3,7 @@ package codeowners
 import (
 	"bufio"
 	"io"
+	"net/mail"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -15,7 +16,7 @@ var emailRegex = lazyregexp.New(`^\w+@[\w.]+$`)
 // Parse parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
-func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
+func Parse(codeownersFile io.Reader) (*Ruleset, error) {
 	scanner := bufio.NewScanner(codeownersFile)
 	var rs []*codeownerspb.Rule
 	p := new(parsing)
@@ -49,7 +50,19 @@ func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return &codeownerspb.File{Rule: rs}, nil
+	return NewRuleset(&codeownerspb.File{Rule: rs}), nil
+}
+
+func ParseOwner(ownerText string) *codeownerspb.Owner {
+	var o codeownerspb.Owner
+	if strings.HasPrefix(ownerText, "@") {
+		o.Handle = strings.TrimPrefix(ownerText, "@")
+	} else if a, err := mail.ParseAddress(ownerText); err == nil {
+		o.Email = a.Address
+	} else {
+		o.Handle = ownerText
+	}
+	return &o
 }
 
 func ParseOwner(ownerText string) *codeownerspb.Owner {

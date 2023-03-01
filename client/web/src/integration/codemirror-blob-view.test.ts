@@ -163,18 +163,6 @@ describe('CodeMirror blob view', () => {
             return lineNumberElement
         }
 
-        it('selects a line when clicking the line', async () => {
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-            await waitForView()
-            await driver.page.click(lineAt(1))
-
-            // Line is selected
-            await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']")
-
-            // URL is updated
-            await driver.assertWindowLocation(`${filePaths['test.ts']}?L1`)
-        })
-
         // This should also test the "back' button, but that test passed with
         // puppeteer regardless of the implementation.
         for (const button of ['forward', 'middle', 'right'] as MouseButton[]) {
@@ -215,26 +203,6 @@ describe('CodeMirror blob view', () => {
         })
 
         describe('line range selection', () => {
-            it('selects a line range when shift-clicking lines', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-                await waitForView()
-
-                await driver.page.click(lineAt(1))
-                await driver.page.keyboard.down('Shift')
-                await driver.page.click(lineAt(3))
-                await driver.page.keyboard.up('Shift')
-
-                // Lines is selected
-                await Promise.all(
-                    [1, 2, 3].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
-                    )
-                )
-
-                // URL is updated
-                await driver.assertWindowLocation(`${filePaths['test.ts']}?L1-3`)
-            })
-
             it('selects a line range when shift-clicking line numbers', async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
                 await waitForView()

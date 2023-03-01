@@ -1,4 +1,4 @@
-package v1
+package codeowners
 
 import (
 	"fmt"
@@ -10,10 +10,10 @@ import (
 // the proto (as within the CODEOWNERS file), so the returned text
 // representation is deterministic. This is useful in tests,
 // where deep comparison may not work due to protobuf metadata.
-func (f *File) Repr() string {
+func (f *Ruleset) Repr() string {
 	w := new(strings.Builder)
 	var lastSeenSection string
-	for _, r := range f.GetRule() {
+	for _, r := range f.proto.GetRule() {
 		if s := r.SectionName; s != lastSeenSection {
 			fmt.Fprintf(w, "[%s]\n", s)
 			lastSeenSection = s

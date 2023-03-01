@@ -1,4 +1,4 @@
-package v1
+package codeowners
 
 import (
 	"strings"
@@ -7,30 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func (r *Rule) Match(path string) bool {
-	r.compileOnce.Do(func() {
-		r.compiledPattern, r.compileErr = compile(r.GetPattern())
-	})
-	if r.compileErr != nil {
-		return false
-	}
-	return r.compiledPattern.match(path)
-}
-
-// FindOwners returns the Owners associated with given path as per this CODEOWNERS file.
-// Rules are evaluated in order: Returned owners come from the rule which pattern matches
-// given path, that is the furthest down the file.
-func (x *File) FindOwners(path string) []*Owner {
-	rules := x.GetRule()
-	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i]
-		if rule.Match(path) {
-			return rule.GetOwner()
-		}
-	}
-	return nil
-}
 
 const separator = "/"
 
@@ -64,15 +40,18 @@ type anyMatch struct{}
 func (p anyMatch) String() string      { return "*" }
 func (p anyMatch) Match(_ string) bool { return true }
 
-// asteriskPattern is a pattern that may contain * glob wildcard.
 type asteriskPattern struct {
 	glob     string
 	compiled *wildmatch.WildMatch
 }
 
-func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
+// asteriskPattern is a pattern that may contain * glob wildcard.
+func makeAsteriskPattern(pattern string) asteriskPattern {
+	// TODO: This also matches `?` for single characters, which we don't need.
+	// We can later switch it out by a more optimized version for our use-case
+	// but for now this is giving us a good boost already.
 	compiled := wildmatch.NewWildMatch(pattern)
-	return asteriskPattern{glob: pattern, compiled: compiled}, nil
+	return asteriskPattern{glob: pattern, compiled: compiled}
 }
 func (p asteriskPattern) String() string { return p.glob }
 func (p asteriskPattern) Match(part string) bool {
@@ -98,11 +77,7 @@ func compile(pattern string) (globPattern, error) {
 			glob = append(glob, anyMatch{})
 		default:
 			if strings.Contains(part, "*") {
-				p, err := makeAsteriskPattern(part)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to interpret %q within %q", part, pattern)
-				}
-				glob = append(glob, p)
+				glob = append(glob, makeAsteriskPattern(part))
 			} else {
 				glob = append(glob, exactMatch(part))
 			}

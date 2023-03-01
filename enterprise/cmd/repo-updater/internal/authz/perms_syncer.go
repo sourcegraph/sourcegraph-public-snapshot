@@ -373,7 +373,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
-	unifiedPermsEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	for _, acct := range accts {
 		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
@@ -641,7 +641,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get the value of feature flag to store in the unified user_repo_permissions table
-	unifiedEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+	unifiedEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	for acctID, repoIDs := range results.repoPerms {
 		if unifiedEnabled {
@@ -694,16 +694,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	return result, providerStates, nil
-}
-
-const userRepoPermsFlagName = "unified-user-repo-perms"
-
-func UnifiedUserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
-	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
-	if featureFlag == nil || err != nil {
-		return false
-	}
-	return featureFlag.Bool.Value
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
@@ -858,7 +848,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if UnifiedUserRepoPermsEnabled(ctx, s.db) {
+	if conf.ExperimentalFeatures().UnifiedPermissions {
 		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 		}

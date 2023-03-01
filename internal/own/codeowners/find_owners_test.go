@@ -1,4 +1,4 @@
-package v1_test
+package codeowners_test
 
 import (
 	"reflect"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
@@ -93,11 +94,11 @@ func TestFileOwnersMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := &codeownerspb.File{
+			file := codeowners.NewRuleset(&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{Pattern: pattern, Owner: owner},
 				},
-			}
+			})
 			got := file.FindOwners(path)
 			if !reflect.DeepEqual(got, owner) {
 				t.Errorf("want %q to match %q", pattern, path)
@@ -195,11 +196,11 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := &codeownerspb.File{
+			file := codeowners.NewRuleset(&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{Pattern: pattern, Owner: owner},
 				},
-			}
+			})
 			got := file.FindOwners(path)
 			if got != nil {
 				t.Errorf("want %q not to match %q", pattern, path)
@@ -210,7 +211,7 @@ func TestFileOwnersNoMatch(t *testing.T) {
 
 func TestFileOwnersOrder(t *testing.T) {
 	wantOwner := []*codeownerspb.Owner{{Handle: "some-path-owner"}}
-	file := &codeownerspb.File{
+	file := codeowners.NewRuleset(&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "/top-level-directory/",
@@ -226,7 +227,7 @@ func TestFileOwnersOrder(t *testing.T) {
 				Owner:   []*codeownerspb.Owner{{Handle: "not-matching-owner"}},
 			},
 		},
-	}
+	})
 	got := file.FindOwners("/top-level-directory/some/path/main.go")
 	assert.Equal(t, wantOwner, got)
 }

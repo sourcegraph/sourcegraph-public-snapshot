@@ -18,7 +18,7 @@ import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
 
@@ -229,10 +229,11 @@ export const FooterWidget: FC<PropsWithChildren<{}>> = props => {
 interface CustomNextButtonProps {
     label: string
     disabled: boolean
+    tooltip?: string
 }
 
 export const CustomNextButton: FC<CustomNextButtonProps> = props => {
-    const { label, disabled } = props
+    const { label, disabled, tooltip } = props
     const { nextButtonPortal, onNextStep } = useContext(SetupStepsContext)
 
     if (!nextButtonPortal) {
@@ -240,9 +241,12 @@ export const CustomNextButton: FC<CustomNextButtonProps> = props => {
     }
 
     return createPortal(
-        <Button variant="primary" disabled={disabled} onClick={onNextStep}>
-            {label}
-        </Button>,
+        <Tooltip content={tooltip}>
+            <Button variant="primary" disabled={disabled} onClick={onNextStep}>
+                {label}
+                <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+            </Button>
+        </Tooltip>,
         nextButtonPortal
     )
 }
