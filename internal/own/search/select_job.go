@@ -1,4 +1,4 @@
-package codeownership
+package search
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwners(child job.Job) job.Job {
+func NewSelectOwnersJob(child job.Job) job.Job {
 	return &selectOwnersJob{
 		child: child,
 	}
