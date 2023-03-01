@@ -87,11 +87,6 @@ type Rule struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// todo: cannot modify generated code.
-	compiledPattern globPattern
-	compileOnce sync.Once
-	compileErr error
-
 	// Patterns are familliar glob patterns that match file paths.
 	// * `filename` matches any file with that name, for example:
 	//   * `/filename` and `/src/filename` match.
