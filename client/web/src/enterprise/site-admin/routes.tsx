@@ -75,6 +75,11 @@ const ExecutorsSiteAdminArea = lazyComponent(
     'ExecutorsSiteAdminArea'
 )
 
+const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
+    () => import('../rbac/SiteAdminRolesPage'),
+    'SiteAdminRolesPage'
+)
+
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
@@ -202,10 +207,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             path: '/roles',
             exact: true,
-            render: lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
-                () => import('../rbac/SiteAdminRolesPage'),
-                'SiteAdminRolesPage'
-            ),
+            render: (props) => <SiteAdminRolesPage {...props} />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]
