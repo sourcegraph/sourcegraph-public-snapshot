@@ -45,6 +45,7 @@ export interface Panel {
     /** The title of the panel view. */
     title: string
 
+    /** Optional product status to show as a badge next to the panel title. */
     productStatus?: ProductStatusType
 
     /** The content element to display when the tab is active. */

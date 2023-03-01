@@ -6,7 +6,7 @@ import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusType } from '@sourcegraph/wildcard'
 
 export interface QueryExamplesContent {
     repositoryName: string
@@ -15,7 +15,8 @@ export interface QueryExamplesContent {
 }
 
 export interface QueryExamplesSection {
-    title: string | JSX.Element
+    title: string
+    productStatus?: ProductStatusType
     queryExamples: {
         id: string
         query: string
@@ -182,11 +183,8 @@ export function useQueryExamples(
                 ...(enableOwnershipSearch
                     ? [
                           {
-                              title: (
-                                  <>
-                                      Explore code ownership <ProductStatusBadge status="prototype" />
-                                  </>
-                              ),
+                              title: 'Explore code ownership',
+                              productStatus: 'experimental' as const,
                               queryExamples: [
                                   { id: 'type-has-owner', query: `file:some_path file:has.owner(johndoe)` },
                                   { id: 'type-select-file-owners', query: 'file:some_path select:file.owners' },
