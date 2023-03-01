@@ -404,6 +404,14 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
+func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMessage, error) {
+	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(stats)
+}
+
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
 	logFunc := scopedLog.Debug
@@ -569,6 +577,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		r.ExternalServices, err = externalServiceKinds(ctx, db)
 		if err != nil {
 			logFunc("externalServicesKinds failed", log.Error(err))
+		}
+
+		r.OwnUsage, err = getAndMarshalOwnUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("ownUsage failed", log.Error(err))
 		}
 
 		r.HasExtURL = conf.UsingExternalURL()
