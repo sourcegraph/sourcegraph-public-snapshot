@@ -17,6 +17,7 @@ import { CodeInsightsDescription } from '../getting-started/components/code-insi
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
+import { LimitedAccessBanner } from '../../../../../components/LimitedAccessBanner'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
@@ -29,6 +30,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 > = props => {
     const { telemetryService } = props
     const isSourcegraphDotCom = window.context.sourcegraphDotComMode
+    const isSourcegraphApp = window.context.sourcegraphAppMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
@@ -54,6 +56,15 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     }
                     className="mb-4"
                 />
+                {isSourcegraphApp && (
+                    <LimitedAccessBanner>
+                        Code Insights is currently available to try for free, up to 2 insights, while Sourcegraph App is
+                        in beta. Pricing and availability for Code Insights is subject to change in future releases.{' '}
+                        <strong>
+                            For unlimited access to Insights, <Link>sign up for a Cloud Trial.</Link>
+                        </strong>
+                    </LimitedAccessBanner>
+                )}
                 <main className="pb-5">
                     <Card as={CardBody} className={styles.heroSection}>
                         <aside className={styles.heroVideoBlock}>
