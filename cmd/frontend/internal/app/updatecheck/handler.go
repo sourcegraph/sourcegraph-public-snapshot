@@ -176,7 +176,7 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID          string `json:"site"`
+	ClientSiteID          string          `json:"site"`
 	LicenseKey            string
 	DeployType            string          `json:"deployType"`
 	ClientVersionString   string          `json:"version"`
