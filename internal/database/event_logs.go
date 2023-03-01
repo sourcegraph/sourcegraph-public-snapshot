@@ -1604,38 +1604,7 @@ func (l *eventLogStore) OwnershipFeatureActivity(ctx context.Context, now time.T
 		default:
 			return nil, errors.Newf("unexpected unit %q, this is a bug", unit)
 		}
-		//debug
-		fmt.Printf("%s/%s:\t@%s\t#%d\n", eventName, unit, timestamp, activeUsers)
 	}
-	// DEBUG
-	debugQuery := sqlf.Sprintf(`SELECT
-	`+aggregatedUserIDQueryFragment+` AS user_id,
-	`+makeDateTruncExpression("day", "timestamp")+` AS day,
-	`+makeDateTruncExpression("week", "timestamp")+` AS week,
-	`+makeDateTruncExpression("month", "timestamp")+` AS month,
-	name AS name
-	FROM event_logs
-	WHERE timestamp >= `+makeDateTruncExpression("month", "%s::timestamp")+` - '1 month'::interval
-	AND name IN (%s)`, now, sqlf.Join(sqlEventNames, ","))
-	debugRows, err := l.Query(ctx, debugQuery)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(debugRows, err) }()
-	for debugRows.Next() {
-		var (
-			userID    int32
-			day       time.Time
-			week      time.Time
-			month     time.Time
-			eventName string
-		)
-		if err := debugRows.Scan(&userID, &day, &week, &month, &eventName); err != nil {
-			return nil, err
-		}
-		fmt.Printf("u:%d,\tday:%s,\tweek:%s,\tmonth:%s,\tname:%q\n", userID, day, week, month, eventName)
-	}
-	// END DEBUG
 	return stats, err
 }
 
