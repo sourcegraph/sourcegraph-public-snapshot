@@ -1047,9 +1047,8 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 requiredCommands: ['comby', 'go'],
                 changes: [
                     {
-                        base: 'cclark/automate-src-cli',
+                        base: 'main',
                         head: `update-src-cli-to-v${next.version}`,
-
                         repo: 'sourcegraph',
                         owner: 'sourcegraph',
                         body: `Update src-cli to ${next.version}`,
