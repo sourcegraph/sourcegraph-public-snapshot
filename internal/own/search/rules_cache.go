@@ -1,4 +1,4 @@
-package codeownership
+package search
 
 import (
 	"context"

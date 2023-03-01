@@ -1,4 +1,4 @@
-package codeownership
+package search
 
 import (
 	"context"
@@ -16,22 +16,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(child job.Job, includeOwners, excludeOwners []string) job.Job {
-	return &codeownershipJob{
+func NewFileHasOwnersJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
+	return &fileHasOwnersJob{
 		child:         child,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
 	}
 }
 
-type codeownershipJob struct {
+type fileHasOwnersJob struct {
 	child job.Job
 
 	includeOwners []string
 	excludeOwners []string
 }
 
-func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
@@ -60,11 +60,11 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	return alert, errs
 }
 
-func (s *codeownershipJob) Name() string {
-	return "CodeOwnershipFilterJob"
+func (s *fileHasOwnersJob) Name() string {
+	return "FileHasOwnersFilterJob"
 }
 
-func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (s *fileHasOwnersJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
@@ -77,11 +77,11 @@ func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	return res
 }
 
-func (s *codeownershipJob) Children() []job.Describer {
+func (s *fileHasOwnersJob) Children() []job.Describer {
 	return []job.Describer{s.child}
 }
 
-func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
+func (s *fileHasOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *s
 	cp.child = job.Map(s.child, fn)
 	return &cp

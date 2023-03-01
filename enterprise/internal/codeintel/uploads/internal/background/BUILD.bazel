@@ -8,7 +8,6 @@ go_library(
         "job_cleanup.go",
         "job_commitgraph.go",
         "job_expirer.go",
-        "job_graph_exporter.go",
         "job_reconciler.go",
         "job_resetters.go",
         "job_worker_handler.go",
