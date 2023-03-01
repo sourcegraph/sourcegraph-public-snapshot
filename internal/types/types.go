@@ -1907,6 +1907,7 @@ type AccessRequest struct {
 	Email          string
 	AdditionalInfo string
 	Status         AccessRequestStatus
+	DecisionByID   *int32
 }
 
 const (
