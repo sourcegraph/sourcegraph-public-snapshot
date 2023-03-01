@@ -2,6 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -794,6 +797,12 @@ type PreviewRepositoryFilterArgs struct {
 type InferredAvailableIndexersResolver interface {
 	Indexer() CodeIntelIndexerResolver
 	Roots() []string
+	RootsWithKeys() []RootsWithKeyResolver
+}
+
+type RootsWithKeyResolver interface {
+	Root() string
+	ComparisonKey() string
 }
 
 type inferredAvailableIndexersResolver struct {
@@ -814,4 +823,35 @@ func (r *inferredAvailableIndexersResolver) Indexer() CodeIntelIndexerResolver {
 
 func (r *inferredAvailableIndexersResolver) Roots() []string {
 	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) RootsWithKeys() []RootsWithKeyResolver {
+	var resolvers []RootsWithKeyResolver
+	for _, root := range r.roots {
+		resolvers = append(resolvers, &rootWithKeyResolver{
+			root: root,
+			key:  comparisonKey(root, r.indexer.Name()),
+		})
+	}
+
+	return resolvers
+}
+
+type rootWithKeyResolver struct {
+	root string
+	key  string
+}
+
+func (r *rootWithKeyResolver) Root() string {
+	return r.root
+}
+
+func (r *rootWithKeyResolver) ComparisonKey() string {
+	return r.key
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

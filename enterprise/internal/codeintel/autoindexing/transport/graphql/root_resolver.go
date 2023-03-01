@@ -282,17 +282,9 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		}
 
 		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			root:    indexJob.Root,
-			indexer: types.NewCodeIntelIndexerResolver(indexJob.Indexer),
-			steps: sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
-				DockerSteps:      steps,
-				LocalSteps:       indexJob.LocalSteps,
-				Root:             indexJob.Root,
-				Indexer:          indexJob.Indexer,
-				IndexerArgs:      indexJob.IndexerArgs,
-				Outfile:          indexJob.Outfile,
-				RequestedEnvVars: indexJob.RequestedEnvVars,
-			}),
+			autoindexSvc: r.autoindexSvc,
+			indexJob:     indexJob,
+			steps:        steps,
 		})
 	}
 
@@ -300,21 +292,29 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 }
 
 type autoIndexJobDescriptionResolver struct {
-	root    string
-	indexer resolverstubs.CodeIntelIndexerResolver
-	steps   resolverstubs.IndexStepsResolver
+	autoindexSvc AutoIndexingService
+	indexJob     config.IndexJob
+	steps        []types.DockerStep
 }
 
 func (r *autoIndexJobDescriptionResolver) Root() string {
-	return r.root
+	return r.indexJob.Root
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return r.indexer
+	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer)
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return r.steps
+	return sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
+		DockerSteps:      r.steps,
+		LocalSteps:       r.indexJob.LocalSteps,
+		Root:             r.indexJob.Root,
+		Indexer:          r.indexJob.Indexer,
+		IndexerArgs:      r.indexJob.IndexerArgs,
+		Outfile:          r.indexJob.Outfile,
+		RequestedEnvVars: r.indexJob.RequestedEnvVars,
+	})
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs

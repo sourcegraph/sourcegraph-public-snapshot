@@ -1086,6 +1086,29 @@ type InferredAvailableIndexers {
     The list of roots that could be indexed.
     """
     roots: [String!]!
+
+    """
+    The list of roots that could be indexed.
+    """
+    rootsWithKeys: [RootWithKey!]!
+}
+
+"""
+Pairs a root directory with comparison key used to match index configurations for the same repository "project".
+"""
+type RootWithKey {
+    """
+    The root.
+    """
+    root: String!
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository.
+    """
+    comparisonKey: String!
 }
 
 """
