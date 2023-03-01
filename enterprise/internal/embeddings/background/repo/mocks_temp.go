@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -19,6 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo)
 // used for unit testing.
 type MockRepoEmbeddingJobsStore struct {
+	// CountRepoEmbeddingJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountRepoEmbeddingJobs.
+	CountRepoEmbeddingJobsFunc *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc
 	// CreateRepoEmbeddingJobFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateRepoEmbeddingJob.
 	CreateRepoEmbeddingJobFunc *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc
@@ -29,9 +33,16 @@ type MockRepoEmbeddingJobsStore struct {
 	// function object controlling the behavior of the method
 	// GetLastCompletedRepoEmbeddingJob.
 	GetLastCompletedRepoEmbeddingJobFunc *RepoEmbeddingJobsStoreGetLastCompletedRepoEmbeddingJobFunc
+	// GetLastRepoEmbeddingJobForRevisionFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetLastRepoEmbeddingJobForRevision.
+	GetLastRepoEmbeddingJobForRevisionFunc *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *RepoEmbeddingJobsStoreHandleFunc
+	// ListRepoEmbeddingJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRepoEmbeddingJobs.
+	ListRepoEmbeddingJobsFunc *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *RepoEmbeddingJobsStoreTransactFunc
@@ -42,6 +53,11 @@ type MockRepoEmbeddingJobsStore struct {
 // results, unless overwritten.
 func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 	return &MockRepoEmbeddingJobsStore{
+		CountRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
 		CreateRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc{
 			defaultHook: func(context.Context, api.RepoID, api.CommitID) (r0 int, r1 error) {
 				return
@@ -57,8 +73,18 @@ func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 				return
 			},
 		},
+		GetLastRepoEmbeddingJobForRevisionFunc: &RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID) (r0 *RepoEmbeddingJob, r1 error) {
+				return
+			},
+		},
 		HandleFunc: &RepoEmbeddingJobsStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc{
+			defaultHook: func(context.Context, *database.PaginationArgs) (r0 []*RepoEmbeddingJob, r1 error) {
 				return
 			},
 		},
@@ -75,6 +101,11 @@ func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 // overwritten.
 func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 	return &MockRepoEmbeddingJobsStore{
+		CountRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockRepoEmbeddingJobsStore.CountRepoEmbeddingJobs")
+			},
+		},
 		CreateRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc{
 			defaultHook: func(context.Context, api.RepoID, api.CommitID) (int, error) {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.CreateRepoEmbeddingJob")
@@ -90,9 +121,19 @@ func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob")
 			},
 		},
+		GetLastRepoEmbeddingJobForRevisionFunc: &RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error) {
+				panic("unexpected invocation of MockRepoEmbeddingJobsStore.GetLastRepoEmbeddingJobForRevision")
+			},
+		},
 		HandleFunc: &RepoEmbeddingJobsStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.Handle")
+			},
+		},
+		ListRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc{
+			defaultHook: func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
+				panic("unexpected invocation of MockRepoEmbeddingJobsStore.ListRepoEmbeddingJobs")
 			},
 		},
 		TransactFunc: &RepoEmbeddingJobsStoreTransactFunc{
@@ -108,6 +149,9 @@ func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 // implementation, unless overwritten.
 func NewMockRepoEmbeddingJobsStoreFrom(i RepoEmbeddingJobsStore) *MockRepoEmbeddingJobsStore {
 	return &MockRepoEmbeddingJobsStore{
+		CountRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc{
+			defaultHook: i.CountRepoEmbeddingJobs,
+		},
 		CreateRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc{
 			defaultHook: i.CreateRepoEmbeddingJob,
 		},
@@ -117,13 +161,128 @@ func NewMockRepoEmbeddingJobsStoreFrom(i RepoEmbeddingJobsStore) *MockRepoEmbedd
 		GetLastCompletedRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreGetLastCompletedRepoEmbeddingJobFunc{
 			defaultHook: i.GetLastCompletedRepoEmbeddingJob,
 		},
+		GetLastRepoEmbeddingJobForRevisionFunc: &RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc{
+			defaultHook: i.GetLastRepoEmbeddingJobForRevision,
+		},
 		HandleFunc: &RepoEmbeddingJobsStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		ListRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc{
+			defaultHook: i.ListRepoEmbeddingJobs,
 		},
 		TransactFunc: &RepoEmbeddingJobsStoreTransactFunc{
 			defaultHook: i.Transact,
 		},
 	}
+}
+
+// RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc describes the behavior
+// when the CountRepoEmbeddingJobs method of the parent
+// MockRepoEmbeddingJobsStore instance is invoked.
+type RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountRepoEmbeddingJobs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoEmbeddingJobsStore) CountRepoEmbeddingJobs(v0 context.Context) (int, error) {
+	r0, r1 := m.CountRepoEmbeddingJobsFunc.nextHook()(v0)
+	m.CountRepoEmbeddingJobsFunc.appendCall(RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountRepoEmbeddingJobs method of the parent MockRepoEmbeddingJobsStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountRepoEmbeddingJobs method of the parent MockRepoEmbeddingJobsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) appendCall(r0 RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall objects describing
+// the invocations of this function.
+func (f *RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFunc) History() []RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall is an object that
+// describes an invocation of method CountRepoEmbeddingJobs on an instance
+// of MockRepoEmbeddingJobsStore.
+type RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc describes the behavior
@@ -457,6 +616,123 @@ func (c RepoEmbeddingJobsStoreGetLastCompletedRepoEmbeddingJobFuncCall) Results(
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc describes
+// the behavior when the GetLastRepoEmbeddingJobForRevision method of the
+// parent MockRepoEmbeddingJobsStore instance is invoked.
+type RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc struct {
+	defaultHook func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error)
+	hooks       []func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error)
+	history     []RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastRepoEmbeddingJobForRevision delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockRepoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(v0 context.Context, v1 api.RepoID, v2 api.CommitID) (*RepoEmbeddingJob, error) {
+	r0, r1 := m.GetLastRepoEmbeddingJobForRevisionFunc.nextHook()(v0, v1, v2)
+	m.GetLastRepoEmbeddingJobForRevisionFunc.appendCall(RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLastRepoEmbeddingJobForRevision method of the parent
+// MockRepoEmbeddingJobsStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) SetDefaultHook(hook func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastRepoEmbeddingJobForRevision method of the parent
+// MockRepoEmbeddingJobsStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) PushHook(hook func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) SetDefaultReturn(r0 *RepoEmbeddingJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) PushReturn(r0 *RepoEmbeddingJob, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) nextHook() func(context.Context, api.RepoID, api.CommitID) (*RepoEmbeddingJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) appendCall(r0 RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall objects
+// describing the invocations of this function.
+func (f *RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFunc) History() []RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall is an
+// object that describes an invocation of method
+// GetLastRepoEmbeddingJobForRevision on an instance of
+// MockRepoEmbeddingJobsStore.
+type RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *RepoEmbeddingJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoEmbeddingJobsStoreGetLastRepoEmbeddingJobForRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // RepoEmbeddingJobsStoreHandleFunc describes the behavior when the Handle
 // method of the parent MockRepoEmbeddingJobsStore instance is invoked.
 type RepoEmbeddingJobsStoreHandleFunc struct {
@@ -554,6 +830,118 @@ func (c RepoEmbeddingJobsStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c RepoEmbeddingJobsStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc describes the behavior
+// when the ListRepoEmbeddingJobs method of the parent
+// MockRepoEmbeddingJobsStore instance is invoked.
+type RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc struct {
+	defaultHook func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
+	hooks       []func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
+	history     []RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepoEmbeddingJobs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoEmbeddingJobsStore) ListRepoEmbeddingJobs(v0 context.Context, v1 *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
+	r0, r1 := m.ListRepoEmbeddingJobsFunc.nextHook()(v0, v1)
+	m.ListRepoEmbeddingJobsFunc.appendCall(RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListRepoEmbeddingJobs method of the parent MockRepoEmbeddingJobsStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) SetDefaultHook(hook func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepoEmbeddingJobs method of the parent MockRepoEmbeddingJobsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) PushHook(hook func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) SetDefaultReturn(r0 []*RepoEmbeddingJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) PushReturn(r0 []*RepoEmbeddingJob, r1 error) {
+	f.PushHook(func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) nextHook() func(context.Context, *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) appendCall(r0 RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall objects describing
+// the invocations of this function.
+func (f *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc) History() []RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall is an object that
+// describes an invocation of method ListRepoEmbeddingJobs on an instance of
+// MockRepoEmbeddingJobsStore.
+type RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *database.PaginationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*RepoEmbeddingJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // RepoEmbeddingJobsStoreTransactFunc describes the behavior when the

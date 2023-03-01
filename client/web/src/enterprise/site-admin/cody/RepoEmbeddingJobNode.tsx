@@ -1,4 +1,5 @@
 import { FC, useState } from 'react'
+
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'

@@ -1,5 +1,11 @@
+import { MutationTuple } from '@apollo/client'
+
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     RepoEmbeddingJobFields,
     RepoEmbeddingJobsListResult,
@@ -9,11 +15,6 @@ import {
     ScheduleRepoEmbeddingJobsResult,
     ScheduleRepoEmbeddingJobsVariables,
 } from '../../../graphql-operations'
-import {
-    useShowMorePagination,
-    UseShowMorePaginationResult,
-} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import { MutationTuple } from '@apollo/client'
 
 const REPO_EMBEDDING_JOB_FRAGMENT = gql`
     fragment RepoEmbeddingJobFields on RepoEmbeddingJob {

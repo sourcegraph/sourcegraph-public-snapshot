@@ -115,6 +115,9 @@ enum RepoEmbeddingJobState {
     CANCELED
 }
 
+"""
+A repo embedding job.
+"""
 type RepoEmbeddingJob implements Node {
     """
     Unique node ID.

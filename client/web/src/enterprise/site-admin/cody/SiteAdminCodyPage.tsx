@@ -14,12 +14,6 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { PageTitle } from '../../../components/PageTitle'
-import {
-    useRepoEmbeddingJobsConnection,
-    useScheduleContextDetectionEmbeddingJob,
-    useScheduleRepoEmbeddingJobs,
-} from './backend'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -29,7 +23,14 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
+
+import {
+    useRepoEmbeddingJobsConnection,
+    useScheduleContextDetectionEmbeddingJob,
+    useScheduleRepoEmbeddingJobs,
+} from './backend'
 import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
