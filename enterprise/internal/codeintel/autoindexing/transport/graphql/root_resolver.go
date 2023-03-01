@@ -273,25 +273,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, nil
 	}
 
-	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range config.IndexJobs {
-		var steps []types.DockerStep
-		for _, step := range indexJob.Steps {
-			steps = append(steps, types.DockerStep{
-				Root:     step.Root,
-				Image:    step.Image,
-				Commands: step.Commands,
-			})
-		}
-
-		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			autoindexSvc: r.autoindexSvc,
-			indexJob:     indexJob,
-			steps:        steps,
-		})
-	}
-
-	return resolvers, nil
+	return newDescriptionResolvers(r.autoindexSvc, config)
 }
 
 type autoIndexJobDescriptionResolver struct {
