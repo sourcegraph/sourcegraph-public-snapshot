@@ -13,7 +13,7 @@ expression: "dump_document(&document, &contents)"
 //                          ^ NumericLiteral  punctuation.separator.decimal.css
 //                           ^ PunctuationBracket  punctuation.separator.decimal.css
 //                            ^ NumericLiteral  keyword.other.unit.css
-//                             ^^^ IdentifierKeyword  keyword.other.unit.css
+//                             ^^^ Keyword  keyword.other.unit.css
 //                                ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
 //^ PunctuationBracket  punctuation.section.property-list.css
@@ -54,10 +54,10 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^ IdentifierFunction  support.function.transform.css
 //                        ^ PunctuationBracket  punctuation.definition.group.begin.css
 //                         ^^^ NumericLiteral  keyword.other.unit.css
-//                            ^ IdentifierKeyword  keyword.other.unit.css
+//                            ^ Keyword  keyword.other.unit.css
 //                             ^ PunctuationBracket  punctuation.separator.sequence.css
 //                               ^^^ NumericLiteral  keyword.other.unit.css
-//                                  ^ IdentifierKeyword  keyword.other.unit.css
+//                                  ^ Keyword  keyword.other.unit.css
 //                                   ^ PunctuationBracket  punctuation.definition.group.end.css
 //                                    ^ PunctuationDelimiter  punctuation.terminator.rule.css
       position: absolute;
@@ -68,7 +68,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^ IdentifierType  support.type.property-name.css
 //       ^ PunctuationBracket  punctuation.separator.key-value.css
 //         ^^ NumericLiteral  keyword.other.unit.css
-//           ^ IdentifierKeyword  keyword.other.unit.css
+//           ^ Keyword  keyword.other.unit.css
 //            ^ PunctuationDelimiter  punctuation.terminator.rule.css
       margin: 0;
 //    ^^^^^^ IdentifierType  support.type.property-name.css
@@ -79,7 +79,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ IdentifierType  support.type.property-name.css
 //        ^ PunctuationBracket  punctuation.separator.key-value.css
 //          ^^ NumericLiteral  keyword.other.unit.css
-//            ^ IdentifierKeyword  keyword.other.unit.css
+//            ^ Keyword  keyword.other.unit.css
 //             ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
 //^ PunctuationBracket  punctuation.section.property-list.css

@@ -62,7 +62,7 @@ expression: "dump_document(&document, &contents)"
 //              ^^^^ IdentifierFunction  variable.function.shell
 //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.single.shell
   if [ "$OUT" != '0' ]; then
-//^^ IdentifierKeyword  keyword.control.conditional.if.shell
+//^^ Keyword  keyword.control.conditional.if.shell
 //   ^ IdentifierFunction  support.function.test.begin.shell
 //     ^^^^^^ StringLiteral  string.quoted.double.shell
 //      ^ PunctuationBracket  punctuation.definition.variable.shell
@@ -71,10 +71,10 @@ expression: "dump_document(&document, &contents)"
 //               ^^^ StringLiteral  string.quoted.single.shell
 //                   ^ IdentifierFunction  support.function.test.end.shell
 //                    ^ IdentifierOperator  keyword.operator.logical.continue.shell
-//                      ^^^^ IdentifierKeyword  keyword.control.conditional.then.shell
+//                      ^^^^ Keyword  keyword.control.conditional.then.shell
   echo 'foo'
 //^^^^ IdentifierFunction  support.function.echo.shell
 //     ^^^^^ StringLiteral  string.quoted.single.shell
   fi
-//^^ IdentifierKeyword  keyword.control.conditional.end.shell
+//^^ Keyword  keyword.control.conditional.end.shell
 

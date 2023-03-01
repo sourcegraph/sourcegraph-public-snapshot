@@ -4,7 +4,7 @@ expression: "dump_document(&document, &contents)"
 ---
   <!DOCTYPE html>
 //^^ PunctuationBracket  punctuation.definition.tag.begin.html
-//  ^^^^^^^ IdentifierKeyword  keyword.declaration.doctype.html
+//  ^^^^^^^ Keyword  keyword.declaration.doctype.html
 //         ^ Identifier  constant.language.doctype.html
 //          ^^^^ IdentifierBuiltin  constant.language.doctype.html
 //              ^ PunctuationBracket  punctuation.definition.tag.end.html
@@ -89,10 +89,10 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^ IdentifierFunction  support.function.transform.css
 //                        ^ PunctuationBracket  punctuation.definition.group.begin.css
 //                         ^^^ NumericLiteral  keyword.other.unit.css
-//                            ^ IdentifierKeyword  keyword.other.unit.css
+//                            ^ Keyword  keyword.other.unit.css
 //                             ^ PunctuationBracket  punctuation.separator.sequence.css
 //                               ^^^ NumericLiteral  keyword.other.unit.css
-//                                  ^ IdentifierKeyword  keyword.other.unit.css
+//                                  ^ Keyword  keyword.other.unit.css
 //                                   ^ PunctuationBracket  punctuation.definition.group.end.css
 //                                    ^ PunctuationDelimiter  punctuation.terminator.rule.css
       position: absolute;
@@ -103,7 +103,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^ IdentifierType  support.type.property-name.css
 //       ^ PunctuationBracket  punctuation.separator.key-value.css
 //         ^^ NumericLiteral  keyword.other.unit.css
-//           ^ IdentifierKeyword  keyword.other.unit.css
+//           ^ Keyword  keyword.other.unit.css
 //            ^ PunctuationDelimiter  punctuation.terminator.rule.css
       margin: 0;
 //    ^^^^^^ IdentifierType  support.type.property-name.css
@@ -114,7 +114,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ IdentifierType  support.type.property-name.css
 //        ^ PunctuationBracket  punctuation.separator.key-value.css
 //          ^^ NumericLiteral  keyword.other.unit.css
-//            ^ IdentifierKeyword  keyword.other.unit.css
+//            ^ Keyword  keyword.other.unit.css
 //             ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
 //^ PunctuationBracket  punctuation.section.property-list.css
@@ -128,7 +128,7 @@ expression: "dump_document(&document, &contents)"
 //     ^^^^^^ Identifier  entity.name.tag.script.html
 //           ^ PunctuationBracket  punctuation.definition.tag.end.html
           function globalFunction(y) {
-//        ^^^^^^^^ IdentifierKeyword  storage.type.function.js
+//        ^^^^^^^^ Keyword  storage.type.function.js
 //                 ^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.js
 //                               ^ PunctuationBracket  punctuation.section.group.begin.js
 //                                ^ Identifier  variable.parameter.function.js
@@ -160,7 +160,7 @@ expression: "dump_document(&document, &contents)"
 //                                 ^^^^^^^ TagAttribute  entity.other.attribute-name.event.html
 //                                        ^ PunctuationBracket  punctuation.separator.key-value.html
 //                                         ^ StringLiteral  string.quoted.double
-//                                          ^^^^^^^^ IdentifierKeyword  storage.type.function.js
+//                                          ^^^^^^^^ Keyword  storage.type.function.js
 //                                                   ^ IdentifierFunction  entity.name.function.js
 //                                                    ^ PunctuationBracket  punctuation.section.group.begin.js
 //                                                     ^ Identifier  variable.parameter.function.js
