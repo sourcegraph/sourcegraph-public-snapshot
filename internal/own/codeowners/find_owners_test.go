@@ -231,3 +231,141 @@ func TestFileOwnersOrder(t *testing.T) {
 	got := file.FindOwners("/top-level-directory/some/path/main.go")
 	assert.Equal(t, wantOwner, got)
 }
+
+func BenchmarkOwnersMatchLiteral(b *testing.B) {
+	pattern := "/main/src/foo/bar/README.md"
+	paths := []string{
+		"/main/src/foo/bar/README.md",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
+
+func BenchmarkOwnersMatchRelativeGlob(b *testing.B) {
+	pattern := "**/*.md"
+	paths := []string{
+		"/main/src/foo/bar/README.md",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
+
+func BenchmarkOwnersMatchAbsoluteGlob(b *testing.B) {
+	pattern := "/main/**/*.md"
+	paths := []string{
+		"/main/src/foo/bar/README.md",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
+
+func BenchmarkOwnersMismatchLiteral(b *testing.B) {
+	pattern := "/main/src/foo/bar/README.md"
+	paths := []string{
+		"/main/src/foo/bar/README.txt",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
+
+func BenchmarkOwnersMismatchRelativeGlob(b *testing.B) {
+	pattern := "**/*.md"
+	paths := []string{
+		"/main/src/foo/bar/README.txt",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
+
+func BenchmarkOwnersMismatchAbsoluteGlob(b *testing.B) {
+	pattern := "/main/**/*.md"
+	paths := []string{
+		"/main/src/foo/bar/README.txt",
+	}
+	owner := []*codeownerspb.Owner{
+		{Handle: "foo"},
+	}
+	rs := codeowners.NewRuleset(&codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{Pattern: pattern, Owner: owner},
+		},
+	})
+	// Warm cache.
+	for _, path := range paths {
+		rs.FindOwners(path)
+	}
+
+	for i := 0; i < b.N; i++ {
+		rs.FindOwners(pattern)
+	}
+}
