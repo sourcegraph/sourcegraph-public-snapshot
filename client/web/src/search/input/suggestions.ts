@@ -407,7 +407,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                             ? ALL_FILTER_VALUE_LIST_SIZE
                                             : MULTIPLE_FILTER_VALUE_LIST_SIZE
                                     )
-                                    .map(item => toRepoCompletion(item, from, to)),
+                                    .map(item => toRepoSuggestion(item, from, to)),
                             },
                         ]
 
@@ -434,7 +434,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             {
                                 title: 'Files',
                                 options: entries
-                                    .map(item => toFileCompletion(item, from, to))
+                                    .map(item => toFileSuggestion(item, from, to))
                                     .slice(
                                         0,
                                         predicates.length === 0
