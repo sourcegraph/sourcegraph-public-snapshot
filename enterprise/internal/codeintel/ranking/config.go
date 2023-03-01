@@ -6,28 +6,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-type indexerConfig struct {
+type rankingConfig struct {
 	env.BaseConfig
 
-	Interval time.Duration
+	DocumentReferenceCountsEnabled  bool
+	DocumentReferenceCountsGraphKey string
+	SymbolExporterInterval          time.Duration
+	SymbolExporterNumRoutines       int
+	SymbolExporterReadBatchSize     int
+	SymbolExporterWriteBatchSize    int
+	MapReducerInterval              time.Duration
+	MapReducerBatchSize             int
 }
 
-var IndexerConfigInst = &indexerConfig{}
+var ConfigInst = &rankingConfig{}
 
-func (c *indexerConfig) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_INDEXER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank indexing tasks.")
-}
-
-type loaderConfig struct {
-	env.BaseConfig
-
-	LoadInterval  time.Duration
-	MergeInterval time.Duration
-}
-
-var LoaderConfigInst = &loaderConfig{}
-
-func (c *loaderConfig) Load() {
-	c.LoadInterval = c.GetInterval("CODEINTEL_RANKING_LOADER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank loading tasks.")
-	c.MergeInterval = c.GetInterval("CODEINTEL_RANKING_MERGER_INTERVAL", "1s", "The frequency with which to run periodic codeintel rank merging tasks.")
+func (c *rankingConfig) Load() {
+	c.DocumentReferenceCountsEnabled = c.GetBool("CODEINTEL_RANKING_DOCUMENT_REFERENCE_COUNTS_ENABLED", "false", "Whether or not to run the ranking job.")
+	c.DocumentReferenceCountsGraphKey = c.Get("CODEINTEL_RANKING_DOCUMENT_REFERENCE_COUNTS_GRAPH_KEY", "dev", "Backdoor value used to restart the ranking export procedure.")
+	c.SymbolExporterInterval = c.GetInterval("CODEINTEL_RANKING_SYMBOL_EXPORTER_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
+	c.SymbolExporterNumRoutines = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
+	c.SymbolExporterReadBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_READ_BATCH_SIZE", "16", "How many uploads to process at once.")
+	c.SymbolExporterWriteBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_WRITE_BATCH_SIZE", "10000", "The number of definitions and references to populate the ranking graph per batch.")
+	c.MapReducerInterval = c.GetInterval("CODEINTEL_RANKING_MAP_REDUCER_INTERVAL", "72h", "The maximum age of document reference count values used for ranking before being considered stale.")
+	c.MapReducerBatchSize = c.GetInt("CODEINTEL_RANKING_MAP_REDUCER_BATCH_SIZE", "10000", "How many references, definitions, and path counts to map and reduce at once.")
 }
