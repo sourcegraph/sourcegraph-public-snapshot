@@ -1,4 +1,4 @@
-package worker_test
+package worker
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 )
 
@@ -18,7 +17,7 @@ func TestHandler_PreDequeue(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		options           worker.Options
+		options           Options
 		expectedDequeue   bool
 		expectedExtraArgs any
 		expectedErr       error
