@@ -40,7 +40,8 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		// Set attributes
 		changed := false
 		for k, v := range attributes {
-			changed = changed || applyChangeToAttributes(userRes.Attributes, k, v)
+			newlyChanged := applyChangeToAttributes(userRes.Attributes, k, v)
+			changed = changed || newlyChanged
 		}
 		if !changed {
 			return nil
