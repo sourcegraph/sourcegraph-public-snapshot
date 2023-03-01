@@ -114,7 +114,11 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error("failed to close body", log.String("err", err.Error()))
+		}
+	}()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {

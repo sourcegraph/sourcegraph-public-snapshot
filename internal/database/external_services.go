@@ -1598,6 +1598,17 @@ WHERE EXISTS(
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
 	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
 
+	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
+	//
+	// All code hosts apart from Azure DevOps use the `authorization` pattern for enforcing
+	// permissions. Instead of continuing to use this pattern for Azure DevOps, it is simpler to add
+	// a boolean which has an explicit name and describes what it does better.
+	//
+	// The end result: we start to break away from the `authorization` pattern with an additional
+	// check for this new field - `enforcePermissions`.
+	//
+	// For existing auth providers, this is forwards compatible. While at the same time if they also
+	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
 	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
 		es.Unrestricted = !enforcePermissions.Bool()

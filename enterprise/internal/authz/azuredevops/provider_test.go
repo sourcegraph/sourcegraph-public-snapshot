@@ -324,7 +324,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			defer func() {
-				MOCK_API_URL = ""
+				mockServerURL = ""
 				conf.Mock(nil)
 			}()
 
@@ -348,7 +348,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				t.Errorf("mismatched Warnings (-want, +got)\n%s", diff)
 			}
 
-			// We dont need to test for the inner type yet. Asserting the length is sufficient.
+			// We don't need to test for the inner type yet. Asserting the length is sufficient.
 			if len(tc.providers) != len(result.Providers) {
 				t.Fatalf(
 					"mismatched Providers want %d, but got %d provider(s)\n(-want, +got)\n%s",
@@ -365,7 +365,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			if tc.mockServer != nil {
 				defer tc.mockServer.Close()
-				MOCK_API_URL = tc.mockServer.URL
+				mockServerURL = tc.mockServer.URL
 			}
 
 			permissions, err := p.FetchUserPerms(
@@ -407,7 +407,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		defer func() {
-			MOCK_API_URL = ""
+			mockServerURL = ""
 			conf.Mock(nil)
 		}()
 
@@ -488,7 +488,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 		}))
 
-		MOCK_API_URL = mockServer.URL
+		mockServerURL = mockServer.URL
 
 		wantPermissions := &authz.ExternalUserPermissions{
 			// This order is important. We fetch all the orgs first. And then all the projects.
