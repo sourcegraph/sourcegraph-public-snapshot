@@ -57,7 +57,7 @@ func (x *Ruleset) AllOwners() (allOwners []*codeownerspb.Owner) {
 
 type CompiledRule struct {
 	proto       *codeownerspb.Rule
-	glob        globPattern
+	glob        *globPattern
 	compileOnce sync.Once
 }
 
