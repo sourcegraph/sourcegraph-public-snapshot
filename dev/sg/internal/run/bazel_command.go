@@ -73,8 +73,6 @@ func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[str
 		return errors.Wrapf(err, "failed to start Bazel command %q", bc.Name)
 	}
 
-	// TODO: Watch currently fails when there exist no binary, this is because the Bazel binLocation
-	// is the intended path but not the actual path
 	// Restart when the binary change.
 	wantRestart, err := bc.watch(ctx)
 	if err != nil {
