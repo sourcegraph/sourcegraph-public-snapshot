@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v41/github"
 
@@ -57,6 +58,8 @@ type V3Client struct {
 
 	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
+
+	waitForRateLimit bool
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -123,6 +126,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		resource:         resource,
+		waitForRateLimit: true,
 	}
 }
 
@@ -204,7 +208,27 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	var resp *httpResponseState
+	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+
+	// Retry request after waiting
+	if c.waitForRateLimit && resp.statusCode == http.StatusForbidden {
+		remaining, reset, retry, known := c.rateLimitMonitor.Get()
+
+		if !known {
+			return resp, err
+		}
+
+		if retry > 0 {
+			time.Sleep(retry)
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+		} else if remaining == 0 && reset > 0 {
+			time.Sleep(reset)
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+		}
+	}
+
+	return resp, err
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
