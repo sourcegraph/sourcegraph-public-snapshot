@@ -21,6 +21,7 @@ type BazelCommand struct {
 	Target      string            `yaml:"target"`
 	Args        string            `yaml:"args"`
 	Env         map[string]string `yaml:"env"`
+	Static      bool              `yaml:"static"`
 }
 
 type IBazel struct {
@@ -160,6 +161,10 @@ func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
 }
 
 func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
+	if bc.Static {
+		return nil
+	}
+
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
 
 	// Run the binary for the first time.

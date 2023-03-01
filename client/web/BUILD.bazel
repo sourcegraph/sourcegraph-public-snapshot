@@ -1031,7 +1031,6 @@ ts_project(
         "src/notebooks/notebookPage/ShareNotebookModal.tsx",
         "src/notebooks/serialize/convertMarkdownToBlocks.ts",
         "src/notebooks/serialize/index.ts",
-        "src/onboarding/AddCodeHostWidget.tsx",
         "src/open-in-editor/OpenInEditorActionItem.tsx",
         "src/open-in-editor/OpenInEditorPopover.tsx",
         "src/open-in-editor/build-url.ts",
@@ -1213,8 +1212,6 @@ ts_project(
         "src/search/backend.tsx",
         "src/search/helpers.tsx",
         "src/search/home/SearchPage.tsx",
-        "src/search/home/SearchPageFooter.tsx",
-        "src/search/home/SearchPageInput.tsx",
         "src/search/index.ts",
         "src/search/input/SearchNavbarItem.tsx",
         "src/search/input/lazy.ts",
@@ -1390,6 +1387,17 @@ ts_project(
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
         "src/stores/notepad.ts",
+        "src/storm/backend/route-loader.ts",
+        "src/storm/pages/SearchPage/AddCodeHostWidget.tsx",
+        "src/storm/pages/SearchPage/SearchPage.loader.ts",
+        "src/storm/pages/SearchPage/SearchPage.tsx",
+        "src/storm/pages/SearchPage/SearchPageContent.tsx",
+        "src/storm/pages/SearchPage/SearchPageFooter.tsx",
+        "src/storm/pages/SearchPage/SearchPageInput.tsx",
+        "src/storm/pages/SearchPage/index.ts",
+        "src/storm/pages/SearchPageWrapper/SearchPageWrapper.tsx",
+        "src/storm/pages/SearchPageWrapper/index.ts",
+        "src/storm/routes.tsx",
         "src/team/TeamAvatar.tsx",
         "src/team/TeamsArea.tsx",
         "src/team/area/TeamArea.tsx",
@@ -1515,6 +1523,7 @@ ts_project(
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
+        # ":web_tests",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
@@ -1625,6 +1634,7 @@ ts_project(
     name = "web_tests",
     testonly = True,
     srcs = [
+        "src/__mocks__/legacyLayoutRouteContext.ts",
         "src/__mocks__/zustand.ts",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
@@ -1820,7 +1830,6 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
 
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
-
     ":enterprise-yaml",
 ]
 
@@ -1839,6 +1848,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//visibility:public"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
     )

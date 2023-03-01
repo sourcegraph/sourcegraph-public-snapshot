@@ -4,6 +4,7 @@ go_library(
     name = "azuredevops",
     srcs = [
         "client.go",
+        "projects.go",
         "pull_requests.go",
         "repositories.go",
         "types.go",
@@ -28,6 +29,7 @@ go_test(
     srcs = [
         "client_test.go",
         "main_test.go",
+        "projects_test.go",
         "pull_requests_test.go",
         "repositories_test.go",
         "users_test.go",

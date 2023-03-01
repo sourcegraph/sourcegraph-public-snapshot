@@ -44,6 +44,7 @@ go_test(
         "deduper_test.go",
         "file_test.go",
         "match_test.go",
+        "merger_test.go",
         "range_test.go",
         "symbol_test.go",
     ],
