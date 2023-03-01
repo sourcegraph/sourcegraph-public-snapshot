@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -14,10 +13,14 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
@@ -177,21 +180,38 @@ func isGitRepo(path string) bool {
 
 // Repos returns a slice of all the git repositories it finds.
 func (s *Serve) Repos() ([]Repo, error) {
-	var repos []Repo
-	var reposRootIsRepo bool
-
 	root, err := filepath.EvalSymlinks(s.Root)
 	if err != nil {
 		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
 		return nil, nil
 	}
 
-	err = filepath.WalkDir(root, func(path string, fi fs.DirEntry, fileErr error) error {
-		if fileErr != nil {
-			s.Logger.Warn("ignoring error searching", log.String("path", path), log.Error(fileErr))
-			return nil
+	var (
+		reposRootIsRepo atomic.Bool
+		repoC           = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
+		reposC          = make(chan []Repo, 1)
+	)
+
+	// We collect from repoC here and send to reposC the collected repos. We
+	// need to start this before Walk since that is our sync point of knowing
+	// if we are done sending to repoC.
+	go func() {
+		var repos []Repo
+		for r := range repoC {
+			repos = append(repos, r)
 		}
-		if !fi.IsDir() {
+		reposC <- repos
+	}()
+
+	// We use fastwalk since it is much faster. Notes for people used to
+	// filepath.WalkDir:
+	//
+	//   - func is called concurrently
+	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
+	//     files (so will only get dirs)
+	//   - filepath.SkipDir has the same meaning
+	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+		if !typ.IsDir() {
 			return nil
 		}
 
@@ -220,7 +240,10 @@ func (s *Serve) Repos() ([]Repo, error) {
 		}
 
 		name := filepath.ToSlash(subpath)
-		reposRootIsRepo = reposRootIsRepo || name == "."
+		if name == "." {
+			reposRootIsRepo.Store(true)
+		}
+
 		cloneURI := pathpkg.Join("/repos", name)
 		clonePath := cloneURI
 
@@ -229,23 +252,31 @@ func (s *Serve) Repos() ([]Repo, error) {
 			clonePath += "/.git"
 		}
 
-		repos = append(repos, Repo{
+		repoC <- Repo{
 			Name:      name,
 			URI:       cloneURI,
 			ClonePath: clonePath,
-		})
+		}
 
 		// At this point we know the directory is either a git repo or a bare git repo,
 		// we don't need to recurse further to save time.
 		// TODO: Look into whether it is useful to support git submodules
 		return filepath.SkipDir
 	})
+	close(repoC)
+	repos := <-reposC
 
 	if err != nil {
 		return nil, err
 	}
 
-	if !reposRootIsRepo {
+	// Walk is not deterministic due to concurrency, so introduce determinism
+	// by sorting the results.
+	slices.SortFunc(repos, func(a, b Repo) bool {
+		return a.Name < b.Name
+	})
+
+	if !reposRootIsRepo.Load() {
 		return repos, nil
 	}
 
