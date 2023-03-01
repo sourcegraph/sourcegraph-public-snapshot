@@ -301,10 +301,10 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
-// IsAccessRequestsEnabled returns whether request access experimental feature is enabled or not.
-func IsAccessRequestsEnabled() bool {
+// IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
+func IsAccessRequestEnabled() bool {
 	experimentalFeatures := Get().ExperimentalFeatures
-	return experimentalFeatures == nil || experimentalFeatures.AccessRequestsEnabled == nil || *experimentalFeatures.AccessRequestsEnabled
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
 }
 
 // SearchSymbolsParallelism returns 20, or the site config
