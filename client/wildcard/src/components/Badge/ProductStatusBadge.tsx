@@ -14,7 +14,6 @@ export type ProductStatusType = typeof PRODUCT_STATUSES[number]
  * Product statuses mapped to Badge style variants
  */
 const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[number]> = {
-    prototype: 'warning',
     wip: 'warning',
     experimental: 'warning',
     beta: 'info',
@@ -60,8 +59,6 @@ export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren
     const label =
         props.status === 'beta'
             ? 'This feature is currently in beta'
-            : props.status === 'prototype'
-            ? 'This feature is a prototype'
             : props.status === 'experimental'
             ? 'This feature is experimental'
             : props.status === 'wip'
