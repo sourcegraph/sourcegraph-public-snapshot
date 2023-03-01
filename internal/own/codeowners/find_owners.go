@@ -1,7 +1,6 @@
 package codeowners
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/becheran/wildmatch-go"
@@ -61,50 +60,83 @@ func (p asteriskPattern) Match(part string) bool {
 
 // compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
-func compile(pattern string) (globPattern, error) {
-	var glob globPattern
+func compile(pattern string) (*globPattern, error) {
+	parts := strings.Split(strings.Trim(pattern, separator), separator)
+	patternParts := make([]patternPart, 0, len(parts)+2)
+	isLiteral := true
 	// No leading `/` is equivalent to prefixing with `/**/`.
 	// The pattern matches arbitrarily down the directory tree.
 	if !strings.HasPrefix(pattern, separator) {
-		glob = append(glob, anySubPath{})
+		patternParts = append(patternParts, anySubPath{})
+		isLiteral = false
 	}
 	for _, part := range strings.Split(strings.Trim(pattern, separator), separator) {
 		switch part {
 		case "":
 			return nil, errors.New("two consecutive forward slashes")
 		case "**":
-			glob = append(glob, anySubPath{})
+			patternParts = append(patternParts, anySubPath{})
+			isLiteral = false
 		case "*":
-			glob = append(glob, anyMatch{})
+			patternParts = append(patternParts, anyMatch{})
+			isLiteral = false
 		default:
 			if strings.Contains(part, "*") {
-				glob = append(glob, makeAsteriskPattern(part))
+				patternParts = append(patternParts, makeAsteriskPattern(part))
+				isLiteral = false
 			} else {
-				glob = append(glob, exactMatch(part))
+				patternParts = append(patternParts, exactMatch(part))
 			}
 		}
 	}
 	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
 	if strings.HasSuffix(pattern, separator) {
-		glob = append(glob, anySubPath{})
+		patternParts = append(patternParts, anySubPath{})
+		isLiteral = false
 	}
 	// Trailing `/**` (explicitly or implicitly like above) is necessarily
 	// translated to `/**/*.
 	// This is because, trailing `/**` should not match if the path finishes
 	// with the part that matches up to and excluding final `**` wildcard.
 	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
-	if len(glob) > 0 {
-		if _, ok := glob[len(glob)-1].(anySubPath); ok {
-			glob = append(glob, anyMatch{})
+	if len(patternParts) > 0 {
+		if _, ok := patternParts[len(patternParts)-1].(anySubPath); ok {
+			patternParts = append(patternParts, anyMatch{})
+			isLiteral = false
 		}
 	}
-	return glob, nil
+
+	// initialize a matching state with positions that are
+	// matches for an empty input (`/`). This is most often just bit 0, but in case
+	// there are subpath wildcard **, it is expanded to all indices past the
+	// wildcards, since they match empty path.
+	initialState := int64(1)
+	for i, globPart := range patternParts {
+		if _, ok := globPart.(anySubPath); !ok {
+			break
+		}
+		initialState = initialState | 1<<(i+1)
+	}
+
+	return &globPattern{
+		isLiteral:    isLiteral,
+		pattern:      pattern,
+		parts:        patternParts,
+		initialState: initialState,
+		size:         len(patternParts),
+	}, nil
 }
 
 // globPattern implements a pattern for matching file paths,
 // which can use directory/file names, * and ** wildcards,
 // and may or may not be anchored to the root directory.
-type globPattern []patternPart
+type globPattern struct {
+	isLiteral    bool
+	pattern      string
+	parts        []patternPart
+	size         int
+	initialState int64
+}
 
 // match iterates over `filePath` separated by `/`. It uses a bit vector
 // to track which prefixes of glob pattern match the file path prefix so far.
@@ -133,69 +165,114 @@ type globPattern []patternPart
 // The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
 func (glob globPattern) match(filePath string) bool {
-	currentState := big.NewInt(0)
-	glob.markEmptyMatches(currentState)
-	filePathParts := strings.Split(strings.Trim(filePath, separator), separator)
-	nextState := big.NewInt(0)
-	for _, part := range filePathParts {
-		nextState.SetInt64(0)
-		glob.consume(part, currentState, nextState)
-		currentState, nextState = nextState, currentState
+	// Fast pass for literal globs, we can just string compare those.
+	if glob.isLiteral {
+		return glob.pattern == filePath
 	}
-	return glob.matchesWhole(currentState)
-}
-
-// markEmptyMatches initializes a matching state with positions that are
-// matches for an empty input (`/`). This is most often just bit 0, but in case
-// there are subpath wildcard **, it is expanded to all indices past the
-// wildcards, since they match empty path.
-func (glob globPattern) markEmptyMatches(state *big.Int) {
-	state.SetBit(state, 0, 1)
-	for i, globPart := range glob {
-		if _, ok := globPart.(anySubPath); !ok {
-			break
-		}
-		state.SetBit(state, i+1, 1)
-	}
-}
-
-// matchesWhole returns true if given state indicates whole glob being matched.
-func (glob globPattern) matchesWhole(state *big.Int) bool {
-	return state.Bit(len(glob)) == 1
-}
-
-// consume advances matching algorithm by a single part of a file path.
-// The `current` bit vector is the matching state for up until, but excluding
-// given `part` of the file path. The result - next set of states - is written
-// to bit vector `next`, which is assumed to be zero when passed in.
-func (glob globPattern) consume(part string, current, next *big.Int) {
-	// Since `**` or `anySubPath` can match any number of times, we hold
-	// an invariant: If a bit vector has 1 at the state preceding `**`,
-	// then that bit vector also has 1 at the state following `**`.
-	for i := 0; i < len(glob); i++ {
-		if current.Bit(i) == 0 {
-			continue
-		}
-		// Case 1: `current` matches before i-th part of the pattern,
-		// so set the i+1-th position of the `next` state to whether
-		// the i-th pattern matches (consumes) `part`.
-		bit := uint(0)
-		if glob[i].Match(part) {
-			bit = uint(1)
-		}
-		next.SetBit(next, i+1, bit)
-		// Keep the invariant: if there is `**` afterwards, set it
-		// to the same bit. This will not be overridden in the next
-		// loop turns as `**` always matches.
-		if i+1 < len(glob) {
-			if _, ok := glob[i+1].(anySubPath); ok {
-				next.SetBit(next, i+2, bit)
+	// If starts with ** (ie no root match), do a fast pass on the last rule first,
+	// this optimizes file ending and file name matches.
+	if _, ok := glob.parts[glob.size-1].(anySubPath); ok {
+		l, ok := lastPart(filePath, '/')
+		if ok {
+			if !glob.parts[glob.size-1].Match(l) {
+				return false
 			}
 		}
-		// Case 2: To allow `**` to consume subsequent parts of the file path,
-		// we keep the i-th bit - which precedes `**` - set.
-		if _, ok := glob[i].(anySubPath); ok {
-			next.SetBit(next, i, 1)
+	}
+	// Dirty cheap version of strings.Trim(filePath, separator)
+	if filePath[0] == '/' {
+		filePath = filePath[1:]
+	}
+	if filePath[len(filePath)-1] == '/' {
+		filePath = filePath[:len(filePath)-1]
+	}
+	var (
+		currentState = glob.initialState
+		nextState    = int64(0)
+		part         string
+		hasNext      bool
+	)
+	for {
+		part, hasNext, filePath = nextPart(filePath, '/')
+		// consume advances matching algorithm by a single part of a file path.
+		// The `current` bit vector is the matching state for up until, but excluding
+		// given `part` of the file path. The result - next set of states - is written
+
+		// Since `**` or `anySubPath` can match any number of times, we hold
+		// an invariant: If a bit vector has 1 at the state preceding `**`,
+		// then that bit vector also has 1 at the state following `**`.
+		for i := 0; i < glob.size; i++ {
+			if (currentState>>i)&1 == 0 {
+				continue
+			}
+			currentPart := glob.parts[i]
+			// Case 1: `currentState` matches before i-th part of the pattern,
+			// so set the i+1-th position of the `next` state to whether
+			// the i-th pattern matches (consumes) `part`.
+			if currentPart.Match(part) {
+				nextState = nextState | 1<<(i+1)
+				// Keep the invariant: if there is `**` afterwards, set it
+				// to the same bit. This will not be overridden in the next
+				// loop turns as `**` always matches.
+				if i+1 < glob.size {
+					if _, ok := glob.parts[i+1].(anySubPath); ok {
+						nextState = nextState | 1<<(i+2)
+					}
+				}
+			} else {
+				nextState = nextState &^ (1 << (i + 1))
+				// Keep the invariant: if there is `**` afterwards, set it
+				// to the same bit. This will not be overridden in the next
+				// loop turns as `**` always matches.
+				if i+1 < glob.size {
+					if _, ok := glob.parts[i+1].(anySubPath); ok {
+						nextState = nextState &^ (1 << (i + 2))
+					}
+				}
+			}
+
+			// Case 2: To allow `**` to consume subsequent parts of the file path,
+			// we keep the i-th bit - which precedes `**` - set.
+			if _, ok := currentPart.(anySubPath); ok {
+				nextState = nextState | 1<<i
+			}
+
+		}
+
+		// No matches in current state, impossible to match.
+		if currentState == 0 {
+			return false
+		}
+		currentState = nextState
+
+		if !hasNext {
+			break
+		}
+
+		nextState = 0
+	}
+	// Return true if given state indicates whole glob being matched.
+	return (currentState>>glob.size)&1 == 1
+}
+
+// nextPart splits a string by a separator rune and returns if there's another match,
+// and the remainder to recheck later. It is a lazy strings.Split, of sorts,
+// allowing us to only look as far in the string as absolutely needed.
+func nextPart(s string, sep rune) (string, bool, string) {
+	for i, c := range s {
+		if c == sep {
+			return s[:i], true, s[i+1:]
 		}
 	}
+	return s, false, s
+}
+
+// lastPart returns the last segment of s before sep. It only works with ASCII!
+func lastPart(s string, sep rune) (string, bool) {
+	for i := len(s) - 1; i >= 0; i-- {
+		if rune(s[i]) == sep {
+			return s[i+1:], true
+		}
+	}
+	return "", false
 }
