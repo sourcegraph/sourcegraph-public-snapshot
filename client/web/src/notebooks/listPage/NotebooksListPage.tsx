@@ -21,9 +21,11 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
+import { LimitedAccessBanner } from '../../components/LimitedAccessBanner'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
 }
@@ -61,6 +63,7 @@ interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'st
 
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
+    isSourcegraphApp,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
@@ -257,6 +260,14 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         <PageHeader.Breadcrumb icon={mdiBookOutline}>Notebooks</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                {isSourcegraphApp && (
+                    <LimitedAccessBanner>
+                        Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
+                        availability for Notebooks is subject to change in future releases.
+                    </LimitedAccessBanner>
+                )}
+
                 {isErrorLike(importState) && (
                     <Alert variant="danger">
                         Error while importing the notebook: <strong>{importState.message}</strong>
@@ -283,7 +294,6 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         ))}
                     </div>
                 </div>
-
                 {selectedTab === 'notebooks' && (
                     <div className="row mb-5">
                         <div className="d-flex flex-column col-sm-2">
@@ -315,7 +325,6 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         </div>
                     </div>
                 )}
-
                 {selectedTab === 'getting-started' && (
                     <NotebooksGettingStartedTab
                         telemetryService={telemetryService}
