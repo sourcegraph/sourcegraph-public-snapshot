@@ -71,7 +71,11 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		return nil
 	})
 	if err != nil {
-		return scim.Resource{}, err
+		multiErr, ok := err.(errors.MultiError)
+		if !ok || len(multiErr.Errors()) == 0 {
+			return scim.Resource{}, err
+		}
+		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
 	}
 
 	var now = time.Now()
