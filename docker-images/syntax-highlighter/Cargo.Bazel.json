@@ -1,5 +1,5 @@
 {
-  "checksum": "3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a",
+  "checksum": "47b9f84510f35bfcae410b68d902b408e1c2775f076ce01ef4aeadee96c94dab",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8039,48 +8039,6 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.0": {
-      "name": "scip",
-      "version": "0.1.0",
-      "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/scip",
-          "commitish": {
-            "Branch": "master"
-          },
-          "strip_prefix": "bindings/rust"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "scip",
-            "crate_root": "src/mod.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "protobuf 3.1.0",
-              "target": "protobuf"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "scip 0.1.1": {
       "name": "scip",
       "version": "0.1.1",
@@ -8614,7 +8572,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
@@ -11540,7 +11498,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-jsonnet",
           "commitish": {
-            "Branch": "master"
+            "Branch": "main"
           }
         }
       },
@@ -11742,7 +11700,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-sql",
           "commitish": {
-            "Branch": "master"
+            "Branch": "main"
           }
         }
       },

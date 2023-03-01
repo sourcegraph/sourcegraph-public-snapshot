@@ -1,15 +1,22 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
-rust_binary(
+rust_library(
     name = "sg-syntax",
+    srcs = [
+      "src/lib.rs",
+      "src/sg_sciptect.rs",
+      "src/sg_syntect.rs",
+      "src/sg_treesitter.rs"
+    ],
     aliases = aliases(),
     deps = all_crate_deps(
         normal = True,
     ),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
-    ),
+    ) + ["//docker-images/syntax-highlighter/crates/sg-macros:sg-macros"],
+    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
 )
 
 rust_test(

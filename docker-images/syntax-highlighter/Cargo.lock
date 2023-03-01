@@ -1601,14 +1601,6 @@ dependencies = [
 
 [[package]]
 name = "scip"
-version = "0.1.0"
-source = "git+https://github.com/sourcegraph/scip#7ff845ef5b78772f65463542d5f384967d329b2c"
-dependencies = [
- "protobuf",
-]
-
-[[package]]
-name = "scip"
 version = "0.1.1"
 source = "git+https://github.com/sourcegraph/scip?branch=main#3050326a91551abf4e6f690af6a471a160581ba4"
 dependencies = [
@@ -1708,11 +1700,11 @@ dependencies = [
  "pretty_assertions",
  "protobuf",
  "rocket 0.5.0-rc.1",
- "scip 0.1.0 (git+https://github.com/sourcegraph/scip#7ff845ef5b78772f65463542d5f384967d329b2c)",
+ "scip",
  "serde",
  "serde_json",
  "sg-macros",
- "syntect 4.7.0 (git+https://github.com/sourcegraph/syntect)",
+ "syntect",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
@@ -1927,37 +1919,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "syntect"
-version = "4.7.0"
-source = "git+https://github.com/sourcegraph/syntect#7e02c5b4085e6d935b960b8106cdd85da04532d2"
-dependencies = [
- "bincode",
- "bitflags",
- "flate2",
- "fnv",
- "lazy_static",
- "once_cell",
- "onig",
- "plist",
- "regex-syntax",
- "serde",
- "serde_derive",
- "serde_json",
- "walkdir",
- "yaml-rust",
-]
-
-[[package]]
 name = "syntect_server"
 version = "1.0.1"
 dependencies = [
  "rocket 0.5.0-rc.1",
  "rustyline",
- "scip 0.1.1 (git+https://github.com/sourcegraph/scip?branch=main#3050326a91551abf4e6f690af6a471a160581ba4)",
+ "scip",
  "serde",
  "serde_json",
  "sg-syntax",
- "syntect 4.7.0 (git+https://github.com/sourcegraph/syntect?branch=main)",
+ "syntect",
 ]
 
 [[package]]
@@ -2288,7 +2259,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?branch=main#fdc775714afa27fdef823adbaba6ab98f5ae66f2"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2316,7 +2287,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sql"
 version = "0.0.2"
-source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+source = "git+https://github.com/sourcegraph/tree-sitter-sql?branch=main#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
 dependencies = [
  "cc",
  "tree-sitter",
