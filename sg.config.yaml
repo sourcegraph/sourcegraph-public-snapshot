@@ -37,6 +37,7 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
+  EMBEDDINGS_URL: http://localhost:9991
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -369,6 +370,21 @@ commands:
       - cmd/symbols
       - enterprise/cmd/symbols
       - enterprise/internal/rockskip
+
+  embeddings:
+    cmd: .bin/embeddings
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+    checkBinary: .bin/embeddings
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/embeddings
+      - enterprise/internal/embeddings
 
   searcher:
     cmd: .bin/searcher
@@ -1050,6 +1066,33 @@ commandsets:
       - blobstore
       - batches-executor
       - batcheshelper-builder
+
+  embeddings:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - embeddings
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
 
   iam:
     requiresDevPrivate: true

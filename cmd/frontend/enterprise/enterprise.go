@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 // Services is a bag of HTTP handlers and factory functions that are registered by the
@@ -41,12 +42,16 @@ type Services struct {
 	// Handler for exporting code insights data.
 	CodeInsightsDataExportHandler http.Handler
 
+	// Handler for completions stream.
+	NewCompletionsStreamHandler NewCompletionsStreamHandler
+
 	PermissionsGitHubWebhook    webhooks.Registerer
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
 	RankingService              RankingService
 	NewExecutorProxyHandler     NewExecutorProxyHandler
 	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
 	NewComputeStreamHandler     NewComputeStreamHandler
+	EnterpriseSearchJobs        jobutil.EnterpriseJobs
 	AuthzResolver               graphqlbackend.AuthzResolver
 	BatchChangesResolver        graphqlbackend.BatchChangesResolver
 	CodeIntelResolver           graphqlbackend.CodeIntelResolver
@@ -59,6 +64,7 @@ type Services struct {
 	ComputeResolver             graphqlbackend.ComputeResolver
 	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
 	WebhooksResolver            graphqlbackend.WebhooksResolver
+	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
 	RBACResolver                graphqlbackend.RBACResolver
 	OwnResolver                 graphqlbackend.OwnResolver
 }
@@ -86,6 +92,9 @@ type NewGitHubAppSetupHandler func() http.Handler
 // NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
 type NewComputeStreamHandler func() http.Handler
 
+// NewCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
+type NewCompletionsStreamHandler func() http.Handler
+
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
@@ -108,6 +117,8 @@ func DefaultServices() Services {
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
+		NewCompletionsStreamHandler:     func() http.Handler { return makeNotFoundHandler("completions streaming endpoint") },
+		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 

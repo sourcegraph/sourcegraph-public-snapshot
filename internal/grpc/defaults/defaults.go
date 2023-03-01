@@ -9,13 +9,13 @@ import (
 	"strings"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -62,7 +62,9 @@ func DialOptions() []grpc.DialOption {
 
 // NewServer creates a new *grpc.Server with the default options
 func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Server {
-	return grpc.NewServer(append(ServerOptions(logger), additionalOpts...)...)
+	s := grpc.NewServer(append(ServerOptions(logger), additionalOpts...)...)
+	reflection.Register(s)
+	return s
 }
 
 // ServerOptions is a set of default server options that should be used for all

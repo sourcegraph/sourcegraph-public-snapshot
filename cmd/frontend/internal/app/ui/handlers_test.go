@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -42,7 +43,7 @@ func TestRedirects(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		InitRouter(db)
+		InitRouter(db, jobutil.NewUnimplementedEnterpriseJobs())
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {

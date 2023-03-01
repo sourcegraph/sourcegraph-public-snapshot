@@ -1086,6 +1086,29 @@ type InferredAvailableIndexers {
     The list of roots that could be indexed.
     """
     roots: [String!]!
+
+    """
+    The list of roots that could be indexed.
+    """
+    rootsWithKeys: [RootWithKey!]!
+}
+
+"""
+Pairs a root directory with comparison key used to match index configurations for the same repository "project".
+"""
+type RootWithKey {
+    """
+    The root.
+    """
+    root: String!
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `AutoIndexJobDescription.comparisonKey`.
+    """
+    comparisonKey: String!
 }
 
 """
@@ -2000,6 +2023,11 @@ type IndexConfiguration {
     configuration: String
 
     """
+    The parsed index configuration (decoded from the raw JSON version).
+    """
+    parsedConfiguration: [AutoIndexJobDescription!]
+
+    """
     The raw JSON-encoded index configuration as inferred by the auto-indexer.
     """
     inferredConfiguration: InferredConfiguration
@@ -2013,6 +2041,11 @@ type InferredConfiguration {
     The raw JSON-encoded inferred index configuration.
     """
     configuration: String!
+
+    """
+    The parsed index configuration (decoded from the raw JSON version).
+    """
+    parsedConfiguration: [AutoIndexJobDescription!]
 
     """
     If inference of the repository contents hit a limit its error description will available here.
@@ -2222,6 +2255,14 @@ type AutoIndexJobDescription {
     The target indexer.
     """
     indexer: CodeIntelIndexer
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `RootWithKey.comparisonKey`.
+    """
+    comparisonKey: String!
 
     """
     The particular steps inferred for indexing.
