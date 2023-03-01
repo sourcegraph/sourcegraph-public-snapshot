@@ -146,7 +146,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	client, err := azuredevops.NewClient(
-		p.ServiceID()+account.AccountID,
+		p.ServiceID(),
 		apiURL,
 		oauthToken,
 		nil,
