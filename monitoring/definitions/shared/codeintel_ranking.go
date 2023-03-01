@@ -66,6 +66,38 @@ func (codeIntelligence) NewRankingStoreGroup(containerName string) monitoring.Gr
 	})
 }
 
+// src_codeintel_ranking_lsifstore_total
+// src_codeintel_ranking_lsifstore_duration_seconds_bucket
+// src_codeintel_ranking_lsifstore_errors_total
+func (codeIntelligence) NewRankingLSIFStoreGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Ranking > LSIFStore",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_ranking_lsifstore",
+				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_ranking_num_definitions_inserted_total
 // src_codeintel_ranking_num_references_inserted_total
 // src_codeintel_ranking_reference_records_processed_total
