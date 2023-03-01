@@ -85,7 +85,7 @@ type Provider struct {
 	projects []string
 }
 
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
+func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
 	return nil, nil
 }
 
@@ -234,7 +234,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}, err
 }
 
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(_ context.Context, _ *extsvc.Repository, _ authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, authz.ErrUnimplemented{Feature: "azuredevops.FetchRepoPerms"}
 }
 

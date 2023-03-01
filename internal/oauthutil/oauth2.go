@@ -28,7 +28,7 @@ type OAuthContext struct {
 	// Scope specifies optional requested permissions.
 	Scopes []string
 
-	// CustomURLArgs if any needed by a specific provider that may have a custom implementation.
+	// CustomURLArgs are URL parameters which may be needed by a specific provider that may have a custom OAuth2 implementation.
 	CustomURLArgs map[string]string
 }
 

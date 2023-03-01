@@ -165,7 +165,7 @@ func (c *client) GetURL() *url.URL {
 }
 
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
-// Services (https://dev.azure.com
+// Services (https://dev.azure.com)
 func (c *client) IsAzureDevOpsServices() bool {
 	return c.URL.String() == AZURE_DEV_OPS_API_URL
 }

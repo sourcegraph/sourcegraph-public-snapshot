@@ -117,7 +117,7 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 		v.Set("refresh_token", refreshToken)
 	}
 
-	// FUTURE REFACTORING NOTE: Most of the code in this module is very similar to the upstream
+	// TODO: (FUTURE REFACTORING NOTE) Most of the code in this module is very similar to the upstream
 	// oauth2 library. We should revisit and use the upstream library in the future, but this is one
 	// of the minor but breaking deviations from the upstream library.
 	//
