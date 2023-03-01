@@ -66,6 +66,7 @@ const injectedValuesConfig = {
 const hardcodedConfig = {
     codeIntelligenceEnabled: true,
     codeInsightsEnabled: true,
+    sentinelEnabled: true,
     searchContextsEnabled: true,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,

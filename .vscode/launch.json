@@ -54,21 +54,11 @@
       "name": "vscode-jest-tests",
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-      "args": [
-        "--color",
-        "--runInBand"
-        // "path/to/test/file",
-        // "-t",
-        // "test name",
-      ],
+      "args": ["--color", "--runInBand"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "**/async_hooks.js",
-        "**/inspector_async_hook.js"
-        // "**/node_modules/rxjs",
-      ],
+      "skipFiles": ["**/async_hooks.js", "**/inspector_async_hook.js"],
       "smartStep": false
     },
     {
@@ -79,7 +69,6 @@
       "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
       "args": ["webpack"],
       "env": {
-        // prettier-ignore
         "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
       },
       "internalConsoleOptions": "openOnSessionStart"

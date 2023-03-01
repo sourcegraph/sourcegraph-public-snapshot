@@ -180,6 +180,11 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             logger.error('Error sending search context to extensions!', error)
         })
+
+        console.log(
+            '🚀 ~ file: LegacySourcegraphWebApp.tsx:274 ~ LegacySourcegraphWebApp ~ render ~ this.props.sentinelEnabled:',
+            this.props.sentinelEnabled
+        )
     }
 
     public componentWillUnmount(): void {
@@ -203,6 +208,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             selectedSearchContextSpec: this.state.selectedSearchContextSpec,
             setSelectedSearchContextSpec: this.setSelectedSearchContextSpec,
             codeIntelligenceEnabled: !!this.props.codeInsightsEnabled,
+            sentinelEnabled: this.props.sentinelEnabled,
             notebooksEnabled: this.props.notebooksEnabled,
             codeMonitoringEnabled: this.props.codeMonitoringEnabled,
             searchAggregationEnabled: this.props.searchAggregationEnabled,

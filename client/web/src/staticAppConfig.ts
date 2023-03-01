@@ -6,6 +6,7 @@ import { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
 import type { CodeInsightsProps } from './insights/types'
+import { SentinelProps } from './sentinel/types'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -38,6 +39,7 @@ export interface StaticHardcodedAppConfig
         Pick<NotebookProps, 'notebooksEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<CodeInsightsProps, 'codeInsightsEnabled'>,
+        Pick<SentinelProps, 'sentinelEnabled'>,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'> {}
 
 /**

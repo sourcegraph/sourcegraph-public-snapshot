@@ -25,9 +25,9 @@ func NewRankingGraphExporter(
 				return err
 			}
 
-			if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
-				return err
-			}
+			// if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
+			// 	return err
+			// }
 
 			return nil
 		}),

@@ -669,7 +669,7 @@ interface SideBlobProps extends ReferencesPanelProps {
     blobNav: (url: string) => void
 }
 
-function parseSideBlobProps(
+export function parseSideBlobProps(
     activeURL: string | undefined
 ): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
     if (!activeURL) {

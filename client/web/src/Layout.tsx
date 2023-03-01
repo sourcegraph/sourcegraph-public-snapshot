@@ -54,6 +54,7 @@ function useIsSignInOrSignUpPage(): boolean {
     return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
 }
 export const Layout: React.FC<LegacyLayoutProps> = props => {
+    console.log('layout', props.sentinelEnabled)
     const location = useLocation()
 
     const routeMatches = useMatches()

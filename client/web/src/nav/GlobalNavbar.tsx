@@ -2,6 +2,7 @@ import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, use
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
@@ -28,6 +29,7 @@ import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinde
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
+import { SentinelProps } from '../sentinel/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
@@ -50,6 +52,7 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps {
@@ -124,6 +127,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
+    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -144,6 +148,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
+
+    const showSentinel = sentinelEnabled
+    console.log('🚀 ~ file: GlobalNavbar.tsx:157 ~ showSentinel:', showSentinel)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -232,6 +239,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {showSentinel && (
+                        <NavItem icon={ShieldHalfFullIcon}>
+                            <NavLink variant={navLinkVariant} to="/sentinel">
+                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}

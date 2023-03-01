@@ -39,6 +39,9 @@
   },
   "jest.jestCommandLine": "pnpm run test",
   "jest.showCoverageOnLoad": false,
+  "jest.autoRun": {
+    "onStartup": [],
+  },
   "gulp.autoDetect": "off",
   "npm.packageManager": "pnpm",
   "npm.runSilent": true,

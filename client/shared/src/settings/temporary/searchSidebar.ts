@@ -10,6 +10,8 @@ export enum SectionID {
     SEARCH_SNIPPETS = 'snippets',
     QUICK_LINKS = 'quicklinks',
     REVISIONS = 'revisions',
+    SEVERITY = 'severity',
+    STATUS = 'status',
 }
 
 export enum NoResultsSectionID {
