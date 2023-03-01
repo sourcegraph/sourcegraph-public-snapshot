@@ -152,7 +152,7 @@ export const SetupStepsContent: FC<HTMLAttributes<HTMLElement>> = props => {
                 {steps.map(({ path, component: Component }) => (
                     <Route key="hardcoded-key" path={`${path}/*`} element={<Component className={styles.content} />} />
                 ))}
-                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} />} />
+                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} replace={true} />} />
             </Routes>
         </div>
     )
