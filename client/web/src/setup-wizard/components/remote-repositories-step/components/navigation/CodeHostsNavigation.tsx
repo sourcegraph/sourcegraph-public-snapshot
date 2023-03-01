@@ -1,44 +1,27 @@
 import { FC, ReactElement } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
+import { QueryResult } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
 
-const GET_CODE_HOSTS = gql`
-    query GetCodeHosts {
-        externalServices {
-            nodes {
-                __typename
-                id
-                kind
-                repoCount
-                displayName
-                lastSyncAt
-                nextSyncAt
-            }
-        }
-    }
-`
-
 interface CodeHostsNavigationProps {
+    codeHostQueryResult: QueryResult<GetCodeHostsResult>
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
     className?: string
+    onCodeHostDelete: (codeHost: CodeHost) => void
 }
 
 export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
-    const { activeConnectionId, createConnectionType, className } = props
-
-    const { data, loading, error, refetch } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
-        fetchPolicy: 'cache-and-network',
-    })
+    const { codeHostQueryResult, activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
+    const { data, loading, error, refetch } = codeHostQueryResult
 
     if (error && !loading) {
         return (
@@ -109,7 +92,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     </Button>
 
                     <Tooltip content="Delete code host connection" placement="right" debounce={0}>
-                        <Button className={styles.deleteButton}>
+                        <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
                             <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
                         </Button>
                     </Tooltip>

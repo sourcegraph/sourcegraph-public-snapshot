@@ -50,7 +50,7 @@ FROM
 `
 
 func (m *userRoleAssignmentMigrator) Up(ctx context.Context) (err error) {
-	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, string(types.UserSystemRole), string(types.SiteAdministratorSystemRole), m.batchSize))
+	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, string(types.UserSystemRole), string(types.SiteAdministratorSystemRole), m.batchSize, m.batchSize))
 }
 
 func (m *userRoleAssignmentMigrator) Down(ctx context.Context) error {
@@ -65,18 +65,29 @@ WITH user_system_role AS MATERIALIZED (
 site_admin_system_role AS MATERIALIZED (
     SELECT id FROM roles WHERE name = %s
 ),
-users_without_roles AS MATERIALIZED (
+-- this query selects all users without the USER role
+users_without_user_role AS MATERIALIZED (
 	SELECT
-		id, site_admin
-	FROM users u
-	WHERE
-		u.id NOT IN (SELECT user_id from user_roles)
+		u.id as user_id, role.id AS role_id
+	FROM users u,
+	(SELECT id FROM user_system_role) AS role
+	WHERE NOT EXISTS (SELECT user_id from user_roles ur WHERE ur.user_id = u.id AND ur.role_id = role.id)
+	LIMIT %s
+	FOR UPDATE SKIP LOCKED
+),
+-- this query selects all site administrators without the SITE_ADMINISTRATOR role
+admins_without_admin_role AS MATERIALIZED (
+	SELECT
+		u.id as user_id, role.id AS role_id
+	FROM users u,
+	(SELECT id FROM site_admin_system_role) AS role
+	WHERE u.site_admin AND NOT EXISTS (SELECT user_id from user_roles ur WHERE ur.user_id = u.id AND ur.role_id = role.id)
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 )
 INSERT INTO user_roles (user_id, role_id)
-	SELECT id, (SELECT id FROM user_system_role) FROM users_without_roles
+	SELECT user_id, role_id FROM users_without_user_role
 		UNION ALL
-	SELECT id, (SELECT id FROM site_admin_system_role) FROM users_without_roles uwr WHERE uwr.site_admin
+	SELECT user_id, role_id FROM admins_without_admin_role
 ON CONFLICT DO NOTHING
 `

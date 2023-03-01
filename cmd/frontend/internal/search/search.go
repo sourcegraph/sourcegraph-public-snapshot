@@ -81,7 +81,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		eventWriter.Error(err)
 		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -528,7 +527,7 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			Email:  v.Email,
 		}
 		if v.User != nil {
-			person.User = streamhttp.UserMetadata{
+			person.User = &streamhttp.UserMetadata{
 				Username:    v.User.Username,
 				DisplayName: v.User.DisplayName,
 				AvatarURL:   v.User.AvatarURL,

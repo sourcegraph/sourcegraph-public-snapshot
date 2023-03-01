@@ -27,7 +27,7 @@
 
 .focus-container {
     display: flex;
-    background-color: var(--color-bg-1);
+    background-color: var(--input-bg);
     border-radius: 4px;
     margin: 0.75rem;
     border: 1px solid var(--border-color-2);
@@ -44,9 +44,9 @@
     }
 
     &:focus-within {
-        outline: 2px solid rgba(163, 208, 255, 1);
+        outline: 2px solid var(--primary-2);
         outline-offset: 0;
-        border-color: var(--border-active-color);
+        border-color: var(--primary-2);
 
         .hide-when-focused {
             display: none;
@@ -91,4 +91,29 @@
     height: 1.125rem;
     margin-right: 0.5rem;
     background-color: var(--border-color-2);
+}
+
+.mode-section {
+    display: flex;
+    align-items: center;
+    padding-right: 0.1875rem;
+    margin-right: 0.25rem;
+    border-right: 1px solid var(--border-color-2);
+    font-family: var(--code-font-family);
+    font-size: var(--code-font-size);
+    color: var(--text-muted);
+
+    button {
+        padding: 0.0625rem 0.125rem;
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
+    }
+
+    &.active {
+        color: var(--logo-purple);
+        padding: 0;
+        border: 0;
+    }
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -138,7 +139,12 @@ func run(
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
 			obctx := observation.ContextWithLogger(log.Scoped(service.Name(), service.Name()), obctx)
-			err := service.Start(ctx, obctx, allReadyWG.Done, serviceConfig)
+
+			// ensure ready is only called once and always call it.
+			ready := syncx.OnceFunc(allReadyWG.Done)
+			defer ready()
+
+			err := service.Start(ctx, obctx, ready, serviceConfig)
 			if err != nil {
 				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
 			}

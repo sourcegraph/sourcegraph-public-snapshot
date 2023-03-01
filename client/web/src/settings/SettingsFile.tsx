@@ -5,7 +5,6 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -15,7 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
 
-interface Props extends ThemeProps, TelemetryProps {
+interface Props extends TelemetryProps {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
 
     /**
@@ -33,6 +32,8 @@ interface Props extends ThemeProps, TelemetryProps {
      * if any.
      */
     commitError?: Error
+
+    isLightTheme: boolean
 }
 
 interface State {

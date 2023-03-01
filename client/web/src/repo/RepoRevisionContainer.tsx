@@ -9,7 +9,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
@@ -17,7 +16,6 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
-import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
@@ -44,14 +42,12 @@ export interface RepoRevisionContainerContext
         SettingsCascadeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
-        ThemeProps,
         TelemetryProps,
         HoverThresholdProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks' | 'repo' | 'resolvedRevisionOrError'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
@@ -80,11 +76,9 @@ interface RepoRevisionContainerProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,

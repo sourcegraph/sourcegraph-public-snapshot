@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/conc/pool"
 )
 
 // delete removes users and teams (and team memberships as a side effect) from the GitHub instance.
@@ -92,7 +92,7 @@ func delete(ctx context.Context, cfg config) {
 		}
 	}
 
-	g := group.New().WithMaxConcurrency(1000)
+	p := pool.New().WithMaxGoroutines(1000)
 
 	// delete users from instance
 	usersToDelete := len(localUsers) - cfg.userCount
@@ -101,7 +101,7 @@ func delete(ctx context.Context, cfg config) {
 		if i%100 == 0 {
 			writeInfo(out, "Deleted %d out of %d users", i, usersToDelete)
 		}
-		g.Go(func() {
+		p.Go(func() {
 			currentUser.executeDelete(ctx)
 		})
 	}
@@ -112,11 +112,11 @@ func delete(ctx context.Context, cfg config) {
 		if i%100 == 0 {
 			writeInfo(out, "Deleted %d out of %d teams", i, teamsToDelete)
 		}
-		g.Go(func() {
+		p.Go(func() {
 			currentTeam.executeDelete(ctx)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	//for _, t := range localTeams {
 	//	currentTeam := t

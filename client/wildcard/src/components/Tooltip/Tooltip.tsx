@@ -115,16 +115,22 @@ export const Tooltip: FC<TooltipProps> = props => {
             setOpen({ isOpen: false, reason: TooltipOpenChangeReason.TargetLeave })
         }
 
+        const preventFocusListeners = shouldPreventFocusListeners(target)
+
         target?.addEventListener('pointerenter', handleTargetPointerEnter)
         target?.addEventListener('pointerleave', handleTargetPointerLeave)
-        target?.addEventListener('focus', handleTargetPointerEnter, true)
-        target?.addEventListener('blur', handleTargetPointerLeave, true)
+        if (!preventFocusListeners) {
+            target?.addEventListener('focus', handleTargetPointerEnter, true)
+            target?.addEventListener('blur', handleTargetPointerLeave, true)
+        }
 
         return () => {
             target?.removeEventListener('pointerenter', handleTargetPointerEnter)
             target?.removeEventListener('pointerleave', handleTargetPointerLeave)
-            target?.removeEventListener('focus', handleTargetPointerEnter)
-            target?.removeEventListener('blur', handleTargetPointerLeave)
+            if (!preventFocusListeners) {
+                target?.removeEventListener('focus', handleTargetPointerEnter)
+                target?.removeEventListener('blur', handleTargetPointerLeave)
+            }
         }
     }, [target, setOpen])
 
@@ -215,3 +221,12 @@ const TooltipTarget = forwardRef<any, TooltipTargetProps>(function TooltipTarget
 
     return children
 })
+
+// We use this test to work around a Chromium bug that causes an `<svg>` element with a focus event
+// listener to appear in the tab-order. See https://bugs.chromium.org/p/chromium/issues/detail?id=445798
+function shouldPreventFocusListeners(target: HTMLElement | null): boolean {
+    return (
+        target?.tagName === 'svg' &&
+        (target.getAttribute('tabindex') === '-1' || target?.getAttribute('tabindex') === null)
+    )
+}

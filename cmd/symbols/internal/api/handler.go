@@ -17,9 +17,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 const maxNumSymbolResults = 500
@@ -95,17 +92,13 @@ func NewHandler(
 	rootLogger := logger.Scoped("symbolsServer", "symbols RPC server")
 
 	// Initialize the gRPC server
-	grpcServer := grpc.NewServer(
-		defaults.ServerOptions(rootLogger)...,
-	)
-	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
+	grpcServer := defaults.NewServer(rootLogger)
+	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
-
-	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
 

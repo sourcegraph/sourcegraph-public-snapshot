@@ -10,13 +10,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
@@ -84,9 +83,6 @@ type PermsSyncer struct {
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
 	permsStore edb.PermsStore
-
-	// recordsStore tracks results of recent permissions sync jobs.
-	recordsStore *syncjobs.RecordsStore
 }
 
 // NewPermsSyncer returns a new permissions syncing manager.
@@ -107,7 +103,6 @@ func NewPermsSyncer(
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
-		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store"), conf.DefaultClient()),
 	}
 }
 
@@ -378,7 +373,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
-	unifiedPermsEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	for _, acct := range accts {
 		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
@@ -646,7 +641,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get the value of feature flag to store in the unified user_repo_permissions table
-	unifiedEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+	unifiedEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	for acctID, repoIDs := range results.repoPerms {
 		if unifiedEnabled {
@@ -699,16 +694,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	return result, providerStates, nil
-}
-
-const userRepoPermsFlagName = "unified-user-repo-perms"
-
-func UnifiedUserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
-	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
-	if featureFlag == nil || err != nil {
-		return false
-	}
-	return featureFlag.Bool.Value
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
@@ -863,7 +848,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if UnifiedUserRepoPermsEnabled(ctx, s.db) {
+	if conf.ExperimentalFeatures().UnifiedPermissions {
 		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 		}
@@ -913,7 +898,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // The given sync groups are used to control the max concurrency, this method
 // only returns when the sync process is spawned, and blocks when it reaches max
 // concurrency defined by the sync group.
-func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
+func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]*pool.ContextPool, request *syncRequest) {
 	logger := s.logger.Scoped("syncPerms", "process perms sync request").With(
 		log.Object("request",
 			log.String("type", request.Type.String()),
@@ -965,7 +950,6 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 			}
 
 			s.collectQueueSize()
-			s.recordsStore.Record(request.Type.String(), request.ID, providerStates, err)
 
 			return nil
 		},
@@ -984,8 +968,8 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	userMaxConcurrency := syncUsersMaxConcurrency()
 	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
 
-	syncGroups := map[requestType]group.ContextGroup{
-		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(userMaxConcurrency),
+	syncGroups := map[requestType]*pool.ContextPool{
+		requestTypeUser: pool.New().WithContext(ctx).WithMaxGoroutines(userMaxConcurrency),
 
 		// NOTE: This is not strictly needed as part of effort for
 		// https://github.com/sourcegraph/sourcegraph/issues/37918, but doing it this way
@@ -996,7 +980,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 		// derived from the same code host connection is sharing the same personal access
 		// token and its concurrency throttled to 1 by the github-proxy in the current
 		// architecture.
-		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
+		requestTypeRepo: pool.New().WithContext(ctx).WithMaxGoroutines(1),
 	}
 
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.

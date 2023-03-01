@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -26,15 +27,16 @@ type ListTeamsArgs struct {
 }
 
 type teamConnectionResolver struct {
-	db       database.DB
-	parentID int32
-	search   string
-	cursor   int32
-	limit    int
-	once     sync.Once
-	teams    []*types.Team
-	pageInfo *graphqlutil.PageInfo
-	err      error
+	db            database.DB
+	parentID      int32
+	search        string
+	cursor        int32
+	limit         int
+	once          sync.Once
+	teams         []*types.Team
+	onlyRootTeams bool
+	pageInfo      *graphqlutil.PageInfo
+	err           error
 }
 
 // applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
@@ -70,6 +72,7 @@ func (r *teamConnectionResolver) compute(ctx context.Context) {
 			Cursor:       r.cursor,
 			WithParentID: r.parentID,
 			Search:       r.search,
+			RootOnly:     r.onlyRootTeams,
 		}
 		if r.limit != 0 {
 			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
@@ -88,14 +91,12 @@ func (r *teamConnectionResolver) compute(ctx context.Context) {
 	})
 }
 
-func (r *teamConnectionResolver) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeams bool }) (int32, error) {
-	if args != nil && args.CountDeeplyNestedTeams {
-		return 0, errors.New("Not supported: counting deeply nested teams.")
-	}
+func (r *teamConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// Not taking into account limit or cursor for count.
 	opts := database.ListTeamsOpts{
 		WithParentID: r.parentID,
 		Search:       r.search,
+		RootOnly:     r.onlyRootTeams,
 	}
 	return r.db.Teams().CountTeams(ctx, opts)
 }
@@ -137,6 +138,10 @@ func (r *TeamResolver) URL() string {
 	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
 	u := &url.URL{Path: absolutePath}
 	return u.String()
+}
+
+func (r *TeamResolver) AvatarURL() *string {
+	return nil
 }
 
 func (r *TeamResolver) DisplayName() *string {
@@ -278,10 +283,7 @@ func (r *teamMemberConnection) compute(ctx context.Context) {
 	})
 }
 
-func (r *teamMemberConnection) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeamMembers bool }) (int32, error) {
-	if args != nil && args.CountDeeplyNestedTeamMembers {
-		return 0, errors.New("Not supported: counting deeply nested team members.")
-	}
+func (r *teamMemberConnection) TotalCount(ctx context.Context) (int32, error) {
 	// Not taking into account limit or cursor for count.
 	opts := database.ListTeamMembersOpts{
 		TeamID: r.teamID,
@@ -471,24 +473,51 @@ func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (
 }
 
 type TeamMembersArgs struct {
-	Team     *graphql.ID
-	TeamName *string
-	Members  []graphql.ID
+	Team                 *graphql.ID
+	TeamName             *string
+	Members              []TeamMemberInput
+	SkipUnmatchedMembers bool
 }
 
-func (a *TeamMembersArgs) membersIDs() (map[int32]bool, error) {
-	ids := map[int32]bool{}
-	for i, memberID := range a.Members {
-		if got, want := relay.UnmarshalKind(memberID), "TeamMember"; got != want {
-			return nil, errors.Newf("Members[%d]=%q unexpected kind, got %q want %q", i, memberID, got, want)
-		}
-		var id int32
-		if err := relay.UnmarshalSpec(memberID, &id); err != nil {
-			return nil, errors.Wrapf(err, "Members[%d]=%q ID malformed", i, memberID)
-		}
-		ids[id] = true
+type TeamMemberInput struct {
+	UserID                     *graphql.ID
+	Username                   *string
+	Email                      *string
+	ExternalAccountServiceID   *string
+	ExternalAccountServiceType *string
+	ExternalAccountAccountID   *string
+	ExternalAccountLogin       *string
+}
+
+func (t TeamMemberInput) String() string {
+	conds := []string{}
+
+	if t.UserID != nil {
+		conds = append(conds, fmt.Sprintf("ID=%s", string(*t.UserID)))
 	}
-	return ids, nil
+	if t.Username != nil {
+		conds = append(conds, fmt.Sprintf("Username=%s", *t.Username))
+	}
+	if t.Email != nil {
+		conds = append(conds, fmt.Sprintf("Email=%s", *t.Email))
+	}
+	if t.ExternalAccountServiceID != nil {
+		maybeString := func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		}
+		conds = append(conds, fmt.Sprintf(
+			"ExternalAccount(ServiceID=%s, ServiceType=%s, AccountID=%s, Login=%s)",
+			maybeString(t.ExternalAccountServiceID),
+			maybeString(t.ExternalAccountServiceType),
+			maybeString(t.ExternalAccountAccountID),
+			maybeString(t.ExternalAccountLogin),
+		))
+	}
+
+	return fmt.Sprintf("team member (%s)", strings.Join(conds, ","))
 }
 
 func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -502,41 +531,122 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 	if args.Team != nil && args.TeamName != nil {
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
-	memberIDs, err := args.membersIDs()
+
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
 	if err != nil {
 		return nil, err
 	}
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
+		}
+		return nil, err
+	}
+	usersMap := make(map[int32]*types.User, len(users))
+	for _, user := range users {
+		usersMap[user.ID] = user
+	}
+
 	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
 	}
-	listOpts := database.ListTeamMembersOpts{
-		TeamID: team.ID,
-	}
-	for {
-		existingMembers, cursor, err := r.db.Teams().ListTeamMembers(ctx, listOpts)
-		if err != nil {
-			return nil, err
-		}
-		for _, m := range existingMembers {
-			delete(memberIDs, m.UserID)
-		}
-		if cursor == nil {
-			break
-		}
-		listOpts.Cursor = *cursor
-	}
-	var membersToAdd []*types.TeamMember
-	for userID := range memberIDs {
-		membersToAdd = append(membersToAdd, &types.TeamMember{
+
+	ms := make([]*types.TeamMember, 0, len(users))
+	for _, u := range users {
+		ms = append(ms, &types.TeamMember{
+			UserID: u.ID,
 			TeamID: team.ID,
-			UserID: userID,
 		})
 	}
-	if len(membersToAdd) > 0 {
-		if err := r.db.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
-			return nil, err
+	if err := r.db.Teams().CreateTeamMember(ctx, ms...); err != nil {
+		return nil, err
+	}
+
+	return &TeamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
+}
+
+func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can modify team members")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
+
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	if err != nil {
+		return nil, err
+	}
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
+		return nil, err
+	}
+	usersMap := make(map[int32]*types.User, len(users))
+	for _, user := range users {
+		usersMap[user.ID] = user
+	}
+
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.db.WithTransact(ctx, func(tx database.DB) error {
+		var membersToRemove []*types.TeamMember
+		listOpts := database.ListTeamMembersOpts{
+			TeamID: team.ID,
+		}
+		for {
+			existingMembers, cursor, err := tx.Teams().ListTeamMembers(ctx, listOpts)
+			if err != nil {
+				return err
+			}
+			for _, m := range existingMembers {
+				if _, ok := usersMap[m.UserID]; ok {
+					delete(usersMap, m.UserID)
+				} else {
+					membersToRemove = append(membersToRemove, &types.TeamMember{
+						UserID: m.UserID,
+						TeamID: team.ID,
+					})
+				}
+			}
+			if cursor == nil {
+				break
+			}
+			listOpts.Cursor = *cursor
+		}
+		var membersToAdd []*types.TeamMember
+		for _, user := range users {
+			membersToAdd = append(membersToAdd, &types.TeamMember{
+				UserID: user.ID,
+				TeamID: team.ID,
+			})
+		}
+		if len(membersToRemove) > 0 {
+			if err := tx.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+				return err
+			}
+		}
+		if len(membersToAdd) > 0 {
+			if err := tx.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return &TeamResolver{
 		db:   r.db,
@@ -544,12 +654,50 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 	}, nil
 }
 
-func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *TeamResolver {
-	return &TeamResolver{}
-}
+func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can view teams")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
 
-func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *TeamResolver {
-	return &TeamResolver{}
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	if err != nil {
+		return nil, err
+	}
+	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member))
+		}
+		return nil, err
+	}
+
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	var membersToRemove []*types.TeamMember
+	for _, user := range users {
+		membersToRemove = append(membersToRemove, &types.TeamMember{
+			UserID: user.ID,
+			TeamID: team.ID,
+		})
+	}
+	if len(membersToRemove) > 0 {
+		if err := r.db.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+			return nil, err
+		}
+	}
+	return &TeamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
@@ -561,6 +709,7 @@ func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamC
 	if err := c.applyArgs(args); err != nil {
 		return nil, err
 	}
+	c.onlyRootTeams = true
 	return c, nil
 }
 
@@ -583,4 +732,133 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 	}
 
 	return &TeamResolver{db: r.db, team: t}, nil
+}
+
+// usersForTeamMembers returns the matching users for the given slice of TeamMemberInput.
+// For each input, we look at ID, Username, Email, and then External Account in this precedence
+// order. If one field is specified, it is used. If not found, under that predicate, the
+// next one is tried. If the record doesn't match a user entirely, it is skipped. (As opposed
+// to an error being returned. This is more convenient for ingestion as it allows us to
+// skip over users for now.) We might want to revisit this later.
+func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemberInput) (users []*types.User, noMatch []TeamMemberInput, err error) {
+	// First, look at IDs.
+	ids := []int32{}
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+		// If ID is specified for the member, we try to find the user by ID.
+		if m.UserID == nil {
+			return false, nil
+		}
+		id, err := UnmarshalUserID(*m.UserID)
+		if err != nil {
+			return false, err
+		}
+		ids = append(ids, id)
+		return true, nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(ids) > 0 {
+		users, err = db.Users().List(ctx, &database.UsersListOptions{UserIDs: ids})
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// Now, look at all that have username set.
+	usernames := []string{}
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+		if m.Username == nil {
+			return false, nil
+		}
+		usernames = append(usernames, *m.Username)
+		return true, nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(usernames) > 0 {
+		us, err := db.Users().List(ctx, &database.UsersListOptions{Usernames: usernames})
+		if err != nil {
+			return nil, nil, err
+		}
+		users = append(users, us...)
+	}
+
+	// Next up: Email.
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+		if m.Email == nil {
+			return false, nil
+		}
+		user, err := db.Users().GetByVerifiedEmail(ctx, *m.Email)
+		if err != nil {
+			return false, err
+		}
+		users = append(users, user)
+		return true, nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Next up: ExternalAccount.
+	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+		if m.ExternalAccountServiceID == nil || m.ExternalAccountServiceType == nil {
+			return false, nil
+		}
+
+		eas, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			ServiceType: *m.ExternalAccountServiceType,
+			ServiceID:   *m.ExternalAccountServiceID,
+		})
+		if err != nil {
+			return false, err
+		}
+		for _, ea := range eas {
+			if m.ExternalAccountAccountID != nil {
+				if ea.AccountID == *m.ExternalAccountAccountID {
+					u, err := db.Users().GetByID(ctx, ea.UserID)
+					if err != nil {
+						return false, err
+					}
+					users = append(users, u)
+					return true, nil
+				}
+				continue
+			}
+			if m.ExternalAccountLogin != nil {
+				if ea.PublicAccountData.Login == nil {
+					continue
+				}
+				if *ea.PublicAccountData.Login == *m.ExternalAccountAccountID {
+					u, err := db.Users().GetByID(ctx, ea.UserID)
+					if err != nil {
+						return false, err
+					}
+					users = append(users, u)
+					return true, nil
+				}
+				continue
+			}
+		}
+		return false, nil
+	})
+
+	return users, members, err
+}
+
+// extractMembers calls pred on each member, and returns a new slice of members
+// for which the predicate was falsey.
+func extractMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool, err error)) ([]TeamMemberInput, error) {
+	remaining := []TeamMemberInput{}
+	for _, member := range members {
+		ok, err := pred(member)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			remaining = append(remaining, member)
+		}
+	}
+	return remaining, nil
 }

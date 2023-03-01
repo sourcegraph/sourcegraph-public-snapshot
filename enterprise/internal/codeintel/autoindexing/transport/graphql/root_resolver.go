@@ -510,18 +510,18 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 
 		limitErr = errors.Append(limitErr, err)
 	}
-	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-	if err != nil {
-		if !errors.As(err, &inference.LimitError{}) {
-			return nil, err
-		}
+	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+	// if err != nil {
+	// 	if !errors.As(err, &inference.LimitError{}) {
+	// 		return nil, err
+	// 	}
 
-		limitErr = errors.Append(limitErr, err)
-	}
+	// 	limitErr = errors.Append(limitErr, err)
+	// }
 
 	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {

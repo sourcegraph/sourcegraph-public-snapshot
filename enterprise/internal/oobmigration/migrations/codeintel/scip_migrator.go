@@ -12,6 +12,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/conc/pool"
 	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type scipMigrator struct {
@@ -94,9 +94,9 @@ func (m *scipMigrator) Up(ctx context.Context) error {
 	}
 	close(ch)
 
-	g := group.New().WithContext(ctx)
+	p := pool.New().WithContext(ctx)
 	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			for range ch {
 				if ok, err := m.upSingle(ctx); err != nil {
 					return err
@@ -109,7 +109,7 @@ func (m *scipMigrator) Up(ctx context.Context) error {
 		})
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {

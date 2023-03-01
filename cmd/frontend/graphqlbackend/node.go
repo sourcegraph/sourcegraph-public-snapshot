@@ -161,6 +161,16 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
+	n, ok := r.Node.(*externalServiceNamespaceResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceRepository() (*externalServiceRepositoryResolver, bool) {
+	n, ok := r.Node.(*externalServiceRepositoryResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -189,13 +199,6 @@ func (r *NodeResolver) ToOrganizationInvitation() (*organizationInvitationResolv
 func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	n, ok := r.Node.(*GitCommitResolver)
 	return n, ok
-}
-
-func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
-	if NodeToRegistryExtension == nil {
-		return nil, false
-	}
-	return NodeToRegistryExtension(r.Node)
 }
 
 func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
@@ -346,5 +349,10 @@ func (r *NodeResolver) ToRole() (RoleResolver, bool) {
 
 func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
 	return n, ok
 }

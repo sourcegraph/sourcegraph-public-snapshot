@@ -17,19 +17,38 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests. [#47466](https://github.com/sourcegraph/sourcegraph/pull/47466)
+- Kubernetes Deployments: Introduced a new Kubernetes deployment option ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) to deploy Sourcegraph with Kustomize. [#46755](https://github.com/sourcegraph/sourcegraph/issues/46755)
+- Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base cluster that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources. [#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
+- Added the `other.exclude` setting to [Other external service config](https://docs.sourcegraph.com/admin/external_service/other#configuration). It can be configured to exclude mirroring of repositories matching a pattern similar to other external services. This is useful when you want to exclude repositories discovered via `src serve-git`. [#48168](https://github.com/sourcegraph/sourcegraph/pull/48168)
+- The **Site admin > Updates** page displays the upgrade readiness information about schema drift and out-of-band migrations. [#48046](https://github.com/sourcegraph/sourcegraph/pull/48046)
 
 ### Changed
 
--
+- Experimental GraphQL query, `permissionsSyncJobs` is substituted with new non-experimental query which provides full information about permissions sync jobs stored in the database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Renders `readme.txt` files in the repository page. [#47944](https://github.com/sourcegraph/sourcegraph/pull/47944)
+- Renders GitHub pull request references in all places where a commit message is referenced. [#48183](https://github.com/sourcegraph/sourcegraph/pull/48183)
+- CodeMirror blob view (default) uses selection-driven code navigation. [#48066](https://github.com/sourcegraph/sourcegraph/pull/48066)
+- Older Code Insights data points will now be automatically archived as configured by the site configuration setting `insights.maximumSampleSize`, set to 30 by default. All points can be exported. This behaviour can be disabled using the experimental setting `insightsDataRetention`. [#48259](https://github.com/sourcegraph/sourcegraph/pull/48259)
 
 ### Fixed
 
--
+- Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
+- Enable `auto gc` on fetch when `SRC_ENABLE_GC_AUTO` is set to `true`. [#47852](https://github.com/sourcegraph/sourcegraph/pull/47852)
+- Fixes syntax highlighting and line number issues in the code preview rendered inside the references panel. [#48107](https://github.com/sourcegraph/sourcegraph/pull/48107)
 
 ### Removed
 
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
+- The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+
+## 4.5.1
+
+### Changed
+
+- Updated git to version 2.39.2 to address [reported security vulnerabilities](https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/) [#47892](https://github.com/sourcegraph/sourcegraph/pull/47892/files)
+- Updated curl to 7.88.1 to address [reported security vulnerabilities](https://curl.se/docs/CVE-2022-42915.html) [#48144](https://github.com/sourcegraph/sourcegraph/pull/48144)
 
 ## 4.5.0
 
@@ -84,6 +103,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The Code insights "run over all repositories" mode has been replaced with search-powered repositories filed syntax. [#45687](https://github.com/sourcegraph/sourcegraph/pull/45687)
 - The settings `search.repositoryGroups`, `codeInsightsGqlApi`, `codeInsightsAllRepos`, `experimentalFeatures.copyQueryButton`,, `experimentalFeatures.showRepogroupHomepage`, `experimentalFeatures.showOnboardingTour`, `experimentalFeatures.showSearchContextManagement` and `codeIntelligence.autoIndexRepositoryGroups` have been removed as they were deprecated and unsued. [#47481](https://github.com/sourcegraph/sourcegraph/pull/47481)
+- The site config `enableLegacyExtensions` setting was removed. It is no longer possible to enable legacy Sourcegraph extension API functionality in this version.
 
 ## 4.4.2
 

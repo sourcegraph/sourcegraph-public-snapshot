@@ -10,16 +10,15 @@ import (
 	"sync/atomic"
 
 	"github.com/google/go-github/v41/github"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/conc/pool"
 )
 
 // generateUserOAuthCsv creates user impersonation OAuth tokens and writes them to a CSV file together with the usernames.
 func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
-	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
+	tp := pool.NewWithResults[userToken]().WithMaxGoroutines(1000)
 	for _, u := range users {
 		currentU := u
-		tg.Go(func() userToken {
+		tp.Go(func() userToken {
 			token := currentU.executeCreateImpersonationToken(ctx)
 			atomic.AddInt64(&tokensDone, 1)
 			progress.SetValue(5, float64(tokensDone))
@@ -29,7 +28,7 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 			}
 		})
 	}
-	pairs := tg.Wait()
+	pairs := tp.Wait()
 
 	csvFile, err := os.Create("users.csv")
 	defer func() {

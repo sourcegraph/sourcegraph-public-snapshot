@@ -2,12 +2,12 @@ import React, { useEffect } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { useExperimentalFeatures } from '../../../../../../stores'
 import { CodeInsightsPage } from '../../../../components'
 
 import {
@@ -27,7 +27,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
 
     const navigate = useNavigate()
     const { search } = useLocation()
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
