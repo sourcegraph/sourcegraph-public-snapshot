@@ -78,6 +78,7 @@ type RepoEmbeddingJobsStore interface {
 	basestore.ShareableStore
 
 	Transact(ctx context.Context) (RepoEmbeddingJobsStore, error)
+	Exec(ctx context.Context, query *sqlf.Query) error
 	Done(err error) error
 
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
