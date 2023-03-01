@@ -23,14 +23,15 @@ var mockServerURL string
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
 	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
-	isValidAzureDevOpsConn := false
+	initResults := &authztypes.ProviderInitResult{}
+
+	if len(conns) == 0 {
+		return initResults
+	}
+
 	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
 	// orgs and projects in every permissions sync iteration.
 	for _, c := range conns {
-		if c.AzureDevOpsConnection == nil {
-			continue
-		}
-
 		// The list of orgs and projects may have duplicates if there are multiple Azure DevOps code
 		// host connections that have the same project in their config.
 		//
@@ -43,14 +44,6 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		for _, name := range c.Projects {
 			projects[name] = struct{}{}
 		}
-
-		isValidAzureDevOpsConn = true
-	}
-
-	initResults := &authztypes.ProviderInitResult{}
-	// There are no AzureDevOpsConnection.
-	if !isValidAzureDevOpsConn {
-		return initResults
 	}
 
 	// Nothing fancy, just some data restructuring to convert the map back to a slice now that we
