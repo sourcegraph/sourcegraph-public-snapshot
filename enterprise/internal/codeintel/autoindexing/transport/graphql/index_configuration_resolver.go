@@ -72,6 +72,10 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	}, nil
 }
 
+func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	return nil, errors.New("unimplemented") // TODO
+}
+
 type inferredConfigurationResolver struct {
 	configuration string
 	limitErr      error
@@ -79,6 +83,10 @@ type inferredConfigurationResolver struct {
 
 func (r *inferredConfigurationResolver) Configuration() string {
 	return r.configuration
+}
+
+func (r *inferredConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	return nil, errors.New("unimplemented") // TODO
 }
 
 func (r *inferredConfigurationResolver) LimitError() *string {

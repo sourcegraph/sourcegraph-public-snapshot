@@ -190,6 +190,7 @@ type PreciseIndexResolver interface {
 type AutoIndexJobDescriptionResolver interface {
 	Root() string
 	Indexer() CodeIntelIndexerResolver
+	ComparisonKey() string
 	Steps() IndexStepsResolver
 }
 
@@ -306,11 +307,13 @@ type CodeIntelIndexerResolver interface {
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
+	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
 }
 
 type InferredConfigurationResolver interface {
 	Configuration() string
+	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	LimitError() *string
 }
 

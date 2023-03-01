@@ -2,6 +2,9 @@ package graphql
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -303,6 +306,16 @@ func (r *autoIndexJobDescriptionResolver) Root() string {
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer)
+}
+
+func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
+	return comparisonKey(r.indexJob.Root, r.indexJob.Indexer)
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
