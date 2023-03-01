@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 )
 
 var (
@@ -24,7 +22,7 @@ func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
 	case PullRequestUpdatedEventType:
 		target = &PullRequestUpdatedEvent{}
 	default:
-		return nil, webhooks.WebHookeNotFoundErr{}
+		return nil, webhookNotFoundErr{}
 	}
 
 	if err := json.Unmarshal(payload, target); err != nil {
@@ -81,4 +79,14 @@ func (e *PullRequestMergedEvent) Key() string {
 
 func (e *PullRequestCreatedEvent) Key() string {
 	return strconv.Itoa(e.PullRequest.ID) + ":created"
+}
+
+type webhookNotFoundErr struct{}
+
+func (w webhookNotFoundErr) Error() string {
+	return "webhook not found"
+}
+
+func (w webhookNotFoundErr) NotFound() bool {
+	return true
 }

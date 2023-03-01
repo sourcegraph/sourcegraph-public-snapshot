@@ -2,8 +2,6 @@ package webhooks
 
 import (
 	"encoding/json"
-	"fmt"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,16 +34,6 @@ type PushEvent struct {
 }
 
 var ErrObjectKindUnknown = errors.New("unknown object kind")
-
-type WebHookeNotFoundErr struct{}
-
-func (w WebHookeNotFoundErr) Error() string {
-	return fmt.Sprintf("webhook not found")
-}
-
-func (w WebHookeNotFoundErr) NotFound() bool {
-	return true
-}
 
 type downcaster interface {
 	downcast() (any, error)
