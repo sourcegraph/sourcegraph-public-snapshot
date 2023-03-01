@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/rjeczalik/notify"
 	"github.com/sourcegraph/conc/pool"
@@ -25,12 +23,6 @@ type BazelCommand struct {
 	Target      string            `yaml:"target"`
 	Args        string            `yaml:"args"`
 	Env         map[string]string `yaml:"env"`
-}
-
-type IBazel struct {
-	pwd     string
-	targets []string
-	cancel  func()
 }
 
 func outputPath() ([]byte, error) {
@@ -61,48 +53,6 @@ func binLocation(target string) (string, error) {
 	return fmt.Sprintf("%s%s", outputPath, binPath), nil
 }
 
-// newIBazel returns a runner to interact with ibazel.
-func newIBazel(pwd string, targets ...string) *IBazel {
-	return &IBazel{
-		pwd:     pwd,
-		targets: targets,
-	}
-}
-
-func (ib *IBazel) Start(ctx context.Context, dir string) error {
-	args := append([]string{"build"}, ib.targets...)
-	ctx, ib.cancel = context.WithCancel(ctx)
-	cmd := exec.CommandContext(ctx, "ibazel", args...)
-
-	sc := &startedCmd{
-		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
-	}
-
-	println("💈", "ibazel", strings.Join(args, " "))
-	sc.cancel = ib.cancel
-	sc.Cmd = cmd
-	sc.Cmd.Dir = dir
-
-	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(ctx, "iBazel", std.Out.Output)
-	stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
-	stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
-	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
-	if err != nil {
-		return err
-	}
-	sc.outEg = eg
-
-	// Bazel out directory should exist here before returning
-	return sc.Start()
-}
-
-func (ib *IBazel) Stop() error {
-	ib.cancel()
-	return nil
-}
-
 func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...BazelCommand) error {
 	if len(cmds) == 0 {
 		// no Bazel commands so we return
@@ -118,6 +68,12 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 	for _, cmd := range cmds {
 		targets = append(targets, cmd.Target)
 	}
+
+	// First we build everything once, to ensure all binaries are present.
+	if err := BazelBuild(ctx, repoRoot, targets...); err != nil {
+		return err
+	}
+
 	ibazel := newIBazel(repoRoot, targets...)
 
 	p := pool.New().WithContext(ctx).WithCancelOnError()
@@ -128,15 +84,6 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 	for _, bc := range cmds {
 		bc := bc
 		p.Go(func(ctx context.Context) error {
-			loc, err := bc.BinLocation()
-			if err != nil {
-				return err
-			}
-			// The binary for this command might not exist yet, so we wait until it does
-			// before starting it.
-			if err := waitForFileToExist(ctx, loc); err != nil {
-				return err
-			}
 			return bc.Start(ctx, repoRoot, parentEnv)
 		})
 	}
@@ -146,30 +93,6 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 
 func (bc *BazelCommand) BinLocation() (string, error) {
 	return binLocation(bc.Target)
-}
-
-func waitForFileToExist(ctx context.Context, bin string) error {
-	// We can't use notify, since the directory/file has to exist.
-	// On a brand new install or after running `bazel clean` the
-	// binary locations do not exist, so we need to resort to some
-	// polling with the use of a Ticker.
-	ticker := time.NewTicker(1 * time.Second)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			// Does bin exist yet?
-			_, err := os.Stat(bin)
-			if err != nil && os.IsNotExist(err) {
-				continue
-			} else {
-				// location exists, so we don't have to wait anymore
-				return nil
-			}
-		}
-	}
 }
 
 func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
