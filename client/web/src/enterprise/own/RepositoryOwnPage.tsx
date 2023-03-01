@@ -3,6 +3,7 @@ import React from 'react'
 import { mdiAccount } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { LoadingSpinner, PageHeader, Icon, H1, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -47,7 +48,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
 
     return (
         <Page>
-            <PageTitle title="Sourcegraph Own" />
+            <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
             <PageHeader
                 description={
                     <>
