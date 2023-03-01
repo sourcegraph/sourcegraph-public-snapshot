@@ -244,6 +244,10 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					// This is the heuristic that is described in the UpdateScheduler documentation.
 					// Update that documentation if you update this logic.
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
+					maxUpdateInterval := conf.Get().GitMaxRepoUpdateInterval
+					if maxUpdateInterval > 0 && interval.Hours() > float64(maxUpdateInterval) {
+						interval = time.Duration(maxUpdateInterval) * time.Hour
+					}
 					s.schedule.updateInterval(repo, interval)
 				}
 			}(ctx, repo, cancel)

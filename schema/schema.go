@@ -2427,6 +2427,8 @@ type SiteConfiguration struct {
 	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
+	// GitMaxRepoUpdateInterval description: Maximum interval of time, in hours, for scheduling a repository update. The repository updater heuristic will not exceed this value when scheduling updates. Default is one week, values <= 0 means no maximum, and custom intervals take precedence over this.
+	GitMaxRepoUpdateInterval int `json:"gitMaxRepoUpdateInterval,omitempty"`
 	// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
@@ -2622,6 +2624,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitLongCommandTimeout")
 	delete(m, "gitMaxCodehostRequestsPerSecond")
 	delete(m, "gitMaxConcurrentClones")
+	delete(m, "gitMaxRepoUpdateInterval")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
 	delete(m, "htmlBodyBottom")

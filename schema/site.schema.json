@@ -687,6 +687,12 @@
       },
       "group": "External services"
     },
+    "gitMaxRepoUpdateInterval": {
+      "description": "Maximum interval of time, in hours, for scheduling a repository update. The repository updater heuristic will not exceed this value when scheduling updates. Default is one week, values <= 0 means no maximum, and custom intervals take precedence over this.",
+      "type": "integer",
+      "default": 168,
+      "group": "External services"
+    },
     "disablePublicRepoRedirects": {
       "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
