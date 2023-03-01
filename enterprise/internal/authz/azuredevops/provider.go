@@ -21,7 +21,7 @@ import (
 var mockServerURL string
 
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
-	orgs, projects := []string{}, []string{}
+	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
 	isValidAzureDevOpsConn := false
 	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
@@ -31,8 +31,18 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 			continue
 		}
 
-		orgs = append(orgs, c.Orgs...)
-		projects = append(projects, c.Projects...)
+		// The list of orgs and projects may have duplicates if there are multiple Azure DevOps code
+		// host connections that have the same project in their config.
+		//
+		// Add them to a map so that we may filter out duplicates before passing them over to the
+		// provider.
+		for _, name := range c.Orgs {
+			orgs[name] = struct{}{}
+		}
+
+		for _, name := range c.Projects {
+			projects[name] = struct{}{}
+		}
 
 		isValidAzureDevOpsConn = true
 	}
@@ -43,7 +53,18 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		return initResults
 	}
 
-	p, err := newAuthzProvider(db, orgs, projects)
+	// Nothing fancy, just some data restructuring to convert the map back to a slice now that we
+	// have a unique list of orgs and projects.
+	uniqueOrgs, uniqueProjects := []string{}, []string{}
+	for name, _ := range orgs {
+		uniqueOrgs = append(uniqueOrgs, name)
+	}
+
+	for name, _ := range projects {
+		uniqueProjects = append(uniqueProjects, name)
+	}
+
+	p, err := newAuthzProvider(db, uniqueOrgs, uniqueProjects)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
@@ -139,20 +160,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	var repos []azuredevops.Repository
 
-	seenOrgs := map[string]struct{}{}
 	for _, org := range p.orgs {
-		// The list of orgs may have duplicates if there are multiple Azure DevOps code host
-		// connections that have the same org in their config. As a result, skip this org if we
-		// already listed its repositories in this iteration of permissions syncing.
-		if _, ok := seenOrgs[org]; ok {
-			continue
-		}
-
-		seenOrgs[org] = struct{}{}
-
-		logger.Debug("listing repos",
-			log.String("org", fmt.Sprintf("%#v", org)),
-		)
+		logger.Debug("listing repos", log.String("org", fmt.Sprintf("%#v", org)))
 
 		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 			ProjectOrOrgName: org,
@@ -184,17 +193,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		repos = append(repos, foundRepos...)
 	}
 
-	seenProjects := map[string]struct{}{}
 	for _, project := range p.projects {
-		// The list of projects may have duplicates if there are multiple Azure DevOps code host
-		// connections that have the same project in their config. As a result, skip this project if
-		// we already listed its repositories in this iteration of permissions syncing.
-		if _, ok := seenProjects[project]; ok {
-			continue
-		}
-
-		seenProjects[project] = struct{}{}
-
 		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 			ProjectOrOrgName: project,
 		})
