@@ -111,16 +111,17 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 	// Convert account data – if it doesn't exist, never mind
 	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
-		// TODO: Failed to convert account data to SCIM resource attributes. Maybe log this?
-		resourceAttributes = scim.ResourceAttributes{}
+		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
+		resourceAttributes = scim.ResourceAttributes{
+			AttrUserName:    user.Username,
+			AttrDisplayName: user.DisplayName,
+			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
+			"externalId":    user.SCIMExternalID,
+		}
 	}
 	if resourceAttributes[AttrName] == nil {
 		resourceAttributes[AttrName] = map[string]interface{}{}
 	}
-	resourceAttributes["externalId"] = user.SCIMExternalID
-	resourceAttributes[AttrName].(map[string]interface{})[AttrNameFormatted] = user.DisplayName
-	resourceAttributes[AttrDisplayName] = user.DisplayName
-	resourceAttributes["active"] = true
 
 	// Fall back to username and primary email in the user object if not set in account data
 	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
