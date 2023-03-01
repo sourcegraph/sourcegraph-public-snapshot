@@ -296,16 +296,6 @@ mutation {
 	}
 }`,
 			}, {
-				name: "users",
-				query: `
-{
-	users {
-		nodes {
-			id
-		}
-	}
-}`,
-			}, {
 				name: "surveyResponses",
 				query: `
 {

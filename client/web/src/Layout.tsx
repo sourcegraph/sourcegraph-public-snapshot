@@ -1,11 +1,12 @@
 import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { Outlet, useLocation, Navigate, useMatches } from 'react-router-dom'
+import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-router-dom'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
@@ -28,8 +29,6 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { useExperimentalFeatures } from './stores'
-import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -46,6 +45,14 @@ export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
+function useIsSignInOrSignUpPage(): boolean {
+    const isSignInPage = useMatch(PageRoutes.SignIn)
+    const isSignUpPage = useMatch(PageRoutes.SignUp)
+    const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
+    const isWelcomePage = useMatch(PageRoutes.Welcome)
+    const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+}
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
@@ -69,11 +76,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
 
-    const { setupWizard } = useExperimentalFeatures()
+    const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
+        setupWizard: features.setupWizard,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings
+        fuzzyFinder: features.fuzzyFinder ?? true,
+    }))
     const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    // enable fuzzy finder by default unless it's explicitly disabled in settings
-    const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
 
@@ -85,11 +94,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
-    const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+    const isSignInOrUp = useIsSignInOrSignUpPage()
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -140,7 +145,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard />
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} />
             </Suspense>
         )
     }
@@ -197,7 +202,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}

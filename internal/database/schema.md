@@ -1,3 +1,20 @@
+# Table "public.access_requests"
+```
+     Column      |           Type           | Collation | Nullable |                   Default                   
+-----------------+--------------------------+-----------+----------+---------------------------------------------
+ id              | integer                  |           | not null | nextval('access_requests_id_seq'::regclass)
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+ name            | text                     |           | not null | 
+ email           | text                     |           | not null | 
+ additional_info | text                     |           |          | 
+ status          | text                     |           | not null | 
+Indexes:
+    "access_requests_pkey" PRIMARY KEY, btree (id)
+    "access_requests_email_key" UNIQUE CONSTRAINT, btree (email)
+
+```
+
 # Table "public.access_tokens"
 ```
      Column      |           Type           | Collation | Nullable |                  Default                  
@@ -940,16 +957,18 @@ Triggers:
 
 # Table "public.codeintel_ranking_definitions"
 ```
-    Column     |  Type   | Collation | Nullable |                          Default                          
----------------+---------+-----------+----------+-----------------------------------------------------------
- id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
- upload_id     | integer |           | not null | 
- symbol_name   | text    |           | not null | 
- repository    | text    |           | not null | 
- document_path | text    |           | not null | 
- graph_key     | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_name     | text                     |           | not null | 
+ repository      | text                     |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
     "codeintel_ranking_definitions_upload_id" btree (upload_id)
 
@@ -985,19 +1004,22 @@ Foreign-key constraints:
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr" btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
 # Table "public.codeintel_ranking_references"
 ```
-    Column    |  Type   | Collation | Nullable |                         Default                          
---------------+---------+-----------+----------+----------------------------------------------------------
- id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
- upload_id    | integer |           | not null | 
- symbol_names | text[]  |           | not null | 
- graph_key    | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_names    | text[]                   |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
 Referenced by:
     TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
@@ -1060,6 +1082,28 @@ Indexes:
 **record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
 
 **transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
+# Table "public.context_detection_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                           Default                            
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------------
+ id                | integer                  |           | not null | nextval('context_detection_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "context_detection_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
 
 # Table "public.critical_and_site_config"
 ```
@@ -1290,6 +1334,24 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **queue_name**: The queue name that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
+
+# Table "public.executor_job_tokens"
+```
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea                    |           | not null | 
+ job_id       | bigint                   |           | not null | 
+ queue        | text                     |           | not null | 
+ repo_id      | bigint                   |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
+    "executor_job_tokens_job_id_queue_repo_id_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo_id)
+    "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
+
+```
 
 # Table "public.executor_secret_access_logs"
 ```
@@ -3019,10 +3081,35 @@ Referenced by:
 Triggers:
     trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trig_delete_user_repo_permissions_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_repo_soft_delete()
     trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ revision          | text                     |           | not null | 
+Indexes:
+    "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -3487,6 +3574,8 @@ Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Referenced by:
     TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
+Triggers:
+    trig_delete_user_repo_permissions_on_external_account_soft_dele AFTER UPDATE ON user_external_accounts FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete()
 
 ```
 
@@ -3680,6 +3769,7 @@ Referenced by:
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:
+    trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
 

@@ -98,6 +98,23 @@ func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 	return
 }
 
+func TryUnmarshalExternalServiceID(externalServiceID *graphql.ID) (*int64, error) {
+	var (
+		id  int64
+		err error
+	)
+
+	if externalServiceID != nil {
+		id, err = UnmarshalExternalServiceID(*externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		return &id, nil
+	}
+
+	return nil, nil
+}
+
 func (r *externalServiceResolver) ID() graphql.ID {
 	return MarshalExternalServiceID(r.externalService.ID)
 }
@@ -448,8 +465,20 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			return
 		}
 
-		args := protocol.ExternalServiceNamespacesArgs{Kind: r.args.Kind, Config: config}
-		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, args)
+		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		namespacesArgs := protocol.ExternalServiceNamespacesArgs{
+			ExternalServiceID: externalServiceID,
+			Kind:              r.args.Kind,
+			Config:            config,
+		}
+
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, namespacesArgs)
 		if err != nil {
 			r.err = err
 			return
@@ -497,4 +526,77 @@ func (r *externalServiceNamespaceResolver) Name() string {
 
 func (r *externalServiceNamespaceResolver) ExternalID() string {
 	return r.namespace.ExternalID
+}
+
+func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceRepository, error) {
+	r.once.Do(func() {
+		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		first := int32(100)
+		if r.args.First != nil {
+			first = *r.args.First
+		}
+
+		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		reposArgs := protocol.ExternalServiceRepositoriesArgs{
+			ExternalServiceID: externalServiceID,
+			Kind:              r.args.Kind,
+			Query:             r.args.Query,
+			Config:            config,
+			First:             first,
+			ExcludeRepos:      r.args.ExcludeRepos,
+		}
+
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, reposArgs)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.nodes = res.Repos
+	})
+
+	return r.nodes, r.err
+}
+
+func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceRepositoryResolver, error) {
+	sourceRepos, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceRepositoryResolver, len(sourceRepos))
+	for i, j := range sourceRepos {
+		nodes[i] = &externalServiceRepositoryResolver{
+			repo: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+type externalServiceRepositoryResolver struct {
+	repo *types.ExternalServiceRepository
+}
+
+func (r *externalServiceRepositoryResolver) ID() graphql.ID {
+	return relay.MarshalID("ExternalServiceRepository", r.repo)
+}
+
+func (r *externalServiceRepositoryResolver) Name() string {
+	return string(r.repo.Name)
+}
+
+func (r *externalServiceRepositoryResolver) ExternalID() string {
+	return r.repo.ExternalID
 }

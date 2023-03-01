@@ -25,14 +25,15 @@ Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
 ### **Step 1**: Set up a release branch
 
-Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
+Create a release branch from the default branch (or [an available tag](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tags)) in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
 
 See the [docs on reference repository](../repositories.md) for detailed instructions on creating a local fork.
 
 ```bash
+  # Recommended: replace the URL with your private fork
   $ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
   $ cd deploy-sourcegraph-k8s
-  $ git checkout -b release
+  $ git checkout v4.5.1 && git checkout -b release
 ```
 
 ### **Step 2**: Set up a directory for your instance
@@ -43,24 +44,24 @@ Create a copy of the [instances/template](kustomize/index.md#template) directory
   $ cp -R instances/template instances/my-sourcegraph
 ```
 
-In Kustomize, this directory is referred to as an [overlay](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay).
+>NOTE: In Kustomize, this directory is referred to as an [overlay](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay).
 
 ### **Step 3**: Set up the configuration files
 
-1\. Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`.
+**1.** Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`. 
 
-The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
+- The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
 
 ```bash
-  $ mv instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
+  $ mv instances/my-sourcegraph/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
 ```
 
-2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`.
+**2.** Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`.
 
-The `buildConfig.yaml` file is used to configure components included in your `kustomization` file when required.
+- The `buildConfig.yaml` file is used to configure components included in your `kustomization` file if required.
 
 ```bash
-  $ mv instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
+  $ mv instances/my-sourcegraph/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
 ```
 
 ### **Step 4**: Set namespace
@@ -98,7 +99,10 @@ See our [configurations guide](configure.md) for the full list of available stor
 
 If you cannot create a new storage class and/or want to use an existing one with SSDs:
 
-1\. Include the `storage-class/name-update` component under the components list
+<details>
+  <summary>Show instruction</summary>
+
+**1.** Include the `storage-class/name-update` component under the components list
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
@@ -108,18 +112,19 @@ If you cannot create a new storage class and/or want to use an existing one with
       - ../../components/storage-class/name-update
   ```
 
-2\. Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
+**2.** Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
 
 For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
 
   ```yaml
   # instances/my-sourcegraph/buildConfig.yaml
-    kind: SourcegraphBuildConfig
+    kind: ConfigMap
     metadata:
-      name: sourcegraph-kustomize-config
+      name: sourcegraph-kustomize-build-config
     data:
       STORAGECLASS_NAME: sourcegraph # -- [ACTION] Update storage class name here
   ```
+</details>
 
 #### Option 3: Use default storage class
 
@@ -195,16 +200,16 @@ Other common configurations include:
 
 See the [configuration guide for Kustomize](configure.md) for more configuration options.
 
-## Helm Chart
+## Helm Charts
 
-We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm chart](helm.md) instead.
+We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm Charts](helm.md) instead.
 
 ## Learn more
 
-- [Migrate from deploy-sourcegraph to deploy-sourcegraph-k8s](kustomize/migrate.md)
 - Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)
   - [Minikube](../single-node/minikube.md)
-- [Troubleshooting](troubleshoot.md)
+- [Migration guide](kustomize/migrate.md) on migrating from [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)
 - [Other deployment options](../index.md)
+- [Troubleshooting](troubleshoot.md)

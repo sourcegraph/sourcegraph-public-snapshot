@@ -446,7 +446,10 @@ func MeteredTransportOpt(subsystem string) Opt {
 		}
 
 		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
-			return u.Path
+			// We don't have a way to return a low cardinality label here (for
+			// the prometheus label "category"). Previously we returned u.Path
+			// but that blew up prometheus. So we just return unknown.
+			return "unknown"
 		})
 
 		return nil

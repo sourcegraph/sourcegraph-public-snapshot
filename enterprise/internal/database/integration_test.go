@@ -64,6 +64,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"ReposIDsWithOldestPerms", testPermsStore_ReposIDsWithOldestPerms(db)},
 		{"Metrics", testPermsStore_Metrics(db)},
 		{"MapUsers", testPermsStore_MapUsers(db)},
+		{"ListUserPermissions", testPermsStore_ListUserPermissions(db)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

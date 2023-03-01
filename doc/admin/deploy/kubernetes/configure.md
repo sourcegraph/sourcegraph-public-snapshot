@@ -25,7 +25,7 @@
 
 # Configure Sourcegraph with Kustomize
 
-This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components, and does not work with non-Kustomize deployment types.
+This guide will demonstrate how to customize a Kubernetes deployment (**non-Helm**) using Kustomize components.
 
 <div class="getting-started">
   <a class="btn text-center" href="./index">Installation</a>
@@ -46,7 +46,7 @@ Following these guidelines will help you create a seamless deployment and avoid 
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services (tracing services and cAdvisor are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services ([tracing services](#tracing) and [cAdvisor](#deploy-cadvisor) are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -587,16 +587,12 @@ To use an **existing** storage class provided by other cloud providers:
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
   ```yaml
-  # instances/$INSTANCE_NAME/kustomization.yaml
-  components:
-    # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/name-update
-  # ...
-  configMapGenerator:
-    - name: sourcegraph-kustomize-env
-      behavior: merge
-      literals:
-        - STORAGECLASS_NAME=sourcegraph # [ACTION] Set storage class name here
+  # instances/$INSTANCE_NAME/buildConfig.yaml
+  kind: SourcegraphBuildConfig
+  metadata:
+    name: sourcegraph-kustomize-config
+  data:
+    STORAGECLASS_NAME: sourcegraph # [ACTION] Set storage class name here
   ```
 
   The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
@@ -745,7 +741,7 @@ Example:
     TLS_CLUSTER_ISSUER: letsencrypt
 ```
 
-Step 4: Include the tls component:
+Step 4: Include the `tls` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -756,6 +752,25 @@ Step 4: Include the tls component:
 ### TLS with Let’s Encrypt
 
 Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+
+### TLS secret name
+
+If the name of your secret for TLS is not `sourcegraph-frontend-tls`, you can replace it using the `$TLS_SECRET_NAME` config key:
+
+```yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
+  data:
+    # [ACTION] Set values below
+    TLS_SECRET_NAME: sourcegraph-tls
+```
+
+Then, include the `tls-secretname` component:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/network/tls-secretname
+```
 
 ---
 

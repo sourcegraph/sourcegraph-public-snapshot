@@ -14,8 +14,22 @@ import {
 import { preciseIndexFieldsFragment } from './types'
 
 const PRECISE_INDEX_LIST = gql`
-    query PreciseIndexes($repo: ID, $states: [PreciseIndexState!], $query: String, $first: Int, $after: String) {
-        preciseIndexes(repo: $repo, states: $states, query: $query, first: $first, after: $after) {
+    query PreciseIndexes(
+        $repo: ID
+        $states: [PreciseIndexState!]
+        $indexerKey: String
+        $query: String
+        $first: Int
+        $after: String
+    ) {
+        preciseIndexes(
+            repo: $repo
+            states: $states
+            query: $query
+            first: $first
+            after: $after
+            indexerKey: $indexerKey
+        ) {
             nodes {
                 ...PreciseIndexFields
             }
@@ -31,13 +45,21 @@ const PRECISE_INDEX_LIST = gql`
 `
 
 export const queryPreciseIndexes = (
-    { repo, states, query, first, after }: Partial<Omit<PreciseIndexesVariables, 'states'>> & { states?: string },
+    {
+        repo,
+        states,
+        query,
+        indexerKey,
+        first,
+        after,
+    }: Partial<Omit<PreciseIndexesVariables, 'states'>> & { states?: string },
     client: ApolloClient<object>
 ): Observable<PreciseIndexConnectionFields> => {
     const typedStates = statesFromString(states)
     const variables: PreciseIndexesVariables = {
         repo: repo ?? null,
         states: typedStates.length > 0 ? typedStates : null,
+        indexerKey: indexerKey ?? null,
         query: query ?? null,
         first: first ?? null,
         after: after ?? null,

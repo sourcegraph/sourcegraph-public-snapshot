@@ -676,6 +676,13 @@ def go_dependencies():
         sum = "h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=",
         version = "v0.2.0",
     )
+    go_repository(
+        name = "com_github_becheran_wildmatch_go",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/becheran/wildmatch-go",
+        sum = "h1:mE3dGGkTmpKtT4Z+88t8RStG40yN9T+kFEGj2PZFSzA=",
+        version = "v1.0.0",
+    )
 
     go_repository(
         name = "com_github_beevik_etree",
@@ -3671,8 +3678,8 @@ def go_dependencies():
         name = "com_github_graph_gophers_graphql_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/graph-gophers/graphql-go",
-        sum = "h1:Eb9x/q6MFpCLz7jBCiP/WTxjSDrYLR1QY41SORZyNJ0=",
-        version = "v1.3.0",
+        sum = "h1:fDqblo50TEpD0LY7RXk/LFVYEVqo3+tXMNMPSVXA1yc=",
+        version = "v1.5.0",
     )
     go_repository(
         name = "com_github_graphql_go_graphql",
@@ -5436,13 +5443,6 @@ def go_dependencies():
         version = "v0.0.0-20160511093645-99348263ae86",
     )
     go_repository(
-        name = "com_github_neelance_parallel",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/neelance/parallel",
-        sum = "h1:NZOii9TDGRAfCS5VM16XnF4K7afoLQmIiZX8EkKnxtE=",
-        version = "v0.0.0-20160708114440-4de9ce63d14c",
-    )
-    go_repository(
         name = "com_github_neelance_sourcemap",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/neelance/sourcemap",
@@ -6505,8 +6505,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/conc",
-        sum = "h1:9GeYVmWWa1jeOq3zGq17m10d9pjYZpiGTj/N4hQFl58=",
-        version = "v0.1.0",
+        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=",
+        version = "v0.2.0",
     )
     go_repository(
         name = "com_github_sourcegraph_go_ctags",
@@ -6601,8 +6601,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:8m3KmiPFserdWGG0D/VjKprze+AV+yOvjR4WBgNYAWg=",
-        version = "v0.0.0-20230222091349-b65e3e6bceef",
+        sum = "h1:rGDjagbwOFFb40KX7qKLmUIrCZLURo0JANUC4b/7s+0=",
+        version = "v0.0.0-20230227001314-5f25b3073480",
     )
 
     go_repository(

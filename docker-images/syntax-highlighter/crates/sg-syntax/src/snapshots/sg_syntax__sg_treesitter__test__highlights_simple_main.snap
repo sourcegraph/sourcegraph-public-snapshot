@@ -11,10 +11,10 @@ expression: "dump_document(&document, src)"
   
   func main() {
 //^^^^ IdentifierKeyword 
-//     ^^^^ IdentifierFunctionDefinition 
+//     ^^^^ IdentifierFunction 
    fmt.Println("Hello, world", 5)
 // ^^^ IdentifierBuiltin 
-//     ^^^^^^^ IdentifierFunctionDefinition 
+//     ^^^^^^^ IdentifierFunction 
 //             ^^^^^^^^^^^^^^ StringLiteral 
 //                           ^ PunctuationDelimiter 
 //                             ^ NumericLiteral 

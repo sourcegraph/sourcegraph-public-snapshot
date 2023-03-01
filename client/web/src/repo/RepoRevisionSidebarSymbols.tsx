@@ -7,6 +7,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -29,7 +30,6 @@ import {
     SymbolsVariables,
     SymbolKind as SymbolKindEnum,
 } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
