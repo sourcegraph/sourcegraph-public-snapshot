@@ -24,8 +24,6 @@ function startProductionServer(): void {
 
     signale.await('Starting production server', ENVIRONMENT_CONFIG)
 
-    const staticAssetsPath = process.env.STATIC_ASSETS_PATH || STATIC_ASSETS_PATH
-
     const app = express()
 
     // Serve index.html in place of any 404 responses.
@@ -34,7 +32,7 @@ function startProductionServer(): void {
     // Serve build artifacts.
     app.use(
         '/.assets',
-        expressStaticGzip(staticAssetsPath, {
+        expressStaticGzip(STATIC_ASSETS_PATH, {
             enableBrotli: true,
             orderPreference: ['br', 'gz'],
             index: false,
