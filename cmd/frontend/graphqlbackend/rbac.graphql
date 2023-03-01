@@ -170,7 +170,7 @@ extend type Mutation {
     """
     Creates a role.
     """
-    createRole(name: String!): Role!
+    createRole(name: String!, permissions: [ID!]!): Role!
 }
 
 extend type User {
