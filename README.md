@@ -44,6 +44,10 @@ There are four separate components:
 
 ### Build and run
 
+Build and watch the TypeScript code (if you're running VS Code, this runs automatically in the background):
+
+1. `pnpm exec tsc --build`
+
 Run the server:
 
 1. `cd server && CODY_PORT=9300 pnpm run dev`
