@@ -7,6 +7,7 @@ import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink }
 
 import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
 import { UsersList } from './components/UsersList'
@@ -54,6 +55,22 @@ export const UsersManagement: React.FunctionComponent = () => {
                 tooltip: 'The number of users with site admin permissions.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(
+            window.context.sourcegraphDotComMode,
+            window.context.allowSignup,
+            window.context.experimentalFeatures
+        )
+
+        if (isRequestAccessAllowed) {
+            legends.push({
+                value: data.pendingAccessRequests.totalCount,
+                description: 'Pending requests',
+                color: 'var(--cyan)',
+                position: 'left',
+                tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+            })
+        }
 
         return legends
     }, [data])

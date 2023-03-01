@@ -686,6 +686,10 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
                 totalCount: 49036,
                 __typename: 'UserConnection',
             },
+            pendingAccessRequests: {
+                totalCount: 123,
+                __typename: 'AccessRequestConnection',
+            },
         },
     },
 }
