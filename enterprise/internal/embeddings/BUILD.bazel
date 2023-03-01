@@ -30,5 +30,5 @@ go_test(
     srcs = ["similarity_search_test.go"],
     data = glob(["testdata/**"]),
     embed = [":embeddings"],
-    deps = ["@com_github_hexops_autogold//:autogold"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

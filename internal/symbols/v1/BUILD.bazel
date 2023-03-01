@@ -7,6 +7,7 @@ exports_files(["buf.gen.yaml"])
 proto_library(
     name = "v1_proto",
     srcs = ["symbols.proto"],
+    strip_import_prefix = "/internal",
     visibility = ["//visibility:public"],
     deps = ["@com_google_protobuf//:duration_proto"],
 )
@@ -50,5 +51,6 @@ go_test(
 
 buf_lint_test(
     name = "v1_proto_lint",
+    config = "//internal:buf.yaml",
     targets = [":v1_proto"],
 )

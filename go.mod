@@ -257,7 +257,6 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
-	github.com/hexops/autogold v1.3.1
 	github.com/hexops/autogold/v2 v2.1.0
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13

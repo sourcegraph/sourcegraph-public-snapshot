@@ -13,5 +13,5 @@ go_test(
     srcs = ["split_test.go"],
     data = glob(["testdata/**"]),
     embed = [":split"],
-    deps = ["@com_github_hexops_autogold//:autogold"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

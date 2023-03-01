@@ -48,6 +48,28 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				assert.Nil(t, user.Attributes[AttrUserName])
 			},
 		},
+		{
+			name:   "replace many",
+			userId: "1",
+			attrs: scim.ResourceAttributes{
+				AttrDisplayName: "Test User",
+				AttrNickName:    "testy",
+				AttrEmails: []interface{}{
+					map[string]interface{}{
+						"value":   "email@address.test",
+						"primary": true,
+					},
+				},
+			},
+			testFunc: func(user scim.Resource, err error) {
+				assert.NoError(t, err)
+				assert.Nil(t, user.Attributes[AttrUserName])
+				assert.Equal(t, "Test User", user.Attributes[AttrDisplayName])
+				assert.Equal(t, "testy", user.Attributes[AttrNickName])
+				assert.Len(t, user.Attributes[AttrEmails], 1)
+				assert.Equal(t, user.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"], "email@address.test")
+			},
+		},
 	}
 
 	for _, tc := range testCases {
