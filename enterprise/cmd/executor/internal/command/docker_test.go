@@ -226,3 +226,89 @@ func TestFormatRawOrDockerCommandDockerScriptWithDockerHostMountPath(t *testing.
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
+
+func TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefix(t *testing.T) {
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Operation:  makeTestOperation(),
+		},
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 4,
+				Memory:  "20G",
+			},
+			DockerOptions: DockerOptions{
+				RegistryUrl: "us-central1.pkg.dev/project/repo",
+			},
+		},
+		"/tmp/docker-config",
+	)
+
+	expected := command{
+		Command: []string{
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
+			"--cpus", "4",
+			"--memory", "20G",
+			"-v", "/proj/src:/data",
+			"-w", "/data/subdir",
+			"--entrypoint",
+			"/bin/sh",
+			"us-central1.pkg.dev/project/repo/alpine:latest",
+			"/data/.sourcegraph-executor/myscript.sh",
+		},
+	}
+
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+
+}
+
+func TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefixAndRepo(t *testing.T) {
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Image:      "sourcegraph/executor:insiders",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Operation:  makeTestOperation(),
+		},
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 4,
+				Memory:  "20G",
+			},
+			DockerOptions: DockerOptions{
+				RegistryUrl: "us-central1.pkg.dev/project/repo",
+			},
+		},
+		"/tmp/docker-config",
+	)
+
+	expected := command{
+		Command: []string{
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
+			"--cpus", "4",
+			"--memory", "20G",
+			"-v", "/proj/src:/data",
+			"-w", "/data/subdir",
+			"--entrypoint",
+			"/bin/sh",
+			"us-central1.pkg.dev/project/repo/sourcegraph/executor:insiders",
+			"/data/.sourcegraph-executor/myscript.sh",
+		},
+	}
+
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+
+}

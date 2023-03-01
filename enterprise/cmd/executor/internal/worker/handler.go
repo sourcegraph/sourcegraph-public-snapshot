@@ -143,8 +143,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 		}
 	}()
 
+	// TODO check that the original spec.Image isn't fully qualified so we don't inject our path
+	// and create an invalid docker name
+
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
+		image := dockerStep.Image
+		if options.DockerOptions.RegistryUrl != "" {
+			image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
+		}
+
 		var key string
 		if dockerStep.Key != "" {
 			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
@@ -153,7 +161,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 		}
 		dockerStepCommand := command.CommandSpec{
 			Key:        key,
-			Image:      dockerStep.Image,
+			Image:      image,
 			ScriptPath: ws.ScriptFilenames()[i],
 			Dir:        dockerStep.Dir,
 			Env:        dockerStep.Env,
@@ -176,11 +184,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 			key = fmt.Sprintf("step.src.%d", i)
 		}
 
+		env := cliStep.Env
+		if options.DockerOptions.RegistryUrl != "" {
+			env = append(env, fmt.Sprintf("DOCKER_PREFIX_REGISTRY_URL=%s", options.DockerOptions.RegistryUrl))
+		}
+
 		cliStepCommand := command.CommandSpec{
 			Key:       key,
 			Command:   append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
-			Env:       cliStep.Env,
+			Env:       env,
 			Operation: h.operations.Exec,
 		}
 

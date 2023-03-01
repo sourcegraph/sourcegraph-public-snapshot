@@ -64,6 +64,11 @@ type DockerOptions struct {
 	// container. This can be useful to add host.docker.internal as an endpoint inside
 	// the container.
 	AddHostGateway bool
+	// RegistryUrl, if set, will be injected before the image name to fully-qualify the
+	// image name for situations where registries with subpaths are used, e.g. Artifact Registry
+	// where the registry is https://<location>-docker.pkg.dev./<project>/<repository>/<image>
+	// and therefore cannot be configured within the docker daemon
+	RegistryUrl string
 }
 
 type FirecrackerOptions struct {

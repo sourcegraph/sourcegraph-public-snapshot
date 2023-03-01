@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"net/url"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/c2h5oh/datasize"
@@ -46,6 +48,7 @@ type Config struct {
 	DockerRegistryNodeExporterURL  string
 	WorkerHostname                 string
 	DockerRegistryMirrorURL        string
+	DockerRegistryPrefixURL        string
 	DockerAuthConfig               executor.DockerAuthConfig
 	dockerAuthConfigStr            string
 	dockerAuthConfigUnmarshalError error
@@ -82,6 +85,7 @@ func (c *Config) Load() {
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
+	c.DockerRegistryPrefixURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_PREFIX_URL", "The address of a docker reigsry mirror to use in firecracker VMs that will be injected before all container names to fully qualify their URL. Supports only a single registry.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 
 	if c.dockerAuthConfigStr != "" {
@@ -121,6 +125,20 @@ func (c *Config) Validate() error {
 		if err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
 		}
+	}
+
+	// Verify that no Docker registry URLs contain a subpath that will crash the Docker daemon startup
+	// https://github.com/docker/engine/blob/8955d8da8951695a98eb7e15bead19d402c6eb27/registry/config.go#L303-L321
+	registries := strings.Split(c.DockerRegistryMirrorURL, ",")
+	for _, registry := range registries {
+		uri, err := url.Parse(registry)
+		if err != nil {
+			c.AddError(errors.Newf("invalid registry URL %s provided", uri))
+		}
+		if uri.Path != "" {
+			c.AddError(errors.Newf("registry URL %s contains a subpath, consider using EXECUTOR_DOCKER_REGISTRY_PREFIX_URL instead"))
+		}
+
 	}
 
 	return c.BaseConfig.Validate()

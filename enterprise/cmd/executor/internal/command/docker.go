@@ -17,6 +17,8 @@ const ScriptsPath = ".sourcegraph-executor"
 // given options.
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
+	// Note: unless the `native-ssbc-execution` feature-flag is enabled, this
+	// is the default execution method
 	if spec.Image == "" {
 		env := spec.Env
 		if dockerConfigPath != "" {
@@ -36,6 +38,13 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 		hostDir = filepath.Join(options.ResourceOptions.DockerHostMountPath, filepath.Base(dir))
 	}
 
+	// TODO check that the original spec.Image isn't fully qualified so we don't inject our path
+	// and create an invalid docker name
+	image := spec.Image
+	if options.DockerOptions.RegistryUrl != "" {
+		image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
+	}
+
 	return command{
 		Key: spec.Key,
 		Command: flatten(
@@ -48,7 +57,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 			dockerWorkingdirectoryFlags(spec.Dir),
 			dockerEnvFlags(spec.Env),
 			dockerEntrypointFlags(),
-			spec.Image,
+			image,
 			filepath.Join("/data", ScriptsPath, spec.ScriptPath),
 		),
 		Operation: spec.Operation,

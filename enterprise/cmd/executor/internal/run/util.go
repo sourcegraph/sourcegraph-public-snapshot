@@ -141,6 +141,7 @@ func dockerOptions(c *config.Config) command.DockerOptions {
 		// host entry and route to it to the containers. This is used for LSIF
 		// uploads and should not be required anymore once we support native uploads.
 		AddHostGateway: u.Hostname() == "host.docker.internal",
+		RegistryUrl:    c.DockerRegistryPrefixURL,
 	}
 }
 
