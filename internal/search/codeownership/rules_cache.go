@@ -44,7 +44,7 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoN
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
 		file, err := c.ownService.RulesetForRepo(ctx, repoName, commitID)
-		if err != nil {
+		if err != nil || file == nil {
 			emptyRuleset := codeowners.NewRuleset(&codeownerspb.File{})
 			c.rules[key] = emptyRuleset
 			return emptyRuleset, err
