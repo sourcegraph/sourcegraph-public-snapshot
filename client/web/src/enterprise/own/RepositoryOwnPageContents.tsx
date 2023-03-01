@@ -1,15 +1,17 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 
 import { EditorState, Extension } from '@codemirror/state'
-import { EditorView, lineNumbers } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import { mdiTrashCan, mdiUpload } from '@mdi/js'
+import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { CodeMirrorEditor, defaultEditorTheme } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { CodeMirrorEditor, defaultEditorTheme, Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { H3, Text, Button, Icon, Code, Alert } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
+import { selectableLineNumbers } from '../../repo/blob/codemirror/linenumbers'
 
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
 import { testCodeOwnersIngestedFile } from './testData'
@@ -30,15 +32,39 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
 
     const isLightTheme = useIsLightTheme()
 
+    const location = useLocation()
+
+    const lineNumber = useMemo(() => {
+        const params = new URLSearchParams(location.search)
+        const line = params.get('L')
+        return line ? parseInt(line, 10) : undefined
+    }, [location.search])
+
     const extensions: Extension[] = useMemo(
         () => [
             EditorView.darkTheme.of(isLightTheme === false),
             EditorState.readOnly.of(true),
-            lineNumbers(),
+            EditorView.theme({
+                '.selected-line, .cm-line.selected-line': {
+                    backgroundColor: 'var(--code-selection-bg)',
+                },
+                '.cm-lineNumbers .cm-gutterElement:hover': {
+                    textDecoration: 'none',
+                    cursor: 'auto',
+                },
+            }),
+            selectableLineNumbers({
+                onSelection: () => {},
+                initialSelection: lineNumber ? { line: lineNumber } : null,
+                navigateToLineOnAnyClick: true,
+                enableSelectionDrivenCodeNavigation: false,
+            }),
             defaultEditorTheme,
         ],
-        [isLightTheme]
+        [isLightTheme, lineNumber]
     )
+
+    const editorRef = useRef<Editor | null>(null)
 
     return (
         <>
@@ -46,7 +72,8 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                 <div>
                     <H3>{isAdmin ? 'Upload a CODEOWNERS file' : 'Ask your site admin to upload a CODEOWNERS file'}</H3>
                     <Text>
-                        Each owner must be either a Sourcegraph username, a Sourcegraph team name, or an email address.
+                        {!isAdmin && 'A site admin can manually upload a CODEOWNERS file for this repository. '} Each
+                        owner must be either a Sourcegraph username, a Sourcegraph team name, or an email address.
                     </Text>
 
                     {isAdmin && (
@@ -93,7 +120,7 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                         The following CODEOWNERS file was uploaded to Sourcegraph{' '}
                         <Timestamp date={codeownersIngestedFile.updatedAt} />.
                     </Text>
-                    <CodeMirrorEditor value={codeownersIngestedFile.contents} extensions={extensions} />
+                    <CodeMirrorEditor ref={editorRef} value={codeownersIngestedFile.contents} extensions={extensions} />
                 </div>
             )}
         </>
