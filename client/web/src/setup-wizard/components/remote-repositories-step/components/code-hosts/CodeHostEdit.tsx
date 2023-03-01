@@ -52,7 +52,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
         GET_CODE_HOST_BY_ID,
         {
-            fetchPolicy: 'cache-and-network',
+            fetchPolicy: 'network-only',
             variables: { id: codehostId! },
         }
     )
@@ -140,7 +140,10 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
     )
 
     const handleSubmit = async (input: AddExternalServiceInput): Promise<void> => {
-        await updateRemoteCodeHost({ variables: { input: { id: codeHostId, ...input } } })
+        await updateRemoteCodeHost({
+            variables: { input: { id: codeHostId, ...input } },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+        })
 
         navigate('/setup/remote-repositories')
         // TODO show notification UI that code host has been added successfully

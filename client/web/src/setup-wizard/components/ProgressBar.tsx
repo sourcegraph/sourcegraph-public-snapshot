@@ -24,7 +24,7 @@ export const ProgressBar: FC<{}> = () => {
 
     const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
-        pollInterval: 10000,
+        pollInterval: 5000,
     })
 
     useEffect(() => {

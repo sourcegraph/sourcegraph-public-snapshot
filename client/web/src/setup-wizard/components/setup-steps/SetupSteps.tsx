@@ -26,6 +26,7 @@ export interface StepConfiguration {
     id: string
     path: string
     name: string
+    nextURL?: string
     component: ComponentType<{ className?: string }>
 }
 
@@ -98,7 +99,13 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     }, [currentStep, onStepChange])
 
     const handleGoToNextStep = useCallback(() => {
+        const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
+
+        if (activeStep.nextURL) {
+            navigate(activeStep.nextURL)
+            return
+        }
 
         if (nextStepIndex < steps.length) {
             const nextStep = steps[nextStepIndex]
