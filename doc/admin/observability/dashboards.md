@@ -24090,7 +24090,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_store_errors_total{job=~"^${s
 
 ### Code Intelligence > Ranking: Codeintel: Ranking
 
-#### codeintel-ranking: codeintel_uploads_ranking_num_definitions_inserted_total
+#### codeintel-ranking: codeintel_ranking_num_definitions_inserted_total
 
 <p class="subtitle">Definition rows inserted every 5m</p>
 
@@ -24105,13 +24105,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_ranking_num_definitions_inserted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_definitions_inserted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_ranking_num_references_inserted_total
+#### codeintel-ranking: codeintel_ranking_num_references_inserted_total
 
 <p class="subtitle">Reference rows inserted every 5m</p>
 
@@ -24126,13 +24126,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_ranking_num_references_inserted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_references_inserted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_num_stale_definition_records_deleted_total
+#### codeintel-ranking: codeintel_ranking_num_stale_definition_records_deleted_total
 
 <p class="subtitle">Definition records removed every 5m</p>
 
@@ -24147,13 +24147,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_num_stale_definition_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_stale_definition_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_num_stale_reference_records_deleted_total
+#### codeintel-ranking: codeintel_ranking_num_stale_reference_records_deleted_total
 
 <p class="subtitle">Reference records removed every 5m</p>
 
@@ -24168,7 +24168,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_num_stale_reference_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_stale_reference_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -24258,7 +24258,7 @@ Query: `sum(increase(src_codeintel_ranking_path_ranks_inserted_total{job=~"^${so
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_num_metadata_records_deleted_total
+#### codeintel-ranking: codeintel_ranking_num_metadata_records_deleted_total
 
 <p class="subtitle">Metadata records removed every 5m</p>
 
@@ -24273,13 +24273,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_num_metadata_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_metadata_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_uploads_num_input_records_deleted_total
+#### codeintel-ranking: codeintel_ranking_num_input_records_deleted_total
 
 <p class="subtitle">Input records removed every 5m</p>
 
@@ -24294,7 +24294,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_num_input_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_num_input_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
