@@ -8,6 +8,7 @@ import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series 
 
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -19,7 +20,6 @@ import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 import { USERS_STATISTICS } from './queries'
 
 import styles from './AnalyticsUsersPage.module.scss'
-import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 
 export const AnalyticsUsersPage: FC = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
