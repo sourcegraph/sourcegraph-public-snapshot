@@ -64,9 +64,16 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 		q.Set("utm_source", "sg_app")
 		q.Set("utm_medium", "referral")
 
-		// App version and OS
+		// App OS and version
+		os := runtime.GOOS
+		if os == "darwin" {
+			// Use a more common name for mac because it'll be used for analytics.
+			os = "mac"
+		}
+
+		q.Set("app_os", os)
 		q.Set("app_version", versionStr)
-		q.Set("app_os", runtime.GOOS)
+
 		dest.RawQuery = q.Encode()
 	}
 
