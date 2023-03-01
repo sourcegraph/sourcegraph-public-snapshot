@@ -28,6 +28,7 @@ const (
 	AttrNameFamily    = "familyName"
 	AttrNickName      = "nickName"
 	AttrEmails        = "emails"
+	AttrExternalId    = "externalId"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -126,7 +127,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 
 // getOptionalExternalID extracts the external identifier of the given attributes.
 func getOptionalExternalID(attributes scim.ResourceAttributes) optional.String {
-	if eID, ok := attributes["externalId"]; ok {
+	if eID, ok := attributes[AttrExternalId]; ok {
 		if externalID, ok := eID.(string); ok {
 			return optional.NewString(externalID)
 		}
@@ -183,12 +184,6 @@ func checkBodyNotEmpty(r *http.Request) error {
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
 func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert external ID
-	externalIDOptional := optional.String{}
-	if user.SCIMExternalID != "" {
-		externalIDOptional = optional.NewString(user.SCIMExternalID)
-	}
-
 	// Convert account data – if it doesn't exist, never mind
 	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
@@ -197,7 +192,9 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 			AttrUserName:    user.Username,
 			AttrDisplayName: user.DisplayName,
 			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
-			"externalId":    user.SCIMExternalID,
+		}
+		if user.SCIMExternalID != "" {
+			resourceAttributes[AttrExternalId] = user.SCIMExternalID
 		}
 	}
 	if resourceAttributes[AttrName] == nil {
@@ -219,7 +216,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional, // TODO: Get this from account data instead
+		ExternalID: getOptionalExternalID(resourceAttributes),
 		Attributes: resourceAttributes,
 	}
 }
