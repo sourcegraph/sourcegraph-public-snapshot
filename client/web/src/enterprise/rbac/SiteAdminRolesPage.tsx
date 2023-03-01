@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -53,17 +53,20 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         <div className="site-admin-roles-page">
             <PageTitle title="Roles - Admin" />
             <PageHeader
-                path={[{ text: 'Roles' }]}
-                headingElement="h2"
-                description={<>Roles represent a set of permissions that are granted to a user.</>}
                 className="mb-3"
+                description="Roles represent a set of permissions that are granted to a user."
                 actions={
                     <Button variant="primary">
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
                     </Button>
                 }
-            />
-
+            >
+                <PageHeader.Heading as="h2">
+                    <PageHeader.Breadcrumb>
+                        Roles <ProductStatusBadge status="experimental" />
+                    </PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
