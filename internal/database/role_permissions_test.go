@@ -421,13 +421,6 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
 
-	numberOfPerms := 4
-	var perms []int32
-	for i := 0; i < numberOfPerms; i++ {
-		perm := createTestPermissionForRolePermission(ctx, fmt.Sprintf("READ-%d", i), t, db)
-		perms = append(perms, perm.ID)
-	}
-
 	role, permission := createRoleAndPermission(ctx, t, db)
 	permissionTwo := createTestPermissionForRolePermission(ctx, "READ-1-2", t, db)
 
