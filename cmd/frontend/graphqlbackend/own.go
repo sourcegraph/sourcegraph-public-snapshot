@@ -24,6 +24,7 @@ type OwnResolver interface {
 
 	// Codeowners queries
 	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
+	CodeownersIngestedFile(context.Context, *CodeownersIngestedFileArgs) (CodeownersIngestedFileResolver, error)
 
 	// Codeowners mutations
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
@@ -69,19 +70,23 @@ type CodeownersFileArgs struct {
 }
 
 type CodeownersFileInput struct {
-	FileContents string
-	RepoID       *int32
-	RepoName     *string
+	FileContents   string
+	RepositoryID   *int32
+	RepositoryName *string
 }
 
 type DeleteCodeownersFileArgs struct {
-	RepoIDs []int32
+	RepositoryIDs []int32
 }
 
 type CodeownersIngestedFilesArgs struct {
-	First  *int32
-	After  *string
-	RepoID *int32
+	First        *int32
+	After        *string
+	RepositoryID *int32
+}
+
+type CodeownersIngestedFileArgs struct {
+	RepositoryID int32
 }
 
 type CodeownersIngestedFileResolver interface {

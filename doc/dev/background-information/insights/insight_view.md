@@ -1,3 +1,4 @@
+
 ## Background
 A Code Insight can be thought of as a few discrete components:
 1. A visualization of time series data with metadata such as title and labels, as well as time range to display

@@ -39,7 +39,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input)
+	repo, err := r.getRepo(ctx, args.Input.RepositoryID, args.Input.RepositoryName)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input)
+	repo, err := r.getRepo(ctx, args.Input.RepositoryID, args.Input.RepositoryName)
 	if err != nil {
 		return nil, err
 	}
@@ -99,23 +99,23 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return proto, nil
 }
 
-func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*types.Repo, error) {
-	if input.RepoID == nil && input.RepoName == nil {
-		return nil, errors.New("either RepoID or RepoName should be set")
+func (r *ownResolver) getRepo(ctx context.Context, repositoryID *int32, repositoryName *string) (*types.Repo, error) {
+	if repositoryID == nil && repositoryName == nil {
+		return nil, errors.New("either RepositoryID or RepositoryName should be set")
 	}
-	if input.RepoID != nil && input.RepoName != nil {
-		return nil, errors.New("both RepoID and RepoName cannot be set")
+	if repositoryID != nil && repositoryName != nil {
+		return nil, errors.New("both RepositoryID and RepositoryName cannot be set")
 	}
-	if input.RepoName != nil {
-		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*input.RepoName))
+	if repositoryName != nil {
+		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*repositoryName))
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for name %v", input.RepoName)
+			return nil, errors.Wrapf(err, "could not fetch repository for name %v", repositoryName)
 		}
 		return repo, nil
 	}
-	repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*input.RepoID))
+	repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*repositoryID))
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not fetch repository for ID %v", input.RepoID)
+		return nil, errors.Wrapf(err, "could not fetch repository for ID %v", repositoryID)
 	}
 	if len(repo) != 1 {
 		return nil, errors.New("could not fetch repository")
@@ -127,8 +127,8 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	if err := r.ViewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
-	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepoIDs...); err != nil {
-		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepoIDs)
+	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepositoryIDs...); err != nil {
+		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepositoryIDs)
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
@@ -154,6 +154,24 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 		connectionResolver.limit = int(*args.First)
 	}
 	return connectionResolver, nil
+}
+
+func (r *ownResolver) CodeownersIngestedFile(ctx context.Context, args *graphqlbackend.CodeownersIngestedFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	// TODO: do we need to check repo permissions here?
+	codeownersFile, err := r.codeownersStore.GetCodeownersForRepo(ctx, api.RepoID(args.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+	repo, err := r.getRepo(ctx, &args.RepositoryID, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &codeownersIngestedFileResolver{
+		gitserver:      r.gitserver,
+		db:             r.db,
+		codeownersFile: codeownersFile,
+		repository:     repo,
+	}, nil
 }
 
 type codeownersIngestedFileResolver struct {

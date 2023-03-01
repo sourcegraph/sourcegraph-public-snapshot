@@ -148,7 +148,7 @@ extend type Mutation {
     """
     deleteCodeownersFile deletes any existing Codeowners file for the given repositories.
     """
-    deleteCodeownersFiles(repoIDs: [Int!]!): EmptyResponse
+    deleteCodeownersFiles(repositoryIDs: [Int!]!): EmptyResponse
 }
 
 """
@@ -160,20 +160,24 @@ input CodeownersFileInput {
     """
     fileContents: String!
     """
-    The repo ID to ingest the file for. Cannot be set with repoName.
+    The repo ID to ingest the file for. Cannot be set with repositoryName.
     """
-    repoID: Int
+    repositoryID: Int
     """
-    The repo name to ingest the file for. Cannot be set with repoID.
+    The repo name to ingest the file for. Cannot be set with repositoryID.
     """
-    repoName: String
+    repositoryName: String
 }
 
 extend type Query {
     """
     codeownersIngestedFiles returns all existing manually ingested codeowners files.
     """
-    codeownersIngestedFiles(first: Int, after: Int, repoID: Int): CodeownersIngestedFileConnection!
+    codeownersIngestedFiles(first: Int, after: Int, repositoryID: Int): CodeownersIngestedFileConnection!
+    """
+    codeownersIngestedFile returns a manually ingested codeowners file for a specific repo.
+    """
+    codeownersIngestedFile(repositoryID: Int!): CodeownersIngestedFile
 }
 
 """
