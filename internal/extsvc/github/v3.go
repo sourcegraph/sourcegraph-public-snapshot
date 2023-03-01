@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -127,6 +128,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		resource:         resource,
+		WaitForRateLimit: true,
 	}
 }
 
@@ -223,10 +225,10 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		}
 
 		if retry > 0 {
-			time.Sleep(retry)
+			timeutil.SleepWithContext(ctx, retry)
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 		} else if remaining == 0 && reset > 0 {
-			time.Sleep(reset)
+			timeutil.SleepWithContext(ctx, reset)
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 		}
 	}
