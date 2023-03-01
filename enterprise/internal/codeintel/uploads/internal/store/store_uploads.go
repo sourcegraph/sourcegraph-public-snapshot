@@ -152,7 +152,9 @@ FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+WHERE %s
+ORDER BY %s
+LIMIT %d OFFSET %d
 `
 
 const getUploadsCountQuery = `
@@ -2178,6 +2180,8 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 	if !opts.AllowDeletedRepo {
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
+	// Never show uploads for deleted repos
+	conds = append(conds, sqlf.Sprintf("repo.blocked IS NULL"))
 
 	return sourceTableExpr, conds, cteDefinitions
 }
