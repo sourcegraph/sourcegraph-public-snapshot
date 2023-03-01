@@ -1,4 +1,5 @@
 import path from 'path'
+
 /**
  * Unpack all `process.env.*` variables used during the build
  * time of the web application in this module to keep one source of truth.
