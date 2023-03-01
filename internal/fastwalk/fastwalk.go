@@ -188,7 +188,7 @@ func (w *walker) walk(root string, runUserCallback bool) error {
 		if err == filepath.SkipDir {
 			return nil
 		}
-		if err != nil {
+		if err != nil && err != ErrSkipFiles {
 			return err
 		}
 	}
