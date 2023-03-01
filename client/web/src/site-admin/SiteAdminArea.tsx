@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useLocation, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -13,7 +13,7 @@ import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
 import { RouteV6Descriptor } from '../util/contributions'
@@ -59,7 +59,6 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
-    const location = useLocation()
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -96,24 +95,23 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
-                    <ErrorBoundary location={location}>
-                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Routes>
-                                {props.routes.map(
-                                    ({ render, path, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                key="hardcoded-key"
-                                                path={path}
-                                                element={render(context)}
-                                            />
-                                        )
-                                )}
-                                <Route path="*" element={<NotFoundPage />} />
-                            </Routes>
-                        </React.Suspense>
-                    </ErrorBoundary>
+                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                        <Routes>
+                            {props.routes.map(
+                                ({ render, path, condition = () => true }) =>
+                                    condition(context) && (
+                                        <Route
+                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            key="hardcoded-key"
+                                            errorElement={<RouteError />}
+                                            path={path}
+                                            element={render(context)}
+                                        />
+                                    )
+                            )}
+                            <Route path="*" element={<NotFoundPage />} />
+                        </Routes>
+                    </React.Suspense>
                 </div>
             </div>
         </Page>

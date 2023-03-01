@@ -63,14 +63,6 @@
             "pointer": true
           }
         },
-        "codeNavigation": {
-          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
-          "type": "string",
-          "enum": ["selection-driven", "link-driven"],
-          "!go": {
-            "pointer": true
-          }
-        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
@@ -264,11 +256,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "preloadGoToDefinition": {
-          "description": "Preload definitions for available tokens in the visible viewport.",
-          "type": "boolean",
-          "default": false
         },
         "symbolKindTags": {
           "description": "Show the initial letter of the symbol kind instead of icons.",
@@ -552,7 +539,12 @@
       }
     },
     "alerts.showPatchUpdates": {
-      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.",
+      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will be shown if `alerts.showMajorMinorUpdatess` is true.",
+      "type": "boolean",
+      "default": true
+    },
+    "alerts.showMajorMinorUpdates": {
+      "description": "Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.",
       "type": "boolean",
       "default": true
     },
