@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
@@ -90,19 +90,8 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
     const focusSymbolsShortcut = useKeyboardShortcut('focusSymbols')
 
-    const [filesTabKey, setFilesTabKey] = useState('')
-    const [symbolsTabKey, setSymbolsTabKey] = useState('')
-
-    const focusFileTree = useCallback(() => {
-        setIsVisible(true)
-        setPersistedTabIndex(0)
-        setFilesTabKey(Date.now().toString())
-    }, [setIsVisible, setPersistedTabIndex, setFilesTabKey])
-    const focusSymbols = useCallback(() => {
-        setIsVisible(true)
-        setPersistedTabIndex(1)
-        setSymbolsTabKey(Date.now().toString())
-    }, [setIsVisible, setPersistedTabIndex, setSymbolsTabKey])
+    // Value change triggers programmatic focus of elements in the currently opened tab.
+    const [focusKey, setFocusKey] = useState('')
 
     return (
         <>
@@ -156,7 +145,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                             {enableAccessibleFileTree ? (
                                                 <RepoRevisionSidebarFileTree
                                                     key={initialFilePath}
-                                                    focusKey={filesTabKey}
+                                                    focusKey={focusKey}
                                                     onExpandParent={onExpandParent}
                                                     repoName={props.repoName}
                                                     revision={props.revision}
@@ -187,7 +176,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                         <TabPanel>
                                             <RepoRevisionSidebarSymbols
                                                 key="symbols"
-                                                focusKey={symbolsTabKey}
+                                                focusKey={focusKey}
                                                 repoID={props.repoID}
                                                 revision={props.revision}
                                                 activePath={props.filePath}
@@ -217,10 +206,26 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
             )}
 
             {focusFileTreeShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={focusFileTree} />
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsVisible(true)
+                        setPersistedTabIndex(0)
+                        setFocusKey(Date.now().toString())
+                    }}
+                />
             ))}
             {focusSymbolsShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={focusSymbols} />
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsVisible(true)
+                        setPersistedTabIndex(1)
+                        setFocusKey(Date.now().toString())
+                    }}
+                />
             ))}
         </>
     )

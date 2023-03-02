@@ -14,14 +14,13 @@ import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-opera
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
-import { FocusableTree } from './RepoRevisionSidebarFileTree'
+import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
-interface Props {
+interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]
     onClick: () => void
     selectedSymbolUrl: string | null
     setSelectedSymbolUrl: (url: string | null) => void
-    focusKey?: string
 }
 type SymbolNode = (Omit<SymbolNodeFields, 'children'> & TreeNode) | (Omit<SymbolPlaceholder, 'children'> & TreeNode)
 

@@ -114,6 +114,7 @@ export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps }
 export type { IconProps, IconType } from './Icon'
 export type { Point } from './Popover'
 export type { TreeNode } from './Tree'
+export type { TreeProps } from './Tree'
 export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
