@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 )
 
@@ -24,11 +24,7 @@ func makeTemporaryLoopFile(prefix string) (*os.File, error) {
 	return os.CreateTemp(loopDevPath, prefix+"-*")
 }
 
-// MakeTempDirectory defaults to makeTemporaryDirectory and can be replaced for testing
-// with deterministic workspace/scripts directories.
-var MakeTempDirectory = MakeTemporaryDirectory
-
-func MakeTemporaryDirectory(prefix string) (string, error) {
+func makeTemporaryDirectory(prefix string) (string, error) {
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
@@ -52,10 +48,9 @@ func MakeTemporaryMountDirectory(prefix string) (string, error) {
 }
 
 // runs the given command with args and logs the invocation and output to the provided log entry handle.
-func commandLogger(ctx context.Context, handle command.LogEntry, command string, args ...string) (string, error) {
+func commandLogger(ctx context.Context, cmdRunner util.CmdRunner, handle command.LogEntry, command string, args ...string) (string, error) {
 	fmt.Fprintf(handle, "$ %s %s\n", command, strings.Join(args, " "))
-	cmd := exec.CommandContext(ctx, command, args...)
-	out, err := cmd.CombinedOutput()
+	out, err := cmdRunner.CombinedOutput(ctx, command, args...)
 	if len(out) == 0 {
 		fmt.Fprint(handle, "stderr: <no output>\n")
 	} else {
