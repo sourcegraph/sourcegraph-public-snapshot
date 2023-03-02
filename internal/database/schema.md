@@ -940,13 +940,17 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
 
 # Table "public.codeintel_path_ranks"
 ```
-    Column     |           Type           | Collation | Nullable | Default 
----------------+--------------------------+-----------+----------+---------
- repository_id | integer                  |           | not null | 
- payload       | jsonb                    |           | not null | 
- precision     | double precision         |           | not null | 
- updated_at    | timestamp with time zone |           | not null | now()
- graph_key     | text                     |           |          | 
+        Column        |           Type           | Collation | Nullable | Default 
+----------------------+--------------------------+-----------+----------+---------
+ repository_id        | integer                  |           | not null | 
+ payload              | jsonb                    |           | not null | 
+ precision            | double precision         |           | not null | 
+ updated_at           | timestamp with time zone |           | not null | now()
+ graph_key            | text                     |           |          | 
+ num_paths            | integer                  |           |          | 
+ min_reference_count  | integer                  |           |          | 
+ mean_reference_count | double precision         |           |          | 
+ max_reference_count  | integer                  |           |          | 
 Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)

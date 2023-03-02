@@ -1729,7 +1729,11 @@ CREATE TABLE codeintel_path_ranks (
     payload jsonb NOT NULL,
     "precision" double precision NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text
+    graph_key text,
+    num_paths integer,
+    min_reference_count integer,
+    mean_reference_count double precision,
+    max_reference_count integer
 );
 
 CREATE TABLE codeintel_ranking_definitions (
