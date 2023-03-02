@@ -7,11 +7,11 @@ import { last, share, throttleTime } from 'rxjs/operators'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface CachedResults {

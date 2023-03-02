@@ -37,6 +37,7 @@ go_test(
         "nginx_test.go",
         "redis_test.go",
     ],
+    data = ["//cmd/server/shared/assets:nginx"],
     embed = [":shared"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

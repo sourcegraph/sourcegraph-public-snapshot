@@ -1,0 +1,79 @@
+extend type Query {
+    """
+    Experimental: Searches a repository for similar code and text results using embeddings.
+    We separated code and text results because text results tended to always feature at the top of the combined results,
+    and didn't leave room for the code.
+    """
+    embeddingsSearch(
+        """
+        The repository to search.
+        """
+        repo: ID!
+        """
+        The query used for embeddings search.
+        """
+        query: String!
+        """
+        The number of code results to return.
+        """
+        codeResultsCount: Int!
+        """
+        The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
+        """
+        textResultsCount: Int!
+    ): EmbeddingsSearchResults!
+    """
+    Experimental: Determines whether the given query requires further context before it can be answered.
+    For example:
+      - "What are Sourcegraph Notebooks" requires additional information from the Sourcegraph repository (Notebooks Markdown docs, etc.).
+      - "Translate the previous code to Typescript" does not need additional context since it is referring to the existing context (or conversation).
+    """
+    isContextRequiredForChatQuery(query: String!): Boolean!
+}
+
+extend type Mutation {
+    """
+    Experimental: Schedules a job to create an embedding search index for each listed repository. The indices are used for embeddings search.
+    """
+    scheduleRepositoriesForEmbedding(repoNames: [String!]!): EmptyResponse!
+    """
+    Experimental: Schedules a job to create an embedding index used for context detection. The index is used to determine wheter a query requires additional context.
+    """
+    scheduleContextDetectionForEmbedding: EmptyResponse!
+}
+
+"""
+A single embeddings search result.
+"""
+type EmbeddingsSearchResult {
+    """
+    The search result file name.
+    """
+    fileName: String!
+    """
+    The start line of the content (inclusive).
+    """
+    startLine: Int!
+    """
+    The end line of the content (exclusive).
+    """
+    endLine: Int!
+    """
+    The content of the file from start line to end line.
+    """
+    content: String!
+}
+
+"""
+Embeddings search results. Contains a list of code results and a list of text results.
+"""
+type EmbeddingsSearchResults {
+    """
+    A list of code file results.
+    """
+    codeResults: [EmbeddingsSearchResult!]!
+    """
+    A list of text file results.
+    """
+    textResults: [EmbeddingsSearchResult!]!
+}

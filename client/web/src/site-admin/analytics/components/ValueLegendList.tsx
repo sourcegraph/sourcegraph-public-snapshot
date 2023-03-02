@@ -13,6 +13,7 @@ import styles from './index.module.scss'
 interface ValueLegendItemProps {
     color?: string
     description: string
+    // Value is a number or LoadingSpinner
     value: number | string | ReactNode
     tooltip?: string
     className?: string
@@ -42,7 +43,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     }, [filter, location.search])
 
     const tooltipOnNumber =
-        formattedNumber !== unformattedNumber
+        formattedNumber !== unformattedNumber && typeof value !== 'object'
             ? isNaN(parseFloat(unformattedNumber))
                 ? unformattedNumber
                 : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))

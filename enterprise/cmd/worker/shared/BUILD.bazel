@@ -17,6 +17,8 @@ go_library(
         "//enterprise/cmd/worker/internal/batches",
         "//enterprise/cmd/worker/internal/codeintel",
         "//enterprise/cmd/worker/internal/codemonitors",
+        "//enterprise/cmd/worker/internal/embeddings/contextdetection",
+        "//enterprise/cmd/worker/internal/embeddings/repo",
         "//enterprise/cmd/worker/internal/executors",
         "//enterprise/cmd/worker/internal/insights",
         "//enterprise/cmd/worker/internal/permissions",

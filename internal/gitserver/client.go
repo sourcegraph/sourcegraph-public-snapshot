@@ -316,7 +316,7 @@ type Client interface {
 	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
-	// The caller should always close the reader after use
+	// The caller should always close the reader after use.
 	NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -392,11 +392,6 @@ type Client interface {
 
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
-
-	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
-	// at path. If the path is not an LFS pointer, the file contents from git
-	// are returned instead.
-	LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (io.ReadCloser, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -1296,24 +1291,6 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		return "", err
 	}
 	defer resp.Body.Close()
-	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
-	if resp.StatusCode == http.StatusNotFound {
-		resp.Body.Close()
-		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
-			Repo:         req.Repo,
-			BaseCommit:   req.BaseCommit,
-			Patch:        string(req.Patch),
-			TargetRef:    req.TargetRef,
-			UniqueRef:    req.UniqueRef,
-			CommitInfo:   req.CommitInfo,
-			Push:         req.Push,
-			GitApplyArgs: req.GitApplyArgs,
-		})
-		if err != nil {
-			return "", err
-		}
-		defer resp.Body.Close()
-	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { useLocation } from 'react-router-dom'
+import { RouteObject, useLocation } from 'react-router-dom'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -24,15 +24,15 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
+import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
-import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -57,7 +57,7 @@ export interface GlobalNavbarProps
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps[]
+    routes: RouteObject[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -169,7 +169,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [showSearchContext])
 
-    const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
+    const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
     const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
@@ -274,6 +274,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Cloud
                         </ButtonLink>
                     )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <AccessRequestsGlobalNavItem
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            context={window.context}
+                        />
+                    )}
                     {isSourcegraphDotCom && (
                         <NavAction>
                             <Link
@@ -322,6 +328,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 {...props}
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                isSourcegraphApp={isSourcegraphApp}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||

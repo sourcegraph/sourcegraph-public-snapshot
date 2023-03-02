@@ -42,7 +42,8 @@ type DeleteRoleArgs struct {
 }
 
 type CreateRoleArgs struct {
-	Name string
+	Name        string
+	Permissions []graphql.ID
 }
 
 type ListRoleArgs struct {

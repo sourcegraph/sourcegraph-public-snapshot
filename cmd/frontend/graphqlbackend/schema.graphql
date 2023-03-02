@@ -1300,6 +1300,13 @@ type Query {
     """
     externalServiceNamespaces(
         """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
         The kind of the external service.
         """
         kind: ExternalServiceKind!
@@ -1312,6 +1319,42 @@ type Query {
         """
         url: String!
     ): ExternalServiceNamespaceConnection!
+    """
+    Lists all repositories for a given external service connection.
+    """
+    externalServiceRepositories(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+        """
+        Repository query string.
+        """
+        query: String!
+        """
+        A list of repository names to exclude from results (in the form of owner/name).
+        """
+        excludeRepos: [String!]!
+        """
+        Returns the first n repositories matching the query and excludeRepos criteria.
+        """
+        first: Int
+    ): ExternalServiceRepositoryConnection!
     """
     List all repositories.
     """
@@ -3174,6 +3217,36 @@ type ExternalServiceNamespace {
     """
     The Namespace's ID on the external service.
     Example: For GitHub, this is the GitHub GraphQL API's node ID for the organization.
+    """
+    externalID: String!
+}
+
+"""
+A list of repositories available to an external service configuration.
+"""
+type ExternalServiceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceRepository!]!
+}
+
+"""
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceRepository {
+    """
+    The unique identifier of the external service repository.
+    """
+    id: ID!
+    """
+    The name of the external service repository.
+    """
+    name: String!
+    """
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
     """
     externalID: String!
 }
@@ -9437,4 +9510,99 @@ input TeamMemberInput {
     Account Login is usually the username on the external account platform.
     """
     externalAccountLogin: String
+}
+
+"""
+A list of access requests
+"""
+type AccessRequestConnection {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+    """
+    A list of access requests
+    """
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
+}
+
+extend type Mutation {
+    """
+    Marks access_request as rejected
+    """
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
 }

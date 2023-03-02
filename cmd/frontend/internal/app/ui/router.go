@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -120,9 +121,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB) {
+func InitRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) {
 	router := newRouter()
-	initRouter(db, router)
+	initRouter(db, enterpriseJobs, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -145,6 +146,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
@@ -232,7 +234,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router) {
+func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -252,6 +254,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
 	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
 	router.Get(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
+	router.Get(uirouter.RouteRequestAccess).Handler(brandedIndex("Request access"))
 	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
 	router.Get(uirouter.RouteUnlockAccount).Handler(brandedNoIndex("Unlock Your Account"))
 	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
@@ -319,7 +322,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db, enterpriseJobs))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
