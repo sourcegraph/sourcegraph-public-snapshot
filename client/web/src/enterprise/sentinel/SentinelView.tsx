@@ -17,19 +17,20 @@ export const SentinelView: FC = () => {
     // const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     let mockData = [
         {
-            cve: 'CVE-2023-1234',
-            description: 'Remote code exectuion vulnerability foo in bar.',
-            dependency: 'vulnerable-package',
-            packageManager: 'npm',
-            publishedDate: '1st February 2023',
-            lastUpdate: '9th February 2023',
-            sourceFile: 'github.com/sourcegraph/sourcegraph:README.md',
-            sourceFileLineNumber: 1,
-            affectedVersion: '<1.2.3',
-            currentVersion: '1.2.2',
-            severityScore: '9.8',
-            severityString: 'High',
+            cve: 'CVE-2023-1234', // VulnerabilityMatch.Vulnerability.sourceID
+            description: 'Remote code exectuion vulnerability foo in bar.', // VulnerabilityMatch.Vulnerability.details
+            dependency: 'vulnerable-package', // VulnerabilityMatch.VulnerabilityAffectedPackage.packageName
+            packageManager: 'npm', // VulnerabilityMatch.VulnerabilityAffectedPackage.language
+            publishedDate: '1st February 2023', // VulnerabilityMatch.Vulnerability.published
+            lastUpdate: '9th February 2023', // VulnerabilityMatch.Vulnerability.modified
+            sourceFile: 'github.com/sourcegraph/sourcegraph:README.md', // Not avail yet
+            sourceFileLineNumber: 1, // Not needed. Will come from code intel location
+            affectedVersion: '<1.2.3', // VulnerabilityMatch.VulnerabilityAffectedPackage.versionConstraint (sort and take first one)
+            currentVersion: '1.2.2', // Not avail yet
+            severityScore: '9.8', // VulnerabilityMatch.Vulnerability.cvssScore
+            severityString: 'High', // VulnerabilityMatch.Vulnerability.severity
             vulnerableCode: [
+                // ^ VulnerabilityMatch.location (not avail yet)
                 {
                     repository: 'github.com/sourcegraph/sourcegraph',
                     fileName: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
