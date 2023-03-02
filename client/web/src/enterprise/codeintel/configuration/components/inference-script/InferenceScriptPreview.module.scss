@@ -1,0 +1,27 @@
+.container {
+    padding: 1rem;
+}
+
+.actionContainer {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 1rem;
+}
+
+.actionInput {
+    margin-right: 0.5rem;
+    width: 25rem;
+}
+
+.label {
+    display: flex;
+    align-items: center;
+}
+
+.step {
+    border: 1px solid var(--border-color);
+}
