@@ -6,11 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	contextdetectionbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -40,6 +42,10 @@ type Resolver struct {
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return nil, err
@@ -67,7 +73,26 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }
 
+func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+	// 🚨 SECURITY: Only site admins may list repo embedding jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	return NewRepoEmbeddingJobsResolver(r.db, r.gitserverClient, r.repoEmbeddingJobsStore, args)
+}
+
+func isRepoEmbeddingJobScheduledOrCompleted(job *repobg.RepoEmbeddingJob) bool {
+	return job != nil && (job.State == "completed" || job.State == "processing" || job.State == "queued")
+}
+
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
 	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
 	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -95,7 +120,14 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 			if refName == "" {
 				return errors.Newf("could not get latest commit for repo %s", repo.Name)
 			}
-			// TODO: Check if repo + revision embedding job already exists and is not completed
+
+			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, repo.ID, latestRevision)
+			// Skip creating a repo embedding job for a repo at revision, if there already exists
+			// an identical job that has been completed or is scheduled to run (processing or queued).
+			if isRepoEmbeddingJobScheduledOrCompleted(job) {
+				return nil
+			}
+
 			_, err = tx.CreateRepoEmbeddingJob(ctx, repo.ID, latestRevision)
 			return err
 		}()
@@ -107,6 +139,10 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 }
 
 func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
 	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

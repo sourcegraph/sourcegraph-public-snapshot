@@ -47,8 +47,7 @@ var splitOptions = split.SplitOptions{
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
-	config := conf.Get().Embeddings
-	if config == nil || !config.Enabled {
+	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
