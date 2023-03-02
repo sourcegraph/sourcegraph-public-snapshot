@@ -115,6 +115,10 @@
   interfaces:
     - UserEmailsService
     - ReposService
+- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
+  interfaces:
+    - RepoEmbeddingJobsStore
 - filename: enterprise/internal/executor/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:

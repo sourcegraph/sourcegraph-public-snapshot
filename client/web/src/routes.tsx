@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { Navigate } from 'react-router-dom'
+import { Navigate, RouteObject } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -34,12 +34,6 @@ const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'S
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 
-export interface LayoutRouteProps {
-    path: string
-    handle?: {}
-    element: React.ReactNode
-}
-
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
     useEffect(() => {
@@ -54,116 +48,114 @@ const PassThroughToServer: React.FC = () => {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps[] = (
-    [
-        {
-            path: PageRoutes.Index,
-            element: <Navigate replace={true} to={PageRoutes.Search} />,
-        },
-        {
-            path: PageRoutes.Search,
-            element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
-        },
-        {
-            path: PageRoutes.SearchConsole,
-            element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
-        },
-        {
-            path: PageRoutes.SignIn,
-            element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
-        },
-        {
-            path: PageRoutes.RequestAccess,
-            element: <RequestAccessPage />,
-        },
-        {
-            path: PageRoutes.SignUp,
-            element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
-        },
-        {
-            path: PageRoutes.UnlockAccount,
-            element: <LegacyRoute render={props => <UnlockAccountPage {...props} context={window.context} />} />,
-        },
-        {
-            path: PageRoutes.Welcome,
-            // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-            element: <Navigate replace={true} to={PageRoutes.Search} />,
-        },
-        {
-            path: PageRoutes.InstallGitHubAppSuccess,
-            element: <InstallGitHubAppSuccessPage />,
-        },
-        {
-            path: PageRoutes.Settings,
-            element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
-        },
-        {
-            path: PageRoutes.User,
-            element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
-        },
-        {
-            path: PageRoutes.Teams,
-            element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
-        },
-        {
-            path: PageRoutes.Organizations,
-            element: <LegacyRoute render={props => <OrgsArea {...props} />} />,
-        },
-        {
-            path: PageRoutes.SiteAdminInit,
-            element: <LegacyRoute render={props => <SiteInitPage {...props} context={window.context} />} />,
-        },
-        {
-            path: PageRoutes.SiteAdmin,
-            element: (
-                <LegacyRoute
-                    render={props => (
-                        <SiteAdminArea
-                            {...props}
-                            routes={props.siteAdminAreaRoutes}
-                            sideBarGroups={props.siteAdminSideBarGroups}
-                            overviewComponents={props.siteAdminOverviewComponents}
-                        />
-                    )}
-                />
-            ),
-        },
-        {
-            path: PageRoutes.PasswordReset,
-            element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
-        },
-        {
-            path: PageRoutes.ApiConsole,
-            element: <ApiConsole />,
-        },
-        {
-            path: PageRoutes.UserArea,
-            element: <LegacyRoute render={props => <UserArea {...props} />} />,
-        },
-        {
-            path: PageRoutes.Survey,
-            element: <LegacyRoute render={props => <SurveyPage {...props} />} />,
-        },
-        {
-            path: PageRoutes.Help,
-            element: <PassThroughToServer />,
-        },
-        {
-            path: PageRoutes.Debug,
-            element: <PassThroughToServer />,
-        },
-        ...communitySearchContextsRoutes,
-        {
-            path: PageRoutes.RepoContainer,
-            element: <LegacyRoute render={props => <RepoContainer {...props} />} />,
-            // In RR6, the useMatches hook will only give you the location that is matched
-            // by the path rule and not the path rule instead. Since we need to be able to
-            // detect if we're inside the repo container reliably inside the Layout, we
-            // expose this information in the handle object instead.
-            handle: { isRepoContainer: true },
-        },
-    ] as readonly (LayoutRouteProps | undefined)[]
-).filter(Boolean) as readonly LayoutRouteProps[]
+export const routes: RouteObject[] = [
+    {
+        path: PageRoutes.Index,
+        element: <Navigate replace={true} to={PageRoutes.Search} />,
+    },
+    {
+        path: PageRoutes.Search,
+        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
+    },
+    {
+        path: PageRoutes.SearchConsole,
+        element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
+    },
+    {
+        path: PageRoutes.SignIn,
+        element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.RequestAccess,
+        element: <RequestAccessPage />,
+    },
+    {
+        path: PageRoutes.SignUp,
+        element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.UnlockAccount,
+        element: <LegacyRoute render={props => <UnlockAccountPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.Welcome,
+        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
+        element: <Navigate replace={true} to={PageRoutes.Search} />,
+    },
+    {
+        path: PageRoutes.InstallGitHubAppSuccess,
+        element: <InstallGitHubAppSuccessPage />,
+    },
+    {
+        path: PageRoutes.Settings,
+        element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
+    },
+    {
+        path: PageRoutes.User,
+        element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.Teams,
+        element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
+    },
+    {
+        path: PageRoutes.Organizations,
+        element: <LegacyRoute render={props => <OrgsArea {...props} />} />,
+    },
+    {
+        path: PageRoutes.SiteAdminInit,
+        element: <LegacyRoute render={props => <SiteInitPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.SiteAdmin,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SiteAdminArea
+                        {...props}
+                        routes={props.siteAdminAreaRoutes}
+                        sideBarGroups={props.siteAdminSideBarGroups}
+                        overviewComponents={props.siteAdminOverviewComponents}
+                    />
+                )}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.PasswordReset,
+        element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.ApiConsole,
+        element: <ApiConsole />,
+    },
+    {
+        path: PageRoutes.UserArea,
+        element: <LegacyRoute render={props => <UserArea {...props} />} />,
+    },
+    {
+        path: PageRoutes.Survey,
+        element: <LegacyRoute render={props => <SurveyPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.Help,
+        element: <PassThroughToServer />,
+    },
+    {
+        path: PageRoutes.Debug,
+        element: <PassThroughToServer />,
+    },
+    ...communitySearchContextsRoutes,
+    {
+        path: PageRoutes.RepoContainer,
+        element: <LegacyRoute render={props => <RepoContainer {...props} />} />,
+        // In RR6, the useMatches hook will only give you the location that is matched
+        // by the path rule and not the path rule instead. Since we need to be able to
+        // detect if we're inside the repo container reliably inside the Layout, we
+        // expose this information in the handle object instead.
+        handle: { isRepoContainer: true },
+    },
+]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
     const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)

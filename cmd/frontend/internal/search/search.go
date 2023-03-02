@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -41,12 +42,12 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB) http.Handler {
+func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.Handler {
 	logger := log.Scoped("searchStreamHandler", "")
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}

@@ -499,7 +499,7 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
-	allSlowPackages := append(slowGoTestPackagesGRPC, slowGoTestPackagesGRPC...)
+	allSlowPackages := append(slowGoTestPackagesNonGRPC, slowGoTestPackagesGRPC...)
 	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
 
 	// Run all tests that aren't slow both with and without gRPC enabled

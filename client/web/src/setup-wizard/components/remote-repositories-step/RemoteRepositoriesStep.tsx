@@ -7,6 +7,7 @@ import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 import { Container, Text } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult } from '../../../graphql-operations'
+import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
@@ -63,7 +64,10 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 </Container>
             </section>
 
-            <FooterWidget>Hello custom content in the footer</FooterWidget>
+            <FooterWidget>
+                <ProgressBar />
+            </FooterWidget>
+
             <CustomNextButton
                 label="Next"
                 disabled={!isAnyConnectedCodeHosts(codeHostQueryResult.data)}

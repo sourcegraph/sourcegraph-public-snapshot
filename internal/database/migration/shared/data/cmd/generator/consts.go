@@ -27,5 +27,5 @@ var MinVersion = oobmigration.NewVersion(3, 20)
 // can continue to run on their last pre-deprecation version. This code is still ran by the
 // migrator, but only on a schema shape that existed in the past.
 var FrozenRevisions = []string{
-	"4.3.0",
+	"4.5.0",
 }
