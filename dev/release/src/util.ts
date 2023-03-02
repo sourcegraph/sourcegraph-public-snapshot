@@ -1,12 +1,13 @@
-import { readdirSync, readFileSync, writeFileSync } from 'fs'
+import {readdirSync, readFileSync, writeFileSync} from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
 import Octokit from '@octokit/rest'
 import chalk from 'chalk'
 import execa from 'execa'
-import { mkdir, readFile, writeFile } from 'mz/fs'
+import {mkdir, readFile, writeFile} from 'mz/fs'
 import fetch from 'node-fetch'
+import * as semver from 'semver'
 import {SemVer} from 'semver';
 
 import {getPreviousVersionSrcCli} from './git';
@@ -73,6 +74,11 @@ export async function verifyWithInput(prompt: string): Promise<void> {
     })
 }
 
+// similar to verifyWithInput but will not exit and will allow the caller to decide what to do
+export async function softVerifyWithInput(prompt: string): Promise<boolean> {
+    return readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => val === 'yes' || val === 'y')
+}
+
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
     return execa('docker', ['version'], { stdout: 'ignore' })
 }
@@ -136,8 +142,8 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     }
 }
 
-export async function ensureSrcCliUpToDate(): Promise<void> {
-    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+export async function getLatestSrcCliGithubRelease(): Promise<string> {
+    return fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -145,7 +151,10 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
     })
         .then(response => response.json())
         .then(json => json.tag_name)
+}
 
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await getLatestSrcCliGithubRelease()
     let installedTag = execa.sync('src', ['version']).stdout.split('\n')
     installedTag = installedTag[0].split(':')
     const trimmedInstalledTag = installedTag[1].trim()
@@ -170,7 +179,7 @@ Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
 }
 
 export async function getLatestTag(owner: string, repo: string): Promise<string> {
-    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+    return fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -178,7 +187,6 @@ export async function getLatestTag(owner: string, repo: string): Promise<string>
     })
         .then(response => response.json())
         .then(json => json[0].name)
-    return latestTag
 }
 
 interface ContainerRegistryCredential {
@@ -315,7 +323,7 @@ export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void>
     }
 }
 
-export async function nextSrcCliVersionWithConfirm(repoPath?: string): Promise<SemVer> {
+export async function nextSrcCliVersionInputWithAutodetect(repoPath?: string): Promise<SemVer> {
     if (!repoPath) {
         const client = await getAuthenticatedGitHubClient()
         const {workdir} = await cloneRepo(client, 'sourcegraph', 'src-cli', {revision: 'main', revisionMustExist: true})
@@ -325,6 +333,8 @@ export async function nextSrcCliVersionWithConfirm(repoPath?: string): Promise<S
     const previous = getPreviousVersionSrcCli(repoPath)
     console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
     const next = previous.inc('minor')
-    await verifyWithInput(`Confirm next version of src-cli should be: ${next.version}`)
+    if (!await softVerifyWithInput(`Confirm next version of src-cli should be: ${next.version}`)) {
+        return new SemVer(await retryInput('Enter the next version of src-cli: ', val => !!semver.parse(val), 'Expected semver format'))
+    }
     return next
 }
