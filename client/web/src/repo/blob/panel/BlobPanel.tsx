@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { Text } from '@sourcegraph/wildcard'
 import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
@@ -14,6 +13,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { Text } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
@@ -140,6 +140,7 @@ function useBlobPanelViews({
 
             return panelDefinitions
         }, [
+            isPackage,
             position,
             settingsCascade,
             platformContext,
