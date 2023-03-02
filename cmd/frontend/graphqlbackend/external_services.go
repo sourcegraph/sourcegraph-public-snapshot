@@ -29,12 +29,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
+var ExtsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
+var ExtsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
 
 func externalServicesWritable() error {
-	if extsvcConfigFile != "" && !extsvcConfigAllowEdits {
+	if ExtsvcConfigFile != "" && !ExtsvcConfigAllowEdits {
 		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 	return nil
