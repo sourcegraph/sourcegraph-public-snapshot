@@ -6,6 +6,7 @@ import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
@@ -72,6 +73,11 @@ const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploa
 const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
     'ExecutorsSiteAdminArea'
+)
+
+const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
+    () => import('../rbac/SiteAdminRolesPage'),
+    'SiteAdminRolesPage'
 )
 
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
@@ -196,6 +202,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/cody',
             render: props => <SiteAdminCodyPage {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        // rbac-related routes
+        {
+            path: '/roles',
+            exact: true,
+            render: props => <SiteAdminRolesPage {...props} />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]

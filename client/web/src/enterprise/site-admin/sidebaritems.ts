@@ -10,7 +10,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
-    usersGroup,
+    usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -143,6 +143,17 @@ export const codyGroup: SiteAdminSideBarGroup = {
         },
     ],
     condition: () => window.context?.embeddingsEnabled,
+}
+
+const usersGroup: SiteAdminSideBarGroup = {
+    ...ossUsersGroup,
+    items: [
+        ...ossUsersGroup.items,
+        {
+            label: 'Roles',
+            to: '/site-admin/roles',
+        },
+    ],
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
