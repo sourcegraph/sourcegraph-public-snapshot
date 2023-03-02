@@ -802,7 +802,7 @@ CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
     AS $$ BEGIN
     SELECT
         COUNT(r.v) AS num_paths,
-        SUM(LOG(2, r.v::int)) AS sum_reference_count
+        SUM(LOG(2, r.v::int)) AS refcount_logsum
     INTO
         NEW.num_paths,
         NEW.refcount_logsum
@@ -1752,7 +1752,7 @@ CREATE TABLE codeintel_path_ranks (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     graph_key text,
     num_paths integer,
-    refcount_logsum integer
+    refcount_logsum double precision
 );
 
 CREATE TABLE codeintel_ranking_definitions (
