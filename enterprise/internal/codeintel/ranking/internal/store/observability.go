@@ -8,7 +8,12 @@ import (
 )
 
 type operations struct {
-	getStaleSourcedCommits *observation.Operation
+	vacuumStaleDefinitionsAndReferences *observation.Operation
+	vacuumStaleGraphs                   *observation.Operation
+	insertDefinitionsForRanking         *observation.Operation
+	insertReferencesForRanking          *observation.Operation
+	insertPathCountInputs               *observation.Operation
+	insertPathRanks                     *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -32,6 +37,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		getStaleSourcedCommits: op("StaleSourcedCommits"),
+		vacuumStaleDefinitionsAndReferences: op("VacuumStaleDefinitionsAndReferences"),
+		vacuumStaleGraphs:                   op("VacuumStaleGraphs"),
+		insertDefinitionsForRanking:         op("InsertDefinitionsForRanking"),
+		insertReferencesForRanking:          op("InsertReferencesForRanking"),
+		insertPathCountInputs:               op("InsertPathCountInputs"),
+		insertPathRanks:                     op("InsertPathRanks"),
 	}
 }

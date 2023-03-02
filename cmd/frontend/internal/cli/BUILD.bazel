@@ -57,6 +57,7 @@ go_library(
         "//internal/oobmigration",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/search/job/jobutil",
         "//internal/service",
         "//internal/symbols",
         "//internal/sysreq",

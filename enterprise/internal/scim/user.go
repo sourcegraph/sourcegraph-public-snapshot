@@ -26,6 +26,7 @@ const (
 	AttrNameGiven     = "givenName"
 	AttrNameMiddle    = "middleName"
 	AttrNameFamily    = "familyName"
+	AttrNickName      = "nickName"
 	AttrEmails        = "emails"
 )
 
