@@ -5056,6 +5056,10 @@ ALTER TABLE ONLY webhooks
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_pkey PRIMARY KEY (repo_id);
 
+CREATE INDEX access_requests_created_at ON access_requests USING btree (created_at);
+
+CREATE INDEX access_requests_status ON access_requests USING btree (status);
+
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);

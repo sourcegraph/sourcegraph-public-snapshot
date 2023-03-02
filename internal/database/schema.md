@@ -12,6 +12,8 @@
 Indexes:
     "access_requests_pkey" PRIMARY KEY, btree (id)
     "access_requests_email_key" UNIQUE CONSTRAINT, btree (email)
+    "access_requests_created_at" btree (created_at)
+    "access_requests_status" btree (status)
 
 ```
 
