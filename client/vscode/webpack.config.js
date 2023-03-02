@@ -130,8 +130,7 @@ const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'se
 const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
 // Extension Host Worker Path
 const extensionHostWorker = /main\.worker\.ts$/
-// Codicons Path
-const CODICONS_PATH = path.resolve(rootPath, 'node_modules', '@vscode', 'codicons')
+
 /** @type {import('webpack').Configuration}*/
 const webviewConfig = {
   context: __dirname, // needed when running `gulp` from the root dir
