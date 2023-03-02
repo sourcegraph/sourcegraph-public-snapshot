@@ -2271,171 +2271,171 @@ type AutoIndexJobDescription {
 }
 
 """
-TODO
+Vulnerabilities synced from the GitHub Advisory Database.
 """
 type Vulnerability implements Node {
     """
-    TODO
+    The ID of the vulnerability.
     """
     id: ID!
 
     """
-    TODO
+    The CVE identifier of the vulnerability (e.g., CVE-2023-123).
     """
     sourceID: String!
 
     """
-    TODO
+    A short summary of the vulnerability.
     """
     summary: String!
 
     """
-    TODO
+    A longer description of the vulnerability.
     """
     details: String!
 
     """
-    TODO
+    Common Platform Enumeration identifiers related to this vulnerability.
     """
     cpes: [String!]!
 
     """
-    TODO
+    Common Weakness Enumeration identifiers related to this vulnerability.
     """
     cwes: [String!]!
 
     """
-    TODO
+    Other names this vulnerability is known by.
     """
     aliases: [String!]!
 
     """
-    TODO
+    Names of related vulnerabilities.
     """
     related: [String!]!
 
     """
-    TODO
+    The data source of this vulnerability.
     """
     dataSource: String!
 
     """
-    TODO
+    URLs indicating the source of this vulnerability.
     """
     urls: [String!]!
 
     """
-    TODO
+    A human-readable severity string.
     """
     severity: String!
 
     """
-    TODO
+    The Common Vulnerability Scoring System severity vector.
     """
     cvssVector: String!
 
     """
-    TODO
+    The Common Vulnerability Scoring System severity score.
     """
     cvssScore: String!
 
     """
-    TODO
+    The time this vulnerability was published.
     """
     published: DateTime!
 
     """
-    TODO
+    The last time this vulnerability was modified.
     """
     modified: DateTime
 
     """
-    TODO
+    The time this vulnerability was withdrawn.
     """
     withdrawn: DateTime
 
     """
-    TODO
+    A list of packages that are affected by this vulnerability.
     """
     affectedPackages: [VulnerabilityAffectedPackage!]!
 }
 
 """
-TODO
+A package affected by a vulnerability.
 """
 type VulnerabilityAffectedPackage {
     """
-    TODO
+    The name of the package.
     """
     packageName: String!
 
     """
-    TODO
+    The language ecosystem.
     """
     language: String!
 
     """
-    TODO
+    A package namespace.
     """
     namespace: String!
 
     """
-    TODO
+    A list of constraints that identify affected versions of the package.
     """
     versionConstraint: [String!]!
 
     """
-    TODO
+    Whether or not there is a known fix.
     """
     fixed: Boolean!
 
     """
-    TODO
+    The version in which the fix was applied.
     """
     fixedIn: String
 
     """
-    TODO
+    A list of specific symbols affected by the vulnerability.
     """
     affectedSymbols: [VulnerabilityAffectedSymbol!]!
 }
 
 """
-TODO
+A specific symbol affected by a vulnerability.
 """
 type VulnerabilityAffectedSymbol {
     """
-    TODO
+    A path to the document within the package source.
     """
     path: String!
 
     """
-    TODO
+    A list of symbols defined in that path.
     """
     symbols: [String!]!
 }
 
 """
-TODO
+A use of a known vulnerable-affected package.e
 """
 type VulnerabilityMatch implements Node {
     """
-    TODO
+    The match ID.
     """
     id: ID!
 
     """
-    TODO
+    The vulnerability.
     """
     vulnerability: Vulnerability!
 
     """
-    TODO
+    The affected package that is used by the associated index.
     """
     affectedPackage: VulnerabilityAffectedPackage!
 
     """
-    TODO
+    The index record that contains a direct use of the affected package.
     """
     preciseIndex: PreciseIndex!
 }
