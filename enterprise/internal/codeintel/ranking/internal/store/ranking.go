@@ -178,6 +178,7 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
+		derivativeGraphKey,
 		parentGraphKey,
 		derivativeGraphKey,
 	))
@@ -222,15 +223,27 @@ locked_refs AS (
 	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
 	SELECT %s, r.id FROM refs r
 	ON CONFLICT DO NOTHING
-	RETURNING codeintel_ranking_reference_id AS id
+	RETURNING codeintel_ranking_reference_id
 ),
 referenced_symbols AS (
 	SELECT unnest(r.symbol_names) AS symbol_name
 	FROM refs r
 	JOIN lsif_uploads u ON u.id = r.upload_id
 	WHERE
-		r.id IN (SELECT lr.id FROM locked_refs lr) AND
-		TRUE -- TODO
+		r.id IN (SELECT lr.codeintel_ranking_reference_id FROM locked_refs lr) AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_ranking_references_processed rrp
+			JOIN codeintel_ranking_references rr ON rr.id = rrp.codeintel_ranking_reference_id
+			JOIN lsif_uploads u2 ON u2.id = rr.upload_id
+			WHERE
+				rrp.graph_key = %s AND
+				NOT (
+					u.repository_id = u2.repository_id AND
+					u.root = u2.root AND
+					u.indexer = u2.indexer
+				)
+		)
 ),
 referenced_definitions AS (
 	SELECT
