@@ -43,7 +43,7 @@ class ChatController {
 			if (this.inputElement.value.trim().length === 0) {
 				return
 			}
-			this.vscode.postMessage({ command: 'submit', text: inputElement.value })
+			this.vscode.postMessage({ command: 'submit', text: this.inputElement.value })
 			this.inputElement.value = ''
 		})
 
