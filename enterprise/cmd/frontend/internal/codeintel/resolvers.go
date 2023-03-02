@@ -47,7 +47,21 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 		"PreciseIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.PreciseIndexByID(ctx, id)
 		},
+		"Vulnerability": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.VulnerabilityByID(ctx, id)
+		},
+		"VulnerabilityMatch": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.VulnerabilityMatchByID(ctx, id)
+		},
 	}
+}
+
+func (r *Resolver) VulnerabilityByID(ctx context.Context, id graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
+}
+
+func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {

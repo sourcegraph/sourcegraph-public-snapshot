@@ -26,6 +26,50 @@ type RootResolver interface {
 }
 
 type SentinelServiceResolver interface {
+	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
+	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
+}
+
+type VulnerabilityResolver interface {
+	ID() graphql.ID
+	SourceID() string
+	Summary() string
+	Details() string
+	CPEs() []string
+	CWEs() []string
+	Aliases() []string
+	Related() []string
+	DataSource() string
+	URLs() []string
+	Severity() string
+	CVSSVector() string
+	CVSSScore() string
+	Published() gqlutil.DateTime
+	Modified() *gqlutil.DateTime
+	Withdrawn() *gqlutil.DateTime
+	AffectedPackages() []VulnerabilityAffectedPackageResolver
+}
+
+type VulnerabilityAffectedPackageResolver interface {
+	PackageName() string
+	Language() string
+	Namespace() string
+	VersionConstraint() []string
+	Fixed() bool
+	FixedIn() *string
+	AffectedSymbols() []VulnerabilityAffectedSymbolResolver
+}
+
+type VulnerabilityAffectedSymbolResolver interface {
+	Path() string
+	Symbols() []string
+}
+
+type VulnerabilityMatchResolver interface {
+	ID() graphql.ID
+	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
+	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
+	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
 type CodeNavServiceResolver interface {
