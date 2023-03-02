@@ -73,7 +73,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const isLightTheme = useIsLightTheme()
 
-    const wrapOutboundLink = (url: string) => {
+    const wrapOutboundLink = (url: string): string => {
         if (isSourcegraphApp) {
             return addSourcegraphAppOutboundUrlParameters(url)
         }
