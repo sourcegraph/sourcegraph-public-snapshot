@@ -150,9 +150,20 @@ extend type Mutation {
     """
     updateCodeownersFile(input: CodeownersFileInput!): CodeownersIngestedFile!
     """
-    deleteCodeownersFile deletes any existing Codeowners file for the given repositories.
+    deleteCodeownersFiles deletes any existing Codeowners file for the given repositories.
     """
-    deleteCodeownersFiles(repositoryIDs: [Int!]!): EmptyResponse
+    deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
+}
+
+input DeleteCodeownersFilesInput {
+    """
+    The repo ID to ingest the file for. Cannot be set with repositoryName.
+    """
+    repoID: ID
+    """
+    The repo name to ingest the file for. Cannot be set with repositoryID.
+    """
+    repoName: String
 }
 
 """

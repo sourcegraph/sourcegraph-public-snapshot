@@ -108,7 +108,7 @@ func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.Codeowne
 	if input.RepoName != nil {
 		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*input.RepoName))
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for name %v", input.RepoName)
+			return nil, err
 		}
 		return repo, nil
 	}
@@ -123,8 +123,21 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
-	if err := r.db.Codeowners().DeleteCodeownersForRepos(ctx, args.RepositoryIDs...); err != nil {
-		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepositoryIDs)
+
+	if len(args.Repositories) == 0 {
+		return nil, nil
+	}
+
+	repoIDs := []api.RepoID{}
+	for _, input := range args.Repositories {
+		repo, err := r.getRepo(ctx, graphqlbackend.CodeownersFileInput{RepoID: input.RepoID, RepoName: input.RepoName})
+		if err != nil {
+			return nil, err
+		}
+		repoIDs = append(repoIDs, repo.ID)
+	}
+	if err := r.db.Codeowners().DeleteCodeownersForRepos(ctx, repoIDs...); err != nil {
+		return nil, errors.Wrapf(err, "could not delete codeowners file for repos")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
