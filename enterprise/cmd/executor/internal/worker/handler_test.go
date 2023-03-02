@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -133,6 +136,53 @@ func TestHandler_PreDequeue(t *testing.T) {
 			}
 
 			test.assertMockFunc(t, cmdRunner)
+		})
+	}
+}
+
+func TestHandler_Handle(t *testing.T) {
+	internalLogger := logtest.Scoped(t)
+	operations := command.NewOperations(&observation.TestContext)
+
+	tests := []struct {
+		name           string
+		options        Options
+		job            types.Job
+		mockFunc       func(cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
+		expectedErr    error
+		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
+	}{
+		// TODO: test cases
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cmdRunner := NewMockCmdRunner()
+			cmd := NewMockCommand()
+			logStore := NewMockExecutionLogEntryStore()
+			filesStore := NewMockFilesStore()
+
+			h := &handler{
+				cmdRunner:  cmdRunner,
+				cmd:        cmd,
+				logStore:   logStore,
+				filesStore: filesStore,
+				options:    test.options,
+				operations: operations,
+			}
+
+			if test.mockFunc != nil {
+				test.mockFunc(cmdRunner, cmd, logStore, filesStore)
+			}
+
+			err := h.Handle(context.Background(), internalLogger, test.job)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			test.assertMockFunc(t, cmdRunner, cmd, logStore, filesStore)
 		})
 	}
 }
