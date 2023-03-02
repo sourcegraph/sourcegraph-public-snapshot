@@ -13,12 +13,16 @@ import {
     CollapseHeader,
     CollapsePanel,
     H4,
-    useCheckboxes
+    useCheckboxes,
+    useForm,
+    Form,
+    SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 import { PermissionsList } from './Permissions'
 
@@ -28,6 +32,10 @@ interface RoleNodeProps {
     node: RoleFields
     afterDelete: () => void
     allPermissions: PermissionsMap
+}
+
+interface RoleNodePermissionsFormValues {
+    permissions: string[]
 }
 
 export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDelete, allPermissions }) => {
@@ -62,6 +70,21 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         },
         [deleteRole, node.id]
     )
+
+    const { nodes: permissionNodes } = node.permissions
+    const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
+
+    const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
+        console.log(values, '<======')
+    }
+    const defaultFormValues: RoleNodePermissionsFormValues = { permissions: rolePermissionIDs }
+    const { formAPI, ref, handleSubmit } = useForm({
+        initialValues: defaultFormValues,
+        onSubmit,
+    })
+    const {
+        input: { isChecked, onBlur, onChange },
+    } = useCheckboxes('permissions', formAPI)
 
     return (
         <li className={styles.roleNode}>
@@ -116,9 +139,20 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     )}
                 </CollapseHeader>
 
-                <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
-                    <H4>Permissions</H4>
-                    {/* <PermissionList allPermissions={allPermissions} /> */}
+                <CollapsePanel
+                    className={styles.roleNodePermissions}
+                    forcedRender={false}
+                    as={Form}
+                    ref={ref}
+                    onSubmit={handleSubmit}
+                >
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        isChecked={isChecked}
+                        onBlur={onBlur}
+                        onChange={onChange}
+                    />
+                    <LoaderButton alwaysShowLabel={true} variant="primary" type="submit" loading={formAPI.submitting} label="Update" />
                 </CollapsePanel>
             </Collapse>
         </li>

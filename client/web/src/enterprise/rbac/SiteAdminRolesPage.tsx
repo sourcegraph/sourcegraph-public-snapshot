@@ -18,7 +18,7 @@ import {
 import { PageTitle } from '../../components/PageTitle'
 
 import { useRolesConnection, usePermissions, PermissionsMap, DEFAULT_PAGE_LIMIT } from './backend'
-import { AddRoleModal } from './components/AddRoleModal'
+import { CreateRoleModal } from './components/CreateRoleModal'
 import { RoleNode } from './components/RoleNode'
 
 import styles from './SiteAdminRolesPage.module.scss'
@@ -86,11 +86,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             </PageHeader>
 
             {showAddModal && !loading && (
-                <AddRoleModal
-                    onCancel={closeModal}
-                    afterCreate={afterCreate}
-                    allPermissions={permissions}
-                />
+                <CreateRoleModal onCancel={closeModal} afterCreate={afterCreate} allPermissions={permissions} />
             )}
 
             <ConnectionContainer className="mb-3">
