@@ -38,7 +38,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				assert.Equal(t, "user6", userRes.Attributes[AttrUserName])
 				assert.Equal(t, false, userRes.ExternalID.Present())
 				userID, _ := strconv.Atoi(userRes.ID)
-				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				user, _ := db.Users().GetByID(context.Background(), int32(userID))
 				assert.Equal(t, "user6", user.Username)
 			},
 		},
