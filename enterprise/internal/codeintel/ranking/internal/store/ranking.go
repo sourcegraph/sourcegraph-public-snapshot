@@ -203,6 +203,7 @@ WITH
 refs AS (
 	SELECT
 		rr.id,
+		rr.upload_id,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
 	WHERE
@@ -221,12 +222,14 @@ locked_refs AS (
 	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
 	SELECT %s, r.id FROM refs r
 	ON CONFLICT DO NOTHING
-	RETURNING codeintel_ranking_reference_id
+	RETURNING codeintel_ranking_reference_id AS id
 ),
 referenced_symbols AS (
-	SELECT unnest(symbol_names) AS symbol_name
-	FROM refs
-	WHERE id IN (SELECT id FROM locked_refs)
+	SELECT unnest(r.symbol_names) AS symbol_name
+	FROM refs r
+	WHERE
+		r.id IN (SELECT lr.id FROM locked_refs lr) AND
+		TRUE -- TODO
 ),
 referenced_definitions AS (
 	SELECT
