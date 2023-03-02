@@ -26,7 +26,6 @@ export interface TemporarySettingsSchema {
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
-    'sentinel.sidebar.collapsed': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
