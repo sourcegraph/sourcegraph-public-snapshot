@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strconv"
 	"sync"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type rootResolver struct {
