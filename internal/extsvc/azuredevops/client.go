@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	AzureDevOpsApiUrl       = "https://dev.azure.com/"
+	AzureDevOpsAPIURL       = "https://dev.azure.com/"
 	ClientAssertionType     = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 	apiVersion              = "7.0"
 	continuationTokenHeader = "x-ms-continuationtoken"
@@ -166,17 +166,17 @@ func (c *client) GetURL() *url.URL {
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
 // Services (https://dev.azure.com)
 func (c *client) IsAzureDevOpsServices() bool {
-	return c.URL.String() == AzureDevOpsApiUrl
+	return c.URL.String() == AzureDevOpsAPIURL
 }
 
 func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.AzureDevOps != nil {
-			authURL, err := url.JoinPath(VisualStudioAppUrl, "oauth2/authorize")
+			authURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/authorize")
 			if err != nil {
 				return nil, err
 			}
-			tokenURL, err := url.JoinPath(VisualStudioAppUrl, "oauth2/token")
+			tokenURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/token")
 			if err != nil {
 				return nil, err
 			}

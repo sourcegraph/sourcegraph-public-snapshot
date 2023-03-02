@@ -120,11 +120,11 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 	azureProvider := sourceCfg.AzureDevOps
 
 	// Since this provider is for dev.azure.com only, we can hardcode the provider's URL to
-	// azuredevops.VisualStudioAppUrl.
-	parsedURL, err := url.Parse(azuredevops.VisualStudioAppUrl)
+	// azuredevops.VisualStudioAppURL.
+	parsedURL, err := url.Parse(azuredevops.VisualStudioAppURL)
 	if err != nil {
 		messages = append(messages, fmt.Sprintf(
-			"Failed to parse Azure DevOps URL %q. Login via this Azure instance will not work.", azuredevops.VisualStudioAppUrl,
+			"Failed to parse Azure DevOps URL %q. Login via this Azure instance will not work.", azuredevops.VisualStudioAppURL,
 		))
 		return nil, messages
 	}
@@ -143,19 +143,19 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		sessionKey,
 	)
 
-	authURL, err := url.JoinPath(azuredevops.VisualStudioAppUrl, "/oauth2/authorize")
+	authURL, err := url.JoinPath(azuredevops.VisualStudioAppURL, "/oauth2/authorize")
 	if err != nil {
 		messages = append(messages, fmt.Sprintf(
-			"Failed to generate auth URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppUrl): %s",
+			"Failed to generate auth URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppURL): %s",
 			err.Error(),
 		))
 		return nil, messages
 	}
 
-	tokenURL, err := url.JoinPath(azuredevops.VisualStudioAppUrl, "/oauth2/token")
+	tokenURL, err := url.JoinPath(azuredevops.VisualStudioAppURL, "/oauth2/token")
 	if err != nil {
 		messages = append(messages, fmt.Sprintf(
-			"Failed to generate token URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppUrl): %s", err.Error(),
+			"Failed to generate token URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppURL): %s", err.Error(),
 		))
 		return nil, messages
 	}

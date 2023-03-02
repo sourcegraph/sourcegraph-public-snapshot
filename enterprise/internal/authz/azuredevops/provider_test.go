@@ -3,6 +3,7 @@ package azuredevops
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -523,6 +524,68 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		if diff := cmp.Diff(wantPermissions, gotPermissions); diff != "" {
 			t.Errorf("Mismatched perms, (-want, +got)\n%s", diff)
+		}
+	})
+}
+
+func Test_ValidateConnection(t *testing.T) {
+	licensing.MockCheckFeature = func(_ licensing.Feature) error { return nil }
+	rcache.SetupForTest(t)
+
+	db := database.NewMockDB()
+	result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
+		{
+			URN: "1",
+			AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+				Orgs:     []string{"solarsystem"},
+				Projects: []string{"solar/system"},
+			},
+		},
+		{
+			URN: "2",
+			AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+				Orgs:     []string{"solarsystem", "milkyway"},
+				Projects: []string{"solar/system", "milky/way"},
+			},
+		},
+	})
+
+	if len(result.Providers) == 0 {
+		fmt.Println(result)
+		t.Fatal("No providers found, expected one")
+	}
+
+	p := result.Providers[0]
+
+	t.Run("expected errors", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		azuredevops.MockVisualStudioAppURL = mockServer.URL
+
+		err := p.ValidateConnection(context.Background())
+		if err == nil {
+			t.Fatalf("Expected errors but got nil")
+		}
+	})
+
+	t.Run("expected no errors", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			response := azuredevops.Profile{
+				ID:          "1",
+				DisplayName: "foo",
+			}
+
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+			}
+		}))
+		azuredevops.MockVisualStudioAppURL = mockServer.URL
+
+		err := p.ValidateConnection(context.Background())
+		if err != nil {
+			t.Fatalf("Expected no errors but got: %v", err)
 		}
 	})
 }

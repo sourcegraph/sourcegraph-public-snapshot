@@ -31,7 +31,7 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 
 		azureClient, err := azuredevops.NewClient(
 			"AzureDevOpsOAuth",
-			azuredevops.VisualStudioAppUrl,
+			azuredevops.VisualStudioAppURL,
 			&auth.OAuthBearerToken{Token: token.AccessToken},
 			nil,
 		)
