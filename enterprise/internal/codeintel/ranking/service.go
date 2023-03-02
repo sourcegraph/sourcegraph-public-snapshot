@@ -96,9 +96,9 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 		return types.RepoPathRanks{}, err
 	}
 	statistics := types.ReferenceCountStatistics{
-		MinReferenceCount:  min,
-		MeanReferenceCount: mean,
-		MaxReferenceCount:  max,
+		Min:               min,
+		Mean:              mean,
+		MaxReferenceCount: max,
 	}
 
 	paths := map[string]types.PathRank{}
