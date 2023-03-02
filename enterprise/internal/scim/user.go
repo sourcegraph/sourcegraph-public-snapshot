@@ -185,28 +185,28 @@ func checkBodyNotEmpty(r *http.Request) error {
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
 func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert account data – if it doesn't exist, never mind
-	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
+	attributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
 		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
-		resourceAttributes = scim.ResourceAttributes{
+		attributes = scim.ResourceAttributes{
 			AttrUserName:    user.Username,
 			AttrDisplayName: user.DisplayName,
 			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
 		}
 		if user.SCIMExternalID != "" {
-			resourceAttributes[AttrExternalId] = user.SCIMExternalID
+			attributes[AttrExternalId] = user.SCIMExternalID
 		}
 	}
-	if resourceAttributes[AttrName] == nil {
-		resourceAttributes[AttrName] = map[string]interface{}{}
+	if attributes[AttrName] == nil {
+		attributes[AttrName] = map[string]interface{}{}
 	}
 
 	// Fall back to username and primary email in the user object if not set in account data
-	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
-		resourceAttributes[AttrUserName] = user.Username
+	if attributes[AttrUserName] == nil || attributes[AttrUserName].(string) == "" {
+		attributes[AttrUserName] = user.Username
 	}
-	if emails, ok := resourceAttributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && user.Emails != nil && len(user.Emails) > 0 {
-		resourceAttributes[AttrEmails] = []interface{}{
+	if emails, ok := attributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && user.Emails != nil && len(user.Emails) > 0 {
+		attributes[AttrEmails] = []interface{}{
 			map[string]interface{}{
 				"value":   user.Emails[0],
 				"primary": true,
@@ -216,7 +216,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 
 	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: getOptionalExternalID(resourceAttributes),
-		Attributes: resourceAttributes,
+		ExternalID: getOptionalExternalID(attributes),
+		Attributes: attributes,
 	}
 }
