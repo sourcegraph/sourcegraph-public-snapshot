@@ -86,9 +86,9 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 }
 
 // updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, newUser scim.Resource) (err error) {
+func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes) (err error) {
 	usernameUpdate := ""
-	requestedUsername := extractStringAttribute(newUser.Attributes, AttrUserName)
+	requestedUsername := extractStringAttribute(attributes, AttrUserName)
 	if requestedUsername != oldUser.Username {
 		usernameUpdate, err = getUniqueUsername(ctx, db.Users(), requestedUsername)
 		if err != nil {
@@ -107,7 +107,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
 
-	accountData, err := toAccountData(newUser.Attributes)
+	accountData, err := toAccountData(attributes)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}

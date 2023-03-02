@@ -96,7 +96,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		}
 
 		// Update user
-		return updateUser(r.Context(), tx, user, userRes)
+		return updateUser(r.Context(), tx, user, userRes.Attributes)
 	})
 	if err != nil {
 		return scim.Resource{}, err
