@@ -27,7 +27,7 @@ const stormRoutes: RouteObject[] = [
          * There's still no way to create routes based on query params.
          * Lazy loading of the proper component is handled by `SearchPageWrapper`.
          */
-        element: null, //<SearchPageWrapper />,
+        element: <SearchPageWrapper />,
         loader,
     },
 ]
