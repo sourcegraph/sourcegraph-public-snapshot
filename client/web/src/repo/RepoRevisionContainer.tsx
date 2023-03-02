@@ -222,7 +222,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                     <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
                 )}
             </RepoHeaderContributionPortal>
-            {resolvedRevision && isPackage && (
+            {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={3}
