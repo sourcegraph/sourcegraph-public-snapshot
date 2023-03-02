@@ -152,7 +152,7 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 
 				// Just check if the URN of the connection is the as expected. Using cmp.Diff on the
 				// whole list would require to reconstruct the entire struct in the expected output.
-				for j, _ := range gotAzureProvider.conns {
+				for j := range gotAzureProvider.conns {
 					if diff := cmp.Diff(tc.expectedAzureDevOpsConnections[j].URN, gotAzureProvider.conns[j].URN); diff != "" {
 						t.Errorf("Mismatched provider connection URN, (-want, +got)\n%s", diff)
 					}
@@ -626,27 +626,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		if diff := cmp.Diff(wantPermissions, gotPermissions); diff != "" {
 			t.Errorf("Mismatched perms, (-want, +got)\n%s", diff)
-		}
-	})
-
-	t.Run("at least one code host connection with enforcePermissions set to true", func(t *testing.T) {
-		licensing.MockCheckFeature = allowLicensingCheck
-		result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
-			{
-				URN: "1",
-				AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-					EnforcePermissions: false,
-				},
-			},
-			{
-				URN: "2",
-				AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-					EnforcePermissions: true,
-				},
-			},
-		})
-		if len(result.Providers) != 1 {
-			t.Fatalf("expected one provider but got %d", len(result.Providers))
 		}
 	})
 }
