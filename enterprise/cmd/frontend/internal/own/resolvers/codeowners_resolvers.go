@@ -48,7 +48,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 		Proto:    proto,
 	}
 
-	if err := r.codeownersStore.CreateCodeownersFile(ctx, codeownersFile); err != nil {
+	if err := r.db.Codeowners().CreateCodeownersFile(ctx, codeownersFile); err != nil {
 		return nil, errors.Wrap(err, "could not ingest codeowners file")
 	}
 
@@ -77,7 +77,7 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 		Contents: args.Input.FileContents,
 		Proto:    proto,
 	}
-	if err := r.codeownersStore.UpdateCodeownersFile(ctx, codeownersFile); err != nil {
+	if err := r.db.Codeowners().UpdateCodeownersFile(ctx, codeownersFile); err != nil {
 		return nil, errors.Wrap(err, "could not update codeowners file")
 	}
 
@@ -123,7 +123,7 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
-	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepositoryIDs...); err != nil {
+	if err := r.db.Codeowners().DeleteCodeownersForRepos(ctx, args.RepositoryIDs...); err != nil {
 		return nil, errors.Wrapf(err, "could not delete codeowners file for repos +%d", args.RepositoryIDs)
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -134,7 +134,7 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 		return nil, err
 	}
 	connectionResolver := &codeownersIngestedFileConnectionResolver{
-		codeownersStore: r.codeownersStore,
+		codeownersStore: r.db.Codeowners(),
 	}
 	if args.After != nil {
 		cursor, err := graphqlutil.DecodeIntCursor(args.After)
@@ -159,7 +159,7 @@ func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.Rep
 	if err != nil {
 		return nil, err
 	}
-	codeownersFile, err := r.codeownersStore.GetCodeownersForRepo(ctx, repoID)
+	codeownersFile, err := r.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -262,6 +262,5 @@ func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context)
 
 func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {
 	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
-	// Eventually we should allow users to access the Get method, but check that they have view permissions on the repository.
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }
