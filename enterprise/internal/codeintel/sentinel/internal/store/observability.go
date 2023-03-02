@@ -1,14 +1,13 @@
 package store
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
 }
 
-var m = new(metrics.SingletonREDMetrics)
+// var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
 	// m := m.Get(func() *metrics.REDMetrics {

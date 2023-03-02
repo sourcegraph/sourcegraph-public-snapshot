@@ -9,11 +9,11 @@ go_library(
         "parse.go",
         "repr.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//enterprise/internal/own/codeowners/v1:codeowners",
         "//internal/lazyregexp",
-        "//internal/own/codeowners/v1:codeowners",
         "//internal/types",
         "//lib/errors",
         "@com_github_becheran_wildmatch_go//:wildmatch-go",
@@ -28,7 +28,7 @@ go_test(
     ],
     deps = [
         ":codeowners",
-        "//internal/own/codeowners/v1:codeowners",
+        "//enterprise/internal/own/codeowners/v1:codeowners",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

@@ -3,7 +3,7 @@ package codeowners
 import (
 	"sync"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 type Ruleset struct {
