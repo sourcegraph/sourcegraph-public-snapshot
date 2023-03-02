@@ -44,11 +44,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{
-		logger: r.logger,
-		db:     r.db,
-		gqlID:  siteGQLID,
-	}, nil
+	return newSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -63,9 +59,17 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
+	return newSiteResolver(r.logger, r.db)
+}
+
+func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
+	return newSiteResolver(logger, db)
+}
+
+func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
-		logger: r.logger,
-		db:     r.db,
+		logger: logger,
+		db:     db,
 		gqlID:  singletonSiteGQLID,
 	}
 }

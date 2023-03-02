@@ -6,10 +6,12 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -172,6 +174,14 @@ type JSContext struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+
+	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+
+	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
+
+	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
+
+	RunningOnMacOS bool `json:"runningOnMacOS"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -245,6 +255,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	if err != nil {
+		needsRepositoryConfiguration = false
+	}
+
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
+	runningOnMacOS := runtime.GOOS == "darwin"
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -317,6 +336,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+
+		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+
+		ExtsvcConfigFileExists: extsvcConfigFileExists,
+
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+
+		RunningOnMacOS: runningOnMacOS,
 	}
 }
 

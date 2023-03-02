@@ -226,6 +226,16 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToVulnerability() (resolverstubs.VulnerabilityResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVulnerabilityMatch() (resolverstubs.VulnerabilityMatchResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityMatchResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
 	n, ok := r.Node.(*SiteConfigurationChangeResolver)
 	return n, ok
@@ -359,5 +369,10 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 
 func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
 	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolver, bool) {
+	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok
 }
