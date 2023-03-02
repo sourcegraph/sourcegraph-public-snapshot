@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
@@ -21,11 +22,31 @@ import (
 type Service interface {
 	// RulesetForRepo returns a CODEOWNERS file ruleset from a given repository at given commit ID.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error)
+	RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, RulesetSource, error)
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
+}
+
+type RulesetSource interface {
+	Identifier() string
+}
+
+type RulesetSourceCommittedFile struct {
+	Path string
+}
+
+func (s RulesetSourceCommittedFile) Identifier() string {
+	return s.Path
+}
+
+type RulesetSourceIngestedFile struct {
+	ID int
+}
+
+func (s RulesetSourceIngestedFile) Identifier() string {
+	return strconv.Itoa(s.ID)
 }
 
 var _ Service = &service{}
@@ -67,7 +88,7 @@ var codeownersLocations = []string{
 
 // RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
 // from one of the possible codeownersLocations. It returns nil if no match is found.
-func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
+func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, RulesetSource, error) {
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,
@@ -77,13 +98,14 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, com
 			path,
 		)
 		if content != nil && err == nil {
-			return codeowners.Parse(bytes.NewReader(content))
+			rs, err := codeowners.Parse(bytes.NewReader(content))
+			return rs, RulesetSourceCommittedFile{Path: path}, err
 		} else if os.IsNotExist(err) {
 			continue
 		}
-		return nil, err
+		return nil, nil, err
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func (s *service) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {

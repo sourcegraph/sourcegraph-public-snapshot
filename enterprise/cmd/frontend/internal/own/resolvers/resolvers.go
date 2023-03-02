@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func New(db database.DB, ownService own.Service) *ownResolver {
@@ -24,9 +25,6 @@ var (
 	_ graphqlbackend.OwnResolver = &ownResolver{}
 )
 
-// ownResolver is a dummy graphqlbackend.OwnResolver that reutns a single owner
-// that is the author of currently viewed commit, and fake ownership reason
-// pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct {
 	db         database.DB
 	ownService own.Service
@@ -35,21 +33,46 @@ type ownResolver struct {
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
+	rs, source, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
+
 	// No data found.
 	if rs == nil {
 		return &ownershipConnectionResolver{db: r.db}, nil
 	}
 
-	owners := rs.FindOwners(blob.Path())
-	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
+	rule := rs.FindMatchingRule(blob.Path())
+	if rule == nil {
+		return &ownershipConnectionResolver{db: r.db}, nil
+	}
+	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
 	if err != nil {
 		return nil, err
 	}
-	return &ownershipConnectionResolver{r.db, resolvedOwners}, nil
+
+	if args.Reasons != nil && len(*args.Reasons) > 0 {
+		return nil, errors.New("filtering by reasons is not yet implemented")
+	}
+
+	after, err := graphqlutil.DecodeIntCursor(args.After)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse cursor")
+	}
+
+	first := 0
+	if args.First != nil {
+		first = int(*args.First)
+	}
+
+	return &ownershipConnectionResolver{
+		db:             r.db,
+		resolvedOwners: resolvedOwners,
+		source:         source,
+		first:          first,
+		after:          after,
+	}, nil
 }
 
 func (r *ownResolver) PersonOwnerField(person *graphqlbackend.PersonResolver) string {
@@ -68,11 +91,12 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{}
 }
 
-// ownershipConnectionResolver is a fake graphqlbackend.OwnershipConnectionResolver
-// connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             database.DB
 	resolvedOwners []codeowners.ResolvedOwner
+	source         own.RulesetSource
+	first          int
+	after          int
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
@@ -80,26 +104,35 @@ func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, erro
 }
 
 func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if r.first == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	if r.after+r.first >= len(r.resolvedOwners) {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	idx := int32(r.first + r.after)
+	return graphqlutil.EncodeIntCursor(&idx), nil
 }
 
 func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {
 	var resolvers []graphqlbackend.OwnershipResolver
-	for _, resolvedOwner := range r.resolvedOwners {
+	for i, resolvedOwner := range r.resolvedOwners[r.after:] {
+		if r.first != 0 && i == r.first-1 {
+			break
+		}
 		resolvers = append(resolvers, &ownershipResolver{
 			db:            r.db,
 			resolvedOwner: resolvedOwner,
+			source:        r.source,
 		})
 	}
 	return resolvers, nil
 }
 
-// ownershipResolver provides a dummy implementation of graphqlbackend.OwnershipResolver
-// which just claims the the auhthor of given GitTreeEntryResolver Commit is the owner
-// and is supports it by pointing at line 42 of the CODEOWNERS file.
 type ownershipResolver struct {
 	db            database.DB
 	resolvedOwner codeowners.ResolvedOwner
+	source        own.RulesetSource
 }
 
 func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
@@ -110,7 +143,7 @@ func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerReso
 }
 
 func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
-	return []graphqlbackend.OwnershipReasonResolver{&codeownersFileEntryResolver{}}, nil
+	return []graphqlbackend.OwnershipReasonResolver{&codeownersFileEntryResolver{source: r.source}}, nil
 }
 
 type ownerResolver struct {
@@ -136,7 +169,9 @@ func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 	return nil, false
 }
 
-type codeownersFileEntryResolver struct{}
+type codeownersFileEntryResolver struct {
+	source own.RulesetSource
+}
 
 func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
 	return r, true
@@ -151,6 +186,15 @@ func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, er
 }
 
 func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphqlbackend.FileResolver, error) {
+	s, ok := r.source.(own.RulesetSourceCommittedFile)
+	if ok {
+		commit := graphqlbackend.NewGitCommitResolver(r.db, r.gc, r.repo, r.commit, nil)
+		// commit.inputRev = r.inputRev
+		return graphqlbackend.NewGitTreeEntryResolver(r.db, r.gc, graphqlbackend.GitTreeEntryResolverOpts{
+			Commit: commit,
+			Stat:   graphqlbackend.CreateFileInfo(s.Path, false),
+		}), nil
+	}
 	return nil, nil
 }
 

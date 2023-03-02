@@ -25,10 +25,18 @@ func NewRuleset(proto *codeownerspb.File) *Ruleset {
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.
 func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
+	rule := x.FindMatchingRule(path)
+	if rule == nil {
+		return nil
+	}
+	return rule.GetOwner()
+}
+
+func (x *Ruleset) FindMatchingRule(path string) *CompiledRule {
 	for i := len(x.rules) - 1; i >= 0; i-- {
 		rule := x.rules[i]
 		if rule.match(path) {
-			return rule.GetOwner()
+			return rule
 		}
 	}
 	return nil
