@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -35,7 +36,7 @@ func toComputeResult(ctx context.Context, cmd compute.Command, match result.Matc
 	return out, nil
 }
 
-func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
+func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
 	s := stream.New().WithMaxGoroutines(8)
@@ -74,7 +75,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"",

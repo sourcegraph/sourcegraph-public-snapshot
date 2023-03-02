@@ -537,6 +537,16 @@ type CodeIntelRepositoryBadge struct {
 	ForNerds *bool `json:"forNerds,omitempty"`
 }
 
+// Completions description: Configuration for the completions service.
+type Completions struct {
+	// AccessToken description: The access token used to authenticate with the external completions provider.
+	AccessToken string `json:"accessToken"`
+	// Enabled description: Toggles whether completions are enabled.
+	Enabled bool `json:"enabled"`
+	// Provider description: The external completions provider.
+	Provider string `json:"provider"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -573,6 +583,20 @@ type EmailTemplates struct {
 	ResetPassword *EmailTemplate `json:"resetPassword,omitempty"`
 	// SetPassword description: Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
 	SetPassword *EmailTemplate `json:"setPassword,omitempty"`
+}
+
+// Embeddings description: Configuration for embeddings service.
+type Embeddings struct {
+	// AccessToken description: The access token used to authenticate with the external embedding API service.
+	AccessToken string `json:"accessToken"`
+	// Dimensions description: The dimensionality of the embedding vectors.
+	Dimensions int `json:"dimensions"`
+	// Enabled description: Toggles whether embedding service is enabled.
+	Enabled bool `json:"enabled"`
+	// Model description: The model used for embedding.
+	Model string `json:"model"`
+	// Url description: The url to the external embedding API service.
+	Url string `json:"url"`
 }
 
 // EncryptionKey description: Config for a key
@@ -1947,7 +1971,9 @@ type Settings struct {
 	AlertsCodeHostIntegrationMessaging string `json:"alerts.codeHostIntegrationMessaging,omitempty"`
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
-	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
+	// AlertsShowMajorMinorUpdates description: Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.
+	AlertsShowMajorMinorUpdates bool `json:"alerts.showMajorMinorUpdates,omitempty"`
+	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will be shown if `alerts.showMajorMinorUpdatess` is true.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// BasicCodeIntelGlobalSearchesEnabled description: Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.
 	BasicCodeIntelGlobalSearchesEnabled bool `json:"basicCodeIntel.globalSearchesEnabled,omitempty"`
@@ -2059,6 +2085,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "alerts.codeHostIntegrationMessaging")
 	delete(m, "alerts.hideObservabilitySiteAlerts")
+	delete(m, "alerts.showMajorMinorUpdates")
 	delete(m, "alerts.showPatchUpdates")
 	delete(m, "basicCodeIntel.globalSearchesEnabled")
 	delete(m, "basicCodeIntel.includeArchives")
@@ -2339,6 +2366,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// Completions description: Configuration for the completions service.
+	Completions *Completions `json:"completions,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -2365,6 +2394,8 @@ type SiteConfiguration struct {
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
 	EmailTemplates *EmailTemplates `json:"email.templates,omitempty"`
+	// Embeddings description: Configuration for embeddings service.
+	Embeddings *Embeddings `json:"embeddings,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
@@ -2561,6 +2592,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "completions")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")
 	delete(m, "defaultRateLimit")
@@ -2573,6 +2605,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "email.address")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
+	delete(m, "embeddings")
 	delete(m, "encryption.keys")
 	delete(m, "executors.accessToken")
 	delete(m, "executors.batcheshelperImage")

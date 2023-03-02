@@ -53,13 +53,13 @@
 .own-items {
     padding: 0.125rem 0.5rem 0.125rem 0; // Assymetic padding to account for the avatar
     display: flex;
-    align-items: baseline;
+    align-items: center;
     overflow: hidden;
 }
 
 .own-item {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

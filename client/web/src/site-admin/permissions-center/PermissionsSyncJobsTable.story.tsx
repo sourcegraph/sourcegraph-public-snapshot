@@ -30,7 +30,7 @@ export default config
 
 const TIMESTAMP_MOCK = subMinutes(Date.now(), 5)
 
-export const FiveSyncJobsFound: Story = () => (
+export const SixSyncJobsFound: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -151,7 +151,7 @@ export const FiveSyncJobsFound: Story = () => (
     </WebStory>
 )
 
-FiveSyncJobsFound.storyName = 'Five sync jobs'
+SixSyncJobsFound.storyName = 'Six sync jobs'
 
 interface repo {
     __typename: 'Repository'

@@ -1865,6 +1865,32 @@ CREATE SEQUENCE configuration_policies_audit_logs_seq
 
 ALTER SEQUENCE configuration_policies_audit_logs_seq OWNED BY configuration_policies_audit_logs.sequence;
 
+CREATE TABLE context_detection_embedding_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE context_detection_embedding_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE context_detection_embedding_jobs_id_seq OWNED BY context_detection_embedding_jobs.id;
+
 CREATE TABLE critical_and_site_config (
     id integer NOT NULL,
     type critical_or_site NOT NULL,
@@ -3716,6 +3742,34 @@ CREATE SEQUENCE registry_extensions_id_seq
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
 
+CREATE TABLE repo_embedding_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    repo_id integer NOT NULL,
+    revision text NOT NULL
+);
+
+CREATE SEQUENCE repo_embedding_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_embedding_jobs_id_seq OWNED BY repo_embedding_jobs.id;
+
 CREATE SEQUENCE repo_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -4175,6 +4229,89 @@ CREATE TABLE versions (
     first_version text NOT NULL
 );
 
+CREATE TABLE vulnerabilities (
+    id integer NOT NULL,
+    source_id text NOT NULL,
+    summary text NOT NULL,
+    details text NOT NULL,
+    cpes text[] NOT NULL,
+    cwes text[] NOT NULL,
+    aliases text[] NOT NULL,
+    related text[] NOT NULL,
+    data_source text NOT NULL,
+    urls text[] NOT NULL,
+    severity text NOT NULL,
+    cvss_vector text NOT NULL,
+    cvss_score text NOT NULL,
+    published_at timestamp with time zone NOT NULL,
+    modified_at timestamp with time zone,
+    withdrawn_at timestamp with time zone
+);
+
+CREATE SEQUENCE vulnerabilities_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
+
+CREATE TABLE vulnerability_affected_packages (
+    id integer NOT NULL,
+    vulnerability_id integer NOT NULL,
+    package_name text NOT NULL,
+    language text NOT NULL,
+    namespace text NOT NULL,
+    version_constraint text[] NOT NULL,
+    fixed boolean NOT NULL,
+    fixed_in text
+);
+
+CREATE SEQUENCE vulnerability_affected_packages_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_packages_id_seq OWNED BY vulnerability_affected_packages.id;
+
+CREATE TABLE vulnerability_affected_symbols (
+    id integer NOT NULL,
+    vulnerability_affected_package_id integer NOT NULL,
+    path text NOT NULL,
+    symbols text[] NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_affected_symbols_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_symbols_id_seq OWNED BY vulnerability_affected_symbols.id;
+
+CREATE TABLE vulnerability_matches (
+    id integer NOT NULL,
+    upload_id integer NOT NULL,
+    vulnerability_affected_package_id integer NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_matches_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_matches_id_seq OWNED BY vulnerability_matches.id;
+
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -4311,6 +4448,8 @@ ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_s
 
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY context_detection_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('context_detection_embedding_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
 
 ALTER TABLE ONLY discussion_comments ALTER COLUMN id SET DEFAULT nextval('discussion_comments_id_seq'::regclass);
@@ -4403,6 +4542,8 @@ ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('regist
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
 
 ALTER TABLE ONLY saved_searches ALTER COLUMN id SET DEFAULT nextval('saved_searches_id_seq'::regclass);
@@ -4428,6 +4569,14 @@ ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('u
 ALTER TABLE ONLY user_repo_permissions ALTER COLUMN id SET DEFAULT nextval('user_repo_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerabilities ALTER COLUMN id SET DEFAULT nextval('vulnerabilities_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_packages ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_packages_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_symbols ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_symbols_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_matches ALTER COLUMN id SET DEFAULT nextval('vulnerability_matches_id_seq'::regclass);
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
@@ -4567,6 +4716,9 @@ ALTER TABLE ONLY codeowners
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
+
+ALTER TABLE ONLY context_detection_embedding_jobs
+    ADD CONSTRAINT context_detection_embedding_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
@@ -4781,6 +4933,9 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_embedding_jobs
+    ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
 
@@ -4876,6 +5031,18 @@ ALTER TABLE ONLY users
 
 ALTER TABLE ONLY versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (service);
+
+ALTER TABLE ONLY vulnerabilities
+    ADD CONSTRAINT vulnerabilities_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT vulnerability_affected_packages_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT vulnerability_affected_symbols_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT vulnerability_matches_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
@@ -5321,6 +5488,16 @@ CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
 
+CREATE UNIQUE INDEX vulnerabilities_source_id ON vulnerabilities USING btree (source_id);
+
+CREATE UNIQUE INDEX vulnerability_affected_packages_vulnerability_id_package_name ON vulnerability_affected_packages USING btree (vulnerability_id, package_name);
+
+CREATE UNIQUE INDEX vulnerability_affected_symbols_vulnerability_affected_package_i ON vulnerability_affected_symbols USING btree (vulnerability_affected_package_id, path);
+
+CREATE UNIQUE INDEX vulnerability_matches_upload_id_vulnerability_affected_package_ ON vulnerability_matches USING btree (upload_id, vulnerability_affected_package_id);
+
+CREATE INDEX vulnerability_matches_vulnerability_affected_package_id ON vulnerability_matches USING btree (vulnerability_affected_package_id);
+
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
 CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_at);
@@ -5623,6 +5800,18 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT fk_vulnerabilities FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

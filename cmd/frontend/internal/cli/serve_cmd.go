@@ -139,7 +139,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db)
+	ui.InitRouter(db, enterpriseServices.EnterpriseSearchJobs)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -203,8 +203,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
-	schema, err := graphqlbackend.NewSchema(db,
+	schema, err := graphqlbackend.NewSchema(
+		db,
 		gitserver.NewClient(),
+		enterpriseServices.EnterpriseSearchJobs,
 		enterpriseServices.BatchChangesResolver,
 		enterpriseServices.CodeIntelResolver,
 		enterpriseServices.InsightsResolver,
@@ -217,6 +219,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterpriseServices.ComputeResolver,
 		enterpriseServices.InsightsAggregationResolver,
 		enterpriseServices.WebhooksResolver,
+		enterpriseServices.EmbeddingsResolver,
 		enterpriseServices.RBACResolver,
 		enterpriseServices.OwnResolver,
 	)
@@ -269,6 +272,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	// Create the external HTTP handler.
 	externalHandler := newExternalHTTPHandler(
 		db,
+		enterprise.EnterpriseSearchJobs,
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
@@ -288,6 +292,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
+			NewCompletionsStreamHandler:     enterprise.NewCompletionsStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
@@ -323,6 +328,7 @@ func makeInternalAPI(
 	internalHandler := newInternalHTTPHandler(
 		schema,
 		db,
+		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,

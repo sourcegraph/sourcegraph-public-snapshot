@@ -35,7 +35,10 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
     const [deleteCode, { loading, error }] = useMutation(DELETE_CODE_HOST)
 
     const handleDeleteConfirm = async (): Promise<void> => {
-        await deleteCode({ variables: { id: codeHost.id } })
+        await deleteCode({
+            variables: { id: codeHost.id },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+        })
         navigate('/setup/remote-repositories')
 
         // We have to remove it from the cache after we remove it on the backend

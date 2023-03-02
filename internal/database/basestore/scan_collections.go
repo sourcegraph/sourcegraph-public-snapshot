@@ -50,14 +50,28 @@ func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows Rows, q
 // the values of a query result. The given function is invoked multiple
 // times with a SQL rows object to scan a single value.
 func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows Rows, queryErr error) ([]T, error) {
+	return NewFilteredSliceScanner(func(s dbutil.Scanner) (T, bool, error) {
+		value, err := f(s)
+		return value, true, err
+	})
+}
+
+// NewFilteredSliceScanner returns a basestore scanner function that returns
+// filtered values  of a query result. The given function is invoked multiple
+// times with a SQL rows object to scan a single value. If the boolean flag
+// returned by the function is false, the associated value is not added to the
+// returned slice.
+func NewFilteredSliceScanner[T any](f func(dbutil.Scanner) (T, bool, error)) func(rows Rows, queryErr error) ([]T, error) {
 	return func(rows Rows, queryErr error) (values []T, _ error) {
 		scanner := func(s dbutil.Scanner) (bool, error) {
-			value, err := f(s)
+			value, ok, err := f(s)
 			if err != nil {
 				return false, err
 			}
+			if ok {
+				values = append(values, value)
+			}
 
-			values = append(values, value)
 			return true, nil
 		}
 

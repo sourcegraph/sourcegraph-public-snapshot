@@ -19,5 +19,5 @@ go_test(
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
     embed = [":anonymiser_lib"],
-    deps = ["@com_github_hexops_autogold//:autogold"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )
