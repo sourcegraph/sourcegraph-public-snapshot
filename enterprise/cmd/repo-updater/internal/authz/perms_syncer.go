@@ -455,11 +455,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
 					}
-				}
-				// Use the old user_permissions table if feature flag is off or no repos found.
-				// We need to do this because data might not have been migrated to the new table yet.
-				// TODO: refactor to be bulletproof once we have the OOB migration ready
-				if len(currentRepos) == 0 {
+				} else if len(currentRepos) == 0 {
+					// Use the old user_permissions table if feature flag is off
+					// TODO: refactor to be bulletproof once we have the OOB migration ready
 					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
@@ -469,7 +467,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				for _, repoID := range currentRepos {
 					results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(repoID))
 				}
-
 			}
 
 			// Process partial results if this is an initial fetch.
