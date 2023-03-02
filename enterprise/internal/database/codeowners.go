@@ -180,10 +180,6 @@ LIMIT 1
 
 func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...int32) error {
 	return s.WithTransact(ctx, func(tx CodeownersStore) error {
-		sqlIDs := make([]*sqlf.Query, 0, len(ids))
-		for _, id := range ids {
-			sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
-		}
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("repo_id = ANY (%s)", pq.Array(ids)),
 		}
