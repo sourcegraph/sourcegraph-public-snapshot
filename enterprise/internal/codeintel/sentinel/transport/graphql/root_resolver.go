@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"sync"
@@ -62,6 +63,13 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 		offset = after
 	}
 
+	if args.Severity != nil {
+		return nil, errors.New("filtering by severity is not yet implemented") // TODO
+	}
+	if args.Language != nil {
+		return nil, errors.New("filtering by language is not yet implemented") // TODO
+	}
+
 	vulnerabilities, totalCount, err := r.sentinelSvc.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
 		Limit:  limit,
 		Offset: offset,
@@ -84,6 +92,16 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 	limit := 50
 	if args.First != nil {
 		limit = int(*args.First)
+	}
+
+	if args.Repository != nil {
+		return nil, errors.New("filtering by repository is not yet implemented") // TODO
+	}
+	if args.Severity != nil {
+		return nil, errors.New("filtering by severity is not yet implemented") // TODO
+	}
+	if args.Language != nil {
+		return nil, errors.New("filtering by language is not yet implemented") // TODO
 	}
 
 	offset := 0
@@ -129,6 +147,10 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		offset:           offset,
 		totalCount:       totalCount,
 	}, nil
+}
+
+func (r *rootResolver) VulnerableRepositories(ctx context.Context, args resolverstubs.GetVulnerableRepositoriesArgs) (_ resolverstubs.VulnerableRepositoriesConnection, err error) {
+	return nil, errors.New("unimplemented") // TODO
 }
 
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
@@ -367,6 +389,14 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		&upload,
 		nil,
 	)
+}
+
+func (r *vulnerabilityMatchResolver) CurrentVersion(ctx context.Context) (string, error) {
+	return "", errors.New("current version is currently unimplemented") // TODO
+}
+
+func (r *vulnerabilityMatchResolver) UsageLocations(ctx context.Context, args resolverstubs.VulnerabilityMatchUsageLocationArgs) (resolverstubs.LocationConnectionResolver, error) {
+	return nil, errors.New("usage locations is current unimplemented") // TODO
 }
 
 //

@@ -470,6 +470,16 @@ extend type Query {
         If supplied, indicates which results to skip over during pagination.
         """
         after: String
+
+        """
+        If supplied, only return vulnerabilities with the given severity.
+        """
+        severity: VulnerabilitySeverity
+
+        """
+        If supplied, only return vulnerabilities with affected packages with the given language.
+        """
+        language: VulnerabilityLanguage
     ): VulnerabilityConnection!
 
     """
@@ -485,7 +495,96 @@ extend type Query {
         If supplied, indicates which results to skip over during pagination.
         """
         after: String
+
+        """
+        If supplied, only show matches for the given repository.
+        """
+        repository: ID
+
+        """
+        If supplied, only return matches whose vulnerability has the given severity.
+        """
+        severity: VulnerabilitySeverity
+
+        """
+        If supplied, only return matches whose vulnerability has an affected package with the given language.
+        """
+        language: VulnerabilityLanguage
     ): VulnerabilityMatchConnection!
+
+    """
+    List repositories with vulnerability matches.
+    """
+    vulnerableRepositories(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+
+        """
+        If supplied, only return repositories matching the given search term.
+        """
+        filter: String
+    ): VulnerableRepositoryConnection!
+}
+
+"""
+A list of vulnerable repositories.
+"""
+type VulnerableRepositoryConnection {
+    """
+    A list of repositories and their count of vulnerabilities.
+    """
+    nodes: [CodeIntelRepositoryWithCount!]!
+
+    """
+    The total number of repositories in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a count of vulnerabilities.
+"""
+type CodeIntelRepositoryWithCount {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The number of matched vulnerabilities.
+    """
+    count: Int!
+}
+
+"""
+Severity of a vulnerability.
+"""
+enum VulnerabilitySeverity {
+    CRITICAL
+    HIGH
+    MEDIUM
+    LOW
+}
+
+"""
+The language of a vulnerability-affected package.
+"""
+enum VulnerabilityLanguage {
+    GO
+    JAVA
+    TYPESCRIPT
 }
 
 """
@@ -2468,6 +2567,28 @@ type VulnerabilityMatch implements Node {
     The index record that contains a direct use of the affected package.
     """
     preciseIndex: PreciseIndex!
+
+    """
+    The version version used in the associated index.
+    """
+    currentVersion: String!
+
+    """
+    Locations where the affected package is used in the associated index.
+    """
+    usageLocations(
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned.
+        """
+        first: Int
+    ): LocationConnection!
 }
 
 """

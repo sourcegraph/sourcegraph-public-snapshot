@@ -28,18 +28,30 @@ type RootResolver interface {
 type SentinelServiceResolver interface {
 	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
 	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
+	VulnerableRepositories(ctx context.Context, args GetVulnerableRepositoriesArgs) (VulnerableRepositoriesConnection, error)
 	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
 	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
 }
 
 type GetVulnerabilitiesArgs struct {
-	First *int32
-	After *string
+	First    *int32
+	After    *string
+	Severity *string
+	Language *string
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	First *int32
-	After *string
+	First      *int32
+	After      *string
+	Repository *graphql.ID
+	Severity   *string
+	Language   *string
+}
+
+type GetVulnerableRepositoriesArgs struct {
+	First  *int32
+	After  *string
+	Filter *string
 }
 
 type VulnerabilityConnectionResolver interface {
@@ -52,6 +64,17 @@ type VulnerabilityMatchConnectionResolver interface {
 	Nodes() []VulnerabilityMatchResolver
 	TotalCount() *int32
 	PageInfo() PageInfo
+}
+
+type VulnerableRepositoriesConnection interface {
+	Nodes() []CodeIntelRepositoryWithCountResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type CodeIntelRepositoryWithCountResolver interface {
+	Repository() RepositoryResolver
+	Count() int32
 }
 
 type VulnerabilityResolver interface {
@@ -94,6 +117,13 @@ type VulnerabilityMatchResolver interface {
 	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
 	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
 	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
+	CurrentVersion(ctx context.Context) (string, error)
+	UsageLocations(ctx context.Context, args VulnerabilityMatchUsageLocationArgs) (LocationConnectionResolver, error)
+}
+
+type VulnerabilityMatchUsageLocationArgs struct {
+	First *int
+	After *string
 }
 
 type CodeNavServiceResolver interface {

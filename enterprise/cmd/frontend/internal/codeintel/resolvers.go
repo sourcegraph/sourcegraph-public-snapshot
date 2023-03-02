@@ -64,6 +64,10 @@ func (r *Resolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.
 	return r.sentinelRootResolver.VulnerabilityMatches(ctx, args)
 }
 
+func (r *Resolver) VulnerableRepositories(ctx context.Context, args resolverstubs.GetVulnerableRepositoriesArgs) (_ resolverstubs.VulnerableRepositoriesConnection, err error) {
+	return r.sentinelRootResolver.VulnerableRepositories(ctx, args)
+}
+
 func (r *Resolver) VulnerabilityByID(ctx context.Context, id graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
 	return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
 }
