@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { Text } from '@sourcegraph/wildcard'
 import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
@@ -29,6 +30,7 @@ interface Props
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
     repoID: Scalars['ID']
+    isPackage: boolean
     repoName: string
     commitID: string
 
@@ -45,6 +47,7 @@ function useBlobPanelViews({
     revision,
     filePath,
     repoID,
+    isPackage,
     settingsCascade,
     platformContext,
     useCodeIntel,
@@ -91,22 +94,34 @@ function useBlobPanelViews({
                           ),
                       }
                     : null,
-                {
-                    id: 'history',
-                    title: 'History',
-                    element: (
-                        <PanelContent>
-                            <RepoRevisionSidebarCommits
-                                key="commits"
-                                repoID={repoID}
-                                revision={revision}
-                                filePath={filePath}
-                                preferAbsoluteTimestamps={preferAbsoluteTimestamps}
-                                defaultPageSize={defaultPageSize}
-                            />
-                        </PanelContent>
-                    ),
-                },
+
+                isPackage
+                    ? {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  {/* Instead of removing the "History" tab, explain why it's not available */}
+                                  <Text>Git history is not available when browsing packages</Text>
+                              </PanelContent>
+                          ),
+                      }
+                    : {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  <RepoRevisionSidebarCommits
+                                      key="commits"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                      defaultPageSize={defaultPageSize}
+                                  />
+                              </PanelContent>
+                          ),
+                      },
                 enableOwnershipPanel
                     ? {
                           id: 'ownership',
