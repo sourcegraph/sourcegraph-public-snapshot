@@ -65,9 +65,6 @@ type service struct {
 	teamStore       database.TeamStore
 	db              database.DB
 
-	// mu         sync.RWMutex
-	// ownerCache map[OwnerKey]codeowners.ResolvedOwner
-
 	// TODO: Move outside of this service.
 	mu        sync.RWMutex
 	fileCache map[fileCacheKey]*codeowners.Ruleset
@@ -199,6 +196,8 @@ func (s *service) ResolveOwnersWithType(ctx context.Context, protoOwners []*code
 
 // TODO: Make this lazy to only happen on the first comparison, so we don't need to
 // match 10000 users if only one rule matches anyways.
+// If we do that, we lose the property of doing candidate matching though.
+// Maybe we should instead keep resolved data warm somehow.
 func resolveWithContext(
 	ctx context.Context,
 	db database.DB,
@@ -288,7 +287,6 @@ func teamName(handle string, serviceType string) string {
 	return handle
 }
 
-// TODO: Does this cache help?
 type usersCache struct {
 	t  map[string]*types.User
 	db database.DB
