@@ -183,36 +183,55 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1})
+	t1 := time.Now().Add(-time.Minute * 10)
+	t2 := time.Now().Add(-time.Minute * 20)
+
+	insertUploads(t, db,
+		types.Upload{ID: 42, RepositoryID: 50},
+		types.Upload{ID: 43, RepositoryID: 51},
+		types.Upload{ID: 90, RepositoryID: 52},
+		types.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
+		types.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
+		types.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+		types.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+	)
 
 	// Insert definitions
 	mockDefinitions := []shared.RankingDefinitions{
 		{
-			UploadID:     1,
+			UploadID:     42,
 			SymbolName:   "foo",
 			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
-			UploadID:     1,
+			UploadID:     42,
 			SymbolName:   "bar",
 			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
-			UploadID:     1,
-			SymbolName:   "foo",
-			Repository:   "deadbeef",
-			DocumentPath: "foo.go",
+			UploadID:     43,
+			SymbolName:   "baz",
+			Repository:   "cafebabe",
+			DocumentPath: "baz.go",
+		},
+		{
+			UploadID:     43,
+			SymbolName:   "bonk",
+			Repository:   "cafebabe",
+			DocumentPath: "bonk.go",
 		},
 	}
 	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
-	// Insert references
+	//
+	// Basic test case
+
 	mockReferences := shared.RankingReferences{
-		UploadID: 1,
+		UploadID: 90,
 		SymbolNames: []string{
 			mockDefinitions[0].SymbolName,
 			mockDefinitions[1].SymbolName,
@@ -223,27 +242,92 @@ func TestInsertPathCountInputs(t *testing.T) {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	// Test InsertPathCountInputs
+	mockReferences = shared.RankingReferences{
+		UploadID: 91,
+		SymbolNames: []string{
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// duplicate of 91 (should not be processed as it's older)
+	mockReferences = shared.RankingReferences{
+		UploadID: 92,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should process existing rows
 	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
+	//
+	// Incremental insertion test case
+
+	mockReferences = shared.RankingReferences{
+		UploadID: 93,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should process unprocessed rows only
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	//
+	// No-op test case
+
+	mockReferences = shared.RankingReferences{
+		UploadID: 94,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should do nothing, 94 covers the same project as 93
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	//
+	// Assertions
+
 	// Test path count inputs were inserted
-	repository, documentPath, count, err := getRankingPathCountsInputs(ctx, t, db, mockRankingGraphKey)
+	inputs, err := getPathCountsInputs(ctx, t, db, mockRankingGraphKey)
 	if err != nil {
 		t.Fatalf("unexpected error getting path count inputs: %s", err)
 	}
 
-	if repository != "deadbeef" {
-		t.Fatalf("unexpected repository. want=%s have=%s", "deadbeef", repository)
+	expectedInputs := []pathCountsInput{
+		{Repository: "cafebabe", DocumentPath: "baz.go", Count: 1},
+		{Repository: "cafebabe", DocumentPath: "bonk.go", Count: 1},
+		{Repository: "deadbeef", DocumentPath: "bar.go", Count: 2},
+		{Repository: "deadbeef", DocumentPath: "foo.go", Count: 2},
 	}
-
-	if documentPath != "foo.go" {
-		t.Fatalf("unexpected document path. want=%s have=%s", "foo.go", documentPath)
-	}
-
-	if count != 2 {
-		t.Fatalf("unexpected count. want=%d have=%d", 2, count)
+	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
+		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
 	}
 }
 
@@ -464,30 +548,42 @@ func getRankingReferences(
 	return references, nil
 }
 
-func getRankingPathCountsInputs(
+type pathCountsInput struct {
+	Repository   string
+	DocumentPath string
+	Count        int
+}
+
+func getPathCountsInputs(
 	ctx context.Context,
 	t *testing.T,
 	db database.DB,
 	graphKey string,
-) (repository, documentPath string, count int, err error) {
-	query := sqlf.Sprintf(
-		`SELECT repository, document_path, count FROM codeintel_ranking_path_counts_inputs WHERE graph_key LIKE %s || '%%'`,
-		graphKey,
-	)
+) (_ []pathCountsInput, err error) {
+	query := sqlf.Sprintf(`
+		SELECT repository, document_path, SUM(count)
+		FROM codeintel_ranking_path_counts_inputs
+		WHERE graph_key LIKE %s || '%%'
+		GROUP BY repository, document_path
+		ORDER BY repository, document_path
+	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return "", "", 0, err
+		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	var pathCountsInputs []pathCountsInput
 	for rows.Next() {
-		err = rows.Scan(&repository, &documentPath, &count)
-		if err != nil {
-			return "", "", 0, err
+		var input pathCountsInput
+		if err := rows.Scan(&input.Repository, &input.DocumentPath, &input.Count); err != nil {
+			return nil, err
 		}
+
+		pathCountsInputs = append(pathCountsInputs, input)
 	}
 
-	return repository, documentPath, count, nil
+	return pathCountsInputs, nil
 }
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
