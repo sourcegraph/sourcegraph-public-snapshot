@@ -109,13 +109,13 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         </span>
                     </Button>
 
-                    <Tooltip content="Delete code host connection" placement="right" debounce={0}>
-                        <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
-                            <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
-                        </Button>
-                    </Tooltip>
-                </li>
-            ))}
+                        <Tooltip content="Delete code host connection" placement="right" debounce={0}>
+                            <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
+                                <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
+                            </Button>
+                        </Tooltip>
+                    </li>
+                ))}
         </ul>
     )
 }
