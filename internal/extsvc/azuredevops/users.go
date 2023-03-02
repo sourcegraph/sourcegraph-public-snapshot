@@ -41,6 +41,31 @@ func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 	return p, nil
 }
 
+func (c *client) ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error) {
+	reqURL := url.URL{Path: "_apis/accounts"}
+
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	queryParams := req.URL.Query()
+	queryParams.Set("memberId", profile.PublicAlias)
+	req.URL.RawQuery = queryParams.Encode()
+
+	apiURL := VisualStudioAppURL
+	if MockVisualStudioAppURL != "" {
+		apiURL = MockVisualStudioAppURL
+	}
+
+	response := ListAuthorizedUserOrgsResponse{}
+	if _, err := c.do(ctx, req, apiURL, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Value, nil
+}
+
 // SetExternalAccountData sets the user and token into the external account data blob.
 func SetExternalAccountData(data *extsvc.AccountData, user *Profile, token *oauth2.Token) error {
 	serializedUser, err := json.Marshal(user)
