@@ -238,7 +238,12 @@ export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
     <div className={styles.queryExamplesSection}>
         <H2 className={styles.queryExamplesSectionTitle}>
             {title}
-            {productStatus && <ProductStatusBadge status={productStatus} />}
+            {productStatus && (
+                <>
+                    {' '}
+                    <ProductStatusBadge status={productStatus} />
+                </>
+            )}
         </H2>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples

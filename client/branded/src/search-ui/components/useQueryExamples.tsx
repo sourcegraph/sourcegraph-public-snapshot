@@ -180,18 +180,6 @@ export function useQueryExamples(
                         { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
                     ],
                 },
-                ...(enableOwnershipSearch
-                    ? [
-                          {
-                              title: 'Explore code ownership',
-                              productStatus: 'experimental' as const,
-                              queryExamples: [
-                                  { id: 'type-has-owner', query: `file:some_path file:has.owner(johndoe)` },
-                                  { id: 'type-select-file-owners', query: 'file:some_path select:file.owners' },
-                              ],
-                          },
-                      ]
-                    : []),
             ],
             [
                 {
@@ -209,10 +197,25 @@ export function useQueryExamples(
                         { id: 'not-operator', query: 'lang:go NOT file:main.go' },
                     ],
                 },
-                {
-                    title: 'Get advanced',
-                    queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-                },
+                ...(enableOwnershipSearch
+                    ? [
+                          {
+                              title: 'Explore code ownership',
+                              productStatus: 'experimental' as const,
+                              queryExamples: [
+                                  { id: 'type-has-owner', query: `file:^some_path file:has.owner(johndoe)` },
+                                  { id: 'type-select-file-owners', query: 'file:^some_path select:file.owners' },
+                              ],
+                          },
+                      ]
+                    : [
+                          {
+                              title: 'Get advanced',
+                              queryExamples: [
+                                  { id: 'repo-has-description', query: 'repo:has.description(hello world)' },
+                              ],
+                          },
+                      ]),
             ],
         ]
     }, [queryExamplesContent, isSourcegraphDotCom])
