@@ -247,21 +247,22 @@ referenced_definitions AS (
 	SELECT
 		rd.repository,
 		rd.document_path,
-		rd.graph_key
+		rd.graph_key,
+		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
-	WHERE
-		rd.graph_key = %s AND
-		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
+	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	WHERE rd.graph_key = %s
+	GROUP BY rd.repository, rd.document_path, rd.graph_key
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
 	SELECT
-		rd.repository,
-		rd.document_path,
-		COUNT(*),
+		rx.repository,
+		rx.document_path,
+		SUM(rx.count),
 		%s
-	FROM referenced_definitions rd
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	FROM referenced_definitions rx
+	GROUP BY rx.repository, rx.document_path
 	RETURNING 1
 )
 SELECT
