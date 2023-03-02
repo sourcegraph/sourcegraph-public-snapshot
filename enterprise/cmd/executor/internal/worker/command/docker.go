@@ -55,10 +55,11 @@ func NewDockerSpec(workingDir string, image string, scriptPath string, spec Spec
 			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", options.ConfigPath))
 		}
 		return Spec{
-			Key:     spec.Key,
-			Command: spec.Command,
-			Dir:     filepath.Join(workingDir, spec.Dir),
-			Env:     env,
+			Key:       spec.Key,
+			Command:   spec.Command,
+			Dir:       filepath.Join(workingDir, spec.Dir),
+			Env:       env,
+			Operation: spec.Operation,
 		}
 	}
 
@@ -68,8 +69,9 @@ func NewDockerSpec(workingDir string, image string, scriptPath string, spec Spec
 	}
 
 	return Spec{
-		Key:     spec.Key,
-		Command: formatDockerCommand(hostDir, image, scriptPath, spec, options),
+		Key:       spec.Key,
+		Command:   formatDockerCommand(hostDir, image, scriptPath, spec, options),
+		Operation: spec.Operation,
 	}
 }
 

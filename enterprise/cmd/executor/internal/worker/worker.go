@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
@@ -99,6 +100,12 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		ExecutorToken:  options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
 	}
 
+	cmdRunner := &util.RealCmdRunner{}
+	cmd := &command.RealCommand{
+		CmdRunner: cmdRunner,
+		Logger:    log.Scoped("executor-worker.command", "command execution"),
+	}
+
 	// Configure the supported runtimes
 	// TODO: uncomment when firecracker runtime is complete
 	//jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions)
@@ -108,6 +115,8 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 
 	h := &handler{
 		nameSet:      nameSet,
+		cmdRunner:    cmdRunner,
+		cmd:          cmd,
 		logStore:     queueClient,
 		filesStore:   filesClient,
 		options:      options,

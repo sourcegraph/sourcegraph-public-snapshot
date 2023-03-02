@@ -45,7 +45,7 @@ type Options struct {
 // implementation.
 func NewRunner(cmd command.Command, dir, vmName string, logger command.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operations *command.Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
-		return NewDockerRunner(nil, logger, dir, options.DockerOptions, dockerAuthConfig)
+		return NewDockerRunner(cmd, logger, dir, options.DockerOptions, dockerAuthConfig)
 	}
 	return NewFirecrackerRunner(cmd, logger, dir, vmName, options.FirecrackerOptions, dockerAuthConfig, operations)
 }

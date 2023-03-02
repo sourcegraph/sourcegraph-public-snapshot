@@ -294,6 +294,7 @@ func (h *handler) prepareWorkspace(
 			job,
 			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
 			h.options.KeepWorkspaces,
+			h.cmdRunner,
 			cmd,
 			commandLogger,
 			h.cloneOptions,

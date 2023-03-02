@@ -68,8 +68,9 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	commandLogger := &writerLogger{w: logOutput}
 	operations := command.NewOperations(&observation.TestContext)
 
+	cmdRunner := &util.RealCmdRunner{}
 	cmd := &command.RealCommand{
-		CmdRunner: nil,
+		CmdRunner: cmdRunner,
 		Logger:    log.Scoped("executor-test-vm", ""),
 	}
 	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
@@ -84,6 +85,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 		config.FirecrackerDiskSpace,
 		// Always keep the workspace in this debug command.
 		true,
+		cmdRunner,
 		cmd,
 		commandLogger,
 		// TODO: get git service path from config.
