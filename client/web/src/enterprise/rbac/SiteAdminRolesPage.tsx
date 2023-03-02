@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
