@@ -202,7 +202,8 @@
           "enum": [
             "embeddings",
             "keyword",
-            "none"
+            "none",
+            "blended"
           ],
           "default": "embeddings"
         },

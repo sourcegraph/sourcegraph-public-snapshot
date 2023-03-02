@@ -13,6 +13,7 @@ import { getContextMessageWithResponse, populateCodeContextTemplate } from './pr
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
 export async function getKeywordContextMessages(query: string): Promise<Message[]> {
+	console.log('fetching keyword matches')
 	const rootPath = getRootPath()
 	if (!rootPath) {
 		return []

@@ -27,7 +27,7 @@ export class Transcript {
 
 	constructor(
 		private embeddingsClient: EmbeddingsClient | null,
-		private contextType: 'embeddings' | 'keyword' | 'none',
+		private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
 		private serverUrl: string,
 		private accessToken: string
 	) {}
@@ -72,7 +72,7 @@ export class Transcript {
 	}
 
 	private async getCodebaseContextMessages(query: string): Promise<ContextMessage[]> {
-		const { needsCurrentFileContext } = await this.detectIntent(query)
+		const { needsCurrentFileContext, needsCodebaseContext } = await this.detectIntent(query)
 		if (needsCurrentFileContext) {
 			const activeEditor = vscode.window.activeTextEditor
 			const documentText = activeEditor?.document.getText()
@@ -100,23 +100,29 @@ export class Transcript {
 			return []
 		}
 
-		const inputNeedsAdditionalContext = this.embeddingsClient
-			? await this.embeddingsClient.queryNeedsAdditionalContext(query)
-			: false
-
 		let contextMessages: Message[] | undefined
+
+		const fetchEmbeddingsMessages = () => {
+			return this.getEmbeddingsContextMessages(query, {
+				numCodeResults: 8,
+				numMarkdownResults: 2,
+			})
+		}
 		switch (this.contextType) {
+			case 'blended':
+				if (this.embeddingsClient) {
+					contextMessages = await fetchEmbeddingsMessages()
+					if (needsCodebaseContext && contextMessages.length === 0) {
+						contextMessages = await getKeywordContextMessages(query)
+					}
+				} else {
+					contextMessages = await getKeywordContextMessages(query)
+				}
+				break
 			case 'embeddings':
-				console.log('fetching embeddings')
-				contextMessages = inputNeedsAdditionalContext
-					? await this.getEmbeddingsContextMessages(query, {
-							numCodeResults: 8,
-							numMarkdownResults: 2,
-					  })
-					: []
+				contextMessages = await fetchEmbeddingsMessages()
 				break
 			case 'keyword':
-				console.log('fetching keyword matches')
 				contextMessages = await getKeywordContextMessages(query)
 				break
 			case 'none':
@@ -135,9 +141,15 @@ export class Transcript {
 		options: ContextSearchOptions
 	): Promise<ContextMessage[]> {
 		if (!this.embeddingsClient) {
+			console.error('no embeddings client for current codebase')
+			return []
+		}
+		if (!(await this.embeddingsClient.queryNeedsAdditionalContext(query))) {
+			console.log('embeddings: no context needed')
 			return []
 		}
 
+		console.log('fetching embeddings context')
 		const embeddingsSearchResults = await this.embeddingsClient.search(
 			query,
 			options.numCodeResults,

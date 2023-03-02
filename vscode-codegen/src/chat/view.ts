@@ -43,7 +43,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		private accessToken: string,
 		private wsclient: Promise<WSChatClient | null>,
 		private embeddingsClient: EmbeddingsClient | null,
-		private contextType: 'embeddings' | 'keyword' | 'none',
+		private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
 		private debug: boolean
 	) {
 		if (TestSupport.instance) {
