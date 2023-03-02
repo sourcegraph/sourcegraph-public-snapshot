@@ -12,7 +12,6 @@ import (
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -111,18 +110,23 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
-	// TODO: External ID currently can't be updated, can it be updated through SCIM?
-	_, err = db.UserExternalAccounts().LookupUserAndSave(ctx, extsvc.AccountSpec{
-		ServiceType: "scim",
-		ServiceID:   "TODO", // TODO: Start using service IDs
-		ClientID:    "",
-		AccountID:   oldUser.SCIMExternalID,
-	}, accountData)
+	err = db.UserExternalAccounts().UpdateSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
 
 	return
+}
+
+// getUniqueExternalID extracts the external identifier from the given attributes.
+// If it's not present, it returns a unique identifier based on the primary email address of the user.
+// We need this because the account ID must be unique across all SCIM accounts that we have on file.
+func getUniqueExternalID(attributes scim.ResourceAttributes) string {
+	if attributes[AttrExternalId] != nil {
+		return attributes[AttrExternalId].(string)
+	}
+
+	return "no-external-id-" + extractPrimaryEmail(attributes)
 }
 
 // getOptionalExternalID extracts the external identifier of the given attributes.

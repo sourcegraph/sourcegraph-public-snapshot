@@ -78,6 +78,11 @@ type UserExternalAccountsStore interface {
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
 
+	// UpdateSCIMData updates the external account data for the given user's SCIM account.
+	// It looks up the existing user based on its ID, then sets its account ID and data.
+	// Account ID is the same as the external ID for SCIM.
+	UpdateSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error)
+
 	// TouchExpired sets the given user external accounts to be expired now.
 	TouchExpired(ctx context.Context, ids ...int32) error
 
@@ -156,6 +161,30 @@ RETURNING user_id
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
 	return userID, err
+}
+
+func (s *userExternalAccountsStore) UpdateSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return
+	}
+
+	_, err = s.Handle().ExecContext(ctx, `
+UPDATE user_external_accounts
+SET
+	account_id = $4,
+	auth_data = $5,
+	account_data = $6,
+	encryption_key_id = $7,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	user_id = $1
+AND service_type = $2
+AND service_id = $3
+AND deleted_at IS NULL
+`, userID, "scim", "scim", accountID, encryptedAuthData, encryptedAccountData, keyID)
+	return
 }
 
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {

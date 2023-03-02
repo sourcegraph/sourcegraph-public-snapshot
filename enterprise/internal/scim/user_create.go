@@ -16,7 +16,6 @@ import (
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
 	// Extract external ID, primary email, username, and display name from attributes to variables
-	optionalExternalID := getOptionalExternalID(attributes)
 	primaryEmail := extractPrimaryEmail(attributes)
 	if primaryEmail == "" {
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
@@ -31,27 +30,18 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			return err
 		}
 
-		// Create user (with or without external ID)
+		// Create user
 		newUser := database.NewUser{
 			Email:           primaryEmail,
 			Username:        uniqueUsername,
 			DisplayName:     displayName,
 			EmailIsVerified: true,
 		}
-		var externalID = ""
-		if optionalExternalID.Present() {
-			externalID = optionalExternalID.Value()
-		}
-		if externalID == "" {
-			externalID = "no-external-id-" + primaryEmail
-		}
 		accountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
-			// TODO: provide proper service ID
-			ServiceID: "TODO",
-			AccountID: externalID,
+			ServiceID:   "scim",
+			AccountID:   getUniqueExternalID(attributes),
 		}
-
 		accountData, err := toAccountData(attributes)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
@@ -81,7 +71,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
-		ExternalID: optionalExternalID,
+		ExternalID: getOptionalExternalID(attributes),
 		Attributes: attributes,
 		Meta: scim.Meta{
 			Created:      &now,
