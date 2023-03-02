@@ -2469,6 +2469,7 @@ type VulnerabilityMatch implements Node {
     """
     preciseIndex: PreciseIndex!
 }
+<<<<<<< HEAD
 
 """
 A page of vulnerabilities.
@@ -2509,3 +2510,5 @@ type VulnerabilityMatchConnection {
     """
     pageInfo: PageInfo!
 }
+=======
+>>>>>>> main
