@@ -18,6 +18,7 @@ import {
     ErrorMessage,
     Icon,
     TreeNode as WildcardTreeNode,
+    TreeProps as WildcardTreeProps,
     Link,
     LoadingSpinner,
     Tree,
@@ -84,10 +85,22 @@ interface Props {
     repoName: string
     revision: string
     telemetryService: TelemetryService
-    autoFocusKey?: string
+    focusKey?: string
 }
+
+export function FocusableTree<N extends WildcardTreeNode>(props: { focusKey?: string } & WildcardTreeProps<N>) {
+    const { focusKey, ...rest } = props
+    const ref = useRef<HTMLUListElement>(null)
+    useEffect(() => {
+        if (ref.current && focusKey) {
+            ref.current.focus()
+        }
+    }, [focusKey])
+    return <Tree ref={ref} {...rest} />
+}
+
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent, autoFocusKey } = props
+    const { telemetryService, onExpandParent, focusKey } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
@@ -357,8 +370,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }
 
     return (
-        <Tree<TreeNode>
-            autoFocusKey={autoFocusKey}
+        <FocusableTree<TreeNode>
+            focusKey={focusKey}
             data={treeData.nodes}
             aria-label="file tree"
             selectedIds={selectedIds}

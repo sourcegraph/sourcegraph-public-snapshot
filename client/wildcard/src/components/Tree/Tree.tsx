@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -11,7 +11,7 @@ import styles from './Tree.module.scss'
 
 export type TreeNode = INode
 
-interface Props<N extends TreeNode>
+export interface TreeProps<N extends TreeNode>
     extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onExpand' | 'onLoadData' | 'nodeRenderer'> {
     data: N[]
 
@@ -32,24 +32,28 @@ interface Props<N extends TreeNode>
     // because we can not rely on the .length property to know if we're still
     // loading children.
     loadedIds?: Set<number>
-
-    autoFocusKey?: string
 }
-export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, autoFocusKey, ...rest } = props
+
+interface TreeRef {
+    focus: () => void
+}
+
+function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref: React.Ref<TreeRef>): React.ReactElement {
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, ...rest } = props
 
     const treeViewRef = useRef<HTMLUListElement>(null)
-    useEffect(() => {
-        if (autoFocusKey && treeViewRef.current) {
-            const element =
-                treeViewRef.current.querySelector("[tabindex]:not([tabindex='-1'])") ||
-                treeViewRef.current.querySelector('.tree-leaf-list-item--selected')
-
-            if (element instanceof HTMLElement) {
-                element.focus()
-            }
-        }
-    }, [autoFocusKey])
+    useImperativeHandle(
+        ref,
+        () => ({
+            focus: () => {
+                const element = treeViewRef.current?.querySelector("[tabindex]:not([tabindex='-1'])")
+                if (element instanceof HTMLElement) {
+                    element.focus()
+                }
+            },
+        }),
+        []
+    )
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -158,6 +162,11 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
         />
     )
 }
+
+// Workaround to create a generic component as output of React.forwardRef: https://stackoverflow.com/a/58473012
+export const Tree = forwardRef(TreeComponent) as <N extends TreeNode>(
+    p: TreeProps<N> & { ref?: React.Ref<TreeRef> }
+) => React.ReactElement
 
 function getMarginLeft(level: number, isBranch: boolean): string {
     if (isBranch) {

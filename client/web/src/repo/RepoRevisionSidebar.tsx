@@ -122,111 +122,114 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     return (
         <>
             {isVisible ? (
-        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
-            <div className="d-flex flex-column h-100 w-100">
-                <GettingStartedTour
-                    className="mr-3"
-                    telemetryService={props.telemetryService}
-                    isAuthenticated={!!props.authenticatedUser}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                />
-                <Tabs
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
-                    index={persistedTabIndex}
-                    onChange={setPersistedTabIndex}
-                    lazy={true}
-                >
-                    <TabList
-                        actions={
-                            <Tooltip content="Hide sidebar" placement="right">
-                                <Button
-                                    aria-label="Hide sidebar"
-                                    onClick={() => handleSidebarToggle(false)}
-                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                >
-                                    <Icon
-                                        className={styles.closeIcon}
-                                        aria-hidden={true}
-                                        svgPath={mdiChevronDoubleLeft}
-                                    />
-                                </Button>
-                            </Tooltip>
-                        }
-                    >
-                        <Tab data-tab-content="files">
-                            <span className="tablist-wrapper--tab-label">Files</span>
-                        </Tab>
-                        <Tab data-tab-content="symbols">
-                            <span className="tablist-wrapper--tab-label">Symbols</span>
-                        </Tab>
-                    </TabList>
-                    <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
-                        {/* TODO: See if we can render more here, instead of waiting for these props */}
-                        {props.repoID && props.commitID && (
-                            <TabPanels>
-                                <TabPanel>
-                                    {enableAccessibleFileTree ? (
-                                        <RepoRevisionSidebarFileTree
-                                            key={initialFilePath}
-                                            autoFocusKey={filesTabKey}
-                                            onExpandParent={onExpandParent}
-                                            repoName={props.repoName}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            initialFilePath={initialFilePath}
-                                            initialFilePathIsDirectory={initialFilePathIsDir}
-                                            filePath={props.filePath}
-                                            filePathIsDirectory={props.isDir}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    ) : (
-                                        <Tree
-                                            key="files"
-                                            repoName={props.repoName}
-                                            repoID={props.repoID}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            location={location}
-                                            navigate={navigate}
-                                            scrollRootSelector=".explorer"
-                                            activePath={props.filePath}
-                                            activePathIsDir={props.isDir}
-                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    )}
-                                </TabPanel>
-                                <TabPanel>
-                                    <RepoRevisionSidebarSymbols
-                                        key="symbols"
-                                        autoFocusKey={symbolsTabKey}
-                                        repoID={props.repoID}
-                                        revision={props.revision}
-                                        activePath={props.filePath}
-                                        onHandleSymbolClick={handleSymbolClick}
-                                    />
-                                </TabPanel>
-                            </TabPanels>
-                        )}
-                    </div>
-                </Tabs>
-            </div>
-        </Panel>)
-                : (
-                    <Tooltip content="Show sidebar">
-                        <Button
-                            aria-label="Show sidebar"
-                            variant="icon"
-                            className={classNames(
-                                'position-absolute border-top border-bottom border-right mt-4',
-                                styles.toggle
-                            )}
-                            onClick={() => handleSidebarToggle(true)}
+                <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
+                    <div className="d-flex flex-column h-100 w-100">
+                        <GettingStartedTour
+                            className="mr-3"
+                            telemetryService={props.telemetryService}
+                            isAuthenticated={!!props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                        <Tabs
+                            className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
+                            index={persistedTabIndex}
+                            onChange={setPersistedTabIndex}
+                            lazy={true}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
-                        </Button>
-                    </Tooltip>
-                )}
+                            <TabList
+                                actions={
+                                    <Tooltip content="Hide sidebar" placement="right">
+                                        <Button
+                                            aria-label="Hide sidebar"
+                                            onClick={() => handleSidebarToggle(false)}
+                                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                        >
+                                            <Icon
+                                                className={styles.closeIcon}
+                                                aria-hidden={true}
+                                                svgPath={mdiChevronDoubleLeft}
+                                            />
+                                        </Button>
+                                    </Tooltip>
+                                }
+                            >
+                                <Tab data-tab-content="files">
+                                    <span className="tablist-wrapper--tab-label">Files</span>
+                                </Tab>
+                                <Tab data-tab-content="symbols">
+                                    <span className="tablist-wrapper--tab-label">Symbols</span>
+                                </Tab>
+                            </TabList>
+                            <div
+                                className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                                tabIndex={-1}
+                            >
+                                {/* TODO: See if we can render more here, instead of waiting for these props */}
+                                {props.repoID && props.commitID && (
+                                    <TabPanels>
+                                        <TabPanel>
+                                            {enableAccessibleFileTree ? (
+                                                <RepoRevisionSidebarFileTree
+                                                    key={initialFilePath}
+                                                    focusKey={filesTabKey}
+                                                    onExpandParent={onExpandParent}
+                                                    repoName={props.repoName}
+                                                    revision={props.revision}
+                                                    commitID={props.commitID}
+                                                    initialFilePath={initialFilePath}
+                                                    initialFilePathIsDirectory={initialFilePathIsDir}
+                                                    filePath={props.filePath}
+                                                    filePathIsDirectory={props.isDir}
+                                                    telemetryService={props.telemetryService}
+                                                />
+                                            ) : (
+                                                <Tree
+                                                    key="files"
+                                                    repoName={props.repoName}
+                                                    repoID={props.repoID}
+                                                    revision={props.revision}
+                                                    commitID={props.commitID}
+                                                    location={location}
+                                                    navigate={navigate}
+                                                    scrollRootSelector=".explorer"
+                                                    activePath={props.filePath}
+                                                    activePathIsDir={props.isDir}
+                                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                                    telemetryService={props.telemetryService}
+                                                />
+                                            )}
+                                        </TabPanel>
+                                        <TabPanel>
+                                            <RepoRevisionSidebarSymbols
+                                                key="symbols"
+                                                focusKey={symbolsTabKey}
+                                                repoID={props.repoID}
+                                                revision={props.revision}
+                                                activePath={props.filePath}
+                                                onHandleSymbolClick={handleSymbolClick}
+                                            />
+                                        </TabPanel>
+                                    </TabPanels>
+                                )}
+                            </div>
+                        </Tabs>
+                    </div>
+                </Panel>
+            ) : (
+                <Tooltip content="Show sidebar">
+                    <Button
+                        aria-label="Show sidebar"
+                        variant="icon"
+                        className={classNames(
+                            'position-absolute border-top border-bottom border-right mt-4',
+                            styles.toggle
+                        )}
+                        onClick={() => handleSidebarToggle(true)}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                    </Button>
+                </Tooltip>
+            )}
 
             {focusFileTreeShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={focusFileTree} />

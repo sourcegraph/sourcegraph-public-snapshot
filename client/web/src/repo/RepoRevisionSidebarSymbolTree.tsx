@@ -8,19 +8,20 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Tree, Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
+import { Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
 
 import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
+import { FocusableTree } from './RepoRevisionSidebarFileTree'
 
 interface Props {
     symbols: SymbolWithChildren[]
     onClick: () => void
     selectedSymbolUrl: string | null
     setSelectedSymbolUrl: (url: string | null) => void
-    autoFocusKey?: string
+    focusKey?: string
 }
 type SymbolNode = (Omit<SymbolNodeFields, 'children'> & TreeNode) | (Omit<SymbolPlaceholder, 'children'> & TreeNode)
 
@@ -29,7 +30,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     onClick,
     selectedSymbolUrl,
     setSelectedSymbolUrl,
-    autoFocusKey,
+    focusKey,
 }) => {
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
@@ -116,13 +117,21 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
         : []
 
     return (
-        <Tree<SymbolNode>
+        <FocusableTree<SymbolNode>
             data={treeData}
-            autoFocusKey={autoFocusKey}
+            focusKey={focusKey}
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
-            renderNode={({ element, handleSelect, props }): React.ReactNode => {
+            renderNode={({
+                element,
+                handleSelect,
+                props,
+            }: {
+                element: SymbolNode
+                handleSelect: (event: React.MouseEvent) => {}
+                props: { className: string; tabIndex: number }
+            }): React.ReactNode => {
                 const { className, ...rest } = props
 
                 const to = element.__typename === 'SymbolPlaceholder' ? '' : element.url

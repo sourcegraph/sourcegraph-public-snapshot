@@ -134,12 +134,12 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     /** The path of the file or directory currently shown in the content area */
     activePath: string
     onHandleSymbolClick: () => void
-    autoFocusKey?: string
+    focusKey?: string
 }
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionSidebarSymbolsProps>
-> = ({ repoID, revision = '', activePath, onHandleSymbolClick, autoFocusKey }) => {
+> = ({ repoID, revision = '', activePath, onHandleSymbolClick, focusKey }) => {
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -246,7 +246,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                                 // data changes to avoid complicated bookkeeping in the tree
                                 // component.
                                 key={activePath + ':' + query}
-                                autoFocusKey={autoFocusKey}
+                                focusKey={focusKey}
                                 selectedSymbolUrl={selectedSymbolUrl}
                                 setSelectedSymbolUrl={setSelectedSymbolUrl}
                                 symbols={hierarchicalSymbols}
