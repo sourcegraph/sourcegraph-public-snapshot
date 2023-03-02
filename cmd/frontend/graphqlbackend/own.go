@@ -73,9 +73,9 @@ type CodeownersFileArgs struct {
 }
 
 type CodeownersFileInput struct {
-	FileContents   string
-	RepositoryID   *graphql.ID
-	RepositoryName *string
+	FileContents string
+	RepoID       *graphql.ID
+	RepoName     *string
 }
 
 type DeleteCodeownersFileArgs struct {

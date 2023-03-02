@@ -65,6 +65,16 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 - Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
+### Multiple region availability
+
+Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data center locations:
+- North America (USA)
+- Europe (UK or Germany)
+- Asia (Japan)
+- Australia
+
+More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
+
 ### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
@@ -133,7 +143,7 @@ All Sourcegraph Cloud instances have Sourcegraph management access enabled by de
 
 - The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
 - Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
-- Instances currently run only on Google Cloud Platform in the `us-central1` region. Other regions and cloud providers (such as AWS or Azure) are not yet supported.
+- Instances currently run only on Google Cloud Platform in the [chosen regions](#multiple-region-availability). Other regions and cloud providers (such as AWS or Azure) are not yet supported.
 - Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
 ## Security

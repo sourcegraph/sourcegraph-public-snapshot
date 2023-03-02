@@ -825,6 +825,26 @@ CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     INITCOND = ''
 );
 
+CREATE TABLE access_requests (
+    id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    email text NOT NULL,
+    additional_info text,
+    status text NOT NULL
+);
+
+CREATE SEQUENCE access_requests_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE access_requests_id_seq OWNED BY access_requests.id;
+
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
     subject_user_id integer NOT NULL,
@@ -4199,6 +4219,8 @@ CREATE TABLE zoekt_repos (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -4386,6 +4408,12 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY webhooks ALTER COLUMN id SET DEFAULT nextval('webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_email_key UNIQUE (email);
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_pkey PRIMARY KEY (id);

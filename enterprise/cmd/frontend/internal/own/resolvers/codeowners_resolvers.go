@@ -29,12 +29,6 @@ var (
 	_ graphqlbackend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
 )
 
-func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {
-	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
-	// Eventually we should allow users to access the Get method, but check that they have view permissions on the repository.
-	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
-}
-
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
@@ -43,7 +37,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input.RepositoryID, args.Input.RepositoryName)
+	repo, err := r.getRepo(ctx, args.Input)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +67,7 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input.RepositoryID, args.Input.RepositoryName)
+	repo, err := r.getRepo(ctx, args.Input)
 	if err != nil {
 		return nil, err
 	}
@@ -103,21 +97,21 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return proto, nil
 }
 
-func (r *ownResolver) getRepo(ctx context.Context, repositoryID *graphql.ID, repositoryName *string) (*types.Repo, error) {
-	if repositoryID == nil && repositoryName == nil {
-		return nil, errors.New("either RepositoryID or RepositoryName should be set")
+func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*types.Repo, error) {
+	if input.RepoID == nil && input.RepoName == nil {
+		return nil, errors.New("either RepoID or RepoName should be set")
 	}
-	if repositoryID != nil && repositoryName != nil {
-		return nil, errors.New("both RepositoryID and RepositoryName cannot be set")
+	if input.RepoID != nil && input.RepoName != nil {
+		return nil, errors.New("both RepoID and RepoName cannot be set")
 	}
-	if repositoryName != nil {
-		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*repositoryName))
+	if input.RepoName != nil {
+		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*input.RepoName))
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch repository for name %v", repositoryName)
+			return nil, errors.Wrapf(err, "could not fetch repository for name %v", input.RepoName)
 		}
 		return repo, nil
 	}
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repositoryID)
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(*input.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -263,4 +257,10 @@ func (r *codeownersIngestedFileConnectionResolver) TotalCount(ctx context.Contex
 func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	r.compute(ctx)
 	return r.pageInfo, r.err
+}
+
+func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {
+	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
+	// Eventually we should allow users to access the Get method, but check that they have view permissions on the repository.
+	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }

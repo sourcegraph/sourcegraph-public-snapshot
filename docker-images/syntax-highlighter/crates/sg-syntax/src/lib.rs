@@ -21,6 +21,7 @@ pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
+use crate::sg_treesitter::treesitter_language;
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
 
@@ -106,9 +107,19 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Err(_) => "".to_owned(),
     });
 
-    // We normalize all the filenames here
+    // Normalize all the filenames here
     match filetype.as_str() {
+        "Rust Enhanced" => "rust",
+        "C++" => "cpp",
         "C#" => "c_sharp",
+        "JS Custom - React" => "javascript",
+        "TypeScriptReact" => {
+            if q.filepath.ends_with(".tsx") {
+                "tsx"
+            } else {
+                "typescript"
+            }
+        }
         filetype => filetype,
     }
     .to_lowercase()
@@ -292,7 +303,7 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            match treesitter_index(&language, &q.code) {
+            match treesitter_index(treesitter_language(&language), &q.code) {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 

@@ -219,7 +219,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -508,11 +508,9 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		conds = append(conds, pagination.Where)
 	}
 
-	var whereClause *sqlf.Query
-	if len(conds) != 0 {
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
-	} else {
-		whereClause = sqlf.Sprintf("")
 	}
 
 	q := sqlf.Sprintf(
@@ -544,10 +542,18 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
+%s -- whereClause
 `
 
-func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery)
+func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error) {
+	conds := opts.sqlConds()
+
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	}
+
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err

@@ -1,7 +1,9 @@
 package backend_test
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"sort"
 	"testing"
@@ -29,12 +31,12 @@ type repoPath struct {
 // repoFiles is a fake git client mapping a file
 type repoFiles map[repoPath]string
 
-func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (fs repoFiles) NewFileReader(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) (io.ReadCloser, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return []byte(content), nil
+	return io.NopCloser(bytes.NewReader([]byte(content))), nil
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
@@ -53,7 +55,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
-			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+			git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
 			got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
@@ -74,7 +76,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
-	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+	git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
 	got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)

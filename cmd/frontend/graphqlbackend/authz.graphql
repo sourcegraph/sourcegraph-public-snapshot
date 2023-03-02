@@ -161,6 +161,14 @@ extend type Query {
         also used in conjunction with "last" to return the last N nodes.
         """
         before: String
+        """
+        Optional filter for PermissionsSyncJobReasonGroup.
+        """
+        reasonGroup: PermissionsSyncJobReasonGroup
+        """
+        Optional filter for PermissionsSyncJobState.
+        """
+        state: PermissionsSyncJobState
     ): PermissionsSyncJobsConnection!
 
     """

@@ -69,6 +69,8 @@ message Rule {
   // when evaluating owners, the result also contains a separate
   // owners for the PM section.
   string section_name = 3;
+  // The line number this rule originally appeared in in the input data.
+  int32 line_number = 4;
 }
 
 // Owner is denoted by either a handle or an email.

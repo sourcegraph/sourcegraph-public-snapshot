@@ -347,6 +347,11 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolver, bool) {
 	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok

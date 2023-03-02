@@ -181,7 +181,7 @@ extend type Query {
 }
 
 """
-A list of CodeownersIngestedFiles. 
+A list of CodeownersIngestedFiles.
 """
 type CodeownersIngestedFileConnection {
     """
@@ -201,5 +201,8 @@ type CodeownersIngestedFileConnection {
 }
 
 extend type Repository {
+    """
+    A file containing manually ingested codeowners data, if any. Null if no data has been uploaded.
+    """
     ingestedCodeowners: CodeownersIngestedFile
 }

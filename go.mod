@@ -269,6 +269,7 @@ require (
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
 	go.bobheadxi.dev/streamline v1.2.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
+	gotest.tools v2.2.0+incompatible
 )
 
 replace (
