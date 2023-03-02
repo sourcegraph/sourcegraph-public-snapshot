@@ -162,7 +162,7 @@ WHERE
 func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float64, err error) {
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
 		SELECT CASE
-			WHEN SUM(pr.num_paths) = 0
+			WHEN COALESCE(SUM(pr.num_paths), 0) = 0
 				THEN 0.0
 				ELSE SUM(pr.refcount_logsum) / SUM(pr.num_paths)::float
 		END AS logmean
