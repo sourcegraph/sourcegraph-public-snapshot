@@ -24,17 +24,6 @@ func makeTemporaryLoopFile(prefix string) (*os.File, error) {
 	return os.CreateTemp(loopDevPath, prefix+"-*")
 }
 
-func makeTemporaryDirectory(prefix string) (string, error) {
-	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
-		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
-			return "", err
-		}
-		return os.MkdirTemp(tempdir, prefix+"-*")
-	}
-
-	return os.MkdirTemp("", prefix+"-*")
-}
-
 // MakeMountDirectory defaults to makeTemporaryMountDirectory and can be replaced for testing
 // with deterministic workspace/scripts directories.
 var MakeMountDirectory = MakeTemporaryMountDirectory

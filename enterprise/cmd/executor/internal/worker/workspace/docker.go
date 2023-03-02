@@ -54,6 +54,17 @@ func NewDockerWorkspace(
 	}, nil
 }
 
+func makeTemporaryDirectory(prefix string) (string, error) {
+	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
+		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
+			return "", err
+		}
+		return os.MkdirTemp(tempdir, prefix+"-*")
+	}
+
+	return os.MkdirTemp("", prefix+"-*")
+}
+
 func (w dockerWorkspace) Path() string {
 	return w.path
 }
