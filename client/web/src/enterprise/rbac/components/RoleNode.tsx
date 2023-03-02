@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
 import { startCase } from 'lodash'
 
-import { Button, Icon, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Icon, Text, Tooltip, ErrorAlert, Collapse, CollapseHeader, CollapsePanel, H4 } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
@@ -23,15 +23,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
 
-    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-        event => {
-            event.preventDefault()
-            setIsExpanded(!isExpanded)
-        },
-        [isExpanded]
-    )
+    const handleOpenChange = (isOpen: boolean) => setIsExpanded(isOpen)
     const openModal = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
+        event.stopPropagation()
         setShowConfirmDeleteModal(true)
     }, [])
     const closeModal = useCallback(() => {
@@ -65,45 +59,47 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     onConfirm={onDelete}
                 />
             )}
-            <Button
-                variant="icon"
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                onClick={toggleIsExpanded}
-            >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
-            </Button>
 
-            <div className="d-flex flex-column justify-content-center">
-                <div className="d-flex align-items-center">
-                    <Text className="font-weight-bold m-0">{roleName}</Text>
+            <Collapse isOpen={isExpanded} onOpenChange={handleOpenChange}>
+                <CollapseHeader
+                    as={Button}
+                    className={styles.roleNodeCollapsibleHeader}
+                    aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                    outline={true}
+                    type="button"
+                    variant="icon"
+                >
+                    <Icon className="mr-1 bg-red" aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
 
-                {node.system && (
-                    <Tooltip
-                        content="System roles are predefined by Sourcegraph. They cannot be deleted."
-                        placement="topStart"
-                    >
-                        <Text className={styles.roleNodeSystemText}>System</Text>
-                    </Tooltip>
-                )}
-                </div>
-                {error && <ErrorAlert className="mt-1" error={error} />}
-            </div>
+                    <header className="d-flex flex-column justify-content-center mr-2">
+                        <div className="d-flex align-items-center">
+                            <H4 className="m-0">{roleName}</H4>
 
-            {!node.system && (
-                <Tooltip content="Deleting a role is an irreversible action.">
-                    <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm" className={styles.roleNodeDeleteBtn}>
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
-                </Tooltip>
-            )}
+                            {node.system && (
+                                <Tooltip
+                                    content="System roles are predefined by Sourcegraph. They cannot be deleted."
+                                    placement="topStart"
+                                >
+                                    <Text className={styles.roleNodeSystemText}>System</Text>
+                                </Tooltip>
+                            )}
+                        </div>
+                        {error && <ErrorAlert className="mt-1" error={error} />}
+                    </header>
 
-            {isExpanded ? (
-                <div className={styles.roleNodePermissions}>
+                    {!node.system && (
+                        <Tooltip content="Deleting a role is an irreversible action.">
+                            <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm" className={styles.roleNodeDeleteBtn}>
+                                <Icon aria-hidden={true} svgPath={mdiDelete} />
+                            </Button>
+                        </Tooltip>
+                    )}
+                </CollapseHeader>
+
+                <CollapsePanel className={styles.roleNodePermissions}>
                     <PermissionList role={node} allPermissions={allPermissions} />
-                </div>
-            ) : (
-                <span />
-            )}
+                </CollapsePanel>
+            </Collapse>
         </li>
     )
 }

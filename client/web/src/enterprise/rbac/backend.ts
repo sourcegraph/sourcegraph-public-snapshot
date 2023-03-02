@@ -67,8 +67,8 @@ export const ROLES_QUERY = gql`
 `
 
 export const CREATE_ROLE = gql`
-    mutation CreateRole($name: String!) {
-        createRole(name: $name) {
+    mutation CreateRole($name: String!, $permissions: [ID!]!) {
+        createRole(name: $name, $permissions) {
             ...RoleFields
         }
     }

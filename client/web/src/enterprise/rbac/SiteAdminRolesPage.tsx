@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -19,6 +19,8 @@ import { PageTitle } from '../../components/PageTitle'
 
 import { useRolesConnection, usePermissions, PermissionsMap, DEFAULT_PAGE_LIMIT } from './backend'
 import { RoleNode } from './components/RoleNode'
+
+import styles from './SiteAdminRolesPage.module.scss'
 
 export interface SiteAdminRolesPageProps extends TelemetryProps {}
 
@@ -53,8 +55,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         <div className="site-admin-roles-page">
             <PageTitle title="Roles - Admin" />
             <PageHeader
-                className="mb-3"
-                description="Roles represent a set of permissions that are granted to a user."
+                className={styles.rolesPageHeader}
+                description="Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality."
                 actions={
                     <Button variant="primary">
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
