@@ -16,7 +16,7 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 	if err != nil {
 		return scim.Resource{}, err
 	}
-	return h.convertUserToSCIMResource(user), nil
+	return convertUserToSCIMResource(user), nil
 }
 
 // GetAll returns a paginated list of resources.
@@ -84,7 +84,7 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 	}
 	resources = make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resources = append(resources, h.convertUserToSCIMResource(user))
+		resources = append(resources, convertUserToSCIMResource(user))
 	}
 
 	// Get total count

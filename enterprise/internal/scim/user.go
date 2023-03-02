@@ -183,7 +183,7 @@ func checkBodyNotEmpty(r *http.Request) error {
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
+func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert account data – if it doesn't exist, never mind
 	attributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {

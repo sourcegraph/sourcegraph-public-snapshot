@@ -29,7 +29,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		if err != nil {
 			return err
 		}
-		userRes = h.convertUserToSCIMResource(user)
+		userRes = convertUserToSCIMResource(user)
 
 		// Perform changes on the user resource
 		var changed bool
