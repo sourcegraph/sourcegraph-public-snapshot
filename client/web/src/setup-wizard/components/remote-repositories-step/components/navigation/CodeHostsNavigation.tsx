@@ -62,42 +62,47 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
     return (
         <ul className={styles.list}>
             {createConnectionType && <CreateCodeHostConnectionCard codeHostType={createConnectionType} />}
-            {data.externalServices.nodes.map(codeHost => (
-                <li
-                    key={codeHost.id}
-                    className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
-                >
-                    <Button
-                        as={Link}
-                        to={`/setup/remote-repositories/${codeHost.id}/edit`}
-                        className={styles.itemButton}
+            {data.externalServices.nodes
+                // Code Host with kind 'OTHER' are local repositories handled in Local Repository step
+                .filter(codeHost => codeHost.kind !== 'OTHER')
+                .map(codeHost => (
+                    <li
+                        key={codeHost.id}
+                        className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
                     >
-                        <span>
-                            <Icon svgPath={getCodeHostIcon(codeHost.kind)} aria-hidden={true} />
-                        </span>
-                        <span className={styles.itemDescription}>
-                            <span>{codeHost.displayName}</span>
-                            <small className={styles.itemDescriptionStatus}>
-                                {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
-                                {codeHost.lastSyncAt === null && (
-                                    <>
-                                        <LoadingSpinner />, Syncing{' '}
-                                        {codeHost.repoCount > 0 && (
-                                            <>, so far {codeHost.repoCount} repositories found</>
-                                        )}
-                                    </>
-                                )}
-                            </small>
-                        </span>
-                    </Button>
-
-                    <Tooltip content="Delete code host connection" placement="right" debounce={0}>
-                        <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
-                            <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
+                        <Button
+                            as={Link}
+                            to={`/setup/remote-repositories/${codeHost.id}/edit`}
+                            className={styles.itemButton}
+                        >
+                            <span>
+                                <Icon svgPath={getCodeHostIcon(codeHost.kind)} aria-hidden={true} />
+                            </span>
+                            <span className={styles.itemDescription}>
+                                <span>{codeHost.displayName}</span>
+                                <small className={styles.itemDescriptionStatus}>
+                                    {codeHost.lastSyncAt !== null && (
+                                        <>Synced, {codeHost.repoCount} repositories found</>
+                                    )}
+                                    {codeHost.lastSyncAt === null && (
+                                        <>
+                                            <LoadingSpinner />, Syncing{' '}
+                                            {codeHost.repoCount > 0 && (
+                                                <>, so far {codeHost.repoCount} repositories found</>
+                                            )}
+                                        </>
+                                    )}
+                                </small>
+                            </span>
                         </Button>
-                    </Tooltip>
-                </li>
-            ))}
+
+                        <Tooltip content="Delete code host connection" placement="right" debounce={0}>
+                            <Button className={styles.deleteButton} onClick={() => onCodeHostDelete(codeHost)}>
+                                <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
+                            </Button>
+                        </Tooltip>
+                    </li>
+                ))}
             <li className={styles.itemWithMoreLink}>
                 <Link to="/setup/remote-repositories" className={classNames(styles.moreLink)}>
                     <Icon svgPath={mdiPlus} aria-hidden={true} /> Add more code hosts
