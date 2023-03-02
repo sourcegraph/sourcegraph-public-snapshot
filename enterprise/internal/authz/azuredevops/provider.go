@@ -26,7 +26,7 @@ var mockServerURL string
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
 	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
-	validAzureDevOpsConnections := []*types.AzureDevOpsConnection{}
+	authorizedConnections := []*types.AzureDevOpsConnection{}
 
 	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
 	// orgs and projects in every permissions sync iteration.
@@ -49,11 +49,11 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		}
 
 		c := c
-		validAzureDevOpsConnections = append(validAzureDevOpsConnections, c)
+		authorizedConnections = append(authorizedConnections, c)
 	}
 
 	initResults := &authztypes.ProviderInitResult{}
-	if len(validAzureDevOpsConnections) == 0 {
+	if len(authorizedConnections) == 0 {
 		return initResults
 	}
 
@@ -61,7 +61,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	uniqueOrgs := maps.Keys(orgs)
 	uniqueProjects := maps.Keys(projects)
 
-	p, err := newAuthzProvider(db, validAzureDevOpsConnections, uniqueOrgs, uniqueProjects)
+	p, err := newAuthzProvider(db, authorizedConnections, uniqueOrgs, uniqueProjects)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
