@@ -428,6 +428,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		},
 	}
 
+	licensing.MockCheckFeature = allowLicensingCheck
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			rcache.SetupForTest(t)
@@ -441,7 +442,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			licensing.MockCheckFeature = allowLicensingCheck
 			result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 				{
 					URN:                   "",
