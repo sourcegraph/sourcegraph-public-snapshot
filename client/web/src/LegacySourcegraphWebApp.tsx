@@ -58,7 +58,6 @@ import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
-import { log } from 'console'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
