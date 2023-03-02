@@ -19,6 +19,7 @@ import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
+import { filterPlaceholder } from '../codemirror/active-filter'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
@@ -173,6 +174,7 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
         keymap.of(historyKeymap),
         keymap.of(defaultKeymap),
         codemirrorHistory(),
+        filterPlaceholder,
         Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
         EditorView.theme({
             '&': {
@@ -206,6 +208,10 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
             },
             '.sg-decorated-token-hover': {
                 borderRadius: '3px',
+            },
+            '.sg-query-filter-placeholder': {
+                color: 'var(--text-muted)',
+                fontStyle: 'italic',
             },
         }),
     ]

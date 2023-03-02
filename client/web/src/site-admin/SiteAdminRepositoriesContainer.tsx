@@ -296,7 +296,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             {
                 value: data.repositoryStats.cloning,
                 description: 'Cloning',
-                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                color: data.repositoryStats.cloning > 0 ? 'var(--primary)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
                 onClick: () =>

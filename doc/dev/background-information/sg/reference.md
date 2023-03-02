@@ -33,15 +33,20 @@ Available comamndsets in `sg.config.yaml`:
 * app
 * batches 🦡
 * codeintel
+* codeintel-bazel
 * dotcom
+* embeddings
 * enterprise
+* enterprise-bazel
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
+* enterprise-codeintel-bazel
 * enterprise-e2e
 * iam
 * monitoring
 * monitoring-alerts
 * oss
+* oss-bazel
 * oss-web-standalone
 * oss-web-standalone-prod
 * otel
@@ -97,6 +102,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-worker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
+* embeddings
 * executor-template
 * frontend: Enterprise frontend
 * github-proxy

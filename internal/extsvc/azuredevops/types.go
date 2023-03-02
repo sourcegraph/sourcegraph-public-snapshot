@@ -1,6 +1,7 @@
 package azuredevops
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -274,8 +275,23 @@ type CreatorInfo struct {
 	ImageURL    string `json:"imageUrl"`
 }
 
-type httpError struct {
+type HTTPError struct {
 	StatusCode int
 	URL        *url.URL
 	Body       []byte
+}
+
+// Error returns a minimal string of the HTTP error with the status code and the URL.
+//
+// It does not write HTTPError.Body as part of the error string as the Azure DevOPs API returns raw
+// HTML for 4xx errors and non 200 OK responses inspite of using the "application/json" header in
+// the request. It does return JSON for 200 OK responses though.
+//
+// The body would only add noise to logs and error messages that also may bubble up to the user
+// interface which makes for a bad user experience. For our usecases in debugging, the status
+// code and URL should provide plenty of information on what is going contrary to expectations.
+// In the worst case, we should reproduce the error by manually sending a curl request that
+// causes an error and inspecting the HTML output.
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StatusCode, e.URL)
 }

@@ -37,7 +37,8 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			// Handle multiple operations in one value
 			if op.Path == nil {
 				for rawPath, value := range op.Value.(map[string]interface{}) {
-					changed = changed || applyChangeToAttributes(userRes.Attributes, rawPath, value)
+					newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
+					changed = changed || newlyChanged
 				}
 				continue
 			}
@@ -71,18 +72,20 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			case "add", "replace":
 				switch v := op.Value.(type) {
 				case []interface{}:
-					changed = true
 					if op.Op == "add" {
 						userRes.Attributes[attrName] = append(old.([]interface{}), v...)
 					} else { // replace
 						userRes.Attributes[attrName] = v
 					}
+					changed = true
 				default:
+					var newlyChanged bool
 					if subAttrName != "" {
-						changed = changed || applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+						newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
 					} else {
-						changed = changed || applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+						newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
 					}
+					changed = changed || newlyChanged
 				}
 			}
 		}

@@ -12,6 +12,7 @@ import {
     mdiLock,
     mdiLockOpen,
     mdiAccountReactivate,
+    mdiSecurity,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
@@ -323,6 +324,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 onClick: handleRecoverUsers,
                                 bulk: true,
                                 condition: users => users.some(user => user.deletedAt),
+                            },
+                            {
+                                key: 'view-permissions',
+                                label: 'View Permissions',
+                                icon: mdiSecurity,
+                                href: ([user]) => `/users/${user.username}/settings/permissions`,
+                                target: '_blank',
+                                condition: ([user]) => !!user,
                             },
                         ]}
                         columns={[

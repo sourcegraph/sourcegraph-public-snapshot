@@ -449,6 +449,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 }
 
 type externalServiceNamespacesArgs struct {
+	ID    *graphql.ID
 	Kind  string
 	Token string
 	Url   string
@@ -476,6 +477,7 @@ type externalServiceNamespaceConnectionResolver struct {
 }
 
 type externalServiceRepositoriesArgs struct {
+	ID           *graphql.ID
 	Kind         string
 	Token        string
 	Url          string
