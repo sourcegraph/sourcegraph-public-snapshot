@@ -802,14 +802,10 @@ CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
     AS $$ BEGIN
     SELECT
         COUNT(r.v) AS num_paths,
-        MIN(r.v::int) AS min_reference_count,
-        MAX(r.v::int) AS max_reference_count,
-        SUM(r.v::int) AS sum_reference_count
+        SUM(LOG(2, r.v::int)) AS sum_reference_count
     INTO
         NEW.num_paths,
-        NEW.min_reference_count,
-        NEW.max_reference_count,
-        NEW.sum_reference_count
+        NEW.refcount_logsum
     FROM jsonb_each(
         CASE WHEN NEW.payload::text = 'null'
             THEN '{}'::jsonb
@@ -1756,9 +1752,7 @@ CREATE TABLE codeintel_path_ranks (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     graph_key text,
     num_paths integer,
-    min_reference_count integer,
-    max_reference_count integer,
-    sum_reference_count integer
+    refcount_logsum integer
 );
 
 CREATE TABLE codeintel_ranking_definitions (
