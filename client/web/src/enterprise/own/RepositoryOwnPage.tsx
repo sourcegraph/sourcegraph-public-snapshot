@@ -4,7 +4,7 @@ import { mdiAccount } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { LoadingSpinner, PageHeader, Icon, H1, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, Icon, H1 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -18,10 +18,10 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryOwnAreaPageProps extends BreadcrumbSetters {
+export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'> {
     /** The active repository. */
     repo: RepositoryFields
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
 const BREADCRUMB = { key: 'own', element: 'Ownership' }
 
@@ -53,7 +53,10 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 description={
                     <>
                         Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
-                        CODEOWNERS file. <Link to="/help/own">Learn more</Link>
+                        CODEOWNERS file.
+                        {/* TODO: Add link to docs
+                        <Link to="/help/own">Learn more</Link>
+                        */}
                     </>
                 }
             >
