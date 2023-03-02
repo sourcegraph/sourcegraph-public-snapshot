@@ -152,13 +152,31 @@ func TestHandler_Handle(t *testing.T) {
 		expectedErr    error
 		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
 	}{
-		// TODO: test cases
+		{
+			name:    "Legacy Success with no steps",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				// Since things will get complicated, it will be much better to push returns instead of setting a default.
+				// This will allow easier copy-paste for other tests/scenarios.
+			},
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
+				require.Len(t, cmd.RunFunc.History(), 0)
+				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 0)
+				require.Len(t, filesStore.GetFunc.History(), 0)
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// Used in prepareWorkspace
 			cmdRunner := NewMockCmdRunner()
+			// Used in prepareWorkspace, runner
 			cmd := NewMockCommand()
+			// Used in NewLogger
 			logStore := NewMockExecutionLogEntryStore()
+			// Used in prepareWorkspace
 			filesStore := NewMockFilesStore()
 
 			h := &handler{
