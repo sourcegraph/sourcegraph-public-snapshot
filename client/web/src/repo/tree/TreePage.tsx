@@ -227,7 +227,7 @@ export const TreePage: FC<Props> = ({
                     <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
+                            to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
