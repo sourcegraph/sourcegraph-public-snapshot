@@ -17,7 +17,7 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, H3, Text, useDeepMemo } from '@sourcegraph/wildcard'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -423,18 +423,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             caseSensitive={caseSensitive}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
-
-                        {liveQuery.includes('select:file.owners') && (
-                            <Alert variant="info">
-                                <H3>Export owner results</H3>
-                                <Text>
-                                    You can export all the matching owners in CSV format, so you can contact them all!
-                                </Text>
-                                <Button variant="info" outline={true}>
-                                    Export owners
-                                </Button>
-                            </Alert>
-                        )}
 
                         {results?.alert?.kind && (
                             <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
