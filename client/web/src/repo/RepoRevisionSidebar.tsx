@@ -2,7 +2,7 @@ import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -58,7 +58,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
     const [enableAccessibleFileTree] = useFeatureFlag('accessible-file-tree')
-    const [enableAccessibleFileTreeAlwaysLoadAncestors] = useFeatureFlag('accessible-file-tree-always-load-ancestors')
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -160,7 +159,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                             filePath={props.filePath}
                                             filePathIsDirectory={props.isDir}
                                             telemetryService={props.telemetryService}
-                                            alwaysLoadAncestors={enableAccessibleFileTreeAlwaysLoadAncestors}
                                         />
                                     ) : (
                                         <Tree

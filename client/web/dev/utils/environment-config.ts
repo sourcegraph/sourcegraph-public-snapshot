@@ -1,8 +1,10 @@
+import path from 'path'
+
 /**
  * Unpack all `process.env.*` variables used during the build
  * time of the web application in this module to keep one source of truth.
  */
-import { getEnvironmentBoolean } from '@sourcegraph/build-config'
+import { getEnvironmentBoolean, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
@@ -44,6 +46,7 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
     // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
     WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
+    STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH || STATIC_ASSETS_PATH,
 
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
@@ -68,13 +71,6 @@ export const ENVIRONMENT_CONFIG = {
      * (Esbuild only.)
      */
     DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
-
-    /**
-     * Force tree-shaking in esbuild. Currently unsafe due to
-     * https://github.com/evanw/esbuild/pull/1458; see the other comments in this repository
-     * mentioning that PR for more information. (Esbuild only.)
-     */
-    DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING: Boolean(process.env.DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING),
 
     /**
      * ----------------------------------------
@@ -106,3 +102,5 @@ const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT 
 
 export const HTTPS_WEB_SERVER_URL = `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
 export const HTTP_WEB_SERVER_URL = `http://localhost:${SOURCEGRAPH_HTTP_PORT}`
+
+export const STATIC_INDEX_PATH = path.resolve(ENVIRONMENT_CONFIG.STATIC_ASSETS_PATH, 'index.html')

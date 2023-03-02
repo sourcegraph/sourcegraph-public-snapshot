@@ -2,15 +2,25 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "azuredevops",
-    srcs = ["client.go"],
+    srcs = [
+        "client.go",
+        "projects.go",
+        "pull_requests.go",
+        "repositories.go",
+        "types.go",
+        "users.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/encryption",
+        "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/ratelimit",
         "//lib/errors",
-        "//schema",
+        "@com_github_goware_urlx//:urlx",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
@@ -19,15 +29,19 @@ go_test(
     srcs = [
         "client_test.go",
         "main_test.go",
+        "projects_test.go",
+        "pull_requests_test.go",
+        "repositories_test.go",
+        "users_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":azuredevops"],
     deps = [
+        "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/httptestutil",
         "//internal/lazyregexp",
         "//internal/testutil",
-        "//schema",
         "@com_github_dnaeon_go_vcr//cassette",
     ],
 )

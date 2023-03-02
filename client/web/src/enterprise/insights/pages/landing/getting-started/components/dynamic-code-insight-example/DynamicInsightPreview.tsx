@@ -1,12 +1,11 @@
 import { FC } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Series, useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
+import { Series, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     SeriesBasedChartTypes,
     SeriesChart,
-    getSanitizedRepositories,
     LivePreviewCard,
     LivePreviewHeader,
     LivePreviewLoading,
@@ -29,13 +28,13 @@ const createExampleDataSeries = (query: string): SeriesWithStroke[] => [
         query,
         label: 'TODOs',
         generatedFromCaptureGroups: false,
-        stroke: DATA_SERIES_COLORS.ORANGE,
+        stroke: DATA_SERIES_COLORS.INDIGO,
     },
 ]
 
 interface DynamicInsightPreviewProps extends TelemetryProps {
     disabled: boolean
-    repositories: string
+    repositories: string[]
     query: string
     className?: string
 }
@@ -45,15 +44,12 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
 
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
-    const settings = useDebounce(
-        useDeepMemo({
-            series: createExampleDataSeries(query),
-            repoScope: { repositories: getSanitizedRepositories(repositories) },
-            step: { months: 2 },
-            disabled,
-        }),
-        500
-    )
+    const settings = useDeepMemo({
+        disabled,
+        repoScope: { repositories },
+        series: createExampleDataSeries(query),
+        step: { months: 2 },
+    })
 
     const { state } = useLivePreviewSeriesInsight({
         skip: disabled,

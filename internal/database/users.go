@@ -101,7 +101,7 @@ type userStore struct {
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(logger log.Logger, db dbutil.DB) UserStore {
+func Users(logger log.Logger) UserStore {
 	return &userStore{
 		logger: logger,
 		Store:  &basestore.Store{},
@@ -134,6 +134,15 @@ type userNotFoundErr struct {
 	args []any
 }
 
+func IsUserNotFoundErr(err error) bool {
+	_, ok := err.(userNotFoundErr)
+	return ok
+}
+
+func NewUserNotFoundErr(args ...any) userNotFoundErr {
+	return userNotFoundErr{args: args}
+}
+
 func (err userNotFoundErr) Error() string {
 	return fmt.Sprintf("user not found: %v", err.args)
 }
@@ -148,35 +157,35 @@ func NewUserNotFoundError(userID int32) error {
 	return userNotFoundErr{args: []any{"userID", userID}}
 }
 
-// errCannotCreateUser is the error that is returned when
+// ErrCannotCreateUser is the error that is returned when
 // a user cannot be added to the DB due to a constraint.
-type errCannotCreateUser struct {
+type ErrCannotCreateUser struct {
 	code string
 }
 
 const (
-	errorCodeUsernameExists = "err_username_exists"
-	errorCodeEmailExists    = "err_email_exists"
+	ErrorCodeUsernameExists = "err_username_exists"
+	ErrorCodeEmailExists    = "err_email_exists"
 )
 
-func (err errCannotCreateUser) Error() string {
+func (err ErrCannotCreateUser) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-func (err errCannotCreateUser) Code() string {
+func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
 // IsUsernameExists reports whether err is an error indicating that the intended username exists.
 func IsUsernameExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeUsernameExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeUsernameExists
 }
 
 // IsEmailExists reports whether err is an error indicating that the intended email exists.
 func IsEmailExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeEmailExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeEmailExists
 }
 
 // NewUser describes a new to-be-created user.
@@ -301,7 +310,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, err
 	}
 	if alreadyInitialized && info.FailIfNotInitialUser {
-		return nil, errCannotCreateUser{"site_already_initialized"}
+		return nil, ErrCannotCreateUser{"site_already_initialized"}
 	}
 
 	// Run BeforeCreateUser hook.
@@ -321,21 +330,21 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		if errors.As(err, &e) {
 			switch e.ConstraintName {
 			case "users_username":
-				return nil, errCannotCreateUser{errorCodeUsernameExists}
+				return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
-				return nil, errCannotCreateUser{e.ConstraintName}
+				return nil, ErrCannotCreateUser{e.ConstraintName}
 			}
 		}
 		return nil, err
 	}
 	if info.FailIfNotInitialUser && !siteAdmin {
 		// Refuse to make the user the initial site admin if there are other existing users.
-		return nil, errCannotCreateUser{"initial_site_admin_must_be_first_user"}
+		return nil, ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}
 	}
 
 	// Reserve username in shared users+orgs namespace.
 	if err := u.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) VALUES(%s, %s)", info.Username, id)); err != nil {
-		return nil, errCannotCreateUser{errorCodeUsernameExists}
+		return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 	}
 
 	if info.Email != "" {
@@ -346,7 +355,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 			return nil, err
 		}
 		if exists {
-			return nil, errCannotCreateUser{errorCodeEmailExists}
+			return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 		}
 
 		// The first email address added should be their primary
@@ -358,7 +367,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		if err != nil {
 			var e *pgconn.PgError
 			if errors.As(err, &e) && e.ConstraintName == "user_emails_unique_verified_email" {
-				return nil, errCannotCreateUser{errorCodeEmailExists}
+				return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 			}
 			return nil, err
 		}
@@ -376,6 +385,26 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		InvalidatedSessionsAt: invalidatedSessionsAt,
 		Searchable:            searchable,
 	}
+
+	{
+		// Assign roles to the created user. We do this in here to ensure role assign occurs in the same transaction as user creation occurs.
+		// This ensures we don't have "zombie" users (users with no role assigned to them).
+		// All users on a Sourcegraph instance must have the `USER` role, however depending on the value of user.SiteAdmin,
+		// we assign them the `SITE_ADMINISTRATOR` role.
+		roles := []types.SystemRole{types.UserSystemRole}
+		if user.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
+		}
+
+		db := NewDBWith(u.logger, u)
+		if err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roles,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	{
 		// Run hooks.
 		//
@@ -502,7 +531,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.ConstraintName == "users_username" {
-			return errCannotCreateUser{errorCodeUsernameExists}
+			return ErrCannotCreateUser{ErrorCodeUsernameExists}
 		}
 		return err
 	}
@@ -765,7 +794,8 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 	return updateIds, nil
 }
 
-// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
+// to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
@@ -773,8 +803,29 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 		}
 	}
 
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
+	db := NewDBWith(u.logger, u)
+	return db.WithTransact(ctx, func(tx DB) error {
+		userStore := tx.Users()
+		err := userStore.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+		if err != nil {
+			return err
+		}
+
+		userRoleStore := tx.UserRoles()
+		if isSiteAdmin {
+			err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+				UserID: id,
+				Role:   types.SiteAdministratorSystemRole,
+			})
+			return err
+		}
+
+		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+			UserID: id,
+			Role:   types.SiteAdministratorSystemRole,
+		})
+		return err
+	})
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified
@@ -896,6 +947,8 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Usernames specifies a list of usernames to include.
+	Usernames []string
 	// Only show users inside this org
 	OrgID int32
 
@@ -1063,6 +1116,10 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
 	}
+
+	if len(opt.Usernames) > 0 {
+		conds = append(conds, sqlf.Sprintf("u.username = ANY(%s)", pq.Array(opt.Usernames)))
+	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
 	}
@@ -1174,7 +1231,8 @@ SELECT u.id,
        u.tos_accepted,
        u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
-       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id,
+       (SELECT account_data FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_account_data
   FROM users u %s`
 
 // getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
@@ -1188,14 +1246,15 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 // scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
-	var displayName, avatarURL, scimExternalID sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
+	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
 	u.DisplayName = displayName.String
 	u.AvatarURL = avatarURL.String
 	u.SCIMExternalID = scimExternalID.String
+	u.SCIMAccountData = scimAccountData.String
 	return &u, nil
 }
 
@@ -1307,8 +1366,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff don't have a password and they
-// don't have any valid login connections.
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
@@ -1329,15 +1387,7 @@ WHERE id=%s
   AND passwd IS NULL
   AND passwd_reset_code IS NULL
   AND passwd_reset_time IS NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM user_external_accounts
-    WHERE
-          user_id = %s
-      AND deleted_at IS NULL
-      AND expired_at IS NULL
-    )
-`, passwd, id, id))
+`, passwd, id))
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}

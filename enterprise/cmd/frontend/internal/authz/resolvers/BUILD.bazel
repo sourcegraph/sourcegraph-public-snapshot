@@ -4,6 +4,7 @@ go_library(
     name = "resolvers",
     srcs = [
         "bitbucket_projects_permission_jobs.go",
+        "permissions_info.go",
         "permissions_sync_jobs.go",
         "repositories.go",
         "resolver.go",
@@ -16,7 +17,6 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",
@@ -41,14 +41,17 @@ go_library(
 
 go_test(
     name = "resolvers_test",
-    srcs = ["resolver_test.go"],
+    srcs = [
+        "permissions_sync_jobs_test.go",
+        "resolver_test.go",
+    ],
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/authz/github",
-        "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",

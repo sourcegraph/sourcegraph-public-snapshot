@@ -57,6 +57,7 @@ go_test(
     embed = [":backend"],
     deps = [
         "//internal/api",
+        "//internal/conf",
         "//internal/types",
         "//lib/errors",
         "//schema",

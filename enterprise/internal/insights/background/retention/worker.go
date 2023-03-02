@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -26,7 +27,8 @@ type dataRetentionHandler struct {
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
 	doArchive := conf.ExperimentalFeatures().InsightsDataRetention
-	if doArchive == nil || !*doArchive {
+	// If the setting is not set we run retention by default.
+	if doArchive != nil && !*doArchive {
 		return nil
 	}
 
@@ -67,7 +69,7 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 func getMaximumSampleSize(logger log.Logger) int {
 	// Default should match what is shown in the schema not to be confusing
 	maximumSampleSize := 30
-	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
+	if configured := conf.Get().InsightsMaximumSampleSize; configured > 0 {
 		maximumSampleSize = configured
 	}
 	if maximumSampleSize > 90 {

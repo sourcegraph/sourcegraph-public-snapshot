@@ -81,9 +81,12 @@ func getIgniteVersion(ctx context.Context) (string, error) {
 	return execOutput(ctx, "ignite", "version", "-o", "short")
 }
 
+// execCommand allows the ability to mock the command in unit tests.
+var execCommand = exec.CommandContext
+
 func execOutput(ctx context.Context, name string, args ...string) (string, error) {
 	var buf bytes.Buffer
-	cmd := exec.CommandContext(ctx, name, args...)
+	cmd := execCommand(ctx, name, args...)
 	cmd.Stderr = &buf
 	cmd.Stdout = &buf
 	if err := cmd.Run(); err != nil {
@@ -183,12 +186,14 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 
 func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
 func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, pathPrefix),
 	}
 }

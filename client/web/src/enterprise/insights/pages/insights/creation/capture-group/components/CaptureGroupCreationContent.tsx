@@ -2,17 +2,10 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
-import { useExperimentalFeatures } from '../../../../../../../stores'
-import {
-    CreationUiLayout,
-    CreationUIForm,
-    CreationUIPreview,
-    useField,
-    FormChangeEvent,
-    SubmissionErrors,
-    useForm,
-    useRepoFields,
-} from '../../../../../components'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useField, FormChangeEvent, SubmissionErrors, useForm } from '@sourcegraph/wildcard'
+
+import { CreationUiLayout, CreationUIForm, CreationUIPreview, useRepoFields } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
 
@@ -20,7 +13,7 @@ import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCre
 import { QUERY_VALIDATORS, STEP_VALIDATORS, TITLE_VALIDATORS } from './validators'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
-    repositories: '',
+    repositories: [],
     groupSearchQuery: '',
     title: '',
     step: 'months',
@@ -86,7 +79,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     const handleFormReset = (): void => {
         title.input.onChange('')
         repoQuery.input.onChange({ query: '' })
-        repositories.input.onChange('')
+        repositories.input.onChange([])
         query.input.onChange('')
         step.input.onChange('months')
         stepValue.input.onChange('1')
@@ -97,7 +90,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
 
     const hasFilledValue =
         form.values.title !== '' ||
-        form.values.repositories !== '' ||
+        form.values.repositories.length > 0 ||
         form.values.repoQuery.query !== '' ||
         form.values.groupSearchQuery !== ''
 
@@ -140,7 +133,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     )
 }
 
-function captureGroupPreviewSeries(query: string): any {
+function captureGroupPreviewSeries(query: string): any[] {
     return [
         {
             generatedFromCaptureGroup: true,

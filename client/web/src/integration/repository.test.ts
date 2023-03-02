@@ -26,7 +26,7 @@ import {
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
@@ -35,6 +35,13 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
+    ...createViewerSettingsGraphQLOverride({
+        user: {
+            experimentalFeatures: {
+                enableCodeMirrorFileView: false,
+            },
+        },
+    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
@@ -43,6 +50,13 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
+            externalURLs: [
+                {
+                    __typename: 'ExternalLink',
+                    serviceKind: ExternalServiceKind.GITHUB,
+                    url: 'https://' + repositoryName,
+                },
+            ],
             commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
@@ -93,6 +107,13 @@ describe('Repository', () => {
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             ancestors: {
                                 nodes: [
@@ -628,6 +649,13 @@ describe('Repository', () => {
                     __typename: 'Query',
                     node: {
                         __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             __typename: 'GitCommit',
                             ancestors: {

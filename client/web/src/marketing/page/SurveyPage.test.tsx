@@ -1,7 +1,5 @@
 import { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
-import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -25,19 +23,19 @@ describe('SurveyPage', () => {
 
     afterEach(cleanup)
 
-    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) => {
-        const history = createMemoryHistory()
-        history.push(`/survey/${routerProps?.matchParam || ''}`, routerProps?.locationState)
-
-        return renderWithBrandedContext(
+    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) =>
+        renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <Routes>
-                    <Route path="/survey/:score?" element={<SurveyPage authenticatedUser={null} />} />
-                </Routes>
+                <SurveyPage authenticatedUser={null} />
             </MockedTestProvider>,
-            { route: '/', history }
+            {
+                path: '/survey/:score?',
+                route: {
+                    pathname: `/survey/${routerProps?.matchParam || ''}`,
+                    state: routerProps?.locationState,
+                },
+            }
         )
-    }
 
     describe('Prior to submission', () => {
         beforeEach(() => {
@@ -62,7 +60,7 @@ describe('SurveyPage', () => {
 
             fireEvent.click(renderResult.getByText('Submit'))
 
-            await waitFor(() => expect(renderResult.history.location.pathname).toBe('/survey/thanks'))
+            await waitFor(() => expect(renderResult.locationRef.current?.pathname).toBe('/survey/thanks'))
         })
     })
 

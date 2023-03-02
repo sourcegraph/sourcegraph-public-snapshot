@@ -1,13 +1,12 @@
 import React, { useCallback } from 'react'
 
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 import { of } from 'rxjs'
 
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -62,18 +61,18 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                     <div className="d-flex align-items-center justify-content-between">
                         <H3 className="mb-2">Your code monitors</H3>
                         {isSourcegraphDotCom && (
-                            <CloudCtaBanner variant="outlined" small={true}>
-                                To monitor changes across your private repos,{' '}
+                            <CallToActionBanner variant="outlined" small={true}>
+                                To monitor changes across your private repositories,{' '}
                                 <Link
-                                    to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Monitoring' })}
+                                    to="https://about.sourcegraph.com"
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
+                                    }
                                 >
-                                    try Sourcegraph Cloud
+                                    get Sourcegraph Enterprise
                                 </Link>
                                 .
-                            </CloudCtaBanner>
+                            </CallToActionBanner>
                         )}
                     </div>
                     <Container className="py-3">

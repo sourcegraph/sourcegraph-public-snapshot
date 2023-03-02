@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -109,7 +110,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphOperators: true})
+	return db.Users().Count(ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
@@ -567,6 +573,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.HasExtURL = conf.UsingExternalURL()
 		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
+		r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
 		r.AuthProviders = authProviderTypes()
 
 		// The following methods are the most expensive to calculate, so we do them in
@@ -668,6 +675,8 @@ func updateCheckURL(logger log.Logger) string {
 	return u.String()
 }
 
+var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy URL for telemetry and update checks")
+
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -688,7 +697,20 @@ func check(logger log.Logger, db database.DB) {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		resp, err := httpcli.ExternalDoer.Do(req)
+		var doer httpcli.Doer
+		if telemetryHTTPProxy == "" {
+			doer = httpcli.ExternalDoer
+		} else {
+			u, err := url.Parse(telemetryHTTPProxy)
+			if err != nil {
+				return "", errors.Wrap(err, "parsing telemetry HTTP proxy URL")
+			}
+			doer = &http.Client{
+				Transport: &http.Transport{Proxy: http.ProxyURL(u)},
+			}
+		}
+
+		resp, err := doer.Do(req)
 		if err != nil {
 			return "", err
 		}

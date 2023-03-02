@@ -1,0 +1,5 @@
+filegroup(
+    name = "data",
+    srcs = glob(["*.lsif"]),
+    visibility = ["//lib/codeintel:__subpackages__"],
+)

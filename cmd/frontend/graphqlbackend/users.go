@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,8 +27,8 @@ type usersArgs struct {
 }
 
 func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins can see users.
-	if err := checkMembersAccess(ctx, r.db, 0); err != nil {
+	// 🚨 SECURITY: Verify listing users is allowed.
+	if err := checkMembersAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -153,18 +154,10 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func checkMembersAccess(ctx context.Context, db database.DB, orgID int32) error {
-	// 🚨 SECURITY: Only site admins can see users and only org members can
-	// count see org members.
-	if orgID == 0 {
+func checkMembersAccess(ctx context.Context, db database.DB) error {
+	// 🚨 SECURITY: Only site admins can list users on sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-			return err
-		}
-	} else {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, db, orgID); err != nil {
-			if err == auth.ErrNotAnOrgMember {
-				return errors.New("must be a member of this organization to view members")
-			}
 			return err
 		}
 	}

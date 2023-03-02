@@ -1,6 +1,7 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
+import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -9,7 +10,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
-    usersGroup,
+    usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -27,6 +28,13 @@ const configurationGroup: SiteAdminSideBarGroup = {
 
 const maintenanceGroup: SiteAdminSideBarGroup = {
     ...ossMaintenanceGroup,
+    items: [
+        ...ossMaintenanceGroup.items,
+        {
+            label: 'Code Insights jobs',
+            to: '/site-admin/code-insights-jobs',
+        },
+    ],
 }
 
 const executorsGroup: SiteAdminSideBarGroup = {
@@ -101,6 +109,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
+            to: '/site-admin/code-graph/dashboard',
+            label: 'Dashboard',
+        },
+        {
             to: '/site-admin/code-graph/indexes',
             label: 'Precise indexes',
         },
@@ -126,6 +138,28 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const codyGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Cody', icon: RobotOutlineIcon },
+    items: [
+        {
+            label: 'Cody',
+            to: '/site-admin/cody',
+        },
+    ],
+    condition: () => window.context?.embeddingsEnabled,
+}
+
+const usersGroup: SiteAdminSideBarGroup = {
+    ...ossUsersGroup,
+    items: [
+        ...ossUsersGroup.items,
+        {
+            label: 'Roles',
+            to: '/site-admin/roles',
+        },
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
@@ -136,5 +170,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
+    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups

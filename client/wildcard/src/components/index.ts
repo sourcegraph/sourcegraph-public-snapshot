@@ -1,6 +1,6 @@
 /** Component exports */
+export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
-export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -17,19 +17,30 @@ export {
     ParentSize,
 } from './Charts'
 export {
-    Checkbox,
-    FlexTextArea,
     Form,
+    FormGroup,
+    useForm,
+    useField,
+    useCheckboxes,
+    useControlledField,
+    getDefaultInputProps,
+    getDefaultInputError,
+    getDefaultInputStatus,
+    composeValidators,
+    createRequiredValidator,
+    FORM_ERROR,
     Input,
     LoaderInput,
+    InputStatus,
+    InputElement,
     InputDescription,
     InputErrorMessage,
-    InputElement,
-    RadioButton,
-    Select,
-    TextArea,
-    InputStatus,
     getInputStatus,
+    Select,
+    Checkbox,
+    RadioButton,
+    TextArea,
+    FlexTextArea,
 } from './Form'
 export { Grid } from './Grid'
 export { LoadingSpinner } from './LoadingSpinner'
@@ -41,7 +52,7 @@ export { SourcegraphIcon } from './SourcegraphIcon'
 export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
 export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
-export { Tree } from './Tree'
+export { Tree, flattenTree } from './Tree'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
@@ -89,6 +100,7 @@ export {
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { ButtonGroupProps } from './Button'
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { ButtonProps } from './Button'
@@ -108,6 +120,17 @@ export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatus
 export type { ModalProps } from './Modal'
 export type { MultiComboboxProps } from './Combobox'
 export type { RadioButtonProps } from './Form/RadioButton'
+export type {
+    useFieldAPI,
+    FormInstance,
+    FormAPI,
+    FormChangeEvent,
+    SubmissionErrors,
+    SubmissionResult,
+    Validator,
+    AsyncValidator,
+    ValidationResult,
+} from './Form/Form'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

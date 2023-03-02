@@ -1,15 +1,15 @@
 import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
-import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
 import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
@@ -18,11 +18,13 @@ import {
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
+import { BLOB_SEARCH_CONTAINER_ID } from '../search'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { languageSupport } from './languageSupport'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -59,6 +61,13 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
             }
 
             if (effect.is(setPinnedCodeIntelTooltipState)) {
+                // If the pinned occurrence is the same as the hovered or focused one, use pin the existing one
+                for (const trigger of ['hover', 'focus'] as const) {
+                    if (effect.value?.occurrence === value[trigger]?.occurrence) {
+                        return { ...value, pin: value[trigger], [trigger]: null }
+                    }
+                }
+
                 return { ...value, pin: effect.value }
             }
         }
@@ -67,7 +76,25 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
     },
     provide(field) {
         return [
-            showTooltip.computeN([field], state => Object.values(state.field(field)).map(val => val?.tooltip ?? null)),
+            showTooltip.computeN([field], state => {
+                const { hover, focus, pin } = state.field(field)
+                const isLanguageSupported = state.facet(languageSupport)
+
+                // Only show one tooltip for the occurrence at a time
+                const uniqueTooltips = [pin, focus, hover]
+                    .reduce((acc, current) => {
+                        if (current?.tooltip && acc.every(({ occurrence }) => occurrence !== current.occurrence)) {
+                            acc.push(current)
+                        }
+                        return acc
+                    }, [] as NonNullable<CodeIntelTooltipState>[])
+                    .map(({ tooltip }) => tooltip)
+                    .filter(tooltip =>
+                        tooltip instanceof CodeIntelTooltip ? (isLanguageSupported ? tooltip : null) : tooltip
+                    )
+
+                return uniqueTooltips
+            }),
 
             /**
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
@@ -175,7 +202,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === null || hover.contents.length === 0
+        hover === null || hover === undefined || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)
@@ -187,7 +214,7 @@ async function hoverRequest(
     return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null): boolean {
+function isPrecise(hover: HoverMerged | null | undefined): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
@@ -195,6 +222,34 @@ function isPrecise(hover: HoverMerged | null): boolean {
     }
     return false
 }
+
+function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
+
+const HOVER_DEBOUNCE_TIME = 25 // ms
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
+ */
+const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -335,7 +390,6 @@ const hoverManager = ViewPlugin.fromClass(
                                     }
 
                                     return from(getHoverTooltip(view, offset)).pipe(
-                                        catchError(() => of(null)),
                                         map(tooltip => (tooltip ? { tooltip, occurrence } : null))
                                     )
                                 }),
@@ -377,6 +431,12 @@ const hoverManager = ViewPlugin.fromClass(
 function isOffsetInHoverRange(offset: number, range: { from: number; to: number }): boolean {
     return range.from <= offset && offset <= range.to
 }
+
+/**
+ * This field is used by the blob component to sync the position from the URL to
+ * the editor.
+ */
+export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
 
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
     if (!pin || !pin.line || !pin.character) {
@@ -437,14 +497,14 @@ const pinManager = ViewPlugin.fromClass(
 
             if (update.selectionSet && update.state.field(pin)) {
                 // Remove `popover=pinned` from the URL when the user updates the selection.
-                const history = update.state.facet(blobPropsFacet).history
-                const params = new URLSearchParams(history.location.search)
+                const { navigate, location } = update.state.facet(blobPropsFacet)
+                const params = new URLSearchParams(location.search)
                 params.delete('popover')
                 window.requestAnimationFrame(() =>
-                    // Use `history.push` instead of `history.replace` in case
+                    // Use `navigate(to)` instead of `navigate(to, { replace: true })` in case
                     // the user accidentally clicked somewhere without intending to
                     // dismiss the popover.
-                    history.push({ ...history.location, search: formatSearchParameters(params) })
+                    navigate({ search: formatSearchParameters(params) })
                 )
             }
         }
@@ -489,6 +549,29 @@ export function codeIntelTooltipsExtension(): Extension {
         hoverManager,
         pinManager,
         tooltipStyles,
+
+        ViewPlugin.define(view => ({
+            update(update: ViewUpdate) {
+                if (update.viewportChanged) {
+                    /**
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
+                     * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     * Ignore cases when viewport change is caused by navigating to next/previous search result
+                     * (e.g., by clicking 'Enter' when the search input field is focused).
+                     */
+                    view.requestMeasure({
+                        read(view: EditorView) {
+                            if (
+                                !view.contentDOM.contains(document.activeElement) &&
+                                !document.activeElement?.closest(`#${BLOB_SEARCH_CONTAINER_ID}`)
+                            ) {
+                                view.contentDOM.focus()
+                            }
+                        },
+                    })
+                }
+            },
+        })),
 
         EditorView.domEventHandlers({
             click(event, view) {

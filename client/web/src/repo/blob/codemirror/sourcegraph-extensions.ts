@@ -7,31 +7,21 @@
  */
 
 import { Extension } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
-import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, shareReplay, switchMap } from 'rxjs/operators'
+import { combineLatest, EMPTY, from, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, map, shareReplay, switchMap } from 'rxjs/operators'
 
-import { DocumentHighlight, emitLoading, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
+import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
-import { getHover } from '../../../backend/features'
-import { BlobInfo } from '../Blob'
+import type { BlobInfo } from '../CodeMirrorBlob'
 
-import { documentHighlightsSource } from './document-highlights'
-import { hovercardSource } from './hovercard'
 import { SelectedLineRange, selectedLines } from './linenumbers'
-
-import { blobPropsFacet } from '.'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to
@@ -55,12 +45,10 @@ export function sourcegraphExtensions({
     blobInfo,
     initialSelection,
     extensionsController,
-    enableSelectionDrivenCodeNavigation,
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
     extensionsController: RequiredExtensionsControllerProps['extensionsController']
-    enableSelectionDrivenCodeNavigation?: boolean
 }): Extension {
     const subscriptions = new Subscription()
 
@@ -118,50 +106,10 @@ export function sourcegraphExtensions({
                 subscriptions.unsubscribe()
             },
         })),
-        // This needs to come before document highlights so that the hovered
-        // token is highlighted differently. Hovercard datasource is disabled
-        // when selection-driven navigation is enabled because it reimplements
-        // hover logic in the file 'token-selection/hover.ts'.
-        enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
-        enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
         ViewPlugin.define(() => new WarmupReferencesManager(contextObservable)),
     ]
 }
-
-//
-// Document highlights
-//
-
-/**
- * documentHighlightsDataSource registers a callback function for retrieving
- * document highlight information.
- * See {@link DocumentHighlightsDataSource} and {@link documentHighlightsSource}.
- */
-function documentHighlightsDataSource(context: Observable<Context>): Extension {
-    return documentHighlightsSource.of(
-        (position: Position): Observable<DocumentHighlight[]> =>
-            combineLatest([context, of(position)]).pipe(
-                switchMap(([context, position]) =>
-                    wrapRemoteObservable(
-                        context.extensionHostAPI.getDocumentHighlights({
-                            textDocument: {
-                                uri: toURIWithPath(context.blobInfo),
-                            },
-                            position: {
-                                character: position.character - 1,
-                                line: position.line - 1,
-                            },
-                        })
-                    )
-                )
-            )
-    )
-}
-
-//
-// Text document decorations
-//
 
 //
 // Selection change notifier
@@ -200,55 +148,6 @@ class SelectionManager implements PluginValue {
             this.nextSelection.next(update.state.field(selectedLines))
         }
     }
-}
-
-//
-// Hovercards
-//
-
-/**
- * hovercardDataSource uses the {@link hovercardSource} facet to provide a
- * callback function for querying the extension API for hover data.
- */
-function hovercardDataSource(context: Observable<Context>): Extension {
-    return hovercardSource.of(
-        (
-            view: EditorView,
-            position: UIPositionSpec['position']
-        ): Observable<Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'>> =>
-            context.pipe(
-                filter((context): context is Context => context !== null),
-                switchMap(context => {
-                    const hoverContext = {
-                        commitID: context.blobInfo.commitID,
-                        revision: context.blobInfo.revision,
-                        filePath: context.blobInfo.filePath,
-                        repoName: context.blobInfo.repoName,
-                    }
-                    const { extensionsController, platformContext } = view.state.facet(blobPropsFacet)
-
-                    return combineLatest([
-                        getHover({ ...hoverContext, position }, { extensionsController }).pipe(
-                            catchError((error): [MaybeLoadingResult<ErrorLike>] => [
-                                { isLoading: false, result: asError(error) },
-                            ]),
-                            emitLoading<HoverOverlayBaseProps['hoverOrError'] | ErrorLike, null>(LOADER_DELAY, null)
-                        ),
-                        getHoverActions(
-                            { extensionsController, platformContext },
-                            {
-                                ...hoverContext,
-                                ...position,
-                            }
-                        ),
-                    ])
-                }),
-                map(([hoverResult, actionsResult]) => ({
-                    hoverOrError: hoverResult,
-                    actionsOrError: actionsResult,
-                }))
-            )
-    )
 }
 
 class WarmupReferencesManager implements PluginValue {

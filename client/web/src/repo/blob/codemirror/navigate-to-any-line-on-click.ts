@@ -31,8 +31,8 @@ class LineLinkManager implements PluginValue {
                     line.to,
                     Decoration.mark({
                         tagName: 'a',
-                        attributes: { href, 'data-line-link': '' },
-                        class: 'text-decoration-none',
+                        attributes: { href, 'data-cm-line-link': '' },
+                        class: 'text-decoration-none text-inherit',
                     })
                 )
                 pos = line.to + 1
@@ -50,16 +50,18 @@ export const navigateToLineOnAnyClickExtension: Extension = [
     EditorView.domEventHandlers({
         click(event, view) {
             const target = event.target as HTMLElement
-            // Check to see if the clicked target is a token link.
-            // If it is, push the link to the history stack.
-            if (target.matches('[data-line-link]')) {
+            const closest = target.closest('[data-cm-line-link]')
+
+            // Check to see if the clicked target is a or is inside a token link.
+            // If it is, navigate to the link.
+            if (closest) {
                 event.preventDefault()
-                const href = target.getAttribute('href')!
+                const href = closest.getAttribute('href')!
                 const props = view.state.facet(blobPropsFacet)
                 if (props.nav) {
                     props.nav(href)
                 } else {
-                    props.history.push(href)
+                    props.navigate(href)
                 }
             }
         },

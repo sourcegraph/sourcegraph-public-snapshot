@@ -32,6 +32,7 @@ type operations struct {
 	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -60,11 +61,6 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
-
-	numUploadsRead         prometheus.Counter
-	numBytesUploaded       prometheus.Counter
-	numStaleRecordsDeleted prometheus.Counter
-	numBytesDeleted        prometheus.Counter
 }
 
 var (
@@ -91,42 +87,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
-	counter := func(name, help string) prometheus.Counter {
-		metricsMu.Lock()
-		defer metricsMu.Unlock()
-
-		if c, ok := metricsMap[name]; ok {
-			return c
-		}
-
-		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
-			Help: help,
-		})
-		observationCtx.Registerer.MustRegister(counter)
-
-		metricsMap[name] = counter
-
-		return counter
-	}
-
-	numUploadsRead := counter(
-		"src_codeintel_uploads_ranking_uploads_read_total",
-		"The number of upload records read.",
-	)
-	numBytesUploaded := counter(
-		"src_codeintel_uploads_ranking_bytes_uploaded_total",
-		"The number of bytes uploaded to GCS.",
-	)
-	numStaleRecordsDeleted := counter(
-		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
-		"The number of stale upload records removed from GCS.",
-	)
-	numBytesDeleted := counter(
-		"src_codeintel_uploads_ranking_bytes_deleted_total",
-		"The number of bytes deleted from GCS.",
-	)
-
 	return &operations{
 		// Commits
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
@@ -145,6 +105,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -173,11 +134,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
-
-		numUploadsRead:         numUploadsRead,
-		numBytesUploaded:       numBytesUploaded,
-		numStaleRecordsDeleted: numStaleRecordsDeleted,
-		numBytesDeleted:        numBytesDeleted,
 	}
 }
 

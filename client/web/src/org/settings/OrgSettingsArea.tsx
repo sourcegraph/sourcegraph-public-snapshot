@@ -1,23 +1,21 @@
-import * as React from 'react'
+import React, { FC } from 'react'
 
-import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Routes, Route } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import {
     OrgAreaOrganizationFields,
     OrgFeatureFlagValueResult,
     OrgFeatureFlagValueVariables,
 } from '../../graphql-operations'
-import { RouteDescriptor } from '../../util/contributions'
+import { RouteV6Descriptor } from '../../util/contributions'
 import { OrgAreaRouteContext } from '../area/OrgArea'
 import { GET_ORG_FEATURE_FLAG_VALUE, ORG_DELETION_FEATURE_FLAG_NAME } from '../backend'
 
@@ -31,10 +29,9 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     />
 )
 
-export interface OrgSettingsAreaRoute extends RouteDescriptor<OrgSettingsAreaRouteContext> {}
+export interface OrgSettingsAreaRoute extends RouteV6Descriptor<OrgSettingsAreaRouteContext> {}
 
-export interface OrgSettingsAreaProps extends OrgAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
-    location: H.Location
+export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
     authenticatedUser: AuthenticatedUser
     sideBarItems: OrgSettingsSidebarItems
     routes: readonly OrgSettingsAreaRoute[]
@@ -50,9 +47,7 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
-    React.PropsWithChildren<OrgSettingsAreaProps>
-> = props => {
+export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
     const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
         {
@@ -71,26 +66,22 @@ export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
         <div className="d-flex flex-column flex-sm-row">
             <OrgSettingsSidebar items={props.sideBarItems} {...context} className="flex-0 mr-3 mb-4" />
             <div className="flex-1">
-                <ErrorBoundary location={props.location}>
-                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                        <Switch>
-                            {props.routes.map(
-                                ({ path, exact, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                            path={props.match.url + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                        />
-                                    )
-                            )}
-                            <Route component={NotFoundPage} />
-                        </Switch>
-                    </React.Suspense>
-                </ErrorBoundary>
+                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                    <Routes>
+                        {props.routes.map(
+                            ({ path, render, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        element={render(context)}
+                                        errorElement={<RouteError />}
+                                        path={path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    />
+                                )
+                        )}
+                        <Route element={<NotFoundPage />} />
+                    </Routes>
+                </React.Suspense>
             </div>
         </div>
     )

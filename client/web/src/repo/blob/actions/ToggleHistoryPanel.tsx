@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import { Location, NavigateFunction, To } from 'react-router-dom-v5-compat'
+import { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -25,6 +25,7 @@ import { BlobPanelTabID } from '../panel/BlobPanel'
  */
 export class ToggleHistoryPanel extends React.PureComponent<
     {
+        isPackage: boolean
         location: Location
         navigate: NavigateFunction
     } & RepoHeaderContext
@@ -72,12 +73,16 @@ export class ToggleHistoryPanel extends React.PureComponent<
         // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.code === 'KeyH'))
+                .pipe(filter(event => !this.isDisabled() && event.altKey && event.code === 'KeyH'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
                 })
         )
+    }
+
+    private isDisabled(): boolean {
+        return this.props.isPackage
     }
 
     public componentWillUnmount(): void {
@@ -86,11 +91,14 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
-        const message = `${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`
+
+        const toggleMessage = `${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`
+        const disabled = this.isDisabled()
+        const message = disabled ? 'Git history is not available when browsing packages' : toggleMessage
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
+                <RepoHeaderActionMenuItem disabled={disabled} file={true} onSelect={this.onClick}>
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
                     <span>{message}</span>
                 </RepoHeaderActionMenuItem>
@@ -104,6 +112,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                     aria-expanded={visible}
                     file={false}
                     onSelect={this.onClick}
+                    disabled={disabled}
                 >
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
                 </RepoHeaderActionButtonLink>

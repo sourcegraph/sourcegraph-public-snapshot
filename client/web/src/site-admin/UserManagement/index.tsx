@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
 import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
 import { UsersList } from './components/UsersList'
@@ -15,7 +15,7 @@ import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
-export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+export const UsersManagement: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
     }, [])
@@ -55,6 +55,22 @@ export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> =
                 tooltip: 'The number of users with site admin permissions.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(
+            window.context.sourcegraphDotComMode,
+            window.context.allowSignup,
+            window.context.experimentalFeatures
+        )
+
+        if (isRequestAccessAllowed) {
+            legends.push({
+                value: data.pendingAccessRequests.totalCount,
+                description: 'Pending requests',
+                color: 'var(--cyan)',
+                position: 'left',
+                tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+            })
+        }
 
         return legends
     }, [data])

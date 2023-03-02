@@ -51,6 +51,8 @@ const batchChangeDefaults: BatchChangeFields = {
         total: 29,
         archived: 18,
         unpublished: 4,
+        isCompleted: false,
+        percentComplete: 30,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
@@ -270,14 +272,13 @@ export const Overview: Story = args => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
                 />
             )}
@@ -308,14 +309,13 @@ export const NoOpenChangesets: Story = () => {
         []
     )
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
                 />
             )}

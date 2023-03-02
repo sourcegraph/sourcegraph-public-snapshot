@@ -12,7 +12,25 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
-- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+## v4.5.0 ➔ v4.5.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.5.0...v4.5.1)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.5.0...v4.5.1)
+
+#### Notes:
+
+## v4.4.2 ➔ v4.5.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.2...v4.5.0)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.2...v4.5.0)
+
+#### Notes:
+
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
 ## v4.4.1 ➔ v4.4.2
 
@@ -32,6 +50,11 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 As a template, perform the same actions as the following diffs in your own deployment:
 - [`➔ v4.4.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8cdeb7616b73e100aec41806b1118264fea0615d)
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
+
+  - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
+    - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
 
 ## v4.2 ➔ v4.3.1
 

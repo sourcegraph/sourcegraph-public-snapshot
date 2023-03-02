@@ -1,12 +1,17 @@
 import {
+    selectAll,
     selectCharLeft,
     selectCharRight,
+    selectDocEnd,
+    selectDocStart,
     selectGroupLeft,
     selectGroupRight,
     selectLineDown,
     selectLineUp,
+    selectPageDown,
+    selectPageUp,
 } from '@codemirror/commands'
-import { Extension } from '@codemirror/state'
+import { Extension, Prec } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
@@ -100,8 +105,11 @@ const keybindings: KeyBinding[] = [
                     () => {}
                 )
                 .finally(() => {
-                    // hide loading tooltip
-                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    // close loading tooltip if any
+                    const current = getCodeIntelTooltipState(view, 'focus')
+                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
+                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    }
                 })
 
             return true
@@ -111,14 +119,14 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Mod-ArrowRight',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goForward()
+            view.state.facet(blobPropsFacet).navigate(1)
             return true
         },
     },
     {
         key: 'Mod-ArrowLeft',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goBack()
+            view.state.facet(blobPropsFacet).navigate(-1)
             return true
         },
     },
@@ -159,6 +167,35 @@ const textSelectionKeybindings: KeyBinding[] = [
     {
         key: 'ArrowDown',
         shift: selectLineDown,
+    },
+
+    {
+        key: 'Mod-Home',
+        mac: 'Cmd-ArrowUp',
+        shift: selectDocStart,
+    },
+
+    {
+        key: 'Mod-End',
+        mac: 'Cmd-ArrowDown',
+        shift: selectDocEnd,
+    },
+
+    {
+        key: 'PageUp',
+        mac: 'Ctrl-ArrowUp',
+        shift: selectPageUp,
+    },
+
+    {
+        key: 'PageDown',
+        mac: 'Ctrl-ArrowDown',
+        shift: selectPageDown,
+    },
+
+    {
+        key: 'Mod-a',
+        run: selectAll,
     },
 ]
 
@@ -239,21 +276,25 @@ function occurrenceKeyboardNavigation(): Extension {
  * [browser selection](https://developer.mozilla.org/en-US/docs/Web/API/Selection). This function is a workaround to ensure
  * that the browser selection is updated when the editor selection is updated.
  *
+ * This layer has explicitly set high precedence to be always shown above other layers (e.g. selected lines layer).
+ *
  * @see https://codemirror.net/docs/ref/#view.drawSelection
  * @see https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102
  */
-const selectionLayer = layer({
-    above: false,
-    markers(view) {
-        return view.state.selection.ranges
-            .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
-            .reduce((a, b) => a.concat(b))
-    },
-    update(update) {
-        return update.docChanged || update.selectionSet || update.viewportChanged
-    },
-    class: 'cm-selectionLayer',
-})
+const selectionLayer = Prec.high(
+    layer({
+        above: false,
+        markers(view) {
+            return view.state.selection.ranges
+                .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
+                .reduce((a, b) => a.concat(b))
+        },
+        update(update) {
+            return update.docChanged || update.selectionSet || update.viewportChanged
+        },
+        class: 'cm-selectionLayer',
+    })
+)
 
 /**
  * Extension that adds support for the text selection with keyboard.
@@ -272,7 +313,7 @@ function textSelectionExtension(): Extension {
                 },
             },
             '.cm-selectionLayer .cm-selectionBackground': {
-                background: 'var(--code-selection-bg)',
+                background: 'var(--code-selection-bg-2)',
             },
         }),
     ]

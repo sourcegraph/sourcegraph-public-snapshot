@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react'
 
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
@@ -21,7 +20,7 @@ import { PreviewList } from './list/PreviewList'
 
 import styles from './BatchChangePreviewTabs.module.scss'
 
-export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
+export interface BatchChangePreviewProps extends TelemetryProps {
     batchSpecID: string
     authenticatedUser: PreviewPageAuthenticatedUser
 
@@ -43,14 +42,13 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
     authenticatedUser,
     batchSpecID,
     expandChangesetDescriptions,
-    isLightTheme,
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
 }) => {
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
     const initialTab = new URLSearchParams(location.search).get('tab')
 
@@ -66,9 +64,9 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 urlParameters.set('tab', SPEC_TAB_NAME)
             }
 
-            history.replace({ ...location, search: urlParameters.toString() })
+            navigate({ search: urlParameters.toString() })
         },
-        [history, location]
+        [navigate, location.search]
     )
 
     return (
@@ -98,8 +96,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 <TabPanel>
                     <PreviewList
                         batchSpecID={batchSpecID}
-                        history={history}
-                        location={location}
                         authenticatedUser={authenticatedUser}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
@@ -114,7 +110,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                         <BatchSpec
                             name={spec.description.name}
                             originalInput={spec.originalInput}
-                            isLightTheme={isLightTheme}
                             className={styles.batchSpec}
                         />
                     </Container>

@@ -253,7 +253,8 @@ CREATE TABLE insight_view (
     default_filter_search_contexts text[],
     series_sort_mode series_sort_mode_enum,
     series_sort_direction series_sort_direction_enum,
-    series_limit integer
+    series_limit integer,
+    series_num_samples integer
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';

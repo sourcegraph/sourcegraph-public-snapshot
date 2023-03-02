@@ -12,10 +12,12 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/graph-gophers/graphql-go/trace"
+	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
+	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,13 +47,13 @@ var (
 
 type requestTracer struct {
 	DB     database.DB
-	tracer trace.OpenTracingTracer
+	tracer *otel.Tracer
 	logger log.Logger
 }
 
-func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish trace.TraceQueryFinishFunc
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
@@ -164,7 +167,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -179,8 +182,8 @@ func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName 
 	}
 }
 
-func (t requestTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
-	var finish trace.TraceValidationFinishFunc
+func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
 	}
@@ -380,40 +383,45 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil, nil)
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
+}
+
+func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
 }
 
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	batchChanges BatchChangesResolver,
 	codeIntel CodeIntelResolver,
 	insights InsightsResolver,
@@ -426,9 +434,11 @@ func NewSchema(
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
 	webhooksResolver WebhooksResolver,
+	embeddingsResolver EmbeddingsResolver,
 	rbacResolver RBACResolver,
+	ownResolver OwnResolver,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient)
+	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	if batchChanges != nil {
@@ -461,9 +471,6 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
-		for kind, res := range authz.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
-		}
 	}
 
 	if codeMonitors != nil {
@@ -534,6 +541,12 @@ func NewSchema(
 		}
 	}
 
+	if embeddingsResolver != nil {
+		EnterpriseResolvers.embeddingsResolver = embeddingsResolver
+		resolver.EmbeddingsResolver = embeddingsResolver
+		schemas = append(schemas, embeddingsSchema)
+	}
+
 	if rbacResolver != nil {
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
@@ -544,12 +557,25 @@ func NewSchema(
 		}
 	}
 
+	if ownResolver != nil {
+		EnterpriseResolvers.ownResolver = ownResolver
+		resolver.OwnResolver = ownResolver
+		schemas = append(schemas, ownSchema)
+		// Register NodeByID handlers.
+		for kind, res := range ownResolver.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
 		graphql.Tracer(&requestTracer{
-			DB:     db,
+			DB: db,
+			tracer: &otel.Tracer{
+				Tracer: oteltracer.Tracer("GraphQL"),
+			},
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
@@ -562,11 +588,12 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger            log.Logger
-	db                database.DB
-	gitserverClient   gitserver.Client
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
+	logger               log.Logger
+	db                   database.DB
+	gitserverClient      gitserver.Client
+	repoupdaterClient    *repoupdater.Client
+	nodeByIDFns          map[string]NodeByIDFunc
+	enterpriseSearchJobs jobutil.EnterpriseJobs
 
 	// SubResolvers are assigned using the Schema constructor.
 
@@ -582,20 +609,26 @@ type schemaResolver struct {
 	NotebooksResolver
 	InsightsAggregationResolver
 	WebhooksResolver
+	EmbeddingsResolver
 	RBACResolver
+	OwnResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
+func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpriseJobs jobutil.EnterpriseJobs) *schemaResolver {
 	r := &schemaResolver{
-		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
-		db:                db,
-		gitserverClient:   gitserverClient,
-		repoupdaterClient: repoupdater.DefaultClient,
+		logger:               log.Scoped("schemaResolver", "GraphQL schema resolver"),
+		db:                   db,
+		gitserverClient:      gitserverClient,
+		repoupdaterClient:    repoupdater.DefaultClient,
+		enterpriseSearchJobs: enterpriseJobs,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
+		"AccessRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return accessRequestByID(ctx, db, id)
+		},
 		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return accessTokenByID(ctx, db, id)
 		},
@@ -622,9 +655,6 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitCommitByID(ctx, id)
-		},
-		"RegistryExtension": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return RegistryExtensionByID(ctx, db, id)
 		},
 		"SavedSearch": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.savedSearchByID(ctx, id)
@@ -661,7 +691,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			if err != nil {
 				return nil, err
 			}
-			return &teamResolver{team: team, db: db}, nil
+			return &TeamResolver{team: team, db: db}, nil
 		},
 		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return OutboundWebhookByID(ctx, db, id)
@@ -685,12 +715,14 @@ var EnterpriseResolvers = struct {
 	notebooksResolver           NotebooksResolver
 	InsightsAggregationResolver InsightsAggregationResolver
 	webhooksResolver            WebhooksResolver
+	embeddingsResolver          EmbeddingsResolver
 	rbacResolver                RBACResolver
+	ownResolver                 OwnResolver
 }{}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient)
+	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

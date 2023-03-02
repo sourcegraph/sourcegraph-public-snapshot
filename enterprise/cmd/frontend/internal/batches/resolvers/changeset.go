@@ -192,6 +192,16 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
 }
 
+// This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
+// then the changeset is imported.
+func (r *changesetResolver) OwnedByBatchChange() *graphql.ID {
+	if batchChangeID := r.changeset.OwnedByBatchChangeID; batchChangeID != 0 {
+		bcID := bgql.MarshalBatchChangeID(batchChangeID)
+		return &bcID
+	}
+	return nil
+}
+
 func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.changeset.CreatedAt}
 }
@@ -323,6 +333,13 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 func (r *changesetResolver) ForkNamespace() *string {
 	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
 		return &namespace
+	}
+	return nil
+}
+
+func (r *changesetResolver) ForkName() *string {
+	if name := r.changeset.ExternalForkName; name != "" {
+		return &name
 	}
 	return nil
 }

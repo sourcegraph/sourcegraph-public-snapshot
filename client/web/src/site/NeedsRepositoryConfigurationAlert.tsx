@@ -2,10 +2,11 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { useExperimentalFeatures } from '../stores'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 const onClickCTA = (): void => {
@@ -29,7 +30,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
         >
             <Link
                 className="site-alert__link"
-                to={isSetupWizardEnabled ? '/setup' : '/site-admin/external-services'}
+                to={isSetupWizardEnabled ? PageRoutes.SetupWizard : '/site-admin/external-services'}
                 onClick={onClickCTA}
             >
                 <span className="underline">Connect a code host</span>

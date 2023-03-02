@@ -13,17 +13,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(logger log.Logger, db database.DB) gql.ComputeResolver {
-	return &Resolver{logger: logger, db: db}
+func NewResolver(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) gql.ComputeResolver {
+	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
 }
 
 type Resolver struct {
-	logger log.Logger
-	db     database.DB
+	logger         log.Logger
+	db             database.DB
+	enterpriseJobs jobutil.EnterpriseJobs
 }
 
 type computeMatchContextResolver struct {
@@ -222,7 +224,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 // NewBatchComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
+func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
 	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
@@ -235,7 +237,7 @@ func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db datab
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, enterpriseJobs, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
@@ -248,5 +250,5 @@ func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db datab
 }
 
 func (r *Resolver) Compute(ctx context.Context, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	return NewBatchComputeImplementer(ctx, r.logger, r.db, args)
+	return NewBatchComputeImplementer(ctx, r.logger, r.db, r.enterpriseJobs, args)
 }

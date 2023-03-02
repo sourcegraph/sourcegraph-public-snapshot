@@ -14,6 +14,7 @@ type Resolver struct {
 	codenavResolver          resolverstubs.CodeNavServiceResolver
 	policiesRootResolver     resolverstubs.PoliciesServiceResolver
 	uploadsRootResolver      resolverstubs.UploadsServiceResolver
+	sentinelRootResolver     resolverstubs.SentinelServiceResolver
 }
 
 func newResolver(
@@ -21,12 +22,14 @@ func newResolver(
 	codenavResolver resolverstubs.CodeNavServiceResolver,
 	policiesRootResolver resolverstubs.PoliciesServiceResolver,
 	uploadsRootResolver resolverstubs.UploadsServiceResolver,
+	sentinelRootResolver resolverstubs.SentinelServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
 		codenavResolver:          codenavResolver,
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
+		sentinelRootResolver:     sentinelRootResolver,
 	}
 }
 
@@ -45,6 +48,10 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.PreciseIndexByID(ctx, id)
 		},
 	}
+}
+
+func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {
+	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {
@@ -127,6 +134,10 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolver
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
+	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
+}
+
 func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	return r.autoIndexingRootResolver.RequestLanguageSupport(ctx, args)
 }
@@ -165,6 +176,10 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	return r.policiesRootResolver.DeleteCodeIntelligenceConfigurationPolicy(ctx, args)
+}
+
+func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
 }
 
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {

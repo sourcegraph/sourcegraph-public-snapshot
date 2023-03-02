@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { serve } from 'esbuild'
+import { context as esbuildContext } from 'esbuild'
 import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
@@ -21,15 +21,18 @@ export const esbuildDevelopmentServer = async (
     // One-time build (these files only change when the monaco-editor npm package is changed, which
     // is rare enough to ignore here).
     if (!ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS) {
-        await buildMonaco(STATIC_ASSETS_PATH)
+        const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
+        await ctx.dispose()
     }
 
+    const ctx = await esbuildContext(BUILD_OPTIONS)
+
     // Start esbuild's server on a random local port.
-    const {
-        host: esbuildHost,
-        port: esbuildPort,
-        wait: esbuildStopped,
-    } = await serve({ host: 'localhost', servedir: STATIC_ASSETS_PATH }, BUILD_OPTIONS)
+    const { host: esbuildHost, port: esbuildPort } = await ctx.serve({
+        host: 'localhost',
+        servedir: STATIC_ASSETS_PATH,
+    })
 
     // Start a proxy at :3080. Asset requests (underneath /.assets/) go to esbuild; all other
     // requests go to the upstream.
@@ -57,7 +60,6 @@ export const esbuildDevelopmentServer = async (
         proxyServer.once('listening', () => {
             signale.success(`esbuild server is ready after ${Math.round(performance.now() - start)}ms`)
             printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
-            esbuildStopped.finally(() => proxyServer.close(error => (error ? reject(error) : resolve())))
         })
         proxyServer.once('error', error => reject(error))
     })

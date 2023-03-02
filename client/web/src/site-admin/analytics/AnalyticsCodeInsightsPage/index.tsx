@@ -1,7 +1,6 @@
 import React, { useMemo, useEffect } from 'react'
 
 import { startCase } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, Text, LineChart, Series, H2 } from '@sourcegraph/wildcard'
@@ -37,7 +36,7 @@ export const calculateMinutesSaved = (data: typeof MinutesSaved): number =>
     data.LanguageSeries * MinutesSaved.LanguageSeries +
     data.ComputeSeries * MinutesSaved.ComputeSeries
 
-export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentProps> = () => {
+export const AnalyticsCodeInsightsPage: React.FunctionComponent = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Insights', aggregation: 'count' })
     const { data, error, loading } = useQuery<InsightsStatisticsResult, InsightsStatisticsVariables>(
         INSIGHTS_STATISTICS,

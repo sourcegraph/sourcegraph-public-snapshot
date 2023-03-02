@@ -21,6 +21,7 @@ pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
+use crate::sg_treesitter::treesitter_language;
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
 
@@ -37,7 +38,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -70,7 +71,7 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub enum SyntaxEngine {
     #[default]
     #[serde(rename = "syntect")]
@@ -80,7 +81,7 @@ pub enum SyntaxEngine {
     TreeSitter,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ScipHighlightQuery {
     // Which highlighting engine to use.
     pub engine: SyntaxEngine,
@@ -106,9 +107,19 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Err(_) => "".to_owned(),
     });
 
-    // We normalize all the filenames here
+    // Normalize all the filenames here
     match filetype.as_str() {
+        "Rust Enhanced" => "rust",
+        "C++" => "cpp",
         "C#" => "c_sharp",
+        "JS Custom - React" => "javascript",
+        "TypeScriptReact" => {
+            if q.filepath.ends_with(".tsx") {
+                "tsx"
+            } else {
+                "typescript"
+            }
+        }
         filetype => filetype,
     }
     .to_lowercase()
@@ -160,11 +171,18 @@ pub fn determine_language<'a>(
         prefix_langs: Vec<(&'static str, &'static str)>,
         default: &'static str,
     }
-    let overrides = vec![Override {
-        extension: "cls",
-        prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
-        default: "Apex",
-    }];
+    let overrides = vec![
+        Override {
+            extension: "cls",
+            prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+            default: "Apex",
+        },
+        Override {
+            extension: "xlsg",
+            prefix_langs: vec![],
+            default: "xlsg",
+        },
+    ];
 
     if let Some(Override {
         prefix_langs,
@@ -285,7 +303,7 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            match treesitter_index(&language, &q.code) {
+            match treesitter_index(treesitter_language(&language), &q.code) {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 

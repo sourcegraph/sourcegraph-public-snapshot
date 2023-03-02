@@ -1,15 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { History } from 'history'
-import { Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { BrowserRouter, NavigateFunction, useLocation } from 'react-router-dom'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { globalHistory } from '../../../util/globalHistory'
-
 interface CodeMirrorContainerProps {
-    history: History
+    navigate: NavigateFunction
     onMount?: () => void
     onRender?: () => void
 }
@@ -19,6 +15,7 @@ interface CodeMirrorContainerProps {
  * CodeMirror.
  */
 export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildren<CodeMirrorContainerProps>> = ({
+    navigate,
     onMount,
     onRender,
     children,
@@ -30,9 +27,26 @@ export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Router history={globalHistory}>
-                <CompatRouter>{children}</CompatRouter>
-            </Router>
+            <BrowserRouter>
+                {children}
+                <SyncInnerRouterWithParent navigate={navigate} />
+            </BrowserRouter>
         </WildcardThemeContext.Provider>
     )
+}
+
+const SyncInnerRouterWithParent: React.FC<{ navigate: NavigateFunction }> = ({ navigate }) => {
+    const initialLocation = useState(useLocation())[0]
+    const location = useLocation()
+    useEffect(() => {
+        if (
+            location.hash === initialLocation.hash &&
+            location.pathname === initialLocation.pathname &&
+            location.search === initialLocation.search
+        ) {
+            return
+        }
+        navigate(location)
+    }, [location, navigate, initialLocation])
+    return null
 }

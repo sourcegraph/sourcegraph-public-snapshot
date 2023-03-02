@@ -27,6 +27,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *store) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, err
+	}
+	conds = append(conds, authzConds)
+
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getIndexersQuery, sqlf.Join(conds, "AND"))))
+}
+
+const getIndexersQuery = `
+WITH
+combined_indexers AS (
+	SELECT u.indexer, u.repository_id FROM lsif_uploads u
+	UNION
+	SELECT u.indexer, u.repository_id FROM lsif_indexes u
+)
+SELECT DISTINCT u.indexer
+FROM combined_indexers u
+JOIN repo r ON r.id = u.repository_id
+WHERE
+	%s AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
+`
+
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
@@ -46,8 +82,14 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	query := sqlf.Sprintf(
-		getUploadsQuery,
+		getUploadsSelectQuery,
 		buildCTEPrefix(cte),
 		tableExpr,
 		sqlf.Join(conds, " AND "),
@@ -55,18 +97,31 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		opts.Limit,
 		opts.Offset,
 	)
-	uploads, totalCount, err = scanUploadsWithCount(s.db.Query(ctx, query))
+	uploads, err = scanUploadComplete(tx.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numUploads", len(uploads)))
+
+	countQuery := sqlf.Sprintf(
+		getUploadsCountQuery,
+		buildCTEPrefix(cte),
+		tableExpr,
+		sqlf.Join(conds, " AND "),
+	)
+	totalCount, _, err = basestore.ScanFirstInt(tx.db.Query(ctx, countQuery))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("totalCount", totalCount),
-		attribute.Int("numUploads", len(uploads)))
+	)
 
 	return uploads, totalCount, nil
 }
 
-const getUploadsQuery = `
+const getUploadsSelectQuery = `
 %s -- Dynamic CTE definitions for use in the WHERE clause
 SELECT
 	u.id,
@@ -92,13 +147,22 @@ SELECT
 	u.content_type,
 	u.should_reindex,
 	s.rank,
-	u.uncompressed_size,
-	COUNT(*) OVER() AS count
+	u.uncompressed_size
 FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+WHERE %s
+ORDER BY %s
+LIMIT %d OFFSET %d
+`
+
+const getUploadsCountQuery = `
+%s -- Dynamic CTE definitions for use in the WHERE clause
+SELECT COUNT(*) AS count
+FROM %s
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
 `
 
 const uploadRankQueryFragment = `
@@ -2051,6 +2115,15 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		)`, opts.DependentOf))
 	}
 
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
+
 	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")
 	if allowDeletedUploads {
 		cteDefinitions = append(cteDefinitions, cteDefinition{
@@ -2107,6 +2180,8 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 	if !opts.AllowDeletedRepo {
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
+	// Never show uploads for deleted repos
+	conds = append(conds, sqlf.Sprintf("repo.blocked IS NULL"))
 
 	return sourceTableExpr, conds, cteDefinitions
 }

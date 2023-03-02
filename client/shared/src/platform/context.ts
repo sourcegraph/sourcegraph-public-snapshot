@@ -3,7 +3,7 @@ import { isObject } from 'lodash'
 import { Observable, Subscribable, Subscription } from 'rxjs'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
-import { ErrorLike, hasProperty } from '@sourcegraph/common'
+import { hasProperty } from '@sourcegraph/common'
 import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
@@ -129,22 +129,6 @@ export interface PlatformContext {
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
     createExtensionHost: () => Promise<ClosableEndpointPair>
-
-    /**
-     * Returns the script URL suitable for passing to importScripts for an extension's bundle.
-     *
-     * This is necessary because some platforms (such as Chrome extensions) use a script-src CSP
-     * that would prevent loading bundles from arbitrary URLs, which requires us to pass blob: URIs
-     * to importScripts.
-     *
-     * @param bundleURL The URL to the JavaScript bundle file specified in the extension manifest.
-     * @returns A script URL suitable for passing to importScripts, typically either the original
-     * https:// URL for the extension's bundle or a blob: URI for it.
-     *
-     * TODO(tj): If this doesn't return a getScriptURLForExtension function, the original bundleURL will be used.
-     * Also, make getScriptURL batched to minimize round trips between extension host and client application
-     */
-    getScriptURLForExtension: () => undefined | ((bundleURL: string[]) => Promise<(string | ErrorLike)[]>)
 
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.

@@ -1,10 +1,10 @@
 import { FC, useContext } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useExperimentalFeatures } from '../../../../../stores'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../routers.constant'
@@ -32,11 +32,11 @@ interface InsightCreationPageProps extends TelemetryProps {
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
 
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
@@ -47,22 +47,22 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const handleInsightSuccessfulCreation = (): void => {
         if (!dashboardId) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/all')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboardId}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const handleCancel = (): void => {
         if (!dashboardId) {
-            history.push('/insights/all')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboardId}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const backCreateUrl = encodeDashboardIdQueryParam('/insights/create', dashboardId)

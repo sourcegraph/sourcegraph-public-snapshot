@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -28,30 +28,30 @@ func TestRoleGet(t *testing.T) {
 
 	roleName := "OPERATOR"
 	createdRole, err := store.Create(ctx, roleName, true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("without role ID or name", func(t *testing.T) {
 		_, err := store.Get(ctx, GetRoleOpts{})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing id or name")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing id or name")
 	})
 
 	t.Run("with role ID", func(t *testing.T) {
 		role, err := store.Get(ctx, GetRoleOpts{
 			ID: createdRole.ID,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, role.ID, createdRole.ID)
-		assert.Equal(t, role.Name, createdRole.Name)
+		require.NoError(t, err)
+		require.Equal(t, role.ID, createdRole.ID)
+		require.Equal(t, role.Name, createdRole.Name)
 	})
 
 	t.Run("with role name", func(t *testing.T) {
 		role, err := store.Get(ctx, GetRoleOpts{
 			Name: roleName,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, role.ID, createdRole.ID)
-		assert.Equal(t, role.Name, createdRole.Name)
+		require.NoError(t, err)
+		require.Equal(t, role.ID, createdRole.ID)
+		require.Equal(t, role.Name, createdRole.Name)
 	})
 }
 
@@ -62,13 +62,13 @@ func TestRoleList(t *testing.T) {
 	store := db.Roles()
 
 	roles, total := createTestRoles(ctx, t, store)
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 
-	_, err := db.UserRoles().Create(ctx, CreateUserRoleOpts{
+	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: roles[0].ID,
 		UserID: user.ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	firstParam := 100
 
@@ -79,9 +79,9 @@ func TestRoleList(t *testing.T) {
 			},
 		})
 
-		assert.NoError(t, err)
-		assert.LessOrEqual(t, len(allRoles), firstParam)
-		assert.Len(t, allRoles, total+numberOfSystemRoles)
+		require.NoError(t, err)
+		require.LessOrEqual(t, len(allRoles), firstParam)
+		require.Len(t, allRoles, total+numberOfSystemRoles)
 	})
 
 	t.Run("system roles", func(t *testing.T) {
@@ -91,8 +91,8 @@ func TestRoleList(t *testing.T) {
 			},
 			System: true,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, allSystemRoles, numberOfSystemRoles)
+		require.NoError(t, err)
+		require.Len(t, allSystemRoles, numberOfSystemRoles)
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
@@ -103,8 +103,8 @@ func TestRoleList(t *testing.T) {
 			},
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, roles, firstParam)
+		require.NoError(t, err)
+		require.Len(t, roles, firstParam)
 	})
 
 	t.Run("user roles", func(t *testing.T) {
@@ -114,9 +114,10 @@ func TestRoleList(t *testing.T) {
 			},
 			UserID: user.ID,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, userRoles, 1)
-		assert.Equal(t, userRoles[0].ID, roles[0].ID)
+		require.NoError(t, err)
+
+		require.Len(t, userRoles, 1)
+		require.Equal(t, userRoles[0].ID, roles[0].ID)
 	})
 }
 
@@ -128,7 +129,7 @@ func TestRoleCreate(t *testing.T) {
 	store := db.Roles()
 
 	_, err := store.Create(ctx, "TESTOLE", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRoleCount(t *testing.T) {
@@ -137,20 +138,20 @@ func TestRoleCount(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Roles()
 
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 	roles, total := createTestRoles(ctx, t, store)
 
-	_, err := db.UserRoles().Create(ctx, CreateUserRoleOpts{
+	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: roles[0].ID,
 		UserID: user.ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("all roles", func(t *testing.T) {
 		count, err := store.Count(ctx, RolesListOptions{})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, total+numberOfSystemRoles)
+		require.NoError(t, err)
+		require.Equal(t, count, total+numberOfSystemRoles)
 	})
 
 	t.Run("system roles", func(t *testing.T) {
@@ -158,8 +159,8 @@ func TestRoleCount(t *testing.T) {
 			System: true,
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, numberOfSystemRoles)
+		require.NoError(t, err)
+		require.Equal(t, count, numberOfSystemRoles)
 	})
 
 	t.Run("user roles", func(t *testing.T) {
@@ -167,8 +168,8 @@ func TestRoleCount(t *testing.T) {
 			UserID: user.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, 1)
+		require.NoError(t, err)
+		require.Equal(t, count, 1)
 	})
 }
 
@@ -184,20 +185,20 @@ func TestRoleUpdate(t *testing.T) {
 		nonExistentRoleID := int32(1234)
 		role := types.Role{ID: nonExistentRoleID, Name: "Random Role"}
 		updated, err := store.Update(ctx, &role)
-		assert.Error(t, err)
-		assert.Nil(t, updated)
-		assert.Equal(t, err, &RoleNotFoundErr{ID: role.ID})
+		require.Error(t, err)
+		require.Nil(t, updated)
+		require.Equal(t, err, &RoleNotFoundErr{ID: role.ID})
 	})
 
 	t.Run("existing role", func(t *testing.T) {
 		role, err := createTestRole(ctx, "TEST ROLE 1", false, t, store)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		role.Name = "TEST ROLE 2"
 		updated, err := store.Update(ctx, role)
-		assert.NoError(t, err)
-		assert.NotNil(t, updated)
-		assert.Equal(t, role.Name, "TEST ROLE 2")
+		require.NoError(t, err)
+		require.NotNil(t, updated)
+		require.Equal(t, role.Name, "TEST ROLE 2")
 	})
 }
 
@@ -211,28 +212,28 @@ func TestRoleDelete(t *testing.T) {
 
 	t.Run("no ID", func(t *testing.T) {
 		err := store.Delete(ctx, DeleteRoleOpts{})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing id from sql query")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing id from sql query")
 	})
 
 	t.Run("existing role", func(t *testing.T) {
 		role, err := createTestRole(ctx, "TEST ROLE 1", false, t, store)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = store.Delete(ctx, DeleteRoleOpts{ID: role.ID})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		r, err := store.Get(ctx, GetRoleOpts{ID: role.ID})
-		assert.Error(t, err)
-		assert.Equal(t, err, &RoleNotFoundErr{role.ID})
-		assert.Nil(t, r)
+		require.Error(t, err)
+		require.Equal(t, err, &RoleNotFoundErr{role.ID})
+		require.Nil(t, r)
 	})
 
 	t.Run("non-existent role", func(t *testing.T) {
 		nonExistentRoleID := int32(2381)
 		err := store.Delete(ctx, DeleteRoleOpts{ID: nonExistentRoleID})
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to delete role")
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to delete role")
 	})
 }
 
@@ -243,7 +244,7 @@ func createTestRoles(ctx context.Context, t *testing.T, store RoleStore) ([]*typ
 	name := "TESTROLE"
 	for i := 1; i <= totalRoles; i++ {
 		role, err := createTestRole(ctx, fmt.Sprintf("%s-%d", name, i), false, t, store)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		roles = append(roles, role)
 	}
 	return roles, totalRoles

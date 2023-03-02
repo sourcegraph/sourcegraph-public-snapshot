@@ -165,6 +165,7 @@ export interface MetaSelector extends BaseMetaToken {
 export enum MetaSelectorKind {
     Repo = 'repo',
     File = 'file',
+    FileOwners = 'file.owners',
     Content = 'content',
     Symbol = 'symbol',
     Commit = 'commit',
@@ -1201,7 +1202,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
-interface Decoration {
+export interface Decoration {
     value: string
     key: number
     className: string

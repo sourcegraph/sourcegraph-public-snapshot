@@ -41,8 +41,6 @@ type PermissionStore interface {
 	Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error)
 	// Delete deletes a permission with the provided ID
 	Delete(ctx context.Context, opts DeletePermissionOpts) error
-	// FetchAll returns all permissions in the database. This list is not paginated and is meant for internal use only.
-	FetchAll(ctx context.Context) ([]*types.Permission, error)
 	// GetByID returns the permission matching the given ID, or PermissionNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetPermissionOpts) (*types.Permission, error)
 	// List returns all the permissions in the database that matches the options.
@@ -50,7 +48,7 @@ type PermissionStore interface {
 }
 
 type CreatePermissionOpts struct {
-	Namespace string
+	Namespace types.PermissionNamespace
 	Action    string
 }
 
@@ -106,6 +104,10 @@ func (p *permissionStore) WithTransact(ctx context.Context, f func(PermissionSto
 }
 
 func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error) {
+	if opts.Action == "" || !opts.Namespace.Valid() {
+		return nil, errors.New("valid action and namespace is required")
+	}
+
 	q := sqlf.Sprintf(
 		permissionCreateQueryFmtStr,
 		sqlf.Join(permissionInsertColumns, ", "),
@@ -138,6 +140,9 @@ func scanPermission(sc dbutil.Scanner) (*types.Permission, error) {
 func (p *permissionStore) BulkCreate(ctx context.Context, opts []CreatePermissionOpts) ([]*types.Permission, error) {
 	var values []*sqlf.Query
 	for _, opt := range opts {
+		if !opt.Namespace.Valid() {
+			return nil, errors.New("valid namespace is required")
+		}
 		values = append(values, sqlf.Sprintf("(%s, %s)", opt.Namespace, opt.Action))
 	}
 
@@ -250,32 +255,6 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 	}
 
 	return permission, nil
-}
-
-func (p *permissionStore) FetchAll(ctx context.Context) ([]*types.Permission, error) {
-	query := sqlf.Sprintf(
-		"SELECT %s FROM permissions",
-		sqlf.Join(permissionColumns, ", "),
-	)
-
-	rows, err := p.Query(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
-	}
-
-	defer rows.Close()
-
-	var permissions []*types.Permission
-	for rows.Next() {
-		permission, err := scanPermission(rows)
-		if err != nil {
-			return nil, errors.Wrap(err, "scanning permission")
-		}
-
-		permissions = append(permissions, permission)
-	}
-
-	return permissions, rows.Err()
 }
 
 const permissionListQueryFmtStr = `

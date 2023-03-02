@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
     mdiFileDocumentOutline,
     mdiSourceRepository,
@@ -8,7 +9,7 @@ import {
     mdiFolderArrowUp,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -60,6 +61,7 @@ const QUERY = gql`
         }
     }
 `
+const APOLLO_QUERY = apolloGql(QUERY)
 
 // TODO(philipp-spiess): Figure out why we can't use a GraphQL fragment here.
 // The issue is that on `TreeEntry` does not match because the type is either
@@ -73,10 +75,6 @@ type FileTreeEntry = Extract<
 >['entries'][number]
 
 interface Props {
-    // Instead of showing a `..` indicator and only loading the current dirs
-    // entries, it will use the Ancestors query to load all entries of all
-    // parent directories.
-    alwaysLoadAncestors: boolean
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -88,13 +86,20 @@ interface Props {
     telemetryService: TelemetryService
 }
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
+    const { telemetryService, onExpandParent } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
         props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
     )
     const [treeData, setTreeData] = useState<TreeData | null>(null)
+
+    // We need a mutable reference to the tree data since we don't want some
+    // hooks to run when the tree data changes.
+    const treeDataRef = useRef<TreeData | null>(treeData)
+    useEffect(() => {
+        treeDataRef.current = treeData
+    }, [treeData])
 
     const defaultNodeId = treeData?.pathToId.get(props.initialFilePath)
     const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
@@ -110,9 +115,9 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             : []
 
     const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds)
+    const [expandedIds, setExpandedIds] = useState<number[]>(defaultExpandedIds)
 
     const navigate = useNavigate()
-    const location = useLocation()
 
     const [defaultVariables] = useState({
         repoName: props.repoName,
@@ -121,29 +126,57 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         first: MAX_TREE_ENTRIES,
     })
 
-    const { error, loading, refetch } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
+    const { data, error, loading } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
         variables: {
             ...defaultVariables,
             filePath: initialFilePath,
-            ancestors: alwaysLoadAncestors,
-        },
-        onCompleted(data) {
-            const rootTreeUrl = data?.repository?.commit?.tree?.url ?? location.pathname
-            const entries = data?.repository?.commit?.tree?.entries ?? []
-            if (treeData === null) {
-                setTreeData(
-                    appendTreeData(
-                        createTreeData(alwaysLoadAncestors ? '' : initialFilePath),
-                        entries,
-                        rootTreeUrl,
-                        alwaysLoadAncestors
-                    )
-                )
-            } else {
-                setTreeData(treeData => appendTreeData(treeData!, entries, rootTreeUrl, alwaysLoadAncestors))
-            }
+            ancestors: false,
         },
     })
+
+    const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
+        const rootTreeUrl = data?.repository?.commit?.tree?.url
+        const entries = data?.repository?.commit?.tree?.entries
+
+        if (rootTreeUrl === undefined || entries === undefined) {
+            return
+        }
+
+        const nextTreeData = appendTreeData(currentTreeData, entries, rootTreeUrl)
+
+        setTreeData(nextTreeData)
+        // Eagerly update the ref so that the selected path syncing can
+        // use the new data before the tree is re-rendered.
+        treeDataRef.current = nextTreeData
+    }, [])
+
+    // Initialize the treeData from the initial query
+    // We use a layout effect here because the data can be available in the first render pass and
+    // we want to avoid showing a loading indicator in that case.
+    useLayoutEffect(() => {
+        if (data === undefined || treeData !== null) {
+            return
+        }
+
+        updateTreeData(createTreeData(initialFilePath), data)
+    }, [data, initialFilePath, treeData, updateTreeData])
+
+    const client = useApolloClient()
+    const fetchEntries = useCallback(
+        async (variables: FileTreeEntriesVariables) => {
+            const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
+                query: APOLLO_QUERY,
+                variables,
+            })
+
+            if (!treeDataRef.current) {
+                return
+            }
+
+            updateTreeData(treeDataRef.current, result.data)
+        },
+        [client, updateTreeData]
+    )
 
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
@@ -154,7 +187,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
 
             telemetryService.log('FileTreeLoadDirectory')
-            await refetch({
+            await fetchEntries({
                 ...defaultVariables,
                 filePath: fullPath,
                 ancestors: false,
@@ -162,7 +195,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
-        [defaultVariables, refetch, treeData?.loadedIds, telemetryService]
+        [defaultVariables, fetchEntries, treeData?.loadedIds, telemetryService]
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
@@ -215,28 +248,96 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         ]
     )
 
-    // We need a mutable reference to the tree data since we don't want the
-    // below hook to run when the tree data changes.
-    const treeDataRef = useRef<TreeData | null>(treeData)
     useEffect(() => {
-        treeDataRef.current = treeData
-    }, [treeData])
-    useEffect(() => {
-        const id = treeDataRef.current?.pathToId.get(props.filePath)
-        if (id) {
-            setSelectedIds([id])
-        } else {
+        if (loading || error) {
+            return
+        }
+        const treeData = treeDataRef.current
+        if (!treeData) {
+            return
+        }
+
+        function selectAndExpandPathToNode(path: string): boolean {
+            const treeData = treeDataRef.current
+            if (!treeData) {
+                return false
+            }
+            const id = treeData.pathToId.get(path)
+            if (id) {
+                const allParents = getAllParentsOfPath(treeData, path)
+                setSelectedIds([id])
+                setExpandedIds(expandedIds => {
+                    allParents.map(node => {
+                        if (!expandedIds.includes(node.id)) {
+                            expandedIds = [...expandedIds, node.id]
+                        }
+                    })
+                    return expandedIds
+                })
+
+                return true
+            }
+            return false
+        }
+
+        if (!selectAndExpandPathToNode(props.filePath)) {
             // When a file is opened that is not inside the tree, we want the tree
             // to expand to the parent directory of the file.
             let path = props.filePathIsDirectory ? props.filePath : dirname(props.filePath)
             if (path === '.') {
                 path = ''
             }
-            if (props.initialFilePath.length > path.length && props.initialFilePath.startsWith(path)) {
+
+            const rootPath = treeData.rootPath ?? ''
+
+            if (!path.startsWith(rootPath)) {
                 onExpandParent(path)
+            } else if (path !== rootPath) {
+                fetchEntries({
+                    ...defaultVariables,
+                    filePath: path,
+                    // The file can be anywhere in the tree so we need to load all ancestors
+                    ancestors: true,
+                }).then(
+                    () => selectAndExpandPathToNode(props.filePath),
+                    // eslint-disable-next-line no-console
+                    error => console.error(error)
+                )
             }
         }
-    }, [onExpandParent, props.filePath, props.filePathIsDirectory, props.initialFilePath])
+    }, [
+        onExpandParent,
+        props.filePath,
+        props.filePathIsDirectory,
+        props.initialFilePath,
+        loading,
+        error,
+        fetchEntries,
+        defaultVariables,
+    ])
+
+    // Is expanded is called when we updated the expanded IDs or when the user interacts with a tree
+    // item. To find out what the next expandedIds state should be, we compare the new expanded
+    // state from the UI with our controlled variable and only update the controlled value if it
+    // does not match it.
+    //
+    // This effectively makes the UI the source of truth.
+    const onExpand = useCallback(
+        ({ element, isExpanded: shouldBeExpanded }: { element: TreeNode; isExpanded: boolean }) => {
+            const id = element.id
+            setExpandedIds(expandedIds => {
+                const isExpanded = expandedIds.includes(id)
+                if (shouldBeExpanded && !isExpanded) {
+                    return [...expandedIds, id]
+                }
+                if (!shouldBeExpanded && isExpanded) {
+                    return expandedIds.filter(_id => _id !== id)
+                }
+                return expandedIds
+            })
+        },
+        []
+    )
 
     if (error) {
         return (
@@ -245,7 +346,12 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             </Alert>
         )
     }
-    if (loading || treeData === null) {
+
+    // The loading flag might be true when a sub directory is loaded (as we have to set
+    // `notifyOnNetworkStatusChange` in order to get `onComplete` callbacks to fire). So instead of
+    // relying on this, we check wether we have tree data which is only unset before the first
+    // successful request.
+    if (treeData === null) {
         return <LoadingSpinner />
     }
 
@@ -254,7 +360,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             data={treeData.nodes}
             aria-label="file tree"
             selectedIds={selectedIds}
-            defaultExpandedIds={defaultExpandedIds}
+            expandedIds={expandedIds}
+            onExpand={onExpand}
             onSelect={onSelect}
             onLoadData={onLoadData}
             renderNode={renderNode}
@@ -404,17 +511,12 @@ function createTreeData(root: string): TreeData {
     }
 }
 
-function appendTreeData(
-    tree: TreeData,
-    entries: FileTreeEntry[],
-    rootTreeUrl: string,
-    alwaysLoadAncestors: boolean
-): TreeData {
+function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: string): TreeData {
     tree = { ...tree, nodes: [...tree.nodes], pathToId: new Map(tree.pathToId) }
 
     const isNewTree = tree.nodes.length === 0
     if (isNewTree) {
-        insertRootNode(tree, rootTreeUrl, alwaysLoadAncestors)
+        insertRootNode(tree, rootTreeUrl)
     }
 
     // Bookkeeping for single child expansion:
@@ -465,6 +567,13 @@ function appendTreeData(
                 singleChildParentPathForPath = [singleChildParentPathForPath[0], entry.path]
             }
             singleChildFolderPath.push(entry.name)
+
+            // Store the path id in our lookup map and point to the single child
+            // parent (where this path name will be appended to)
+            const parentId = tree.pathToId.get(singleChildParentPathForPath[0])
+            if (parentId) {
+                tree.pathToId.set(entry.path, parentId)
+            }
 
             // Single child entries are not rendered, so we're skipping over
             // them.
@@ -536,7 +645,7 @@ function appendTreeData(
     return tree
 }
 
-function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors: boolean): void {
+function insertRootNode(tree: TreeData, rootTreeUrl: string): void {
     const root: TreeNode = {
         name: tree.rootPath,
         id: 0,
@@ -552,7 +661,7 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
     tree.nodes.push(root)
     tree.pathToId.set(tree.rootPath, 0)
 
-    if (!alwaysLoadAncestors && tree.rootPath !== '') {
+    if (tree.rootPath !== '') {
         const id = tree.nodes.length
         const parentPathName = getParentPath(tree.rootPath)
         const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()!

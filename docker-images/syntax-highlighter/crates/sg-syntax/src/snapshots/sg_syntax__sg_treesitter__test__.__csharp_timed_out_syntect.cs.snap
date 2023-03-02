@@ -87,7 +87,7 @@ expression: "dump_document(&document, &contents)"
           {
               using var ctx = new TestContext();
 //            ^^^^^ IdentifierKeyword 
-//                  ^^^ IdentifierType 
+//                  ^^^ IdentifierBuiltinType 
 //                      ^^^ Identifier 
 //                          ^ IdentifierOperator 
 //                            ^^^ IdentifierKeyword 
@@ -107,7 +107,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                              ^ StringLiteral 
 //                                                                                ^ PunctuationDelimiter 
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
-//            ^^^ IdentifierType 
+//            ^^^ IdentifierBuiltinType 
 //                ^^^^^^^^^ Identifier 
 //                          ^ IdentifierOperator 
 //                               ^ PunctuationDelimiter 
@@ -250,7 +250,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                               ^ PunctuationDelimiter 
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
-//            ^^^ IdentifierType 
+//            ^^^ IdentifierBuiltinType 
 //                ^^^^^^^^^ Identifier 
 //                          ^ IdentifierOperator 
 //                               ^ PunctuationDelimiter 
@@ -372,7 +372,7 @@ expression: "dump_document(&document, &contents)"
 //              ^ PunctuationDelimiter 
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
-//            ^^^ IdentifierType 
+//            ^^^ IdentifierBuiltinType 
 //                ^^^^^^ Identifier 
 //                       ^ IdentifierOperator 
 //                         ^^^ IdentifierKeyword 

@@ -126,6 +126,7 @@ export function codeFoldingExtension(): Extension {
         foldGutter({
             markerDOM(open: boolean): HTMLElement {
                 const container = document.createElement('div')
+                container.classList.add('fold-marker')
                 const root = createRoot(container)
                 root.render(
                     <Icon aria-hidden={true} svgPath={open ? mdiMenuDown : mdiMenuRight} className="fold-icon" />
@@ -158,7 +159,7 @@ export function codeFoldingExtension(): Extension {
         })),
 
         EditorView.theme({
-            '.cm-foldGutter': {
+            '.cm-foldGutter .fold-marker': {
                 height: '1rem',
                 width: '1rem',
             },

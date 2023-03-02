@@ -565,13 +565,13 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // page is the page of results to return, and is 1-indexed (so the first call should be
 // for page 1).
 // visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, perPage int, affiliations ...RepositoryAffiliation) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
-	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=%d", visibility, page, perPage)
 	if len(affiliations) > 0 {
 		affilationsStrings := make([]string, 0, len(affiliations))
 		for _, affiliation := range affiliations {
@@ -705,6 +705,15 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, respState.hasNextPage(), nil
+}
+
+func (c *V3Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	var restRepo restRepository
+	if _, err := c.get(ctx, "repos/"+owner+"/"+repo, &restRepo); err != nil {
+		return nil, err
+	}
+
+	return convertRestRepo(restRepo), nil
 }
 
 // Fork forks the given repository. If org is given, then the repository will

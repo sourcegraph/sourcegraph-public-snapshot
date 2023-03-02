@@ -30,7 +30,6 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
 	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
@@ -133,11 +132,17 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
-	// Write script that invokes universal-ctags via Docker.
-	// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
-	ctagsPath := filepath.Join(cacheDir, "universal-ctags-dev")
-	writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-	setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+
+	// generate a shell script to run a ctags Docker image
+	// unless the environment is already set up to find ctags
+	ctagsPath := os.Getenv("CTAGS_COMMAND")
+	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
+		// Write script that invokes universal-ctags via Docker.
+		// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
+		ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+		writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+		setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+	}
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.
@@ -148,6 +153,7 @@ const universalCtagsDevScript = `#!/usr/bin/env bash
 exec docker run --rm -i \
     -a stdin -a stdout -a stderr \
     --user guest \
+    --platform=linux/amd64 \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"

@@ -1,32 +1,97 @@
-import { FC, useState } from 'react'
+import { FC, ReactElement, useCallback, useMemo } from 'react'
 
-import { H1, H2 } from '@sourcegraph/wildcard'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { H1, H2, Text } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { PageTitle } from '../components/PageTitle'
+import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
 
-import { SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
+import { RemoteRepositoriesStep } from './components/remote-repositories-step'
+import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
 
 import styles from './Setup.module.scss'
 
-export const SetupWizard: FC = props => {
-    const [step, setStep] = useState(0)
+const CORE_STEPS: StepConfiguration[] = [
+    {
+        id: 'remote-repositoires',
+        name: 'Add remote repositories',
+        path: '/setup/remote-repositories',
+        component: RemoteRepositoriesStep,
+    },
+    {
+        id: 'sync-repositories',
+        name: 'Sync repositories',
+        path: '/setup/sync-repositories',
+        nextURL: '/search',
+        component: SyncRepositoriesStep,
+    },
+]
+
+const SOURCEGRAPH_APP_STEPS = [
+    {
+        id: 'local-repositories',
+        name: 'Add local repositories',
+        path: '/setup/local-repositories',
+        component: LocalRepositoriesStep,
+    },
+    ...CORE_STEPS,
+]
+
+interface SetupWizardProps {
+    isSourcegraphApp: boolean
+}
+
+export const SetupWizard: FC<SetupWizardProps> = props => {
+    const { isSourcegraphApp } = props
+
+    const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
+    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
+
+    const handleStepChange = useCallback(
+        (step: StepConfiguration): void => {
+            setStepId(step.id)
+        },
+        [setStepId]
+    )
+
+    if (status !== 'loaded') {
+        return null
+    }
 
     return (
         <div className={styles.root}>
-            <header className={styles.header}>
-                <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
+            <PageTitle title="Setup" />
+            <SetupStepsRoot initialStepId={activeStepId} steps={steps} onStepChange={handleStepChange}>
+                <div className={styles.content}>
+                    <header className={styles.header}>
+                        <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
-                <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
-                    Welcome to Sourcegraph! Let's get your instance ready.
-                </H2>
-            </header>
+                        <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
+                            Welcome to Sourcegraph! Let's get started.
+                        </H2>
+                    </header>
 
-            <SetupTabs activeTabIndex={step} defaultActiveIndex={0} onTabChange={setStep}>
-                <SetupList wrapperClassName="border-bottom-0">
-                    <SetupTab index={0}>Add code hosts</SetupTab>
-                    <SetupTab index={1}>Sync repositories</SetupTab>
-                </SetupList>
-            </SetupTabs>
+                    <SetupStepsContent />
+                </div>
+
+                <SetupStepsFooter className={styles.footer} />
+            </SetupStepsRoot>
         </div>
+    )
+}
+
+function LocalRepositoriesStep(props: any): ReactElement {
+    return <H2 {...props}>Hello local repositories step</H2>
+}
+
+function SyncRepositoriesStep(props: any): ReactElement {
+    return (
+        <section {...props}>
+            <Text className="mb-2">
+                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
+            </Text>
+            <SiteAdminRepositoriesContainer />
+        </section>
     )
 }

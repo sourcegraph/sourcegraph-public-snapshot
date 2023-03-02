@@ -32,8 +32,7 @@ A single job should have the following resources available.
 - **Memory:** 12GB
 - **Disk:** 20GB
 
-So, if you expect an Executor instance to process up to 4 jobs in parallel, the recommended resources for the machine
-are
+So, if you expect an Executor instance to process up to 4 jobs in parallel, the recommended resources for the machine are
 
 - **CPU:** 16
 - **Memory:** 48GB
@@ -46,12 +45,12 @@ The above recommended resources can be changed to fit your constraints. See belo
 
 #### Job Configuration
 
-The maximum number of Jobs an Executor instance can run in parallel is configured by the Environment
-Variable `EXECUTOR_MAXIMUM_NUM_JOBS`.
+The maximum number of Jobs an Executor instance can run in parallel is configured by the Environment Variable `EXECUTOR_MAXIMUM_NUM_JOBS`.
 
 The CPU and Memory usage of an individual Job is configured by the Environment Variables `EXECUTOR_JOB_NUM_CPUS`
-and `EXECUTOR_JOB_MEMORY`. See [Environment Variables](./deploy_executors_binary.md#step-2-setup-environment-variables)
-for additional Environment Variables.
+and `EXECUTOR_JOB_MEMORY`. 
+
+See [Environment Variables](./deploy_executors_binary.md#step-2-setup-environment-variables) for additional Environment Variables.
 
 <sub>Note: changing CPU and Memory for jobs will affect the overall requirements for an Executor instance.</sub>
 
@@ -69,9 +68,8 @@ It is recommended to add the following **Disk** configuration in AWS.
 
 #### Firecracker Requirements
 
-To run Executors with Firecracker enabled requires the machine to
-support [Kernel-based Virtual Machine](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine).
-See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines.
+To run Executors with Firecracker enabled requires the machine to support [Kernel-based Virtual Machine](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine).
+See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines. 
 
 ##### Cloud Providers
 
@@ -105,6 +103,19 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
   <a class="btn-app btn" href="/admin/deploy_executors_binary">
     <h3>Install executor on your machine</h3>
     <p>Run executors on any linux amd64 machine.</p>
+  </a>
+</div>
+
+<div class="grid">
+  <a class="btn-app btn" href="/admin/deploy_executors_kubernetes">
+    <h3>Kubernetes</h3>
+    <p>Run executors on kubernetes</p>
+    <p>Requires privileged access to a container runtime.</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy_executors_docker">
+    <h3>Docker Compose</h3>
+    <p>Run executors on any linux amd64 machine with docker-compose</p>
+    <p>Requires privileged access to a container runtime.</p>
   </a>
 </div>
 

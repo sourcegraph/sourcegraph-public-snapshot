@@ -6,11 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -20,11 +19,9 @@ import (
 
 type Service struct {
 	store           store.Store
-	uploadSvc       *uploads.Service
+	lsifstore       lsifstore.LsifStore
 	gitserverClient GitserverClient
-	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
-	resultsBucket   *storage.BucketHandle
 	operations      *operations
 	logger          log.Logger
 }
@@ -32,19 +29,15 @@ type Service struct {
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
-	uploadSvc *uploads.Service,
+	lsifStore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
-	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
-	resultsBucket *storage.BucketHandle,
 ) *Service {
 	return &Service{
 		store:           store,
-		uploadSvc:       uploadSvc,
+		lsifstore:       lsifStore,
 		gitserverClient: gitserverClient,
-		symbolsClient:   symbolsClient,
 		getConf:         getConf,
-		resultsBucket:   resultsBucket,
 		operations:      newOperations(observationCtx),
 		logger:          observationCtx.Logger,
 	}

@@ -25,7 +25,7 @@ export enum FilterType {
     repo = 'repo',
     repohascommitafter = 'repohascommitafter',
     repohasfile = 'repohasfile',
-    // eslint-disable-next-line unicorn/prevent-abbreviations
+
     rev = 'rev',
     select = 'select',
     timeout = 'timeout',
@@ -33,7 +33,6 @@ export enum FilterType {
     visibility = 'visibility',
 }
 
-/* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     f = 'file',
     path = 'file',
@@ -135,6 +134,7 @@ export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter =>
  */
 export interface Completion {
     label: string
+    description?: string
     insertText?: string
     asSnippet?: boolean
 }
@@ -241,7 +241,20 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
+        discreteValues: () => [
+            {
+                label: 'yes',
+                description: 'Include repository forks',
+            },
+            {
+                label: 'only',
+                description: 'Only search in repository forks',
+            },
+            {
+                label: 'no',
+                description: 'Do not search in repository forks (default)',
+            },
+        ],
         description: 'Include results from forked repositories.',
         singular: true,
     },
@@ -302,7 +315,32 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to the specified type.',
-        discreteValues: () => ['diff', 'commit', 'symbol', 'repo', 'path', 'file'].map(value => ({ label: value })),
+        discreteValues: () => [
+            {
+                label: 'diff',
+                description: 'Search for file changes',
+            },
+            {
+                label: 'commit',
+                description: 'Search in commit messages',
+            },
+            {
+                label: 'symbol',
+                description: 'Search for symbol names',
+            },
+            {
+                label: 'repo',
+                description: 'Search for repositories',
+            },
+            {
+                label: 'path',
+                description: 'Search for file/directory names',
+            },
+            {
+                label: 'file',
+                description: 'Search for file content',
+            },
+        ],
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),

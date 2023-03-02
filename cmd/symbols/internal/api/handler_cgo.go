@@ -8,8 +8,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // addHandlers adds handlers that require cgo.
@@ -31,6 +34,9 @@ func (s *grpcService) LocalCodeIntel(ctx context.Context, request *proto.LocalCo
 
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
+		if errors.Is(err, squirrel.UnsupportedLanguageError) {
+			return nil, status.Error(codes.Unimplemented, err.Error())
+		}
 		return nil, err
 	}
 
@@ -52,6 +58,9 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {
+		if errors.Is(err, squirrel.UnsupportedLanguageError) {
+			return nil, status.Error(codes.Unimplemented, err.Error())
+		}
 		return nil, err
 	}
 

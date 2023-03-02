@@ -13,7 +13,7 @@ export interface CreateInsightFormFields {
     title: string
 
     /** Repositories which to be used to get the info for code insights */
-    repositories: string
+    repositories: string[]
 
     /**
      * [Experimental] Repositories UI can work in different modes when we have

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -181,7 +182,7 @@ func (s *Service) ApplyBatchChange(
 		}
 	}
 
-	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, batchChange)
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
 	return batchChange, nil
 }
 

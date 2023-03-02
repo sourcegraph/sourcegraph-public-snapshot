@@ -338,10 +338,9 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	}
 
 	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:              s.scheme,
-		Name:                packageName,
-		ExactNameOnly:       true,
-		MostRecentlyUpdated: true,
+		Scheme:        s.scheme,
+		Name:          packageName,
+		ExactNameOnly: true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")

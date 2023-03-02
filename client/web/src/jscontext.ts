@@ -1,3 +1,4 @@
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
@@ -17,11 +18,42 @@ export interface AuthProvider {
         | 'saml'
         | 'builtin'
         | 'gerrit'
+        | 'azuredevops'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
 }
+
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `CurrentAuthState` query.
+ *
+ * This type is derived from the generated `AuthenticatedUser` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export interface SourcegraphContextCurrentUser
+    extends Pick<
+        AuthenticatedUser,
+        | '__typename'
+        | 'id'
+        | 'databaseID'
+        | 'username'
+        | 'avatarURL'
+        | 'displayName'
+        | 'siteAdmin'
+        | 'tags'
+        | 'url'
+        | 'settingsURL'
+        | 'viewerCanAdminister'
+        | 'tosAccepted'
+        | 'searchable'
+        | 'organizations'
+        | 'session'
+        | 'emails'
+        | 'latestSettings'
+    > {}
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
@@ -31,6 +63,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
+    readonly currentUser: SourcegraphContextCurrentUser | null
 
     readonly sentryDSN: string | null
 
@@ -52,6 +85,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
+    sourcegraphAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -125,6 +159,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
 
+    /** Whether embeddings are enabled on this site. */
+    embeddingsEnabled: boolean
+
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
@@ -167,9 +204,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** Whether the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
-    enableLegacyExtensions?: boolean
-
     /** Contains information about the product license. */
     licenseInfo?: {
         currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
@@ -177,6 +211,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        knownLicenseTags?: string[]
     }
 
     /** Prompt users with browsers that would crash to download a modern browser. */

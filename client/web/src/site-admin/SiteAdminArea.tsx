@@ -2,8 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Switch } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -14,10 +13,10 @@ import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { RouteDescriptor } from '../util/contributions'
+import { RouteV6Descriptor } from '../util/contributions'
 
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -42,27 +41,24 @@ export interface SiteAdminAreaRouteContext
         TelemetryProps {
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
-    isLightTheme: boolean
     isSourcegraphDotCom: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 }
 
-export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
+export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
 
 interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
-    isLightTheme: boolean
     isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
-    const location = useLocation()
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -73,7 +69,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         authenticatedUser: props.authenticatedUser,
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
-        isLightTheme: props.isLightTheme,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
@@ -100,27 +95,23 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
-                    <ErrorBoundary location={location}>
-                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Switch>
-                                {props.routes.map(
-                                    ({ render, path, exact, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                key="hardcoded-key"
-                                                path={'/site-admin' + path}
-                                                exact={exact}
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                            />
-                                        )
-                                )}
-                                <Route component={NotFoundPage} />
-                            </Switch>
-                        </React.Suspense>
-                    </ErrorBoundary>
+                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                        <Routes>
+                            {props.routes.map(
+                                ({ render, path, condition = () => true }) =>
+                                    condition(context) && (
+                                        <Route
+                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            key="hardcoded-key"
+                                            errorElement={<RouteError />}
+                                            path={path}
+                                            element={render(context)}
+                                        />
+                                    )
+                            )}
+                            <Route path="*" element={<NotFoundPage />} />
+                        </Routes>
+                    </React.Suspense>
                 </div>
             </div>
         </Page>

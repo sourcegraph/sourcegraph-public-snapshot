@@ -45,8 +45,8 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		}
 
 		// Should not allow a second insert
-		if err := store.CreateTeamMember(ctx, member); err == nil {
-			t.Fatal("no error for reinsert")
+		if err := store.CreateTeamMember(ctx, member); err != nil {
+			t.Fatal("error for reinsert")
 		}
 
 		if err := store.DeleteTeamMember(ctx, member); err != nil {

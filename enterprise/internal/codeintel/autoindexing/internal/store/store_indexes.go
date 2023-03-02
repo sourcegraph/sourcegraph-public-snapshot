@@ -127,24 +127,48 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
+
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
 	if err != nil {
 		return nil, 0, err
 	}
 	conds = append(conds, authzConds)
 
-	indexes, totalCount, err := scanIndexesWithCount(tx.db.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+		getIndexesSelectQuery,
+		sqlf.Join(conds, " AND "),
+		opts.Limit,
+		opts.Offset,
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.AddEvent("scanIndexesWithCount",
+		attribute.Int("numIndexes", len(indexes)))
+
+	totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+		getIndexesCountQuery,
+		sqlf.Join(conds, " AND "),
+	)))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("scanIndexesWithCount",
 		attribute.Int("totalCount", totalCount),
-		attribute.Int("numIndexes", len(indexes)))
+	)
 
 	return indexes, totalCount, nil
 }
 
-const getIndexesQuery = `
+const getIndexesSelectQuery = `
 SELECT
 	u.id,
 	u.commit,
@@ -168,13 +192,27 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars,
-	COUNT(*) OVER() AS count
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
+ORDER BY queued_at DESC, u.id
+LIMIT %d OFFSET %d
+`
+
+const getIndexesCountQuery = `
+SELECT COUNT(*) AS count
+FROM lsif_indexes u
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
 `
 
 // DeleteIndexes deletes indexes matching the given filter criteria.

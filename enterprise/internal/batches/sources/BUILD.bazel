@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "sources",
     srcs = [
+        "azuredevops.go",
         "bitbucketcloud.go",
         "bitbucketserver.go",
         "common.go",
@@ -14,6 +15,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
@@ -21,6 +23,7 @@ go_library(
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
@@ -42,6 +45,7 @@ go_library(
 go_test(
     name = "sources_test",
     srcs = [
+        "azuredevops_test.go",
         "bitbucketcloud_test.go",
         "bitbucketserver_test.go",
         "github_test.go",
@@ -53,6 +57,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":sources"],
     deps = [
+        "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
@@ -61,6 +66,7 @@ go_test(
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",

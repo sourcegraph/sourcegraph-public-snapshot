@@ -290,7 +290,8 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 		case *schema.GitHubConnection,
 			*schema.BitbucketServerConnection,
 			*schema.GitLabConnection,
-			*schema.BitbucketCloudConnection:
+			*schema.BitbucketCloudConnection,
+			*schema.AzureDevOpsConnection:
 			return e, nil
 		}
 	}
@@ -310,6 +311,8 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 		return NewBitbucketServerSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(ctx, externalService, cf)
+	case extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -371,8 +374,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub, extsvc.TypeGitLab:
 		return errors.New("need token to push commits to " + extSvcType)
-
-	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud:
+	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps:
 		u.User = url.UserPassword(username, password)
 
 	default:
@@ -434,31 +436,33 @@ func GetRemoteRepo(
 	var repo *types.Repo
 	var err error
 
+	// ExternalForkNamespace and ExternalForkName will only be set once a changeset has
+	// been published.
 	if ch.ExternalForkNamespace != "" {
-		// If we're updating an existing changeset, we should push/modify the
-		// same fork, even if the user credential would now fork into a
-		// different namespace.
-		repo, err = fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+		// If we're updating an existing changeset, we should push/modify the same fork it
+		// was created on, even if the user credential would now fork into a different
+		// namespace.
+		repo, err = fss.GetFork(ctx, targetRepo, &ch.ExternalForkNamespace, &ch.ExternalForkName)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting namespace fork for external fork namespace")
-		}
-		return repo, nil
-	} else if namespace := spec.GetForkNamespace(); namespace != nil {
-		// If the changeset spec requires a specific fork namespace, then we
-		// should handle that here.
-		repo, err = fss.GetNamespaceFork(ctx, targetRepo, *namespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting namespace fork")
+			return nil, errors.Wrap(err, "getting fork for changeset")
 		}
 		return repo, nil
 	}
 
-	// Otherwise, we're pushing to a user fork.
-	repo, err = fss.GetUserFork(ctx, targetRepo)
+	// If we're creating a new changeset, we should fork into the namespace specified by
+	// the changeset spec, if any.
+	namespace := spec.GetForkNamespace()
+	repo, err = fss.GetFork(ctx, targetRepo, namespace, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting user fork")
+		return nil, errors.Wrap(err, "getting fork for changeset spec")
 	}
 	return repo, nil
+}
+
+// DefaultForkName returns the default name assigned when creating a new fork of a
+// repository originally from the given namespace and with the given name.
+func DefaultForkName(namespace string, name string) string {
+	return fmt.Sprintf("%s-%s", namespace, name)
 }
 
 // CopyRepoAsFork takes a *types.Repo and returns a copy of it where each

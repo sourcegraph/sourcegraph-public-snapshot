@@ -49,20 +49,22 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
-		logger:       logger,
-		db:           db,
-		zoekt:        zoektStreamer,
-		searcherURLs: searcherURLs,
+		logger:         logger,
+		db:             db,
+		zoekt:          zoektStreamer,
+		searcherURLs:   searcherURLs,
+		enterpriseJobs: enterpriseJobs,
 	}
 }
 
 type searchClient struct {
-	logger       log.Logger
-	db           database.DB
-	zoekt        zoekt.Streamer
-	searcherURLs *endpoint.Map
+	logger         log.Logger
+	db             database.DB
+	zoekt          zoekt.Streamer
+	searcherURLs   *endpoint.Map
+	enterpriseJobs jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(
@@ -141,7 +143,7 @@ func (s *searchClient) Execute(
 		tr.Finish()
 	}()
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +292,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		CodeOwnershipFilters:    flagSet.GetBoolOr("search-ownership", false),
+		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
 		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),

@@ -18,9 +18,11 @@ go_library(
         "//internal/database/dbutil",
         "//internal/metrics",
         "//internal/observation",
+        "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_opentracing_opentracing_go//log",
+        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -30,7 +32,6 @@ go_test(
     embed = [":store"],
     deps = [
         "//internal/codeintel/dependencies/shared",
-        "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/observation",

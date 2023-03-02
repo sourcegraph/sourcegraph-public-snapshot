@@ -16,16 +16,14 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { SearchPatternType } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -37,7 +35,6 @@ import styles from './NotebookQueryBlock.module.scss'
 interface NotebookQueryBlockProps
     extends BlockProps<QueryBlock>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
@@ -63,7 +60,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         id,
         input,
         output,
-        isLightTheme,
         telemetryService,
         settingsCascade,
         isSelected,
@@ -171,7 +167,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 value={input.query}
                                 patternType={SearchPatternType.standard}
                                 interpretComments={true}
-                                isLightTheme={isLightTheme}
                                 onEditorCreated={setEditor}
                                 extensions={useMemo(
                                     () => [
@@ -199,7 +194,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}
-                                isLightTheme={isLightTheme}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}

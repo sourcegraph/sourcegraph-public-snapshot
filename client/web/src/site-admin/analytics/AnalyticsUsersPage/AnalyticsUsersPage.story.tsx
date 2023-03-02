@@ -686,12 +686,16 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
                 totalCount: 49036,
                 __typename: 'UserConnection',
             },
+            pendingAccessRequests: {
+                totalCount: 123,
+                __typename: 'AccessRequestConnection',
+            },
         },
     },
 }
 
 export const AnalyticsUsersPageExample: Story = () => (
     <MockedTestProvider mocks={[USER_ANALYTICS_QUERY_MOCK]}>
-        <AnalyticsUsersPage history={{} as any} location={{} as any} match={{} as any} />
+        <AnalyticsUsersPage />
     </MockedTestProvider>
 )
