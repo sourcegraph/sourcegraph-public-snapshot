@@ -25,6 +25,7 @@ type Store interface {
 
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error)
+	GetReferenceCountStatistics(ctx context.Context) (min int, mean float64, max int, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
 
@@ -157,6 +158,25 @@ WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL
 `
+
+func (s *store) GetReferenceCountStatistics(ctx context.Context) (min int, mean float64, max int, err error) {
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
+		SELECT MIN(v::int), AVG(v::int), MAX(v::int)
+		FROM codeintel_path_ranks pr, jsonb_each(pr.payload) r(k, v)
+	`))
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&min, &mean, &max); err != nil {
+			return 0, 0, 0, err
+		}
+	}
+
+	return min, mean, max, nil
+}
 
 func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64) error {
 	serialized, err := json.Marshal(ranks)
