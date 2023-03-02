@@ -33,6 +33,8 @@
 #### Notes:
 
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
+- **Kubernetes with Helm** - This release updates `searcher` and `symbols` services to be headless.
+  - Before upgrading, delete your `searcher` and `symbols` services (ex: `kubectl delete svc/searcher svc/symbols`) [#250](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/250)
 
 ## v4.4.1 ➔ v4.4.2
 
