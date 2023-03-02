@@ -69,9 +69,9 @@ func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs
 		return nil, err
 	}
 
-	u, err := url.Parse(azuredevops.AzureDevOpsApiUrl)
+	u, err := url.Parse(azuredevops.AzureDevOpsAPIURL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse url: %q, this is likely a misconfigured URL in the constant azuredevops.AzureDevOpsApiUrl", azuredevops.AzureDevOpsApiUrl)
+		return nil, errors.Wrapf(err, "failed to parse url: %q, this is likely a misconfigured URL in the constant azuredevops.AzureDevOpsAPIURL", azuredevops.AzureDevOpsAPIURL)
 	}
 
 	return &Provider{
@@ -134,7 +134,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	if mockServerURL != "" {
 		apiURL = mockServerURL
 	} else {
-		apiURL = azuredevops.AzureDevOpsApiUrl
+		apiURL = azuredevops.AzureDevOpsAPIURL
 	}
 
 	client, err := azuredevops.NewClient(
@@ -259,7 +259,7 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 	for _, conn := range p.conns {
 		client, err := azuredevops.NewClient(
 			p.ServiceID(),
-			azuredevops.AzureDevOpsApiUrl,
+			azuredevops.AzureDevOpsAPIURL,
 			&auth.BasicAuth{
 				Username: conn.Username,
 				Password: conn.Token,
@@ -269,6 +269,7 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 
 		if err != nil {
 			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))
+			continue
 		}
 
 		_, err = client.GetAuthorizedProfile(ctx)

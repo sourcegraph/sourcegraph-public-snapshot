@@ -12,7 +12,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const VisualStudioAppUrl = "https://app.vssps.visualstudio.com/"
+const VisualStudioAppURL = "https://app.vssps.visualstudio.com/"
+
+var MockVisualStudioAppURL string
 
 // GetAuthorizedProfile is used to return information about the currently authorized user. Should
 // only be used for Azure Services (https://dev.azure.com).
@@ -21,13 +23,18 @@ const VisualStudioAppUrl = "https://app.vssps.visualstudio.com/"
 func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 	reqURL := url.URL{Path: "/_apis/profile/profiles/me"}
 
+	apiURL := VisualStudioAppURL
+	if MockVisualStudioAppURL != "" {
+		apiURL = MockVisualStudioAppURL
+	}
+
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return Profile{}, err
 	}
 
 	var p Profile
-	if _, err = c.do(ctx, req, VisualStudioAppUrl, &p); err != nil {
+	if _, err = c.do(ctx, req, apiURL, &p); err != nil {
 		return Profile{}, err
 	}
 
