@@ -106,6 +106,10 @@ func TestDocumentRanks(t *testing.T) {
 	}
 }
 
+func TestGetReferenceCountStatistics(t *testing.T) {
+	// TODO
+}
+
 func TestLastUpdatedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

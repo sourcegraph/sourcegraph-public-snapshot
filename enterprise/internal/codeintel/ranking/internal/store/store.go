@@ -161,8 +161,11 @@ WHERE
 
 func (s *store) GetReferenceCountStatistics(ctx context.Context) (min int, mean float64, max int, err error) {
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
-		SELECT MIN(v::int), AVG(v::int), MAX(v::int)
-		FROM codeintel_path_ranks pr, jsonb_each(pr.payload) r(k, v)
+		SELECT
+			MIN(pr.min_reference_count) AS min_reference_count,
+			(CASE WHEN SUM(pr.num_paths) = 0 THEN 0 ELSE (SUM(pr.mean_reference_count) / SUM(pr.num_paths)) END) AS mean_reference_count,
+			MAX(pr.max_reference_count) AS max_reference_count
+		FROM codeintel_path_ranks pr
 	`))
 	if err != nil {
 		return 0, 0, 0, err

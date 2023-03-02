@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS update_codeintel_path_ranks_statistics ON codeintel_path_ranks;
+DROP FUNCTION IF EXISTS update_codeintel_path_ranks_statistics_columns;

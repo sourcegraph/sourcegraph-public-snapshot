@@ -1,0 +1,21 @@
+CREATE OR REPLACE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
+LANGUAGE plpgsql
+AS $$ BEGIN
+    SELECT
+        COUNT(r.v) AS num_paths,
+        MIN(r.v::int) AS min_reference_count,
+        AVG(r.v::int) AS mean_reference_count,
+        MAX(r.v::int) AS max_reference_count
+    INTO
+        NEW.num_paths,
+        NEW.min_reference_count,
+        NEW.mean_reference_count,
+        NEW.max_reference_count
+    FROM jsonb_each(NEW.payload) r(k, v);
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS update_codeintel_path_ranks_statistics ON codeintel_path_ranks;
+CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();

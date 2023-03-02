@@ -205,6 +205,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\n STRICT\nAS $function$\nBEGIN\n    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\nEND;\n$function$\n"
     },
     {
+      "Name": "update_codeintel_path_ranks_statistics_columns",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        MIN(r.v::int) AS min_reference_count,\n        AVG(r.v::int) AS mean_reference_count,\n        MAX(r.v::int) AS max_reference_count\n    INTO\n        NEW.num_paths,\n        NEW.min_reference_count,\n        NEW.mean_reference_count,\n        NEW.max_reference_count\n    FROM jsonb_each(NEW.payload) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
       "Name": "update_codeintel_path_ranks_updated_at_column",
       "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$function$\n"
     },
@@ -7629,6 +7633,10 @@
       ],
       "Constraints": null,
       "Triggers": [
+        {
+          "Name": "update_codeintel_path_ranks_statistics",
+          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()"
+        },
         {
           "Name": "update_codeintel_path_ranks_updated_at",
           "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"

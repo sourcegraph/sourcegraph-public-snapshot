@@ -797,6 +797,25 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    SELECT
+        COUNT(r.v) AS num_paths,
+        MIN(r.v::int) AS min_reference_count,
+        AVG(r.v::int) AS mean_reference_count,
+        MAX(r.v::int) AS max_reference_count
+    INTO
+        NEW.num_paths,
+        NEW.min_reference_count,
+        NEW.mean_reference_count,
+        NEW.max_reference_count
+    FROM jsonb_each(NEW.payload) r(k, v);
+
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -5557,6 +5576,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
