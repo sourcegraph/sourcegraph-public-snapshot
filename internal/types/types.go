@@ -1900,13 +1900,14 @@ type CodeownersFile struct {
 type AccessRequestStatus string
 
 type AccessRequest struct {
-	ID             int32
-	Name           string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Email          string
-	AdditionalInfo string
-	Status         AccessRequestStatus
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
 }
 
 const (
