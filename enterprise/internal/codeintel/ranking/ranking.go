@@ -160,7 +160,7 @@ func (s *Service) MapRankingGraph(ctx context.Context, rankingJobEnabled bool) (
 	return s.store.InsertPathCountInputs(
 		ctx,
 		getCurrentGraphKey(time.Now()),
-		ConfigInst.MapReducerBatchSize,
+		ConfigInst.MapperBatchSize,
 	)
 }
 
@@ -175,7 +175,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, rankingJobEnabled bool
 	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
 		ctx,
 		getCurrentGraphKey(time.Now()),
-		ConfigInst.MapReducerBatchSize,
+		ConfigInst.ReducerBatchSize,
 	)
 	if err != nil {
 		return numPathCountInputsProcessed, numPathCountInputsProcessed, err

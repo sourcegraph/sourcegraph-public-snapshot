@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -1358,11 +1357,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers
@@ -1885,25 +1887,17 @@ type TeamMember struct {
 	UpdatedAt time.Time
 }
 
-type CodeownersFile struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	RepoID   api.RepoID
-	Contents string
-	Proto    *codeownerspb.File
-}
-
 type AccessRequestStatus string
 
 type AccessRequest struct {
-	ID             int32
-	Name           string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Email          string
-	AdditionalInfo string
-	Status         AccessRequestStatus
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
 }
 
 const (

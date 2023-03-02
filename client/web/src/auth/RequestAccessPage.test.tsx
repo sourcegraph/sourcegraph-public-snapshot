@@ -93,10 +93,10 @@ describe('RequestAccessPage', () => {
             expect(locationRef?.current?.pathname).toBe('/sign-in')
         })
 
-        test('if experimentalFeatures.accessRequests.enabled=false', () => {
+        test('if experimentalFeatures.accessRequest.enabled=false', () => {
             const { locationRef } = renderPage({
                 experimentalFeatures: {
-                    'accessRequests.enabled': false,
+                    'accessRequest.enabled': false,
                 },
             })
             expect(locationRef?.current?.pathname).toBe('/sign-in')

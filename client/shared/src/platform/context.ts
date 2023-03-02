@@ -70,6 +70,8 @@ export interface PlatformContext {
      * changes as a result of a call to {@link PlatformContext#updateSettings}).
      *
      * It should be a cold observable so that it does not trigger a network request upon each subscription.
+     *
+     * @deprecated Use useSettings instead
      */
     readonly settings: Subscribable<SettingsCascadeOrError<Settings>>
 
@@ -94,6 +96,8 @@ export interface PlatformContext {
     /**
      * Returns promise that resolves into Apollo Client instance after cache restoration.
      * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
     getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
@@ -103,6 +107,8 @@ export interface PlatformContext {
      * @template R The GraphQL result type
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
     requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**

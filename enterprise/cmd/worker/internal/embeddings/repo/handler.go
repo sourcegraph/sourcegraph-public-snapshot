@@ -1,9 +1,7 @@
 package repo
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 
 	"github.com/sourcegraph/log"
 
@@ -47,8 +45,7 @@ var splitOptions = split.SplitOptions{
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
-	config := conf.Get().Embeddings
-	if config == nil || !config.Enabled {
+	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
@@ -83,12 +80,5 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	indexJsonBytes, err := json.Marshal(repoEmbeddingIndex)
-	if err != nil {
-		return err
-	}
-
-	bytesReader := bytes.NewReader(indexJsonBytes)
-	_, err = h.uploadStore.Upload(ctx, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), bytesReader)
-	return err
+	return embeddings.UploadIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 }
