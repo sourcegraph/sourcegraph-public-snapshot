@@ -119,10 +119,3 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:
     - JobTokenStore
-- filename: enterprise/cmd/executor/internal/worker/command/mocks_temp.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
-      interfaces:
-        - Logger
-        - LogEntry
-        - ExecutionLogEntryStore
