@@ -9,6 +9,7 @@ import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
 
 import { getKeywordContextMessages } from './context'
 import { ContextSearchOptions } from './context-search-options'
+import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes/index'
 
 const PROMPT_PREAMBLE_LENGTH = 230
@@ -281,7 +282,7 @@ export class Transcript {
 		const { displayText, contextMessages, promptMessage, botResponsePrefix } = prompt
 
 		this.addMessage({
-			display: [{ speaker: 'you', text: displayText }],
+			display: [{ speaker: 'you', text: renderMarkdown(displayText) }],
 			actual: [promptMessage],
 			context: contextMessages,
 		})

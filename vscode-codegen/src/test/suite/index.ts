@@ -9,6 +9,8 @@ export function run(): Promise<void> {
 		ui: 'tdd',
 		color: true,
 	})
+	// To debug tests interactively, extend this timeout.
+	mocha.timeout(2000)
 
 	const testsRoot = path.resolve(__dirname, '..')
 

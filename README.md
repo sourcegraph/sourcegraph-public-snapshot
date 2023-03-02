@@ -82,6 +82,13 @@ Run the VS Code extension:
 
    - Note: You may find it more convenient to use a separate user profile for VS Code (or the Insiders build) so that you can continue using the released version of Cody in your usual editing workflow.
 
+### Testing the VS Code extension
+
+```
+$ cd vscode-codegen
+$ pnpm test
+```
+
 ### Publishing the [VS Code extension](vscode-codegen/)
 
 Increment the `version` in [`vscode-codegen/package.json`](vscode-codegen/package.json) and then run:

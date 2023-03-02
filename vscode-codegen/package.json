@@ -23,7 +23,7 @@
   "scripts": {
     "bundle": "ts-node --transpileOnly scripts/bundle.ts",
     "vsce:package": "pnpm run --silent bundle && vsce package --no-dependencies -o dist/kodj.vsix",
-    "test": "node ./out/test/runTest.js",
+    "test": "pnpm bundle && pnpm exec tsc --build && node ./out/test/runTest.js",
     "unittest": "mocha ./out/test/unittest"
   },
   "main": "./dist/node/extension.js",

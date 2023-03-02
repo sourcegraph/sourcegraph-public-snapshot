@@ -9,6 +9,7 @@ import { Feedback, Message } from '@sourcegraph/cody-common'
 import { EmbeddingsClient } from '../embeddings-client'
 
 import { renderMarkdown } from './markdown'
+import { TestSupport } from '../test-support'
 import { Transcript } from './prompt'
 import { WSChatClient } from './ws'
 
@@ -45,6 +46,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		private contextType: 'embeddings' | 'keyword' | 'none',
 		private debug: boolean
 	) {
+		if (TestSupport.instance) {
+			TestSupport.instance.chatViewProvider.set(this)
+		}
 		this.prompt = new Transcript(this.embeddingsClient, this.contextType, this.serverUrl, this.accessToken)
 	}
 
@@ -268,6 +272,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	private getStyleTag(webview: vscode.Webview, filePath: string): string {
 		const href = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, this.staticDir, filePath)))
 		return `<link rel="stylesheet" href="${href}">`
+	}
+
+	public transcriptForTesting(testing: TestSupport): ChatMessage[] {
+		if (!testing) {
+			console.error('used ForTesting method without test support object')
+			return []
+		}
+		return this.transcript
 	}
 }
 
