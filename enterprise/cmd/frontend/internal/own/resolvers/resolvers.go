@@ -12,7 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
@@ -37,6 +39,9 @@ type ownResolver struct {
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
 	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
@@ -107,6 +112,9 @@ type ownershipResolver struct {
 }
 
 func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
@@ -159,3 +167,10 @@ func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphql
 }
 
 func (r *codeownersFileEntryResolver) RuleLineMatch(_ context.Context) (int32, error) { return 42, nil }
+
+func areOwnEndpointsAvailable(ctx context.Context) error {
+	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
+		return errors.New("own is not available yet")
+	}
+	return nil
+}
