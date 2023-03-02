@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -27,10 +26,29 @@ const (
 
 func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.OwnershipUsageStatistics, error) {
 	var stats types.OwnershipUsageStatistics
-	if err := db.QueryRowContext(ctx, ownUsageStatsQuery).Scan(); err != nil {
+	var totalReposCount int32
+	if err := db.QueryRowContext(ctx, `SELECT total FROM repo_statistics`).Scan(&totalReposCount); err != nil {
 		return nil, err
 	}
-	featureFlagOn := featureflag.FromContext(ctx).GetBoolOr("search-ownership", false)
+	var ingestedOwnershipReposCount int32
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT repo_id) FROM codeowners`).Scan(&ingestedOwnershipReposCount); err != nil {
+		return nil, err
+	}
+	stats.ReposCount = &types.OwnershipUsageReposCounts{
+		Total:                 &totalReposCount,
+		WithIngestedOwnership: &ingestedOwnershipReposCount,
+	}
+	fos ,err := db.FeatureFlags().GetOverridesForFlag(ctx, "search-ownership")
+	if err != nil {
+		return nil, err
+	}
+	featureFlagOn := false
+	for _, fo := range fos {
+		if fo.Value {
+			featureFlagOn = true
+			break
+		}
+	}
 	stats.FeatureFlagOn = &featureFlagOn
 	// At this poing we do not compute ReposCount.WithOwnership as this is really
 	// computationally intensive (get all repos and query gitserver for each).
