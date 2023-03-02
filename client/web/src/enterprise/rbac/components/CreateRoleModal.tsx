@@ -1,37 +1,49 @@
 import React from 'react'
 
-import { Button, Modal, Input, H3, Text, Label, ErrorAlert, Form, useCheckboxes, useForm, useField, SubmissionResult } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Modal,
+    Input,
+    H3,
+    Text,
+    Label,
+    ErrorAlert,
+    Form,
+    useCheckboxes,
+    useForm,
+    useField,
+    SubmissionResult,
+} from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { PermissionsList } from './Permissions'
 import { useCreateRole, PermissionsMap } from '../backend'
-import { PermissionFields } from '../../../graphql-operations'
 
-export interface AddRoleModalProps {
+export interface CreateRoleModalProps {
     onCancel: () => void
     afterCreate: () => void
     allPermissions: PermissionsMap
 }
 
-interface AddRoleModalFormValues {
+interface CreateRoleModalFormValues {
     name: string
     permissions: string[]
 }
 
-const DEFAULT_FORM_VALUES: AddRoleModalFormValues = {
+const DEFAULT_FORM_VALUES: CreateRoleModalFormValues = {
     name: '',
-    permissions: []
+    permissions: [],
 }
 
-export const AddRoleModal: React.FunctionComponent<React.PropsWithChildren<AddRoleModalProps>> = ({
+export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<CreateRoleModalProps>> = ({
     onCancel,
     afterCreate,
-    allPermissions
+    allPermissions,
 }) => {
     const labelId = 'addRole'
 
     const [createRole, { loading, error }] = useCreateRole(afterCreate)
-    const onSubmit = (values: AddRoleModalFormValues): SubmissionResult => {
+    const onSubmit = (values: CreateRoleModalFormValues): SubmissionResult => {
         const { name, permissions } = values
         createRole({ variables: { name, permissions } })
     }
@@ -41,7 +53,9 @@ export const AddRoleModal: React.FunctionComponent<React.PropsWithChildren<AddRo
         onSubmit,
     })
 
-    const { input: { isChecked, onBlur, onChange } } = useCheckboxes('permissions', formAPI)
+    const {
+        input: { isChecked, onBlur, onChange },
+    } = useCheckboxes('permissions', formAPI)
     const nameInput = useField({
         name: 'name',
         formApi: formAPI,
@@ -55,7 +69,9 @@ export const AddRoleModal: React.FunctionComponent<React.PropsWithChildren<AddRo
 
             <Form onSubmit={handleSubmit} ref={ref}>
                 <Label className="w-100">
-                    <Text alignment="left" className="mb-2">Name</Text>
+                    <Text alignment="left" className="mb-2">
+                        Name
+                    </Text>
 
                     <Input
                         id="name"
@@ -73,7 +89,12 @@ export const AddRoleModal: React.FunctionComponent<React.PropsWithChildren<AddRo
                     />
                 </Label>
 
-                <PermissionsList allPermissions={allPermissions} isChecked={isChecked} onBlur={onBlur} onChange={onChange} />
+                <PermissionsList
+                    allPermissions={allPermissions}
+                    isChecked={isChecked}
+                    onBlur={onBlur}
+                    onChange={onChange}
+                />
                 {error && !loading && <ErrorAlert error={error} className="my-2" />}
 
                 <div className="d-flex justify-content-end">
@@ -86,7 +107,7 @@ export const AddRoleModal: React.FunctionComponent<React.PropsWithChildren<AddRo
                         loading={formAPI.submitting}
                         variant="primary"
                         alwaysShowLabel={true}
-                        label="Add role"
+                        label="Create role"
                     />
                 </div>
             </Form>

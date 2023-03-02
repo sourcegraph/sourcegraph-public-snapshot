@@ -18,29 +18,29 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
     allPermissions,
     isChecked,
     onChange,
-    onBlur
+    onBlur,
 }) => (
     <>
-    {allNamespaces.map(namespace => {
-                const namespacePermissions = allPermissions[namespace]
-                return (
-                    <Form key={namespace}>
-                        <Text className="font-weight-bold">{namespace}</Text>
-                        <Grid columnCount={4}>
-                            {namespacePermissions.map(permission => (
-                                    <Checkbox
-                                        key={permission.id}
-                                        label={permission.action}
-                                        id={permission.displayName}
-                                        checked={isChecked(permission.id)}
-                                        value={permission.id}
-                                        onChange={onChange}
-                                        onBlur={onBlur}
-                                    />
-                                ))}
-                        </Grid>
-                    </Form>
-                )
-            })}
+        {allNamespaces.map(namespace => {
+            const namespacePermissions = allPermissions[namespace]
+            return (
+                <div key={namespace}>
+                    <Text className="font-weight-bold">{namespace}</Text>
+                    <Grid columnCount={4}>
+                        {namespacePermissions.map(permission => (
+                            <Checkbox
+                                key={permission.id}
+                                label={permission.action}
+                                id={permission.displayName}
+                                checked={isChecked(permission.id)}
+                                value={permission.id}
+                                onChange={onChange}
+                                onBlur={onBlur}
+                            />
+                        ))}
+                    </Grid>
+                </div>
+            )
+        })}
     </>
 )

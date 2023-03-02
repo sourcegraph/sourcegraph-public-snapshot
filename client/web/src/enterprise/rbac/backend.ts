@@ -120,7 +120,8 @@ export const usePermissions = (
         onCompleted,
     })
 
-export const useCreateRole = (onCompleted: () => void): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE, { onCompleted })
+export const useCreateRole = (onCompleted: () => void): MutationTuple<CreateRoleResult, CreateRoleVariables> =>
+    useMutation(CREATE_ROLE, { onCompleted })
 
 export const useDeleteRole = (
     onCompleted: () => void,
