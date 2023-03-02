@@ -25,15 +25,9 @@ func NewSymbolExporter(
 				return err
 			}
 
-<<<<<<< HEAD:enterprise/internal/codeintel/uploads/internal/background/job_graph_exporter.go
-			// if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
-			// 	return err
-			// }
-=======
 			if err := rankingService.VacuumRankingGraph(ctx); err != nil {
 				return err
 			}
->>>>>>> main:enterprise/internal/codeintel/ranking/internal/background/job_graph_exporter.go
 
 			return nil
 		}),

@@ -10,6 +10,6 @@ export interface SentinelRouterProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const SentinelRouter: FC<SentinelRouterProps> = ({ authenticatedUser }) => {
-    return <SentinelAppLazyRouter authenticatedUser={authenticatedUser} />
-}
+export const SentinelRouter: FC<SentinelRouterProps> = ({ authenticatedUser }) => (
+    <SentinelAppLazyRouter authenticatedUser={authenticatedUser} />
+)
