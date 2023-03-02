@@ -967,7 +967,11 @@ func canModifyTeam(ctx context.Context, db database.DB, team *types.Team) (bool,
 	if team.ReadOnly {
 		return false, nil
 	}
-	return db.Teams().IsTeamMember(ctx, team.ID, actor.FromContext(ctx).UID)
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return false, auth.ErrNotAuthenticated
+	}
+	return db.Teams().IsTeamMember(ctx, team.ID, a.UID)
 }
 
 func isSiteAdmin(ctx context.Context, db database.DB) bool {
