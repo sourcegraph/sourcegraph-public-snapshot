@@ -28,11 +28,7 @@ export const ConfirmDeleteRoleModalStory: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <ConfirmDeleteRoleModal
-                    role={batchChangeAdminRole}
-                    onCancel={noop}
-                    onConfirm={mockOnConfirm}
-                />
+                <ConfirmDeleteRoleModal role={batchChangeAdminRole} onCancel={noop} onConfirm={mockOnConfirm} />
             </MockedTestProvider>
         )}
     </WebStory>

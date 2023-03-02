@@ -38,12 +38,7 @@ export const ConfirmDeleteRoleModal: React.FunctionComponent<React.PropsWithChil
                     <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
                     </Button>
-                    <LoaderButton
-                        type="submit"
-                        variant="primary"
-                        alwaysShowLabel={true}
-                        label="Delete"
-                    />
+                    <LoaderButton type="submit" variant="primary" alwaysShowLabel={true} label="Delete" />
                 </div>
             </Form>
         </Modal>

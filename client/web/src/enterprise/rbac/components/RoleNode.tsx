@@ -3,7 +3,17 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
 import { startCase } from 'lodash'
 
-import { Button, Icon, Text, Tooltip, ErrorAlert, Collapse, CollapseHeader, CollapsePanel, H4 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Text,
+    Tooltip,
+    ErrorAlert,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    H4,
+} from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
@@ -53,11 +63,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     return (
         <li className={styles.roleNode}>
             {showConfirmDeleteModal && (
-                <ConfirmDeleteRoleModal
-                    onCancel={closeModal}
-                    role={node}
-                    onConfirm={onDelete}
-                />
+                <ConfirmDeleteRoleModal onCancel={closeModal} role={node} onConfirm={onDelete} />
             )}
 
             <Collapse isOpen={isExpanded} onOpenChange={handleOpenChange}>
@@ -68,7 +74,12 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     outline={true}
                     variant="icon"
                 >
-                    <Icon data-caret={true} className="mr-1 bg-red" aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
+                    <Icon
+                        data-caret={true}
+                        className="mr-1 bg-red"
+                        aria-hidden={true}
+                        svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                    />
 
                     <header className="d-flex flex-column justify-content-center mr-2">
                         <div className="d-flex align-items-center">
@@ -88,7 +99,14 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
 
                     {!node.system && (
                         <Tooltip content="Deleting a role is an irreversible action.">
-                            <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm" className={styles.roleNodeDeleteBtn}>
+                            <Button
+                                aria-label="Delete"
+                                onClick={openModal}
+                                disabled={loading}
+                                variant="danger"
+                                size="sm"
+                                className={styles.roleNodeDeleteBtn}
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiDelete} className={styles.roleNodeDeleteBtnIcon} />
                             </Button>
                         </Tooltip>
