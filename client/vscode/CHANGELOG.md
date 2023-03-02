@@ -12,6 +12,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Fixes
 
+- Prefer `upstream` and `origin` remotes when no remote is selected [issues/2761](https://github.com/sourcegraph/sourcegraph/issues/2761) [pull/48369](https://github.com/sourcegraph/sourcegraph/pull/48369)
+
 ## 2.2.14
 
 ### Changes
