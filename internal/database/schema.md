@@ -953,7 +953,7 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
  updated_at      | timestamp with time zone |           | not null | now()
  graph_key       | text                     |           |          | 
  num_paths       | integer                  |           |          | 
- refcount_logsum | integer                  |           |          | 
+ refcount_logsum | double precision         |           |          | 
 Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
