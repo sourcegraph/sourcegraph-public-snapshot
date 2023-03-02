@@ -1,6 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { codeIntelIndexerFieldsFragment, preciseIndexFieldsFragment } from '../../indexes/hooks/types'
+import { codeIntelIndexerFieldsFragment, preciseIndexFieldsFragment } from '../indexes/hooks/types'
+
+export const dashboardRepoFieldsFragment = gql`
+    fragment DashboardRepoFields on CodeIntelRepository {
+        name
+        url
+        externalRepository {
+            serviceID
+            serviceType
+        }
+    }
+`
 
 export const globalCodeIntelStatusQuery = gql`
     query GlobalCodeIntelStatus {
@@ -33,7 +44,6 @@ export const globalCodeIntelStatusQuery = gql`
                         indexer {
                             ...CodeIntelIndexerFields
                         }
-
                         count
                     }
                 }
@@ -88,35 +98,41 @@ export const searchBasedCodeIntelSupportFragment = gql`
     }
 `
 
-export const repoCodeIntelStatusQuery = gql`
-    query RepoCodeIntelStatus($repository: String!) {
-        repository(name: $repository) {
-            codeIntelSummary {
-                lastIndexScan
-                lastUploadRetentionScan
-                recentActivity {
-                    ...PreciseIndexFields
-                }
-                availableIndexers {
-                    ...InferredAvailableIndexersFields
-                }
-            }
-            commit(rev: "HEAD") {
-                path(path: "/") {
-                    ... on GitTree {
-                        codeIntelInfo {
-                            ...GitTreeCodeIntelInfoFields
-                        }
-                    }
-                }
-            }
+export const repoCodeIntelStatusCommitGraphFragment = gql`
+    fragment RepoCodeIntelStatusCommitGraphFields on CodeIntelligenceCommitGraph {
+        stale
+        updatedAt
+    }
+`
+
+export const repoCodeIntelStatusSummaryFragment = gql`
+    fragment RepoCodeIntelStatusSummaryFields on CodeIntelRepositorySummary {
+        lastIndexScan
+        lastUploadRetentionScan
+        recentActivity {
+            ...PreciseIndexFields
+        }
+        availableIndexers {
+            ...InferredAvailableIndexersFields
         }
     }
 
     ${preciseIndexFieldsFragment}
     ${inferredAvailableIndexersFieldsFragment}
+`
 
-    ${gitTreeCodeIntelInfoFragment}
-    ${preciseSupportFragment}
-    ${searchBasedCodeIntelSupportFragment}
+export const repoCodeIntelStatusQuery = gql`
+    query RepoCodeIntelStatus($repository: String!) {
+        repository(name: $repository) {
+            codeIntelSummary {
+                ...RepoCodeIntelStatusSummaryFields
+            }
+            codeIntelligenceCommitGraph {
+                ...RepoCodeIntelStatusCommitGraphFields
+            }
+        }
+    }
+
+    ${repoCodeIntelStatusSummaryFragment}
+    ${repoCodeIntelStatusCommitGraphFragment}
 `

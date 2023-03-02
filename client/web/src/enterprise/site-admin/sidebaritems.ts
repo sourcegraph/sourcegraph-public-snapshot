@@ -109,6 +109,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
+            to: '/site-admin/code-graph/dashboard',
+            label: 'Dashboard',
+        },
+        {
             to: '/site-admin/code-graph/indexes',
             label: 'Precise indexes',
         },
