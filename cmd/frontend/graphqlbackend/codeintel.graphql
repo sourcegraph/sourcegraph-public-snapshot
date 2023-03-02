@@ -458,31 +458,31 @@ extend type Query {
     inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): [AutoIndexJobDescription!]!
 
     """
-    TODO
+    Return known vulnerabilities.
     """
     vulnerabilities(
         """
-        TODO
+        The maximum number of results to return.
         """
         first: Int
 
         """
-        TODO
+        If supplied, indicates which results to skip over during pagination.
         """
         after: String
     ): VulnerabilityConnection!
 
     """
-    TODO
+    Return known vulnerability matches.
     """
     vulnerabilityMatches(
         """
-        TODO
+        The maximum number of results to return.
         """
         first: Int
 
         """
-        TODO
+        If supplied, indicates which results to skip over during pagination.
         """
         after: String
     ): VulnerabilityMatchConnection!
@@ -2471,41 +2471,41 @@ type VulnerabilityMatch implements Node {
 }
 
 """
-TODO
+A page of vulnerabilities.
 """
 type VulnerabilityConnection {
     """
-    TODO
+    The vulnerabilities on the page.
     """
     nodes: [Vulnerability!]!
 
     """
-    TODO
+    The total number of vulnerabilities across all pages.
     """
     totalCount: Int
 
     """
-    TODO
+    Information on how to fetch the next page.
     """
     pageInfo: PageInfo!
 }
 
 """
-TODO
+A page of vulnerability matches.
 """
 type VulnerabilityMatchConnection {
     """
-    TODO
+    The vulnerability matches on the page.
     """
     nodes: [VulnerabilityMatch!]!
 
     """
-    TODO
+    The total number of vulnerability matches across all pages.
     """
     totalCount: Int
 
     """
-    TODO
+    Information on how to fetch the next page.
     """
     pageInfo: PageInfo!
 }
