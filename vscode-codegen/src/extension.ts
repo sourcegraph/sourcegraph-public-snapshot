@@ -34,7 +34,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 		}),
 		vscode.commands.registerCommand('cody.delete-access-token', async () =>
 			context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
-		)
+		),
+		vscode.commands.registerCommand('cody.accept-tos', async version => {
+			if (typeof version !== 'number') {
+				vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
+				return
+			}
+			await context.globalState.update('cody.tos-version-accepted', version)
+		}),
+		vscode.commands.registerCommand('cody.get-accepted-tos-version', async () => {
+			const version = await context.globalState.get('cody.tos-version-accepted')
+			return version
+		})
 	)
 
 	let disposable: vscode.Disposable | undefined

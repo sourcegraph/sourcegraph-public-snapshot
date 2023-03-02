@@ -52,18 +52,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		this.prompt = new Transcript(this.embeddingsClient, this.contextType, this.serverUrl, this.accessToken)
 	}
 
-	resolveWebviewView(
+	async resolveWebviewView(
 		webviewView: vscode.WebviewView,
 		_context: vscode.WebviewViewResolveContext<unknown>,
 		_token: vscode.CancellationToken
-	): void | Thenable<void> {
+	): Promise<void> {
+		const tosVersion = await vscode.commands.executeCommand('cody.get-accepted-tos-version')
+
 		this.webview = webviewView.webview
-		webviewView.webview.html = this.renderView(webviewView.webview)
+		webviewView.webview.html = this.renderView(webviewView.webview, tosVersion as number)
 		webviewView.webview.options = {
 			enableScripts: true,
 			localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, this.staticDir))],
 		}
 
+		webviewView.onDidChangeVisibility(async () => {
+			if (webviewView.visible) {
+				const tosVersion = await vscode.commands.executeCommand('cody.get-accepted-tos-version')
+				webviewView.webview.html = this.renderView(webviewView.webview, tosVersion as number)
+			}
+		})
 		webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
 	}
 
@@ -84,7 +92,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			case 'feedback':
 				this.sendFeedback(message.feedback)
 				break
+			case 'acceptTOS':
+				this.acceptTOS(message.version)
+				break
 		}
+	}
+
+	private async acceptTOS(version: number) {
+		vscode.commands.executeCommand('cody.accept-tos', version)
 	}
 
 	private async sendFeedback(feedback: Feedback): Promise<void> {
@@ -253,15 +268,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		})
 	}
 
-	renderView(webview: vscode.Webview): string {
+	renderView(webview: vscode.Webview, tosVersion?: number): string {
 		const html = readFileSync(path.join(this.extensionPath, this.staticDir, 'index.html')).toString()
-
 		const nonce = getNonce()
 		return html
 			.replace('{nonce}', nonce)
 			.replace('{scripts}', this.staticFiles.js.map(file => this.getScriptTag(webview, file, nonce)).join(''))
 			.replace('{styles}', this.staticFiles.css.map(file => this.getStyleTag(webview, file)).join(''))
 			.replace('{debug-tab-class-hidden}', this.debug ? '' : 'debug-tab-hidden')
+			.replace('{tos-accepted-version}', tosVersion ? `${tosVersion}` : '')
 	}
 
 	private getScriptTag(webview: vscode.Webview, filePath: string, nonce: string): string {

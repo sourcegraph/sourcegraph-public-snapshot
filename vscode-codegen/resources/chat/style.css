@@ -265,10 +265,11 @@ textarea.chat-input {
 
 .container-getting-started {
 	padding: 1.5rem;
+	font-size: 1rem;
 }
 
 .container-getting-started li {
-	line-height: 1.5rem;
+	line-height: 1.7rem;
 }
 
 .btn-feedback {
@@ -277,4 +278,31 @@ textarea.chat-input {
 	font-weight: normal;
 	cursor: pointer;
 	width: inherit;
+}
+
+.tos-container {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 0 1rem 1rem 1rem;
+	background-color: #303443;
+	z-index: 10;
+	line-height: 1.5;
+}
+
+.tos-container-accepted {
+	display: none;
+}
+
+blockquote {
+	margin: 0.5rem 0 0.5rem 0;
+	padding: 0 1rem 0 1rem;
+	border-left: 0.25rem solid var(--bubble-text-color);	;
+	background-color: transparent;
+}
+
+.container-about {
+	padding: 1rem;
 }
