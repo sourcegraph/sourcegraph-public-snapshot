@@ -268,12 +268,17 @@ func (s *store) InsertPathRanks(
 	)
 	defer endObservation(1, observation.Args{})
 
-	// Validation for testing (test graph keys do not have hyphens)
+	// Unused, but here for validation
 	if parts := strings.Split(derivativeGraphKey, "-"); len(parts) < 2 {
 		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
 	}
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, derivativeGraphKey, batchSize))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		insertPathRanksQuery,
+		derivativeGraphKey,
+		batchSize,
+		derivativeGraphKey,
+	))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -316,10 +321,11 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
 	SELECT
 		temp.repository_id,
 		1,
+		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
 		SELECT
