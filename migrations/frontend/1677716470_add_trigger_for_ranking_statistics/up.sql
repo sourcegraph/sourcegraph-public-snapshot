@@ -17,5 +17,16 @@ AS $$ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS insert_codeintel_path_ranks_statistics ON codeintel_path_ranks;
 DROP TRIGGER IF EXISTS update_codeintel_path_ranks_statistics ON codeintel_path_ranks;
-CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
+
+CREATE TRIGGER insert_codeintel_path_ranks_statistics
+BEFORE INSERT ON codeintel_path_ranks
+FOR EACH ROW
+EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
+
+CREATE TRIGGER update_codeintel_path_ranks_statistics
+BEFORE UPDATE ON codeintel_path_ranks
+FOR EACH ROW
+WHEN ((new.* IS DISTINCT FROM old.*))
+EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();

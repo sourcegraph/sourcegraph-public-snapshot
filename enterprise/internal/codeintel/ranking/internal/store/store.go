@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -184,8 +183,6 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (min int, mean 
 		}
 	}
 
-	// TODO
-	fmt.Printf("> %d %.2f %d\n", min, mean, max)
 	return min, mean, max, nil
 }
 

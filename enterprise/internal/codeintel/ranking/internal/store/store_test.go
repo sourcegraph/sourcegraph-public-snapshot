@@ -107,7 +107,43 @@ func TestDocumentRanks(t *testing.T) {
 }
 
 func TestGetReferenceCountStatistics(t *testing.T) {
-	// TODO
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := newInternal(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	if err := store.SetDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 1, "bar": 17, "baz": 35}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 44, "bar": 14, "baz": 2}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 77, "bar": 57, "baz": 129, "bonk": 3}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+
+	min, mean, max, err := store.GetReferenceCountStatistics(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error getting reference count statistics: %s", err)
+	}
+
+	if expected := 1; min != expected {
+		t.Errorf("unexpected min. want=%d have=%d", expected, min)
+	}
+	if expected := 37.9; mean != expected {
+		t.Errorf("unexpected mean. want=%.2f have=%.2f", expected, mean)
+	}
+	if expected := 129; max != expected {
+		t.Errorf("unexpected max. want=%d have=%d", expected, max)
+	}
 }
 
 func TestLastUpdatedAt(t *testing.T) {

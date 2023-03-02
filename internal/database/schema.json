@@ -7634,6 +7634,10 @@
       "Constraints": null,
       "Triggers": [
         {
+          "Name": "insert_codeintel_path_ranks_statistics",
+          "Definition": "CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()"
+        },
+        {
           "Name": "update_codeintel_path_ranks_statistics",
           "Definition": "CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()"
         },
