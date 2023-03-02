@@ -1,37 +1,28 @@
 import { FC, HTMLAttributes, useState, useEffect } from 'react'
 
-import { mdiInformationOutline, mdiPlus, mdiDelete, mdiGit } from '@mdi/js'
+import { mdiInformationOutline, mdiPlus, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Container, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult } from '../../../graphql-operations'
+import { GetCodeHostsResult, RepositoriesResultResult } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
-import { GET_CODE_HOSTS } from '../remote-repositories-step/queries'
+import { GET_CODE_HOSTS, GET_REPOSITORIES_BY_SERVICE } from '../remote-repositories-step/queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
 // TODO: Skip button logic
 
-interface ExternalService {
-    __typename: 'ExternalService'
-    id: string
-    repoCount: number
-    displayName: string
-    lastSyncAt: string | null
-    nextSyncAt: string | null
-}
-
 interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
-    const [localRepositories, setLocalRepositories] = useState<Array<ExternalService>>([])
+    const [localRepositories, setLocalRepositories] = useState<RepositoriesResultResult>()
     const [repoPickerMode, setRepoPickerMode] = useState<string>('')
 
-    // TODO: Edit state & delete action?
+    // TODO: Edit action?
 
     /** TODO: Trade out for GetLocalRepositoriesByService() query once query is open
      * -->  query GetLocalRepositoriesService() {
@@ -50,13 +41,26 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         fetchPolicy: 'cache-and-network',
         pollInterval: 5000,
     })
+    console.log(data)
 
-    useEffect(() => {
-        if (!data?.externalServices.nodes) return
+    const { data: repoData } = useQuery<RepositoriesResultResult>(GET_REPOSITORIES_BY_SERVICE, {
+        fetchPolicy: 'cache-and-network',
+        variables: {
+            first: 25,
+            externalService: 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0',
+        },
+    })
+    console.log(repoData)
 
-        const localRepos = data?.externalServices.nodes.filter(codeHost => codeHost.kind === 'OTHER')
-        setLocalRepositories(localRepos)
-    }, [data])
+    // useEffect(() => {
+    //     if (!data?.externalServices.nodes) return
+
+    //     const localRepos = useQuery<RepositoriesResultResult>(GET_REPOSITORIES_BY_SERVICE, {
+    //         fetchPolicy: 'cache-and-network',
+    //         variables: { id: data?.externalServices.nodes[0].id },
+    //     })
+    //     setLocalRepositories(localRepos.data)
+    // }, [data])
 
     /** TODO: Implement BE file picker & local repo discovery
      * --> File picker (https://github.com/sourcegraph/sourcegraph/issues/48127)
@@ -87,7 +91,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
             <Container>
                 <ul className={styles.list}>
-                    {localRepositories?.length ? (
+                    {/* {localRepositories?.length ? (
                         localRepositories.map((codeHost, index) => (
                             <li
                                 key={codeHost.id}
@@ -107,6 +111,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                                     </Text>
                                 </div>
 
+                                // TODO: Edit here
                                 <Tooltip content="Delete repository" placement="right" debounce={0}>
                                     <Button
                                         variant="secondary"
@@ -129,7 +134,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                             />
                             To get started, add at least one local repository to Sourcegraph.
                         </Text>
-                    )}
+                    )} */}
 
                     <li className="d-flex">
                         <Button
