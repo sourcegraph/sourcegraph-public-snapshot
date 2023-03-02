@@ -3,7 +3,7 @@ package embeddings
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestSimilaritySearch(t *testing.T) {
@@ -25,18 +25,18 @@ func TestSimilaritySearch(t *testing.T) {
 	t.Run("find row with exact match", func(t *testing.T) {
 		query := embeddings[0:3]
 		results := index.SimilaritySearch(query, 1)
-		autogold.Equal(t, results)
+		autogold.ExpectFile(t, results)
 	})
 
 	t.Run("find nearest neighbors", func(t *testing.T) {
 		query := []float32{0.87006284, 0.48336824, 0.09667365}
 		results := index.SimilaritySearch(query, 2)
-		autogold.Equal(t, results)
+		autogold.ExpectFile(t, results)
 	})
 
 	t.Run("request more results then there are rows", func(t *testing.T) {
 		query := embeddings[0:3]
 		results := index.SimilaritySearch(query, 5)
-		autogold.Equal(t, results)
+		autogold.ExpectFile(t, results)
 	})
 }

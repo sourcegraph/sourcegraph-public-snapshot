@@ -1,47 +1,18 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "api",
     srcs = [
         "doc.go",
-        "extension_connection_graphql.go",
-        "extension_graphql.go",
-        "extension_manifest.go",
-        "extension_remote_graphql.go",
-        "extensions.go",
         "extensions_helpers.go",
         "gating.go",
         "http_api.go",
-        "registry_graphql.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api",
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/registry/client",
-        "//internal/conf",
-        "//internal/database",
-        "//internal/jsonc",
         "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//relay",
-    ],
-)
-
-go_test(
-    name = "api_test",
-    srcs = [
-        "extension_connection_graphql_test.go",
-        "extension_manifest_test.go",
-        "extensions_test.go",
-    ],
-    embed = [":api"],
-    deps = [
-        "//cmd/frontend/envvar",
-        "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/registry/client",
-        "//internal/conf",
-        "//schema",
     ],
 )

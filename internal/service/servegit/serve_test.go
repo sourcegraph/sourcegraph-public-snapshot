@@ -38,8 +38,10 @@ func TestReposHandler(t *testing.T) {
 
 			h := (&Serve{
 				Logger: logtest.Scoped(t),
-				Addr:   testAddress,
-				Root:   root,
+				Config: Config{
+					Addr: testAddress,
+					Root: root,
+				},
 			}).handler()
 
 			var want []Repo
@@ -157,7 +159,9 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 
 	repos, err := (&Serve{
 		Logger: logtest.Scoped(t),
-		Root:   root,
+		Config: Config{
+			Root: root,
+		},
 	}).Repos()
 	if err != nil {
 		t.Fatal(err)

@@ -223,6 +223,14 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </ul>
                 </li>
                 <li>
+                    Monthly aggregated access requests changes
+                    <ul>
+                        <li>Count of pending access requests</li>
+                        <li>Count of approved access requests</li>
+                        <li>Count of rejected access requests</li>
+                    </ul>
+                </li>
+                <li>
                     Saved searches usage data
                     <ul>
                         <li>Count of saved searches</li>

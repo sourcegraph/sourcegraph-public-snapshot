@@ -15,6 +15,8 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
+import styles from './RepoRevisionSidebarSymbols.module.scss'
+
 interface Props {
     symbols: SymbolWithChildren[]
     onClick: () => void
@@ -119,6 +121,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
+            nodeClassName={styles.treeNode}
             renderNode={({ element, handleSelect, props }): React.ReactNode => {
                 const { className, ...rest } = props
 

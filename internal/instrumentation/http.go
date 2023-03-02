@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -35,6 +36,7 @@ func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) h
 					}
 					return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
 				}),
+				otelhttp.WithMeterProvider(metric.NewNoopMeterProvider()),
 			},
 			opts...,
 		)...)

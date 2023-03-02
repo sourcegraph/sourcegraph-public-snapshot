@@ -1,0 +1,35 @@
+.tree-node {
+    width: 100%;
+    min-height: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.badge {
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+
+    &:last-of-type {
+        margin-right: 0.25rem;
+    }
+
+    // Clip extra long badges
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}
+
+.spacer {
+    margin-left: 0.25rem;
+}

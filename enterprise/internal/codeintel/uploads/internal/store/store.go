@@ -96,35 +96,8 @@ type Store interface {
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]shared.ExportedUpload, error)
-
-	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-		metadataRecordsDeleted int,
-		inputRecordsDeleted int,
-		err error,
-	)
-
-	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
-		numStaleDefinitionRecordsDeleted int,
-		numStaleReferenceRecordsDeleted int,
-		err error,
-	)
-
-	ProcessStaleExportedUploads(
-		ctx context.Context,
-		graphKey string,
-		batchSize int,
-		deleter func(ctx context.Context, objectPrefix string) error,
-	) (totalDeleted int, err error)
-
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
-
-	// Ranking
-	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
-	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
-	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 
 // store manages the database operations for uploads.

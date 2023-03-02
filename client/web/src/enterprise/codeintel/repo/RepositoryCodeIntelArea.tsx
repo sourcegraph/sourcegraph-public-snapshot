@@ -15,6 +15,7 @@ import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeInte
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
 import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
+import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
@@ -26,6 +27,11 @@ export interface CodeIntelAreaRouteContext extends TelemetryProps {
 }
 
 export interface CodeIntelAreaRoute extends RouteV6Descriptor<CodeIntelAreaRouteContext> {}
+
+const RepoDashboardPage = lazyComponent<RepoDashboardPageProps, 'RepoDashboardPage'>(
+    () => import('../dashboard/pages/RepoDashboardPage'),
+    'RepoDashboardPage'
+)
 
 const CodeIntelPreciseIndexesPage = lazyComponent<CodeIntelPreciseIndexesPageProps, 'CodeIntelPreciseIndexesPage'>(
     () => import('../indexes/pages/CodeIntelPreciseIndexesPage'),
@@ -62,7 +68,11 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
-        render: () => <Navigate to="./indexes" replace={true} />,
+        render: () => <Navigate to="./dashboard" replace={true} />,
+    },
+    {
+        path: '/dashboard',
+        render: props => <RepoDashboardPage {...props} />,
     },
     {
         path: '/indexes',
@@ -113,6 +123,10 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
     {
         header: { label: 'Code graph data' },
         items: [
+            {
+                to: '/dashboard',
+                label: 'Dashboard',
+            },
             {
                 to: '/indexes',
                 label: 'Precise indexes',

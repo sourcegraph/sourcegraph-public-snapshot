@@ -181,6 +181,11 @@ func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToRepoEmbeddingJob() (RepoEmbeddingJobResolver, bool) {
+	n, ok := r.Node.(RepoEmbeddingJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
@@ -354,5 +359,10 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 
 func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
 	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolver, bool) {
+	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok
 }
