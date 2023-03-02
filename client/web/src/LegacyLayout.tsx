@@ -144,6 +144,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         )
     }
 
+    if (setupWizard && props.needsRepositoryConfiguration) {
+        return <Navigate to={PageRoutes.SetupWizard} replace={true} />
+    }
+
     return (
         <div
             className={classNames(

@@ -1,8 +1,8 @@
-import { FC } from 'react';
+import { FC } from 'react'
 
 import {
     ExternalServiceEditingDisabledAlert,
-    ExternalServiceEditingTemporaryAlert
+    ExternalServiceEditingTemporaryAlert,
 } from '../../../../components/externalServices'
 
 export const CodeHostExternalServiceAlert: FC = () => {
@@ -12,11 +12,11 @@ export const CodeHostExternalServiceAlert: FC = () => {
     const isEditingStateless = extsvcConfigFileExists && extsvcConfigAllowEdits
 
     if (isEditingDisabled) {
-        return <ExternalServiceEditingDisabledAlert/>
+        return <ExternalServiceEditingDisabledAlert />
     }
 
     if (isEditingStateless) {
-        return <ExternalServiceEditingTemporaryAlert/>
+        return <ExternalServiceEditingTemporaryAlert />
     }
 
     // If nothing is specified that means everything is available manually
