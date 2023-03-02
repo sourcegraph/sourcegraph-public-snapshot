@@ -166,7 +166,7 @@ input CodeownersFileInput {
     """
     The repo ID to ingest the file for. Cannot be set with repositoryName.
     """
-    repositoryID: Int
+    repositoryID: ID
     """
     The repo name to ingest the file for. Cannot be set with repositoryID.
     """
@@ -177,11 +177,7 @@ extend type Query {
     """
     codeownersIngestedFiles returns all existing manually ingested codeowners files.
     """
-    codeownersIngestedFiles(first: Int, after: Int, repositoryID: Int): CodeownersIngestedFileConnection!
-    """
-    codeownersIngestedFile returns a manually ingested codeowners file for a specific repo.
-    """
-    codeownersIngestedFile(repositoryID: Int!): CodeownersIngestedFile
+    codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
 }
 
 """

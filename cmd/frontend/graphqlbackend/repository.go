@@ -448,13 +448,7 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 }
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
-	id := r.ID()
-	rid, err := UnmarshalRepositoryID(id)
-	if err != nil {
-		return nil, err
-	}
-	repoID := int32(rid)
-	return EnterpriseResolvers.ownResolver.CodeownersIngestedFile(ctx, &CodeownersIngestedFileArgs{RepositoryID: repoID})
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }
 
 func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

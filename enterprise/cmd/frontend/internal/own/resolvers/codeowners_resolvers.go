@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
@@ -28,14 +29,14 @@ var (
 	_ graphqlbackend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
 )
 
-func (r *ownResolver) ViewerCanAdminister(ctx context.Context) error {
+func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {
 	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
 	// Eventually we should allow users to access the Get method, but check that they have view permissions on the repository.
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }
 
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := r.ViewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
 	proto, err := parseInputString(args.Input.FileContents)
@@ -65,7 +66,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := r.ViewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
 	proto, err := parseInputString(args.Input.FileContents)
@@ -102,7 +103,7 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return proto, nil
 }
 
-func (r *ownResolver) getRepo(ctx context.Context, repositoryID *int32, repositoryName *string) (*types.Repo, error) {
+func (r *ownResolver) getRepo(ctx context.Context, repositoryID *graphql.ID, repositoryName *string) (*types.Repo, error) {
 	if repositoryID == nil && repositoryName == nil {
 		return nil, errors.New("either RepositoryID or RepositoryName should be set")
 	}
@@ -116,18 +117,15 @@ func (r *ownResolver) getRepo(ctx context.Context, repositoryID *int32, reposito
 		}
 		return repo, nil
 	}
-	repo, err := r.db.Repos().GetByIDs(ctx, api.RepoID(*repositoryID))
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repositoryID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not fetch repository for ID %v", repositoryID)
+		return nil, err
 	}
-	if len(repo) != 1 {
-		return nil, errors.New("could not fetch repository")
-	}
-	return repo[0], nil
+	return r.db.Repos().Get(ctx, repoID)
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.ViewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
 	if err := r.codeownersStore.DeleteCodeownersForRepos(ctx, args.RepositoryIDs...); err != nil {
@@ -137,7 +135,7 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
-	if err := r.ViewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
 	connectionResolver := &codeownersIngestedFileConnectionResolver{
@@ -159,14 +157,18 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 	return connectionResolver, nil
 }
 
-func (r *ownResolver) CodeownersIngestedFile(ctx context.Context, args *graphqlbackend.CodeownersIngestedFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	// TODO: do we need to check repo permissions here?
-	codeownersFile, err := r.codeownersStore.GetCodeownersForRepo(ctx, api.RepoID(args.RepositoryID))
+func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.RepoID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	// This endpoint is open to anyone.
+	// TODO: do we need to check repo permissions here, or is that check embedded in the repos store?
+	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, &args.RepositoryID, nil)
+	codeownersFile, err := r.codeownersStore.GetCodeownersForRepo(ctx, repoID)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &codeownersIngestedFileResolver{

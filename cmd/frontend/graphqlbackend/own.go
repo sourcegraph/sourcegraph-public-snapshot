@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -26,7 +27,7 @@ type OwnResolver interface {
 
 	// Codeowners queries
 	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
-	CodeownersIngestedFile(context.Context, *CodeownersIngestedFileArgs) (CodeownersIngestedFileResolver, error)
+	RepoIngestedCodeowners(context.Context, api.RepoID) (CodeownersIngestedFileResolver, error)
 
 	// Codeowners mutations
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
@@ -73,7 +74,7 @@ type CodeownersFileArgs struct {
 
 type CodeownersFileInput struct {
 	FileContents   string
-	RepositoryID   *int32
+	RepositoryID   *graphql.ID
 	RepositoryName *string
 }
 
@@ -82,13 +83,8 @@ type DeleteCodeownersFileArgs struct {
 }
 
 type CodeownersIngestedFilesArgs struct {
-	First        *int32
-	After        *string
-	RepositoryID *int32
-}
-
-type CodeownersIngestedFileArgs struct {
-	RepositoryID int32
+	First *int32
+	After *string
 }
 
 type CodeownersIngestedFileResolver interface {
