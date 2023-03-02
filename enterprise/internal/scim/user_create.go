@@ -32,7 +32,6 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		}
 
 		// Create user (with or without external ID)
-		// TODO: Use NewSCIMUser instead of NewUser?
 		newUser := database.NewUser{
 			Email:           primaryEmail,
 			Username:        uniqueUsername,
