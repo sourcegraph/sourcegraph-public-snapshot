@@ -513,7 +513,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}()
 
 		licensing.MockCheckFeature = allowLicensingCheck
-
 		result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 			{
 				URN: "1",
