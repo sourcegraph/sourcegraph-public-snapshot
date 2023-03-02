@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -380,10 +379,8 @@ func (s *GitHubSource) ExternalServices() types.ExternalServices {
 // ListNamespaces returns all Github organizations accessible to the given source defined
 // via the external service configuration.
 func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
-	var (
-		err  error
-		cost int
-	)
+	var err error
+
 	orgs := make([]*github.Org, 0)
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
@@ -392,18 +389,12 @@ func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNa
 			return
 		}
 		var pageOrgs []*github.Org
-		pageOrgs, hasNextPage, cost, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
 		if err != nil {
 			results <- SourceNamespaceResult{Source: s, Err: err}
 			continue
 		}
 		orgs = append(orgs, pageOrgs...)
-		if hasNextPage && cost > 0 {
-			// 0-duration sleep unless nearing rate limit exhaustion, or
-			// shorter if context has been canceled (next iteration of loop
-			// will then return `ctx.Err()`).
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
-		}
 	}
 	for _, org := range orgs {
 		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
@@ -505,9 +496,8 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		var pageRepos []*github.Repository
-		var cost int
 		var err error
-		pageRepos, hasNext, cost, err = pager(page)
+		pageRepos, hasNext, _, err = pager(page)
 		if err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -520,13 +510,6 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 			}
 
 			results <- &githubResult{repo: r}
-		}
-
-		if hasNext && cost > 0 {
-			// 0-duration sleep unless nearing rate limit exhaustion, or
-			// shorter if context has been canceled (next iteration of loop
-			// will then return `ctx.Err()`).
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -691,14 +674,6 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 		s.logger.Debug("github sync: GetRepository", log.String("repo", repo.NameWithOwner))
 
 		results <- &githubResult{repo: repo}
-
-		// If there is another iteration of the loop: 0-duration sleep unless
-		// nearing rate limit exhaustion, or shorter if context has been
-		// canceled. If context has been canceled, the `ctx.Err()` will be
-		// returned by next iteration.
-		if i > 0 {
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
-		}
 	}
 }
 

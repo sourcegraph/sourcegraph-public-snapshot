@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v41/github"
 
