@@ -225,12 +225,13 @@ locked_refs AS (
 	ON CONFLICT DO NOTHING
 	RETURNING codeintel_ranking_reference_id
 ),
-referenced_symbols AS (
-	SELECT unnest(r.symbol_names) AS symbol_name
-	FROM refs r
+processable_symbols AS (
+	SELECT r.symbol_names
+	FROM locked_refs lr
+	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
 	JOIN lsif_uploads u ON u.id = r.upload_id
 	WHERE
-		r.id IN (SELECT lr.codeintel_ranking_reference_id FROM locked_refs lr) AND
+		-- Do not select references for repository/root/indexer that has already been processed
 		NOT EXISTS (
 			SELECT 1
 			FROM lsif_uploads u2
@@ -241,7 +242,25 @@ referenced_symbols AS (
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
 				u.indexer = u2.indexer
+		) AND
+		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
+		-- process the one associated with the most recently processed upload record. This should
+		-- maximize fresh results.
+		NOT EXISTS (
+			SELECT 1
+			FROM locked_refs lr2
+			JOIN refs r2 ON r2.id = lr2.codeintel_ranking_reference_id
+			JOIN lsif_uploads u2 ON u2.id = r2.upload_id
+			WHERE
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer AND
+				u.finished_at > u2.finished_at
 		)
+),
+referenced_symbols AS (
+	SELECT unnest(r.symbol_names) AS symbol_name
+	FROM processable_symbols r
 ),
 referenced_definitions AS (
 	SELECT
