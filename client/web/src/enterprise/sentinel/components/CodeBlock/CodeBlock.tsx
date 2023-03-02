@@ -141,7 +141,7 @@ export const CodeBlock: FC<CodeBlockProps> = ({ vulnerableCode }) => {
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
     if (parts.length >= 3 && parts[0].includes('.')) {
-        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
+        parts = parts.slice(1)
     }
     return parts.join('/')
 }
