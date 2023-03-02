@@ -53,8 +53,8 @@ type V3Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
+	// externalRateLimiter is the external API rate limit monitor.
+	externalRateLimiter *ratelimit.Monitor
 
 	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
@@ -119,15 +119,15 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 				log.String("urn", urn),
 				log.String("resource", resource),
 			),
-		urn:              urn,
-		apiURL:           apiURL,
-		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		auth:             a,
-		httpClient:       cli,
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
-		resource:         resource,
-		WaitForRateLimit: true,
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		rateLimit:           rl,
+		externalRateLimiter: rlm,
+		resource:            resource,
+		WaitForRateLimit:    true,
 	}
 }
 
@@ -140,7 +140,7 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 
 // RateLimitMonitor exposes the rate limit monitor.
 func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+	return c.externalRateLimiter
 }
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
@@ -210,14 +210,14 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	}
 
 	var resp *httpResponseState
-	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 	if err != nil {
 		return nil, err
 	}
 
 	// Retry request after waiting
 	if c.WaitForRateLimit && resp.statusCode == http.StatusForbidden {
-		remaining, reset, retry, known := c.rateLimitMonitor.Get()
+		remaining, reset, retry, known := c.externalRateLimiter.Get()
 
 		if !known {
 			return resp, err
@@ -225,10 +225,10 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 
 		if retry > 0 {
 			timeutil.SleepWithContext(ctx, retry)
-			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 		} else if remaining == 0 && reset > 0 {
 			timeutil.SleepWithContext(ctx, reset)
-			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 		}
 	}
 
