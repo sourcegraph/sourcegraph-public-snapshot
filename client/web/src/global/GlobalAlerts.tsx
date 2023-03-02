@@ -21,6 +21,7 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
+import { siteFlagFieldsFragment } from '../storm/pages/LayoutPage/LayoutPage.loader'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
@@ -37,33 +38,16 @@ const QUERY = gql`
         }
     }
 
-    fragment SiteFlagFields on Site {
-        needsRepositoryConfiguration
-        freeUsersExceeded
-        alerts {
-            ...SiteFlagAlertFields
-        }
-        productSubscription {
-            license {
-                expiresAt
-            }
-            noLicenseWarningUserCount
-        }
-    }
-
-    fragment SiteFlagAlertFields on Alert {
-        type
-        message
-        isDismissibleWithKey
-    }
+    ${siteFlagFieldsFragment}
 `
-
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
 export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
     const settings = useSettings()
-    const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {})
+    const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
+        fetchPolicy: 'cache-first',
+    })
     const siteFlagsValue = data?.site
 
     const verifyEmailProps = useMemo(() => {
