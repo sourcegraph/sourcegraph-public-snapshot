@@ -1,0 +1,46 @@
+.summary-item-extended {
+    // Maintain similar spacing with additional copy
+    max-width: 12rem;
+}
+
+.details {
+    padding: 1rem;
+    border: 1px solid var(--border-color-2);
+    margin: 1rem 0;
+
+    &-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 25rem;
+        overflow-y: scroll;
+
+        &-item {
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            &:hover {
+                background-color: var(--subtle-bg);
+            }
+
+            &:not(:first-of-type) {
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    }
+
+    &-link {
+        padding: 0.5rem 0;
+        display: flex;
+        align-items: center;
+        &:hover {
+            text-decoration: none;
+        }
+    }
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+}

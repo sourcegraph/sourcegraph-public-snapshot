@@ -5,6 +5,7 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
 
 import { modify } from '@sourcegraph/common'
+import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import {
     Tabs,
     Tab,
@@ -22,13 +23,23 @@ import {
     useControlledField,
     ErrorAlert,
     FORM_ERROR,
+    AsyncValidator,
 } from '@sourcegraph/wildcard'
 
+import { EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID } from '../../../../../../components/externalServices/backend'
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
-import { AddExternalServiceInput, ExternalServiceKind } from '../../../../../../graphql-operations'
+import {
+    AddExternalServiceInput,
+    ExternalServiceCheckConnectionByIdResult,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServiceKind,
+    ValidateAccessTokenResult,
+    ValidateAccessTokenVariables,
+} from '../../../../../../graphql-operations'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
+import { getAccessTokenValue, getRepositoriesSettings } from './helpers'
 
 import styles from './GithubConnectView.module.scss'
 
@@ -44,6 +55,7 @@ const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
 
 interface GithubConnectViewProps {
     initialValues?: CodeHostConnectFormFields
+    externalServiceId?: string
 
     /**
      * Render props that is connected to form state, usually is used to render
@@ -60,7 +72,7 @@ interface GithubConnectViewProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { initialValues, children, onSubmit } = props
+    const { initialValues, externalServiceId, children, onSubmit } = props
     const [localValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
 
     const handleSubmit = useCallback(
@@ -81,6 +93,7 @@ export const GithubConnectView: FC<GithubConnectViewProps> = props => {
     return (
         <GithubConnectForm
             initialValues={initialValues ?? localValues}
+            externalServiceId={externalServiceId}
             onChange={initialValues ? noop : setInitialValues}
             onSubmit={handleSubmit}
         >
@@ -96,6 +109,7 @@ enum GithubConnectFormTab {
 
 interface GithubConnectFormProps {
     initialValues: CodeHostConnectFormFields
+    externalServiceId?: string
     children: (state: CodeHostJSONFormState) => ReactNode
     onChange: (values: CodeHostConnectFormFields) => void
     onSubmit: (values: CodeHostConnectFormFields) => void
@@ -106,11 +120,12 @@ interface GithubConnectFormProps {
  * configuration UI.
  */
 export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
-    const { initialValues, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, children, onChange, onSubmit } = props
 
     const [activeTab, setActiveTab] = useState(GithubConnectFormTab.Form)
     const form = useForm<CodeHostConnectFormFields>({
         initialValues,
+        touched: !!externalServiceId,
         onSubmit,
         onChange: event => onChange(event.values),
     })
@@ -153,6 +168,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                         displayNameField={displayName}
                         configurationField={configuration}
                         isTabActive={activeTab === GithubConnectFormTab.Form}
+                        externalServiceId={externalServiceId}
                     />
                 </TabPanel>
                 <TabPanel as="fieldset" tabIndex={-1} className={styles.formView}>
@@ -175,21 +191,26 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
 }
 
 interface GithubFormViewProps {
+    isTabActive: boolean
     form: FormInstance<CodeHostConnectFormFields>
     displayNameField: useFieldAPI<string>
     configurationField: useFieldAPI<string>
-    isTabActive: boolean
+    externalServiceId?: string
 }
 
 function GithubFormView(props: GithubFormViewProps): ReactElement {
-    const { form, displayNameField, configurationField } = props
+    const { isTabActive, form, displayNameField, configurationField, externalServiceId } = props
 
+    const accessTokenAsyncValidator = useAccessTokenValidator({ externalServiceId })
     const accessTokenField = useControlledField({
         value: getAccessTokenValue(configurationField.input.value),
         name: 'accessToken',
         submitted: form.formAPI.submitted,
         formTouched: form.formAPI.touched,
-        validators: { sync: syncAccessTokenValidator, async: asyncAccessTokenValidator },
+        validators: {
+            sync: isTabActive ? syncAccessTokenValidator : undefined,
+            async: isTabActive ? accessTokenAsyncValidator : undefined,
+        },
         onChange: value => configurationField.input.onChange(modify(configurationField.input.value, ['token'], value)),
     })
 
@@ -269,6 +290,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     onChange={handleOrganizationsModeChange}
                 >
                     <GithubOrganizationsPicker
+                        externalServiceId={externalServiceId}
                         token={accessTokenField.input.value}
                         disabled={accessTokenField.meta.validState !== 'VALID'}
                         organizations={organizations}
@@ -285,6 +307,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     onChange={handleRepositoriesModeChange}
                 >
                     <GithubRepositoriesPicker
+                        externalServiceId={externalServiceId}
                         token={accessTokenField.input.value}
                         disabled={accessTokenField.meta.validState !== 'VALID'}
                         repositories={repositories}
@@ -304,54 +327,85 @@ function syncAccessTokenValidator(value: string | undefined): string | undefined
     return
 }
 
-async function asyncAccessTokenValidator(value: string | undefined): Promise<string | undefined> {
-    if (!value) {
-        return
-    }
-
-    await new Promise(res => setTimeout(res, 1000))
-
-    return
-}
-
-function getAccessTokenValue(configuration: string): string {
-    const parsedConfiguration = parseJSONC(configuration) as Record<string, any>
-
-    if (typeof parsedConfiguration === 'object') {
-        return parsedConfiguration.token ?? ''
-    }
-
-    return ''
-}
-
-interface GithubFormConfiguration {
-    isAffiliatedRepositories: boolean
-    isOrgsRepositories: boolean
-    isSetRepositories: boolean
-    repositories: string[]
-    organizations: string[]
-}
-
-function getRepositoriesSettings(configuration: string): GithubFormConfiguration {
-    const parsedConfiguration = parseJSONC(configuration) as Record<string, any>
-
-    if (typeof parsedConfiguration === 'object') {
-        const repositoryQuery: string[] = parsedConfiguration.repositoryQuery ?? []
-
-        return {
-            isAffiliatedRepositories: repositoryQuery.includes('affiliated'),
-            isOrgsRepositories: Array.isArray(parsedConfiguration.orgs),
-            organizations: parsedConfiguration.orgs ?? [],
-            isSetRepositories: Array.isArray(parsedConfiguration.repos),
-            repositories: parsedConfiguration.repos ?? [],
+/**
+ * At the moment we don't have a designated query to check access token
+ * validity, but as a workaround for this we use externalServiceRepositories
+ * query that depends on the access token, so if this query resolves without
+ * any error this means that token is valid.
+ */
+const CHECK_TOKEN_VALIDATION = gql`
+    query ValidateAccessToken($token: String!) {
+        externalServiceRepositories(
+            token: $token
+            first: 1
+            query: ""
+            kind: GITHUB
+            excludeRepos: []
+            url: "https://github.com"
+        ) {
+            nodes {
+                id
+            }
         }
     }
+`
 
-    return {
-        isAffiliatedRepositories: false,
-        isOrgsRepositories: false,
-        organizations: [],
-        isSetRepositories: false,
-        repositories: [],
-    }
+interface useAccessTokenValidatorInput {
+    externalServiceId?: string
+}
+
+function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncValidator<string> {
+    const { externalServiceId } = input
+
+    const [checkNewAccessToken] = useLazyQuery<ValidateAccessTokenResult, ValidateAccessTokenVariables>(
+        CHECK_TOKEN_VALIDATION,
+        { fetchPolicy: 'network-only' }
+    )
+
+    const [checkExternalServiceConnection] = useLazyQuery<
+        ExternalServiceCheckConnectionByIdResult,
+        ExternalServiceCheckConnectionByIdVariables
+    >(EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID, { fetchPolicy: 'network-only' })
+
+    return useCallback<AsyncValidator<string>>(
+        async (token: string | undefined) => {
+            if (!token) {
+                return
+            }
+
+            // If we are in edit and access token has "REDACTED" value (which is default value
+            // that BE returns for connected code hosts we should run check connection by its id
+            // instead of making any token validation calls
+            if (token === 'REDACTED' && externalServiceId) {
+                const { data } = await checkExternalServiceConnection({ variables: { id: externalServiceId } })
+                const externalService = data?.node
+
+                // TS check since get external service by id lives in node(id: ID!) query
+                // it's possible (im theory and API schema) to get non-external service entity
+                // we should check it to get along with generated ts types
+                if (externalService?.__typename !== 'ExternalService') {
+                    return
+                }
+
+                switch (externalService.checkConnection.__typename) {
+                    // Everything is ok, code host successfully checked and connected
+                    case 'ExternalServiceAvailable':
+                        return
+                    case 'ExternalServiceUnavailable':
+                        return externalService.checkConnection.suspectedReason
+                    case 'ExternalServiceAvailabilityUnknown':
+                        return "Check your access token, we couldn't reach out to code host by the current token"
+                }
+            }
+
+            const { error } = await checkNewAccessToken({ variables: { token } })
+
+            if (error) {
+                return "Check your access token, we couldn't reach out to code host by the current token"
+            }
+
+            return
+        },
+        [checkExternalServiceConnection, checkNewAccessToken, externalServiceId]
+    )
 }

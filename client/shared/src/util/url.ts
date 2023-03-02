@@ -586,6 +586,49 @@ export const buildCloudTrialURL = (
     return url.toString()
 }
 
+/**
+ * Takes an input URL and adds Sourcegraph App specific query parameters to it. This includes the UTM parameters and app_os.
+ * @param url Original URL
+ * @param campaign Optional utm_campaign value to add to the query params.
+ * @returns URL string with appended query parameters
+ */
+export const addSourcegraphAppOutboundUrlParameters = (url: string, campaign?: string): string => {
+    const urlObject = new URL(url)
+    urlObject.searchParams.append('utm_source', 'sg_app')
+    urlObject.searchParams.append('utm_medium', 'referral')
+
+    if (campaign) {
+        urlObject.searchParams.append('utm_campaign', campaign)
+    }
+
+    const os = detectOS()
+    if (os) {
+        urlObject.searchParams.append('app_os', os)
+    }
+
+    return urlObject.toString()
+}
+
+/*
+ * Detect the user's OS, for analytics purposes and not for feature detection.
+ * Do not rely on this for any feature functionality. Returns undefined if unknown.
+ */
+function detectOS(): 'windows' | 'mac' | 'linux' | undefined {
+    const userAgent = window.navigator.userAgent
+
+    if (userAgent.includes('Windows')) {
+        return 'windows'
+    }
+    if (userAgent.includes('Mac')) {
+        return 'mac'
+    }
+    if (userAgent.includes('Linux')) {
+        return 'linux'
+    }
+
+    return undefined
+}
+
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */
 export interface ParsedRepoRevision {
     repoName: string
