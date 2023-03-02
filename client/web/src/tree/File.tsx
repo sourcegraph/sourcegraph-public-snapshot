@@ -4,10 +4,10 @@ import * as React from 'react'
 import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
-import { useExperimentalFeatures } from '../stores'
 
 import {
     TreeLayerCell,

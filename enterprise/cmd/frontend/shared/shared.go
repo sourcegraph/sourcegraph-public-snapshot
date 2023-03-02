@@ -19,8 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
@@ -29,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
@@ -43,6 +46,7 @@ import (
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
+	"search":         search.Init,
 	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
@@ -56,8 +60,10 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
 	"repos.webhooks": webhooks.Init,
+	"embeddings":     embeddings.Init,
 	"rbac":           rbac.Init,
 	"own":            own.Init,
+	"completions":    completions.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -91,7 +97,7 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 
 	// Inititalize executor last, as we require code intel and batch changes services to be
 	// already populated on the enterpriseServices object.
-	if err := executor.Init(ctx, observationCtx, db, conf, &enterpriseServices); err != nil {
+	if err := executor.Init(observationCtx, db, conf, &enterpriseServices); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 

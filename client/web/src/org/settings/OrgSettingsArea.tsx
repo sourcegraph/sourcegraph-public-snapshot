@@ -1,14 +1,14 @@
 import React, { FC } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import {
     OrgAreaOrganizationFields,
@@ -48,7 +48,6 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
  * an organization's settings.
  */
 export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
-    const location = useLocation()
     const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
         {
@@ -67,23 +66,22 @@ export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
         <div className="d-flex flex-column flex-sm-row">
             <OrgSettingsSidebar items={props.sideBarItems} {...context} className="flex-0 mr-3 mb-4" />
             <div className="flex-1">
-                <ErrorBoundary location={location}>
-                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                        <Routes>
-                            {props.routes.map(
-                                ({ path, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            element={render(context)}
-                                            path={path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        />
-                                    )
-                            )}
-                            <Route element={<NotFoundPage />} />
-                        </Routes>
-                    </React.Suspense>
-                </ErrorBoundary>
+                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                    <Routes>
+                        {props.routes.map(
+                            ({ path, render, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        element={render(context)}
+                                        errorElement={<RouteError />}
+                                        path={path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    />
+                                )
+                        )}
+                        <Route element={<NotFoundPage />} />
+                    </Routes>
+                </React.Suspense>
             </div>
         </div>
     )

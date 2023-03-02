@@ -186,12 +186,14 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 
 func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
 func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, pathPrefix),
 	}
 }

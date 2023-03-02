@@ -12,7 +12,9 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/GitCommitNode',
-    parameters: { disableSnapshot: false },
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
     decorators: [decorator],
 }
 

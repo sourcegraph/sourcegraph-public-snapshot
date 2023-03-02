@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -413,8 +412,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB: db,
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)

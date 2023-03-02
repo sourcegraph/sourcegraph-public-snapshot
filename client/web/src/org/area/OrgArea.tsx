@@ -18,7 +18,7 @@ import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
@@ -253,37 +253,36 @@ export class OrgArea extends React.Component<OrgAreaProps> {
         }
 
         return (
-            <ErrorBoundary location={this.props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                    <Routes>
-                        {this.props.orgAreaRoutes.map(
-                            ({ path, render, condition = () => true, fullPage }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        element={
-                                            fullPage ? (
-                                                render(context)
-                                            ) : (
-                                                <Page className="org-area">
-                                                    <OrgHeader
-                                                        {...this.props}
-                                                        {...context}
-                                                        navItems={this.props.orgAreaHeaderNavItems}
-                                                        className="mb-3"
-                                                    />
-                                                    <div className="container">{render(context)}</div>
-                                                </Page>
-                                            )
-                                        }
-                                    />
-                                )
-                        )}
-                        <Route element={<NotFoundPage />} />
-                    </Routes>
-                </React.Suspense>
-            </ErrorBoundary>
+            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                <Routes>
+                    {this.props.orgAreaRoutes.map(
+                        ({ path, render, condition = () => true, fullPage }) =>
+                            condition(context) && (
+                                <Route
+                                    path={path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    errorElement={<RouteError />}
+                                    element={
+                                        fullPage ? (
+                                            render(context)
+                                        ) : (
+                                            <Page className="org-area">
+                                                <OrgHeader
+                                                    {...this.props}
+                                                    {...context}
+                                                    navItems={this.props.orgAreaHeaderNavItems}
+                                                    className="mb-3"
+                                                />
+                                                <div className="container">{render(context)}</div>
+                                            </Page>
+                                        )
+                                    }
+                                />
+                            )
+                    )}
+                    <Route element={<NotFoundPage />} />
+                </Routes>
+            </React.Suspense>
         )
     }
 

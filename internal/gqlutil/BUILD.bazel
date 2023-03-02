@@ -12,4 +12,5 @@ go_test(
     name = "gqlutil_test",
     srcs = ["datetime_test.go"],
     embed = [":gqlutil"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

@@ -82,8 +82,14 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	query := sqlf.Sprintf(
-		getUploadsQuery,
+		getUploadsSelectQuery,
 		buildCTEPrefix(cte),
 		tableExpr,
 		sqlf.Join(conds, " AND "),
@@ -91,18 +97,31 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		opts.Limit,
 		opts.Offset,
 	)
-	uploads, totalCount, err = scanUploadsWithCount(s.db.Query(ctx, query))
+	uploads, err = scanUploadComplete(tx.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numUploads", len(uploads)))
+
+	countQuery := sqlf.Sprintf(
+		getUploadsCountQuery,
+		buildCTEPrefix(cte),
+		tableExpr,
+		sqlf.Join(conds, " AND "),
+	)
+	totalCount, _, err = basestore.ScanFirstInt(tx.db.Query(ctx, countQuery))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("totalCount", totalCount),
-		attribute.Int("numUploads", len(uploads)))
+	)
 
 	return uploads, totalCount, nil
 }
 
-const getUploadsQuery = `
+const getUploadsSelectQuery = `
 %s -- Dynamic CTE definitions for use in the WHERE clause
 SELECT
 	u.id,
@@ -128,13 +147,22 @@ SELECT
 	u.content_type,
 	u.should_reindex,
 	s.rank,
-	u.uncompressed_size,
-	COUNT(*) OVER() AS count
+	u.uncompressed_size
 FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+WHERE %s
+ORDER BY %s
+LIMIT %d OFFSET %d
+`
+
+const getUploadsCountQuery = `
+%s -- Dynamic CTE definitions for use in the WHERE clause
+SELECT COUNT(*) AS count
+FROM %s
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
 `
 
 const uploadRankQueryFragment = `
@@ -2152,6 +2180,8 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 	if !opts.AllowDeletedRepo {
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
+	// Never show uploads for deleted repos
+	conds = append(conds, sqlf.Sprintf("repo.blocked IS NULL"))
 
 	return sourceTableExpr, conds, cteDefinitions
 }

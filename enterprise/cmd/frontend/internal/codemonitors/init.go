@@ -22,6 +22,6 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.CodeMonitorsResolver = resolvers.NewResolver(log.Scoped("codeMonitorResolver", ""), edb.NewEnterpriseDB(db))
+	enterpriseServices.CodeMonitorsResolver = resolvers.NewResolver(log.Scoped("codeMonitorResolver", ""), edb.NewEnterpriseDB(db), enterpriseServices.EnterpriseSearchJobs)
 	return nil
 }

@@ -16,7 +16,7 @@ import { UserHistory } from '../useUserHistory'
 
 import { createActionsFSM, getAllFuzzyActions } from './FuzzyActions'
 import { FuzzyFiles, FuzzyRepoFiles } from './FuzzyFiles'
-import { getFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
+import { useFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
 import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
 import { FuzzyRepos } from './FuzzyRepos'
@@ -252,7 +252,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     repoRevisionRef.current = repoRevision
 
     const { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } =
-        getFuzzyFinderFeatureFlags(props.settingsCascade.final)
+        useFuzzyFinderFeatureFlags()
 
     const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
 
