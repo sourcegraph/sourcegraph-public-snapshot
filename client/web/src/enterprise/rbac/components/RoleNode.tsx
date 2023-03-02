@@ -69,7 +69,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     type="button"
                     variant="icon"
                 >
-                    <Icon className="mr-1 bg-red" aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
+                    <Icon data-caret={true} className="mr-1 bg-red" aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
 
                     <header className="d-flex flex-column justify-content-center mr-2">
                         <div className="d-flex align-items-center">
@@ -84,13 +84,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                                 </Tooltip>
                             )}
                         </div>
-                        {error && <ErrorAlert className="mt-1" error={error} />}
+                        {error && <ErrorAlert className="mt-2" error={error} />}
                     </header>
 
                     {!node.system && (
                         <Tooltip content="Deleting a role is an irreversible action.">
                             <Button aria-label="Delete" onClick={openModal} disabled={loading} variant="danger" size="sm" className={styles.roleNodeDeleteBtn}>
-                                <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                <Icon aria-hidden={true} svgPath={mdiDelete} className={styles.roleNodeDeleteBtnIcon} />
                             </Button>
                         </Tooltip>
                     )}
