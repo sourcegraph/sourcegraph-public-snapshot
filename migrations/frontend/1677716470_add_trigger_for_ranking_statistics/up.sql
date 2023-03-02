@@ -11,7 +11,7 @@ AS $$ BEGIN
         NEW.min_reference_count,
         NEW.max_reference_count,
         NEW.sum_reference_count
-    FROM jsonb_each(NEW.payload) r(k, v);
+    FROM jsonb_each(CASE WHEN NEW.payload::text == 'null' THEN '{}'::jsonb ELSE COALESCE(NEW.payload, '{}'::jsonb) END) r(k, v);
 
     RETURN NEW;
 END;
