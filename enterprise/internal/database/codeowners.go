@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -184,7 +185,7 @@ func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...i
 			sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
 		}
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("repo_id IN (%s)", sqlf.Join(sqlIDs, ",")),
+			sqlf.Sprintf("repo_id = ANY (%s)", pq.Array(ids)),
 		}
 
 		q := sqlf.Sprintf(deleteCodeownersFileQueryFmtStr, sqlf.Join(conds, "AND"))
