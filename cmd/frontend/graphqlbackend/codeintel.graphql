@@ -2269,3 +2269,173 @@ type AutoIndexJobDescription {
     """
     steps: IndexSteps!
 }
+
+"""
+TODO
+"""
+type Vulnerability implements Node {
+    """
+    TODO
+    """
+    id: ID!
+
+    """
+    TODO
+    """
+    sourceID: String!
+
+    """
+    TODO
+    """
+    summary: String!
+
+    """
+    TODO
+    """
+    details: String!
+
+    """
+    TODO
+    """
+    cpes: [String!]!
+
+    """
+    TODO
+    """
+    cwes: [String!]!
+
+    """
+    TODO
+    """
+    aliases: [String!]!
+
+    """
+    TODO
+    """
+    related: [String!]!
+
+    """
+    TODO
+    """
+    dataSource: String!
+
+    """
+    TODO
+    """
+    urls: [String!]!
+
+    """
+    TODO
+    """
+    severity: String!
+
+    """
+    TODO
+    """
+    cvssVector: String!
+
+    """
+    TODO
+    """
+    cvssScore: String!
+
+    """
+    TODO
+    """
+    published: DateTime!
+
+    """
+    TODO
+    """
+    modified: DateTime
+
+    """
+    TODO
+    """
+    withdrawn: DateTime
+
+    """
+    TODO
+    """
+    affectedPackages: [VulnerabilityAffectedPackage!]!
+}
+
+"""
+TODO
+"""
+type VulnerabilityAffectedPackage {
+    """
+    TODO
+    """
+    packageName: String!
+
+    """
+    TODO
+    """
+    language: String!
+
+    """
+    TODO
+    """
+    namespace: String!
+
+    """
+    TODO
+    """
+    versionConstraint: [String!]!
+
+    """
+    TODO
+    """
+    fixed: Boolean!
+
+    """
+    TODO
+    """
+    fixedIn: String
+
+    """
+    TODO
+    """
+    affectedSymbols: [VulnerabilityAffectedSymbol!]!
+}
+
+"""
+TODO
+"""
+type VulnerabilityAffectedSymbol {
+    """
+    TODO
+    """
+    path: String!
+
+    """
+    TODO
+    """
+    symbols: [String!]!
+}
+
+"""
+TODO
+"""
+type VulnerabilityMatch implements Node {
+    """
+    TODO
+    """
+    id: ID!
+
+    """
+    TODO
+    """
+    vulnerability: Vulnerability!
+
+    """
+    TODO
+    """
+    affectedPackage: VulnerabilityAffectedPackage!
+
+    """
+    TODO
+    """
+    preciseIndex: PreciseIndex!
+}
