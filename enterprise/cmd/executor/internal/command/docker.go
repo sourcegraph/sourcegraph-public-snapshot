@@ -18,7 +18,7 @@ const ScriptsPath = ".sourcegraph-executor"
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
 	// Note: unless the `native-ssbc-execution` feature-flag is enabled, this
-	// is the default execution method
+	// is the default execution method for server-side batch changes.
 	if spec.Image == "" {
 		env := spec.Env
 		if dockerConfigPath != "" {
