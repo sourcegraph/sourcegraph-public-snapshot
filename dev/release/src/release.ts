@@ -6,7 +6,7 @@ import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
 import { SemVer } from 'semver'
-import semver from 'semver/preload';
+import semver from 'semver/preload'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -20,9 +20,10 @@ import {
     removeScheduledRelease,
     saveReleaseConfig,
     getReleaseDefinition,
-    deactivateAllReleases, setSrcCliVersion,
+    deactivateAllReleases,
+    setSrcCliVersion,
 } from './config'
-import {getCandidateTags, getPreviousVersion} from './git'
+import { getCandidateTags, getPreviousVersion } from './git'
 import {
     cloneRepo,
     closeTrackingIssue,
@@ -32,11 +33,13 @@ import {
     createLatestRelease,
     createTag,
     ensureTrackingIssues,
-    getAuthenticatedGitHubClient, getBackportLabelForRelease,
+    getAuthenticatedGitHubClient,
+    getBackportLabelForRelease,
     getTrackingIssue,
     IssueLabel,
     localSourcegraphRepo,
-    queryIssues, releaseBlockerLabel,
+    queryIssues,
+    releaseBlockerLabel,
     releaseName,
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
@@ -49,10 +52,13 @@ import {
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     formatDate,
-    getAllUpgradeGuides, getLatestSrcCliGithubRelease,
+    getAllUpgradeGuides,
+    getLatestSrcCliGithubRelease,
     getLatestTag,
-    getReleaseBlockers, nextSrcCliVersionInputWithAutodetect,
-    releaseBlockerUri, retryInput,
+    getReleaseBlockers,
+    nextSrcCliVersionInputWithAutodetect,
+    releaseBlockerUri,
+    retryInput,
     timezoneLink,
     updateUpgradeGuides,
     validateNoReleaseBlockers,
@@ -343,7 +349,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                             },
                         ],
                     },
-
                 ],
                 dryRun: config.dryRun.changesets,
             })
@@ -1043,7 +1048,10 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             // So our options are either to release a new version of src-cli, wait for the github action to be complete and THEN update the src/src repo,
             // OR we can assume that main is going to be the new version (which it is). So we will clone it and execute the
             // commands against the binary directly, saving ourselves a lot of time.
-            const {workdir} = await cloneRepo(client, 'sourcegraph', 'src-cli', {revision: 'main', revisionMustExist: true})
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
             const next = await nextSrcCliVersionInputWithAutodetect(workdir)
             setSrcCliVersion(config, next.version)
 
@@ -1062,19 +1070,23 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                         edits: [
                             `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${next.version}\\"" internal/src-cli/consts.go`,
                             `cd ${workdir}/cmd/src && go build`,
-                            `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`
+                            `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
                         ],
-                        labels: [getBackportLabelForRelease(release), releaseBlockerLabel]
-                    }
-                ]
+                        labels: [getBackportLabelForRelease(release), releaseBlockerLabel],
+                    },
+                ],
             })
             if (!config.dryRun.changesets) {
                 // actually execute the release
-                await execa('bash', ['-c', 'yes | ./release.sh'], { stdio: 'inherit', cwd: workdir, env: {...process.env, VERSION: next.version} })
+                await execa('bash', ['-c', 'yes | ./release.sh'], {
+                    stdio: 'inherit',
+                    cwd: workdir,
+                    env: { ...process.env, VERSION: next.version },
+                })
             } else {
                 console.log(chalk.blue('Skipping src-cli release for dry run'))
             }
-        }
+        },
     },
     {
         id: 'release:verify-src-cli',
@@ -1082,7 +1094,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async config => {
             let passed = true
             let expected = config.in_progress?.srcCliVersion
-            const formatVersion = function (val:string): string {
+            const formatVersion = function (val: string): string {
                 if (val === expected) {
                     return chalk.green(val)
                 }
@@ -1090,7 +1102,11 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 return chalk.red(val)
             }
             if (!config.in_progress?.srcCliVersion) {
-                expected = await retryInput('Enter the expected version of src-cli: ', val => !!semver.parse(val), 'Expected semver format')
+                expected = await retryInput(
+                    'Enter the expected version of src-cli: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
             } else {
                 console.log(`Expecting src-cli version ${expected} from release config`)
             }
@@ -1098,7 +1114,10 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const githubRelease = await getLatestSrcCliGithubRelease()
             console.log(`github:\t${formatVersion(githubRelease)}`)
 
-            const brewVersion = execa.sync('bash', ['-c', 'brew info sourcegraph/src-cli/src-cli -q | sed -n \'s/.*stable \\([0-9]\\.[0-9]\\.[0-9]\\)/\\1/p\'']).stdout
+            const brewVersion = execa.sync('bash', [
+                '-c',
+                "brew info sourcegraph/src-cli/src-cli -q | sed -n 's/.*stable \\([0-9]\\.[0-9]\\.[0-9]\\)/\\1/p'",
+            ]).stdout
             console.log(`brew:\t${formatVersion(brewVersion)}`)
 
             const npmVersion = execa.sync('bash', ['-c', 'npm show @sourcegraph/src version']).stdout
@@ -1109,7 +1128,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
             }
-        }
+        },
     },
     {
         id: 'util:clear-cache',

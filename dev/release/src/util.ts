@@ -1,17 +1,17 @@
-import {readdirSync, readFileSync, writeFileSync} from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
 import Octokit from '@octokit/rest'
 import chalk from 'chalk'
 import execa from 'execa'
-import {mkdir, readFile, writeFile} from 'mz/fs'
+import { mkdir, readFile, writeFile } from 'mz/fs'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
-import {SemVer} from 'semver';
+import { SemVer } from 'semver'
 
-import {getPreviousVersionSrcCli} from './git';
-import {cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues} from './github'
+import { getPreviousVersionSrcCli } from './git'
+import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
@@ -326,15 +326,24 @@ export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void>
 export async function nextSrcCliVersionInputWithAutodetect(repoPath?: string): Promise<SemVer> {
     if (!repoPath) {
         const client = await getAuthenticatedGitHubClient()
-        const {workdir} = await cloneRepo(client, 'sourcegraph', 'src-cli', {revision: 'main', revisionMustExist: true})
+        const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
+            revision: 'main',
+            revisionMustExist: true,
+        })
         repoPath = workdir
     }
     console.log('Attempting to detect previous src-cli version...')
     const previous = getPreviousVersionSrcCli(repoPath)
     console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
     const next = previous.inc('minor')
-    if (!await softVerifyWithInput(`Confirm next version of src-cli should be: ${next.version}`)) {
-        return new SemVer(await retryInput('Enter the next version of src-cli: ', val => !!semver.parse(val), 'Expected semver format'))
+    if (!(await softVerifyWithInput(`Confirm next version of src-cli should be: ${next.version}`))) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of src-cli: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
     }
     return next
 }

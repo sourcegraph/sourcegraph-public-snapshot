@@ -64,7 +64,7 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         ...(def as ReleaseDates),
         ...(def as ReleaseCaptainInformation),
         branch: `${version.major}.${version.minor}`,
-        srcCliVersion: config.in_progress.srcCliVersion ? new SemVer(config.in_progress.srcCliVersion) : undefined
+        srcCliVersion: config.in_progress.srcCliVersion ? new SemVer(config.in_progress.srcCliVersion) : undefined,
     }
 }
 
