@@ -312,7 +312,7 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	})
 
 	// If we timed out return what we found without an error
-	if err == context.DeadlineExceeded {
+	if errors.Is(err, context.DeadlineExceeded) {
 		err = nil
 		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
 	}
