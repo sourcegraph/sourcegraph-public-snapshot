@@ -26,8 +26,32 @@ type RootResolver interface {
 }
 
 type SentinelServiceResolver interface {
+	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
+	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
 	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
 	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
+}
+
+type GetVulnerabilitiesArgs struct {
+	First *int32
+	After *string
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	First *int32
+	After *string
+}
+
+type VulnerabilityConnectionResolver interface {
+	Nodes() []VulnerabilityResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityMatchConnectionResolver interface {
+	Nodes() []VulnerabilityMatchResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
 }
 
 type VulnerabilityResolver interface {

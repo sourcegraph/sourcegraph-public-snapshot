@@ -456,6 +456,36 @@ extend type Query {
     Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
     """
     inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): [AutoIndexJobDescription!]!
+
+    """
+    TODO
+    """
+    vulnerabilities(
+        """
+        TODO
+        """
+        first: Int
+
+        """
+        TODO
+        """
+        after: String
+    ): VulnerabilityConnection!
+
+    """
+    TODO
+    """
+    vulnerabilityMatches(
+        """
+        TODO
+        """
+        first: Int
+
+        """
+        TODO
+        """
+        after: String
+    ): VulnerabilityMatchConnection!
 }
 
 """
@@ -2438,4 +2468,44 @@ type VulnerabilityMatch implements Node {
     TODO
     """
     preciseIndex: PreciseIndex!
+}
+
+"""
+TODO
+"""
+type VulnerabilityConnection {
+    """
+    TODO
+    """
+    nodes: [Vulnerability!]!
+
+    """
+    TODO
+    """
+    totalCount: Int
+
+    """
+    TODO
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+TODO
+"""
+type VulnerabilityMatchConnection {
+    """
+    TODO
+    """
+    nodes: [VulnerabilityMatch!]!
+
+    """
+    TODO
+    """
+    totalCount: Int
+
+    """
+    TODO
+    """
+    pageInfo: PageInfo!
 }

@@ -8,6 +8,8 @@ import (
 )
 
 type operations struct {
+	getVulnerabilities     *observation.Operation
+	getMatches             *observation.Operation
 	vulnerabilityByID      *observation.Operation
 	vulnerabilityMatchByID *observation.Operation
 }
@@ -29,6 +31,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
+		getVulnerabilities:     op("Vulnerabilities"),
+		getMatches:             op("Matches"),
 		vulnerabilityByID:      op("VulnerabilityByID"),
 		vulnerabilityMatchByID: op("VulnerabilityMatchByID"),
 	}
