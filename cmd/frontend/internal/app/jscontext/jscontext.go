@@ -261,7 +261,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		needsRepositoryConfiguration = false
 	}
 
-	extsvcConfigFileExists := graphqlbackend.ExtsvcConfigFile != ""
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -341,7 +341,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExtsvcConfigFileExists: extsvcConfigFileExists,
 
-		ExtsvcConfigAllowEdits: graphqlbackend.ExtsvcConfigAllowEdits,
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
 	}
