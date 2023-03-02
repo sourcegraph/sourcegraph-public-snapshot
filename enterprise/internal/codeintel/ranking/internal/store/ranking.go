@@ -227,6 +227,7 @@ locked_refs AS (
 referenced_symbols AS (
 	SELECT unnest(r.symbol_names) AS symbol_name
 	FROM refs r
+	JOIN lsif_uploads u ON u.id = r.upload_id
 	WHERE
 		r.id IN (SELECT lr.id FROM locked_refs lr) AND
 		TRUE -- TODO
