@@ -222,6 +222,12 @@ Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
 
 In the case where your testdata lives in `../**`, Gazelle cannot see those on its own, and you need to create a filegroup manually, see https://github.com/sourcegraph/sourcegraph/pull/47605/commits/93c838aad5436dc69f6695cec933bfb84b8ba59a
 
+#### How to update to the latest recommended bazelrc?
+
+```
+bazel run //.aspect/bazelrc:update_aspect_bazelrc_presets
+```
+
 ## Resources
 
 - [Core Bazel (book)](https://www.amazon.com/Core-Bazel-Fast-Builds-People/dp/B08DVDM7BZ):
