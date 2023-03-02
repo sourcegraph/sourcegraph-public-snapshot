@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
-func New(db database.DB, gitserver gitserver.Client, ownService own.OwnService) graphqlbackend.OwnResolver {
+func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
 	enterpriseDB := edb.NewEnterpriseDB(db)
 	return &ownResolver{
 		db:              enterpriseDB,
@@ -36,7 +36,7 @@ type ownResolver struct {
 	db              edb.EnterpriseDB
 	codeownersStore edb.CodeownersStore
 	gitserver       gitserver.Client
-	ownService own.Service
+	ownService      own.Service
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {

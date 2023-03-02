@@ -166,11 +166,11 @@ input CodeownersFileInput {
     """
     The repo ID to ingest the file for. Cannot be set with repositoryName.
     """
-    repositoryID: ID
+    repoID: ID
     """
     The repo name to ingest the file for. Cannot be set with repositoryID.
     """
-    repositoryName: String
+    repoName: String
 }
 
 extend type Query {
