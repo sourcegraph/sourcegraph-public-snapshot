@@ -199,6 +199,8 @@ type AzureDevOpsAuthProvider struct {
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
 type AzureDevOpsConnection struct {
+	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
+	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
@@ -209,7 +211,7 @@ type AzureDevOpsConnection struct {
 	Token string `json:"token"`
 	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
 }
 type BackendInsight struct {
@@ -733,8 +735,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
-	// AccessRequestsEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
-	AccessRequestsEnabled *bool `json:"accessRequests.enabled,omitempty"`
+	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
+	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
 	// AzureDevOps description: Allow adding Azure DevOps code host connections
 	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
@@ -831,7 +833,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "accessRequests.enabled")
+	delete(m, "accessRequest.enabled")
 	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")

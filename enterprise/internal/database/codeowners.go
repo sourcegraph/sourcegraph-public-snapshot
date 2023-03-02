@@ -9,13 +9,13 @@ import (
 	"github.com/lib/pq"
 	"google.golang.org/protobuf/proto"
 
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -102,7 +102,7 @@ var codeownersColumns = []*sqlf.Query{
 }
 
 const createCodeownersQueryFmtStr = `
-INSERT INTO codeowners 
+INSERT INTO codeowners
 (%s)
 VALUES (%s, %s, %s, %s, %s)
 `
@@ -146,12 +146,12 @@ func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.
 }
 
 const updateCodeownersQueryFmtStr = `
-UPDATE codeowners 
-SET 
+UPDATE codeowners
+SET
     contents = %s,
     contents_proto = %s,
     updated_at = %s
-WHERE 
+WHERE
     %s
 `
 
@@ -173,7 +173,7 @@ func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoI
 
 const getCodeownersFileQueryFmtStr = `
 SELECT %s
-FROM codeowners 
+FROM codeowners
 WHERE %s
 LIMIT 1
 `
@@ -202,7 +202,7 @@ func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...i
 }
 
 const deleteCodeownersFileQueryFmtStr = `
-DELETE FROM codeowners 
+DELETE FROM codeowners
 WHERE %s
 `
 
@@ -243,10 +243,10 @@ func (s *codeownersStore) ListCodeowners(ctx context.Context, opts ListCodeowner
 
 const listCodeownersFilesQueryFmtStr = `
 SELECT %s
-FROM codeowners 
+FROM codeowners
 WHERE %s
-ORDER BY 
-    repo_id ASC 
+ORDER BY
+    repo_id ASC
 %s
 `
 

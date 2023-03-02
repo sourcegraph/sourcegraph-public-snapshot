@@ -134,8 +134,10 @@ func TestCanUpdate(t *testing.T) {
 	}
 }
 
-func TestSerializeBasic(t *testing.T) {
-	pr := &pingRequest{
+func makeDefaultPingRequest(t *testing.T) *pingRequest {
+	t.Helper()
+
+	return &pingRequest{
 		ClientSiteID:             "0101-0101",
 		LicenseKey:               "mylicense",
 		DeployType:               "server",
@@ -144,6 +146,7 @@ func TestSerializeBasic(t *testing.T) {
 		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		CodeHostVersions:         nil,
 		BuiltinSignupAllowed:     true,
+		AccessRequestEnabled:     true,
 		HasExtURL:                false,
 		UniqueUsers:              123,
 		Activity:                 json.RawMessage(`{"foo":"bar"}`),
@@ -166,6 +169,10 @@ func TestSerializeBasic(t *testing.T) {
 		EverFindRefs:             true,
 		RetentionStatistics:      nil,
 	}
+}
+
+func TestSerializeBasic(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
 
 	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -205,6 +212,7 @@ func TestSerializeBasic(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
@@ -274,6 +282,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "false",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
@@ -285,37 +294,8 @@ func TestSerializeFromQuery(t *testing.T) {
 }
 
 func TestSerializeBatchChangesUsage(t *testing.T) {
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        json.RawMessage(`{"baz":"bonk"}`),
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+	pr.BatchChangesUsage = json.RawMessage(`{"baz":"bonk"}`)
 
 	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -327,7 +307,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -355,6 +335,60 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeGrowthStatistics(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
+	pr.GrowthStatistics = json.RawMessage(`{"baz":"bonk"}`)
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "mylicense",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo":"bar"},
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"search_usage": null,
+		"growth_statistics": {"baz":"bonk"},
+		"saved_searches": null,
+		"search_onboarding": null,
+		"homepage_panels": null,
+		"repositories": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
@@ -467,37 +501,9 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		t.Fatalf("unexpected error %s", err)
 	}
 
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        testUsage,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+
+	pr.NewCodeIntelUsage = testUsage
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
 	if err != nil {
@@ -508,7 +514,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -636,6 +642,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
@@ -669,37 +676,9 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 	}
 	period := string(testPeriod)
 
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           json.RawMessage(`{"Weekly": [` + period + `]}`),
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+
+	pr.CodeIntelUsage = json.RawMessage(`{"Weekly": [` + period + `]}`)
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
 	if err != nil {
@@ -710,7 +689,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -808,6 +787,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
@@ -819,37 +799,8 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 }
 
 func TestSerializeCodeHostVersions(t *testing.T) {
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         json.RawMessage(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`),
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 nil,
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+	pr.CodeHostVersions = json.RawMessage(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`)
 
 	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -861,10 +812,10 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
-		"site_activity": null,
+		"site_activity": {"foo": "bar"},
 		"batch_changes_usage": null,
 		"code_intel_usage": null,
 		"new_code_intel_usage": null,
@@ -889,6 +840,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": [{"external_service_kind":"GITHUB","version":"1.2.3.4"}],
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",

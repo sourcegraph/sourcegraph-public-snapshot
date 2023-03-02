@@ -11,15 +11,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -97,7 +98,7 @@ func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	return ruleset.GetFile(), nil
 }
 
-func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*types.Repo, error) {
+func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*itypes.Repo, error) {
 	if input.RepoID == nil && input.RepoName == nil {
 		return nil, errors.New("either RepoID or RepoName should be set")
 	}
@@ -177,7 +178,7 @@ type codeownersIngestedFileResolver struct {
 	gitserver      gitserver.Client
 	db             edb.EnterpriseDB
 	codeownersFile *types.CodeownersFile
-	repository     *types.Repo
+	repository     *itypes.Repo
 }
 
 const codeownersIngestedFileKind = "CodeownersIngestedFile"

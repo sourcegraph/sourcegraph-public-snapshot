@@ -27,8 +27,8 @@ import (
 )
 
 type Serve struct {
-	Addr   string
-	Root   string
+	Config
+
 	Logger log.Logger
 }
 
@@ -238,7 +238,14 @@ func (s *Serve) Repos() ([]Repo, error) {
 func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	var reposRootIsRepo atomic.Bool
 
-	ignore := mkIgnoreSubPath(root)
+	ctx := context.Background()
+	if s.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.Timeout)
+		defer cancel()
+	}
+
+	ignore := mkIgnoreSubPath(root, s.MaxDepth)
 
 	// We use fastwalk since it is much faster. Notes for people used to
 	// filepath.WalkDir:
@@ -248,6 +255,10 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	//     files (so will only get dirs)
 	//   - filepath.SkipDir has the same meaning
 	err := fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if !typ.IsDir() {
 			return fastwalk.ErrSkipFiles
 		}
@@ -300,12 +311,18 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 		return filepath.SkipDir
 	})
 
+	// If we timed out return what we found without an error
+	if errors.Is(err, context.DeadlineExceeded) {
+		err = nil
+		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
+	}
+
 	return reposRootIsRepo.Load(), err
 }
 
 // mkIgnoreSubPath which acts on subpaths to root. It returns true if the
 // subpath should be ignored.
-func mkIgnoreSubPath(root string) func(string) bool {
+func mkIgnoreSubPath(root string, maxDepth int) func(string) bool {
 	// A list of dirs which cause us trouble and are unlikely to contain
 	// repos.
 	ignoredSubPaths := ignoredPaths(root)
@@ -323,6 +340,10 @@ func mkIgnoreSubPath(root string) func(string) bool {
 	}
 
 	return func(subpath string) bool {
+		if maxDepth > 0 && strings.Count(subpath, string(os.PathSeparator)) >= maxDepth {
+			return true
+		}
+
 		// Previously we recursed into bare repositories which is why this check was here.
 		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
 		base := filepath.Base(subpath)

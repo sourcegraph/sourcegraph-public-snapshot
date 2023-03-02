@@ -117,6 +117,20 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 		v.Set("refresh_token", refreshToken)
 	}
 
+	// TODO: (FUTURE REFACTORING NOTE) Most of the code in this module is very similar to the upstream
+	// oauth2 library. We should revisit and use the upstream library in the future, but this is one
+	// of the minor but breaking deviations from the upstream library.
+	//
+	// If we decide to refactor this, OAuthContext can be replaced by oauth2.Config which is pretty
+	// much the same except the CustomURLArgs that we're adding here. But that also means if we go
+	// back to using oauth2.Config, we can use the Exchange method instead and pass the custom args
+	// as oauth2.AuthCodeOption values. See the implementation of the azuredevops auth provider
+	// which already does this to exchange the auth_code for an access token the first time a user
+	// connects their ADO account with Sourcegraph.
+	for key, value := range oauthCtx.CustomQueryParams {
+		v.Set(key, value)
+	}
+
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
 
 	if err != nil {
