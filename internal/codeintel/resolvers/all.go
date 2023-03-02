@@ -26,6 +26,74 @@ type RootResolver interface {
 }
 
 type SentinelServiceResolver interface {
+	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
+	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
+	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
+	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
+}
+
+type GetVulnerabilitiesArgs struct {
+	First *int32
+	After *string
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	First *int32
+	After *string
+}
+
+type VulnerabilityConnectionResolver interface {
+	Nodes() []VulnerabilityResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityMatchConnectionResolver interface {
+	Nodes() []VulnerabilityMatchResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityResolver interface {
+	ID() graphql.ID
+	SourceID() string
+	Summary() string
+	Details() string
+	CPEs() []string
+	CWEs() []string
+	Aliases() []string
+	Related() []string
+	DataSource() string
+	URLs() []string
+	Severity() string
+	CVSSVector() string
+	CVSSScore() string
+	Published() gqlutil.DateTime
+	Modified() *gqlutil.DateTime
+	Withdrawn() *gqlutil.DateTime
+	AffectedPackages() []VulnerabilityAffectedPackageResolver
+}
+
+type VulnerabilityAffectedPackageResolver interface {
+	PackageName() string
+	Language() string
+	Namespace() string
+	VersionConstraint() []string
+	Fixed() bool
+	FixedIn() *string
+	AffectedSymbols() []VulnerabilityAffectedSymbolResolver
+}
+
+type VulnerabilityAffectedSymbolResolver interface {
+	Path() string
+	Symbols() []string
+}
+
+type VulnerabilityMatchResolver interface {
+	ID() graphql.ID
+	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
+	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
+	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
 type CodeNavServiceResolver interface {

@@ -3,7 +3,7 @@ package codeowners
 import (
 	"sync"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 type Ruleset struct {
@@ -19,6 +19,10 @@ func NewRuleset(proto *codeownerspb.File) *Ruleset {
 		f.rules = append(f.rules, &CompiledRule{proto: r})
 	}
 	return f
+}
+
+func (r *Ruleset) GetFile() *codeownerspb.File {
+	return r.proto
 }
 
 // FindOwners returns the Owners associated with given path as per this CODEOWNERS file.

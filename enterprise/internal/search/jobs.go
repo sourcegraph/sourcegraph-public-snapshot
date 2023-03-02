@@ -1,7 +1,7 @@
 package search
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/own/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )

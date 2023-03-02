@@ -3,13 +3,16 @@ package store
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -105,6 +108,8 @@ func TestInsertPathRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	insertUploads(t, db, types.Upload{ID: 1})
+
 	// Insert definitions
 	mockDefinitions := []shared.RankingDefinitions{
 		{
@@ -178,34 +183,55 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	t1 := time.Now().Add(-time.Minute * 10)
+	t2 := time.Now().Add(-time.Minute * 20)
+
+	insertUploads(t, db,
+		types.Upload{ID: 42, RepositoryID: 50},
+		types.Upload{ID: 43, RepositoryID: 51},
+		types.Upload{ID: 90, RepositoryID: 52},
+		types.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
+		types.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
+		types.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+		types.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+	)
+
 	// Insert definitions
 	mockDefinitions := []shared.RankingDefinitions{
 		{
-			UploadID:     1,
+			UploadID:     42,
 			SymbolName:   "foo",
 			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
-			UploadID:     1,
+			UploadID:     42,
 			SymbolName:   "bar",
 			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
-			UploadID:     1,
-			SymbolName:   "foo",
-			Repository:   "deadbeef",
-			DocumentPath: "foo.go",
+			UploadID:     43,
+			SymbolName:   "baz",
+			Repository:   "cafebabe",
+			DocumentPath: "baz.go",
+		},
+		{
+			UploadID:     43,
+			SymbolName:   "bonk",
+			Repository:   "cafebabe",
+			DocumentPath: "bonk.go",
 		},
 	}
 	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
-	// Insert references
+	//
+	// Basic test case
+
 	mockReferences := shared.RankingReferences{
-		UploadID: 1,
+		UploadID: 90,
 		SymbolNames: []string{
 			mockDefinitions[0].SymbolName,
 			mockDefinitions[1].SymbolName,
@@ -216,27 +242,92 @@ func TestInsertPathCountInputs(t *testing.T) {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	// Test InsertPathCountInputs
+	mockReferences = shared.RankingReferences{
+		UploadID: 91,
+		SymbolNames: []string{
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// duplicate of 91 (should not be processed as it's older)
+	mockReferences = shared.RankingReferences{
+		UploadID: 92,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should process existing rows
 	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
+	//
+	// Incremental insertion test case
+
+	mockReferences = shared.RankingReferences{
+		UploadID: 93,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should process unprocessed rows only
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	//
+	// No-op test case
+
+	mockReferences = shared.RankingReferences{
+		UploadID: 94,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+			mockDefinitions[3].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs: should do nothing, 94 covers the same project as 93
+	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	//
+	// Assertions
+
 	// Test path count inputs were inserted
-	repository, documentPath, count, err := getRankingPathCountsInputs(ctx, t, db, mockRankingGraphKey)
+	inputs, err := getPathCountsInputs(ctx, t, db, mockRankingGraphKey)
 	if err != nil {
 		t.Fatalf("unexpected error getting path count inputs: %s", err)
 	}
 
-	if repository != "deadbeef" {
-		t.Fatalf("unexpected repository. want=%s have=%s", "deadbeef", repository)
+	expectedInputs := []pathCountsInput{
+		{Repository: "cafebabe", DocumentPath: "baz.go", Count: 1},
+		{Repository: "cafebabe", DocumentPath: "bonk.go", Count: 1},
+		{Repository: "deadbeef", DocumentPath: "bar.go", Count: 2},
+		{Repository: "deadbeef", DocumentPath: "foo.go", Count: 2},
 	}
-
-	if documentPath != "foo.go" {
-		t.Fatalf("unexpected document path. want=%s have=%s", "foo.go", documentPath)
-	}
-
-	if count != 2 {
-		t.Fatalf("unexpected count. want=%d have=%d", 2, count)
+	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
+		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
 	}
 }
 
@@ -457,30 +548,42 @@ func getRankingReferences(
 	return references, nil
 }
 
-func getRankingPathCountsInputs(
+type pathCountsInput struct {
+	Repository   string
+	DocumentPath string
+	Count        int
+}
+
+func getPathCountsInputs(
 	ctx context.Context,
 	t *testing.T,
 	db database.DB,
 	graphKey string,
-) (repository, documentPath string, count int, err error) {
-	query := sqlf.Sprintf(
-		`SELECT repository, document_path, count FROM codeintel_ranking_path_counts_inputs WHERE graph_key LIKE %s || '%%'`,
-		graphKey,
-	)
+) (_ []pathCountsInput, err error) {
+	query := sqlf.Sprintf(`
+		SELECT repository, document_path, SUM(count)
+		FROM codeintel_ranking_path_counts_inputs
+		WHERE graph_key LIKE %s || '%%'
+		GROUP BY repository, document_path
+		ORDER BY repository, document_path
+	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return "", "", 0, err
+		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	var pathCountsInputs []pathCountsInput
 	for rows.Next() {
-		err = rows.Scan(&repository, &documentPath, &count)
-		if err != nil {
-			return "", "", 0, err
+		var input pathCountsInput
+		if err := rows.Scan(&input.Repository, &input.DocumentPath, &input.Count); err != nil {
+			return nil, err
 		}
+
+		pathCountsInputs = append(pathCountsInputs, input)
 	}
 
-	return repository, documentPath, count, nil
+	return pathCountsInputs, nil
 }
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
@@ -503,5 +606,108 @@ func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, 
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
+	}
+}
+
+// insertUploads populates the lsif_uploads table with the given upload models.
+func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
+	for _, upload := range uploads {
+		if upload.Commit == "" {
+			upload.Commit = makeCommit(upload.ID)
+		}
+		if upload.State == "" {
+			upload.State = "completed"
+		}
+		if upload.RepositoryID == 0 {
+			upload.RepositoryID = 50
+		}
+		if upload.Indexer == "" {
+			upload.Indexer = "lsif-go"
+		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
+		if upload.UploadedParts == nil {
+			upload.UploadedParts = []int{}
+		}
+
+		// Ensure we have a repo for the inner join in select queries
+		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
+
+		query := sqlf.Sprintf(`
+			INSERT INTO lsif_uploads (
+				id,
+				commit,
+				root,
+				uploaded_at,
+				state,
+				failure_message,
+				started_at,
+				finished_at,
+				process_after,
+				num_resets,
+				num_failures,
+				repository_id,
+				indexer,
+				indexer_version,
+				num_parts,
+				uploaded_parts,
+				upload_size,
+				associated_index_id,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		`,
+			upload.ID,
+			upload.Commit,
+			upload.Root,
+			upload.UploadedAt,
+			upload.State,
+			upload.FailureMessage,
+			upload.StartedAt,
+			upload.FinishedAt,
+			upload.ProcessAfter,
+			upload.NumResets,
+			upload.NumFailures,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.IndexerVersion,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
+			upload.AssociatedIndexID,
+			upload.ShouldReindex,
+		)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while inserting upload: %s", err)
+		}
+	}
+}
+
+// makeCommit formats an integer as a 40-character git commit hash.
+func makeCommit(i int) string {
+	return fmt.Sprintf("%040d", i)
+}
+
+// insertRepo creates a repository record with the given id and name. If there is already a repository
+// with the given identifier, nothing happens
+func insertRepo(t testing.TB, db database.DB, id int, name string) {
+	if name == "" {
+		name = fmt.Sprintf("n-%d", id)
+	}
+
+	deletedAt := sqlf.Sprintf("NULL")
+	if strings.HasPrefix(name, "DELETED-") {
+		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		id,
+		name,
+		deletedAt,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
 }

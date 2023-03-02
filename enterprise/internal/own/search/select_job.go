@@ -6,6 +6,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -107,7 +108,7 @@ matchesLoop:
 		}
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{
-				ResolvedOwner: o,
+				ResolvedOwner: ownerToResult(o),
 				InputRev:      mm.InputRev,
 				Repo:          mm.Repo,
 				CommitID:      mm.CommitID,
@@ -116,4 +117,22 @@ matchesLoop:
 		}
 	}
 	return ownerMatches, errs
+}
+
+func ownerToResult(o codeowners.ResolvedOwner) result.Owner {
+	if v, ok := o.(*codeowners.Person); ok {
+		return &result.OwnerPerson{
+			Handle: v.Handle,
+			Email:  v.Email,
+			User:   v.User,
+		}
+	}
+	if v, ok := o.(*codeowners.Team); ok {
+		return &result.OwnerTeam{
+			Handle: v.Handle,
+			Email:  v.Email,
+			Team:   v.Team,
+		}
+	}
+	panic("unimplemented resolved owner in ownerToResult")
 }

@@ -32,9 +32,12 @@ interface Props<N extends TreeNode>
     // because we can not rely on the .length property to know if we're still
     // loading children.
     loadedIds?: Set<number>
+
+    // Optional className that is passed through to the focused nodes
+    nodeClassName?: string
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -94,7 +97,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
                     data-tree-node-id={element.id}
-                    className={classNames(styles.node, isSelected && styles.selected)}
+                    className={classNames(styles.node, isSelected && styles.selected, nodeClassName)}
                 >
                     {isBranch ? (
                         // We already handle accessibility events for expansion in the <TreeView />
@@ -127,7 +130,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                 </div>
             )
         },
-        [loadedIds, renderNode]
+        [loadedIds, nodeClassName, renderNode]
     )
 
     return (
