@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import classNames from 'classnames'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
@@ -82,6 +83,16 @@ const COMMITS_TAB: RevisionsPopoverTab = {
     description: 'Find a revision from the listed commits',
 }
 
+// Note: Functionally equivalent to the "Tabs" tab, with different wording for packages.
+const VERSIONS_TAB: RevisionsPopoverTab = {
+    id: 'tags',
+    label: 'Versions',
+    noun: 'version',
+    pluralNoun: 'versions',
+    type: GitRefType.GIT_TAG,
+    description: 'Find a listed version',
+}
+
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
@@ -96,17 +107,18 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
+    const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
     const tabs = useMemo(() => {
-        if (isPackageServiceType(repoServiceType)) {
-            return [TAGS_TAB]
+        if (isPackage) {
+            return [VERSIONS_TAB]
         }
 
         return [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB]
-    }, [repoServiceType])
+    }, [isPackage])
 
     return (
         <ConnectionPopoverTabs
-            className={styles.revisionsPopover}
+            className={classNames(styles.revisionsPopover, isPackage && styles.revisionsPopoverSlim)}
             data-testid="revisions-popover"
             defaultIndex={tabs.length === 1 ? 0 : tabIndex}
             onChange={handleTabsChange}
@@ -147,6 +159,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
+                                isPackage={isPackage}
                                 tabLabel={tab.description}
                             />
                         ) : (
