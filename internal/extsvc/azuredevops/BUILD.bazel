@@ -4,6 +4,7 @@ go_library(
     name = "azuredevops",
     srcs = [
         "client.go",
+        "projects.go",
         "pull_requests.go",
         "repositories.go",
         "types.go",
@@ -12,11 +13,14 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/encryption",
+        "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/ratelimit",
         "//lib/errors",
         "@com_github_goware_urlx//:urlx",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
@@ -25,6 +29,7 @@ go_test(
     srcs = [
         "client_test.go",
         "main_test.go",
+        "projects_test.go",
         "pull_requests_test.go",
         "repositories_test.go",
         "users_test.go",

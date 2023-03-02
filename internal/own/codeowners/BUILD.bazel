@@ -3,8 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "codeowners",
     srcs = [
+        "file.go",
+        "find_owners.go",
         "owner_types.go",
         "parse.go",
+        "repr.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners",
     visibility = ["//:__subpackages__"],
@@ -13,12 +16,16 @@ go_library(
         "//internal/own/codeowners/v1:codeowners",
         "//internal/types",
         "//lib/errors",
+        "@com_github_becheran_wildmatch_go//:wildmatch-go",
     ],
 )
 
 go_test(
     name = "codeowners_test",
-    srcs = ["parse_test.go"],
+    srcs = [
+        "find_owners_test.go",
+        "parse_test.go",
+    ],
     deps = [
         ":codeowners",
         "//internal/own/codeowners/v1:codeowners",

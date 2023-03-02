@@ -181,6 +181,11 @@ func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToRepoEmbeddingJob() (RepoEmbeddingJobResolver, bool) {
+	n, ok := r.Node.(RepoEmbeddingJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok

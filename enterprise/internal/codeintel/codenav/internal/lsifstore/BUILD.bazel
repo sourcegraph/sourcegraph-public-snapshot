@@ -15,7 +15,6 @@ go_library(
         "observability.go",
         "scan.go",
         "scip_decompressor.go",
-        "serializer.go",
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore",

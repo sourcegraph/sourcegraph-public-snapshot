@@ -58,7 +58,9 @@ func (r *roleResolver) Permissions(ctx context.Context, args *gql.ListPermission
 	return graphqlutil.NewConnectionResolver[gql.PermissionResolver](
 		connectionStore,
 		&args.ConnectionResolverArgs,
-		nil,
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
 	)
 }
 

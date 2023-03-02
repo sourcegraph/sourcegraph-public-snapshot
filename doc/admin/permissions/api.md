@@ -16,6 +16,12 @@ E.g. if a code host does not support permission syncing/webhooks or if it would 
 It's also a good idea to use explicit permissions API if the source of truth for the codehost permissions is already defined in some external system, e.g. LDAP group membership.
 In that case, it might be less resource intensive to sync the permissions from external source of truth directly via a periodically running routine.
 
+## SLA
+
+Sourcegraph SLA is, that **p95 of write requests to the explicit permissions API will be resolved within 10 seconds**.
+
+Sourcegraph does not provide SLA for how fresh the permissions are, since the data is provided as is to the API.
+
 ## Disadvantages
 
 It is important to note, that when using explicit permissions API, the permissions are written to the database as provided, without further verification that such permissions do exist on the code host side.

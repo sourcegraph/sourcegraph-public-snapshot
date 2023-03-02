@@ -55,7 +55,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={mdiAccountMultiple}>
-                        Teams <ProductStatusBadge status="prototype" />
+                        Teams <ProductStatusBadge status="experimental" />
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
