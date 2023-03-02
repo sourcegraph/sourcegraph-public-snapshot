@@ -248,7 +248,7 @@ query ($node: ID!) {
 }
 `
 
-func TestSyncPermissionsForRole(t *testing.T) {
+func TestSetPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
@@ -284,7 +284,7 @@ func TestSyncPermissionsForRole(t *testing.T) {
 	t.Run("as non-site-admin", func(t *testing.T) {
 		input := map[string]any{"role": marshalRoleID(roleWithoutPermissions.ID), "permissions": []int32{}}
 		var response struct{ Permissions apitest.EmptyResponse }
-		errs := apitest.Exec(userCtx, t, s, input, &response, syncPermissionsForRoleQuery)
+		errs := apitest.Exec(userCtx, t, s, input, &response, setPermissionsQuery)
 
 		require.Len(t, errs, 1)
 		require.ErrorContains(t, errs[0], "must be site admin")
@@ -296,7 +296,7 @@ func TestSyncPermissionsForRole(t *testing.T) {
 		t.Run("assign permissions", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithoutPermissions.ID), "permissions": permissionIDs}
 			var response struct{ Permissions apitest.EmptyResponse }
-			apitest.MustExec(adminCtx, t, s, input, &response, syncPermissionsForRoleQuery)
+			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithoutPermissions.ID)
 			require.Len(t, rps, len(permissionIDs))
@@ -313,7 +313,7 @@ func TestSyncPermissionsForRole(t *testing.T) {
 		t.Run("revoke permissions", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithAllPermissions.ID), "permissions": []graphql.ID{}}
 			var response struct{ Permissions apitest.EmptyResponse }
-			apitest.MustExec(adminCtx, t, s, input, &response, syncPermissionsForRoleQuery)
+			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithAllPermissions.ID)
 			require.Len(t, rps, 0)
@@ -323,7 +323,7 @@ func TestSyncPermissionsForRole(t *testing.T) {
 			// omitting the first permissions (which is already assigned to the role) will revoke it for the role.
 			input := map[string]any{"role": marshalRoleID(roleWithOnePermission.ID), "permissions": permissionIDs[1:]}
 			var response struct{ Permissions apitest.EmptyResponse }
-			apitest.MustExec(adminCtx, t, s, input, &response, syncPermissionsForRoleQuery)
+			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			// Since this role has the first permission assigned to it, since we
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithOnePermission.ID)
@@ -341,7 +341,7 @@ func TestSyncPermissionsForRole(t *testing.T) {
 		t.Run("no change", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithAllPermissions2.ID), "permissions": permissionIDs}
 			var response struct{ Permissions apitest.EmptyResponse }
-			apitest.MustExec(adminCtx, t, s, input, &response, syncPermissionsForRoleQuery)
+			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithAllPermissions2.ID)
 			require.Len(t, rps, len(permissions))
@@ -357,9 +357,9 @@ func TestSyncPermissionsForRole(t *testing.T) {
 	})
 }
 
-const syncPermissionsForRoleQuery = `
+const setPermissionsQuery = `
 mutation($role: ID!, $permissions: [ID!]!) {
-	syncPermissionsForRole(role: $role, permissions: $permissions) {
+	setPermissions(role: $role, permissions: $permissions) {
 		alwaysNil
 	}
 }

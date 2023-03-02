@@ -92,7 +92,7 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 	)
 }
 
-func (r *Resolver) SyncPermissionsForRole(ctx context.Context, args gql.SyncPermissionsForRoleArgs) (*gql.EmptyResponse, error) {
+func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsArgs) (*gql.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site administrators can sync permissions for a role.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
