@@ -16,7 +16,8 @@ type rankingConfig struct {
 	SymbolExporterReadBatchSize     int
 	SymbolExporterWriteBatchSize    int
 	MapReducerInterval              time.Duration
-	MapReducerBatchSize             int
+	MapperBatchSize                 int
+	ReducerBatchSize                int
 }
 
 var ConfigInst = &rankingConfig{}
@@ -29,5 +30,6 @@ func (c *rankingConfig) Load() {
 	c.SymbolExporterReadBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_READ_BATCH_SIZE", "16", "How many uploads to process at once.")
 	c.SymbolExporterWriteBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_WRITE_BATCH_SIZE", "10000", "The number of definitions and references to populate the ranking graph per batch.")
 	c.MapReducerInterval = c.GetInterval("CODEINTEL_RANKING_MAP_REDUCER_INTERVAL", "72h", "The maximum age of document reference count values used for ranking before being considered stale.")
-	c.MapReducerBatchSize = c.GetInt("CODEINTEL_RANKING_MAP_REDUCER_BATCH_SIZE", "10000", "How many references, definitions, and path counts to map and reduce at once.")
+	c.MapperBatchSize = c.GetInt("CODEINTEL_RANKING_MAPPER_BATCH_SIZE", "10000", "How many definitions and references to map at once.")
+	c.ReducerBatchSize = c.GetInt("CODEINTEL_RANKING_REDUCER_BATCH_SIZE", "1000", "How many path counts to reduce at once.")
 }
