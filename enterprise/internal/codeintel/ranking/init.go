@@ -34,7 +34,6 @@ func NewSymbolExporter(observationCtx *observation.Context, rankingService *Serv
 			ConfigInst.SymbolExporterNumRoutines,
 			ConfigInst.SymbolExporterInterval,
 			ConfigInst.SymbolExporterWriteBatchSize,
-			ConfigInst.DocumentReferenceCountsEnabled,
 		),
 	}
 }
@@ -45,7 +44,6 @@ func NewMapper(observationCtx *observation.Context, rankingService *Service) []g
 			observationCtx,
 			rankingService,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
 		),
 	}
 }
@@ -56,7 +54,6 @@ func NewReducer(observationCtx *observation.Context, rankingService *Service) []
 			observationCtx,
 			rankingService,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
 		),
 	}
 }

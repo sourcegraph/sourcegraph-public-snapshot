@@ -11,14 +11,15 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBatchSize int, rankingJobEnabled bool) (err error) {
+func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBatchSize int) (err error) {
 	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return nil
 	}
 
@@ -149,11 +150,11 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) MapRankingGraph(ctx context.Context, rankingJobEnabled bool) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
+func (s *Service) MapRankingGraph(ctx context.Context) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
@@ -164,11 +165,11 @@ func (s *Service) MapRankingGraph(ctx context.Context, rankingJobEnabled bool) (
 	)
 }
 
-func (s *Service) ReduceRankingGraph(ctx context.Context, rankingJobEnabled bool) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
+func (s *Service) ReduceRankingGraph(ctx context.Context) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
