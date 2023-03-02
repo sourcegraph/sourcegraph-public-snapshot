@@ -4,7 +4,7 @@ import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { Alert, Button, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables, SearchPatternType } from '../../../graphql-operations'
@@ -110,22 +110,31 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     return (
         <div className={classNames(styles.ownExplanation, 'd-flex align-items-start')}>
             <div className="flex-1">
-                <H3>Sourcegraph Own Preview</H3>
-                <Text className="mb-2">
+                <H3 className={styles.ownExplanationTitle}>Sourcegraph Own Preview</H3>
+                <Text className={classNames(styles.ownExplanationContent, 'mb-2')}>
                     Find code owners from a CODEOWNERS file in this repository, or from your external ownership tracking
                     system here. <Link to="/help/own">Learn more</Link>
                     <br />
-                    In the future, we will suggest you many kinds of people to reach out to, including language experts,
-                    codebase experts, and domain experts.
+                    In the future, we will suggest you many options of people to reach out to, including language
+                    experts, codebase experts, and domain experts.
                 </Text>
-                <Text>Try Sourcegraph Own in Search as well!</Text>
-                <Button variant="secondary" size="sm" outline={true} className="mr-2">
+                <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
+                    Try Sourcegraph Own in Search as well
+                </Text>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={true}
+                    as={Link}
+                    to={`/search?q=file:has.owner(johndoe)`}
+                    className="mr-2"
+                >
                     <SyntaxHighlightedSearchQuery
                         query="file:has.owner(johndoe)"
                         searchPatternType={SearchPatternType.standard}
                     />
                 </Button>
-                <Button variant="secondary" size="sm" outline={true}>
+                <Button variant="secondary" size="sm" as={Link} to={`/search?q=select:file.owners`} outline={true}>
                     <SyntaxHighlightedSearchQuery
                         query="select:file.owners"
                         searchPatternType={SearchPatternType.standard}

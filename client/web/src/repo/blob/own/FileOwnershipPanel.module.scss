@@ -22,7 +22,7 @@
     margin: 0.5rem 0.75rem;
     border-radius: 0.25rem;
 
-    h3 {
+    &-title {
         margin-bottom: 0.25rem;
         color: var(--purple);
         text-transform: uppercase;
@@ -30,7 +30,7 @@
         font-weight: 500;
     }
 
-    p {
+    &-content {
         margin: 0;
         font-size: 0.75rem;
     }
