@@ -115,11 +115,9 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
                     Find code owners from a CODEOWNERS file in this repository, or from your external ownership tracking
                     system here. <Link to="/help/own">Learn more</Link>
                     <br />
-                    In the future, we will suggest you many options of people to reach out to, including language
-                    experts, codebase experts, and domain experts.
                 </Text>
                 <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
-                    Try Sourcegraph Own in Search as well
+                    Sourcegraph Own also works in search:
                 </Text>
                 <Button
                     variant="secondary"
