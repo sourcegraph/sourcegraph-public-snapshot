@@ -56,6 +56,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         return undefined
     }
 }
+//make the ci rerun
 
 export async function gitRemoteNameAndBranch(
     repoDirectory: string,
@@ -91,7 +92,6 @@ export async function gitRemoteNameAndBranch(
 
     // If we cannot find the remote name deterministically, we use the first
     // Git remote found.
-    if (!remoteName) {
         if (remotes.length > 1) {
             log?.appendLine(`no upstream found, using first git remote: ${remotes[0]}`)
         }
