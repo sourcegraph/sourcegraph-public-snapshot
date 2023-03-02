@@ -136,7 +136,7 @@ func (c *Config) Validate() error {
 			c.AddError(errors.Newf("invalid registry URL %s provided", uri))
 		}
 		if uri.Path != "" {
-			c.AddError(errors.Newf("registry URL %s contains a subpath, consider using EXECUTOR_DOCKER_REGISTRY_PREFIX_URL instead"))
+			c.AddError(errors.Newf("registry URL %s contains a subpath, consider using EXECUTOR_DOCKER_REGISTRY_PREFIX_URL instead", uri))
 		}
 
 	}
