@@ -82,6 +82,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const handleSubmit = async (input: AddExternalServiceInput): Promise<void> => {
         await addRemoteCodeHost({
             variables: { input },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
             update: (cache, result) => {
                 const { data } = result
 
@@ -99,7 +100,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
                             // Update local cache and put newly created/connected code host
                             // to the beginning of code hosts list
-                            return { nodes: [newCodeHost, ...codeHosts.nodes] }
+                            return { nodes: [newCodeHost, ...(codeHosts?.nodes ?? [])] }
                         },
                     },
                 })
