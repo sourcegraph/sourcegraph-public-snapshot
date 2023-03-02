@@ -24,6 +24,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
     executorsEnabled: true,
+    extsvcConfigAllowEdits: false,
+    extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
     externalServicesUserMode: 'disabled',
@@ -37,6 +39,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     likelyDockerOnMac: false,
     needServerRestart: false,
     needsSiteInit: false,
+    needsRepositoryConfiguration: false,
     resetPasswordEnabled: false,
     sentryDSN: null,
     site: {},
@@ -50,4 +53,5 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     authProviders: [builtinAuthProvider],
     authMinPasswordLength: 12,
     embeddingsEnabled: false,
+    runningOnMacOS: true,
 })
