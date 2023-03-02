@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables, SearchPatternType } from '../../../graphql-operations'
 
@@ -30,14 +30,18 @@ export const FileOwnershipPanel: React.FunctionComponent<{
         },
     })
     if (loading) {
-        return <div className={styles.contents}>Loading...</div>
+        return (
+            <div className={classNames(styles.loaderWrapper, 'text-muted')}>
+                <LoadingSpinner inline={true} className="mr-1" /> Loading...
+            </div>
+        )
     }
 
     if (error) {
         logger.log(error)
         return (
             <div className={styles.contents}>
-                <Alert variant="danger">Error getting ownership data.</Alert>
+                <ErrorAlert error={error} prefix="Error getting ownership data" className="mt-2" />
             </div>
         )
     }
@@ -86,6 +90,7 @@ export const FileOwnershipPanel: React.FunctionComponent<{
 
     return (
         <div className={styles.contents}>
+            <OwnExplanation />
             <Alert variant="info">No ownership data for this file.</Alert>
         </div>
     )
@@ -108,40 +113,44 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     }
 
     return (
-        <div className={classNames(styles.ownExplanation, 'd-flex align-items-start')}>
-            <div className="flex-1">
-                <H3 className={styles.ownExplanationTitle}>Sourcegraph Own Preview</H3>
-                <Text className={classNames(styles.ownExplanationContent, 'mb-2')}>
-                    Find code owners from a CODEOWNERS file in this repository, or from your external ownership tracking
-                    system here. <Link to="/help/own">Learn more</Link>
-                    <br />
-                </Text>
-                <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
-                    Sourcegraph Own also works in search:
-                </Text>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    outline={true}
-                    as={Link}
-                    to={`/search?q=file:has.owner(johndoe)`}
-                    className="mr-2"
-                >
-                    <SyntaxHighlightedSearchQuery
-                        query="file:has.owner(johndoe)"
-                        searchPatternType={SearchPatternType.standard}
-                    />
-                </Button>
-                <Button variant="secondary" size="sm" as={Link} to={`/search?q=select:file.owners`} outline={true}>
-                    <SyntaxHighlightedSearchQuery
-                        query="select:file.owners"
-                        searchPatternType={SearchPatternType.standard}
-                    />
+        <div className={styles.ownExplanation}>
+            <div className={classNames(styles.ownExplanationContainer, 'd-flex align-items-start')}>
+                <div className="flex-1">
+                    <H3 as={H4} className={styles.ownExplanationTitle}>
+                        Sourcegraph Own Preview
+                    </H3>
+                    <Text className={classNames(styles.ownExplanationContent, 'mb-2')}>
+                        Find code owners from a CODEOWNERS file in this repository, or from your external ownership
+                        tracking system here. The <Link to="/help/own">Own documentation</Link> contains more
+                        information.
+                    </Text>
+                    <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
+                        Sourcegraph Own also works in search:
+                    </Text>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        outline={true}
+                        as={Link}
+                        to={`/search?q=file:has.owner(johndoe)`}
+                        className="mr-2"
+                    >
+                        <SyntaxHighlightedSearchQuery
+                            query="file:has.owner(johndoe)"
+                            searchPatternType={SearchPatternType.standard}
+                        />
+                    </Button>
+                    <Button variant="secondary" size="sm" as={Link} to={`/search?q=select:file.owners`} outline={true}>
+                        <SyntaxHighlightedSearchQuery
+                            query="select:file.owners"
+                            searchPatternType={SearchPatternType.standard}
+                        />
+                    </Button>
+                </div>
+                <Button aria-label="Dismiss alert" variant="icon" onClick={onDismiss}>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
-            <Button aria-label="Dismiss alert" variant="icon" onClick={onDismiss}>
-                <Icon aria-hidden={true} svgPath={mdiClose} />
-            </Button>
         </div>
     )
 }
