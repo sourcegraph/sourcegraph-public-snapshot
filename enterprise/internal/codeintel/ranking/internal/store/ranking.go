@@ -231,7 +231,9 @@ processable_symbols AS (
 	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
 	JOIN lsif_uploads u ON u.id = r.upload_id
 	WHERE
-		-- Do not select references for repository/root/indexer that has already been processed
+		-- Do not re-process references for repository/root/indexers that have already been
+		-- processed. We'll still insert a processed reference so that we know we've done the
+		-- "work", but we'll simply no-op the counts for this input.
 		NOT EXISTS (
 			SELECT 1
 			FROM lsif_uploads u2
@@ -255,7 +257,7 @@ processable_symbols AS (
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
 				u.indexer = u2.indexer AND
-				u.finished_at > u2.finished_at
+				u.finished_at < u2.finished_at
 		)
 ),
 referenced_symbols AS (
