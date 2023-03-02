@@ -229,18 +229,12 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	if errors.As(err, &apiError) && c.WaitForRateLimit && apiError.Code == http.StatusForbidden {
 		remaining, reset, retry, known := c.externalRateLimiter.Get()
 
-		// If known is not true, we return the original response and error since we cannot confirm that a rate limit was hit
-		if !known {
-			return resp, err
-		}
-
-		// We only retry a request if we can confirm the initial request failed because of rate limits.
-		// If a secondary rate limit was hit, retry will be greater than 0.
-		// If a primary rate limit was hit, our remianing tokens should be 0, and the reset time should not be in the past.
 		if retry > 0 {
+			// If retry > 0 then the secondary rate limit has been hit
 			timeutil.SleepWithContext(ctx, retry)
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
-		} else if remaining == 0 && reset > 0 {
+		} else if known && remaining == 0 && reset > 0 {
+			// Otherwise, if the rate limit is known and the remaining tokens are zero, the primary rate limit has been hit
 			timeutil.SleepWithContext(ctx, reset)
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 		}

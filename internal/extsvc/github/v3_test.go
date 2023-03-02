@@ -1003,38 +1003,73 @@ func TestResponseHasNextPage(t *testing.T) {
 
 func TestRateLimitRetry(t *testing.T) {
 	ctx := context.Background()
-	firstRequest := true
+	hitPrimaryLimit := false
+	hitSecondaryLimit := false
 	succeeded := false
+
+	// Set up server for test
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if firstRequest {
+		if hitPrimaryLimit {
 			w.Header().Add("x-ratelimit-remaining", "0")
 			w.Header().Add("x-ratelimit-limit", "5000")
-			resetTime := time.Now().Add(1 * time.Second)
+			resetTime := time.Now().Add(time.Second)
 			w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
 			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"message": "Too bad so sad"}`))
+			w.Write([]byte(`{"message": "Primary rate limit hit"}`))
 
-			firstRequest = false
+			hitPrimaryLimit = false
+			return
+		}
+
+		if hitSecondaryLimit {
+			w.Header().Add("retry-after", "1")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+
+			hitSecondaryLimit = false
 			return
 		}
 
 		succeeded = true
 		w.Write([]byte(`{"message": "Very nice"}`))
 	}))
+	t.Run("primary rate limit hit", func(t *testing.T) {
+		hitPrimaryLimit = true
+		succeeded = false
 
-	srvURL, err := url.Parse(srv.URL)
-	require.NoError(t, err)
+		srvURL, err := url.Parse(srv.URL)
+		require.NoError(t, err)
 
-	client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
-	client.WaitForRateLimit = true
+		client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		client.WaitForRateLimit = true
 
-	// We do a simple request to test the retry
-	_, err = client.GetVersion(ctx)
-	require.NoError(t, err)
+		// We do a simple request to test the retry
+		_, err = client.GetVersion(ctx)
+		require.NoError(t, err)
 
-	// We assert that two requests happened
-	assert.True(t, succeeded)
-	assert.False(t, firstRequest)
+		// We assert that two requests happened
+		assert.True(t, succeeded)
+		assert.False(t, hitPrimaryLimit)
+	})
+
+	t.Run("secondary rate limit hit", func(t *testing.T) {
+		hitSecondaryLimit = true
+		succeeded = false
+
+		srvURL, err := url.Parse(srv.URL)
+		require.NoError(t, err)
+
+		client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		client.WaitForRateLimit = true
+
+		// We do a simple request to test the retry
+		_, err = client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		// We assert that two requests happened
+		assert.True(t, succeeded)
+		assert.False(t, hitSecondaryLimit)
+	})
 }
 
 func TestListPublicRepositories(t *testing.T) {
