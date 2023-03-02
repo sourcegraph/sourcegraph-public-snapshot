@@ -37,7 +37,7 @@ export const PermissionList: React.FunctionComponent<React.PropsWithChildren<Per
     return (
         <>
             {allNamespaces.map(namespace => {
-                const namespacePermissions = allPermissions[namespace as PermissionNamespace]
+                const namespacePermissions = allPermissions[namespace]
                 return (
                     <Form key={namespace}>
                         <Text className="font-weight-bold">{namespace}</Text>
