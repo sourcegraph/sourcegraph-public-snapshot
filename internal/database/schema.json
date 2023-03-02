@@ -1183,6 +1183,19 @@
           "Comment": ""
         },
         {
+          "Name": "decision_by_user_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "email",
           "Index": 5,
           "TypeName": "text",
@@ -1290,7 +1303,15 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "access_requests_decision_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
       "Triggers": []
     },
     {

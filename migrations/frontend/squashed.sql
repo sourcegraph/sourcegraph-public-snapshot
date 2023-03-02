@@ -832,7 +832,8 @@ CREATE TABLE access_requests (
     name text NOT NULL,
     email text NOT NULL,
     additional_info text,
-    status text NOT NULL
+    status text NOT NULL,
+    decision_by_user_id integer
 );
 
 CREATE SEQUENCE access_requests_id_seq
@@ -5561,6 +5562,9 @@ CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, n
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
 CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger();
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_decision_by_user_id_fkey FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);
