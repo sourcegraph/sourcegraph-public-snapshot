@@ -49,6 +49,7 @@
         - Command
         - Logger
         - LogEntry
+        - ExecutionLogEntryStore
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
       interfaces:
         - CmdRunner

@@ -1,23 +1,138 @@
 package worker
 
 import (
+	"context"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHandler_PreDequeue(t *testing.T) {
-	//logger := logtest.Scoped(t)
+	logger := logtest.Scoped(t)
 
 	tests := []struct {
 		name              string
 		options           Options
+		mockFunc          func(cmdRunner *MockCmdRunner)
 		expectedDequeue   bool
 		expectedExtraArgs any
 		expectedErr       error
+		assertMockFunc    func(t *testing.T, cmdRunner *MockCmdRunner)
 	}{
-		// TODO: test cases
+		{
+			name: "Firecracker not enabled",
+			options: Options{
+				RunnerOptions: runner.Options{
+					FirecrackerOptions: runner.FirecrackerOptions{Enabled: false},
+				},
+			},
+			expectedDequeue: true,
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
+			},
+		},
+		{
+			name: "Firecracker enabled",
+			options: Options{
+				RunnerOptions: runner.Options{
+					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+				},
+				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 1},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner) {
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
+			},
+			expectedDequeue: true,
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
+				assert.Equal(t, "ignite", cmdRunner.CombinedOutputFunc.History()[0].Arg1)
+				assert.Equal(
+					t,
+					[]string{"ps", "-t", "{{ .Name }}:{{ .UID }}"},
+					cmdRunner.CombinedOutputFunc.History()[0].Arg2,
+				)
+			},
+		},
+		{
+			name: "Orphaned VMs",
+			options: Options{
+				RunnerOptions: runner.Options{
+					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+				},
+				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 1},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner) {
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bar\nfaz:baz"), nil)
+			},
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
+			},
+		},
+		{
+			name: "Less Orphaned VMs than Handlers",
+			options: Options{
+				RunnerOptions: runner.Options{
+					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+				},
+				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 3},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner) {
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bar\nfaz:baz"), nil)
+			},
+			expectedDequeue: true,
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
+			},
+		},
+		{
+			name: "Failed to get active VMs",
+			options: Options{
+				RunnerOptions: runner.Options{
+					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+				},
+				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 3},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner) {
+				cmdRunner.CombinedOutputFunc.PushReturn(nil, errors.New("failed"))
+			},
+			expectedErr: errors.New("failed"),
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			cmdRunner := NewMockCmdRunner()
+
+			h := &handler{
+				cmdRunner: cmdRunner,
+				options:   test.options,
+			}
+
+			if test.mockFunc != nil {
+				test.mockFunc(cmdRunner)
+			}
+
+			dequeueable, extraArgs, err := h.PreDequeue(context.Background(), logger)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+				assert.Equal(t, test.expectedDequeue, dequeueable)
+				assert.Equal(t, test.expectedExtraArgs, extraArgs)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedDequeue, dequeueable)
+				assert.Equal(t, test.expectedExtraArgs, extraArgs)
+			}
+
+			test.assertMockFunc(t, cmdRunner)
 		})
 	}
 }
