@@ -209,7 +209,7 @@ type AzureDevOpsConnection struct {
 	Token string `json:"token"`
 	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
 }
 type BackendInsight struct {
