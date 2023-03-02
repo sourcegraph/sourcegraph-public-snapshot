@@ -1,21 +1,22 @@
 import * as React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
+import { MarketingBlock } from '../../../components/MarketingBlock'
 import { FetchOwnershipResult, FetchOwnershipVariables, SearchPatternType } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
 
 import styles from './FileOwnershipPanel.module.scss'
-import { storageKeyForPartial } from '../../../components/DismissibleAlert'
-import { mdiClose } from '@mdi/js'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 
 export const FileOwnershipPanel: React.FunctionComponent<{
     repoID: string
@@ -96,15 +97,10 @@ export const FileOwnershipPanel: React.FunctionComponent<{
     )
 }
 
-const OWN_EXPLANATION_KEY = 'own-explanation'
-
 const OwnExplanation: React.FunctionComponent<{}> = () => {
-    const [dismissed, setDismissed] = React.useState<boolean>(
-        localStorage.getItem(storageKeyForPartial(OWN_EXPLANATION_KEY)) === 'true'
-    )
+    const [dismissed, setDismissed] = useTemporarySetting('own.panelExplanationHidden')
 
     const onDismiss = React.useCallback(() => {
-        localStorage.setItem(storageKeyForPartial(OWN_EXPLANATION_KEY), 'true')
         setDismissed(true)
     }, [])
 
@@ -113,8 +109,8 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     }
 
     return (
-        <div className={styles.ownExplanation}>
-            <div className={classNames(styles.ownExplanationContainer, 'd-flex align-items-start')}>
+        <MarketingBlock contentClassName={styles.ownExplanationContainer}>
+            <div className="d-flex align-items-start">
                 <div className="flex-1">
                     <H3 as={H4} className={styles.ownExplanationTitle}>
                         Sourcegraph Own Preview
@@ -151,6 +147,6 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
-        </div>
+        </MarketingBlock>
     )
 }

@@ -29,15 +29,8 @@
 }
 
 .own-explanation {
-    background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.25) 3.11%, rgba(215, 240, 253, 0.25) 83.64%);
-    padding: 0.1875rem;
-    margin: 0.5rem 0.75rem 1rem;
-    border-radius: 0.25rem;
-
     &-container {
-        border-radius: 0.25rem;
         background-color: var(--color-bg-1);
-        padding: 0.5rem;
     }
 
     &-title {

@@ -62,6 +62,6 @@ export function isAlertDismissed(key: string): boolean {
     return localStorage.getItem(storageKeyForPartial(key)) === 'true'
 }
 
-export function storageKeyForPartial(partialStorageKey: string): string {
+function storageKeyForPartial(partialStorageKey: string): string {
     return `DismissibleAlert/${partialStorageKey}/dismissed`
 }
