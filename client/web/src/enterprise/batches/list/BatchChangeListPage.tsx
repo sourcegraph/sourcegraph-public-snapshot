@@ -46,12 +46,14 @@ import { NewBatchChangeButton } from './NewBatchChangeButton'
 import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
+import { LimitedAccessBanner } from '../../../components/LimitedAccessBanner'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     authenticatedUser: AuthenticatedUser | null
     /** For testing only. */
     openTab?: SelectedTab
@@ -72,6 +74,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     authenticatedUser,
 }) => {
     const location = useLocation()
@@ -171,6 +174,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
+            {isSourcegraphApp && (
+                <LimitedAccessBanner>
+                    Batch Changes is currently available to try free while Sourcegraph App is in beta. Pricing and
+                    availability for Batch Changes is subject to change in future releases.
+                </LimitedAccessBanner>
+            )}
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader
                 selectedTab={selectedTab}
