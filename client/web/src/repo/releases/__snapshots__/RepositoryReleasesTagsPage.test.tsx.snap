@@ -48,3 +48,52 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
   </div>
 </DocumentFragment>
 `;
+
+exports[`RepositoryReleasesTagsPage renders for packages 1`] = `
+<DocumentFragment>
+  <div
+    class="repository-releases-page"
+  >
+    <div
+      class="normal noncompact my-3"
+      data-testid="filtered-connection"
+    >
+      <form
+        class="form noncompact"
+      >
+        <div
+          class="container loader-input loaderInput input"
+        >
+          <input
+            aria-label="Search versions..."
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            name="query"
+            placeholder="Search versions..."
+            spellcheck="false"
+            type="search"
+            value=""
+          />
+        </div>
+      </form>
+      <div
+        class="normal"
+      />
+      <div
+        class="normal"
+      >
+        <p
+          class="normal"
+          data-testid="summary"
+        >
+          <small>
+            No versions 
+          </small>
+        </p>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
