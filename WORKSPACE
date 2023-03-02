@@ -207,7 +207,7 @@ go_dependencies()
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.3")
+go_register_toolchains(version = "1.19.6")
 
 gazelle_dependencies()
 
