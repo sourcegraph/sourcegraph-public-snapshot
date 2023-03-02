@@ -84,3 +84,4 @@ $ cargo update -p syntect
 ## Supported languages:
 
 Run: `cargo run --bin syntect_server` to see supported languages and themes.
+Hello World

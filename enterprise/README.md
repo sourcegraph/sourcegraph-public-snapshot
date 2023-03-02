@@ -8,3 +8,4 @@ This directory contains Sourcegraph Enterprise code.
 ## Dev
 
 See [Local development: For Sourcegraph employees](https://docs.sourcegraph.com/dev/setup/quickstart) for how to work on this code.
+Hello World

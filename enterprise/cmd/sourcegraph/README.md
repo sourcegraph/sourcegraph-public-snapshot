@@ -43,3 +43,4 @@ VERSION=0.0.0+dev enterprise/dev/app/release.sh --snapshot
 The builds are written to the `dist` directory.
 
 If you just need a local build for your current platform, run `sg start app` (as mentioned in the [Development](#development) section) and then grab the `.bin/sourcegraph` binary. This binary does not have the web bundle (JavaScript/CSS) embedded into it.
+Hello World
