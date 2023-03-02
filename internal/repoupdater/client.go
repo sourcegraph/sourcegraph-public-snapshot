@@ -422,15 +422,7 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 			return nil, err
 		}
 
-		namespaces := make([]*types.ExternalServiceNamespace, 0, len(resp.GetNamespaces()))
-		for _, ns := range resp.GetNamespaces() {
-			namespaces = append(namespaces, &types.ExternalServiceNamespace{
-				ID:         int(ns.GetId()),
-				Name:       ns.GetName(),
-				ExternalID: ns.GetExternalId(),
-			})
-		}
-		return &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}, nil
+		return protocol.ExternalServiceNamespacesResultFromProto(resp), nil
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
@@ -466,18 +458,7 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 			return nil, err
 		}
 
-		repos := make([]*types.ExternalServiceRepository, 0, len(resp.GetRepos()))
-		for _, repo := range resp.GetRepos() {
-			repos = append(repos, &types.ExternalServiceRepository{
-				ID:         api.RepoID(repo.GetId()),
-				Name:       api.RepoName(repo.GetName()),
-				ExternalID: repo.GetExternalId(),
-			})
-		}
-
-		return &protocol.ExternalServiceRepositoriesResult{
-			Repos: repos,
-		}, nil
+		return protocol.ExternalServiceRepositoriesResultFromProto(resp), nil
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-repositories", args)
