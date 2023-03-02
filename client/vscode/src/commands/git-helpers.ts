@@ -89,13 +89,19 @@ export async function gitRemoteNameAndBranch(
         // noop. upstream may not be set
     }
 
-    // If we cannot find the remote name deterministically, we use the first
-    // Git remote found.
-    if (!remoteName) {
-        if (remotes.length > 1) {
+    // If we cannot find the remote name from the branch name, we use the remote list in this order:
+    // - "upstream"
+    // - "origin"
+    // - the first remote alphabetically
+    if (!remoteName && remotes.length > 0) {
+        if (remotes.includes('upstream')) {
+            remoteName = 'upstream'
+        } else if (remotes.includes('origin')) {
+            remoteName = 'origin'
+        } else {
             log?.appendLine(`no upstream found, using first git remote: ${remotes[0]}`)
+            remoteName = remotes[0]
         }
-        remoteName = remotes[0]
     }
 
     // Throw if a remote still isn't found

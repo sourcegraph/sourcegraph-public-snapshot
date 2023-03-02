@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -120,9 +121,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB) {
+func InitRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) {
 	router := newRouter()
-	initRouter(db, router)
+	initRouter(db, enterpriseJobs, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -233,7 +234,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router) {
+func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -321,7 +322,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db, enterpriseJobs))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())

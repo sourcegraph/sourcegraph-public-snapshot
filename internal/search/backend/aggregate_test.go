@@ -171,6 +171,15 @@ func TestFlushCollectSenderMaxSize(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Check the aggregated result was flushed early
+	if len(results) == 0 {
+		t.Fatal("no results returned from search")
+	}
+
+	if results[0].Stats.FlushReason != zoekt.FlushReasonMaxSize {
+		t.Fatalf("expected flush reason %s but got %s", zoekt.FlushReasonMaxSize, results[0].Stats.FlushReason)
+	}
+
 	// Check that all search results are streamed out
 	var repos []string
 	for _, r := range results {
@@ -179,11 +188,6 @@ func TestFlushCollectSenderMaxSize(t *testing.T) {
 				repos = append(repos, f.Repository)
 			}
 		}
-	}
-
-	expectedRepos := 3
-	if len(repos) != expectedRepos {
-		t.Fatalf("expected %d results but got %d", expectedRepos, len(repos))
 	}
 
 	sort.Strings(repos)

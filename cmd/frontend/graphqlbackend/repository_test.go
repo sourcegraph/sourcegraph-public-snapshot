@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -249,7 +250,7 @@ func TestRepository_KVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db, gitserver.NewClient())
+	schema := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	strPtr := func(s string) *string { return &s }

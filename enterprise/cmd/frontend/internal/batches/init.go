@@ -51,6 +51,7 @@ func Init(
 	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesAzureDevOpsWebhook = webhooks.NewAzureDevOpsWebhook(bstore, gitserverClient, logger)
 
 	operations := httpapi.NewOperations(observationCtx)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

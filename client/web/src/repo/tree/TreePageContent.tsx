@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -165,7 +165,8 @@ export const fetchDiffStats = (args: {
                 aggregatedDiffStats[subdirName].deleted += diffStat.deleted
             }
             return Array.from(Object.values(aggregatedDiffStats))
-        })
+        }),
+        catchError(() => []) // ignore errors
     )
 
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {

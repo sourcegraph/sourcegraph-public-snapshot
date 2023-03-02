@@ -18,7 +18,7 @@ import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
 
@@ -26,6 +26,7 @@ export interface StepConfiguration {
     id: string
     path: string
     name: string
+    nextURL?: string
     component: ComponentType<{ className?: string }>
 }
 
@@ -98,7 +99,13 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     }, [currentStep, onStepChange])
 
     const handleGoToNextStep = useCallback(() => {
+        const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
+
+        if (activeStep.nextURL) {
+            navigate(activeStep.nextURL)
+            return
+        }
 
         if (nextStepIndex < steps.length) {
             const nextStep = steps[nextStepIndex]
@@ -145,7 +152,7 @@ export const SetupStepsContent: FC<HTMLAttributes<HTMLElement>> = props => {
                 {steps.map(({ path, component: Component }) => (
                     <Route key="hardcoded-key" path={`${path}/*`} element={<Component className={styles.content} />} />
                 ))}
-                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} />} />
+                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} replace={true} />} />
             </Routes>
         </div>
     )
@@ -229,10 +236,11 @@ export const FooterWidget: FC<PropsWithChildren<{}>> = props => {
 interface CustomNextButtonProps {
     label: string
     disabled: boolean
+    tooltip?: string
 }
 
 export const CustomNextButton: FC<CustomNextButtonProps> = props => {
-    const { label, disabled } = props
+    const { label, disabled, tooltip } = props
     const { nextButtonPortal, onNextStep } = useContext(SetupStepsContext)
 
     if (!nextButtonPortal) {
@@ -240,9 +248,12 @@ export const CustomNextButton: FC<CustomNextButtonProps> = props => {
     }
 
     return createPortal(
-        <Button variant="primary" disabled={disabled} onClick={onNextStep}>
-            {label}
-        </Button>,
+        <Tooltip content={tooltip}>
+            <Button variant="primary" disabled={disabled} onClick={onNextStep}>
+                {label}
+                <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+            </Button>
+        </Tooltip>,
         nextButtonPortal
     )
 }

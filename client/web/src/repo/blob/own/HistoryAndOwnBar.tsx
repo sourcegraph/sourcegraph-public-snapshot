@@ -95,7 +95,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                 <div className={styles.ownItem} key={index}>
                                     {ownership.owner.__typename === 'Person' ? (
                                         <>
-                                            <UserAvatar user={ownership.owner} className="mx-2" />
+                                            <UserAvatar user={ownership.owner} className="mx-2" inline={true} />
                                             {formatPersonName(ownership.owner)}
                                         </>
                                     ) : (

@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -46,7 +46,7 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, types.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		FetchTags:      true,
@@ -102,7 +102,7 @@ func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, types.Job{
 		RepositoryName:      "torvalds/linux",
 		RepositoryDirectory: "subdirectory",
 		Commit:              "deadbeef",
@@ -160,7 +160,7 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, types.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		ShallowClone:   true,
@@ -216,7 +216,7 @@ func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, types.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		ShallowClone:   true,
@@ -265,7 +265,7 @@ func TestPrepareWorkspace_NoRepository(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{}, nil)
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, types.Job{}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}

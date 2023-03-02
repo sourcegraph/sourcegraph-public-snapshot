@@ -41,16 +41,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
-    // TODO: We should just compute this and `isCompleted` on the backend batch change resolver.
-    const percentComplete =
-        // We don't count archived or deleted changesets when computing the percentage.
-        stats.total === 0 ? 0 : ((stats.closed + stats.merged) / (stats.total - stats.archived - stats.deleted)) * 100
-    const isCompleted =
-        stats.total !== 0 && stats.closed + stats.merged === stats.total - stats.archived - stats.deleted
-    let BatchChangeStatusIcon = ProgressCheckIcon
-    if (isCompleted) {
-        BatchChangeStatusIcon = CheckCircleOutlineIcon
-    }
+    const BatchChangeStatusIcon = stats.isCompleted ? CheckCircleOutlineIcon : ProgressCheckIcon
     return (
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
@@ -67,13 +58,13 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                 <div className="d-flex align-items-center">
                     <Heading as="h3" styleAs="h1" className="d-inline mb-0" aria-hidden="true">
                         <Icon
-                            className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
+                            className={classNames('mr-2', stats.isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
                             aria-hidden={true}
                         />
                     </Heading>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {`${formatDisplayPercent(percentComplete)} complete`}
+                        {`${formatDisplayPercent(stats.percentComplete)} complete`}
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />

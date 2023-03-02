@@ -23,6 +23,13 @@ import (
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
+type PermissionsSyncSearchType string
+
+const (
+	PermissionsSyncSearchTypeUser PermissionsSyncSearchType = "USER"
+	PermissionsSyncSearchTypeRepo PermissionsSyncSearchType = "REPOSITORY"
+)
+
 type PermissionsSyncJobState string
 
 // PermissionsSyncJobState constants.
@@ -448,12 +455,16 @@ type ListPermissionSyncJobOpts struct {
 	NotNullProcessAfter bool
 	NotCanceled         bool
 
+	// SearchType and Query are related to text search for sync jobs.
+	SearchType PermissionsSyncSearchType
+	Query      string
+
 	// Cursor-based pagination arguments.
 	PaginationArgs *PaginationArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
-	conds := []*sqlf.Query{}
+	conds := make([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
 		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
@@ -475,7 +486,7 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("state = %s", opts.State))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
@@ -486,12 +497,27 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.NotCanceled {
 		conds = append(conds, sqlf.Sprintf("cancel = false"))
 	}
+
+	if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
+		if opts.Query != "" {
+			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
+		}
+	}
+	if opts.SearchType == PermissionsSyncSearchTypeUser {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
+		if opts.Query != "" {
+			searchTerm := "%" + opts.Query + "%"
+			conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", searchTerm, searchTerm))
+		}
+	}
 	return conds
 }
 
 const listPermissionSyncJobQueryFmtstr = `
 SELECT %s
 FROM permission_sync_jobs
+%s -- optional join with repo/user tables for search
 %s -- whereClause
 `
 
@@ -513,9 +539,20 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
 	}
 
+	joinClause := sqlf.Sprintf("")
+	if opts.Query != "" {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
+			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		}
+	}
+
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
+		joinClause,
 		whereClause,
 	)
 	q = pagination.AppendOrderToQuery(q)
