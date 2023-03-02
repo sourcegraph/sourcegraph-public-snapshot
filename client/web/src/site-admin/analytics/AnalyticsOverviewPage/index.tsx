@@ -80,8 +80,11 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
 
             <Card className="p-3" data-testid="product-certificate">
                 <div className="d-flex justify-content-between align-items-start mb-3 text-nowrap">
-                    <div>
-                        <H2 className="mb-3">{data.site.productSubscription.productNameWithBrand}</H2>
+                    <div className="w-100">
+                        <div className="d-flex">
+                            <H2 className="mb-3">{data.site.productSubscription.productNameWithBrand}</H2>
+                            <HorizontalSelect<typeof dateRange.value> {...dateRange} className="mb-3 ml-auto" />
+                        </div>
                         <div className="d-flex">
                             <Text className="text-muted">
                                 Version <span className={styles.purple}>{data.site.productVersion}</span>
@@ -118,7 +121,6 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                             )}
                         </div>
                     </div>
-                    <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
                 <div className={classNames('d-flex mt-3', styles.padded)}>
                     <div className={styles.main}>
