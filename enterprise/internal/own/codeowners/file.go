@@ -21,6 +21,10 @@ func NewRuleset(proto *codeownerspb.File) *Ruleset {
 	return f
 }
 
+func (r *Ruleset) GetFile() *codeownerspb.File {
+	return r.proto
+}
+
 // FindOwners returns the Owners associated with given path as per this CODEOWNERS file.
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.

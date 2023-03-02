@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"google.golang.org/protobuf/proto"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
@@ -28,10 +29,12 @@ type CodeownersStore interface {
 	UpdateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
 	// GetCodeownersForRepo gets a manually ingested Codeowners file for the given repo if it exists.
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
-	// DeleteCodeownersForRepo deletes a manually ingested Codeowners file for a given repo if it exists.
-	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
+	// DeleteCodeownersForRepos deletes manually ingested Codeowners files for the given repos if it exists.
+	DeleteCodeownersForRepos(ctx context.Context, ids ...int32) error
 	// ListCodeowners lists manually ingested Codeowners files given the options.
 	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
+	// CountCodeownersFiles counts the number of manually ingested Codeowners files.
+	CountCodeownersFiles(context.Context) (int32, error)
 }
 
 type codeownersStore struct {
@@ -175,10 +178,10 @@ WHERE %s
 LIMIT 1
 `
 
-func (s *codeownersStore) DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error {
+func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...int32) error {
 	return s.WithTransact(ctx, func(tx CodeownersStore) error {
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("repo_id = %s", id),
+			sqlf.Sprintf("repo_id = ANY (%s)", pq.Array(ids)),
 		}
 
 		q := sqlf.Sprintf(deleteCodeownersFileQueryFmtStr, sqlf.Join(conds, "AND"))
@@ -245,6 +248,18 @@ WHERE %s
 ORDER BY
     repo_id ASC
 %s
+`
+
+func (s *codeownersStore) CountCodeownersFiles(ctx context.Context) (int32, error) {
+	q := sqlf.Sprintf(countCodeownersFilesQueryFmtStr)
+
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	return int32(count), err
+}
+
+const countCodeownersFilesQueryFmtStr = `
+SELECT COUNT(*)
+FROM codeowners
 `
 
 func CodeownersWith(other basestore.ShareableStore) CodeownersStore {
