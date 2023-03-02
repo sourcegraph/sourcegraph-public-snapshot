@@ -34,3 +34,11 @@ func (s *Service) VulnerabilityByID(ctx context.Context, id int) (shared.Vulnera
 func (s *Service) VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error) {
 	return s.store.VulnerabilityMatchByID(ctx, id)
 }
+
+func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error) {
+	return s.store.GetVulnerabilities(ctx, args)
+}
+
+func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
+	return s.store.GetVulnerabilityMatches(ctx, args)
+}

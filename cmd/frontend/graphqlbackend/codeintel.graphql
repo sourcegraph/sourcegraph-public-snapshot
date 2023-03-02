@@ -456,6 +456,36 @@ extend type Query {
     Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
     """
     inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): [AutoIndexJobDescription!]!
+
+    """
+    Return known vulnerabilities.
+    """
+    vulnerabilities(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+    ): VulnerabilityConnection!
+
+    """
+    Return known vulnerability matches.
+    """
+    vulnerabilityMatches(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+    ): VulnerabilityMatchConnection!
 }
 
 """
@@ -2438,4 +2468,44 @@ type VulnerabilityMatch implements Node {
     The index record that contains a direct use of the affected package.
     """
     preciseIndex: PreciseIndex!
+}
+
+"""
+A page of vulnerabilities.
+"""
+type VulnerabilityConnection {
+    """
+    The vulnerabilities on the page.
+    """
+    nodes: [Vulnerability!]!
+
+    """
+    The total number of vulnerabilities across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A page of vulnerability matches.
+"""
+type VulnerabilityMatchConnection {
+    """
+    The vulnerability matches on the page.
+    """
+    nodes: [VulnerabilityMatch!]!
+
+    """
+    The total number of vulnerability matches across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
 }

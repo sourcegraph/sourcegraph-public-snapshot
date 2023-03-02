@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"sort"
+	"strconv"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -40,6 +41,94 @@ func NewRootResolver(
 		policySvc:    policySvc,
 		operations:   newOperations(observationCtx),
 	}
+}
+
+func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	limit := 50
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	offset := 0
+	if args.After != nil {
+		after, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = after
+	}
+
+	vulnerabilities, totalCount, err := r.sentinelSvc.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityConnectionResolver{
+		vulnerabilities: vulnerabilities,
+		offset:          offset,
+		totalCount:      totalCount,
+	}, nil
+}
+
+func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	limit := 50
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	offset := 0
+	if args.After != nil {
+		after, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = after
+	}
+
+	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
+	db := r.autoindexSvc.GetUnsafeDB()
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+	bulkLoader := NewBulkLoader(r.sentinelSvc)
+
+	for _, match := range matches {
+		prefetcher.MarkUpload(match.UploadID)
+		bulkLoader.MarkVulnerability(match.VulnerabilityID)
+	}
+
+	return &vulnerabilityMatchConnectionResolver{
+		sentinelSvc:      r.sentinelSvc,
+		autoindexSvc:     r.autoindexSvc,
+		uploadSvc:        r.uploadSvc,
+		policySvc:        r.policySvc,
+		prefetcher:       prefetcher,
+		locationResolver: locationResolver,
+		errTracer:        errTracer,
+		bulkLoader:       bulkLoader,
+		matches:          matches,
+		offset:           offset,
+		totalCount:       totalCount,
+	}, nil
 }
 
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
@@ -299,4 +388,84 @@ func unmarshalVulnerabilityMatchGQLID(id graphql.ID) (vulnerabilityMatchID int, 
 
 func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
 	return relay.MarshalID("VulnerabilityMatch", vulnerabilityMatchID)
+}
+
+//
+//
+
+type vulnerabilityConnectionResolver struct {
+	vulnerabilities []shared.Vulnerability
+	offset          int
+	totalCount      int
+}
+
+func (r *vulnerabilityConnectionResolver) Nodes() []resolverstubs.VulnerabilityResolver {
+	var resolvers []resolverstubs.VulnerabilityResolver
+	for _, v := range r.vulnerabilities {
+		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
+	}
+
+	return resolvers
+}
+
+func (r *vulnerabilityConnectionResolver) TotalCount() *int32 {
+	v := int32(r.totalCount)
+	return &v
+}
+
+func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	if r.offset+len(r.vulnerabilities) < r.totalCount {
+		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.vulnerabilities)))
+	}
+
+	return sharedresolvers.HasNextPage(false)
+}
+
+//
+//
+
+type vulnerabilityMatchConnectionResolver struct {
+	sentinelSvc      *sentinel.Service
+	autoindexSvc     sharedresolvers.AutoIndexingService
+	uploadSvc        sharedresolvers.UploadsService
+	policySvc        sharedresolvers.PolicyService
+	prefetcher       *sharedresolvers.Prefetcher
+	locationResolver *sharedresolvers.CachedLocationResolver
+	errTracer        *observation.ErrCollector
+	bulkLoader       *bulkLoader
+	matches          []shared.VulnerabilityMatch
+	offset           int
+	totalCount       int
+}
+
+func (r *vulnerabilityMatchConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchResolver {
+	var resolvers []resolverstubs.VulnerabilityMatchResolver
+	for _, m := range r.matches {
+		resolvers = append(resolvers, &vulnerabilityMatchResolver{
+			sentinelSvc:      r.sentinelSvc,
+			autoindexSvc:     r.autoindexSvc,
+			uploadSvc:        r.uploadSvc,
+			policySvc:        r.policySvc,
+			prefetcher:       r.prefetcher,
+			locationResolver: r.locationResolver,
+			errTracer:        r.errTracer,
+			bulkLoader:       r.bulkLoader,
+			m:                m,
+		})
+	}
+
+	return resolvers
+}
+
+func (r *vulnerabilityMatchConnectionResolver) TotalCount() *int32 {
+	v := int32(r.totalCount)
+	return &v
+}
+
+func (r *vulnerabilityMatchConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	if r.offset+len(r.matches) < r.totalCount {
+		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.matches)))
+	}
+
+	return sharedresolvers.HasNextPage(false)
 }
