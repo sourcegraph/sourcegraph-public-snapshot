@@ -285,7 +285,7 @@ func addVsceTests(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
 		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		bk.AutomaticRetry(1),
+		// bk.AutomaticRetry(1),
 	)
 }
 
