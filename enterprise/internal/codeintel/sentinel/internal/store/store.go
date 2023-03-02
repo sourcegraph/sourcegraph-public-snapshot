@@ -16,6 +16,10 @@ type Store interface {
 	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error)
 	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error)
 	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (err error)
+
+	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
+	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
+	ScanMatches(ctx context.Context) error
 }
 
 type store struct {

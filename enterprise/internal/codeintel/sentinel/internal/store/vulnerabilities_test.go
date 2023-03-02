@@ -14,9 +14,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+var badConfig = shared.AffectedPackage{
+	Language:          "go",
+	PackageName:       "go-nacelle/config",
+	VersionConstraint: []string{"<= v1.2.5"},
+}
+
 var testVulnerabilities = []shared.Vulnerability{
 	// IDs assumed by insertion order
-	{ID: 1, SourceID: "CVE-ABC"},
+	{ID: 1, SourceID: "CVE-ABC", AffectedPackages: []shared.AffectedPackage{badConfig}},
 	{ID: 2, SourceID: "CVE-DEF"},
 	{ID: 3, SourceID: "CVE-GHI"},
 	{ID: 4, SourceID: "CVE-JKL"},

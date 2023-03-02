@@ -44,3 +44,15 @@ type AffectedSymbol struct {
 	Path    string   `json:"path"`
 	Symbols []string `json:"symbols"`
 }
+
+type GetVulnerabilityMatchesArgs struct {
+	Limit  int
+	Offset int
+}
+
+type VulnerabilityMatch struct {
+	ID              int
+	UploadID        int
+	VulnerabilityID int
+	AffectedPackage AffectedPackage
+}

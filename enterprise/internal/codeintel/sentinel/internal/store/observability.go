@@ -12,6 +12,9 @@ type operations struct {
 	getVulnerabilitiesByIDs *observation.Operation
 	getVulnerabilities      *observation.Operation
 	insertVulnerabilities   *observation.Operation
+	vulnerabilityMatchByID  *observation.Operation
+	getVulnerabilityMatches *observation.Operation
+	scanMatches             *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -39,5 +42,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getVulnerabilitiesByIDs: op("GetVulnerabilitiesByIDs"),
 		getVulnerabilities:      op("GetVulnerabilities"),
 		insertVulnerabilities:   op("InsertVulnerabilities"),
+		vulnerabilityMatchByID:  op("VulnerabilityMatchByID"),
+		getVulnerabilityMatches: op("GetVulnerabilityMatches"),
+		scanMatches:             op("ScanMatches"),
 	}
 }
