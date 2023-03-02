@@ -141,6 +141,22 @@ NOTE: altool is deprecated and may not be available starting in "late 2023" - ne
 
 NOTE: altool also supports specifying the Apple Developer username with -u <username/email> and accepts the password on stdin, or with -p "@env:SOME_ENV_VARIABLE" to read an environment variable, so storing in the keychain is not strictly necessary.
 
+To store credentials for `notarytool`:
+```
+xcrun notarytool store-credentials --apple-id "<appleid email address>" --team-id "74A5FJ7P96"
+
+This process stores your credentials securely in the Keychain. You reference these credentials later using a profile name.
+
+Profile name:
+NOTARYTOOL_CREDENTIALS
+App-specific password for <appleid email address>: 
+Validating your credentials...
+Success. Credentials validated.
+Credentials saved to Keychain.
+To use them, specify `--keychain-profile "NOTARYTOOL_CREDENTIALS"`
+```
+
+
 # Packaging and signing
 
 Once the app bundle is populated, it needs to be signed, packaged into a dmg, and get notarized.

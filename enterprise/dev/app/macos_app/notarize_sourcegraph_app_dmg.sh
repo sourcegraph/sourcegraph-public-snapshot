@@ -16,6 +16,10 @@
 # run `sudo xcode-select -r`
 altool_credentials_keychain_item=ALTOOL_CREDENTIALS
 
+# notarytool replaces altool
+notarytool_credentials_keychain_item=NOTARYTOOL_CREDENTIALS
+
+
 dmgpath="${1:-${HOME}/Downloads/Sourcegraph App.dmg}"
 
 # if the shell script quits it can be restarted with an existing UUID passed in as the second parameter
@@ -26,6 +30,14 @@ altool_requestuuid="${2}"
     echo "invalid dmg path: ${dmgpath}" 1>&2
     exit 1
 }
+
+### altool is deprecated and will stop working "late 2023"; `notarytool` is the replacement
+# the keychain profile setup is detailed in README.md
+# can also use a combo of --apple-id + --team-id + --password
+# keychain is more secure, but also locks us in to running this on a Mac with manual setup steps
+# xcrun notarytool submit "${dmgpath}" \
+#                    --keychain-profile "${notarytool_credentials_keychain_item}" \
+#                    --wait
 
 [ -n "${altool_requestuuid}" ] || {
   echo "uploading ${dmgpath} for notarization"
