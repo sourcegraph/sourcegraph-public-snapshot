@@ -64,7 +64,11 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["**/async_hooks.js", "**/inspector_async_hook.js"],
+      "skipFiles": [
+        "**/async_hooks.js",
+        "**/inspector_async_hook.js"
+        // "**/node_modules/rxjs",
+      ],
       "smartStep": false
     },
     {
