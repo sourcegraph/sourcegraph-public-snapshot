@@ -5,7 +5,7 @@ import { groupBy } from 'lodash'
 
 import { Icon, Text, Checkbox, Grid, Form } from '@sourcegraph/wildcard'
 
-import { RoleFields, PermissionNamespace } from '../../../graphql-operations'
+import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, allNamespaces } from '../backend'
 
 const EmptyPermissionList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
