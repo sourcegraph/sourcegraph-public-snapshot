@@ -66,3 +66,15 @@ export const DELETE_CODE_HOST = gql`
         }
     }
 `
+export const GET_REPOSITORIES_BY_SERVICE = gql`
+    query Repositories($first: Int, $externalService: ID) {
+        repositories(first: $first, externalService: $externalService) {
+            nodes {
+                __typename
+                id
+                name
+                description
+            }
+        }
+    }
+`
