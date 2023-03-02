@@ -3,7 +3,7 @@ LANGUAGE plpgsql
 AS $$ BEGIN
     SELECT
         COUNT(r.v) AS num_paths,
-        SUM(LOG(2, r.v::int)) AS sum_reference_count
+        SUM(LOG(2, r.v::int)) AS refcount_logsum
     INTO
         NEW.num_paths,
         NEW.refcount_logsum

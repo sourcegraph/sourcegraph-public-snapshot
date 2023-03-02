@@ -90,7 +90,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetReferenceCountStatisticsFunc: &StoreGetReferenceCountStatisticsFunc{
-			defaultHook: func(context.Context) (r0 int, r1 float64, r2 int, r3 error) {
+			defaultHook: func(context.Context) (r0 float64, r1 error) {
 				return
 			},
 		},
@@ -172,7 +172,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetReferenceCountStatisticsFunc: &StoreGetReferenceCountStatisticsFunc{
-			defaultHook: func(context.Context) (int, float64, int, error) {
+			defaultHook: func(context.Context) (float64, error) {
 				panic("unexpected invocation of MockStore.GetReferenceCountStatistics")
 			},
 		},
@@ -507,24 +507,24 @@ func (c StoreGetDocumentRanksFuncCall) Results() []interface{} {
 // GetReferenceCountStatistics method of the parent MockStore instance is
 // invoked.
 type StoreGetReferenceCountStatisticsFunc struct {
-	defaultHook func(context.Context) (int, float64, int, error)
-	hooks       []func(context.Context) (int, float64, int, error)
+	defaultHook func(context.Context) (float64, error)
+	hooks       []func(context.Context) (float64, error)
 	history     []StoreGetReferenceCountStatisticsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetReferenceCountStatistics delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetReferenceCountStatistics(v0 context.Context) (int, float64, int, error) {
-	r0, r1, r2, r3 := m.GetReferenceCountStatisticsFunc.nextHook()(v0)
-	m.GetReferenceCountStatisticsFunc.appendCall(StoreGetReferenceCountStatisticsFuncCall{v0, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockStore) GetReferenceCountStatistics(v0 context.Context) (float64, error) {
+	r0, r1 := m.GetReferenceCountStatisticsFunc.nextHook()(v0)
+	m.GetReferenceCountStatisticsFunc.appendCall(StoreGetReferenceCountStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // GetReferenceCountStatistics method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultHook(hook func(context.Context) (int, float64, int, error)) {
+func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultHook(hook func(context.Context) (float64, error)) {
 	f.defaultHook = hook
 }
 
@@ -533,7 +533,7 @@ func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreGetReferenceCountStatisticsFunc) PushHook(hook func(context.Context) (int, float64, int, error)) {
+func (f *StoreGetReferenceCountStatisticsFunc) PushHook(hook func(context.Context) (float64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -541,20 +541,20 @@ func (f *StoreGetReferenceCountStatisticsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultReturn(r0 int, r1 float64, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context) (int, float64, int, error) {
-		return r0, r1, r2, r3
+func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultReturn(r0 float64, r1 error) {
+	f.SetDefaultHook(func(context.Context) (float64, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetReferenceCountStatisticsFunc) PushReturn(r0 int, r1 float64, r2 int, r3 error) {
-	f.PushHook(func(context.Context) (int, float64, int, error) {
-		return r0, r1, r2, r3
+func (f *StoreGetReferenceCountStatisticsFunc) PushReturn(r0 float64, r1 error) {
+	f.PushHook(func(context.Context) (float64, error) {
+		return r0, r1
 	})
 }
 
-func (f *StoreGetReferenceCountStatisticsFunc) nextHook() func(context.Context) (int, float64, int, error) {
+func (f *StoreGetReferenceCountStatisticsFunc) nextHook() func(context.Context) (float64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -593,16 +593,10 @@ type StoreGetReferenceCountStatisticsFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
+	Result0 float64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 float64
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -614,7 +608,7 @@ func (c StoreGetReferenceCountStatisticsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreGetReferenceCountStatisticsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreGetStarRankFunc describes the behavior when the GetStarRank method

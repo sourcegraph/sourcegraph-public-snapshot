@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -120,29 +121,22 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.SetDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 1, "bar": 17, "baz": 35}); err != nil {
+	if err := store.SetDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 44, "bar": 14, "baz": 2}); err != nil {
+	if err := store.SetDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 77, "bar": 57, "baz": 129, "bonk": 3}); err != nil {
+	if err := store.SetDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918}); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
 
-	min, mean, max, err := store.GetReferenceCountStatistics(ctx)
+	logmean, err := store.GetReferenceCountStatistics(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error getting reference count statistics: %s", err)
 	}
-
-	if expected := 1; min != expected {
-		t.Errorf("unexpected min. want=%d have=%d", expected, min)
-	}
-	if expected := 37.9; mean != expected {
-		t.Errorf("unexpected mean. want=%.2f have=%.2f", expected, mean)
-	}
-	if expected := 129; max != expected {
-		t.Errorf("unexpected max. want=%d have=%d", expected, max)
+	if expected := 8.5715; !cmpFloat(logmean, expected) {
+		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
 	}
 }
 
@@ -231,4 +225,10 @@ func TestUpdatedAfter(t *testing.T) {
 			t.Fatal("expected no repos")
 		}
 	}
+}
+
+const epsilon = 0.0001
+
+func cmpFloat(x, y float64) bool {
+	return math.Abs(x-y) < epsilon
 }
