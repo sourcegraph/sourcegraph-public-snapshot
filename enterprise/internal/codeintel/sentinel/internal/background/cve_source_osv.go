@@ -160,7 +160,8 @@ func (parser *CVEParser) osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (
 				if event.Fixed != "" {
 					ap.VersionConstraint = append(ap.VersionConstraint, "<"+event.Fixed)
 					ap.Fixed = true
-					ap.FixedIn = &event.Fixed
+					fixed := event.Fixed
+					ap.FixedIn = &fixed
 				}
 				if event.LastAffected != "" {
 					ap.VersionConstraint = append(ap.VersionConstraint, "<="+event.LastAffected)
