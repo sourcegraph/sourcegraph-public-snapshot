@@ -466,7 +466,7 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 			return nil, err
 		}
 
-		repos := make([]*types.ExternalServiceRepository, len(resp.GetRepos()))
+		repos := make([]*types.ExternalServiceRepository, 0, len(resp.GetRepos()))
 		for _, repo := range resp.GetRepos() {
 			repos = append(repos, &types.ExternalServiceRepository{
 				ID:         api.RepoID(repo.GetId()),
