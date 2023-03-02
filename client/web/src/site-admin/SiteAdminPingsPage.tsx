@@ -407,7 +407,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     Sourcegraph Own usage data.
                     <ul>
                         <li>
-                            Whether <pre>search-ownership</pre> feature flag is turned on.
+                            Whether the <pre>search-ownership</pre> feature flag is turned on.
                         </li>
                         <li>
                             Number and ratio of repositories for which ownership data is available via CODEOWNERS file
