@@ -3,7 +3,6 @@ package uploads
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,11 +62,7 @@ type operations struct {
 	getListTags *observation.Operation
 }
 
-var (
-	metricsMap = make(map[string]prometheus.Counter)
-	m          = new(metrics.SingletonREDMetrics)
-	metricsMu  sync.Mutex
-)
+var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
