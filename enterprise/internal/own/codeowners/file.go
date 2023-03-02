@@ -36,7 +36,7 @@ func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
 
 type CompiledRule struct {
 	proto       *codeownerspb.Rule
-	glob        globPattern
+	glob        *globPattern
 	compileOnce sync.Once
 }
 
