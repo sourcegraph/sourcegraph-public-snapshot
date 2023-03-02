@@ -31,7 +31,7 @@ func teamByID(ctx context.Context, db database.DB, id graphql.ID) (Node, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &TeamResolver{team: team, db: db}, nil
+	return NewTeamResolver(db, team), nil
 }
 
 type ListTeamsArgs struct {
@@ -127,10 +127,7 @@ func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*TeamResolver, er
 	}
 	var rs []*TeamResolver
 	for _, t := range r.teams {
-		rs = append(rs, &TeamResolver{
-			db:   r.db,
-			team: t,
-		})
+		rs = append(rs, NewTeamResolver(r.db, t))
 	}
 	return rs, nil
 }
@@ -195,7 +192,7 @@ func (r *TeamResolver) ParentTeam(ctx context.Context) (*TeamResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &TeamResolver{team: parentTeam, db: r.db}, nil
+	return NewTeamResolver(r.db, parentTeam), nil
 }
 
 func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -399,7 +396,7 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	if err := teams.CreateTeam(ctx, &t); err != nil {
 		return nil, err
 	}
-	return &TeamResolver{team: &t, db: r.db}, nil
+	return NewTeamResolver(r.db, &t), nil
 }
 
 type UpdateTeamArgs struct {
@@ -460,7 +457,7 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if err != nil {
 		return nil, err
 	}
-	return &TeamResolver{team: t, db: r.db}, nil
+	return NewTeamResolver(r.db, t), nil
 }
 
 // findTeam returns a team by either GraphQL ID or name.
@@ -625,10 +622,7 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		return nil, err
 	}
 
-	return &TeamResolver{
-		db:   r.db,
-		team: team,
-	}, nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -716,10 +710,7 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 	}); err != nil {
 		return nil, err
 	}
-	return &TeamResolver{
-		db:   r.db,
-		team: team,
-	}, nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -767,10 +758,7 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 			return nil, err
 		}
 	}
-	return &TeamResolver{
-		db:   r.db,
-		team: team,
-	}, nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
@@ -803,7 +791,7 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 		return nil, err
 	}
 
-	return &TeamResolver{db: r.db, team: t}, nil
+	return NewTeamResolver(r.db, t), nil
 }
 
 func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
