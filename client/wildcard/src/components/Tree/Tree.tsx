@@ -130,7 +130,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                 </div>
             )
         },
-        [loadedIds, renderNode]
+        [loadedIds, nodeClassName, renderNode]
     )
 
     return (
