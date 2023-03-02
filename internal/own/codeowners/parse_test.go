@@ -147,7 +147,7 @@ apps/ @octocat
 			LineNumber: 54,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseGitlabExample(t *testing.T) {
@@ -266,8 +266,7 @@ README.md  @docs
 			Pattern: "LICENSE",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "legal"},
-				// Note: To match GitLab parsing, we should not consider this as email.
-				{Email: "this_does_not_match"},
+				{Handle: "this_does_not_match"},
 				{Email: "janedoe@gitlab.com"},
 			},
 			LineNumber: 29,
@@ -363,7 +362,7 @@ README.md  @docs
 			LineNumber:  69,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseAtHandle(t *testing.T) {
@@ -376,7 +375,7 @@ func TestParseAtHandle(t *testing.T) {
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseAtHandleSupportsNesting(t *testing.T) {
@@ -389,7 +388,7 @@ func TestParseAtHandleSupportsNesting(t *testing.T) {
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseEmailHandle(t *testing.T) {
@@ -402,7 +401,7 @@ func TestParseEmailHandle(t *testing.T) {
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseTwoHandles(t *testing.T) {
@@ -416,7 +415,7 @@ func TestParseTwoHandles(t *testing.T) {
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParsePathWithSpaces(t *testing.T) {
@@ -429,7 +428,7 @@ func TestParsePathWithSpaces(t *testing.T) {
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseSection(t *testing.T) {
@@ -445,7 +444,7 @@ func TestParseSection(t *testing.T) {
 		},
 		LineNumber: 2,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseManySections(t *testing.T) {
@@ -481,25 +480,25 @@ func TestParseManySections(t *testing.T) {
 			LineNumber: 5,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 func TestParseEmptyString(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader(""))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseBlankString(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader("  "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseComment(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader(" # This is a comment "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{}), got)
 }
 
 func TestParseRuleWithComment(t *testing.T) {
@@ -514,7 +513,7 @@ func TestParseRuleWithComment(t *testing.T) {
 			LineNumber: 1,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }
 
 // Note: Should a # within [Section name] not be treated as a comment-start
@@ -534,5 +533,5 @@ func TestParseSectionWithComment(t *testing.T) {
 			LineNumber: 2,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	assert.Equal(t, codeowners.NewRuleset(&codeownerspb.File{Rule: want}), got)
 }

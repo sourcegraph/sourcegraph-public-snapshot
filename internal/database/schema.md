@@ -957,16 +957,18 @@ Triggers:
 
 # Table "public.codeintel_ranking_definitions"
 ```
-    Column     |  Type   | Collation | Nullable |                          Default                          
----------------+---------+-----------+----------+-----------------------------------------------------------
- id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
- upload_id     | integer |           | not null | 
- symbol_name   | text    |           | not null | 
- repository    | text    |           | not null | 
- document_path | text    |           | not null | 
- graph_key     | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_name     | text                     |           | not null | 
+ repository      | text                     |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
     "codeintel_ranking_definitions_upload_id" btree (upload_id)
 
@@ -1002,19 +1004,22 @@ Foreign-key constraints:
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr" btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
 # Table "public.codeintel_ranking_references"
 ```
-    Column    |  Type   | Collation | Nullable |                         Default                          
---------------+---------+-----------+----------+----------------------------------------------------------
- id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
- upload_id    | integer |           | not null | 
- symbol_names | text[]  |           | not null | 
- graph_key    | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_names    | text[]                   |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
 Referenced by:
     TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
@@ -1077,6 +1082,28 @@ Indexes:
 **record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
 
 **transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
+# Table "public.context_detection_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                           Default                            
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------------
+ id                | integer                  |           | not null | nextval('context_detection_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "context_detection_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
 
 # Table "public.critical_and_site_config"
 ```
@@ -1307,6 +1334,24 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **queue_name**: The queue name that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
+
+# Table "public.executor_job_tokens"
+```
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea                    |           | not null | 
+ job_id       | bigint                   |           | not null | 
+ queue        | text                     |           | not null | 
+ repo_id      | bigint                   |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
+    "executor_job_tokens_job_id_queue_repo_id_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo_id)
+    "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
+
+```
 
 # Table "public.executor_secret_access_logs"
 ```
@@ -2223,6 +2268,7 @@ Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
     TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
+    TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -3044,6 +3090,30 @@ Triggers:
 
 ```
 
+# Table "public.repo_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ revision          | text                     |           | not null | 
+Indexes:
+    "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.repo_kvps"
 ```
  Column  |  Type   | Collation | Nullable | Default 
@@ -3718,6 +3788,90 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
+
+```
+
+# Table "public.vulnerabilities"
+```
+    Column    |           Type           | Collation | Nullable |                   Default                   
+--------------+--------------------------+-----------+----------+---------------------------------------------
+ id           | integer                  |           | not null | nextval('vulnerabilities_id_seq'::regclass)
+ source_id    | text                     |           | not null | 
+ summary      | text                     |           | not null | 
+ details      | text                     |           | not null | 
+ cpes         | text[]                   |           | not null | 
+ cwes         | text[]                   |           | not null | 
+ aliases      | text[]                   |           | not null | 
+ related      | text[]                   |           | not null | 
+ data_source  | text                     |           | not null | 
+ urls         | text[]                   |           | not null | 
+ severity     | text                     |           | not null | 
+ cvss_vector  | text                     |           | not null | 
+ cvss_score   | text                     |           | not null | 
+ published_at | timestamp with time zone |           | not null | 
+ modified_at  | timestamp with time zone |           |          | 
+ withdrawn_at | timestamp with time zone |           |          | 
+Indexes:
+    "vulnerabilities_pkey" PRIMARY KEY, btree (id)
+    "vulnerabilities_source_id" UNIQUE, btree (source_id)
+Referenced by:
+    TABLE "vulnerability_affected_packages" CONSTRAINT "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_packages"
+```
+       Column       |  Type   | Collation | Nullable |                           Default                           
+--------------------+---------+-----------+----------+-------------------------------------------------------------
+ id                 | integer |           | not null | nextval('vulnerability_affected_packages_id_seq'::regclass)
+ vulnerability_id   | integer |           | not null | 
+ package_name       | text    |           | not null | 
+ language           | text    |           | not null | 
+ namespace          | text    |           | not null | 
+ version_constraint | text[]  |           | not null | 
+ fixed              | boolean |           | not null | 
+ fixed_in           | text    |           |          | 
+Indexes:
+    "vulnerability_affected_packages_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_packages_vulnerability_id_package_name" UNIQUE, btree (vulnerability_id, package_name)
+Foreign-key constraints:
+    "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "vulnerability_affected_symbols" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+    TABLE "vulnerability_matches" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_symbols"
+```
+              Column               |  Type   | Collation | Nullable |                          Default                           
+-----------------------------------+---------+-----------+----------+------------------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_affected_symbols_id_seq'::regclass)
+ vulnerability_affected_package_id | integer |           | not null | 
+ path                              | text    |           | not null | 
+ symbols                           | text[]  |           | not null | 
+Indexes:
+    "vulnerability_affected_symbols_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_symbols_vulnerability_affected_package_i" UNIQUE, btree (vulnerability_affected_package_id, path)
+Foreign-key constraints:
+    "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_matches"
+```
+              Column               |  Type   | Collation | Nullable |                      Default                      
+-----------------------------------+---------+-----------+----------+---------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_matches_id_seq'::regclass)
+ upload_id                         | integer |           | not null | 
+ vulnerability_affected_package_id | integer |           | not null | 
+Indexes:
+    "vulnerability_matches_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_matches_upload_id_vulnerability_affected_package_" UNIQUE, btree (upload_id, vulnerability_affected_package_id)
+    "vulnerability_matches_vulnerability_affected_package_id" btree (vulnerability_affected_package_id)
+Foreign-key constraints:
+    "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
 
 ```
 

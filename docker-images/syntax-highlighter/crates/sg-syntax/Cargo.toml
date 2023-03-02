@@ -36,11 +36,7 @@ tree-sitter-go = "0.19.1"
 # on our own fork.
 tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql" }
 
-# As of 2022 Apr 06, there hasn't been a tree-sitter-c-sharp release
-# which allows for tree-sitter 0.20 as a dependency.
-# As a result, you get a type mismatch because tree-sitter 0.19.x
-# is picked by tree-sitter-c-sharp, whereas tree-sitter-go picks 0.20.x
-tree-sitter-c-sharp = { git = "https://github.com/tree-sitter/tree-sitter-c-sharp" }
+tree-sitter-c-sharp = "0.20.0"
 
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
 

@@ -5,17 +5,17 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
-func New(db database.DB, gitserver gitserver.Client, ownService backend.OwnService) graphqlbackend.OwnResolver {
+func New(db database.DB, gitserver gitserver.Client, ownService own.OwnService) graphqlbackend.OwnResolver {
 	enterpriseDB := edb.NewEnterpriseDB(db)
 	return &ownResolver{
 		db:              enterpriseDB,
@@ -36,17 +36,22 @@ type ownResolver struct {
 	db              edb.EnterpriseDB
 	codeownersStore edb.CodeownersStore
 	gitserver       gitserver.Client
-	ownService      backend.OwnService
+	ownService own.Service
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	file, err := r.ownService.OwnersFile(ctx, repoName, commitID)
+	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
-	owners := file.FindOwners(blob.Path())
+	// No data found.
+	if rs == nil {
+		return &ownershipConnectionResolver{db: r.db}, nil
+	}
+
+	owners := rs.FindOwners(blob.Path())
 	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
 	if err != nil {
 		return nil, err

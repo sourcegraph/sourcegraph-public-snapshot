@@ -349,7 +349,7 @@ class RegisteredSource {
                 )
             }
 
-            if (effect.is(startCompletion)) {
+            if (effect.is(startCompletionEffect)) {
                 source = source.query(transaction.state)
             }
         }
@@ -457,7 +457,7 @@ class SuggestionsState {
             if (effect.is(setSelectedEffect)) {
                 state = new SuggestionsState(state.source, state.open, effect.value)
             }
-            if (effect.is(hideCompletion)) {
+            if (effect.is(hideCompletionEffect)) {
                 state = new SuggestionsState(state.source, false, state.selectedOption)
             }
         }
@@ -490,8 +490,8 @@ const suggestionsConfig = Facet.define<Config, Config>({
 })
 
 const setSelectedEffect = StateEffect.define<number>()
-const startCompletion = StateEffect.define<void>()
-const hideCompletion = StateEffect.define<void>()
+const startCompletionEffect = StateEffect.define<void>()
+const hideCompletionEffect = StateEffect.define<void>()
 const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
@@ -590,9 +590,17 @@ const defaultKeyboardBindings: KeyBinding[] = [
         run: moveSelection('backward'),
     },
     {
+        mac: 'Ctrl-n',
+        run: moveSelection('forward'),
+    },
+    {
+        mac: 'Ctrl-p',
+        run: moveSelection('backward'),
+    },
+    {
         key: 'Mod-Space',
         run(view) {
-            view.dispatch({ effects: startCompletion.of() })
+            startCompletion(view)
             return true
         },
     },
@@ -621,7 +629,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
         key: 'Escape',
         run(view) {
             if (view.state.field(suggestionsStateField).open) {
-                view.dispatch({ effects: hideCompletion.of() })
+                view.dispatch({ effects: hideCompletionEffect.of() })
                 return true
             }
             return false
@@ -639,7 +647,7 @@ export const suggestionSources = Facet.define<Source>({
                 update.view.hasFocus &&
                 update.view.state.field(suggestionsStateField).result.empty()
             ) {
-                update.view.dispatch({ effects: startCompletion.of() })
+                startCompletion(update.view)
             }
         }),
         Prec.highest(keymap.of(defaultKeyboardBindings)),
@@ -657,3 +665,10 @@ export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalC
     suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]
+
+/**
+ * Load and show suggestions.
+ */
+export function startCompletion(view: EditorView): void {
+    view.dispatch({ effects: startCompletionEffect.of() })
+}

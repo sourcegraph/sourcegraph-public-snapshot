@@ -25,7 +25,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_hexops_valast//:valast",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//logtest",

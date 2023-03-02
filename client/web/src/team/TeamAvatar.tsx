@@ -99,7 +99,7 @@ export const TeamAvatar = React.forwardRef(
         }
 
         if (inline) {
-            return <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="div" aria-hidden={true} {...props} />
+            return <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="span" aria-hidden={true} {...props} />
         }
 
         return <div ref={reference} {...props} />

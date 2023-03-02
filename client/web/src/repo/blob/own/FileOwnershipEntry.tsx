@@ -48,8 +48,10 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                     </div>
                 </td>
                 <td>
-                    <UserAvatar user={person} className="mx-2" />
-                    <PersonLink person={person} />
+                    <div className="d-flex align-items-center">
+                        <UserAvatar user={person} className="mx-2" inline={true} />
+                        <PersonLink person={person} />
+                    </div>
                 </td>
                 <td>
                     {reasons.map(reason => (

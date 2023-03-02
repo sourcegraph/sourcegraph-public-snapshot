@@ -76,6 +76,8 @@ const ExecutorsSiteAdminArea = lazyComponent(
 
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
+const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
+
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...siteAdminAreaRoutes,
@@ -187,6 +189,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/executors/*',
             render: () => <ExecutorsSiteAdminArea />,
             condition: () => Boolean(window.context?.executorsEnabled),
+        },
+
+        // Cody configuration
+        {
+            path: '/cody',
+            render: props => <SiteAdminCodyPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]

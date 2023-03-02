@@ -16,6 +16,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -321,6 +323,13 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
 	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores errors from LocalCodeIntel to match the behavior found here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+			//
+			// This is weird, and maybe not intentional, but things break if we return an error.
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -424,6 +433,11 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores unimplemented errors from SymbolInfo to match the behavior here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b039aa70fbd155b5b1eddc4b5deede739626a978/-/blob/cmd/symbols/squirrel/http_handlers.go?L114-114
+			return nil, nil
+		}
 		return nil, err
 	}
 

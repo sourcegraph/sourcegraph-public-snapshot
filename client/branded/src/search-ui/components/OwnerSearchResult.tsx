@@ -57,6 +57,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
 
     const title = (
         <div className="d-flex align-items-center">
+            {/* TODO #48303: Use TeamAvatar for teams. */}
             <UserAvatar user={avatarUser} className={styles.avatar} size={16} />
             {url ? (
                 <Link to={url} className="text-muted">
