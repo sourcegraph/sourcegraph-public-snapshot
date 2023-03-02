@@ -7,14 +7,20 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"reflect"
 	"regexp"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
@@ -39,6 +45,7 @@ type Config struct {
 	clientSet  *kubernetes.Clientset
 	restConfig *rest.Config
 	eks        bool
+	gke        bool
 	eksClient  *eks.Client
 	ec2Client  *ec2.Client
 	iamClient  *iam.Client
@@ -73,6 +80,7 @@ func Validate(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *
 		clientSet:  clientSet,
 		restConfig: restConfig,
 		eks:        false,
+		gke:        false,
 	}
 
 	for _, opt := range opts {
@@ -89,7 +97,7 @@ func Validate(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *
 	}
 
 	if cfg.eks {
-		if err := CurrentContextSetToEKSCluster(); err != nil {
+		if err := CurrentContextSetTo("eks"); err != nil {
 			return errors.Newf("%s %s", validate.FailureEmoji, err)
 		}
 
@@ -107,6 +115,21 @@ func Validate(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *
 			WaitMsg:    "EKS: validating vpc",
 			SuccessMsg: "EKS: vpc validated",
 			ErrMsg:     "EKS: validating vpc failed",
+		})
+	}
+
+	if cfg.gke {
+		if err := CurrentContextSetTo("gke"); err != nil {
+			return errors.Newf("%s %s", validate.FailureEmoji, err)
+		}
+
+		Gke()
+
+		validations = append(validations, validation{
+			Validate:   GkeGcePersistentDiskCSIDrivers,
+			WaitMsg:    "GKE: validating persistent volumes",
+			SuccessMsg: "GKE: persistent volumes validated",
+			ErrMsg:     "GKE: validating peristent volumes failed",
 		})
 	}
 
@@ -416,4 +439,48 @@ func Connections(ctx context.Context, config *Config) ([]validate.Result, error)
 	}
 
 	return results, nil
+}
+
+func CurrentContextSetTo(clusterService string) error {
+	currentContext, err := GetCurrentContext()
+	if err != nil {
+		return err
+	}
+
+	if clusterService == "gke" {
+		got := strings.Split(currentContext, "_")[0]
+		want := clusterService
+		if got != want {
+			return errors.New("no gke cluster configured")
+		}
+	} else if clusterService == "eks" {
+		got := strings.Split(currentContext, ":")
+		want := []string{"arn", "aws", clusterService}
+
+		if len(got) >= 3 {
+			got = got[:3]
+			if !reflect.DeepEqual(got, want) {
+				return errors.New("no eks cluster configured")
+			}
+		}
+	}
+
+	return nil
+}
+
+func GetCurrentContext() (string, error) {
+	home := homedir.HomeDir()
+	pathToKubeConfig := filepath.Join(home, ".kube", "config")
+
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: pathToKubeConfig},
+		&clientcmd.ConfigOverrides{
+			CurrentContext: "",
+		}).RawConfig()
+
+	if err != nil {
+		return "", err
+	}
+
+	return config.CurrentContext, nil
 }

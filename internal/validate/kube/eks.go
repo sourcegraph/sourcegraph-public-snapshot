@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -251,33 +250,6 @@ func validateRolePolicy(rolePolicy RolePolicy) (result []validate.Result) {
 	})
 
 	return result
-}
-
-func CurrentContextSetToEKSCluster() error {
-	home := homedir.HomeDir()
-	pathToKubeConfig := filepath.Join(home, ".kube", "config")
-
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: pathToKubeConfig},
-		&clientcmd.ConfigOverrides{
-			CurrentContext: "",
-		}).RawConfig()
-
-	if err != nil {
-		return err
-	}
-
-	got := strings.Split(config.CurrentContext, ":")
-	want := []string{"arn", "aws", "eks"}
-
-	if len(got) >= 3 {
-		got = got[:3]
-		if reflect.DeepEqual(got, want) {
-			return nil
-		}
-	}
-
-	return errors.New("no eks cluster configured")
 }
 
 func getAddons(ctx context.Context, client *eks.Client) ([]string, error) {
