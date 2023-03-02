@@ -150,7 +150,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchNotebook = notebooksEnabled
 
     const showSentinel = sentinelEnabled
-    console.log('🚀 ~ file: GlobalNavbar.tsx:157 ~ showSentinel:', showSentinel)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
