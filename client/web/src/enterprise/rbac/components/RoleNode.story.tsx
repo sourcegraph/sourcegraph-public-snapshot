@@ -11,7 +11,7 @@ import { mockRoles, mockPermissionsMap } from '../mock'
 
 import { RoleNode } from './RoleNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: DecoratorFn = story => <div className="p-3 container list-unstyled">{story()}</div>
 
 const config: Meta = {
     title: 'web/src/site-admin/rbac/RoleNode',

@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { ApolloError } from '@apollo/client'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
@@ -14,7 +13,7 @@ import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/src/site-admin/rbac/ConfirmDeleteRoleModal',
+    title: 'web/src/site-admin/rbac',
     decorators: [decorator],
 }
 
@@ -30,8 +29,6 @@ export const ConfirmDeleteRoleModalStory: Story = () => (
         {() => (
             <MockedTestProvider>
                 <ConfirmDeleteRoleModal
-                    loading={false}
-                    error={undefined}
                     role={batchChangeAdminRole}
                     onCancel={noop}
                     onConfirm={mockOnConfirm}
@@ -42,42 +39,3 @@ export const ConfirmDeleteRoleModalStory: Story = () => (
 )
 
 ConfirmDeleteRoleModalStory.storyName = 'Confirm Delete role modal'
-
-export const ConfirmDeleteRoleModalStoryLoading: Story = () => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider>
-                <ConfirmDeleteRoleModal
-                    loading={true}
-                    error={undefined}
-                    role={batchChangeAdminRole}
-                    onCancel={noop}
-                    onConfirm={mockOnConfirm}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-ConfirmDeleteRoleModalStoryLoading.storyName = 'Confirm Delete role modal (loading)'
-
-export const ConfirmDeleteRoleModalStoryWithError: Story = () => {
-    const error = new ApolloError({ errorMessage: 'an error occurred' })
-    return (
-        <WebStory>
-            {() => (
-                <MockedTestProvider>
-                    <ConfirmDeleteRoleModal
-                        loading={false}
-                        error={error}
-                        role={batchChangeAdminRole}
-                        onCancel={noop}
-                        onConfirm={mockOnConfirm}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
-}
-
-ConfirmDeleteRoleModalStoryWithError.storyName = 'Confirm Delete role modal (with error)'

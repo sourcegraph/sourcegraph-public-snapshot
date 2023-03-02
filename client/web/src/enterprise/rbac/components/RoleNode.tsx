@@ -66,7 +66,6 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     className={styles.roleNodeCollapsibleHeader}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     outline={true}
-                    type="button"
                     variant="icon"
                 >
                     <Icon data-caret={true} className="mr-1 bg-red" aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
