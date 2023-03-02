@@ -1,7 +1,8 @@
 import React, { ChangeEvent, FC, useCallback, useEffect } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, H5, PageSwitcher, Select } from '@sourcegraph/wildcard'
+import { Container, H5, Icon, PageSwitcher, Select } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
@@ -39,7 +40,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     }, [telemetryService])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
-    const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
         PermissionsSyncJobsResult,
         PermissionsSyncJobsVariables,
         PermissionsSyncJob
@@ -47,25 +48,31 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         query: PERMISSIONS_SYNC_JOBS_QUERY,
         variables: {
             first: 20,
-            reasonGroup:
-                filters.reason === ''
-                    ? null
-                    : PermissionsSyncJobReasonGroup[filters.reason as keyof typeof PermissionsSyncJobReasonGroup],
-            state:
-                filters.state === ''
-                    ? null
-                    : PermissionsSyncJobState[filters.state as keyof typeof PermissionsSyncJobState],
+            reasonGroup: stringToReason(filters.reason),
+            state: stringToState(filters.state),
         } as PermissionsSyncJobsVariables,
         getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
         options: { pollInterval: 5000 },
     })
 
+    useEffect(() => {
+        const newReason = stringToReason(filters.reason)
+        const newState = stringToState(filters.state)
+        if (newReason !== variables.reasonGroup || newState !== variables.state) {
+            refetch({
+                ...variables,
+                reasonGroup: newReason,
+                state: newState,
+            })
+        }
+    }, [filters, refetch, variables])
+
     const setReason = useCallback(
-        (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() ?? '' }),
+        (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
         [setFilters]
     )
     const setState = useCallback(
-        (state: PermissionsSyncJobState | null) => setFilters({ state: state?.toString() ?? '' }),
+        (state: PermissionsSyncJobState | null) => setFilters({ state: state?.toString() || '' }),
         [setFilters]
     )
 
@@ -74,19 +81,22 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             <Container>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    {loading && !connection && <ConnectionLoading />}
-                    {connection && connection.nodes?.length > 0 && (
+                    {!connection && <ConnectionLoading />}
+                    {connection?.nodes && (
                         <div className={styles.filtersGrid}>
-                            <PermissionsSyncJobReasonGroupPicker onChange={setReason} />
-                            <PermissionsSyncJobStatePicker onChange={setState} />
+                            <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
+                            <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
                         </div>
                     )}
-                    <ConnectionList className={styles.jobsGrid} aria-label="Permissions sync jobs">
-                        {connection && connection.nodes?.length > 0 && <Header />}
-                        {connection?.nodes?.map(node => (
-                            <PermissionsSyncJobNode key={node.id} node={node} />
-                        ))}
-                    </ConnectionList>
+                    {connection?.nodes?.length == 0 && <EmptyList />}
+                    {!!connection?.nodes?.length && (
+                        <ConnectionList className={styles.jobsGrid} aria-label="Permissions sync jobs">
+                            {connection?.nodes && <Header />}
+                            {connection?.nodes?.map(node => (
+                                <PermissionsSyncJobNode key={node.id} node={node} />
+                            ))}
+                        </ConnectionList>
+                    )}
                 </ConnectionContainer>
                 <PageSwitcher
                     {...paginationProps}
@@ -99,12 +109,19 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     )
 }
 
+const stringToReason = (reason: string): PermissionsSyncJobReasonGroup | null =>
+    reason === '' ? null : PermissionsSyncJobReasonGroup[reason as keyof typeof PermissionsSyncJobReasonGroup]
+
+const stringToState = (state: string): PermissionsSyncJobState | null =>
+    state === '' ? null : PermissionsSyncJobState[state as keyof typeof PermissionsSyncJobState]
+
 interface PermissionsSyncJobReasonGroupPickerProps {
+    value: string
     onChange: (reasonGroup: PermissionsSyncJobReasonGroup | null) => void
 }
 
 export const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPickerProps> = props => {
-    const { onChange } = props
+    const { onChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
         const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobReasonGroup)
@@ -112,7 +129,7 @@ export const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGro
     }
 
     return (
-        <Select id="reasonSelector" label="Reason" onChange={handleSelect}>
+        <Select id="reasonSelector" value={stringToReason(value) || ''} label="Reason" onChange={handleSelect}>
             <option value="">Any</option>
             <option value={PermissionsSyncJobReasonGroup.MANUAL}>Manual</option>
             <option value={PermissionsSyncJobReasonGroup.SCHEDULE}>Schedule</option>
@@ -123,11 +140,12 @@ export const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGro
 }
 
 interface PermissionsSyncJobStatePickerProps {
+    value: string
     onChange: (state: PermissionsSyncJobState | null) => void
 }
 
 export const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
-    const { onChange } = props
+    const { onChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
         const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobState)
@@ -135,7 +153,7 @@ export const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProp
     }
 
     return (
-        <Select id="stateSelector" label="State" onChange={handleSelect}>
+        <Select id="stateSelector" value={stringToState(value) || ''} label="State" onChange={handleSelect}>
             <option value="">Any</option>
             <option value={PermissionsSyncJobState.CANCELED}>Canceled</option>
             <option value={PermissionsSyncJobState.COMPLETED}>Completed</option>
@@ -156,4 +174,11 @@ const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
         <H5 className="text-uppercase">Removed</H5>
         <H5 className="text-uppercase">Total</H5>
     </>
+)
+
+const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
+    <div className="text-muted text-center mb-3 w-100">
+        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <div className="pt-2">No permissions sync jobs have been found.</div>
+    </div>
 )

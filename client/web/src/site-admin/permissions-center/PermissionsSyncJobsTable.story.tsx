@@ -146,12 +146,12 @@ function getSyncJobs(): PermissionsSyncJob[] {
         }
 
         const subject: subject =
-            index % 2 == 0
+            index % 2 === 0
                 ? {
                       __typename: 'Repository',
                       name: `sourcegraph/repo-${index}`,
                       externalRepository: {
-                          serviceType: index % 3 == 0 ? ExternalServiceKind.GITHUB : ExternalServiceKind.GITLAB,
+                          serviceType: index % 3 === 0 ? ExternalServiceKind.GITHUB : ExternalServiceKind.GITLAB,
                       },
                   }
                 : {
