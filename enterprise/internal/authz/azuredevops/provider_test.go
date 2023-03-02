@@ -23,11 +23,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var allowLicensingCheck = func(_ licensing.Feature) error { return nil }
+
 func TestProvider_NewAuthzProviders(t *testing.T) {
-	testCases := []struct {
-		name                       string
-		mockCheckFeature           func(licensing.Feature) error
-		connections                []*types.AzureDevOpsConnection
+	type input struct {
+		mockCheckFeature func(licensing.Feature) error
+		connections      []*types.AzureDevOpsConnection
+	}
+
+	type output struct {
 		expectedInvalidConnections []string
 		expectedProblems           []string
 		// expectedWarnings is unused but we still want to declare it. Because if we have unexpected
@@ -36,59 +40,75 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 		expectedWarnings               []string
 		expectedTotalProviders         int
 		expectedAzureDevOpsConnections []*types.AzureDevOpsConnection
-	}{
+	}
 
+	testCases := []struct {
+		name string
+		input
+		output
+	}{
 		{
-			name:             "enforcePermissions set to false",
-			mockCheckFeature: func(_ licensing.Feature) error { return nil },
-			// Default is false, but setting it here explicitly to make it obviuos in the test
-			// for anyone new to this code and for myself in a months time.
-			connections: []*types.AzureDevOpsConnection{
-				{
-					URN: "1",
-					AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-						EnforcePermissions: false,
+			name: "enforcePermissions set to false",
+			input: input{
+				mockCheckFeature: allowLicensingCheck,
+				// Default is false, but setting it here explicitly to make it obviuos in the test
+				// for anyone new to this code and for myself in a months time.
+				connections: []*types.AzureDevOpsConnection{
+					{
+						URN: "1",
+						AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+							EnforcePermissions: false,
+						},
 					},
 				},
 			},
+			output: output{},
 			// expect no problems, warnings, invalid connections or providers.
 		},
 		{
-			name:             "at least one code host connection with enforcePermissions set to true",
-			mockCheckFeature: func(_ licensing.Feature) error { return nil },
-			connections: []*types.AzureDevOpsConnection{
-				{
-					URN: "1",
-					AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-						EnforcePermissions: false,
+			name: "at least one code host connection with enforcePermissions set to true",
+			input: input{
+				mockCheckFeature: allowLicensingCheck,
+				connections: []*types.AzureDevOpsConnection{
+					{
+						URN: "1",
+						AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+							EnforcePermissions: false,
+						},
 					},
-				},
-				{
-					URN: "2",
-					AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-						EnforcePermissions: true,
+					{
+						URN: "2",
+						AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+							EnforcePermissions: true,
+						},
 					},
 				},
 			},
-			expectedTotalProviders: 1,
-			expectedAzureDevOpsConnections: []*types.AzureDevOpsConnection{
-				{URN: "2"},
+			output: output{
+				expectedTotalProviders: 1,
+				expectedAzureDevOpsConnections: []*types.AzureDevOpsConnection{
+					{URN: "2"},
+				},
 			},
 		},
 		{
 			name: "licensing feature disabled",
-			mockCheckFeature: func(_ licensing.Feature) error {
-				return errors.New("not allowed")
-			},
-			connections: []*types.AzureDevOpsConnection{
-				{
-					AzureDevOpsConnection: &schema.AzureDevOpsConnection{
-						EnforcePermissions: true,
+			input: input{
+				mockCheckFeature: func(_ licensing.Feature) error {
+					return errors.New("not allowed")
+				},
+				connections: []*types.AzureDevOpsConnection{
+					{
+						AzureDevOpsConnection: &schema.AzureDevOpsConnection{
+							EnforcePermissions: true,
+						},
 					},
 				},
 			},
-			expectedInvalidConnections: []string{"azuredevops"},
-			expectedProblems:           []string{"not allowed"},
+			output: output{
+				expectedInvalidConnections: []string{"azuredevops"},
+				expectedProblems:           []string{"not allowed"},
+			},
 		},
 	}
 
@@ -130,6 +150,8 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 					t.Fatalf("Mismatched provider connections, wanted %d, but got %d\n%#v", len(tc.expectedAzureDevOpsConnections), len(gotAzureProvider.conns), gotAzureProvider.conns)
 				}
 
+				// Just check if the URN of the connection is the as expected. Using cmp.Diff on the
+				// whole list would require to reconstruct the entire struct in the expected output.
 				for j, _ := range gotAzureProvider.conns {
 					if diff := cmp.Diff(tc.expectedAzureDevOpsConnections[j].URN, gotAzureProvider.conns[j].URN); diff != "" {
 						t.Errorf("Mismatched provider connection URN, (-want, +got)\n%s", diff)
@@ -162,7 +184,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 	}
 
-	passLicensingCheck := func(_ licensing.Feature) error { return nil }
 	account := &extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: extsvc.TypeAzureDevOps,
@@ -187,19 +208,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	type input struct {
-		mockCheckFeature func(licensing.Feature) error
-		connection       *schema.AzureDevOpsConnection
-		account          *extsvc.Account
-		mockServer       *httptest.Server
+		connection *schema.AzureDevOpsConnection
+		account    *extsvc.Account
+		mockServer *httptest.Server
 	}
 
 	type output struct {
-		invalidConnections []string
-		problems           []string
-		warnings           []string
-		providers          []authz.Provider
-		error              string
-		permissions        *authz.ExternalUserPermissions
+		error       string
+		permissions *authz.ExternalUserPermissions
 	}
 
 	testCases := []struct {
@@ -211,8 +227,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		{
 			name: "malformed auth data",
 			input: input{
-				mockCheckFeature: passLicensingCheck,
-				connection:       &schema.AzureDevOpsConnection{EnforcePermissions: true},
+				connection: &schema.AzureDevOpsConnection{EnforcePermissions: true},
 				account: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: extsvc.TypeAzureDevOps,
@@ -225,27 +240,23 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 			output: output{
-				providers: expectedProviders,
-				error:     "failed to load external account data from database with external account with ID: 0: unexpected end of JSON input",
+				error: "failed to load external account data from database with external account with ID: 0: unexpected end of JSON input",
 			},
 		},
 		{
 			name: "no auth providers configured",
 			input: input{
-				mockCheckFeature: passLicensingCheck,
-				connection:       &schema.AzureDevOpsConnection{EnforcePermissions: true},
-				account:          account,
+				connection: &schema.AzureDevOpsConnection{EnforcePermissions: true},
+				account:    account,
 			},
 			output: output{
-				providers: expectedProviders,
-				error:     "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config: No authprovider configured for AzureDevOps, check site configuration.",
+				error: "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config: No authprovider configured for AzureDevOps, check site configuration.",
 			},
 		},
 		{
 			name:  "auth provider config with orgs",
 			setup: setup,
 			input: input{
-				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
 					Orgs:               []string{"solarsystem"},
@@ -273,7 +284,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{
 						"1",
@@ -285,7 +295,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			name:  "auth provider config with projects",
 			setup: setup,
 			input: input{
-				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
 					Projects:           []string{"solar/system"},
@@ -311,7 +320,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				},
@@ -321,7 +329,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			name:  "auth provider config with both orgs and projects",
 			setup: setup,
 			input: input{
-				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
 					Orgs:               []string{"solarsystem"},
@@ -361,7 +368,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -371,7 +377,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			name:  "auth provider config with both orgs and projects, ignores 4xx API responses",
 			setup: setup,
 			input: input{
-				mockCheckFeature: passLicensingCheck,
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
 					Orgs:               []string{"solarsystem", "simulate-401", "simulate-403", "simulate-404"},
@@ -416,7 +421,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				providers: expectedProviders,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -437,7 +441,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			licensing.MockCheckFeature = tc.mockCheckFeature
+			licensing.MockCheckFeature = allowLicensingCheck
 			result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 				{
 					URN:                   "",
@@ -445,28 +449,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 			})
 
-			if diff := cmp.Diff(tc.invalidConnections, result.InvalidConnections); diff != "" {
-				t.Errorf("mismatched InvalidConnections (-want, +got)\n%s", diff)
-			}
-
-			if diff := cmp.Diff(tc.problems, result.Problems); diff != "" {
-				t.Errorf("mismatched Problems (-want, +got)\n%s", diff)
-			}
-
-			if diff := cmp.Diff(tc.warnings, result.Warnings); diff != "" {
-				t.Errorf("mismatched Warnings (-want, +got)\n%s", diff)
-			}
-
 			// We don't need to test for the inner type yet. Asserting the length is sufficient.
-			if len(tc.providers) != len(result.Providers) {
+			if len(expectedProviders) != len(result.Providers) {
 				t.Fatalf(
 					"mismatched Providers want %d, but got %d provider(s)\n(-want, +got)\n%s",
-					len(tc.providers), len(result.Providers), cmp.Diff(tc.providers, result.Providers),
+					len(expectedProviders), len(result.Providers), cmp.Diff(expectedProviders, result.Providers),
 				)
 			}
 
 			// Return early because rest of the test will only work if we have a non-nil provider.
-			if len(tc.providers) == 0 {
+			if len(expectedProviders) == 0 {
 				return
 			}
 
@@ -520,7 +512,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			conf.Mock(nil)
 		}()
 
-		licensing.MockCheckFeature = passLicensingCheck
+		licensing.MockCheckFeature = allowLicensingCheck
 
 		result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 			{
@@ -638,7 +630,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("at least one code host connection with enforcePermissions set to true", func(t *testing.T) {
-		licensing.MockCheckFeature = passLicensingCheck
+		licensing.MockCheckFeature = allowLicensingCheck
 		result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 			{
 				URN: "1",
