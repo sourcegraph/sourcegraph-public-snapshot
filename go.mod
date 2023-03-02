@@ -222,6 +222,7 @@ require (
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pandatix/go-cvss v0.5.2 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect

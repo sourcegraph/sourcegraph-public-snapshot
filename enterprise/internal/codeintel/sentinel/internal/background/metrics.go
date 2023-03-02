@@ -7,7 +7,7 @@ import (
 )
 
 type Metrics struct {
-	numTodo prometheus.Counter
+	numVulnerabilitiesInserted prometheus.Counter
 }
 
 func NewMetrics(observationCtx *observation.Context) *Metrics {
@@ -21,12 +21,12 @@ func NewMetrics(observationCtx *observation.Context) *Metrics {
 		return counter
 	}
 
-	numTodo := counter(
-		"src_codeintel_sentinel_todo_total",
-		"TODO",
+	numVulnerabilitiesInserted := counter(
+		"src_codeintel_sentinel_num_vulnerabilities_inserted_total",
+		"The number of vulnerability records inserted into Postgres.",
 	)
 
 	return &Metrics{
-		numTodo: numTodo,
+		numVulnerabilitiesInserted: numVulnerabilitiesInserted,
 	}
 }
