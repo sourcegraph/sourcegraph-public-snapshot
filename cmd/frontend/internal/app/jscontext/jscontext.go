@@ -4,7 +4,6 @@ package jscontext
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -334,7 +333,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 }
 
 func isFreePlan(licenseInfo *hooks.LicenseInfo) bool {
-	fmt.Println("license info ---", licenseInfo.CurrentPlan, "<=====")
 	if licenseInfo == nil {
 		return true
 	}

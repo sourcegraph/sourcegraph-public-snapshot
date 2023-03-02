@@ -22,6 +22,7 @@ export const currentUserMock = {
     searchable: true,
     emails: [{ email: 'felix@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 } satisfies AuthenticatedUser
 
 /**
