@@ -2,6 +2,7 @@ package ranking
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -98,7 +99,7 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 	paths := map[string]float64{}
 	for path, rank := range documentRanks {
-		paths[path] = float64(rank[1])
+		paths[path] = math.Log2(float64(rank[1]))
 	}
 
 	return types.RepoPathRanks{
