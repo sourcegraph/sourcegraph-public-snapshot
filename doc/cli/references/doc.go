@@ -77,7 +77,7 @@ func get(url string, v any) error {
 }
 
 func fetchBinary() (string, error, func()) {
-	fmt.Println(fmt.Sprintf("fetching latest src-cli binary..."))
+	fmt.Printf("fetching latest src-cli binary...\n")
 	dir, err := os.MkdirTemp("", "src-cli-doc-gen")
 	if err != nil {
 		return "", errors.Wrap(err, "creating temporary directory"), func() {}
@@ -163,7 +163,7 @@ func main() {
 	} else {
 		binaryPath = *srcCliBinaryPath
 	}
-	fmt.Println(fmt.Sprintf("Using src-cli path: %s", binaryPath))
+	fmt.Printf("Using src-cli path: %s", binaryPath)
 
 	if err := generateDocs(binaryPath); err != nil {
 		log.Fatalf("error generating documentation: %v:", err)
