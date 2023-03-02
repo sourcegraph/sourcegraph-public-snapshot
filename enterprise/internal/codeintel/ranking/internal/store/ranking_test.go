@@ -183,6 +183,8 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	insertUploads(t, db, types.Upload{ID: 1})
+
 	// Insert definitions
 	mockDefinitions := []shared.RankingDefinitions{
 		{
