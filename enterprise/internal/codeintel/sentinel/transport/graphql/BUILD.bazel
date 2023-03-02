@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "iface.go",
+        "observability.go",
+        "root_resolver.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/sentinel",
+        "//enterprise/internal/codeintel/shared/resolvers",
+        "//internal/codeintel/resolvers",
+        "//internal/observation",
+    ],
+)

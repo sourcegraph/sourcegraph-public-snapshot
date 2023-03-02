@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -67,18 +68,46 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	_ = json.Indent(&indented, marshaled, "", "\t")
 
 	return &inferredConfigurationResolver{
+		autoindexSvc:  r.autoindexSvc,
 		configuration: indented.String(),
 		limitErr:      limitErr,
 	}, nil
 }
 
+func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	configuration, err := r.Configuration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if configuration == nil {
+		return nil, nil
+	}
+
+	descriptions, err := newDescriptionResolversFromJSON(r.autoindexSvc, *configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &descriptions, nil
+}
+
 type inferredConfigurationResolver struct {
+	autoindexSvc  AutoIndexingService
 	configuration string
 	limitErr      error
 }
 
 func (r *inferredConfigurationResolver) Configuration() string {
 	return r.configuration
+}
+
+func (r *inferredConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	descriptions, err := newDescriptionResolversFromJSON(r.autoindexSvc, r.configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &descriptions, nil
 }
 
 func (r *inferredConfigurationResolver) LimitError() *string {
@@ -88,4 +117,35 @@ func (r *inferredConfigurationResolver) LimitError() *string {
 	}
 
 	return nil
+}
+
+func newDescriptionResolvers(autoindexSvc AutoIndexingService, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
+	for _, indexJob := range indexConfiguration.IndexJobs {
+		var steps []types.DockerStep
+		for _, step := range indexJob.Steps {
+			steps = append(steps, types.DockerStep{
+				Root:     step.Root,
+				Image:    step.Image,
+				Commands: step.Commands,
+			})
+		}
+
+		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
+			autoindexSvc: autoindexSvc,
+			indexJob:     indexJob,
+			steps:        steps,
+		})
+	}
+
+	return resolvers, nil
+}
+
+func newDescriptionResolversFromJSON(autoindexSvc AutoIndexingService, configuration string) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
+	if err != nil {
+		return nil, err
+	}
+
+	return newDescriptionResolvers(autoindexSvc, &indexConfiguration)
 }

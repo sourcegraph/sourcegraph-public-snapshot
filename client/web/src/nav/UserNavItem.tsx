@@ -41,6 +41,7 @@ type MinimalAuthenticatedUser = Pick<
 export interface UserNavItemProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
@@ -55,6 +56,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
         isSourcegraphDotCom,
+        isSourcegraphApp,
         codeHostIntegrationMessaging,
         menuButtonRef,
         showFeedbackModal,
@@ -208,7 +210,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
-                            {authenticatedUser.session?.canSignOut && (
+                            {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
                                 <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>

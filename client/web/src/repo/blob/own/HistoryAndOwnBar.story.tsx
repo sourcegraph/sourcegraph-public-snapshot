@@ -28,9 +28,13 @@ const barData: FetchOwnersAndHistoryResult = {
                         {
                             owner: {
                                 email: '',
-                                avatarURL: null,
-                                displayName: 'nirbheek',
-                                user: null,
+                                avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
+                                displayName: 'pwithnall',
+                                user: {
+                                    displayName: 'Philip Withnall',
+                                    url: '/users/pwithnall',
+                                    username: 'pwithnall',
+                                },
                                 __typename: 'Person',
                             },
                             __typename: 'Ownership',
@@ -39,7 +43,7 @@ const barData: FetchOwnersAndHistoryResult = {
                             owner: {
                                 email: '',
                                 avatarURL: null,
-                                displayName: 'pwithnall',
+                                displayName: 'nirbheek',
                                 user: null,
                                 __typename: 'Person',
                             },

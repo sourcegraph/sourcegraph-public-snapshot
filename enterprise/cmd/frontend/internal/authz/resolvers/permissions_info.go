@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -90,7 +91,9 @@ func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.Per
 }
 
 func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+	cursorSQL := fmt.Sprintf("'%s'", cursor)
+
+	return &cursorSQL, nil
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {

@@ -23,7 +23,7 @@ import (
 func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !conf.IsAccessRequestsEnabled() {
+		if !conf.IsAccessRequestEnabled() {
 			logger.Error("experimental feature accessRequests is disabled, but received request")
 			http.Error(w, "experimental feature accessRequests is disabled, but received request", http.StatusForbidden)
 			return

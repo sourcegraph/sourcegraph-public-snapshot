@@ -32,6 +32,7 @@ linters-settings:
       - github.com/hashicorp/go-multierror: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
       # More performant regexp
       - regexp: "Use github.com/grafana/regexp instead"
+      - github.com/hexops/autogold$: "Use github.com/hexops/autogold/v2 instead"
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives

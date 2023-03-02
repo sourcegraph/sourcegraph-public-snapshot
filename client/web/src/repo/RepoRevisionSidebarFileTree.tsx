@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
     mdiFileDocumentOutline,
     mdiSourceRepository,
@@ -8,7 +9,7 @@ import {
     mdiFolderArrowUp,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -60,6 +61,7 @@ const QUERY = gql`
         }
     }
 `
+const APOLLO_QUERY = apolloGql(QUERY)
 
 // TODO(philipp-spiess): Figure out why we can't use a GraphQL fragment here.
 // The issue is that on `TreeEntry` does not match because the type is either
@@ -73,10 +75,6 @@ type FileTreeEntry = Extract<
 >['entries'][number]
 
 interface Props {
-    // Instead of showing a `..` indicator and only loading the current dirs
-    // entries, it will use the Ancestors query to load all entries of all
-    // parent directories.
-    alwaysLoadAncestors: boolean
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -88,7 +86,7 @@ interface Props {
     telemetryService: TelemetryService
 }
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
+    const { telemetryService, onExpandParent } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
@@ -120,7 +118,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const [expandedIds, setExpandedIds] = useState<number[]>(defaultExpandedIds)
 
     const navigate = useNavigate()
-    const location = useLocation()
 
     const [defaultVariables] = useState({
         repoName: props.repoName,
@@ -129,36 +126,57 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         first: MAX_TREE_ENTRIES,
     })
 
-    const { error, loading, refetch } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
+    const { data, error, loading } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
         variables: {
             ...defaultVariables,
             filePath: initialFilePath,
-            ancestors: alwaysLoadAncestors,
-        },
-        notifyOnNetworkStatusChange: true,
-        onCompleted(data) {
-            const rootTreeUrl = data?.repository?.commit?.tree?.url ?? location.pathname
-            const entries = data?.repository?.commit?.tree?.entries ?? []
-            let newTreeData: TreeData | null = null
-            if (treeData === null) {
-                newTreeData = appendTreeData(
-                    createTreeData(alwaysLoadAncestors ? '' : initialFilePath),
-                    entries,
-                    rootTreeUrl,
-                    alwaysLoadAncestors
-                )
-            } else {
-                newTreeData = appendTreeData(treeData, entries, rootTreeUrl, alwaysLoadAncestors)
-            }
-
-            if (newTreeData) {
-                setTreeData(newTreeData)
-                // Eagerly update the ref so that the selected path syncing can
-                // use the new data before the tree is re-rendered.
-                treeDataRef.current = newTreeData
-            }
+            ancestors: false,
         },
     })
+
+    const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
+        const rootTreeUrl = data?.repository?.commit?.tree?.url
+        const entries = data?.repository?.commit?.tree?.entries
+
+        if (rootTreeUrl === undefined || entries === undefined) {
+            return
+        }
+
+        const nextTreeData = appendTreeData(currentTreeData, entries, rootTreeUrl)
+
+        setTreeData(nextTreeData)
+        // Eagerly update the ref so that the selected path syncing can
+        // use the new data before the tree is re-rendered.
+        treeDataRef.current = nextTreeData
+    }, [])
+
+    // Initialize the treeData from the initial query
+    // We use a layout effect here because the data can be available in the first render pass and
+    // we want to avoid showing a loading indicator in that case.
+    useLayoutEffect(() => {
+        if (data === undefined || treeData !== null) {
+            return
+        }
+
+        updateTreeData(createTreeData(initialFilePath), data)
+    }, [data, initialFilePath, treeData, updateTreeData])
+
+    const client = useApolloClient()
+    const fetchEntries = useCallback(
+        async (variables: FileTreeEntriesVariables) => {
+            const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
+                query: APOLLO_QUERY,
+                variables,
+            })
+
+            if (!treeDataRef.current) {
+                return
+            }
+
+            updateTreeData(treeDataRef.current, result.data)
+        },
+        [client, updateTreeData]
+    )
 
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
@@ -169,7 +187,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
 
             telemetryService.log('FileTreeLoadDirectory')
-            await refetch({
+            await fetchEntries({
                 ...defaultVariables,
                 filePath: fullPath,
                 ancestors: false,
@@ -177,7 +195,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
-        [defaultVariables, refetch, treeData?.loadedIds, telemetryService]
+        [defaultVariables, fetchEntries, treeData?.loadedIds, telemetryService]
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
@@ -275,7 +293,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             if (!path.startsWith(rootPath)) {
                 onExpandParent(path)
             } else if (path !== rootPath) {
-                refetch({
+                fetchEntries({
                     ...defaultVariables,
                     filePath: path,
                     // The file can be anywhere in the tree so we need to load all ancestors
@@ -294,7 +312,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         props.initialFilePath,
         loading,
         error,
-        refetch,
+        fetchEntries,
         defaultVariables,
     ])
 
@@ -493,17 +511,12 @@ function createTreeData(root: string): TreeData {
     }
 }
 
-function appendTreeData(
-    tree: TreeData,
-    entries: FileTreeEntry[],
-    rootTreeUrl: string,
-    alwaysLoadAncestors: boolean
-): TreeData {
+function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: string): TreeData {
     tree = { ...tree, nodes: [...tree.nodes], pathToId: new Map(tree.pathToId) }
 
     const isNewTree = tree.nodes.length === 0
     if (isNewTree) {
-        insertRootNode(tree, rootTreeUrl, alwaysLoadAncestors)
+        insertRootNode(tree, rootTreeUrl)
     }
 
     // Bookkeeping for single child expansion:
@@ -632,7 +645,7 @@ function appendTreeData(
     return tree
 }
 
-function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors: boolean): void {
+function insertRootNode(tree: TreeData, rootTreeUrl: string): void {
     const root: TreeNode = {
         name: tree.rootPath,
         id: 0,
@@ -648,7 +661,7 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
     tree.nodes.push(root)
     tree.pathToId.set(tree.rootPath, 0)
 
-    if (!alwaysLoadAncestors && tree.rootPath !== '') {
+    if (tree.rootPath !== '') {
         const id = tree.nodes.length
         const parentPathName = getParentPath(tree.rootPath)
         const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()!

@@ -10,16 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // userCtx returns a context where give user ID identifies logged in user.
@@ -31,11 +30,11 @@ func userCtx(userID int32) context.Context {
 
 // fakeOwnService returns given owners file and resolves owners to UnknownOwner.
 type fakeOwnService struct {
-	File *codeownerspb.File
+	Ruleset *codeowners.Ruleset
 }
 
-func (s fakeOwnService) OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error) {
-	return s.File, nil
+func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error) {
+	return s.Ruleset, nil
 }
 
 // ResolverOwnersWithType here behaves in line with production
@@ -71,7 +70,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	db := database.NewMockDB()
 	fs.Wire(db)
 	own := fakeOwnService{
-		File: &codeownerspb.File{
+		Ruleset: codeowners.NewRuleset(&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
 					Pattern: "*.js",
@@ -80,7 +79,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	}
 	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	repos := database.NewMockRepoStore()
@@ -90,7 +89,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, own))
+	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, own))
 	if err != nil {
 		t.Fatal(err)
 	}
