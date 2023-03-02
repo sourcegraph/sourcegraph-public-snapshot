@@ -1,6 +1,7 @@
 import React, { ChangeEvent, FC, useCallback, useEffect } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, H5, Icon, PageSwitcher, Select } from '@sourcegraph/wildcard'
 
@@ -88,7 +89,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                             <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
                         </div>
                     )}
-                    {connection?.nodes?.length == 0 && <EmptyList />}
+                    {connection?.nodes?.length === 0 && <EmptyList />}
                     {!!connection?.nodes?.length && (
                         <ConnectionList className={styles.jobsGrid} aria-label="Permissions sync jobs">
                             {connection?.nodes && <Header />}
