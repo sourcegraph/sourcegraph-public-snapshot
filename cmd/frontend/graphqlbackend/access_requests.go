@@ -135,7 +135,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		currentUser, err := auth.CurrentUser(ctx, tx)
 
 		accessRequest.Status = args.Status
-		if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByID: &currentUser.ID}); err != nil {
+		if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByUserID: &currentUser.ID}); err != nil {
 			return err
 		}
 		return nil

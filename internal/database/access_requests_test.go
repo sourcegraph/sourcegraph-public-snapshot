@@ -89,7 +89,7 @@ func TestAccessRequests_Update(t *testing.T) {
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByID: &user.ID})
+		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
 		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
@@ -103,11 +103,11 @@ func TestAccessRequests_Update(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByID: &user.ID})
+		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.NotNil(t, updated)
 		assert.NoError(t, err)
 		assert.Equal(t, updated.Status, types.AccessRequestStatusApproved)
-		assert.Equal(t, updated.DecisionByID, &user.ID)
+		assert.Equal(t, updated.DecisionByUserID, &user.ID)
 	})
 }
 

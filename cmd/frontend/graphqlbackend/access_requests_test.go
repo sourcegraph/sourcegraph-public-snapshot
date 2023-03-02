@@ -188,7 +188,6 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	userStore := database.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(userStore)
 
-
 	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {
@@ -242,7 +241,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 			},
 		})
 		assert.Len(t, accessRequestStore.UpdateFunc.History(), 1)
-		assert.Equal(t, types.AccessRequest{ID: mockAccessRequest.ID, DecisionByID: &userID, Status: types.AccessRequestStatusApproved}, *accessRequestStore.UpdateFunc.History()[0].Arg1)
+		assert.Equal(t, types.AccessRequest{ID: mockAccessRequest.ID, DecisionByUserID: &userID, Status: types.AccessRequestStatusApproved}, *accessRequestStore.UpdateFunc.History()[0].Arg1)
 	})
 
 	t.Run("non-existing access request", func(t *testing.T) {
