@@ -341,5 +341,3 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
     ): Observable<string[][]> =>
         fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
 }
-
-console.log(authenticatedUserValue, 'authenticatedUserValue')
