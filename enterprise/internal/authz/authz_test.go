@@ -489,7 +489,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit, extsvc.KindAzureDevOps:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
@@ -517,6 +517,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
+		azureDevOpsConnections     []*schema.AzureDevOpsConnection
 		gitlabConnections          []*schema.GitLabConnection
 		bitbucketServerConnections []*schema.BitbucketServerConnection
 		githubConnections          []*schema.GitHubConnection
@@ -527,6 +528,29 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		expInvalidConnections []string
 		expSeriousProblems    []string
 	}{
+		{
+			description: "Azure DevOps connection with enforce permissions enabled but missing license for ACLs",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "Azure DevOps",
+							Type:         extsvc.TypeAzureDevOps,
+						},
+					}},
+				},
+			},
+			azureDevOpsConnections: []*schema.AzureDevOpsConnection{
+				{
+					EnforcePermissions: true,
+					Url:                "https://dev.azure.com",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"azuredevops"},
+		},
 		{
 			description: "GitHub connection with authz enabled but missing license for ACLs",
 			cfg: conf.Unified{
@@ -663,6 +687,13 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				var svcs []*types.ExternalService
 				for _, kind := range opt.Kinds {
 					switch kind {
+					case extsvc.KindAzureDevOps:
+						for _, ado := range test.azureDevOpsConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(ado)),
+							})
+						}
 					case extsvc.KindGitLab:
 						for _, gl := range test.gitlabConnections {
 							svcs = append(svcs, &types.ExternalService{

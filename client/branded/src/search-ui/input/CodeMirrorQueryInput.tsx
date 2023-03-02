@@ -3,16 +3,8 @@ import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } f
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
-import { EditorSelection, Extension, Prec, Compartment, Range, EditorState } from '@codemirror/state'
-import {
-    EditorView,
-    ViewUpdate,
-    keymap,
-    Decoration,
-    placeholder as placeholderExtension,
-    ViewPlugin,
-    WidgetType,
-} from '@codemirror/view'
+import { EditorSelection, Extension, Prec, Compartment, EditorState } from '@codemirror/state'
+import { EditorView, ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -28,8 +20,6 @@ import {
     type SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
-import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
@@ -37,6 +27,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
+import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
 import { queryTokens, parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
@@ -355,15 +346,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
                     // The precedence of these extensions needs to be decreased
                     // explicitly, otherwise the diagnostic indicators will be
                     // hidden behind the highlight background color
-                    Prec.low([
-                        tokenInfo(),
-                        highlightFocusedFilter,
-                        // It baffels me but the syntax highlighting extension has
-                        // to come after the highlight current filter extension,
-                        // otherwise CodeMirror keeps steeling the focus.
-                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                        querySyntaxHighlighting,
-                    ]),
+                    Prec.low([tokenInfo(), querySyntaxHighlighting, decorateActiveFilter, filterPlaceholder]),
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -552,75 +535,6 @@ const [callbacksField, setCallbacks] = createUpdateableField<
         }
     }),
 ])
-
-// Defines decorators for syntax highlighting
-const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
-
-class PlaceholderWidget extends WidgetType {
-    constructor(private placeholder: string) {
-        super()
-    }
-
-    /* eslint-disable-next-line id-length */
-    public eq(other: PlaceholderWidget): boolean {
-        return this.placeholder === other.placeholder
-    }
-
-    public toDOM(): HTMLElement {
-        const span = document.createElement('span')
-        span.className = styles.placeholder
-        span.textContent = this.placeholder
-        return span
-    }
-}
-
-// Determines whether the cursor is over a filter and if yes, decorates that
-// filter.
-const highlightFocusedFilter = ViewPlugin.define(
-    () => ({
-        decorations: Decoration.none,
-        update(update) {
-            if (update.docChanged || update.selectionSet || update.focusChanged) {
-                if (update.view.hasFocus) {
-                    const query = update.state.facet(queryTokens)
-                    const position = update.state.selection.main.head
-                    const focusedFilter = query.tokens.find(
-                        (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighted when
-                            // the cursor is positioned directly after the value
-                            token.type === 'filter' && token.range.start <= position && token.range.end >= position
-                    )
-                    const decorations: Range<Decoration>[] = []
-
-                    if (focusedFilter) {
-                        // Adds decoration for background highlighting
-                        decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-
-                        // Adds widget decoration for filter placeholder
-                        if (!focusedFilter.value?.value) {
-                            const resolvedFilter = resolveFilter(focusedFilter.field.value)
-                            if (resolvedFilter?.definition.placeholder) {
-                                decorations.push(
-                                    Decoration.widget({
-                                        widget: new PlaceholderWidget(resolvedFilter.definition.placeholder),
-                                        side: 1, // show after the cursor
-                                    }).range(focusedFilter.range.end)
-                                )
-                            }
-                        }
-                    }
-
-                    this.decorations = Decoration.set(decorations)
-                } else {
-                    this.decorations = Decoration.none
-                }
-            }
-        },
-    }),
-    {
-        decorations: plugin => plugin.decorations,
-    }
-)
 
 /**
  * Sets up client side query validation.

@@ -32,14 +32,16 @@ func main() {
 	var c servegit.Config
 	c.Load()
 
-	root := flag.String("root", c.ReposRoot, "the directory we search from.")
+	root := flag.String("root", c.Root, "the directory we search from.")
 	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
 	verbose := flag.Bool("v", false, "verbose output")
 
 	flag.Parse()
 
+	c.Root = *root
+
 	srv := &servegit.Serve{
-		Root:   *root,
+		Config: c,
 		Logger: log.Scoped("serve", ""),
 	}
 

@@ -1,19 +1,22 @@
 # Table "public.access_requests"
 ```
-     Column      |           Type           | Collation | Nullable |                   Default                   
------------------+--------------------------+-----------+----------+---------------------------------------------
- id              | integer                  |           | not null | nextval('access_requests_id_seq'::regclass)
- created_at      | timestamp with time zone |           | not null | now()
- updated_at      | timestamp with time zone |           | not null | now()
- name            | text                     |           | not null | 
- email           | text                     |           | not null | 
- additional_info | text                     |           |          | 
- status          | text                     |           | not null | 
+       Column        |           Type           | Collation | Nullable |                   Default                   
+---------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                  | integer                  |           | not null | nextval('access_requests_id_seq'::regclass)
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ name                | text                     |           | not null | 
+ email               | text                     |           | not null | 
+ additional_info     | text                     |           |          | 
+ status              | text                     |           | not null | 
+ decision_by_user_id | integer                  |           |          | 
 Indexes:
     "access_requests_pkey" PRIMARY KEY, btree (id)
     "access_requests_email_key" UNIQUE CONSTRAINT, btree (email)
     "access_requests_created_at" btree (created_at)
     "access_requests_status" btree (status)
+Foreign-key constraints:
+    "access_requests_decision_by_user_id_fkey" FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 
 ```
 
@@ -3703,6 +3706,7 @@ Check constraints:
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
     "users_username_valid_chars" CHECK (username ~ '^\w(?:\w|[-.](?=\w))*-?$'::citext)
 Referenced by:
+    TABLE "access_requests" CONSTRAINT "access_requests_decision_by_user_id_fkey" FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

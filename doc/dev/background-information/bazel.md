@@ -152,6 +152,35 @@ Gazelle and the frontend: TODO
   - ex `bazel query "allpaths(//enterprise/cmd/worker, @go_googleapis//google/api)"`
   - This is very useful when you want to understand what connects a given package to another.
 
+#### Running bazel built services locally with `sg start`
+
+> For early adopters only.
+
+First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
+
+- `brew install bazel` 
+- `brew install ibazel` 
+
+Then instead of running `sg start oss` you can use the `bazel` variant instead. 
+
+- `sg start oss-bazel`
+- `sg start enterprise-bazel`
+- `sg start codeintel-bazel`
+- `sg start enterprise-codeintel-bazel`
+
+##### How it works
+
+When `sg start` is booting up, the standard installation process will begin as usual for commands that are not built with Bazel, but you'll also see a new program running 
+`[  bazel]` which will log the build process for all the targets required by your chosen commandset. Once it's done, these services will start and [`iBazel`](https://github.com/bazelbuild/bazel-watcher) 
+will take the relay. It will watch the files that Bazel has indentified has dependencies for your services, and rebuild them accordingly. 
+
+So when a change is detected, `iBazel` will build the affected target and it will be restarted once the build finishes. 
+
+##### Caveats 
+
+- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages. 
+- Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
+
 ## FAQ
 
 ### Go

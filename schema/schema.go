@@ -199,6 +199,8 @@ type AzureDevOpsAuthProvider struct {
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
 type AzureDevOpsConnection struct {
+	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
+	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
@@ -209,7 +211,7 @@ type AzureDevOpsConnection struct {
 	Token string `json:"token"`
 	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
 }
 type BackendInsight struct {
