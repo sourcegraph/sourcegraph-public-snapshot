@@ -88,7 +88,7 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
 
-	// Inititalize search first, as we require enterprise search jobs to be already
+	// Initialize search first, as we require enterprise search jobs to exist already
 	// when other initializers are called.
 	if err := search.Init(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
 		logger.Fatal("failed to initialize search", log.Error(err))
