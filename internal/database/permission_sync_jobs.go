@@ -486,7 +486,7 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("state = %s", opts.State))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
