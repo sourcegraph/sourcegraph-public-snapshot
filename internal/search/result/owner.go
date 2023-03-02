@@ -6,41 +6,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type OwnerMatchOwner interface {
+type Owner interface {
 	Type() string
 	Identifier() string
 }
 
-type OwnerMatchPerson struct {
+type OwnerPerson struct {
 	Handle string
 	Email  string
 	User   *types.User
 }
 
-func (o OwnerMatchPerson) Identifier() string {
+func (o OwnerPerson) Identifier() string {
 	return "Person:" + o.Handle + o.Email
 }
 
-func (o OwnerMatchPerson) Type() string {
+func (o OwnerPerson) Type() string {
 	return "person"
 }
 
-type OwnerMatchTeam struct {
+type OwnerTeam struct {
 	Handle string
 	Email  string
 	Team   *types.Team
 }
 
-func (o OwnerMatchTeam) Identifier() string {
+func (o OwnerTeam) Identifier() string {
 	return "Team:" + o.Team.Name
 }
 
-func (o OwnerMatchTeam) Type() string {
+func (o OwnerTeam) Type() string {
 	return "team"
 }
 
 type OwnerMatch struct {
-	ResolvedOwner OwnerMatchOwner
+	ResolvedOwner Owner
 
 	// The following contain information about what search the owner was matched from.
 	InputRev *string           `json:"-"`

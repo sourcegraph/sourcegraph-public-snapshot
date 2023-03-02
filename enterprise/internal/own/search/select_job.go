@@ -119,16 +119,16 @@ matchesLoop:
 	return ownerMatches, errs
 }
 
-func ownerToResult(o codeowners.ResolvedOwner) result.OwnerMatchOwner {
+func ownerToResult(o codeowners.ResolvedOwner) result.Owner {
 	if v, ok := o.(*codeowners.Person); ok {
-		return &result.OwnerMatchPerson{
+		return &result.OwnerPerson{
 			Handle: v.Handle,
 			Email:  v.Email,
 			User:   v.User,
 		}
 	}
 	if v, ok := o.(*codeowners.Team); ok {
-		return &result.OwnerMatchTeam{
+		return &result.OwnerTeam{
 			Handle: v.Handle,
 			Email:  v.Email,
 			Team:   v.Team,
