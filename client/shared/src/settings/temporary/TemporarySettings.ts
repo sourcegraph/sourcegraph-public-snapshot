@@ -52,6 +52,7 @@ export interface TemporarySettingsSchema {
     'search.results.collapseSmartSearch': boolean
     'search.input.recentSearches': RecentSearch[]
     'search.input.usedInlineHistory': boolean
+    'search.ranking.experimental': boolean
     // This is a temporary (no pun intended) setting to allow users to easily
     // switch been the current and the new search input. It's only used when
     // the feature flag `"searchQueryInput": "experimental"` is set.

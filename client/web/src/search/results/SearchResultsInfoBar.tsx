@@ -8,7 +8,8 @@ import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/share
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Label } from '@sourcegraph/wildcard'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -59,6 +60,9 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
+
+    isToggleEnabled: boolean
+    onToggleRanking: (newValue: boolean) => void
 }
 
 /**
@@ -138,6 +142,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 <div className={styles.expander} />
 
+                <Label className={styles.toggle}>
+                    Ranking {props.isToggleEnabled ? 'enabled ' : 'disabled '}
+                    <Toggle
+                        value={props.isToggleEnabled}
+                        onToggle={() => props.onToggleRanking(!props.isToggleEnabled)}
+                        title="Enable Ranking"
+                        className="mr-2"
+                    />
+                </Label>
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         query={props.query}
