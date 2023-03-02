@@ -233,16 +233,14 @@ referenced_symbols AS (
 		r.id IN (SELECT lr.codeintel_ranking_reference_id FROM locked_refs lr) AND
 		NOT EXISTS (
 			SELECT 1
-			FROM codeintel_ranking_references_processed rrp
-			JOIN codeintel_ranking_references rr ON rr.id = rrp.codeintel_ranking_reference_id
-			JOIN lsif_uploads u2 ON u2.id = rr.upload_id
+			FROM lsif_uploads u2
+			JOIN codeintel_ranking_references rr ON rr.upload_id = u2.id
+			JOIN codeintel_ranking_references_processed rrp ON rrp.codeintel_ranking_reference_id = rr.id
 			WHERE
 				rrp.graph_key = %s AND
-				NOT (
-					u.repository_id = u2.repository_id AND
-					u.root = u2.root AND
-					u.indexer = u2.indexer
-				)
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer
 		)
 ),
 referenced_definitions AS (
