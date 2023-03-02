@@ -39,6 +39,9 @@ func TestNewDockerWorkspace(t *testing.T) {
 				Token:  "token",
 				Commit: "commit",
 			},
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
+			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
@@ -53,6 +56,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -146,6 +150,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(errors.New("failed"))
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -164,6 +169,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryDirectory: "/my/dir",
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -236,6 +242,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				FetchTags:      true,
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -266,6 +273,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				ShallowClone:   true,
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -297,6 +305,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				SparseCheckout: []string{"foo/bar/**"},
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
 			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
@@ -442,8 +451,8 @@ func TestNewDockerWorkspace(t *testing.T) {
 
 			ws, err := workspace.NewDockerWorkspace(context.Background(), filesStore, test.job, cmd, logger, test.cloneOptions, operations)
 			t.Cleanup(func() {
-				if ws != nil && len(ws.Path()) > 0 {
-					os.RemoveAll(ws.Path())
+				if ws != nil {
+					ws.Remove(context.Background(), false)
 				}
 			})
 
@@ -476,6 +485,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 				require.NoError(t, err)
 				assert.Len(t, entries, len(test.expectedDockerScripts))
 				for f, commands := range test.expectedDockerScripts {
+					require.Contains(t, ws.ScriptFilenames(), f)
 					b, err := os.ReadFile(path.Join(tempDir, ".sourcegraph-executor", f))
 					require.NoError(t, err)
 					assert.Equal(t, toDockerStepScript(commands...), string(b))
