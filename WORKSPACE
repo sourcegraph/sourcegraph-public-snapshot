@@ -200,7 +200,7 @@ crates_repository(
     # this file has to be manually created and it will be filled when
     # the target is executed
     # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index
-    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.json",
+    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
     manifests = [
       "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
       "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
