@@ -25,7 +25,7 @@ import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
-import { filterHighlight } from './codemirror/syntax-highlighting'
+import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
 import { editorConfigFacet, Source, suggestions, startCompletion } from './suggestionsExtension'
 
@@ -175,7 +175,7 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
         keymap.of(defaultKeymap),
         codemirrorHistory(),
         filterPlaceholder,
-        Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
+        Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
         EditorView.theme({
             '&': {
                 flex: 1,
