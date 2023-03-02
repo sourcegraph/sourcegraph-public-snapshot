@@ -3,5 +3,20 @@
     "path": "internal/codeintel/dependencies/internal/store",
     "prefix": "TestListPackageRepoRefs",
     "reason": "References a column directly in the test that is being dropped post 4.5. No application code references the column"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "Test",
+    "reason": "Removing LSIF tables that no longer contain data."
+  },
+  {
+    "path": "enterprise/internal/codeintel/uploads/internal/lsifstore",
+    "prefix": "Test",
+    "reason": "Removing LSIF tables that no longer contain data."
+  },
+  {
+    "path": "enterprise/internal/oobmigration/migrations/codeintel",
+    "prefix": "Test",
+    "reason": "Removing LSIF tables that no longer contain data."
   }
 ]

@@ -41,6 +41,8 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/observation",
+        "//schema",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

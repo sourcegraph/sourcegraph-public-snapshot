@@ -22,8 +22,8 @@ import {
 } from '../../../../../../graphql-operations'
 
 const GET_GITHUB_ORGANIZATIONS = gql`
-    query GetGitHubOrganizations($token: String!) {
-        externalServiceNamespaces(kind: GITHUB, url: "https://github.com", token: $token) {
+    query GetGitHubOrganizations($id: ID, $token: String!) {
+        externalServiceNamespaces(kind: GITHUB, url: "https://github.com", token: $token, id: $id) {
             nodes {
                 id
                 name
@@ -36,18 +36,19 @@ interface GithubOrganizationsPickerProps {
     token: string
     disabled: boolean
     organizations: string[]
+    externalServiceId: string | undefined
     onChange: (orginaziations: string[]) => void
 }
 
 export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = props => {
-    const { token, disabled, organizations, onChange } = props
+    const { token, disabled, organizations, externalServiceId, onChange } = props
     const [searchTerm, setSearchTerm] = useState('')
 
     const { data, loading, error } = useQuery<GetGitHubOrganizationsResult, GetGitHubOrganizationsVariables>(
         GET_GITHUB_ORGANIZATIONS,
         {
             skip: disabled,
-            variables: { token },
+            variables: { token, id: externalServiceId ?? null },
         }
     )
 
@@ -92,10 +93,17 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
 }
 
 const GET_GITHUB_REPOSITORIES = gql`
-    query GetGitHubRepositories($first: Int!, $token: String!, $query: String!, $excludeRepositories: [String!]!) {
+    query GetGitHubRepositories(
+        $id: ID
+        $first: Int!
+        $token: String!
+        $query: String!
+        $excludeRepositories: [String!]!
+    ) {
         externalServiceRepositories(
             kind: GITHUB
             url: "https://github.com"
+            id: $id
             first: $first
             token: $token
             query: $query
@@ -113,11 +121,12 @@ interface GithubRepositoriesPickerProps {
     token: string
     disabled: boolean
     repositories: string[]
+    externalServiceId: string | undefined
     onChange: (repositories: string[]) => void
 }
 
 export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props => {
-    const { token, disabled, repositories, onChange } = props
+    const { token, disabled, repositories, externalServiceId, onChange } = props
 
     const [searchTerm, setSearchTerm] = useState('')
     const {
@@ -127,10 +136,12 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
         error,
     } = useQuery<GetGitHubRepositoriesResult, GetGitHubRepositoriesVariables>(GET_GITHUB_REPOSITORIES, {
         skip: disabled,
+        fetchPolicy: 'cache-and-network',
         variables: {
             token,
             first: 10,
             query: searchTerm,
+            id: externalServiceId ?? null,
             excludeRepositories: repositories,
         },
     })

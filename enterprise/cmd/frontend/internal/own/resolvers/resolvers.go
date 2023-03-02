@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 )
 
 func New(db database.DB, ownService own.Service) *ownResolver {
@@ -35,11 +35,16 @@ type ownResolver struct {
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	file, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
+	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
-	owners := file.FindOwners(blob.Path())
+	// No data found.
+	if rs == nil {
+		return &ownershipConnectionResolver{db: r.db}, nil
+	}
+
+	owners := rs.FindOwners(blob.Path())
 	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
 	if err != nil {
 		return nil, err

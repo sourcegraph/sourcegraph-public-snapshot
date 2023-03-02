@@ -58,48 +58,6 @@ var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
-var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
-
-func scanUploadWithCount(s dbutil.Scanner) (upload types.Upload, count int, err error) {
-	var rawUploadedParts []sql.NullInt32
-	if err = s.Scan(
-		&upload.ID,
-		&upload.Commit,
-		&upload.Root,
-		&upload.VisibleAtTip,
-		&upload.UploadedAt,
-		&upload.State,
-		&upload.FailureMessage,
-		&upload.StartedAt,
-		&upload.FinishedAt,
-		&upload.ProcessAfter,
-		&upload.NumResets,
-		&upload.NumFailures,
-		&upload.RepositoryID,
-		&upload.RepositoryName,
-		&upload.Indexer,
-		&dbutil.NullString{S: &upload.IndexerVersion},
-		&upload.NumParts,
-		pq.Array(&rawUploadedParts),
-		&upload.UploadSize,
-		&upload.AssociatedIndexID,
-		&upload.ContentType,
-		&upload.ShouldReindex,
-		&upload.Rank,
-		&upload.UncompressedSize,
-		&count,
-	); err != nil {
-		return upload, 0, err
-	}
-
-	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
-	for _, uploadedPart := range rawUploadedParts {
-		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
-	}
-
-	return upload, count, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*Store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {

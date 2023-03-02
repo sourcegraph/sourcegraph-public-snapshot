@@ -72,7 +72,7 @@ go_test(
         "//internal/timeutil",
         "//internal/types",
         "//lib/errors",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
     ],

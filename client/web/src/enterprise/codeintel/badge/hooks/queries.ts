@@ -5,7 +5,7 @@ import {
     preciseSupportFragment,
     searchBasedCodeIntelSupportFragment,
     inferredAvailableIndexersFieldsFragment,
-} from '../../dashboard/hooks/queries'
+} from '../../dashboard/backend'
 import { codeIntelIndexerFieldsFragment } from '../../indexes/hooks/types'
 
 export const lsifIndexFieldsFragment = gql`
