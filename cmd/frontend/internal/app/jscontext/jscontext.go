@@ -4,6 +4,7 @@ package jscontext
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
@@ -75,15 +77,15 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
-type Permissions struct {
+type Permission struct {
 	Typename    string     `json:"__typename"`
 	ID          graphql.ID `json:"id"`
-	DisplayName *string    `json:"displayName"`
+	DisplayName string     `json:"displayName"`
 }
 
 type PermissionsConnection struct {
-	Typename string        `json:"__typename"`
-	Nodes    []Permissions `json:"nodes"`
+	Typename string       `json:"__typename"`
+	Nodes    []Permission `json:"nodes"`
 }
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
@@ -268,7 +270,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
-		CurrentUser:         createCurrentUser(ctx, user, db),
+		CurrentUser:         createCurrentUser(ctx, user, db, licenseInfo),
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
@@ -331,12 +333,25 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 }
 
+func isFreePlan(licenseInfo *hooks.LicenseInfo) bool {
+	fmt.Println("license info ---", licenseInfo.CurrentPlan, "<=====")
+	if licenseInfo == nil {
+		return true
+	}
+	switch licenseInfo.CurrentPlan {
+	case "free-0", "free-1":
+		return true
+	default:
+		return false
+	}
+}
+
 // createCurrentUser creates CurrentUser object which contains of types.User
 // properties along with some extra data such as user emails, organisations,
 // session information, etc.
 //
 // We return a nil CurrentUser object on any error.
-func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
+func createCurrentUser(ctx context.Context, user *types.User, db database.DB, licenseInfo *hooks.LicenseInfo) *CurrentUser {
 	if user == nil {
 		return nil
 	}
@@ -379,6 +394,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
+		Permissions:         resolverUserPermissions(ctx, userResolver, licenseInfo),
 	}
 }
 
@@ -387,6 +403,38 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func resolverUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) *PermissionsConnection {
+	if isFreePlan(licenseInfo) {
+		return nil
+	}
+
+	userID := userResolver.ID()
+
+	permissionResolver, err := userResolver.Permissions(ctx, &graphqlbackend.ListPermissionArgs{
+		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{},
+		User:                   &userID,
+	})
+
+	userPermissions := []Permission{}
+	nodes, err := permissionResolver.Nodes(ctx)
+	// When an error occurs, we don't want to return nil - because when that occurs, we assume the user is on a free plan
+	// and doesn't have access to RBAC. Instead we return an empty permission slice.
+	if err == nil {
+		for _, node := range nodes {
+			userPermissions = append(userPermissions, Permission{
+				Typename:    "Permission",
+				ID:          node.ID(),
+				DisplayName: node.DisplayName(),
+			})
+		}
+	}
+
+	return &PermissionsConnection{
+		Typename: "PermissionConnection",
+		Nodes:    userPermissions,
+	}
 }
 
 func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
