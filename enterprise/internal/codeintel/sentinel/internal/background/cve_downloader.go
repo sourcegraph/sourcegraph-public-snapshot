@@ -22,7 +22,7 @@ func NewCVEDownloader(store store.Store, metrics *Metrics, interval time.Duratio
 		"codeintel.sentinel-cve-downloader", "Periodically syncs GitHub advisory records into Postgres.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			vulnerabilities, err := cveParser.handle(ctx, metrics)
+			vulnerabilities, err := cveParser.handle(ctx)
 			if err != nil {
 				return err
 			}
@@ -49,6 +49,6 @@ func NewCVEParser() *CVEParser {
 	}
 }
 
-func (parser *CVEParser) handle(ctx context.Context, metrics *Metrics) ([]shared.Vulnerability, error) {
+func (parser *CVEParser) handle(ctx context.Context) ([]shared.Vulnerability, error) {
 	return parser.ReadGitHubAdvisoryDB(ctx, false)
 }
