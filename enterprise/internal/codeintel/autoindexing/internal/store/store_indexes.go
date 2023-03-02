@@ -197,14 +197,22 @@ FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
+ORDER BY queued_at DESC, u.id
+LIMIT %d OFFSET %d
 `
 
 const getIndexesCountQuery = `
 SELECT COUNT(*) AS count
 FROM lsif_indexes u
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
 `
 
 // DeleteIndexes deletes indexes matching the given filter criteria.
