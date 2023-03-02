@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
@@ -18,6 +18,7 @@ import {
 import { PageTitle } from '../../components/PageTitle'
 
 import { useRolesConnection, usePermissions, PermissionsMap, DEFAULT_PAGE_LIMIT } from './backend'
+import { AddRoleModal } from './components/AddRoleModal'
 import { RoleNode } from './components/RoleNode'
 
 import styles from './SiteAdminRolesPage.module.scss'
@@ -48,6 +49,20 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         setPermissions(permissions as PermissionsMap)
     })
 
+    const [showAddModal, setShowAddModal] = useState<boolean>(false)
+    const openModal = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setShowAddModal(true)
+    }, [])
+    const closeModal = useCallback(() => {
+        setShowAddModal(false)
+    }, [])
+
+    const afterCreate = useCallback(() => {
+        closeModal()
+        refetchAll()
+    }, [closeModal, refetchAll])
+
     const loading = rolesLoading || permissionsLoading
     const error = rolesError || permissionsError
 
@@ -58,7 +73,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 className={styles.rolesPageHeader}
                 description="Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality."
                 actions={
-                    <Button variant="primary">
+                    <Button variant="primary" onClick={openModal}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
                     </Button>
                 }
@@ -69,6 +84,15 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
+
+            {showAddModal && !loading && (
+                <AddRoleModal
+                    onCancel={closeModal}
+                    afterCreate={afterCreate}
+                    allPermissions={permissions}
+                />
+            )}
+
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}

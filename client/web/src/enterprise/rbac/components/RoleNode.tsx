@@ -13,13 +13,14 @@ import {
     CollapseHeader,
     CollapsePanel,
     H4,
+    useCheckboxes
 } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole } from '../backend'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
-import { PermissionList } from './Permissions'
+import { PermissionsList } from './Permissions'
 
 import styles from './RoleNode.module.scss'
 
@@ -115,8 +116,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                     )}
                 </CollapseHeader>
 
-                <CollapsePanel className={styles.roleNodePermissions}>
-                    <PermissionList role={node} allPermissions={allPermissions} />
+                <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
+                    <H4>Permissions</H4>
+                    {/* <PermissionList allPermissions={allPermissions} /> */}
                 </CollapsePanel>
             </Collapse>
         </li>
