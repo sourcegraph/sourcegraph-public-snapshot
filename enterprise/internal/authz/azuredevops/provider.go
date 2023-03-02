@@ -26,15 +26,15 @@ var mockServerURL string
 func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
 	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
-	initResults := &authztypes.ProviderInitResult{}
-
-	if len(conns) == 0 {
-		return initResults
-	}
+	authorizedConnections := []*types.AzureDevOpsConnection{}
 
 	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
 	// orgs and projects in every permissions sync iteration.
 	for _, c := range conns {
+		if !c.EnforcePermissions {
+			continue
+		}
+
 		// The list of orgs and projects may have duplicates if there are multiple Azure DevOps code
 		// host connections that have the same project in their config.
 		//
@@ -47,13 +47,21 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		for _, name := range c.Projects {
 			projects[name] = struct{}{}
 		}
+
+		c := c
+		authorizedConnections = append(authorizedConnections, c)
+	}
+
+	initResults := &authztypes.ProviderInitResult{}
+	if len(authorizedConnections) == 0 {
+		return initResults
 	}
 
 	// Convert the map back to a slice now that we have a unique list of orgs and projects.
 	uniqueOrgs := maps.Keys(orgs)
 	uniqueProjects := maps.Keys(projects)
 
-	p, err := newAuthzProvider(db, conns, uniqueOrgs, uniqueProjects)
+	p, err := newAuthzProvider(db, authorizedConnections, uniqueOrgs, uniqueProjects)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
