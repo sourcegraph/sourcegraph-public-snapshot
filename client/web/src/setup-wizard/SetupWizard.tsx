@@ -23,6 +23,7 @@ const CORE_STEPS: StepConfiguration[] = [
         id: 'sync-repositories',
         name: 'Sync repositories',
         path: '/setup/sync-repositories',
+        nextURL: '/search',
         component: SyncRepositoriesStep,
     },
 ]

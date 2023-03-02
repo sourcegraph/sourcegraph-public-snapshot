@@ -2,12 +2,13 @@ import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
+import Octokit from '@octokit/rest'
 import chalk from 'chalk'
 import execa from 'execa'
-import { readFile, writeFile, mkdir } from 'mz/fs'
+import { mkdir, readFile, writeFile } from 'mz/fs'
 import fetch from 'node-fetch'
 
-import { EditFunc } from './github'
+import { EditFunc, listIssues } from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
@@ -286,5 +287,28 @@ export async function retryInput(
         } else {
             console.log(chalk.red('invalid input'))
         }
+    }
+}
+
+const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
+
+export async function getReleaseBlockers(
+    octokit: Octokit
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return listIssues(octokit, blockingQuery)
+}
+
+export function releaseBlockerUri(): string {
+    return `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+}
+
+export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void> {
+    const blockers = await getReleaseBlockers(octokit)
+    if (blockers.length > 0) {
+        await verifyWithInput(
+            `Warning! There are ${chalk.red(
+                blockers.length
+            )} release blocking issues open!\n${releaseBlockerUri()}\nConfirm to proceed`
+        )
     }
 }

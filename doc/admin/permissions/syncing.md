@@ -91,6 +91,11 @@ If everything works correctly in such a case, [on-demand sync request](#on-deman
 But the permissions of the entity might have changed in the time since the last sync of these pending permissions, 
 so it is safer to make the request anyway to keep the permissions as fresh as possible
 
+## SLA
+
+Sourcegraph SLA is, that the time it takes for permissions from code host to be synced via permission syncing
+to Sourcegraph is the same as the [lag-time](#lag-time) defined below. So as long as a full cycle of permission syncing takes.
+
 ## Checking permissions sync state
 
 The state of an user or repository's permissions can be checked in the UI by:

@@ -86,19 +86,19 @@ const ColumnFilter: React.FunctionComponent<ColumnFilterProps> = props => {
     return null
 }
 
-interface IColumn<T> {
+export interface IColumn<T> {
     key: string
     accessor?: keyof T | ((data: T) => any)
     header:
         | string
         | {
               label: string
-              align: 'left' | 'right'
+              align: 'left' | 'right' | 'center'
               tooltip?: string
           }
     sortable?: boolean
     align?: 'left' | 'right' | 'center'
-    render?: (data: T, index: number) => JSX.Element
+    render?: (data: T, index: number) => JSX.Element | null
     filter?: ColumnFilterProps
 }
 
@@ -108,9 +108,11 @@ interface IAction<T> {
     icon: string
     iconColor?: 'muted' | 'danger'
     labelColor?: 'body' | 'danger'
-    onClick: (items: T[]) => void
+    onClick?: (items: T[]) => void
     bulk?: boolean
     condition?: (items: T[]) => boolean
+    href?: (items: T[]) => string
+    target?: '_blank'
 }
 
 interface TableProps<T> {
@@ -165,10 +167,11 @@ export function Table<T>({
 
     const bulkActions = useMemo(() => actions.filter(action => action.bulk), [actions])
 
-    const memoizedColumns = useMemo(
-        (): IColumn<T>[] => [
-            ...columns,
-            {
+    const memoizedColumns = useMemo((): IColumn<T>[] => {
+        const allColumns = [...columns]
+
+        if (actions.length > 0) {
+            allColumns.push({
                 key: 'actions',
                 header: { label: 'Actions', align: 'right' },
                 align: 'right',
@@ -181,10 +184,11 @@ export function Table<T>({
                         </div>
                     )
                 },
-            },
-        ],
-        [actions, columns]
-    )
+            })
+        }
+
+        return allColumns
+    }, [actions, columns])
 
     const onPreviousPage = useCallback(() => {
         if (pagination) {
@@ -256,16 +260,13 @@ export function Table<T>({
                             return (
                                 <th key={key} onClick={column.sortable ? handleSort : undefined}>
                                     <div
-                                        className={classNames(
-                                            'text-nowrap',
-                                            styles.header,
-                                            styles.sortable,
-                                            align === 'right' && styles.alignRight,
-                                            {
-                                                [styles.sortedAsc]: sortBy?.key === key && !sortBy.descending,
-                                                [styles.sortedDesc]: sortBy?.key === key && sortBy.descending,
-                                            }
-                                        )}
+                                        className={classNames('text-nowrap', styles.header, {
+                                            [styles.sortedAsc]: sortBy?.key === key && !sortBy.descending,
+                                            [styles.sortedDesc]: sortBy?.key === key && sortBy.descending,
+                                            [styles.sortable]: column.sortable,
+                                            [styles.alignRight]: align === 'right',
+                                            [styles.alignCenter]: align === 'center',
+                                        })}
                                     >
                                         <Tooltip content={tooltip}>
                                             <Text as="span" weight="bold">
@@ -428,12 +429,14 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
                 <ul className="list-unstyled mb-0">
                     {actions
                         .filter(({ condition }) => !condition || condition(selection))
-                        .map(({ key, label, icon, iconColor, labelColor, onClick }) => (
+                        .map(({ key, label, icon, iconColor, labelColor, onClick, href, target }) => (
                             <Button
                                 className={styles.actionItem}
                                 key={key}
                                 variant="link"
-                                as="li"
+                                as={href ? 'a' : 'li'}
+                                href={href?.(selection)}
+                                target={target}
                                 outline={false}
                                 onClick={() => {
                                     onClick?.(selection)

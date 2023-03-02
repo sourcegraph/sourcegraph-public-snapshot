@@ -4,7 +4,7 @@ import { mdiAccount } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { useLazyQuery, useMutation } from '@sourcegraph/http-client'
-import { Card, Text, Button, Grid, Alert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Card, Text, Button, Grid, Alert, PageSwitcher, Link } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
@@ -213,39 +213,60 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         {...paginationArgs}
                     />
                 </div>
-                <Grid columnCount={5}>
-                    {['Email', 'Name', 'Created at', 'Notes', ''].map((value, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <Text weight="medium" key={index} className="mb-1">
-                            {value}
+                <AccessRequestsList onApprove={handleApprove} onReject={handleReject} items={connection?.nodes || []} />
+                {!loading && connection?.nodes.length === 0 && (
+                    <div>
+                        <Alert variant="info">No pending requests</Alert>
+                        <Text>
+                            Users can request access to Sourcegraph via the login page. View the documentation to learn
+                            more about{' '}
+                            <Link to="/help/admin/auth#how-to-control-user-sign-up">controlling sign up requests</Link>.
                         </Text>
-                    ))}
-                    {connection?.nodes.map(({ id, email, name, createdAt, additionalInfo }) => (
-                        <Fragment key={email}>
-                            <Text className="mb-0 d-flex align-items-center">{email}</Text>
-                            <Text className="mb-0 d-flex align-items-center">{name}</Text>
-                            <Text className="mb-0 d-flex align-items-center">
-                                {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
-                            </Text>
-                            <Text className="text-muted mb-0 d-flex align-items-center" size="small">
-                                {additionalInfo}
-                            </Text>
-                            <div className="d-flex justify-content-end align-items-start">
-                                <Button variant="link" onClick={() => handleReject(id)}>
-                                    Reject
-                                </Button>
-                                <Button
-                                    variant="success"
-                                    className="ml-2"
-                                    onClick={() => handleApprove(id, name, email)}
-                                >
-                                    Approve
-                                </Button>
-                            </div>
-                        </Fragment>
-                    ))}
-                </Grid>
+                    </div>
+                )}
             </Card>
         </>
+    )
+}
+
+interface AccessRequestsListProps {
+    onApprove: (id: string, name: string, email: string) => void
+    onReject: (id: string) => void
+    items: PendingAccessRequestsListResult['accessRequests']['nodes']
+}
+
+const AccessRequestsList: React.FunctionComponent<AccessRequestsListProps> = ({ onApprove, onReject, items }) => {
+    if (items.length === 0) {
+        return null
+    }
+    return (
+        <Grid columnCount={5}>
+            {['Email', 'Name', 'Created at', 'Notes', ''].map((value, index) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <Text weight="medium" key={index} className="mb-1">
+                    {value}
+                </Text>
+            ))}
+            {items.map(({ id, email, name, createdAt, additionalInfo }) => (
+                <Fragment key={email}>
+                    <Text className="mb-0 d-flex align-items-center">{email}</Text>
+                    <Text className="mb-0 d-flex align-items-center">{name}</Text>
+                    <Text className="mb-0 d-flex align-items-center">
+                        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
+                    </Text>
+                    <Text className="text-muted mb-0 d-flex align-items-center" size="small">
+                        {additionalInfo}
+                    </Text>
+                    <div className="d-flex justify-content-end align-items-start">
+                        <Button variant="link" onClick={() => onReject(id)}>
+                            Reject
+                        </Button>
+                        <Button variant="success" className="ml-2" onClick={() => onApprove(id, name, email)}>
+                            Approve
+                        </Button>
+                    </div>
+                </Fragment>
+            ))}
+        </Grid>
     )
 }

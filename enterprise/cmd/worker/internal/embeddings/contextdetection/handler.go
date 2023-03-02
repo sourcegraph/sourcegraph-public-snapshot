@@ -30,8 +30,7 @@ var _ workerutil.Handler[*contextdetectionbg.ContextDetectionEmbeddingJob] = &ha
 const MAX_EMBEDDINGS_RETRIES = 3
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
-	config := conf.Get().Embeddings
-	if config == nil || !config.Enabled {
+	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
