@@ -162,8 +162,8 @@ To run and test the web extension on GitPod Web (as well as VS Code and GitHub f
 1. Run `yarn && yarn generate` at the root directory to install dependencies and generate the required schemas
 1. Run `yarn build-vsce` at root to build the Sourcegraph VS Code extension for Web
 1. Once the build has been completed, move to the extension’s directory: `cd client/vscode`
-1. Start an HTTP server inside the extension’s path to host the extension locally: `npx serve --cors -l 8988`
-1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `npx localtunnel -p 8988`
+1. Start an HTTP server inside the extension’s path to host the extension locally: `pnpx serve --cors -l 8988`
+1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `pnpx localtunnel -p 8988`
    1. A publicly-accessible URL will be generated for you in the output followed by “your url is:”
 1. Copy and then open the newly generated URL in a browser and then select “Click to Continue”
 1. Open the Command Palette in GitPod Web (a GitPod Workspace using the Open in Browser setting)
