@@ -9,24 +9,26 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	errors "github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestFirecrackerRunner_Setup(t *testing.T) {
+	operations := command.NewOperations(&observation.TestContext)
+
 	tests := []struct {
 		name             string
 		workspaceDevice  string
 		vmName           string
 		options          runner.FirecrackerOptions
 		dockerAuthConfig types.DockerAuthConfig
-		mockFunc         func(t *testing.T, cmd *fakeCommand, ops *command.Operations)
+		mockFunc         func(cmd *runner.MockCommand)
+		assertMockFunc   func(t *testing.T, cmd *runner.MockCommand)
 		expectedEntries  map[string]string
 		expectedErr      error
 	}{
@@ -34,57 +36,42 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			name:            "Setup default",
 			workspaceDevice: "/dev/sda",
 			vmName:          "test",
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				// Start command
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					// Since the environment variables has a temp dir, we can't check for equality like normal.
-					// Using Run() will let us check the arguments in a custom way.
-					Run(func(args mock.Arguments) {
-						actualSpec := args.Get(2).(command.Spec)
-						assert.Equal(t, "setup.firecracker.start", actualSpec.Key)
-						assert.Equal(
-							t,
-							[]string{
-								"ignite",
-								"run",
-								"--runtime",
-								"docker",
-								"--network-plugin",
-								"cni",
-								"--cpus",
-								"0",
-								"--memory",
-								"",
-								"--size",
-								"",
-								"--volumes",
-								"/dev/sda:/work",
-								"--ssh",
-								"--name",
-								"test",
-								"--kernel-image",
-								"",
-								"--kernel-args",
-								"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
-								"--sandbox-image",
-								"",
-								"",
-							},
-							actualSpec.Command,
-						)
-						assert.Empty(t, actualSpec.Dir)
-						require.Len(t, actualSpec.Env, 1)
-						assert.True(t, strings.HasPrefix(actualSpec.Env[0], "CNI_CONF_DIR="))
-						assert.Equal(t, ops.SetupFirecrackerStart, actualSpec.Operation)
-					}).
-					Return(nil)
-
-				// Teardown
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.SetDefaultReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 1)
+				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
+				assert.Equal(t, []string{
+					"ignite",
+					"run",
+					"--runtime",
+					"docker",
+					"--network-plugin",
+					"cni",
+					"--cpus",
+					"0",
+					"--memory",
+					"",
+					"--size",
+					"",
+					"--volumes",
+					"/dev/sda:/work",
+					"--ssh",
+					"--name",
+					"test",
+					"--kernel-image",
+					"",
+					"--kernel-args",
+					"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
+					"--sandbox-image",
+					"",
+					"",
+				}, cmd.RunFunc.History()[0].Arg2.Command)
+				assert.Empty(t, cmd.RunFunc.History()[0].Arg2.Dir)
+				require.Len(t, cmd.RunFunc.History()[0].Arg2.Env, 1)
+				assert.True(t, strings.HasPrefix(cmd.RunFunc.History()[0].Arg2.Env[0], "CNI_CONF_DIR="))
+				assert.Equal(t, operations.SetupFirecrackerStart, cmd.RunFunc.History()[0].Arg2.Operation)
 			},
 			expectedEntries: map[string]string{
 				"cni": defaultCNIConfig,
@@ -94,17 +81,11 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			name:            "Failed to start firecracker",
 			workspaceDevice: "/dev/sda",
 			vmName:          "test",
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				// Start command
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					Return(errors.New("failed"))
-
-				// Teardown
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.PushReturn(errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 1)
 			},
 			expectedErr: errors.New("failed to start firecracker vm: failed"),
 		},
@@ -115,30 +96,19 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			options: runner.FirecrackerOptions{
 				DockerRegistryMirrorURLs: []string{"https://mirror1", "https://mirror2"},
 			},
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				// Start command
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					// Since the environment variables has a temp dir, we can't check for equality like normal.
-					// Using Run() will let us check the arguments in a custom way.
-					Run(func(args mock.Arguments) {
-						actualSpec := args.Get(2).(command.Spec)
-						// Having docker mirrors add "--copy-files" to the command. The location to copy is the temp
-						// directory. So we need to do extra work.
-						for i, val := range actualSpec.Command {
-							if val == "--copy-files" {
-								assert.True(t, strings.HasSuffix(actualSpec.Command[i+1], "/docker-daemon.json:/etc/docker/daemon.json"))
-								break
-							}
-						}
-					}).
-					Return(nil)
-
-				// Teardown
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.SetDefaultReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 1)
+				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
+				actualCommand := cmd.RunFunc.History()[0].Arg2.Command
+				for i, val := range actualCommand {
+					if val == "--copy-files" {
+						assert.True(t, strings.HasSuffix(actualCommand[i+1], "/docker-daemon.json:/etc/docker/daemon.json"))
+						break
+					}
+				}
 			},
 			expectedEntries: map[string]string{
 				"cni":                defaultCNIConfig,
@@ -156,30 +126,20 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				// Start command
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					// Since the environment variables has a temp dir, we can't check for equality like normal.
-					// Using Run() will let us check the arguments in a custom way.
-					Run(func(args mock.Arguments) {
-						actualSpec := args.Get(2).(command.Spec)
-						// Having docker mirrors add "--copy-files" to the command. The location to copy is the temp
-						// directory. So we need to do extra work.
-						for i, val := range actualSpec.Command {
-							if val == "--copy-files" {
-								assert.True(t, strings.HasSuffix(actualSpec.Command[i+1], "/etc/docker/cli"))
-								break
-							}
-						}
-					}).
-					Return(nil)
-
-				// Teardown
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.SetDefaultReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 1)
+				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
+				actualCommand := cmd.RunFunc.History()[0].Arg2.Command
+				// directory. So we need to do extra work.
+				for i, val := range actualCommand {
+					if val == "--copy-files" {
+						assert.True(t, strings.HasSuffix(actualCommand[i+1], "/etc/docker/cli"))
+						break
+					}
+				}
 			},
 			expectedEntries: map[string]string{
 				"cni":        defaultCNIConfig,
@@ -193,68 +153,49 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			options: runner.FirecrackerOptions{
 				VMStartupScriptPath: "/tmp/startup.sh",
 			},
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				// Start command
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					Run(func(args mock.Arguments) {
-						actualSpec := args.Get(2).(command.Spec)
-						assert.Equal(
-							t,
-							[]string{
-								"ignite",
-								"run",
-								"--runtime",
-								"docker",
-								"--network-plugin",
-								"cni",
-								"--cpus",
-								"0",
-								"--memory",
-								"",
-								"--size",
-								"",
-								"--copy-files",
-								"/tmp/startup.sh:/tmp/startup.sh",
-								"--volumes",
-								"/dev/sda:/work",
-								"--ssh",
-								"--name",
-								"test",
-								"--kernel-image",
-								"",
-								"--kernel-args",
-								"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
-								"--sandbox-image",
-								"",
-								"",
-							},
-							actualSpec.Command,
-						)
-					}).
-					Return(nil)
-
-				// startup script
-				cmd.
-					On("Run", mock.Anything, mock.Anything, command.Spec{
-						Key: "setup.startup-script",
-						Command: []string{
-							"ignite",
-							"exec",
-							"test",
-							"--",
-							"/tmp/startup.sh",
-						},
-						Operation: ops.SetupStartupScript,
-					}).
-					Once().
-					Return(nil)
-
-				// Teardown
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.SetDefaultReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 2)
+				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
+				assert.Equal(t, []string{
+					"ignite",
+					"run",
+					"--runtime",
+					"docker",
+					"--network-plugin",
+					"cni",
+					"--cpus",
+					"0",
+					"--memory",
+					"",
+					"--size",
+					"",
+					"--copy-files",
+					"/tmp/startup.sh:/tmp/startup.sh",
+					"--volumes",
+					"/dev/sda:/work",
+					"--ssh",
+					"--name",
+					"test",
+					"--kernel-image",
+					"",
+					"--kernel-args",
+					"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
+					"--sandbox-image",
+					"",
+					"",
+				}, cmd.RunFunc.History()[0].Arg2.Command)
+				assert.Equal(t, "setup.startup-script", cmd.RunFunc.History()[1].Arg2.Key)
+				assert.Equal(t, []string{
+					"ignite",
+					"exec",
+					"test",
+					"--",
+					"/tmp/startup.sh",
+				}, cmd.RunFunc.History()[1].Arg2.Command)
+				assert.Equal(t, operations.SetupStartupScript, cmd.RunFunc.History()[1].Arg2.Operation)
 			},
 			expectedEntries: map[string]string{
 				"cni": defaultCNIConfig,
@@ -267,27 +208,20 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			options: runner.FirecrackerOptions{
 				VMStartupScriptPath: "/tmp/startup.sh",
 			},
-			mockFunc: func(t *testing.T, cmd *fakeCommand, ops *command.Operations) {
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-					Once().
-					Return(nil)
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.startup-script"))).
-					Once().
-					Return(errors.New("failed"))
-				cmd.
-					On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("teardown.firecracker.remove"))).
-					Return(nil)
+			mockFunc: func(cmd *runner.MockCommand) {
+				cmd.RunFunc.PushReturn(nil)
+				cmd.RunFunc.PushReturn(errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+				require.Len(t, cmd.RunFunc.History(), 2)
 			},
 			expectedErr: errors.New("failed to run startup script: failed"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cmd := new(fakeCommand)
-			logger := command.NewMockLogger()
-			operations := command.NewOperations(&observation.TestContext)
+			cmd := runner.NewMockCommand()
+			logger := runner.NewMockLogger()
 			firecrackerRunner := runner.NewFirecrackerRunner(
 				cmd,
 				logger,
@@ -299,16 +233,13 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 			)
 
 			if test.mockFunc != nil {
-				test.mockFunc(t, cmd, operations)
+				test.mockFunc(cmd)
 			}
 
 			ctx := context.Background()
 			err := firecrackerRunner.Setup(ctx)
 			t.Cleanup(func() {
 				firecrackerRunner.Teardown(ctx)
-				// the Teardown is messing with the mock invocation count. Move AssertExpectationsForObjects here to
-				// capture the teardown.
-				mock.AssertExpectationsForObjects(t, cmd)
 			})
 
 			if test.expectedErr != nil {
@@ -350,6 +281,8 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 					}
 				}
 			}
+
+			test.assertMockFunc(t, cmd)
 		})
 	}
 }
@@ -396,15 +329,12 @@ const defaultCNIConfig = `
 `
 
 func TestFirecrackerRunner_Teardown(t *testing.T) {
-	cmd := new(fakeCommand)
-	logger := command.NewMockLogger()
+	cmd := runner.NewMockCommand()
+	logger := runner.NewMockLogger()
 	operations := command.NewOperations(&observation.TestContext)
 	firecrackerRunner := runner.NewFirecrackerRunner(cmd, logger, "/dev", "test", runner.FirecrackerOptions{}, types.DockerAuthConfig{}, operations)
 
-	cmd.
-		On("Run", mock.Anything, mock.Anything, mock.MatchedBy(matchCmd("setup.firecracker.start"))).
-		Once().
-		Return(nil)
+	cmd.RunFunc.PushReturn(nil)
 
 	ctx := context.Background()
 	err := firecrackerRunner.Setup(ctx)
@@ -415,14 +345,7 @@ func TestFirecrackerRunner_Teardown(t *testing.T) {
 	_, err = os.Stat(dir)
 	require.NoError(t, err)
 
-	cmd.
-		On("Run", mock.Anything, mock.Anything, command.Spec{
-			Key:       "teardown.firecracker.remove",
-			Command:   []string{"ignite", "rm", "-f", "test"},
-			Operation: operations.TeardownFirecrackerRemove,
-		}).
-		Once().
-		Return(nil)
+	cmd.RunFunc.PushReturn(nil)
 
 	err = firecrackerRunner.Teardown(ctx)
 	require.NoError(t, err)
@@ -430,6 +353,11 @@ func TestFirecrackerRunner_Teardown(t *testing.T) {
 	_, err = os.Stat(dir)
 	require.Error(t, err)
 	assert.True(t, os.IsNotExist(err))
+
+	require.Len(t, cmd.RunFunc.History(), 2)
+	assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
+	assert.Equal(t, "teardown.firecracker.remove", cmd.RunFunc.History()[1].Arg2.Key)
+	assert.Equal(t, []string{"ignite", "rm", "-f", "test"}, cmd.RunFunc.History()[1].Arg2.Command)
 }
 
 func matchCmd(key string) func(spec command.Spec) bool {
@@ -439,8 +367,8 @@ func matchCmd(key string) func(spec command.Spec) bool {
 }
 
 func TestFirecrackerRunner_Run(t *testing.T) {
-	cmd := new(fakeCommand)
-	logger := command.NewMockLogger()
+	cmd := runner.NewMockCommand()
+	logger := runner.NewMockLogger()
 	operations := command.NewOperations(&observation.TestContext)
 	options := runner.FirecrackerOptions{
 		DockerOptions: command.DockerOptions{
@@ -466,22 +394,20 @@ func TestFirecrackerRunner_Run(t *testing.T) {
 
 	firecrackerRunner := runner.NewFirecrackerRunner(cmd, logger, "/dev", "test", options, types.DockerAuthConfig{}, operations)
 
-	expectedCommandSpec := command.Spec{
-		Key: "some-key",
-		Command: []string{
-			"ignite",
-			"exec",
-			"test",
-			"--",
-			"sh",
-			"-c",
-			"docker --config /docker/config run --rm --add-host=host.docker.internal:host-gateway --cpus 10 --memory 1G -v /work:/data -w /data/workingdir -e FOO=bar --entrypoint /bin/sh alpine /data/.sourcegraph-executor/some/script",
-		},
-	}
-	cmd.
-		On("Run", mock.Anything, logger, expectedCommandSpec).
-		Return(nil)
+	cmd.RunFunc.PushReturn(nil)
 
 	err := firecrackerRunner.Run(context.Background(), spec)
 	require.NoError(t, err)
+
+	require.Len(t, cmd.RunFunc.History(), 1)
+	assert.Equal(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
+	assert.Equal(t, []string{
+		"ignite",
+		"exec",
+		"test",
+		"--",
+		"sh",
+		"-c",
+		"docker --config /docker/config run --rm --add-host=host.docker.internal:host-gateway --cpus 10 --memory 1G -v /work:/data -w /data/workingdir -e FOO=bar --entrypoint /bin/sh alpine /data/.sourcegraph-executor/some/script",
+	}, cmd.RunFunc.History()[0].Arg2.Command)
 }

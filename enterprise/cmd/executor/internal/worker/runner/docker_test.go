@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
@@ -91,8 +90,8 @@ func TestDockerRunner_Teardown(t *testing.T) {
 }
 
 func TestDockerRunner_Run(t *testing.T) {
-	cmd := new(fakeCommand)
-	logger := command.NewMockLogger()
+	cmd := runner.NewMockCommand()
+	logger := runner.NewMockLogger()
 	dir := "/some/dir"
 	options := command.DockerOptions{
 		ConfigPath:     "/docker/config",
@@ -116,35 +115,34 @@ func TestDockerRunner_Run(t *testing.T) {
 
 	dockerRunner := runner.NewDockerRunner(cmd, logger, dir, options, types.DockerAuthConfig{})
 
-	expectedCommandSpec := command.Spec{
-		Key: "some-key",
-		Command: []string{
-			"docker",
-			"--config",
-			"/docker/config",
-			"run",
-			"--rm",
-			"--add-host=host.docker.internal:host-gateway",
-			"--cpus",
-			"10",
-			"--memory",
-			"1G",
-			"-v",
-			"/some/dir:/data",
-			"-w",
-			"/data/workingdir",
-			"-e",
-			"FOO=bar",
-			"--entrypoint",
-			"/bin/sh",
-			"alpine",
-			"/data/.sourcegraph-executor/some/script",
-		},
-	}
-	cmd.
-		On("Run", mock.Anything, logger, expectedCommandSpec).
-		Return(nil)
+	cmd.RunFunc.PushReturn(nil)
 
 	err := dockerRunner.Run(context.Background(), spec)
+
 	require.NoError(t, err)
+
+	require.Len(t, cmd.RunFunc.History(), 1)
+	assert.Equal(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
+	assert.Equal(t, []string{
+		"docker",
+		"--config",
+		"/docker/config",
+		"run",
+		"--rm",
+		"--add-host=host.docker.internal:host-gateway",
+		"--cpus",
+		"10",
+		"--memory",
+		"1G",
+		"-v",
+		"/some/dir:/data",
+		"-w",
+		"/data/workingdir",
+		"-e",
+		"FOO=bar",
+		"--entrypoint",
+		"/bin/sh",
+		"alpine",
+		"/data/.sourcegraph-executor/some/script",
+	}, cmd.RunFunc.History()[0].Arg2.Command)
 }
