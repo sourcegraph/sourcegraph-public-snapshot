@@ -2,6 +2,7 @@ package workspace
 
 import "context"
 
+// CloneOptions holds the options for cloning a workspace.
 type CloneOptions struct {
 	ExecutorName   string
 	EndpointURL    string
@@ -9,6 +10,7 @@ type CloneOptions struct {
 	ExecutorToken  string
 }
 
+// Workspace represents a workspace that can be used to execute a job.
 type Workspace interface {
 	// Path represents the block device path when firecracker is enabled and the
 	// directory when firecracker is disabled where the workspace is configured.
