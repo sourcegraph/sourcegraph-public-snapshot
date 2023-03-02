@@ -4,8 +4,7 @@
       "external/": "no need to vet third party code",
       ".*_generated\\.go$": "ignore generated code",
       "internal/extsvc/": "ignore temporarily",
-      "* _test\\.go": "Exclude bodyclose lint from tests because leaking connections in tests is a non issue",
-
+      ".*_test\\.go": "Exclude bodyclose lint from tests because leaking connections in tests is a non issue"
     }
   }
 }
