@@ -38,7 +38,7 @@ Administration is usually handled by site administrators are the admins responsi
 - [User authentication](auth/index.md)
   - [User data deletion](user_data_deletion.md)
 - [Setting the URL for your instance](url.md)
-- [Repository permissions](repo/permissions.md)
+- [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
 - [Configure incoming webhooks](config/webhooks.md)
