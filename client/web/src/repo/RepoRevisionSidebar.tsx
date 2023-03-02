@@ -90,23 +90,8 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
     const focusSymbolsShortcut = useKeyboardShortcut('focusSymbols')
 
-    const filesTabRef = useRef<HTMLDivElement>()
-    const symbolsTabRef = useRef<HTMLDivElement>()
-
     const [filesTabKey, setFilesTabKey] = useState('')
     const [symbolsTabKey, setSymbolsTabKey] = useState('')
-
-    useEffect(() => {
-        if (persistedTabIndex === 0) {
-            if (filesTabRef.current instanceof HTMLElement) {
-                filesTabRef.current.focus()
-            }
-        } else if (persistedTabIndex === 1) {
-            if (symbolsTabRef.current instanceof HTMLElement) {
-                symbolsTabRef.current.focus()
-            }
-        }
-    }, [persistedTabIndex])
 
     const focusFileTree = useCallback(() => {
         setIsVisible(true)
