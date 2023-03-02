@@ -88,11 +88,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                 path={[{ text: 'Permissions' }]}
                 description={
                     <>
-                        Learn more about{' '}
-                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
-                            background permissions syncing
-                        </Link>
-                        .
+                        Learn more about <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
                     </>
                 }
                 className="mb-3"
