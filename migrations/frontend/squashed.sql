@@ -803,13 +803,13 @@ CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
     SELECT
         COUNT(r.v) AS num_paths,
         MIN(r.v::int) AS min_reference_count,
-        AVG(r.v::int) AS mean_reference_count,
-        MAX(r.v::int) AS max_reference_count
+        MAX(r.v::int) AS max_reference_count,
+        SUM(r.v::int) AS sum_reference_count
     INTO
         NEW.num_paths,
         NEW.min_reference_count,
-        NEW.mean_reference_count,
-        NEW.max_reference_count
+        NEW.max_reference_count,
+        NEW.sum_reference_count
     FROM jsonb_each(NEW.payload) r(k, v);
 
     RETURN NEW;
@@ -1751,8 +1751,8 @@ CREATE TABLE codeintel_path_ranks (
     graph_key text,
     num_paths integer,
     min_reference_count integer,
-    mean_reference_count double precision,
-    max_reference_count integer
+    max_reference_count integer,
+    sum_reference_count integer
 );
 
 CREATE TABLE codeintel_ranking_definitions (

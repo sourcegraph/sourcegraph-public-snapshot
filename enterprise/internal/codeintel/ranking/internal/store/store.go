@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -163,7 +164,12 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (min int, mean 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			MIN(pr.min_reference_count) AS min_reference_count,
-			(CASE WHEN SUM(pr.num_paths) = 0 THEN 0 ELSE (SUM(pr.mean_reference_count) / SUM(pr.num_paths)) END) AS mean_reference_count,
+			(
+				CASE
+					WHEN SUM(pr.num_paths) = 0 THEN 0
+					ELSE SUM(pr.sum_reference_count)::float / SUM(pr.num_paths)::float
+				END
+			) AS mean_reference_count,
 			MAX(pr.max_reference_count) AS max_reference_count
 		FROM codeintel_path_ranks pr
 	`))
@@ -178,6 +184,8 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (min int, mean 
 		}
 	}
 
+	// TODO
+	fmt.Printf("> %d %.2f %d\n", min, mean, max)
 	return min, mean, max, nil
 }
 

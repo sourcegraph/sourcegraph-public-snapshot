@@ -4,13 +4,13 @@ AS $$ BEGIN
     SELECT
         COUNT(r.v) AS num_paths,
         MIN(r.v::int) AS min_reference_count,
-        AVG(r.v::int) AS mean_reference_count,
-        MAX(r.v::int) AS max_reference_count
+        MAX(r.v::int) AS max_reference_count,
+        SUM(r.v::int) AS sum_reference_count
     INTO
         NEW.num_paths,
         NEW.min_reference_count,
-        NEW.mean_reference_count,
-        NEW.max_reference_count
+        NEW.max_reference_count,
+        NEW.sum_reference_count
     FROM jsonb_each(NEW.payload) r(k, v);
 
     RETURN NEW;
