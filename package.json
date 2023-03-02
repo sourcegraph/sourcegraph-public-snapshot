@@ -478,8 +478,15 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "packageManager": "pnpm@7.24.2",
+  "packageManager": "pnpm@7.28.0",
   "pnpm": {
+    "overrides": {
+      "@types/webpack": "5",
+      "history": "4.5.1",
+      "cssnano": "4.1.10",
+      "webpack": "$webpack",
+      "tslib": "2.1.0"
+    },
     "packageExtensions": {
       "cpu-features": {
         "dependencies": {
@@ -492,12 +499,5 @@
         }
       }
     }
-  },
-  "resolutions": {
-    "@types/webpack": "5",
-    "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "webpack": "5",
-    "tslib": "2.1.0"
   }
 }

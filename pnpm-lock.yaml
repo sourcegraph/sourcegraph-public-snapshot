@@ -4,7 +4,7 @@ overrides:
   '@types/webpack': '5'
   history: 4.5.1
   cssnano: 4.1.10
-  webpack: '5'
+  webpack: ^5.75.0
   tslib: 2.1.0
 
 packageExtensionsChecksum: 8812149dda0bd1a50035894b0475085d
@@ -384,7 +384,7 @@ importers:
       vsce: ^2.7.0
       webext-domain-permission-toggle: ^1.0.1
       webextension-polyfill: ^0.6.0
-      webpack: '5'
+      webpack: ^5.75.0
       webpack-bundle-analyzer: ^4.7.0
       webpack-cli: ^5.0.1
       webpack-dev-server: ^4.11.1
@@ -933,7 +933,7 @@ importers:
       signale: ^1.4.0
       terser-webpack-plugin: ^5.3.6
       typed-scss-modules: ^4.1.1
-      webpack: '5'
+      webpack: ^5.75.0
     dependencies:
       '@statoscope/webpack-plugin': 5.24.0_webpack@5.75.0
       css-loader: 6.7.2_webpack@5.75.0
@@ -1184,7 +1184,7 @@ importers:
       '@types/cookie': 0.5.1
       '@types/prismjs': 1.26.0
       eslint-plugin-svelte3: 4.0.0_dbthnr4b2bdkhyiebwn7su3hnq
-      prettier-plugin-svelte: 2.9.0_jrsxveqmsx2uadbqiuq74wlc4u
+      prettier-plugin-svelte: 2.9.0_4h247imu46srxjbpsfob5j3nnq
       svelte: 3.55.1
       svelte-check: 3.0.4_svelte@3.55.1
       tslib: 2.1.0
@@ -3102,7 +3102,7 @@ packages:
       terser-webpack-plugin: 5.3.6_oa2ac2s5skpozptxi7rtd3zsrm
       util: 0.12.5
       webpack: 5.75.0_yrajokeiryagdtuqucziuwdxti
-      webpack-dev-server: 4.11.1_webpack@5.75.0
+      webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
       webpack-node-externals: 3.0.0
       yaml: 2.2.1
       yml-loader: 2.1.0
@@ -3233,7 +3233,7 @@ packages:
       terser-webpack-plugin: 5.3.6_oa2ac2s5skpozptxi7rtd3zsrm
       util: 0.12.5
       webpack: 5.75.0_yrajokeiryagdtuqucziuwdxti
-      webpack-dev-server: 4.11.1_webpack@5.75.0
+      webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
       webpack-node-externals: 3.0.0
       yaml: 2.2.1
       yml-loader: 2.1.0
@@ -7059,7 +7059,7 @@ packages:
       schema-utils: 3.1.1
       source-map: 0.7.3
       webpack: 5.75.0_yrajokeiryagdtuqucziuwdxti
-      webpack-dev-server: 4.11.1_webpack@5.75.0
+      webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
     dev: true
 
   /@pmmmwh/react-refresh-webpack-plugin/0.5.10_j3lj322d4usblreb4zevy6mwsq:
@@ -22319,7 +22319,7 @@ packages:
     resolution: {integrity: sha512-jZCyo6iIxO1aqUxpuBlwTDMkzOAJS4a3eYz3YzgxxVQFwLeSA7Jfq5cbqCY+JLvTDrWirgusI/0KwxKMgrdf7w==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     dependencies:
-      '@types/node': 18.11.18
+      '@types/node': 13.13.5
       graceful-fs: 4.2.10
     dev: false
 
@@ -22438,7 +22438,7 @@ packages:
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     dependencies:
       '@jest/types': 27.5.1
-      '@types/node': 18.11.18
+      '@types/node': 13.13.5
       chalk: 4.1.2
       ci-info: 3.3.1
       graceful-fs: 4.2.10
@@ -27371,16 +27371,6 @@ packages:
       svelte: 3.55.1
     dev: true
 
-  /prettier-plugin-svelte/2.9.0_jrsxveqmsx2uadbqiuq74wlc4u:
-    resolution: {integrity: sha512-3doBi5NO4IVgaNPtwewvrgPpqAcvNv0NwJNflr76PIGgi9nf1oguQV1Hpdm9TI2ALIQVn/9iIwLpBO5UcD2Jiw==}
-    peerDependencies:
-      prettier: ^1.16.4 || ^2.0.0
-      svelte: ^3.2.0
-    dependencies:
-      prettier: 2.8.4
-      svelte: 3.55.1
-    dev: true
-
   /prettier/2.0.5:
     resolution: {integrity: sha512-7PtVymN48hGcO4fGjybyBSIWDsLU4H4XlvOHfq91pz9kkGlonzwTfYkaIEwiRg/dAJF9YlbsduBAgtYLi+8cFg==}
     engines: {node: '>=10.13.0'}
@@ -27395,12 +27385,6 @@ packages:
 
   /prettier/2.8.1:
     resolution: {integrity: sha512-lqGoSJBQNJidqCHE80vqZJHWHRFoNYsSpP9AjFhlhi9ODCJA541svILes/+/1GM3VaL/abZi7cpFzOpdR9UPKg==}
-    engines: {node: '>=10.13.0'}
-    hasBin: true
-    dev: true
-
-  /prettier/2.8.4:
-    resolution: {integrity: sha512-vIS4Rlc2FNh0BySk3Wkd6xmwxB0FpOndW5fisM5H8hsZSxU2VWVB5CWIkIjWvrHjIhxk2g3bfMKM87zNTrZddw==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
@@ -33638,54 +33622,6 @@ packages:
       - debug
       - supports-color
       - utf-8-validate
-
-  /webpack-dev-server/4.11.1_webpack@5.75.0:
-    resolution: {integrity: sha512-lILVz9tAUy1zGFwieuaQtYiadImb5M3d+H+L1zDYalYoDl0cksAB1UNyuE5MMWJrG6zR1tXkCP2fitl7yoUJiw==}
-    engines: {node: '>= 12.13.0'}
-    hasBin: true
-    peerDependencies:
-      webpack: ^4.37.0 || ^5.0.0
-      webpack-cli: '*'
-    peerDependenciesMeta:
-      webpack-cli:
-        optional: true
-    dependencies:
-      '@types/bonjour': 3.5.10
-      '@types/connect-history-api-fallback': 1.3.5
-      '@types/express': 4.17.14
-      '@types/serve-index': 1.9.1
-      '@types/serve-static': 1.15.0
-      '@types/sockjs': 0.3.33
-      '@types/ws': 8.5.3
-      ansi-html-community: 0.0.8
-      bonjour-service: 1.0.14
-      chokidar: 3.5.3
-      colorette: 2.0.19
-      compression: 1.7.4
-      connect-history-api-fallback: 2.0.0
-      default-gateway: 6.0.3
-      express: 4.18.2
-      graceful-fs: 4.2.10
-      html-entities: 2.3.2
-      http-proxy-middleware: 2.0.6_@types+express@4.17.14
-      ipaddr.js: 2.0.1
-      open: 8.4.0
-      p-retry: 4.6.0
-      rimraf: 3.0.2
-      schema-utils: 4.0.0
-      selfsigned: 2.1.1
-      serve-index: 1.9.1
-      sockjs: 0.3.24
-      spdy: 4.0.2
-      webpack: 5.75.0_yrajokeiryagdtuqucziuwdxti
-      webpack-dev-middleware: 5.3.3_webpack@5.75.0
-      ws: 8.11.0
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-    dev: true
 
   /webpack-filter-warnings-plugin/1.2.1_webpack@5.75.0:
     resolution: {integrity: sha512-Ez6ytc9IseDMLPo0qCuNNYzgtUl8NovOqjIq4uAU8LTD4uoa1w1KpZyyzFtLTEMZpkkOkLfL9eN+KGYdk1Qtwg==}
