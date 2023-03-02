@@ -153,7 +153,7 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 
 func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.RepoID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
 	// This endpoint is open to anyone.
-	// TODO: do we need to check repo permissions here, or is that check embedded in the repos store?
+	// The repository store makes sure the viewer has access to the repository.
 	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ type codeownersIngestedFileResolver struct {
 	repository     *types.Repo
 }
 
-const codeownersIngestedFileKind = "codeowners_ingested_file"
+const codeownersIngestedFileKind = "CodeownersIngestedFile"
 
 func (r *codeownersIngestedFileResolver) ID() graphql.ID {
 	return relay.MarshalID(codeownersIngestedFileKind, r.codeownersFile.RepoID)
