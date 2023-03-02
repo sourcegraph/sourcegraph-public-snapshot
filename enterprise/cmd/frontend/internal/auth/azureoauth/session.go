@@ -58,7 +58,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		},
 		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: s.ServiceType,
-			ServiceID:   s.ServiceID,
+			ServiceID:   azuredevops.AzureDevOpsApiUrl,
 			ClientID:    s.clientID,
 			AccountID:   user.ID,
 		},
