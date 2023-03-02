@@ -54,6 +54,7 @@ class ChatController {
 		if (this.recipeContainerId) {
 			const recipeContainer = document.getElementById(this.recipeContainerId)
 			const onRecipeButtonClick = e => {
+				e.preventDefault()
 				this.vscode.postMessage({
 					command: 'executeRecipe',
 					recipe: e.target.dataset.recipe,
