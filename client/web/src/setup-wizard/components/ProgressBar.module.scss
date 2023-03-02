@@ -1,0 +1,18 @@
+.loading {
+    min-width: 4rem;
+
+    &::after {
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: bottom;
+        animation: ellipsis steps(4, end) 2000ms infinite;
+        content: '\2026'; /* ascii code for the ellipsis character */
+        width: 0;
+    }
+}
+
+@keyframes ellipsis {
+    to {
+        width: 0.75rem;
+    }
+}

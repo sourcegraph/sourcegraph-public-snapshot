@@ -12,6 +12,7 @@ import {
     AddExternalServiceInput,
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
+    GetCodeHostsResult,
 } from '../../../../../graphql-operations'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../queries'
@@ -81,6 +82,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const handleSubmit = async (input: AddExternalServiceInput): Promise<void> => {
         await addRemoteCodeHost({
             variables: { input },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
             update: (cache, result) => {
                 const { data } = result
 
@@ -90,7 +92,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
                 cache.modify({
                     fields: {
-                        externalServices(codeHosts) {
+                        externalServices(codeHosts: GetCodeHostsResult['externalServices']) {
                             const newCodeHost = cache.writeFragment({
                                 data: data.addExternalService,
                                 fragment: CODE_HOST_FRAGMENT,
@@ -98,7 +100,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
                             // Update local cache and put newly created/connected code host
                             // to the beginning of code hosts list
-                            return { nodes: [newCodeHost, ...codeHosts.nodes] }
+                            return { nodes: [newCodeHost, ...(codeHosts?.nodes ?? [])] }
                         },
                     },
                 })

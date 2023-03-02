@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
@@ -37,10 +37,12 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
-    const [jsonEditorContainer, setJSONEditorContainer] = useState<HTMLDivElement | null>(null)
+    const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
+    const editorRef = useRef<EditorView | null>(null)
 
     useCodeMirror(
-        jsonEditorContainer,
+        editorRef,
+        jsonEditorContainerRef,
         useMemo(() => JSON.stringify(latestPing, undefined, 4), [latestPing]),
         useMemo(
             () => [
@@ -83,7 +85,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
             ) : isEmpty(latestPing) ? (
                 <Text>No recent ping data to display.</Text>
             ) : (
-                <div ref={setJSONEditorContainer} className="mb-1 border rounded" />
+                <div ref={jsonEditorContainerRef} className="mb-1 border rounded" />
             )}
             <H3>Critical telemetry</H3>
             <Text>
@@ -218,6 +220,14 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Count of users retained</li>
                         <li>Count of users resurrected</li>
                         <li>Count of users churned</li>
+                    </ul>
+                </li>
+                <li>
+                    Monthly aggregated access requests changes
+                    <ul>
+                        <li>Count of pending access requests</li>
+                        <li>Count of approved access requests</li>
+                        <li>Count of rejected access requests</li>
                     </ul>
                 </li>
                 <li>

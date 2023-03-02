@@ -25,6 +25,7 @@ var SupportedExternalServices = map[string]CodehostCapabilities{
 	extsvc.TypeBitbucketServer: {},
 	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeBitbucketCloud:  {},
+	extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by

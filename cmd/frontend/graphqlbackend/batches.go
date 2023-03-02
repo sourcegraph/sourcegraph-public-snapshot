@@ -731,6 +731,8 @@ type ChangesetsStatsResolver interface {
 	Processing() int32
 	Deleted() int32
 	Archived() int32
+	IsCompleted() bool
+	PercentComplete() int32
 }
 
 type ChangesetsConnectionResolver interface {

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repo",
+    srcs = [
+        "mocks_temp.go",
+        "store.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/executor",
+        "//internal/observation",
+        "//internal/workerutil/dbworker/store",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+    ],
+)

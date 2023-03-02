@@ -166,6 +166,11 @@ func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceRe
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceRepository() (*externalServiceRepositoryResolver, bool) {
+	n, ok := r.Node.(*externalServiceRepositoryResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -173,6 +178,11 @@ func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 
 func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	n, ok := r.Node.(*RepositoryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRepoEmbeddingJob() (RepoEmbeddingJobResolver, bool) {
+	n, ok := r.Node.(RepoEmbeddingJobResolver)
 	return n, ok
 }
 

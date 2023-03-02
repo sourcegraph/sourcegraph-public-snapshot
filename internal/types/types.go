@@ -137,6 +137,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 	return ids
 }
 
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
+}
+
 // BlockedRepoError is returned by a Repo IsBlocked method.
 type BlockedRepoError struct {
 	Name   api.RepoName
@@ -630,6 +638,13 @@ type ExternalServiceNamespace struct {
 	ExternalID string `json:"external_id"`
 }
 
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -816,8 +831,9 @@ type User struct {
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User
-	Emails         []string
-	SCIMExternalID string
+	Emails          []string
+	SCIMExternalID  string
+	SCIMAccountData string
 }
 
 type SystemRole string
@@ -1342,11 +1358,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers

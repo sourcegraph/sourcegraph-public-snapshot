@@ -3,6 +3,7 @@ package workspace
 import "context"
 
 type CloneOptions struct {
+	ExecutorName   string
 	EndpointURL    string
 	GitServicePath string
 	ExecutorToken  string

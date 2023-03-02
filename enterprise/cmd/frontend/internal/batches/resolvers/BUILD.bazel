@@ -103,6 +103,7 @@ go_test(
         "changeset_spec_connection_test.go",
         "changeset_spec_test.go",
         "changeset_test.go",
+        "changesets_stats_test.go",
         "code_host_connection_test.go",
         "credential_test.go",
         "main_test.go",

@@ -7,6 +7,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -27,7 +28,6 @@ import {
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './UserNavItem.module.scss'
 
@@ -41,6 +41,7 @@ type MinimalAuthenticatedUser = Pick<
 export interface UserNavItemProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
@@ -55,6 +56,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
         isSourcegraphDotCom,
+        isSourcegraphApp,
         codeHostIntegrationMessaging,
         menuButtonRef,
         showFeedbackModal,
@@ -121,6 +123,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuDivider className={styles.dropdownDivider} />
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
+                            </MenuLink>
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                Saved searches
                             </MenuLink>
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
@@ -205,7 +210,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
-                            {authenticatedUser.session?.canSignOut && (
+                            {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
                                 <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>

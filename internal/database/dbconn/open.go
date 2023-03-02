@@ -141,16 +141,18 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 		return nil, errors.New("sql driver is not a sqlhooks.Driver")
 	}
 
-	// Driver.Open() is called during after we first attempt to connect to the database
-	// during startup time in `dbconn.open()`, where the manager will persist the config internally,
-	// and also call the underlying pgx RegisterConnConfig() to register the config to pgx driver.
-	// Therefore, this should never be nil.
-	cfg := manager.getConfig(str)
-	if cfg == nil {
-		return nil, errors.Newf("no config found %q", str)
-	}
-
 	if pgConnectionUpdater != "" {
+		// Driver.Open() is called during after we first attempt to connect to the database
+		// during startup time in `dbconn.open()`, where the manager will persist the config internally,
+		// and also call the underlying pgx RegisterConnConfig() to register the config to pgx driver.
+		// Therefore, this should never be nil.
+		//
+		// We do not need this code path unless connection updater is enabled.
+		cfg := manager.getConfig(str)
+		if cfg == nil {
+			return nil, errors.Newf("no config found %q", str)
+		}
+
 		u, ok := connectionUpdaters[pgConnectionUpdater]
 		if !ok {
 			return nil, errors.Errorf("unknown connection updater %q", pgConnectionUpdater)

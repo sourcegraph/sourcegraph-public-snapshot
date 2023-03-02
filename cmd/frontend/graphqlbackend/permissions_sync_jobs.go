@@ -61,4 +61,6 @@ type ListPermissionsSyncJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
 	ReasonGroup *database.PermissionsSyncJobReasonGroup
 	State       *database.PermissionsSyncJobState
+	SearchType  *database.PermissionsSyncSearchType
+	Query       *string
 }

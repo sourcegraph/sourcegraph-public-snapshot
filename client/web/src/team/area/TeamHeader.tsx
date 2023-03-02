@@ -35,7 +35,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     ) : (
                                         team.name
                                     )}
-                                    <ProductStatusBadge className="ml-2" status="prototype" />
+                                    <ProductStatusBadge className="ml-2" status="experimental" />
                                 </PageHeader.Breadcrumb>
                             </PageHeader.Heading>
                         </PageHeader>
