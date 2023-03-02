@@ -313,10 +313,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const editorRef = useRef<EditorView | null>(null)
 
-    const focusCodeEditor = useCallback(() => {
-        editorRef.current?.contentDOM.focus()
-    }, [])
-
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
         const editor = editorRef.current
@@ -440,7 +436,13 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
             {focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={focusCodeEditor} />
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        editorRef.current?.contentDOM.focus()
+                    }}
+                />
             ))}
         </>
     )
