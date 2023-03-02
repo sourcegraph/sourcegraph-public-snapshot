@@ -33,7 +33,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
 
-    const handleOpenChange = (isOpen: boolean) => setIsExpanded(isOpen)
+    const handleOpenChange = (isOpen: boolean): void => {
+        setIsExpanded(isOpen)
+    }
     const openModal = useCallback<React.MouseEventHandler>(event => {
         event.stopPropagation()
         setShowConfirmDeleteModal(true)
@@ -53,9 +55,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     }, [node.name])
 
     const onDelete = useCallback<React.FormEventHandler>(
-        event => {
+        async event => {
             event.preventDefault()
-            deleteRole({ variables: { role: node.id } })
+            await deleteRole({ variables: { role: node.id } })
         },
         [deleteRole, node.id]
     )

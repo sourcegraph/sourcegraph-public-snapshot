@@ -35,9 +35,9 @@
     &__delete-btn {
         max-height: 2rem;
         align-self: center;
+    }
 
-        &__icon {
-            fill: currentColor !important;
-        }
+    &__delete-btn-icon {
+        fill: currentColor !important;
     }
 }
