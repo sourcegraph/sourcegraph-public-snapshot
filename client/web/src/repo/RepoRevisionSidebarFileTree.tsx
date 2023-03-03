@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
@@ -152,9 +152,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }, [])
 
     // Initialize the treeData from the initial query
-    // We use a layout effect here because the data can be available in the first render pass and
-    // we want to avoid showing a loading indicator in that case.
-    useLayoutEffect(() => {
+    useEffect(() => {
         if (data === undefined || treeData !== null) {
             return
         }
