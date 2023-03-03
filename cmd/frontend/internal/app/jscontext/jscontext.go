@@ -77,7 +77,7 @@ type UserSession struct {
 }
 
 type Permission struct {
-	Typename    string     `json:"__typename"`
+	GraphQLTypename    string     `json:"__typename"`
 	ID          graphql.ID `json:"id"`
 	DisplayName string     `json:"displayName"`
 }
