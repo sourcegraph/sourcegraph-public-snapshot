@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 )
 
@@ -42,6 +43,10 @@ func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 }
 
 func (c *client) ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error) {
+	if !c.IsAzureDevOpsServices() {
+		return nil, errors.New("ListAuthorizedUserOrganizations can only be used with Azure DevOps Services")
+	}
+
 	reqURL := url.URL{Path: "_apis/accounts"}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)

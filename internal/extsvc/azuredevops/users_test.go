@@ -24,25 +24,17 @@ func TestClient_AzureServicesProfile(t *testing.T) {
 //  2. Run the test with the -update flag:
 //     `go test -run='TestClient_ListAuthorizedUserOrganizations' -update=true`
 func TestClient_ListAuthorizedUserOrganizations(t *testing.T) {
-	// cf, save := newClientFactory(t, t.Name())
-	// defer save(t)
-
-	// httpCli, err := cf.Doer()
-	// if err != nil {
-	// 	t.Fatalf("failed to created http client: %v", err)
-	// }
-
 	cli, save := NewTestClient(
 		t,
 		"ListAuthorizedUserOrganizations",
 		*update,
 	)
-	defer save()
+	t.Cleanup(save)
 
 	ctx := context.Background()
 	profile, err := cli.GetAuthorizedProfile(ctx)
 	if err != nil {
-		t.Fatalf("failed to authorized profile: %v", err)
+		t.Fatalf("failed to get authorized profile: %v", err)
 	}
 
 	orgs, err := cli.ListAuthorizedUserOrganizations(ctx, profile)
