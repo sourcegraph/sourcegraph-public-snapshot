@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -31,7 +32,7 @@ type Store interface {
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 
 	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageFilter, error)
-	CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error)
+	CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error)
 	UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error)
 	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
 
@@ -92,7 +93,7 @@ type ListDependencyReposOpts struct {
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
 func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error) {
-	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
 	defer func() {
@@ -182,7 +183,7 @@ func makeOffset(id int) *sqlf.Query {
 // InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
 // [{npm, @types/nodejs, [v0.0.1]}, {npm, @types/nodejs, [v0.0.2]}] will be collapsed into [{npm, @types/nodejs, [v0.0.1, v0.0.2]}]
 func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error) {
-	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.insertPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numInputDeps", len(deps)),
 	}})
 	defer func() {
@@ -395,7 +396,7 @@ ORDER BY (scheme, name)
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
 func (s *store) DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deletePackageRepoRefsByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -413,6 +414,11 @@ WHERE id = ANY(%s)
 `
 
 func (s *store) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservation := s.operations.deletePackageRepoRefVersionsByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -433,6 +439,14 @@ type ListPackageRepoRefFiltersOpts struct {
 }
 
 func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
+		log.String("packageScheme", opts.PackageScheme),
+		log.Int("after", opts.After),
+		log.Int("limit", opts.Limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	conds := make([]*sqlf.Query, 0, 4)
 	// we never want to surface filters, and the table should be small enough that a
 	// handful of old entries doesnt matter.
@@ -475,7 +489,22 @@ FROM package_repo_filters
 %s
 `
 
-func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error) {
+	ctx, _, endObservation := s.operations.createPackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", filter.PackageScheme),
+		log.String("behaviour", deref(filter.Behaviour)),
+		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	var matcherJSON driver.Value
 	if filter.NameFilter != nil {
 		matcherJSON, err = json.Marshal(filter.NameFilter)
@@ -505,6 +534,15 @@ ON CONFLICT DO NOTHING
 `
 
 func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+	ctx, _, endObservation := s.operations.updatePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", filter.ID),
+		log.String("packageScheme", filter.PackageScheme),
+		log.String("behaviour", filter.Behaviour),
+		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	var matcherJSON driver.Value
 	if filter.NameFilter != nil {
 		matcherJSON, err = json.Marshal(filter.NameFilter)
@@ -536,6 +574,11 @@ SET
 WHERE id = %s`
 
 func (s *store) DeletePacakgeRepoFilter(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.deletePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(deletePackagRepoFilterQuery, id))
 	if err != nil {
 		return err
@@ -552,6 +595,11 @@ SET deleted_at = now()
 WHERE id = %s`
 
 func (s *store) ExistsPackageRepoRefLastCheckedBefore(ctx context.Context, before time.Time) (exists bool, err error) {
+	ctx, _, endObservation := s.operations.existsPackageRepoRefLastCheckedBefore.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("beforeTime", string(pq.FormatTimestamp(before))),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(existsPackageRepoRefLastCheckedBeforeQuery, before, before)))
 	return
 }
@@ -576,6 +624,9 @@ WHERE EXISTS (
 `
 
 func (s *store) ApplyPackageFilters(ctx context.Context) (pkgsAffected, versionsAffected int, err error) {
+	ctx, _, endObservation := s.operations.applyPackageFilters.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return pkgsAffected, versionsAffected, basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		return false, s.Scan(&pkgsAffected, &versionsAffected)
 	})(s.db.Query(ctx, sqlf.Sprintf(applyAllFiltersToAllPackageRepoRefsQuery)))
@@ -613,16 +664,36 @@ SELECT (
 `
 
 func (s *store) IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error) {
+	ctx, _, endObservation := s.operations.isPackageRepoVersionAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", scheme),
+		log.String("name", string(pkg)),
+		log.String("version", version),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	allowed, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf("SELECT is_versioned_package_allowed(%s, %s, %s)", pkg, version, scheme)))
 	return
 }
 
 func (s *store) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
+	ctx, _, endObservation := s.operations.isPackageRepoAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", scheme),
+		log.String("name", string(pkg)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	allowed, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf("SELECT is_unversioned_package_allowed(%s, %s)", pkg, scheme)))
 	return
 }
 
 func (s *store) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error) {
+	ctx, _, endObservation := s.operations.pkgsOrVersionsMatchingFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", filter.PackageScheme),
+		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	offsetExpr := sqlf.Sprintf("TRUE")
 	if after > 0 {
 		offsetExpr = sqlf.Sprintf("lr.id > %s", after)

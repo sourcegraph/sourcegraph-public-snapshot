@@ -39,6 +39,7 @@ type MinimialVersionedPackageRepo struct {
 
 type MinimalPackageFilter struct {
 	PackageScheme string
+	Behaviour     *string
 	NameFilter    *struct {
 		PackageGlob string
 	}

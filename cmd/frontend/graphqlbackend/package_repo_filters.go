@@ -78,8 +78,8 @@ func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
-	filter := shared.PackageFilter{
-		Behaviour:     args.Behaviour,
+	filter := shared.MinimalPackageFilter{
+		Behaviour:     &args.Behaviour,
 		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
 		NameFilter:    args.Filter.NameFilter,
 		VersionFilter: args.Filter.VersionFilter,
@@ -127,5 +127,5 @@ func (r *schemaResolver) DeletePackageRepoFilter(ctx context.Context, args struc
 		return nil, err
 	}
 
-	return &EmptyResponse{}, depsService.DeletePacakgeRepoFilter(ctx, filterID)
+	return &EmptyResponse{}, depsService.DeletePackageRepoFilter(ctx, filterID)
 }

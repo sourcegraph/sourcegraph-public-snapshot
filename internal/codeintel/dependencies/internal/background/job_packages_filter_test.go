@@ -40,8 +40,9 @@ func TestPackageRepoFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.CreatePackageRepoFilter(ctx, shared.PackageFilter{
-		Behaviour:     "BLOCK",
+	bhvr := "BLOCK"
+	if err := s.CreatePackageRepoFilter(ctx, shared.MinimalPackageFilter{
+		Behaviour:     &bhvr,
 		PackageScheme: "npm",
 		NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
 	}); err != nil {
