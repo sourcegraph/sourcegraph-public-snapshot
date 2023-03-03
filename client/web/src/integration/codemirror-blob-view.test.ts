@@ -15,6 +15,7 @@ import {
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, EditorAPI } from './utils'
@@ -382,6 +383,7 @@ function createBlobPageData<T extends BlobInfo>({
             FileExternalLinks: ({ filePath }) =>
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
+            FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             Blob: ({ filePath }) =>
                 createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
             FileNames: () => ({
