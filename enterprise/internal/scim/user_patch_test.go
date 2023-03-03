@@ -2,71 +2,68 @@ package scim
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 	t.Parallel()
 
-	db := getMockDB()
+	db := getMockDB([]*types.UserForSCIM{
+		{User: types.User{ID: 1}},
+		{User: types.User{ID: 2, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+		{User: types.User{ID: 3}},
+	})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
 	testCases := []struct {
 		name       string
 		userId     string
 		operations []scim.PatchOperation
-		testFunc   func(user scim.Resource, err error)
+		testFunc   func(userRes scim.Resource, err error)
 	}{
 		{
 			name:   "patch username with replace operation",
-			userId: "1",
+			userId: "2",
 			operations: []scim.PatchOperation{
 				{Op: "replace", Path: createPath(AttrUserName, nil), Value: "user6"},
 			},
-			testFunc: func(user scim.Resource, err error) {
+			testFunc: func(userRes scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user6", user.Attributes[AttrUserName])
+				assert.Equal(t, "user6", userRes.Attributes[AttrUserName])
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+				assert.Equal(t, "user6", user.Username)
 			},
 		},
 		{
 			name:   "patch username with add operation",
-			userId: "1",
+			userId: "2",
 			operations: []scim.PatchOperation{
 				{Op: "add", Path: createPath(AttrUserName, nil), Value: "user7"},
 			},
-			testFunc: func(user scim.Resource, err error) {
+			testFunc: func(userRes scim.Resource, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user7", user.Attributes[AttrUserName])
+				assert.Equal(t, "user7", userRes.Attributes[AttrUserName])
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+				assert.Equal(t, "user7", user.Username)
 			},
 		},
-		// TODO: Temporarily disabled test, it's failing on CI for some reason. Figure out what's wrong later.
-		//{
-		//	name:   "replace multiple",
-		//	userId: "4",
-		//	operations: []scim.PatchOperation{
-		//		{Op: "replace", Path: nil, Value: map[string]interface{}{AttrUserName: "user4-mod@company.com", "active": false}},
-		//	},
-		//	testFunc: func(userRes scim.Resource, err error) {
-		//		assert.NoError(t, err)
-		//		assert.Equal(t, "user4-mod@company.com", userRes.Attributes[AttrUserName])
-		//		users, _ := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{4}})
-		//		user := users[0]
-		//		assert.Equal(t, "user4-mod", user.Username)
-		//		assert.Equal(t, "user4-mod@company.com", user.SCIMExternalID)
-		//		//assert.Equal(t, false, user.Attributes["active"])
-		//	},
-		//},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			user, err := userResourceHandler.Patch(createDummyRequest(), tc.userId, tc.operations)
-			tc.testFunc(user, err)
+			userRes, err := userResourceHandler.Patch(createDummyRequest(), tc.userId, tc.operations)
+			tc.testFunc(userRes, err)
 		})
 	}
 }

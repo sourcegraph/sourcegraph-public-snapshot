@@ -11,18 +11,19 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBatchSize int, rankingJobEnabled bool) (err error) {
+func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBatchSize int) (err error) {
 	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return nil
 	}
 
-	uploads, err := s.store.GetUploadsForRanking(ctx, ConfigInst.DocumentReferenceCountsGraphKey, "ranking", ConfigInst.SymbolExporterReadBatchSize)
+	uploads, err := s.store.GetUploadsForRanking(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), "ranking", ConfigInst.SymbolExporterReadBatchSize)
 	if err != nil {
 		return err
 	}
@@ -35,10 +36,11 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBa
 	}
 	close(sharedUploads)
 
+	graphKey := conf.CodeIntelRankingDocumentReferenceCountsGraphKey()
 	for i := 0; i < numRoutines; i++ {
 		p.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, ConfigInst.DocumentReferenceCountsGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -132,7 +134,7 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 }
 
 func (s *Service) VacuumRankingGraph(ctx context.Context) error {
-	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, ConfigInst.DocumentReferenceCountsGraphKey)
+	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey())
 	if err != nil {
 		return err
 	}
@@ -149,11 +151,11 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) MapRankingGraph(ctx context.Context, rankingJobEnabled bool) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
+func (s *Service) MapRankingGraph(ctx context.Context) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
@@ -164,11 +166,11 @@ func (s *Service) MapRankingGraph(ctx context.Context, rankingJobEnabled bool) (
 	)
 }
 
-func (s *Service) ReduceRankingGraph(ctx context.Context, rankingJobEnabled bool) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
+func (s *Service) ReduceRankingGraph(ctx context.Context) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if !rankingJobEnabled {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
@@ -192,5 +194,5 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, rankingJobEnabled bool
 // a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
 // parent graph key will also create a new map/reduce job (without switching buckets).
 func getCurrentGraphKey(now time.Time) string {
-	return fmt.Sprintf("%s-%d", ConfigInst.DocumentReferenceCountsGraphKey, now.UTC().Unix()/int64(ConfigInst.MapReducerInterval.Seconds()))
+	return fmt.Sprintf("%s-%d", conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), now.UTC().Unix()/int64(conf.CodeIntelRankingStaleResultAge().Seconds()))
 }

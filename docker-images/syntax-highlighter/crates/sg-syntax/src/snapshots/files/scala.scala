@@ -17,6 +17,8 @@ object Foo {
   val f = null
   def main(args: Array[String]): Unit = {
     println(args.toList)
+    System.out.println(args.toList)
+    args(1).indexOf("a")
     args.toList match {
         case 1 :: 2 :: Nil =>
         case a :: Nil =>
@@ -27,7 +29,7 @@ object Foo {
   protected def protectedMethod = 42
   private[this] def privateThisMethod = 42
   private[foobar] def privatePackageMethod = 42
-  type MyMap[T] = Map[String, T]
+  type MyMap[A, B] = Map[A, B]
   trait MyTrait[T] extends SuperTrait[T]
   enum X { case A, B }
 }

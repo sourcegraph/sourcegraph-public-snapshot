@@ -1011,6 +1011,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazel
+      - ibazel
     bazelCommands:
       - oss-frontend
       - oss-worker
@@ -1037,6 +1039,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazel
+      - ibazel
     commands:
       - oss-frontend
       - oss-worker
@@ -1062,6 +1066,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazel
+      - ibazel
     bazelCommands:
       - frontend
       - worker
@@ -1126,6 +1132,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazel
+      - ibazel
     bazelCommands:
       - frontend
       - worker

@@ -158,10 +158,10 @@ Gazelle and the frontend: TODO
 
 First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
 
-- `brew install bazel` 
-- `brew install ibazel` 
+- `brew install bazel`
+- `brew install ibazel`
 
-Then instead of running `sg start oss` you can use the `bazel` variant instead. 
+Then instead of running `sg start oss` you can use the `bazel` variant instead.
 
 - `sg start oss-bazel`
 - `sg start enterprise-bazel`
@@ -170,15 +170,15 @@ Then instead of running `sg start oss` you can use the `bazel` variant instead.
 
 ##### How it works
 
-When `sg start` is booting up, the standard installation process will begin as usual for commands that are not built with Bazel, but you'll also see a new program running 
-`[  bazel]` which will log the build process for all the targets required by your chosen commandset. Once it's done, these services will start and [`iBazel`](https://github.com/bazelbuild/bazel-watcher) 
-will take the relay. It will watch the files that Bazel has indentified has dependencies for your services, and rebuild them accordingly. 
+When `sg start` is booting up, the standard installation process will begin as usual for commands that are not built with Bazel, but you'll also see a new program running
+`[  bazel]` which will log the build process for all the targets required by your chosen commandset. Once it's done, these services will start and [`iBazel`](https://github.com/bazelbuild/bazel-watcher)
+will take the relay. It will watch the files that Bazel has indentified has dependencies for your services, and rebuild them accordingly.
 
-So when a change is detected, `iBazel` will build the affected target and it will be restarted once the build finishes. 
+So when a change is detected, `iBazel` will build the affected target and it will be restarted once the build finishes.
 
-##### Caveats 
+##### Caveats
 
-- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages. 
+- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages.
 - Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
 
 ## FAQ
@@ -221,6 +221,16 @@ Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
 #### My go tests complains about missing testdata
 
 In the case where your testdata lives in `../**`, Gazelle cannot see those on its own, and you need to create a filegroup manually, see https://github.com/sourcegraph/sourcegraph/pull/47605/commits/93c838aad5436dc69f6695cec933bfb84b8ba59a
+
+#### Manually adding a `go_repository`
+
+Sometimes Gazelle won't be able to generate a `go_repository` for your dependency and you'll need to fill in the attributes yourself. Most of the fields are easy to get, except when you need to provide values for the sum and version.
+
+To retrieve these values:
+1. Create a go.mod in the directory where the dependency is imported.
+2. Run `go mod tidy`. This will populate the `go.mod` file and also generate a `go.sum` file.
+3. You can then locate the version you should use for `go_repository` from the `go.mod` file and the sum from the `go.sum` file.
+4. Delete the `go.mod` and `go.sum` files as they're no longer needed.
 
 #### How to update to the latest recommended bazelrc?
 

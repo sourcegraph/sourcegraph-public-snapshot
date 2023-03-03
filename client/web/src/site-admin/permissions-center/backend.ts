@@ -54,6 +54,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         $before: String
         $reasonGroup: PermissionsSyncJobReasonGroup
         $state: PermissionsSyncJobState
+        $searchType: PermissionsSyncJobsSearchType
+        $query: String
     ) {
         permissionsSyncJobs(
             first: $first
@@ -62,6 +64,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             before: $before
             reasonGroup: $reasonGroup
             state: $state
+            searchType: $searchType
+            query: $query
         ) {
             totalCount
             pageInfo {

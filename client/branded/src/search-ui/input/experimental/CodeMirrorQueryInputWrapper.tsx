@@ -20,6 +20,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { filterPlaceholder } from '../codemirror/active-filter'
+import { queryDiagnostic } from '../codemirror/diagnostics'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
@@ -175,6 +176,7 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
         keymap.of(defaultKeymap),
         codemirrorHistory(),
         filterPlaceholder,
+        queryDiagnostic(),
         Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
         EditorView.theme({
             '&': {
