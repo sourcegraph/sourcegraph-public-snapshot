@@ -57,8 +57,6 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
     }
 }
 
-// make the ci rerun
-
 export async function gitRemoteNameAndBranch(
     repoDirectory: string,
     git: Pick<GitHelpers, 'branch' | 'remotes' | 'upstreamAndBranch'>,

@@ -67,7 +67,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
-			addVsceTests,                 // TODO: measure
+			addVsceTests,                 // ~3.0m
 		)
 
 		if opts.ClientLintOnlyChangedFiles {
@@ -278,7 +278,7 @@ func getParallelTestCount(webParallelTestCount int) int {
 // Builds and tests the VS Code extensions.
 func addVsceTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
+		":vscode: Tests for VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
