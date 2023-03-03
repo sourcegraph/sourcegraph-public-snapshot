@@ -173,6 +173,14 @@ func (r *TeamResolver) AvatarURL() *string {
 	return nil
 }
 
+func (r *TeamResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	if r.team.CreatorID == 0 {
+		// User was deleted.
+		return nil, nil
+	}
+	return UserByIDInt32(ctx, r.db, r.team.CreatorID)
+}
+
 func (r *TeamResolver) DisplayName() *string {
 	if r.team.DisplayName == "" {
 		return nil
@@ -958,6 +966,10 @@ func canModifyTeam(ctx context.Context, db database.DB, team *types.Team) (bool,
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return false, auth.ErrNotAuthenticated
+	}
+	// The creator can always modify a team.
+	if team.CreatorID != 0 && team.CreatorID == a.UID {
+		return true, nil
 	}
 	return db.Teams().IsTeamMember(ctx, team.ID, a.UID)
 }

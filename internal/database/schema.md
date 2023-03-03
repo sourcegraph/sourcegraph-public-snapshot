@@ -3468,7 +3468,7 @@ Foreign-key constraints:
  display_name   | text                     |           |          | 
  readonly       | boolean                  |           | not null | false
  parent_team_id | integer                  |           |          | 
- creator_id     | integer                  |           | not null | 
+ creator_id     | integer                  |           |          | 
  created_at     | timestamp with time zone |           | not null | now()
  updated_at     | timestamp with time zone |           | not null | now()
 Indexes:
