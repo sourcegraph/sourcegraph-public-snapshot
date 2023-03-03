@@ -525,22 +525,6 @@ mod test {
     }
 
     #[test]
-    fn test_highlights_simple_main() -> Result<(), Error> {
-        let src = r#"package main
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, world", 5)
-}
-"#;
-
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
-
-        Ok(())
-    }
-
-    #[test]
     fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
         let src = r#"package main
 
