@@ -155,6 +155,10 @@ extend type Mutation {
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
 }
 
+"""
+A repository to pass to the deleteCodeownersFiles mutation. Either repoID or repoName
+must be provided.
+"""
 input DeleteCodeownersFilesInput {
     """
     The repo ID to ingest the file for. Cannot be set with repositoryName.
@@ -167,7 +171,7 @@ input DeleteCodeownersFilesInput {
 }
 
 """
-codeownersArgs represents the input for ingesting codeowners files
+CodeownersFileInput represents the input for ingesting codeowners files
 """
 input CodeownersFileInput {
     """
