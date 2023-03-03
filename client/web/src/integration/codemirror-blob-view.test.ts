@@ -110,10 +110,17 @@ describe('CodeMirror blob view', () => {
             // files from TreeEntries request
             assert.deepStrictEqual(
                 allFilesInTheTree,
-                Object.entries(filePaths).map(([name, path]) => ({
-                    content: name,
-                    href: `${driver.sourcegraphBaseUrl}${path}`,
-                }))
+                Object.entries(filePaths)
+                    .filter(
+                        ([name]) =>
+                            name !==
+                            // This file is not part of the same directory so it won't be shown in this test case
+                            'this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java'
+                    )
+                    .map(([name, path]) => ({
+                        content: name,
+                        href: `${driver.sourcegraphBaseUrl}${path}`,
+                    }))
             )
         })
 
