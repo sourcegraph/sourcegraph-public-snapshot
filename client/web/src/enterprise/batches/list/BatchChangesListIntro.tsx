@@ -22,17 +22,17 @@ export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChild
     }
 
     return (
-        <div className={classNames(styles.alertsRow, 'mb-3')}>
+        <div className={classNames(styles.alertsRow)}>
             {isLicensed === true ? (
-                <div className={classNames(styles.alertsRowContent, 'flex-1')}>
+                <div className={classNames(styles.alertsRowContent, 'flex-1 mb-3')}>
                     <BatchChangesChangelogAlert />
                 </div>
             ) : (
                 <>
-                    <div className={classNames(styles.alertsRowContent, 'flex-1')}>
+                    <div className={classNames(styles.alertsRowContent, 'flex-1 mb-3')}>
                         <BatchChangesUnlicensedAlert />
                     </div>
-                    <BatchChangesChangelogAlert className={classNames(styles.alertsRowContent, 'flex-1')} />
+                    <BatchChangesChangelogAlert className={classNames(styles.alertsRowContent, 'flex-1 mb-3')} />
                 </>
             )}
         </div>
