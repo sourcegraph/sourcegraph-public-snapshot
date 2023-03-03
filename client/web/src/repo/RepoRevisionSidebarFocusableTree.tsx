@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { Tree, TreeNode, TreeProps } from '@sourcegraph/wildcard/src'
+import { Tree, TreeNode, TreeProps, TreeRef } from '@sourcegraph/wildcard/src'
 
 export interface FocusableTreeProps {
     focusKey?: string
@@ -12,7 +12,7 @@ export interface FocusableTreeProps {
 export function FocusableTree<N extends TreeNode>(props: FocusableTreeProps & TreeProps<N>): JSX.Element {
     const { focusKey, ...rest } = props
 
-    const ref = useRef<HTMLUListElement>(null)
+    const ref = useRef<TreeRef>(null)
 
     useEffect(() => {
         if (ref.current && focusKey) {

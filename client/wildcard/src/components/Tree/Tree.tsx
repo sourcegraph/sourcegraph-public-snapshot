@@ -37,7 +37,7 @@ export interface TreeProps<N extends TreeNode>
     nodeClassName?: string
 }
 
-interface TreeRef {
+export interface TreeRef {
     focus: () => void
 }
 
