@@ -36,7 +36,7 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 
 	cli, err := NewClient(
 		"urn",
-		"https://dev.azure.com",
+		AzureDevOpsAPIURL,
 		&auth.BasicAuth{
 			Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
 			Password: os.Getenv("AZURE_DEV_OPS_TOKEN"),

@@ -43,7 +43,7 @@ func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 }
 
 func (c *client) ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error) {
-	if !c.IsAzureDevOpsServices() {
+	if MockVisualStudioAppURL == "" && !c.IsAzureDevOpsServices() {
 		return nil, errors.New("ListAuthorizedUserOrganizations can only be used with Azure DevOps Services")
 	}
 
