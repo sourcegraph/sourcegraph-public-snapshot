@@ -56,18 +56,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         options: { pollInterval: 5000 },
     })
 
-    useEffect(() => {
-        const newReason = stringToReason(filters.reason)
-        const newState = stringToState(filters.state)
-        if (newReason !== variables.reasonGroup || newState !== variables.state) {
-            refetch({
-                ...variables,
-                reasonGroup: newReason,
-                state: newState,
-            })
-        }
-    }, [filters, refetch, variables])
-
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
         [setFilters]
