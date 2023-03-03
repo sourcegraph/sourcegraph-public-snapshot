@@ -63,6 +63,7 @@ export interface TemporarySettingsSchema {
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
+    'own.panelExplanationHidden': boolean
 }
 
 /**

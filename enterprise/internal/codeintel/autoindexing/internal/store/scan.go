@@ -77,46 +77,6 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 	)
 }
 
-var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
-
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err error) {
-	var executionLogs []executor.ExecutionLogEntry
-
-	if err := s.Scan(
-		&index.ID,
-		&index.Commit,
-		&index.QueuedAt,
-		&index.State,
-		&index.FailureMessage,
-		&index.StartedAt,
-		&index.FinishedAt,
-		&index.ProcessAfter,
-		&index.NumResets,
-		&index.NumFailures,
-		&index.RepositoryID,
-		&index.RepositoryName,
-		pq.Array(&index.DockerSteps),
-		&index.Root,
-		&index.Indexer,
-		pq.Array(&index.IndexerArgs),
-		&index.Outfile,
-		pq.Array(&executionLogs),
-		&index.Rank,
-		pq.Array(&index.LocalSteps),
-		&index.AssociatedUploadID,
-		&index.ShouldReindex,
-		pq.Array(&index.RequestedEnvVars),
-		&count,
-	); err != nil {
-		return index, 0, err
-	}
-
-	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
-
-	return index, count, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*Store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {

@@ -407,7 +407,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                             ? ALL_FILTER_VALUE_LIST_SIZE
                                             : MULTIPLE_FILTER_VALUE_LIST_SIZE
                                     )
-                                    .map(item => toRepoCompletion(item, from, to)),
+                                    .map(item => toRepoSuggestion(item, from, to)),
                             },
                         ]
 
@@ -434,7 +434,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             {
                                 title: 'Files',
                                 options: entries
-                                    .map(item => toFileCompletion(item, from, to))
+                                    .map(item => toFileSuggestion(item, from, to))
                                     .slice(
                                         0,
                                         predicates.length === 0
@@ -671,28 +671,26 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
 }
 
 /**
- * Returns file (jump) target suggestions matching the term at the cursor,
- * but only if the query contains suitable filters. On dotcom we only show file
- * suggestions if the query contains at least one context: or repo: filter.
+ * Returns file (jump) target suggestions matching the term at the cursor.
+ * Because symbol queries are expensive and are slower the less "precise" the
+ * query is we are only showing symbol suggestions if the query contains suitable
+ * filters (context, repo or file; context must be different from global).
  */
-function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolean): InternalSource {
+function symbolSuggestions(cache: Caches['symbol']): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
         if (token?.type !== 'pattern') {
             return null
         }
 
         // Only show symbol suggestions if the query contains a context:, repo:
-        // or file: filter. On dotcom the context must by different from
-        // "global".
-
+        // or file: filter.
         if (
             !tokens.some(token => {
                 if (token.type !== 'filter') {
                     return false
                 }
                 return (
-                    (isFilterOfType(token, FilterType.context) &&
-                        (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
+                    (isFilterOfType(token, FilterType.context) && token.value?.value !== 'global') ||
                     isFilterOfType(token, FilterType.repo) ||
                     isFilterOfType(token, FilterType.file)
                 )
@@ -955,7 +953,7 @@ export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source
         filterSuggestions,
         repoSuggestions(caches.repo),
         fileSuggestions(caches.file, isSourcegraphDotCom),
-        symbolSuggestions(caches.symbol, isSourcegraphDotCom),
+        symbolSuggestions(caches.symbol),
     ]
 
     return {

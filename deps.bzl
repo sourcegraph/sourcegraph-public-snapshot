@@ -1681,13 +1681,7 @@ def go_dependencies():
         sum = "h1:ANqDyC0ys6qCSvuEK7l3g5RaehL/Xck9EX8ATG8oKsE=",
         version = "v1.0.0",
     )
-    go_repository(
-        name = "com_github_dcadenas_pagerank",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/dcadenas/pagerank",
-        sum = "h1:YG9TGUT3wOhOPxE99qpcd99TZE5zuxBaAvqjuuLMBBI=",
-        version = "v0.0.0-20171013173705-af922e3ceea8",
-    )
+
     go_repository(
         name = "com_github_denisenkom_go_mssqldb",
         build_file_proto_mode = "disable_global",

@@ -590,6 +590,14 @@ const defaultKeyboardBindings: KeyBinding[] = [
         run: moveSelection('backward'),
     },
     {
+        mac: 'Ctrl-n',
+        run: moveSelection('forward'),
+    },
+    {
+        mac: 'Ctrl-p',
+        run: moveSelection('backward'),
+    },
+    {
         key: 'Mod-Space',
         run(view) {
             startCompletion(view)

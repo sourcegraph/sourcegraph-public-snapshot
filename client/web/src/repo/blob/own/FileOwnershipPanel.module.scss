@@ -2,16 +2,44 @@
     margin: 0.75rem 1rem;
 }
 
+.loader-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
 .table {
-    width: 100%;
+    width: calc(100% - 2rem);
     margin: 0.75rem 1rem;
 
     td {
         padding-bottom: 0.5rem;
     }
 
+    td:nth-child(3) {
+        text-overflow: ellipsis;
+    }
+
     td:nth-child(1),
-    td:nth-child(2) {
+    td:nth-child(2),
+    td:nth-child(3) {
         width: 0; // This shrinks the cells to fit the content
+    }
+}
+
+.own-explanation {
+    &-container {
+        background-color: var(--color-bg-1);
+    }
+
+    &-title {
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    &-content {
+        font-size: 0.75rem;
     }
 }

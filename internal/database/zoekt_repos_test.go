@@ -286,7 +286,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 // BenchmarkZoektRepos_UpdateIndexStatus_500000/update-none-10                 5858           2377811 ns/op
 
 func BenchmarkZoektRepos_UpdateIndexStatus_10000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 10_00)
+	benchmarkUpdateIndexStatus(b, 10_000)
 }
 
 func BenchmarkZoektRepos_UpdateIndexStatus_50000(b *testing.B) {
