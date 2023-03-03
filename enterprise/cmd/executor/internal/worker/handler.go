@@ -110,7 +110,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	logger.Info("Creating workspace")
 	ws, err := h.jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating workspace")
 	}
 	defer ws.Remove(ctx, h.options.KeepWorkspaces)
 
@@ -125,7 +125,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	logger.Info("Setting up runner")
 	runtimeRunner, err := h.jobRuntime.NewRunner(ctx, commandLogger, runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating runtime runner")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
@@ -140,14 +140,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	logger.Info("Creating commands")
 	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job.DockerSteps)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating commands")
 	}
 
 	// Run all the things.
 	logger.Info("Running commands")
 	for _, spec := range commands {
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
-			return err
+			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}
 	}
 

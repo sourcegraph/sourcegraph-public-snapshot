@@ -141,7 +141,9 @@ func TestHandler_PreDequeue(t *testing.T) {
 	}
 }
 
-func TestHandler_Handle(t *testing.T) {
+func TestHandler_Handle_Legacy(t *testing.T) {
+	// No runtime is configured.
+	// Will go away once firecracker is implemented.
 	internalLogger := logtest.Scoped(t)
 	operations := command.NewOperations(&observation.TestContext)
 
@@ -154,7 +156,7 @@ func TestHandler_Handle(t *testing.T) {
 		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
 	}{
 		{
-			name:    "Legacy Success with no steps",
+			name:    "Success with no steps",
 			options: Options{},
 			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
 			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
@@ -169,7 +171,7 @@ func TestHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "Legacy Success with srcCli steps",
+			name:    "Success with srcCli steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -204,7 +206,7 @@ func TestHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "Legacy Success with srcCli steps default key",
+			name:    "Success with srcCli steps default key",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -233,7 +235,7 @@ func TestHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "Legacy Success with docker steps",
+			name:    "Success with docker steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -271,7 +273,7 @@ func TestHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "Legacy Success with docker steps default key",
+			name:    "Success with docker steps default key",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -301,7 +303,7 @@ func TestHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "Legacy failed to setup workspace",
+			name:    "failed to setup workspace",
 			options: Options{},
 			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
 			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
@@ -318,7 +320,7 @@ func TestHandler_Handle(t *testing.T) {
 			expectedErr: errors.New("failed to prepare workspace: failed setup.git.init: failed"),
 		},
 		{
-			name:    "Legacy failed with srcCli steps",
+			name:    "failed with srcCli steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -354,7 +356,7 @@ func TestHandler_Handle(t *testing.T) {
 			expectedErr: errors.New("failed to perform src-cli step: failed"),
 		},
 		{
-			name:    "Legacy failed with docker steps",
+			name:    "failed with docker steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
@@ -426,6 +428,212 @@ func TestHandler_Handle(t *testing.T) {
 			}
 
 			test.assertMockFunc(t, cmdRunner, cmd, logStore, filesStore)
+		})
+	}
+}
+
+func TestHandler_Handle(t *testing.T) {
+	internalLogger := logtest.Scoped(t)
+	operations := command.NewOperations(&observation.TestContext)
+
+	tests := []struct {
+		name           string
+		options        Options
+		job            types.Job
+		mockFunc       func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace)
+		expectedErr    error
+		assertMockFunc func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace)
+	}{
+		{
+			name:    "Success with no steps",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
+				jobRuntime.NewRunnerSpecsFunc.PushReturn(nil, nil)
+				jobRunner.RunFunc.PushReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1, 0)
+				require.Len(t, jobRunner.RunFunc.History(), 0)
+			},
+		},
+		{
+			name:    "Success with steps",
+			options: Options{},
+			job: types.Job{
+				ID:             42,
+				RepositoryName: "my-repo",
+				Commit:         "cool-commit",
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "some-step",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+				},
+			},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
+				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
+					{
+						CommandSpec: command.Spec{
+							Key:       "my-key",
+							Command:   []string{"echo", "hello"},
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
+						Image:      "my-image",
+						ScriptPath: "./foo",
+					},
+				}, nil)
+				jobRunner.RunFunc.PushReturn(nil)
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1, 1)
+				assert.Equal(t, "some-step", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Key)
+				assert.Equal(t, "my-image", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Image)
+				assert.Equal(t, []string{"echo", "hello"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Commands)
+				assert.Equal(t, ".", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Dir)
+				assert.Equal(t, []string{"FOO=bar"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Env)
+				require.Len(t, jobRunner.RunFunc.History(), 1)
+				assert.Equal(t, "my-image", jobRunner.RunFunc.History()[0].Arg1.Image)
+				assert.Equal(t, "./foo", jobRunner.RunFunc.History()[0].Arg1.ScriptPath)
+				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpec.Command)
+			},
+		},
+		{
+			name:    "failed to setup workspace",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(nil, errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 0)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 0)
+				require.Len(t, jobRunner.TeardownFunc.History(), 0)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 0)
+				require.Len(t, jobRunner.RunFunc.History(), 0)
+			},
+			expectedErr: errors.New("creating workspace: failed"),
+		},
+		{
+			name:    "failed to setup runner",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(nil, errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				require.Len(t, jobRunner.TeardownFunc.History(), 0)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 0)
+				require.Len(t, jobRunner.RunFunc.History(), 0)
+			},
+			expectedErr: errors.New("creating runtime runner: failed"),
+		},
+		{
+			name:    "failed to create commands",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
+				jobRuntime.NewRunnerSpecsFunc.PushReturn(nil, errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
+				require.Len(t, jobRunner.RunFunc.History(), 0)
+			},
+			expectedErr: errors.New("creating commands: failed"),
+		},
+		{
+			name:    "failed to run command",
+			options: Options{},
+			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
+				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
+					{
+						CommandSpec: command.Spec{
+							Key:       "my-key",
+							Command:   []string{"echo", "hello"},
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
+						Image:      "my-image",
+						ScriptPath: "./foo",
+					},
+				}, nil)
+				jobRunner.RunFunc.PushReturn(errors.New("failed"))
+			},
+			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
+				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
+				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
+				require.Len(t, jobRunner.RunFunc.History(), 1)
+			},
+			expectedErr: errors.New("running command \"my-key\": failed"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			nameSet := janitor.NewNameSet()
+			jobRuntime := NewMockRuntime()
+			jobRunner := NewMockRunner()
+			jobWorkspace := NewMockWorkspace()
+			// Used in NewLogger
+			logStore := NewMockExecutionLogEntryStore()
+
+			h := &handler{
+				nameSet:    nameSet,
+				jobRuntime: jobRuntime,
+				logStore:   logStore,
+				options:    test.options,
+				operations: operations,
+			}
+
+			if test.mockFunc != nil {
+				test.mockFunc(jobRuntime, logStore, jobRunner, jobWorkspace)
+			}
+
+			err := h.Handle(context.Background(), internalLogger, test.job)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			test.assertMockFunc(t, jobRuntime, logStore, jobRunner, jobWorkspace)
 		})
 	}
 }
