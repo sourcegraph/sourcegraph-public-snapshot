@@ -1005,7 +1005,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             ensureReleaseBranchUpToDate(releaseBranch)
 
             const multiVersionSteps: Edit[] = [
-                // multi-version-upgrade
                 `git remote set-branches --add origin '${releaseBranch}'`,
                 `git fetch --depth 1 origin ${releaseBranch}`,
                 combyReplace(
