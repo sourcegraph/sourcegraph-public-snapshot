@@ -41,7 +41,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     }, [telemetryService])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
-    const { connection, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, loading, error, variables, ...paginationProps } = usePageSwitcherPagination<
         PermissionsSyncJobsResult,
         PermissionsSyncJobsVariables,
         PermissionsSyncJob
