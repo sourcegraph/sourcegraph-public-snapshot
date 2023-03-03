@@ -1,8 +1,9 @@
-package usagestats_test
+package usagestats
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -10,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
@@ -37,7 +37,7 @@ func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 	if err := db.RepoStatistics().CompactRepoStatistics(ctx); err != nil {
 		t.Fatalf("failed to recompute stats: %s", err)
 	}
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
@@ -62,7 +62,7 @@ func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 	if err := db.RepoStatistics().CompactRepoStatistics(ctx); err != nil {
 		t.Fatalf("failed to recompute stats: %s", err)
 	}
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
@@ -87,7 +87,7 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	if err := db.RepoStatistics().CompactRepoStatistics(ctx); err != nil {
 		t.Fatalf("failed to recompute stats: %s", err)
 	}
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
@@ -123,7 +123,7 @@ func TestGetOwnershipUsageStatsReposCountNoStats(t *testing.T) {
 		t.Fatalf("failed to create codeowners data: %s", err)
 	}
 	// No repo stats computation.
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
@@ -146,13 +146,13 @@ func TestGetOwnershipUsageStatsFeatureFlagOn(t *testing.T) {
 	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", true); err != nil {
 		t.Fatal(err)
 	}
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
 	want := true
 	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipUsageStats.FeatureFlagOn, -want+got: %s", diff)
+		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
 	}
 }
 
@@ -164,13 +164,13 @@ func TestGetOwnershipUsageStatsFeatureFlagOff(t *testing.T) {
 	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", false); err != nil {
 		t.Fatal(err)
 	}
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
 	want := false
 	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipUsageStats.FeatureFlagOn, -want+got: %s", diff)
+		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
 	}
 }
 
@@ -179,14 +179,70 @@ func TestGetOwnershipUsageStatsFeatureFlagAbsent(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	stats, err := GetOwnershipUsageStats(ctx, db)
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
 	want := false
 	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipUsageStats.FeatureFlagOn, -want+got: %s", diff)
+		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
 	}
 }
 
-// TODO: Event logs stats tests pending landing #48493
+func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
+	// Not parallel as we're replacing timeNow.
+	now := time.Date(2020, 10, 13, 12, 0, 0, 0, time.UTC) // Tuesday
+	backupTimeNow := timeNow
+	timeNow = func() time.Time { return now }
+	t.Cleanup(func() { timeNow = backupTimeNow })
+	logger := logtest.Scoped(t)
+	// Event names are different, so the same database can be reused.
+	for eventName, lens := range map[string]func(*types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers{
+		"SelectFileOwnersSearch": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
+			return stats.SelectFileOwnersSearch
+		},
+		"FileHasOwnersSearch": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
+			return stats.FileHasOwnersSearch
+		},
+		"OwnershipPanelOpened": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
+			return stats.OwnershipPanelOpened
+		},
+	} {
+		t.Run(eventName, func(t *testing.T) {
+			t.Parallel()
+			db := database.NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := context.Background()
+			if err := db.EventLogs().Insert(ctx, &database.Event{
+				UserID: 1,
+				Name:   eventName,
+				Source: "BACKEND",
+				// Monday, same week & month as now: MAU+1, WAU+1, DAU - no change.
+				Timestamp: time.Date(2020, 10, 12, 12, 0, 0, 0, time.UTC),
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if err := db.EventLogs().Insert(ctx, &database.Event{
+				UserID: 2,
+				Name:   eventName,
+				Source: "BACKEND",
+				// Saturday, week before, same month, different user: MAU+1, WAU, DAU - no change.
+				Timestamp: time.Date(2020, 10, 10, 12, 0, 0, 0, time.UTC),
+			}); err != nil {
+				t.Fatal(err)
+			}
+			stats, err := GetOwnershipUsageStats(ctx, db)
+			if err != nil {
+				t.Fatalf("GetOwnershipUsageStats err: %s", err)
+			}
+			ptr := func(i int32) *int32 { return &i }
+			want := &types.OwnershipUsageStatisticsActiveUsers{
+				MAU: ptr(2),
+				WAU: ptr(1),
+				DAU: ptr(0),
+			}
+			if diff := cmp.Diff(want, lens(stats)); diff != "" {
+				t.Errorf("GetOwnershipUsageStats().%s -want+got: %s", eventName, diff)
+			}
+		})
+	}
+}
