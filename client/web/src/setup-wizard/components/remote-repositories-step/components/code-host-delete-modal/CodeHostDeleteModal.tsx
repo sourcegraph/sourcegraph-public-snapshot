@@ -64,7 +64,7 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
             <hr className={styles.seperator} />
 
             <Text>
-                There are{' '}
+                There {pluralize('is', codeHost.repoCount ?? 0, 'are')}{' '}
                 <b>
                     {codeHost.repoCount ?? 0} {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')}
                 </b>{' '}
