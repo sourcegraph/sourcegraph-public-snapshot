@@ -4037,7 +4037,7 @@ CREATE TABLE teams (
     display_name text,
     readonly boolean DEFAULT false NOT NULL,
     parent_team_id integer,
-    creator_id integer NOT NULL,
+    creator_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT teams_display_name_max_length CHECK ((char_length(display_name) <= 255)),

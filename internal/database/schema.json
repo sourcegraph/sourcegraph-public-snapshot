@@ -22318,7 +22318,7 @@
           "Name": "creator_id",
           "Index": 6,
           "TypeName": "integer",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
