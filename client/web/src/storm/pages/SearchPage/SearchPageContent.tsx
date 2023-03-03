@@ -11,6 +11,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 
@@ -32,6 +33,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
 
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -103,6 +105,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         queryState={queryState}
                         setQueryState={setQueryState}
                         isSourcegraphDotCom={isSourcegraphDotCom}
+                        enableOwnershipSearch={enableOwnershipSearch}
                     />
                 )}
             </div>

@@ -412,6 +412,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             showQueryExamplesOnNoResultsPage={true}
                             setQueryState={setUserQueryState}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}
+                            // TODO: No access to feature flags in vscode.
+                            enableOwnershipSearch={false}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

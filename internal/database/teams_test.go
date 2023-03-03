@@ -436,6 +436,35 @@ func TestTeams_GetListCount(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+
+		t.Run("IsMember", func(t *testing.T) {
+			opts := ListTeamMembersOpts{TeamID: batchesTeam.ID}
+			members, _, err := store.ListTeamMembers(internalCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(members) != 2 {
+				t.Fatalf("expected exactly 2 members, got %d", len(members))
+			}
+
+			for _, m := range members {
+				ok, err := store.IsTeamMember(internalCtx, batchesTeam.ID, m.UserID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !ok {
+					t.Fatalf("expected %d to be a member but isn't", m.UserID)
+				}
+			}
+
+			ok, err := store.IsTeamMember(internalCtx, batchesTeam.ID, 999999)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ok {
+				t.Fatal("expected not a member but was truthy")
+			}
+		})
 	})
 }
 

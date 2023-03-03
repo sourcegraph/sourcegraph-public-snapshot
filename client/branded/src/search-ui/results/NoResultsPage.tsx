@@ -45,6 +45,7 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
 
 interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
@@ -57,6 +58,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     searchContextsEnabled,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     showSearchContext,
     assetsRoot,
     showQueryExamples,
@@ -90,6 +92,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             telemetryService={telemetryService}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            enableOwnershipSearch={enableOwnershipSearch}
                         />
                     </div>
                 </>

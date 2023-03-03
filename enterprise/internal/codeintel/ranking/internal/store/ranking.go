@@ -178,6 +178,7 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
+		derivativeGraphKey,
 		parentGraphKey,
 		derivativeGraphKey,
 	))
@@ -203,6 +204,7 @@ WITH
 refs AS (
 	SELECT
 		rr.id,
+		rr.upload_id,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
 	WHERE
@@ -223,30 +225,65 @@ locked_refs AS (
 	ON CONFLICT DO NOTHING
 	RETURNING codeintel_ranking_reference_id
 ),
+processable_symbols AS (
+	SELECT r.symbol_names
+	FROM locked_refs lr
+	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
+	JOIN lsif_uploads u ON u.id = r.upload_id
+	WHERE
+		-- Do not re-process references for repository/root/indexers that have already been
+		-- processed. We'll still insert a processed reference so that we know we've done the
+		-- "work", but we'll simply no-op the counts for this input.
+		NOT EXISTS (
+			SELECT 1
+			FROM lsif_uploads u2
+			JOIN codeintel_ranking_references rr ON rr.upload_id = u2.id
+			JOIN codeintel_ranking_references_processed rrp ON rrp.codeintel_ranking_reference_id = rr.id
+			WHERE
+				rrp.graph_key = %s AND
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer
+		) AND
+		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
+		-- process the one associated with the most recently processed upload record. This should
+		-- maximize fresh results.
+		NOT EXISTS (
+			SELECT 1
+			FROM locked_refs lr2
+			JOIN refs r2 ON r2.id = lr2.codeintel_ranking_reference_id
+			JOIN lsif_uploads u2 ON u2.id = r2.upload_id
+			WHERE
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer AND
+				u.finished_at < u2.finished_at
+		)
+),
 referenced_symbols AS (
-	SELECT unnest(symbol_names) AS symbol_name
-	FROM refs
-	WHERE id IN (SELECT id FROM locked_refs)
+	SELECT unnest(r.symbol_names) AS symbol_name
+	FROM processable_symbols r
 ),
 referenced_definitions AS (
 	SELECT
 		rd.repository,
 		rd.document_path,
-		rd.graph_key
+		rd.graph_key,
+		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
-	WHERE
-		rd.graph_key = %s AND
-		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
+	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	WHERE rd.graph_key = %s
+	GROUP BY rd.repository, rd.document_path, rd.graph_key
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
 	SELECT
-		rd.repository,
-		rd.document_path,
-		COUNT(*),
+		rx.repository,
+		rx.document_path,
+		SUM(rx.count),
 		%s
-	FROM referenced_definitions rd
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	FROM referenced_definitions rx
+	GROUP BY rx.repository, rx.document_path
 	RETURNING 1
 )
 SELECT

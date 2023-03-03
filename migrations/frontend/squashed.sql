@@ -4227,7 +4227,8 @@ CREATE TABLE versions (
     service text NOT NULL,
     version text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    first_version text NOT NULL
+    first_version text NOT NULL,
+    auto_upgrade boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE vulnerabilities (
