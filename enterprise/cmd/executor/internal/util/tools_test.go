@@ -44,7 +44,7 @@ func TestGetGitVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "git", []string{"version"}).
 				Return(test.exitStatus, test.stdout)
 
-			version, err := util.GetGitVersion(runner, context.Background())
+			version, err := util.GetGitVersion(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				require.Equal(t, test.expectedErr.Error(), err.Error())
@@ -89,7 +89,7 @@ func TestGetSrcVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "src", []string{"version", "-client-only"}).
 				Return(test.exitStatus, test.stdout)
 
-			version, err := util.GetSrcVersion(runner, context.Background())
+			version, err := util.GetSrcVersion(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				require.Equal(t, test.expectedErr.Error(), err.Error())
@@ -129,7 +129,7 @@ func TestGetDockerVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "docker", []string{"version", "-f", "{{.Server.Version}}"}).
 				Return(test.exitStatus, test.stdout)
 
-			version, err := util.GetDockerVersion(runner, context.Background())
+			version, err := util.GetDockerVersion(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				require.Equal(t, test.expectedErr.Error(), err.Error())
@@ -169,7 +169,7 @@ func TestGetIgniteVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "ignite", []string{"version", "-o", "short"}).
 				Return(test.exitStatus, test.stdout)
 
-			version, err := util.GetIgniteVersion(runner, context.Background())
+			version, err := util.GetIgniteVersion(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				require.Equal(t, test.expectedErr.Error(), err.Error())

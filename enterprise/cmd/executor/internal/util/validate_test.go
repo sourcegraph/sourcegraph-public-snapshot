@@ -57,7 +57,7 @@ func TestValidateGitVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, mock.Anything, mock.Anything).
 				Return(test.exitStatus, fmt.Sprintf(test.stdout))
 
-			err := util.ValidateGitVersion(runner, context.Background())
+			err := util.ValidateGitVersion(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -145,7 +145,7 @@ func TestValidateSrcCLIVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "src", []string{"version", "-client-only"}).
 				Return(0, fmt.Sprintf("Current version: %s", test.currentVersion))
 
-			err = util.ValidateSrcCLIVersion(runner, context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
+			err = util.ValidateSrcCLIVersion(context.Background(), runner, client, apiclient.EndpointOptions{URL: server.URL})
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, errors.Is(err, util.ErrSrcPatchBehind), test.isSrcPatchErr)
@@ -480,7 +480,7 @@ func TestValidateIgniteInstalled(t *testing.T) {
 				test.mockFunc(runner)
 			}
 
-			err := util.ValidateIgniteInstalled(runner, context.Background())
+			err := util.ValidateIgniteInstalled(context.Background(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())

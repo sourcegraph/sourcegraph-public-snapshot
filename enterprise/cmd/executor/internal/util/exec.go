@@ -36,7 +36,7 @@ func (r *RealCmdRunner) LookPath(file string) (string, error) {
 	return exec.LookPath(file)
 }
 
-func execOutput(runner CmdRunner, ctx context.Context, name string, args ...string) (string, error) {
+func execOutput(ctx context.Context, runner CmdRunner, name string, args ...string) (string, error) {
 	b, err := runner.CombinedOutput(ctx, name, args...)
 	if err != nil {
 		cmdLine := strings.Join(append([]string{name}, args...), " ")

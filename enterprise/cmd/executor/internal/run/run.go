@@ -21,11 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Run(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
-	return StandaloneRun(runner, cliCtx.Context, logger, cfg, cliCtx.Bool("verify"))
+func Run(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
+	return StandaloneRun(cliCtx.Context, runner, logger, cfg, cliCtx.Bool("verify"))
 }
 
-func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
+func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		return newQueueTelemetryOptions(runner, ctx, cfg.UseFirecracker, logger)
+		return newQueueTelemetryOptions(ctx, runner, cfg.UseFirecracker, logger)
 	}()
 	logger.Debug("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
 
@@ -55,7 +55,7 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 		}
 
 		// Validate git is of the right version.
-		if err := util.ValidateGitVersion(runner, ctx); err != nil {
+		if err := util.ValidateGitVersion(ctx, runner); err != nil {
 			return err
 		}
 
@@ -66,7 +66,7 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 		if err != nil {
 			return err
 		}
-		if err = util.ValidateSrcCLIVersion(runner, ctx, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
+		if err = util.ValidateSrcCLIVersion(ctx, runner, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
 			if errors.Is(err, util.ErrSrcPatchBehind) {
 				// This is ok. The patch just doesn't match but still works.
 				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
@@ -77,7 +77,7 @@ func StandaloneRun(runner util.CmdRunner, ctx context.Context, logger log.Logger
 
 		if cfg.UseFirecracker {
 			// Validate ignite is installed.
-			if err = util.ValidateIgniteInstalled(runner, ctx); err != nil {
+			if err = util.ValidateIgniteInstalled(ctx, runner); err != nil {
 				return err
 			}
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -31,6 +32,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	conf.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
+	runner := &util.RealCmdRunner{}
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
 		otherConfig := *conf
 		if conf.QueueName == "batches" {
@@ -39,13 +41,13 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 			otherConfig.QueueName = "batches"
 		}
 		go func() {
-			if err := run.StandaloneRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
+			if err := run.StandaloneRun(ctx, runner, observationCtx.Logger, &otherConfig, false); err != nil {
 				observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
 			}
 		}()
 	}
 
-	return run.StandaloneRun(ctx, observationCtx.Logger, conf, false)
+	return run.StandaloneRun(ctx, runner, observationCtx.Logger, conf, false)
 }
 
 var Service service.Service = svc{}

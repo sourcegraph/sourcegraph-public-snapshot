@@ -16,8 +16,8 @@ import (
 )
 
 // ValidateGitVersion validates that installed Git version meets the recommended version.
-func ValidateGitVersion(runner CmdRunner, ctx context.Context) error {
-	gitVersion, err := GetGitVersion(runner, ctx)
+func ValidateGitVersion(ctx context.Context, runner CmdRunner) error {
+	gitVersion, err := GetGitVersion(ctx, runner)
 	if err != nil {
 		return errors.Wrap(err, "getting git version")
 	}
@@ -33,13 +33,13 @@ func ValidateGitVersion(runner CmdRunner, ctx context.Context) error {
 // ValidateSrcCLIVersion queries the latest recommended version of src-cli and makes sure it
 // matches what is installed. If not, an error recommending to use a different
 // version is returned.
-func ValidateSrcCLIVersion(runner CmdRunner, ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
+func ValidateSrcCLIVersion(ctx context.Context, runner CmdRunner, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
 	latestVersion, err := LatestSrcCLIVersion(ctx, client, options)
 	if err != nil {
 		return errors.Wrap(err, "cannot retrieve latest compatible src-cli version")
 	}
 
-	actualVersion, err := GetSrcVersion(runner, ctx)
+	actualVersion, err := GetSrcVersion(ctx, runner)
 	if err != nil {
 		return errors.Wrap(err, "failed to get src-cli version, is it installed?")
 	}
@@ -124,7 +124,7 @@ func ValidateFirecrackerTools(runner CmdRunner) error {
 }
 
 // ValidateIgniteInstalled validates that ignite is installed to the host.
-func ValidateIgniteInstalled(runner CmdRunner, ctx context.Context) error {
+func ValidateIgniteInstalled(ctx context.Context, runner CmdRunner) error {
 	if found, err := ExistsPath(runner, "ignite"); err != nil {
 		return errors.Wrap(err, "failed to lookup ignite")
 	} else if !found {
@@ -140,7 +140,7 @@ Try running "executor install ignite", or:
 	if err != nil {
 		return err
 	}
-	current, err := GetIgniteVersion(runner, ctx)
+	current, err := GetIgniteVersion(ctx, runner)
 	if err != nil {
 		return errors.Wrap(err, "cannot read current ignite version")
 	}

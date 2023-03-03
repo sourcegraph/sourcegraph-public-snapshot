@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func newQueueTelemetryOptions(runner util.CmdRunner, ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
+func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
 	t := queue.TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
@@ -31,23 +31,23 @@ func newQueueTelemetryOptions(runner util.CmdRunner, ctx context.Context, useFir
 
 	var err error
 
-	t.GitVersion, err = util.GetGitVersion(runner, ctx)
+	t.GitVersion, err = util.GetGitVersion(ctx, runner)
 	if err != nil {
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	t.SrcCliVersion, err = util.GetSrcVersion(runner, ctx)
+	t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 	if err != nil {
 		logger.Error("Failed to get src-cli version", log.Error(err))
 	}
 
-	t.DockerVersion, err = util.GetDockerVersion(runner, ctx)
+	t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
 	if err != nil {
 		logger.Error("Failed to get docker version", log.Error(err))
 	}
 
 	if useFirecracker {
-		t.IgniteVersion, err = util.GetIgniteVersion(runner, ctx)
+		t.IgniteVersion, err = util.GetIgniteVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get ignite version", log.Error(err))
 		}

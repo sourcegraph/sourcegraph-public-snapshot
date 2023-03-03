@@ -6,8 +6,8 @@ import (
 )
 
 // GetGitVersion returns the version of git installed on the host.
-func GetGitVersion(runner CmdRunner, ctx context.Context) (string, error) {
-	out, err := execOutput(runner, ctx, "git", "version")
+func GetGitVersion(ctx context.Context, runner CmdRunner) (string, error) {
+	out, err := execOutput(ctx, runner, "git", "version")
 	if err != nil {
 		return "", err
 	}
@@ -15,8 +15,8 @@ func GetGitVersion(runner CmdRunner, ctx context.Context) (string, error) {
 }
 
 // GetSrcVersion returns the version of src installed on the host.
-func GetSrcVersion(runner CmdRunner, ctx context.Context) (string, error) {
-	out, err := execOutput(runner, ctx, "src", "version", "-client-only")
+func GetSrcVersion(ctx context.Context, runner CmdRunner) (string, error) {
+	out, err := execOutput(ctx, runner, "src", "version", "-client-only")
 	if err != nil {
 		return "", err
 	}
@@ -24,11 +24,11 @@ func GetSrcVersion(runner CmdRunner, ctx context.Context) (string, error) {
 }
 
 // GetDockerVersion returns the version of docker installed on the host.
-func GetDockerVersion(runner CmdRunner, ctx context.Context) (string, error) {
-	return execOutput(runner, ctx, "docker", "version", "-f", "{{.Server.Version}}")
+func GetDockerVersion(ctx context.Context, runner CmdRunner) (string, error) {
+	return execOutput(ctx, runner, "docker", "version", "-f", "{{.Server.Version}}")
 }
 
 // GetIgniteVersion returns the version of ignite installed on the host.
-func GetIgniteVersion(runner CmdRunner, ctx context.Context) (string, error) {
-	return execOutput(runner, ctx, "ignite", "version", "-o", "short")
+func GetIgniteVersion(ctx context.Context, runner CmdRunner) (string, error) {
+	return execOutput(ctx, runner, "ignite", "version", "-o", "short")
 }

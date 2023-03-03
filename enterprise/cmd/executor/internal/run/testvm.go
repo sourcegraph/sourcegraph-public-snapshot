@@ -29,7 +29,7 @@ import (
 // more easily.
 // TODO: Add a command to attach to the VM without calling ignite, this way we can inline or replace ignite later
 // more easily.
-func TestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func TestVM(cliCtx *cli.Context, cmdRunner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	repoName := cliCtx.String("repo")
 	revision := cliCtx.String("revision")
 	nameOnly := cliCtx.Bool("name-only")
@@ -42,7 +42,7 @@ func TestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, confi
 	if nameOnly {
 		logOutput = os.Stderr
 	}
-	name, err := createVM(cliCtx.Context, config, repoName, revision, logOutput)
+	name, err := createVM(cliCtx.Context, cmdRunner, config, repoName, revision, logOutput)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func TestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, confi
 	return nil
 }
 
-func createVM(ctx context.Context, config *config.Config, repositoryName, revision string, logOutput io.Writer) (string, error) {
+func createVM(ctx context.Context, cmdRunner util.CmdRunner, config *config.Config, repositoryName, revision string, logOutput io.Writer) (string, error) {
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -68,7 +68,6 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	commandLogger := &writerLogger{w: logOutput}
 	operations := command.NewOperations(&observation.TestContext)
 
-	cmdRunner := &util.RealCmdRunner{}
 	cmd := &command.RealCommand{
 		CmdRunner: cmdRunner,
 		Logger:    log.Scoped("executor-test-vm", ""),

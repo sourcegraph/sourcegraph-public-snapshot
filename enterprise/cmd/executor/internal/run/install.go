@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func InstallIgnite(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallIgnite(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -29,7 +29,7 @@ func InstallIgnite(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger
 	return installIgnite(cliCtx)
 }
 
-func InstallCNI(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
+func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -37,11 +37,11 @@ func InstallCNI(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, c
 	return installCNIPlugins(cliCtx)
 }
 
-func InstallSrc(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
-	return installSrc(runner, cliCtx, logger, config)
+func InstallSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return installSrc(cliCtx, runner, logger, config)
 }
 
-func InstallIPTablesRules(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -56,7 +56,7 @@ func InstallIPTablesRules(runner util.CmdRunner, cliCtx *cli.Context, logger log
 	return setupIPTables(&util.RealCmdRunner{}, recreateChain)
 }
 
-func InstallAll(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	logger.Info("Running executor install ignite")
 	if err := installIgnite(cliCtx); err != nil {
 		return err
@@ -68,7 +68,7 @@ func InstallAll(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, c
 	}
 
 	logger.Info("Running executor install src-cli")
-	if err := installSrc(runner, cliCtx, logger, config); err != nil {
+	if err := installSrc(cliCtx, runner, logger, config); err != nil {
 		return err
 	}
 
@@ -78,24 +78,24 @@ func InstallAll(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, c
 	}
 
 	logger.Info("Running executor install image executor-vm")
-	if err := ensureExecutorVMImage(runner, cliCtx.Context, logger, config); err != nil {
+	if err := ensureExecutorVMImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install image sandbox")
-	if err := ensureSandboxImage(runner, cliCtx.Context, logger, config); err != nil {
+	if err := ensureSandboxImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install image kernel")
-	if err := ensureKernelImage(runner, cliCtx.Context, logger, config); err != nil {
+	if err := ensureKernelImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func InstallImage(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallImage(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -110,18 +110,18 @@ func InstallImage(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger,
 	img := strings.ToLower(cliCtx.Args().First())
 	switch img {
 	case "executor-vm":
-		return ensureExecutorVMImage(runner, cliCtx.Context, logger, config)
+		return ensureExecutorVMImage(cliCtx.Context, runner, logger, config)
 	case "sandbox":
-		return ensureSandboxImage(runner, cliCtx.Context, logger, config)
+		return ensureSandboxImage(cliCtx.Context, runner, logger, config)
 	case "kernel":
-		return ensureKernelImage(runner, cliCtx.Context, logger, config)
+		return ensureKernelImage(cliCtx.Context, runner, logger, config)
 	default:
 		return errors.Newf("invalid image provided %q, expected one of executor-vm, sandbox, kernel", img)
 	}
 }
 
-func ensureExecutorVMImage(runner util.CmdRunner, ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(runner, ctx); err != nil {
+func ensureExecutorVMImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -140,8 +140,8 @@ func ensureExecutorVMImage(runner util.CmdRunner, ctx context.Context, logger lo
 	return nil
 }
 
-func ensureKernelImage(runner util.CmdRunner, ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(runner, ctx); err != nil {
+func ensureKernelImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -160,8 +160,8 @@ func ensureKernelImage(runner util.CmdRunner, ctx context.Context, logger log.Lo
 	return nil
 }
 
-func ensureSandboxImage(runner util.CmdRunner, ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(runner, ctx); err != nil {
+func ensureSandboxImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -292,13 +292,13 @@ func installCNIPlugins(cliCtx *cli.Context) error {
 	return nil
 }
 
-func installSrc(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
 		binDir = "/usr/local/bin"
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(runner, cliCtx.Context, config.UseFirecracker, logger)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
 	copts := queueOptions(config, telemetryOptions)
 	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
 	if err != nil {

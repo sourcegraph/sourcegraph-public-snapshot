@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Validate(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	// First, validate the config is valid.
 	if err := config.Validate(); err != nil {
 		return err
@@ -24,11 +24,11 @@ func Validate(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, con
 	}
 
 	// Validate git is of the right version.
-	if err := util.ValidateGitVersion(runner, cliCtx.Context); err != nil {
+	if err := util.ValidateGitVersion(cliCtx.Context, runner); err != nil {
 		return err
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(runner, cliCtx.Context, config.UseFirecracker, logger)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
 	copts := queueOptions(config, telemetryOptions)
 	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
 	if err != nil {
@@ -37,7 +37,7 @@ func Validate(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, con
 	// TODO: Validate access token.
 	// Validate src-cli is of a good version, rely on the connected instance to tell
 	// us what "good" means.
-	if err = util.ValidateSrcCLIVersion(runner, cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+	if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
 		if errors.Is(err, util.ErrSrcPatchBehind) {
 			// This is ok. The patch just doesn't match but still works.
 			logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
@@ -48,7 +48,7 @@ func Validate(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, con
 
 	if config.UseFirecracker {
 		// Validate ignite is installed.
-		if err = util.ValidateIgniteInstalled(runner, cliCtx.Context); err != nil {
+		if err = util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
 			return err
 		}
 		// Validate all required CNI plugins are installed.

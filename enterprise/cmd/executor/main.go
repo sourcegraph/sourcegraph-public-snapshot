@@ -35,9 +35,9 @@ func main() {
 
 	runner := &util.RealCmdRunner{}
 
-	makeActionHandler := func(handler func(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
+	makeActionHandler := func(handler func(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
-			return handler(runner, ctx, logger, cfg)
+			return handler(ctx, runner, logger, cfg)
 		}
 	}
 
