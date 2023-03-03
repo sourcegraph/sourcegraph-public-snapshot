@@ -26,6 +26,8 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
+    isToggleEnabled: true,
+    onToggleRanking: noop,
 }
 
 const renderSearchResultsInfoBar = (
@@ -40,7 +42,12 @@ const renderSearchResultsInfoBar = (
 describe('SearchResultsInfoBar', () => {
     test('code monitoring feature flag disabled', () => {
         expect(
-            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: false,
+                isToggleEnabled: true,
+                onToggleRanking: noop,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 

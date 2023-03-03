@@ -3,13 +3,13 @@ import React, { useMemo, useState } from 'react'
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Label } from '@sourcegraph/wildcard'
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 import { AuthenticatedUser } from '../../auth'
 
