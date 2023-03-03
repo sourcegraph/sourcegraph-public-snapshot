@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -238,8 +239,8 @@ func (*fakeRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.Repo
 func (*fakeRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
 	return nil, nil
 }
-func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
-	return nil, nil
+func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ citypes.RepoPathRanks, err error) {
+	return citypes.RepoPathRanks{}, nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with

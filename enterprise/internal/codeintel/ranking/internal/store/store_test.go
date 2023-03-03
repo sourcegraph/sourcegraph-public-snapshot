@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -106,6 +107,39 @@ func TestDocumentRanks(t *testing.T) {
 	}
 }
 
+func TestGetReferenceCountStatistics(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := newInternal(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	if err := store.SetDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918}); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+
+	logmean, err := store.GetReferenceCountStatistics(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error getting reference count statistics: %s", err)
+	}
+	if expected := 8.5715; !cmpFloat(logmean, expected) {
+		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
+	}
+}
+
 func TestLastUpdatedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -191,4 +225,10 @@ func TestUpdatedAfter(t *testing.T) {
 			t.Fatal("expected no repos")
 		}
 	}
+}
+
+const epsilon = 0.0001
+
+func cmpFloat(x, y float64) bool {
+	return math.Abs(x-y) < epsilon
 }
