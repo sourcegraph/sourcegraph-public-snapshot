@@ -2372,8 +2372,8 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsEnabled *bool `json:"codeIntelRanking.documentReferenceCountsEnabled,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsGraphKey description: The string used to group document reference counts for a single graph
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
-	// CodeIntelRankingMapReduceInterval description: The interval at which to run the map/reduce job that computes document reference counts. Default is 72hrs.
-	CodeIntelRankingMapReduceInterval int `json:"codeIntelRanking.mapReduceInterval,omitempty"`
+	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.
+	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
@@ -2602,7 +2602,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
-	delete(m, "codeIntelRanking.mapReduceInterval")
+	delete(m, "codeIntelRanking.staleResultsAge")
 	delete(m, "completions")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")

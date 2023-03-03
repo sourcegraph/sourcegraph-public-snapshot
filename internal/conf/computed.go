@@ -280,9 +280,9 @@ func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
 	return "dev"
 }
 
-func CodeIntelRankingMapReducerInterval() time.Duration {
-	if val := Get().CodeIntelRankingMapReduceInterval; val > 0 {
-		return time.Duration(val)
+func CodeIntelRankingStaleResultAge() time.Duration {
+	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
+		return time.Duration(val) * time.Hour
 	}
 	return 72 * time.Hour
 }

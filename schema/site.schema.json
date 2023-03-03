@@ -640,10 +640,10 @@
       "group": "Code intelligence",
       "examples": ["dev"]
     },
-    "codeIntelRanking.mapReduceInterval": {
-      "description": "The interval at which to run the map/reduce job that computes document reference counts. Default is 72hrs.",
+    "codeIntelRanking.staleResultsAge": {
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.",
       "type": "integer",
-      "default": 259200000,
+      "default": 72,
       "group": "Code intelligence"
     },
     "corsOrigin": {
