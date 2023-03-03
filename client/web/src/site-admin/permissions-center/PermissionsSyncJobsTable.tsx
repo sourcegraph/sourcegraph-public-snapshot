@@ -78,18 +78,18 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     return (
         <div>
+            <PageHeader
+                path={[{ text: 'Permissions Sync Dashboard' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        List of permissions sync jobs. Learn more about{' '}
+                        <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
+                    </>
+                }
+                className="mb-3"
+            />
             <Container>
-                <PageHeader
-                    path={[{ text: 'Permissions Sync Dashboard' }]}
-                    headingElement="h2"
-                    description={
-                        <>
-                            List of permissions sync jobs. Learn more about{' '}
-                            <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
-                        </>
-                    }
-                    className="mb-3"
-                />
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {!connection && <ConnectionLoading />}
