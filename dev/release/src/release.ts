@@ -39,7 +39,7 @@ import {
     getTrackingIssue,
     IssueLabel,
     localSourcegraphRepo,
-    queryIssues,
+    queryIssues, releaseBlockerLabel,
     releaseName,
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
@@ -1044,6 +1044,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                         base: 'main',
                         head: `${version}-bake`,
                         edits: mainBranchEdits,
+                        labels: [releaseBlockerLabel]
                     },
                     {
                         ...prDetails,
@@ -1052,6 +1053,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                         base: releaseBranch,
                         head: `${version}-bake-rb`,
                         edits: releaseBranchEdits,
+                        labels: [releaseBlockerLabel]
                     },
                 ],
                 dryRun: config.dryRun.changesets,
