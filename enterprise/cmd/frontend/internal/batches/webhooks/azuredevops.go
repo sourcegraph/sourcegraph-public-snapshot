@@ -133,6 +133,9 @@ func (h *AzureDevOpsWebhook) enqueueAzureDevOpsChangesetSyncFromEvent(ctx contex
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
 		ExternalServiceType: h.ServiceType,
 	})
+	if err != nil {
+		return errors.Wrap(err, "getting changeset")
+	}
 
 	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}); err != nil {
 		return errors.Wrap(err, "enqueuing changeset sync")
