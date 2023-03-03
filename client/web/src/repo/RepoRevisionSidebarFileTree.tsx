@@ -26,10 +26,11 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
-import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
+
+export const MAX_TREE_ENTRIES = 2500
 
 const QUERY = gql`
     query FileTreeEntries(
