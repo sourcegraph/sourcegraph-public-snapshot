@@ -453,7 +453,7 @@ func derefString(s *string) string {
 	return *s
 }
 
-func resolverUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) *PermissionsConnection {
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) *PermissionsConnection {
 	if isFreePlan(licenseInfo) {
 		return nil
 	}
