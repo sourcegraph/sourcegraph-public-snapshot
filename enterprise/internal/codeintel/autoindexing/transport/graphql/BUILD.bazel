@@ -19,7 +19,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/codeintel/autoindexing/internal/inference",
         "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
@@ -54,7 +53,6 @@ go_test(
     ],
     embed = [":graphql"],
     deps = [
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",

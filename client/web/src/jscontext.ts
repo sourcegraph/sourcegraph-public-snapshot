@@ -74,6 +74,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
 
+    /** Whether instance allows to change its settings manually in UI */
+    extsvcConfigAllowEdits: boolean
+
+    /** Whether instance allows is configured by external service configuration file */
+    extsvcConfigFileExists: boolean
+
     /** URL path to image/font/etc. assets on server */
     assetsRoot: string
 
@@ -101,6 +107,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     needsSiteInit: boolean
 
     /**
+     * Whether at least one code host connections needs to be connected.
+     */
+    needsRepositoryConfiguration: boolean
+
+    /**
      * Emails support enabled
      */
     emailEnabled: boolean
@@ -118,6 +129,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
+
+    /** Whether the instance is running on macOS. */
+    runningOnMacOS: boolean
 
     /**
      * Likely running within a Docker container under a Mac host OS.

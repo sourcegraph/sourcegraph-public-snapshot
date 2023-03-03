@@ -16,7 +16,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
