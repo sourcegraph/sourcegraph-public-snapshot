@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
@@ -127,20 +127,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 }
                             >
                                 <Tab data-tab-content="files">
-                                    <span className="tablist-wrapper--tab-label">
-                                        Files
-                                        {enableBlobPageSwitchAreasShortcuts && (
-                                            <kbd className="d-inline-flex align-items-center"> F</kbd>
-                                        )}
-                                    </span>
+                                    <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
                                 <Tab data-tab-content="symbols">
-                                    <span className="tablist-wrapper--tab-label">
-                                        Symbols
-                                        {enableBlobPageSwitchAreasShortcuts && (
-                                            <kbd className="d-inline-flex align-items-center"> S</kbd>
-                                        )}
-                                    </span>
+                                    <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
                             </TabList>
                             <div

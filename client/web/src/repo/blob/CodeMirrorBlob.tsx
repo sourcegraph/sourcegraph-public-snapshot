@@ -34,7 +34,6 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
-import { focusCodeEditorShortcutLabel } from './codemirror/focus-code-editor-shortcut-label'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
@@ -165,8 +164,6 @@ const blameDecorationsCompartment = new Compartment()
 const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
 const wrapCodeCompartment = new Compartment()
-// Compartment to conditionally show focus code editor shortcut label
-const keyboardShortcutLabelCompartment = new Compartment()
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -300,7 +297,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
-            keyboardShortcutLabelCompartment.of([]),
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
@@ -356,16 +352,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }
         }
     }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
-
-    // Show focus code editor shortcut if blob page shortcuts experimental feature enabled
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor && enableBlobPageSwitchAreasShortcuts) {
-            editor.dispatch({
-                effects: keyboardShortcutLabelCompartment.reconfigure(focusCodeEditorShortcutLabel),
-            })
-        }
-    }, [enableBlobPageSwitchAreasShortcuts])
 
     // Propagate props changes to extensions
     useEffect(() => {
