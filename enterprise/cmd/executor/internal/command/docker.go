@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+
+	"github.com/sourcegraph/sourcegraph/internal/dockertools"
 )
 
 // ScriptsPath is the location relative to the executor workspace where the executor
@@ -38,10 +40,8 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 		hostDir = filepath.Join(options.ResourceOptions.DockerHostMountPath, filepath.Base(dir))
 	}
 
-	// TODO check that the original spec.Image isn't fully qualified so we don't inject our path
-	// and create an invalid docker name
 	image := spec.Image
-	if options.DockerOptions.RegistryUrl != "" {
+	if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).Registry == "" {
 		image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
 	}
 

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -308,6 +309,55 @@ func TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefixAndRepo(t *testin
 	}
 
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+
+}
+
+// TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefixAndFullyQualifiedContainer tests
+// that if a container is specified that is fully qualified with a registry, we do not
+// inject our configured prefix registry
+func TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefixAndFullyQualifiedContainer(t *testing.T) {
+	image := "index.docker.io/sourcegraph/executor:insiders"
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Image:      image,
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Operation:  makeTestOperation(),
+		},
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 4,
+				Memory:  "20G",
+			},
+			DockerOptions: DockerOptions{
+				RegistryUrl: "us-central1.pkg.dev/project/repo",
+			},
+		},
+		"/tmp/docker-config",
+	)
+
+	expected := command{
+		Command: []string{
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
+			"--cpus", "4",
+			"--memory", "20G",
+			"-v", "/proj/src:/data",
+			"-w", "/data/subdir",
+			"--entrypoint",
+			"/bin/sh",
+			image,
+			"/data/.sourcegraph-executor/myscript.sh",
+		},
+	}
+
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		fmt.Println("want: ", expected.Command)
+		fmt.Println("got: ", actual.Command)
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 

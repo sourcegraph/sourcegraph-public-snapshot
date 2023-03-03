@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/dockertools"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -143,13 +144,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		}
 	}()
 
-	// TODO check that the original spec.Image isn't fully qualified so we don't inject our path
-	// and create an invalid docker name
-
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		image := dockerStep.Image
-		if options.DockerOptions.RegistryUrl != "" {
+		if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).Registry == "" {
 			image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
 		}
 
