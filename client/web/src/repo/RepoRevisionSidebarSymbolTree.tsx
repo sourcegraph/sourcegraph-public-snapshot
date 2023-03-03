@@ -13,8 +13,8 @@ import { Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
 import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
-import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
 interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]

@@ -27,6 +27,7 @@ import {
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
+
 import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'

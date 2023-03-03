@@ -9,7 +9,7 @@ export interface FocusableTreeProps {
 /**
  * Renders {@link Tree} and focuses it when {@link focusKey} changes.
  */
-export function FocusableTree<N extends TreeNode>(props: FocusableTreeProps & TreeProps<N>) {
+export function FocusableTree<N extends TreeNode>(props: FocusableTreeProps & TreeProps<N>): JSX.Element {
     const { focusKey, ...rest } = props
 
     const ref = useRef<HTMLUListElement>(null)
