@@ -4,9 +4,9 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { ProductStatusType } from '@sourcegraph/wildcard'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
-import { ProductStatusType } from '@sourcegraph/wildcard'
 
 export interface QueryExamplesContent {
     repositoryName: string
@@ -203,7 +203,7 @@ export function useQueryExamples(
                               title: 'Explore code ownership',
                               productStatus: 'experimental' as const,
                               queryExamples: [
-                                  { id: 'type-has-owner', query: `file:^some_path file:has.owner(johndoe)` },
+                                  { id: 'type-has-owner', query: 'file:^some_path file:has.owner(johndoe)' },
                                   { id: 'type-select-file-owners', query: 'file:^some_path select:file.owners' },
                               ],
                           },
@@ -218,5 +218,5 @@ export function useQueryExamples(
                       ]),
             ],
         ]
-    }, [queryExamplesContent, isSourcegraphDotCom])
+    }, [queryExamplesContent, isSourcegraphDotCom, enableOwnershipSearch])
 }
