@@ -37,5 +37,9 @@ export const STATUS_MESSAGES = gql`
                 }
             }
         }
+
+        repositories {
+            totalCount
+        }
     }
 `
