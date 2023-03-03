@@ -101,7 +101,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                             <Input
                                 type="search"
                                 placeholder={
-                                    filters.searchType === '' ? 'Select a search context' : 'Search repositories...'
+                                    filters.searchType === ''
+                                        ? 'Select a search context'
+                                        : filters.searchType === PermissionsSyncJobsSearchType.USER
+                                        ? 'Search users...'
+                                        : 'Search repositories...'
                                 }
                                 name="query"
                                 value={filters.query}

@@ -33,6 +33,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
+    ("identifier.constant",     SyntaxKind::IdentifierConstant),
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
@@ -517,22 +518,6 @@ mod test {
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
         let src = "// Hello World";
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_highlights_simple_main() -> Result<(), Error> {
-        let src = r#"package main
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, world", 5)
-}
-"#;
-
         let document = index_language("go", src)?;
         insta::assert_snapshot!(dump_document(&document, src));
 

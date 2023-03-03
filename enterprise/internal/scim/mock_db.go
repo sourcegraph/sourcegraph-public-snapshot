@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// getMockDB returns a mock database that contains the given users.
+// Note: IDs of users must be ascending.
 func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 	userStore := database.NewMockUserStore()
 	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -37,15 +39,6 @@ func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 		return applyLimitOffset(users, opt.LimitOffset)
 	})
 	userStore.CountFunc.SetDefaultReturn(4, nil)
-	userStore.CreateFunc.SetDefaultHook(func(ctx context.Context, user database.NewUser) (*types.User, error) {
-		nextID := 0
-		if len(users) > 0 {
-			nextID = int(users[len(users)-1].ID) + 1
-		}
-		newUser := types.UserForSCIM{User: types.User{ID: int32(nextID), Username: user.Username, DisplayName: user.DisplayName}}
-		users = append(users, &newUser)
-		return &newUser.User, nil
-	})
 	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 		for _, user := range users {
 			if user.Username == username {
@@ -84,7 +77,7 @@ func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (*types.User, error) {
-		nextID := 0
+		nextID := 1
 		if len(users) > 0 {
 			nextID = int(users[len(users)-1].ID) + 1
 		}

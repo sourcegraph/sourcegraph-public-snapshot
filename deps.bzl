@@ -5682,6 +5682,13 @@ def go_dependencies():
         sum = "h1:bHXZmw8nTgZin4Nv7JuaLs0KG5x54EQR7migYTd1zrk=",
         version = "v1.1.0",
     )
+    go_repository(
+        name = "com_github_pandatix_go_cvss",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/pandatix/go-cvss",
+        sum = "h1:9441i+Sn/P/TP9kNBl3kI7mwYtNYFr1eN8JdsiybiMM=",
+        version = "v0.5.2",
+    )
 
     go_repository(
         name = "com_github_pascaldekloe_goe",
@@ -6595,8 +6602,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:rGDjagbwOFFb40KX7qKLmUIrCZLURo0JANUC4b/7s+0=",
-        version = "v0.0.0-20230227001314-5f25b3073480",
+        sum = "h1:YbrRL79OskPjGKBg6HtJABAP3pOnMQ+Y0P6MSBkpQbw=",
+        version = "v0.0.0-20230302171514-a4018300b272",
     )
 
     go_repository(
@@ -6688,8 +6695,8 @@ def go_dependencies():
         name = "com_github_stretchr_testify",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/stretchr/testify",
-        sum = "h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=",
-        version = "v1.8.1",
+        sum = "h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=",
+        version = "v1.8.2",
     )
     go_repository(
         name = "com_github_subosito_gotenv",

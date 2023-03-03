@@ -36,6 +36,7 @@ go_test(
     ],
     embed = [":store"],
     deps = [
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",

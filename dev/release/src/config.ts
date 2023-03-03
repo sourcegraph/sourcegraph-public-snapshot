@@ -64,6 +64,7 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         ...(def as ReleaseDates),
         ...(def as ReleaseCaptainInformation),
         branch: `${version.major}.${version.minor}`,
+        srcCliVersion: config.in_progress.srcCliVersion ? new SemVer(config.in_progress.srcCliVersion) : undefined,
     }
 }
 
@@ -152,6 +153,7 @@ export interface ActiveRelease extends ReleaseCaptainInformation, ReleaseDates {
     version: SemVer
     previous: SemVer
     branch: string
+    srcCliVersion?: SemVer
 }
 
 export interface ActiveReleaseDefinition {
@@ -166,6 +168,7 @@ export interface ReleaseCaptainInformation {
 
 export interface InProgress extends ReleaseCaptainInformation {
     releases: ActiveReleaseDefinition[]
+    srcCliVersion?: string
 }
 
 export interface ReleaseConfig {
@@ -250,4 +253,11 @@ async function getScheduledReleaseWithInput(
         saveReleaseConfig(config)
     }
     return scheduled
+}
+
+export function setSrcCliVersion(config: ReleaseConfig, version: string): void {
+    if (config.in_progress) {
+        config.in_progress.srcCliVersion = version
+    }
+    saveReleaseConfig(config)
 }
