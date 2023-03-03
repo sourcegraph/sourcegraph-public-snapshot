@@ -1386,7 +1386,7 @@ describe('searchResultsToFileContent', () => {
                     displayName: 'Example Team',
                 },
             ],
-            'Match type,Handle,Email,User or team name,Display name\nperson,alice,alice@example.com,alice,Alice Example\nperson,bob,,,\nteam,example-team,example-team@example.com,example-team,Example Team',
+            'Match type,Handle,Email,User or team name,Display name,Profile URL\nperson,alice,alice@example.com,alice,Alice Example,http://localhost:3443/users/alice\nperson,bob,,,,\nteam,example-team,example-team@example.com,example-team,Example Team,http://localhost:3443/teams/example-team',
         ],
     ]
 
