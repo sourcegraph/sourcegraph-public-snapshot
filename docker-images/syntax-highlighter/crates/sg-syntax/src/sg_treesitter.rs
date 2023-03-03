@@ -33,6 +33,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
+    ("identifier.constant",     SyntaxKind::IdentifierConstant),
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
