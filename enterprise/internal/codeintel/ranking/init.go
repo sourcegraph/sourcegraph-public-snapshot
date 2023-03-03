@@ -15,13 +15,11 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
-	gitserverClient GitserverClient,
 ) *Service {
 	return newService(
 		scopedContext("service", observationCtx),
 		store.New(scopedContext("store", observationCtx), db),
 		lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB),
-		gitserverClient,
 		conf.DefaultClient(),
 	)
 }

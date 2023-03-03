@@ -797,6 +797,26 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    SELECT
+        COUNT(r.v) AS num_paths,
+        SUM(LOG(2, r.v::int)) AS refcount_logsum
+    INTO
+        NEW.num_paths,
+        NEW.refcount_logsum
+    FROM jsonb_each(
+        CASE WHEN NEW.payload::text = 'null'
+            THEN '{}'::jsonb
+            ELSE COALESCE(NEW.payload, '{}'::jsonb)
+        END
+    ) r(k, v);
+
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -1730,7 +1750,9 @@ CREATE TABLE codeintel_path_ranks (
     payload jsonb NOT NULL,
     "precision" double precision NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text
+    graph_key text,
+    num_paths integer,
+    refcount_logsum double precision
 );
 
 CREATE TABLE codeintel_ranking_definitions (
@@ -5540,6 +5562,8 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE 
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
 
+CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
+
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
@@ -5581,6 +5605,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
