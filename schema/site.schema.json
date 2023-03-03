@@ -627,6 +627,25 @@
       "group": "Code intelligence",
       "default": false
     },
+    "codeIntelRanking.documentReferenceCountsEnabled": {
+      "description": "Enables/disables the document reference counts feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsGraphKey": {
+      "description": "The string used to group document reference counts for a single graph",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": ["dev"]
+    },
+    "codeIntelRanking.staleResultsAge": {
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.",
+      "type": "integer",
+      "default": 72,
+      "group": "Code intelligence"
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
