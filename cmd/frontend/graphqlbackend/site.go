@@ -265,9 +265,8 @@ var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
 
 var schemaFactories = append(
 	migratorshared.DefaultSchemaFactories,
-	// TODO
 	// Special schema factory for dev environment.
-	// devSchemaFactory,
+	devSchemaFactory,
 )
 
 var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
