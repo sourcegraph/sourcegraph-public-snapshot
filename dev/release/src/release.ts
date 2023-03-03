@@ -1055,7 +1055,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                         edits: releaseBranchEdits,
                     },
                 ],
-                dryRun: true,
+                dryRun: config.dryRun.changesets,
             })
             console.log('Merge the following pull requests:\n')
             for (const set of sets) {
