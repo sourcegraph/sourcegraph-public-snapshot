@@ -14,6 +14,7 @@ import (
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
 )
 
@@ -26,7 +27,7 @@ type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	db          database.DB
 	clientID    string
-	allowOrgs   []string
+	allowOrgs   map[string]struct{}
 	allowSignup *bool
 }
 
@@ -109,7 +110,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, token *oauth2.Token) (bool, error) {
-	if len(s.allowOrgs) == 0 {
+	if len(maps.Keys(s.allowOrgs)) == 0 {
 		return true, nil
 	}
 
@@ -135,13 +136,8 @@ func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, token *oauth2
 		return false, errors.Wrap(err, "failed to list organizations of user")
 	}
 
-	allowedOrgs := map[string]struct{}{}
-	for _, org := range s.allowOrgs {
-		allowedOrgs[org] = struct{}{}
-	}
-
 	for _, org := range authorizedOrgs {
-		if _, ok := allowedOrgs[org.Name]; ok {
+		if _, ok := s.allowOrgs[org.Name]; ok {
 			return true, nil
 		}
 	}

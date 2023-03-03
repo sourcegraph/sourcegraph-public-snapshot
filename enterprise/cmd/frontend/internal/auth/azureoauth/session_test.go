@@ -71,25 +71,29 @@ func Test_verifyAllowOrgs(t *testing.T) {
 
 	testCases := []struct {
 		name                           string
-		allowOrgs                      []string
+		allowOrgs                      map[string]struct{}
 		expectedAllow                  bool
 		expectedMockServerInvokedCount int
 	}{
 		{
 			name:                           "empty allowOrgs",
-			allowOrgs:                      []string{},
+			allowOrgs:                      map[string]struct{}{},
 			expectedAllow:                  true,
 			expectedMockServerInvokedCount: 0,
 		},
 		{
-			name:                           "user is not part of org",
-			allowOrgs:                      []string{"this-org-does-not-exist"},
+			name: "user is not part of org",
+			allowOrgs: map[string]struct{}{
+				"this-org-does-not-exist": {},
+			},
 			expectedAllow:                  false,
 			expectedMockServerInvokedCount: 2,
 		},
 		{
-			name:                           "user is part of org",
-			allowOrgs:                      []string{"foo"},
+			name: "user is part of org",
+			allowOrgs: map[string]struct{}{
+				"foo": {},
+			},
 			expectedAllow:                  true,
 			expectedMockServerInvokedCount: 2,
 		},
