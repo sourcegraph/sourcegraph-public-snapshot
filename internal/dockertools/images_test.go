@@ -81,6 +81,30 @@ var tt = []struct {
 			Tag:       "insiders",
 		},
 	},
+	{
+		In: "nodejs:16",
+		Want: ImageReference{
+			Name: "nodejs",
+			Tag:  "16",
+		},
+	},
+	{
+		In: "arm64/nodejs:16",
+		Want: ImageReference{
+			Namespace: "arm64",
+			Name:      "nodejs",
+			Tag:       "16",
+		},
+	},
+	{
+		In: "privateartifactory.sgdev.org/nodejs/nodejs:16",
+		Want: ImageReference{
+			Registry:  "privateartifactory.sgdev.org",
+			Namespace: "nodejs",
+			Name:      "nodejs",
+			Tag:       "16",
+		},
+	},
 }
 
 func TestParseImageString(t *testing.T) {
