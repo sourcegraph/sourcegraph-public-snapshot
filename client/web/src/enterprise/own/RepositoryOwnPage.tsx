@@ -53,8 +53,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 description={
                     <>
                         Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
-                        CODEOWNERS file.
-                        <Link to="/help/own">Learn more about Sourcegraph Own</Link>
+                        CODEOWNERS file. <Link to="/help/own">Learn more about Sourcegraph Own.</Link>
                     </>
                 }
             >
