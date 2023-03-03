@@ -1043,10 +1043,18 @@ func TestRateLimitRetry(t *testing.T) {
 	client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
 	client.waitForRateLimit = true
 
-	t.Run("primary rate limit hit", func(t *testing.T) {
-		numRequests = 0
-		hitPrimaryLimit = true
+	// Defer at start of test to reset server conditions
+	done := func() {
+		hitPrimaryLimit = false
+		hitSecondaryLimit = false
 		succeeded = false
+		numRequests = 0
+		client.waitForRateLimit = true
+	}
+
+	t.Run("primary rate limit hit", func(t *testing.T) {
+		defer done()
+		hitPrimaryLimit = true
 
 		// We do a simple request to test the retry
 		_, err = client.GetVersion(ctx)
@@ -1059,9 +1067,7 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 
 	t.Run("secondary rate limit hit", func(t *testing.T) {
-		numRequests = 0
 		hitSecondaryLimit = true
-		succeeded = false
 
 		// We do a simple request to test the retry
 		_, err = client.GetVersion(ctx)
@@ -1074,10 +1080,7 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 
 	t.Run("no rate limit hit", func(t *testing.T) {
-		hitPrimaryLimit = false
-		hitSecondaryLimit = false
-		succeeded = false
-		numRequests = 0
+		defer done()
 
 		_, err = client.GetVersion(ctx)
 		require.NoError(t, err)
@@ -1087,10 +1090,9 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 
 	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
+		defer done()
 		client.waitForRateLimit = false
 		hitPrimaryLimit = true
-		succeeded = false
-		numRequests = 0
 
 		_, err = client.GetVersion(ctx)
 		require.Error(t, err)
