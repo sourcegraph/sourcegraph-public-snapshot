@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Data below was generated using the testdata/generate_similarity_search_test_data.py script.
+
 // Each line represents a separate embedding.
 var embeddings = []float32{
 	0.5061, 0.6595, 0.5558,
