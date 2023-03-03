@@ -78,7 +78,10 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 />
                             </video>
                         </aside>
-                        <CodeInsightsDescription className={styles.heroDescriptionBlock} />
+                        <CodeInsightsDescription
+                            isSourcegraphApp={isSourcegraphApp}
+                            className={styles.heroDescriptionBlock}
+                        />
                     </Card>
 
                     <CallToActionBanner variant="filled">
