@@ -34,7 +34,7 @@ interface SearchConsolePageProps
     extends SearchStreamingProps,
         Omit<
             StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext'
+            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
         >,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
