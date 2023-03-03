@@ -1,7 +1,0 @@
-[]*embeddings.RepoEmbeddingRowMetadata{
-	{
-		FileName: "a",
-	},
-	{FileName: "b"},
-	{FileName: "c"},
-}

@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -50,7 +51,9 @@ func searchEmbeddingIndex(
 	query []float32,
 	nResults int,
 ) []embeddings.EmbeddingSearchResult {
-	rows := index.SimilaritySearch(query, nResults)
+	nWorkers := runtime.GOMAXPROCS(0)
+	rows := index.SimilaritySearch(query, nResults, nWorkers)
+
 	results := make([]embeddings.EmbeddingSearchResult, len(rows))
 	for idx, row := range rows {
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
