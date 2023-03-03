@@ -79,7 +79,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "GitHub default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitHub,
-			want:   1.3888888888888888,
+			want:   rate.Inf,
 		},
 		{
 			name:   "Bitbucket Server default",

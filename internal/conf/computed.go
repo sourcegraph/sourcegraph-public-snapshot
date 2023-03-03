@@ -266,6 +266,27 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	return *val
 }
 
+func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
+	if enabled := Get().CodeIntelRankingDocumentReferenceCountsEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsGraphKey; val != "" {
+		return val
+	}
+	return "dev"
+}
+
+func CodeIntelRankingStaleResultAge() time.Duration {
+	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
+		return time.Duration(val) * time.Hour
+	}
+	return 72 * time.Hour
+}
+
 func EmbeddingsEnabled() bool {
 	embeddingsConfig := Get().Embeddings
 	return embeddingsConfig != nil && embeddingsConfig.Enabled

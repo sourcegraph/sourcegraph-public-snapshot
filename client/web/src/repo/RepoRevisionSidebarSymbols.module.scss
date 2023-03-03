@@ -61,3 +61,8 @@
     list-style-type: none;
     padding-left: 0;
 }
+
+.tree-node {
+    // Account for the sticky input box at the top of the sidebar
+    scroll-margin-top: 2.75rem;
+}

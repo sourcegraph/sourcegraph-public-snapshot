@@ -25,6 +25,6 @@ func Init(
 ) error {
 	g := gitserver.NewClient()
 	o := own.NewService(g, db)
-	enterpriseServices.OwnResolver = resolvers.New(db, o)
+	enterpriseServices.OwnResolver = resolvers.New(db, g, o)
 	return nil
 }

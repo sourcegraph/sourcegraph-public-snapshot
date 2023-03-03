@@ -39,6 +39,12 @@ export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
                 members {
                     totalCount
                 }
+                creator {
+                    username
+                    displayName
+                    avatarURL
+                    url
+                }
             }
         `,
         {

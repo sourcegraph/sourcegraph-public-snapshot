@@ -1730,6 +1730,49 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedSymbolBlocksCount   *int32
 }
 
+type OwnershipUsageStatistics struct {
+	// Whether the `search-ownership` feature flag is on anywhere on the instance.
+	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
+
+	// Statistics about ownership data in repositories
+	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+
+	// Activity of selecting owners as search results using
+	// `select:file.owners`.
+	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+
+	// Activity of using a `file:has.owners` predicate in search.
+	FileHasOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owners_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+}
+
+type OwnershipUsageReposCounts struct {
+	// Total number of repositories. Can be used in computing adoption
+	// ratio as denominator to number of repos with ownership.
+	Total *int32 `json:"total,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data (of any source, either CODEOWNERS file or API).
+	WithOwnership *int32 `json:"with_ownership,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data ingested through the API.
+	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
+}
+
+type OwnershipUsageStatisticsActiveUsers struct {
+	// Daily-Active Users
+	DAU *int32 `json:"dau,omitempty"`
+
+	// Weekly-Active Users
+	WAU *int32 `json:"wau,omitempty"`
+
+	// Monthly-Active Users
+	MAU *int32 `json:"mau,omitempty"`
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
