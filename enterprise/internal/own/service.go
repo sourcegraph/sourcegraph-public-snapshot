@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,16 +34,14 @@ var _ Service = &service{}
 func NewService(g gitserver.Client, db database.DB) Service {
 	return &service{
 		gitserverClient: g,
-		userStore:       db.Users(),
-		teamStore:       db.Teams(),
+		db:              edb.NewEnterpriseDB(db),
 		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
 	}
 }
 
 type service struct {
 	gitserverClient gitserver.Client
-	userStore       database.UserStore
-	teamStore       database.TeamStore
+	db              edb.EnterpriseDB
 
 	mu         sync.Mutex
 	ownerCache map[ownerKey]codeowners.ResolvedOwner
@@ -68,6 +67,18 @@ var codeownersLocations = []string{
 // RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
 // from one of the possible codeownersLocations. It returns nil if no match is found.
 func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
+	repo, err := s.db.Repos().GetByName(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+	repoID := repo.ID
+	ingestedCodeowners, err := s.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	if ingestedCodeowners != nil {
+		return codeowners.NewRuleset(ingestedCodeowners.Proto), nil
+	}
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,
@@ -123,13 +134,13 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 	var resolvedOwner codeowners.ResolvedOwner
 	var err error
 	if handle != "" {
-		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.db.Teams().GetTeamByName)
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
 	} else if email != "" {
 		// Teams cannot be identified by emails, so we do not pass in a team getter here.
-		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.db.Users().GetByVerifiedEmail, nil)
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
