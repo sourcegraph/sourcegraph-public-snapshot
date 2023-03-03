@@ -58,6 +58,7 @@ import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -122,11 +123,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
-    const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
+    const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
     const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
         enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
     }))
+    const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
+
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const lineOrRange = useMemo(
@@ -307,9 +310,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         return `${repoString}`
     }
 
-    const [isBlameVisible] = useBlameVisibility()
+    const [isBlameVisible] = useBlameVisibility(isPackage)
     const blameHunks = useBlameHunks(
-        { repoName, revision, filePath, enableCodeMirror },
+        { isPackage, repoName, revision, filePath, enableCodeMirror },
         props.platformContext.sourcegraphURL
     )
 
@@ -367,7 +370,12 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {({ actionType }) => (
-                    <ToggleBlameAction actionType={actionType} source="repoHeader" renderMode={renderMode} />
+                    <ToggleBlameAction
+                        actionType={actionType}
+                        source="repoHeader"
+                        renderMode={renderMode}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
@@ -377,7 +385,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {context => (
-                    <ToggleHistoryPanel {...context} key="toggle-blob-panel" location={location} navigate={navigate} />
+                    <ToggleHistoryPanel
+                        {...context}
+                        key="toggle-blob-panel"
+                        location={location}
+                        navigate={navigate}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
@@ -492,7 +506,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     return (
         <div className={className}>
             {alwaysRender}
-            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} />}
+            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} isPackage={isPackage} />}
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"

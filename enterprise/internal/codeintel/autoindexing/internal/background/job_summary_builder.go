@@ -64,18 +64,18 @@ func NewSummaryBuilder(
 
 					return err
 				}
-				indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit)
-				if err != nil {
-					if errors.As(err, &inference.LimitError{}) {
-						continue
-					}
+				// indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit)
+				// if err != nil {
+				// 	if errors.As(err, &inference.LimitError{}) {
+				// 		continue
+				// 	}
 
-					return err
-				}
+				// 	return err
+				// }
 
 				inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
 				inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-				inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+				// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 				if err := store.SetConfigurationSummary(ctx, repositoryWithCount.RepositoryID, repositoryWithCount.Count, inferredAvailableIndexers); err != nil {
 					return err

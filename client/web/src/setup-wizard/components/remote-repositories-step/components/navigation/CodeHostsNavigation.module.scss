@@ -59,15 +59,12 @@
     }
 
     &--with-more-link {
-        border-top: 1px solid var(--border-color);
         position: sticky;
         bottom: 0;
-        background-color: var(--light-text);
-        margin-top: auto;
-        margin-bottom: -1rem;
-        margin-left: -1rem;
-        margin-right: -1rem;
         padding: 0 0.5rem;
+        margin: auto -1rem -1rem;
+        background-color: var(--color-bg-1);
+        border-top: 1px solid var(--border-color);
     }
 
     &--creation {

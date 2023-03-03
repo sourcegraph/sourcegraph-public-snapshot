@@ -14,6 +14,7 @@ type Resolver struct {
 	codenavResolver          resolverstubs.CodeNavServiceResolver
 	policiesRootResolver     resolverstubs.PoliciesServiceResolver
 	uploadsRootResolver      resolverstubs.UploadsServiceResolver
+	sentinelRootResolver     resolverstubs.SentinelServiceResolver
 }
 
 func newResolver(
@@ -21,12 +22,14 @@ func newResolver(
 	codenavResolver resolverstubs.CodeNavServiceResolver,
 	policiesRootResolver resolverstubs.PoliciesServiceResolver,
 	uploadsRootResolver resolverstubs.UploadsServiceResolver,
+	sentinelRootResolver resolverstubs.SentinelServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
 		codenavResolver:          codenavResolver,
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
+		sentinelRootResolver:     sentinelRootResolver,
 	}
 }
 
@@ -44,7 +47,29 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 		"PreciseIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.PreciseIndexByID(ctx, id)
 		},
+		"Vulnerability": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.VulnerabilityByID(ctx, id)
+		},
+		"VulnerabilityMatch": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.VulnerabilityMatchByID(ctx, id)
+		},
 	}
+}
+
+func (r *Resolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
+	return r.sentinelRootResolver.Vulnerabilities(ctx, args)
+}
+
+func (r *Resolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatches(ctx, args)
+}
+
+func (r *Resolver) VulnerabilityByID(ctx context.Context, id graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
+}
+
+func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {

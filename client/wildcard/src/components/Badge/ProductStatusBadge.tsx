@@ -3,6 +3,8 @@ import React from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
+import { ForwardReferenceComponent } from '../../types'
+
 import { BadgeProps, Badge } from './Badge'
 import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
 
@@ -14,7 +16,6 @@ export type ProductStatusType = typeof PRODUCT_STATUSES[number]
  * Product statuses mapped to Badge style variants
  */
 const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[number]> = {
-    prototype: 'warning',
     wip: 'warning',
     experimental: 'warning',
     beta: 'info',
@@ -54,14 +55,12 @@ export type ProductStatusBadgeProps = BaseProductStatusBadgeProps | PossibleLink
  * A specific Badge component wrapper to describe a product status.
  * Can also be used to link to the relevant docs page for that status.
  */
-export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren<ProductStatusBadgeProps>> = props => {
+export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(props, reference) {
     const variant = STATUS_VARIANT_MAPPING[props.status]
     const className = classNames(styles.productStatusBadge, props.className)
     const label =
         props.status === 'beta'
             ? 'This feature is currently in beta'
-            : props.status === 'prototype'
-            ? 'This feature is a prototype'
             : props.status === 'experimental'
             ? 'This feature is experimental'
             : props.status === 'wip'
@@ -75,7 +74,8 @@ export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren
             <>
                 <VisuallyHidden>{label}</VisuallyHidden>
                 <Badge
-                    href={STATUS_LINK_MAPPING[props.status]}
+                    ref={reference}
+                    href={STATUS_LINK_MAPPING[props.status as ProductStatusLinked]}
                     variant={variant}
                     className={className}
                     aria-hidden={true}
@@ -89,9 +89,9 @@ export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren
     return (
         <>
             <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
-            <Badge {...props} variant={variant} className={className} aria-hidden={true}>
+            <Badge ref={reference} {...props} variant={variant} className={className} aria-hidden={true}>
                 {props.status}
             </Badge>
         </>
     )
-}
+}) as ForwardReferenceComponent<'span', ProductStatusBadgeProps>

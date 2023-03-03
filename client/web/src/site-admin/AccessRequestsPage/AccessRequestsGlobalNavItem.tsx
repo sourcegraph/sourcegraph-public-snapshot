@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiAccountPlus } from '@mdi/js'
 
+import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, Text, Icon } from '@sourcegraph/wildcard'
 
@@ -50,7 +51,7 @@ export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequests
             <Text className="mx-1" weight="bold" as="span">
                 {data?.accessRequests.totalCount}
             </Text>
-            Account requests
+            Account {pluralize('request', data?.accessRequests.totalCount)}
         </ButtonLink>
     )
 }

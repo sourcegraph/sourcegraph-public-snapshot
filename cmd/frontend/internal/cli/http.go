@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -38,6 +39,7 @@ import (
 // external clients.
 func newExternalHTTPHandler(
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	schema *graphql.Schema,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 	handlers *internalhttpapi.Handlers,
@@ -52,7 +54,7 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler := internalhttpapi.NewHandler(db, enterpriseJobs, r, schema, rateLimitWatcher, handlers)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -135,6 +137,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
@@ -149,6 +152,7 @@ func newInternalHTTPHandler(
 				internalhttpapi.NewInternalHandler(
 					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
 					db,
+					enterpriseJobs,
 					schema,
 					newCodeIntelUploadHandler,
 					rankingService,

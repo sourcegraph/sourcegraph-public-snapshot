@@ -27,6 +27,6 @@ go_test(
         "//enterprise/internal/compute",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )
