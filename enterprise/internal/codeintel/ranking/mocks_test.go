@@ -73,6 +73,9 @@ type MockStore struct {
 	// VacuumStaleGraphsFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleGraphs.
 	VacuumStaleGraphsFunc *StoreVacuumStaleGraphsFunc
+	// VacuumStaleRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumStaleRanks.
+	VacuumStaleRanksFunc *StoreVacuumStaleRanksFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -151,6 +154,11 @@ func NewMockStore() *MockStore {
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: func(context.Context, string) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -236,6 +244,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.VacuumStaleGraphs")
 			},
 		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: func(context.Context, string) (int, error) {
+				panic("unexpected invocation of MockStore.VacuumStaleRanks")
+			},
+		},
 	}
 }
 
@@ -287,6 +300,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: i.VacuumStaleGraphs,
+		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: i.VacuumStaleRanks,
 		},
 	}
 }
@@ -1948,6 +1964,114 @@ func (c StoreVacuumStaleGraphsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreVacuumStaleGraphsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreVacuumStaleRanksFunc describes the behavior when the
+// VacuumStaleRanks method of the parent MockStore instance is invoked.
+type StoreVacuumStaleRanksFunc struct {
+	defaultHook func(context.Context, string) (int, error)
+	hooks       []func(context.Context, string) (int, error)
+	history     []StoreVacuumStaleRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// VacuumStaleRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) VacuumStaleRanks(v0 context.Context, v1 string) (int, error) {
+	r0, r1 := m.VacuumStaleRanksFunc.nextHook()(v0, v1)
+	m.VacuumStaleRanksFunc.appendCall(StoreVacuumStaleRanksFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the VacuumStaleRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreVacuumStaleRanksFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VacuumStaleRanks method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreVacuumStaleRanksFunc) PushHook(hook func(context.Context, string) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreVacuumStaleRanksFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreVacuumStaleRanksFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreVacuumStaleRanksFunc) nextHook() func(context.Context, string) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreVacuumStaleRanksFunc) appendCall(r0 StoreVacuumStaleRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreVacuumStaleRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreVacuumStaleRanksFunc) History() []StoreVacuumStaleRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreVacuumStaleRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreVacuumStaleRanksFuncCall is an object that describes an invocation
+// of method VacuumStaleRanks on an instance of MockStore.
+type StoreVacuumStaleRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreVacuumStaleRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreVacuumStaleRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockSiteConfigQuerier is a mock implementation of the SiteConfigQuerier

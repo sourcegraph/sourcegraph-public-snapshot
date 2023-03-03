@@ -10,6 +10,7 @@ import (
 type operations struct {
 	vacuumStaleDefinitionsAndReferences *observation.Operation
 	vacuumStaleGraphs                   *observation.Operation
+	vacuumStaleRanks                    *observation.Operation
 	insertDefinitionsForRanking         *observation.Operation
 	insertReferencesForRanking          *observation.Operation
 	insertPathCountInputs               *observation.Operation
@@ -39,6 +40,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	return &operations{
 		vacuumStaleDefinitionsAndReferences: op("VacuumStaleDefinitionsAndReferences"),
 		vacuumStaleGraphs:                   op("VacuumStaleGraphs"),
+		vacuumStaleRanks:                    op("VacuumStaleRanks"),
 		insertDefinitionsForRanking:         op("InsertDefinitionsForRanking"),
 		insertReferencesForRanking:          op("InsertReferencesForRanking"),
 		insertPathCountInputs:               op("InsertPathCountInputs"),
