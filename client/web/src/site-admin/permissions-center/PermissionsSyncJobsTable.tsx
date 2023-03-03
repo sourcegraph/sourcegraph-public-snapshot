@@ -3,7 +3,7 @@ import React, { ChangeEvent, FC, useCallback, useEffect } from 'react'
 import { mdiMapSearch } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, H5, Icon, PageSwitcher, Select } from '@sourcegraph/wildcard'
+import { Container, H5, Icon, Input, Link, PageHeader, PageSwitcher, Select, useDebounce } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
@@ -16,6 +16,7 @@ import {
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
+    PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
     PermissionsSyncJobsVariables,
 } from '../../graphql-operations'
@@ -29,6 +30,8 @@ import styles from './PermissionsSyncJobsTable.module.scss'
 const DEFAULT_FILTERS = {
     reason: '',
     state: '',
+    searchType: '',
+    query: '',
 }
 
 interface Props extends TelemetryProps {}
@@ -41,6 +44,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     }, [telemetryService])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
+    const debouncedQuery = useDebounce(filters.query, 300)
+
     const { connection, loading, error, variables, ...paginationProps } = usePageSwitcherPagination<
         PermissionsSyncJobsResult,
         PermissionsSyncJobsVariables,
@@ -51,6 +56,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             first: 20,
             reasonGroup: stringToReason(filters.reason),
             state: stringToState(filters.state),
+            searchType: stringToSearchType(filters.searchType),
+            query: debouncedQuery,
         } as PermissionsSyncJobsVariables,
         getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
         options: { pollInterval: 5000 },
@@ -64,9 +71,24 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         (state: PermissionsSyncJobState | null) => setFilters({ state: state?.toString() || '' }),
         [setFilters]
     )
+    const setSearchType = useCallback(
+        (searchType: PermissionsSyncJobsSearchType | null) => setFilters({ searchType: searchType?.toString() || '' }),
+        [setFilters]
+    )
 
     return (
         <div>
+            <PageHeader
+                path={[{ text: 'Permissions Sync Dashboard' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        List of permissions sync jobs. Learn more about{' '}
+                        <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
+                    </>
+                }
+                className="mb-3"
+            />
             <Container>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
@@ -75,6 +97,24 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         <div className={styles.filtersGrid}>
                             <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
                             <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
+                            <PermissionsSyncJobSearchTypePicker value={filters.searchType} onChange={setSearchType} />
+                            <Input
+                                type="search"
+                                placeholder={
+                                    filters.searchType === '' ? 'Select a search context' : 'Search repositories...'
+                                }
+                                name="query"
+                                value={filters.query}
+                                onChange={event => setFilters({ ...filters, query: event.currentTarget.value })}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck={false}
+                                aria-label="Search sync jobs..."
+                                variant="regular"
+                                disabled={filters.searchType === ''}
+                                className={styles.searchInput}
+                            />
                         </div>
                     )}
                     {connection?.nodes?.length === 0 && <EmptyList />}
@@ -104,12 +144,15 @@ const stringToReason = (reason: string): PermissionsSyncJobReasonGroup | null =>
 const stringToState = (state: string): PermissionsSyncJobState | null =>
     state === '' ? null : PermissionsSyncJobState[state as keyof typeof PermissionsSyncJobState]
 
+const stringToSearchType = (searchType: string): PermissionsSyncJobsSearchType | null =>
+    searchType === '' ? null : PermissionsSyncJobsSearchType[searchType as keyof typeof PermissionsSyncJobsSearchType]
+
 interface PermissionsSyncJobReasonGroupPickerProps {
     value: string
     onChange: (reasonGroup: PermissionsSyncJobReasonGroup | null) => void
 }
 
-export const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPickerProps> = props => {
+const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPickerProps> = props => {
     const { onChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -133,7 +176,7 @@ interface PermissionsSyncJobStatePickerProps {
     onChange: (state: PermissionsSyncJobState | null) => void
 }
 
-export const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
+const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
     const { onChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -150,6 +193,28 @@ export const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProp
             <option value={PermissionsSyncJobState.FAILED}>Failed</option>
             <option value={PermissionsSyncJobState.PROCESSING}>Processing</option>
             <option value={PermissionsSyncJobState.QUEUED}>Queued</option>
+        </Select>
+    )
+}
+
+interface PermissionsSyncJobSearchTypePickerProps {
+    value: string
+    onChange: (searchType: PermissionsSyncJobsSearchType | null) => void
+}
+
+const PermissionsSyncJobSearchTypePicker: FC<PermissionsSyncJobSearchTypePickerProps> = props => {
+    const { onChange, value } = props
+
+    const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
+        const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobsSearchType)
+        onChange(nextValue)
+    }
+
+    return (
+        <Select id="searchTypeSelector" value={stringToSearchType(value) || ''} label="Search" onChange={handleSelect}>
+            <option value="">Choose User/Repository</option>
+            <option value={PermissionsSyncJobsSearchType.USER}>User</option>
+            <option value={PermissionsSyncJobsSearchType.REPOSITORY}>Repository</option>
         </Select>
     )
 }
