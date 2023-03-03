@@ -5,6 +5,9 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -74,7 +77,33 @@ func (r *ownResolver) TeamOwnerField(team *graphqlbackend.TeamResolver) string {
 }
 
 func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{}
+	return map[string]graphqlbackend.NodeByIDFunc{
+		codeownersIngestedFileKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.codeownersFileByID(ctx, id)
+		},
+	}
+}
+
+func (r *ownResolver) codeownersFileByID(ctx context.Context, id graphql.ID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	// codeowners ingested files are identified by repo ID at the moment.
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+		return nil, err
+	}
+	repo, err := r.getRepo(ctx, graphqlbackend.CodeownersFileInput{RepoID: &id})
+	if err != nil {
+		return nil, err
+	}
+	codeownersFile, err := r.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	return &codeownersIngestedFileResolver{
+		gitserver:      r.gitserver,
+		db:             r.db,
+		codeownersFile: codeownersFile,
+		repository:     repo,
+	}, nil
 }
 
 // ownershipConnectionResolver is a fake graphqlbackend.OwnershipConnectionResolver
