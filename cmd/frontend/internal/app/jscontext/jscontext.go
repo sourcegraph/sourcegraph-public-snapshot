@@ -85,14 +85,14 @@ type TemporarySettings struct {
 }
 
 type Permissions struct {
-	Typename    string     `json:"__typename"`
-	ID          graphql.ID `json:"id"`
-	DisplayName string     `json:"displayName"`
+	GraphQLTypename string     `json:"__typename"`
+	ID              graphql.ID `json:"id"`
+	DisplayName     string     `json:"displayName"`
 }
 
 type PermissionsConnection struct {
-	Typename string        `json:"__typename"`
-	Nodes    []Permissions `json:"nodes"`
+	GraphQLTypename string        `json:"__typename"`
+	Nodes           []Permissions `json:"nodes"`
 }
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
@@ -472,16 +472,16 @@ func resolverUserPermissions(ctx context.Context, userResolver *graphqlbackend.U
 	if err == nil {
 		for _, node := range nodes {
 			userPermissions = append(userPermissions, Permissions{
-				Typename:    "Permission",
-				ID:          node.ID(),
-				DisplayName: node.DisplayName(),
+				GraphQLTypename: "Permission",
+				ID:              node.ID(),
+				DisplayName:     node.DisplayName(),
 			})
 		}
 	}
 
 	return &PermissionsConnection{
-		Typename: "PermissionConnection",
-		Nodes:    userPermissions,
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           userPermissions,
 	}
 }
 
