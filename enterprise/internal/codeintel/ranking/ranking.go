@@ -148,6 +148,12 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	s.operations.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
 	s.operations.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
 
+	numRankRecordsDeleted, err := s.store.VacuumStaleRanks(ctx, getCurrentGraphKey(time.Now()))
+	if err != nil {
+		return err
+	}
+	s.operations.numRankRecordsDeleted.Add(float64(numRankRecordsDeleted))
+
 	return nil
 }
 

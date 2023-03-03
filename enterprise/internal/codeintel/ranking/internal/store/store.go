@@ -40,6 +40,11 @@ type Store interface {
 		err error,
 	)
 
+	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (
+		rankRecordsSDeleted int,
+		err error,
+	)
+
 	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
 		numStaleDefinitionRecordsDeleted int,
 		numStaleReferenceRecordsDeleted int,
@@ -182,26 +187,18 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	return logmean, nil
 }
 
-func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64) error {
-	if ranks == nil {
-		ranks = map[string]float64{}
-	}
-
+func (s *store) setDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64, graphKey string) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized))
+	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized, graphKey))
 }
 
 const setDocumentRanksQuery = `
-INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
-VALUES (
-	(SELECT id FROM repo WHERE name = %s),
-	%s,
-	%s
-)
+INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload, graph_key)
+VALUES ((SELECT id FROM repo WHERE name = %s), %s, %s, %s)
 ON CONFLICT (repository_id, precision) DO
 UPDATE
 	SET payload = EXCLUDED.payload
