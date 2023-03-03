@@ -23,6 +23,7 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -31,7 +32,6 @@ import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookQueryBlock.module.scss'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 
 interface NotebookQueryBlockProps
     extends BlockProps<QueryBlock>,

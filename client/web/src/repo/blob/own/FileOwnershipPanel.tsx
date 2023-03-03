@@ -102,7 +102,7 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
 
     const onDismiss = React.useCallback(() => {
         setDismissed(true)
-    }, [])
+    }, [setDismissed])
 
     if (dismissed) {
         return null
@@ -128,7 +128,7 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
                         size="sm"
                         outline={true}
                         as={Link}
-                        to={`/search?q=file:has.owner(johndoe)`}
+                        to="/search?q=file:has.owner(johndoe)"
                         className="mr-2"
                     >
                         <SyntaxHighlightedSearchQuery
@@ -136,7 +136,7 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
                             searchPatternType={SearchPatternType.standard}
                         />
                     </Button>
-                    <Button variant="secondary" size="sm" as={Link} to={`/search?q=select:file.owners`} outline={true}>
+                    <Button variant="secondary" size="sm" as={Link} to="/search?q=select:file.owners" outline={true}>
                         <SyntaxHighlightedSearchQuery
                             query="select:file.owners"
                             searchPatternType={SearchPatternType.standard}
