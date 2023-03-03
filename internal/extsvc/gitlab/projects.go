@@ -281,7 +281,7 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 		return nil, errors.Wrap(err, "marshalling payload")
 	}
 
-	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+	time.Sleep(c.externalRateLimiter.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/fork", project.ID), bytes.NewBuffer(data))
 	if err != nil {

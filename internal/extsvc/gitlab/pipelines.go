@@ -30,7 +30,7 @@ func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project,
 			return page, nil
 		}
 
-		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+		time.Sleep(c.externalRateLimiter.RecommendedWaitForBackgroundOp(1))
 
 		parsedUrl, err := url.Parse(baseURL)
 		if err != nil {

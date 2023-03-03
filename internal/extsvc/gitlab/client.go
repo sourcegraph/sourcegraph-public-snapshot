@@ -172,12 +172,12 @@ type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
 
-	baseURL          *url.URL
-	httpClient       httpcli.Doer
-	projCache        *rcache.Cache
-	Auth             auth.Authenticator
-	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
+	baseURL             *url.URL
+	httpClient          httpcli.Doer
+	projCache           *rcache.Cache
+	Auth                auth.Authenticator
+	externalRateLimiter *ratelimit.Monitor
+	internalRateLimiter *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -210,13 +210,13 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
-		urn:              p.urn,
-		baseURL:          p.baseURL,
-		httpClient:       p.httpClient,
-		projCache:        projCache,
-		Auth:             a,
-		rateLimiter:      rl,
-		rateLimitMonitor: rlm,
+		urn:                 p.urn,
+		baseURL:             p.baseURL,
+		httpClient:          p.httpClient,
+		projCache:           projCache,
+		Auth:                a,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
 	}
 }
 
@@ -254,8 +254,8 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		span.Finish()
 	}()
 
-	if c.rateLimiter != nil {
-		err = c.rateLimiter.Wait(ctx)
+	if c.internalRateLimiter != nil {
+		err = c.internalRateLimiter.Wait(ctx)
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "rate limit")
 		}
@@ -288,15 +288,15 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 
 // RateLimitMonitor exposes the rate limit monitor.
 func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+	return c.externalRateLimiter
 }
 
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
-	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	cc.internalRateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
+	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 
 	return &cc
