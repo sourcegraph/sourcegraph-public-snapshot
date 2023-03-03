@@ -36,7 +36,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
 	}
 
-	if allow, err := s.verifyAllowOrgs(ctx, token); err != nil {
+	if allow, err := s.verifyAllowOrgs(ctx, user, token); err != nil {
 		return nil, "error in verifying authorized user organizations", err
 	} else if !allow {
 		msg := "User does not belong to any org from the allowed list of organizations. Please contact your site admin."
@@ -108,7 +108,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventAzureDevOpsAuthFailed
 }
 
-func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, token *oauth2.Token) (bool, error) {
+func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, profile *azuredevops.Profile, token *oauth2.Token) (bool, error) {
 	if len(s.allowOrgs) == 0 {
 		return true, nil
 	}
@@ -125,12 +125,7 @@ func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, token *oauth2
 		return false, errors.Wrap(err, "failed to create client for listing organizations of user")
 	}
 
-	profile, err := client.GetAuthorizedProfile(ctx)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get authorized user profile")
-	}
-
-	authorizedOrgs, err := client.ListAuthorizedUserOrganizations(ctx, profile)
+	authorizedOrgs, err := client.ListAuthorizedUserOrganizations(ctx, *profile)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list organizations of user")
 	}

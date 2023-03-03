@@ -18,27 +18,18 @@ import (
 func Test_verifyAllowOrgs(t *testing.T) {
 	rcache.SetupForTest(t)
 
+	profile := azuredevops.Profile{
+		ID:          "1",
+		DisplayName: "test-user",
+		PublicAlias: "public-alias-123",
+	}
+
 	mockServerInvokedCount := 0
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockServerInvokedCount += 1
-		if strings.HasPrefix(r.URL.Path, "/_apis/profile/profiles/me") {
-			response := azuredevops.Profile{
-				ID:          "1",
-				DisplayName: "test-user",
-				PublicAlias: "public-alias-123",
-			}
-
-			if err := json.NewEncoder(w).Encode(response); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-			}
-
-			return
-		}
-
 		if strings.HasPrefix(r.URL.Path, "/_apis/accounts") {
 			memberID := r.URL.Query().Get("memberId")
-			if memberID != "public-alias-123" {
+			if memberID != profile.PublicAlias {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte(fmt.Sprintf("incorrect public alias used in API call: %q", memberID)))
 				return
@@ -88,7 +79,7 @@ func Test_verifyAllowOrgs(t *testing.T) {
 				"this-org-does-not-exist": {},
 			},
 			expectedAllow:                  false,
-			expectedMockServerInvokedCount: 2,
+			expectedMockServerInvokedCount: 1,
 		},
 		{
 			name: "user is part of org",
@@ -96,7 +87,7 @@ func Test_verifyAllowOrgs(t *testing.T) {
 				"foo": {},
 			},
 			expectedAllow:                  true,
-			expectedMockServerInvokedCount: 2,
+			expectedMockServerInvokedCount: 1,
 		},
 	}
 
@@ -107,9 +98,8 @@ func Test_verifyAllowOrgs(t *testing.T) {
 			s := &sessionIssuerHelper{allowOrgs: tc.allowOrgs}
 
 			ctx := context.Background()
-			allow, err := s.verifyAllowOrgs(ctx, &oauth2.Token{AccessToken: "foo"})
+			allow, err := s.verifyAllowOrgs(ctx, &profile, &oauth2.Token{AccessToken: "foo"})
 			require.NoError(t, err, "unexpected error")
-
 			if allow != tc.expectedAllow {
 				t.Fatalf("expected allow to be %v, but got %v", tc.expectedAllow, allow)
 			}
