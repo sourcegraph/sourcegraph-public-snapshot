@@ -62,6 +62,9 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner
       interfaces:
         - Runner
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+      interfaces:
+        - Workspace
 - filename: enterprise/cmd/frontend/internal/app/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:
