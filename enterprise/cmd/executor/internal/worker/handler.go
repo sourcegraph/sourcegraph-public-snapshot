@@ -186,7 +186,7 @@ func union(a, b map[string]string) map[string]string {
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) (err error) {
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) error {
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
@@ -210,7 +210,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 	logger.Info("Setting up VM")
 
 	// Setup Firecracker VM (if enabled)
-	if err := jobRunner.Setup(ctx); err != nil {
+	if err = jobRunner.Setup(ctx); err != nil {
 		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
@@ -243,7 +243,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
 
-		if err := jobRunner.Run(ctx, dockerStepCommand); err != nil {
+		if err = jobRunner.Run(ctx, dockerStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
@@ -269,7 +269,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
-		if err := jobRunner.Run(ctx, cliStepCommand); err != nil {
+		if err = jobRunner.Run(ctx, cliStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}
