@@ -11,6 +11,7 @@ go_library(
         "//cmd/frontend/webhooks",
         "//internal/api",
         "//internal/auth",
+        "//internal/codeintel/types",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
