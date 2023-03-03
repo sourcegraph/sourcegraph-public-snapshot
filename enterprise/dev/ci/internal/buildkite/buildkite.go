@@ -245,7 +245,7 @@ func tracedCmd(command string) string {
 
 // Cmd adds a command step with added instrumentation for testing purposes.
 func Cmd(command string) StepOpt {
-	return RawCmd(tracedCmd(command))
+	return RawCmd(command) // TODO
 }
 
 type AnnotationType string
