@@ -148,7 +148,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 {rankingEnabled && (
                     <Label className={styles.toggle}>
-                        Ranking
+                        Ranking{' '}
                         <Toggle
                             value={props.isRankingEnabled}
                             onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
