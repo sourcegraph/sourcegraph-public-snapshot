@@ -5,7 +5,8 @@
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code",
       "internal/extsvc/": "ignore temporarily",
-      ".*_test\\.go": "Exclude bodyclose lint from tests because leaking connections in tests is a non issue"
+      ".*_test\\.go": "Exclude bodyclose lint from tests because leaking connections in tests is a non issue",
+      "cmd/frontend/internal/gosrc/import_path.go": "temp ignore till we support nolint: comment"
     }
   }
 }
