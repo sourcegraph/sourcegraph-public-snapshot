@@ -442,6 +442,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                     <Shortcut
                         key={index}
                         {...keybinding}
+                        allowDefault={true}
                         onMatch={() => {
                             editorRef.current?.contentDOM.focus()
                         }}

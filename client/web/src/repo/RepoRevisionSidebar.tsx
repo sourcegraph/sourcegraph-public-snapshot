@@ -211,6 +211,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         <Shortcut
                             key={index}
                             {...keybinding}
+                            allowDefault={true}
                             onMatch={() => {
                                 setIsVisible(true)
                                 setPersistedTabIndex(0)
@@ -222,6 +223,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         <Shortcut
                             key={index}
                             {...keybinding}
+                            allowDefault={true}
                             onMatch={() => {
                                 setIsVisible(true)
                                 setPersistedTabIndex(1)
