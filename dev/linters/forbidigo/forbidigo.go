@@ -12,8 +12,9 @@ import (
 // Analyzer is the analyzer nogo should use
 var Analyzer = analyzer.NewAnalyzer()
 
+// defaultPatterns the patterns forbigigo should ban if they match
 var defaultPatterns = []string{
-	"^fmt\\.Errorf$",
+	"^fmt\\.Errorf$", // Use errors.Newf instead
 }
 
 var config = struct {
