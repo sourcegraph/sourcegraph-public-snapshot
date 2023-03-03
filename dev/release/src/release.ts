@@ -1002,7 +1002,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
 
             const releaseBranch = release.branch
             const version = release.version.version
-            // ensureReleaseBranchUpToDate(releaseBranch)
+            ensureReleaseBranchUpToDate(releaseBranch)
 
             const multiVersionSteps: Edit[] = [
                 // multi-version-upgrade
