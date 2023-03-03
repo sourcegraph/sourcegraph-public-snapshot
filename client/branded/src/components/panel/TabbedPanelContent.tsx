@@ -21,6 +21,8 @@ import {
     Icon,
     Tooltip,
     useKeyboard,
+    ProductStatusType,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
@@ -42,6 +44,9 @@ export interface Panel {
 
     /** The title of the panel view. */
     title: string
+
+    /** Optional product status to show as a badge next to the panel title. */
+    productStatus?: ProductStatusType
 
     /** The content element to display when the tab is active. */
     element: React.ReactNode
@@ -137,7 +142,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
-                            {activeTab && (
+                            {activeTab && activeTab.id === 'references' && (
                                 <MixPreciseAndSearchBasedReferencesToggle
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
@@ -157,10 +162,16 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     </div>
                 }
             >
-                {panels.map(({ title, id, trackTabClick }, index) => (
+                {panels.map(({ title, id, trackTabClick, productStatus }, index) => (
                     <Tab key={id} index={index}>
                         <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
                             {title}
+                            {productStatus && (
+                                <>
+                                    {' '}
+                                    <ProductStatusBadge status={productStatus} />
+                                </>
+                            )}
                         </span>
                     </Tab>
                 ))}

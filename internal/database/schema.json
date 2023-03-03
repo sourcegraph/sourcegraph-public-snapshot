@@ -24022,6 +24022,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "auto_upgrade",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "first_version",
           "Index": 4,
           "TypeName": "text",

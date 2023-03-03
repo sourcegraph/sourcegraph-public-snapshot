@@ -7,7 +7,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"

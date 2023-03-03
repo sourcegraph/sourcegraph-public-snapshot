@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -123,28 +122,28 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		}
 		want := []result.Match{
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByEmail, Email: "user@email.com"},
+				ResolvedOwner: &result.OwnerPerson{User: personOwnerByEmail, Email: "user@email.com"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{Handle: "unknown"},
+				ResolvedOwner: &result.OwnerPerson{Handle: "unknown"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByHandle, Handle: "testUserHandle"},
+				ResolvedOwner: &result.OwnerPerson{User: personOwnerByHandle, Handle: "testUserHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Team{Team: teamOwner, Handle: "testTeamHandle"},
+				ResolvedOwner: &result.OwnerTeam{Team: teamOwner, Handle: "testTeamHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",

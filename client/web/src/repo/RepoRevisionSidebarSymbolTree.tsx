@@ -16,6 +16,8 @@ import { parseBrowserRepoURL } from '../util/url'
 import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
+import styles from './RepoRevisionSidebarSymbols.module.scss'
+
 interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]
     onClick: () => void
@@ -122,6 +124,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
+            nodeClassName={styles.treeNode}
             renderNode={({
                 element,
                 handleSelect,

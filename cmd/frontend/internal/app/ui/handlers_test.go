@@ -40,8 +40,15 @@ func TestRedirects(t *testing.T) {
 		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		extSvcs := database.NewMockExternalServiceStore()
+		extSvcs.CountFunc.SetDefaultReturn(0, nil)
+
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
 
 		InitRouter(db, jobutil.NewUnimplementedEnterpriseJobs())
 		rw := httptest.NewRecorder()

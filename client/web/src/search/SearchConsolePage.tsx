@@ -22,6 +22,7 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -33,7 +34,7 @@ interface SearchConsolePageProps
     extends SearchStreamingProps,
         Omit<
             StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext'
+            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
         >,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
@@ -48,6 +49,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         enableGoImportsSearchQueryTransform: features.enableGoImportsSearchQueryTransform,
         applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
     }))
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
@@ -133,6 +135,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <StreamingSearchResultsList
                                 {...props}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
                                 assetsRoot={window.context?.assetsRoot || ''}

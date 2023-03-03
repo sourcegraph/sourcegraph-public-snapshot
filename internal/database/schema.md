@@ -3790,6 +3790,7 @@ Triggers:
  version       | text                     |           | not null | 
  updated_at    | timestamp with time zone |           | not null | now()
  first_version | text                     |           | not null | 
+ auto_upgrade  | boolean                  |           | not null | false
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
