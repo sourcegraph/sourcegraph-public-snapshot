@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ErrorAlert, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHost, ExternalServiceKind, GetCodeHostsResult, ExternalServiceKind } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
