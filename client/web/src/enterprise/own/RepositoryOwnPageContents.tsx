@@ -1,22 +1,38 @@
-import { useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { EditorState, Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
 import { mdiTrashCan, mdiUpload } from '@mdi/js'
-import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { CodeMirrorEditor, defaultEditorTheme, Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { H3, Text, Button, Icon, Code, Card } from '@sourcegraph/wildcard'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { H3, Text, Button, Icon, Code, Card, LoadingSpinner, ErrorAlert, Input } from '@sourcegraph/wildcard'
 
-import { RepositoryFields } from '../../graphql-operations'
-import { selectableLineNumbers } from '../../repo/blob/codemirror/linenumbers'
+import { LoaderButton } from '../../components/LoaderButton'
+import {
+    AddIngestedCodeownersResult,
+    AddIngestedCodeownersVariables,
+    DeleteIngestedCodeownersResult,
+    DeleteIngestedCodeownersVariables,
+    GetIngestedCodeownersResult,
+    GetIngestedCodeownersVariables,
+    IngestedCodeowners,
+    RepositoryFields,
+    UpdateIngestedCodeownersResult,
+    UpdateIngestedCodeownersVariables,
+} from '../../graphql-operations'
 
+import {
+    ADD_INGESTED_CODEOWNERS_MUTATION,
+    DELETE_INGESTED_CODEOWNERS_MUTATION,
+    GET_INGESTED_CODEOWNERS_QUERY,
+    UPDATE_INGESTED_CODEOWNERS_MUTATION,
+} from './graphqlQueries'
+import { IngestedFileViewer } from './IngestedFileViewer'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
-import { testCodeOwnersIngestedFile } from './testData'
 
 import styles from './RepositoryOwnPageContents.module.scss'
+
+const MAX_FILE_SIZE_IN_BYTES = 10 * 1024 * 1024 // 10MB
 
 export interface CodeownersIngestedFile {
     contents: string
@@ -28,45 +44,113 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
 > = ({ repo, authenticatedUser }) => {
     const isAdmin = authenticatedUser?.siteAdmin
 
-    const codeownersIngestedFile: CodeownersIngestedFile | null = testCodeOwnersIngestedFile
-
-    const isLightTheme = useIsLightTheme()
-
-    const location = useLocation()
-
-    const lineNumber = useMemo(() => {
-        const params = new URLSearchParams(location.search)
-        const line = params.get('L')
-        return line ? parseInt(line, 10) : undefined
-    }, [location.search])
-
-    const extensions: Extension[] = useMemo(
-        () => [
-            EditorView.darkTheme.of(isLightTheme === false),
-            EditorState.readOnly.of(true),
-            EditorView.theme({
-                '.selected-line, .cm-line.selected-line': {
-                    backgroundColor: 'var(--code-selection-bg)',
-                },
-                '.cm-lineNumbers .cm-gutterElement:hover': {
-                    textDecoration: 'none',
-                    cursor: 'auto',
-                },
-                '.cm-scroller': {
-                    borderRadius: 'var(--border-radius)',
-                },
-            }),
-            selectableLineNumbers({
-                onSelection: () => {},
-                initialSelection: lineNumber ? { line: lineNumber } : null,
-                navigateToLineOnAnyClick: true,
-            }),
-            defaultEditorTheme,
-        ],
-        [isLightTheme, lineNumber]
+    const { data, error, loading } = useQuery<GetIngestedCodeownersResult, GetIngestedCodeownersVariables>(
+        GET_INGESTED_CODEOWNERS_QUERY,
+        {
+            variables: {
+                repoID: repo.id,
+            },
+        }
     )
 
-    const editorRef = useRef<Editor | null>(null)
+    const [codeownersIngestedFile, setCodeownersIngestedFile] = useState<IngestedCodeowners | null>(null)
+    useEffect(() => {
+        if (data?.node?.__typename === 'Repository') {
+            if (data.node.ingestedCodeowners?.__typename === 'CodeownersIngestedFile') {
+                setCodeownersIngestedFile(data.node.ingestedCodeowners)
+            } else {
+                setCodeownersIngestedFile(null)
+            }
+        }
+    }, [data?.node])
+
+    const [uploadError, setUploadError] = useState<ErrorLike | null>(null)
+    const [addCodeonwersFile, addCodeonwersFileResult] = useMutation<
+        AddIngestedCodeownersResult,
+        AddIngestedCodeownersVariables
+    >(ADD_INGESTED_CODEOWNERS_MUTATION)
+    const [updateCodeownersFile, updateCodeownersFileResult] = useMutation<
+        UpdateIngestedCodeownersResult,
+        UpdateIngestedCodeownersVariables
+    >(UPDATE_INGESTED_CODEOWNERS_MUTATION)
+
+    const [deleteError, setDeleteError] = useState<ErrorLike | null>(null)
+    const [deleteCodeownersFile] = useMutation<DeleteIngestedCodeownersResult, DeleteIngestedCodeownersVariables>(
+        DELETE_INGESTED_CODEOWNERS_MUTATION
+    )
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const onUploadClicked = useCallback(() => {
+        // Open the system file picker.
+        fileInputRef.current?.click()
+    }, [])
+    const onFileSelected = useCallback(() => {
+        const file = fileInputRef.current?.files?.[0]
+        if (!file) {
+            return
+        }
+
+        if (file.size > MAX_FILE_SIZE_IN_BYTES) {
+            setUploadError(new Error(`File size must be less than ${MAX_FILE_SIZE_IN_BYTES / 1024 / 1024}MB`))
+            return
+        }
+
+        const reader = new FileReader()
+        reader.addEventListener('load', () => {
+            const contents = reader.result as string
+
+            const upload = codeownersIngestedFile ? updateCodeownersFile : addCodeonwersFile
+            const options = codeownersIngestedFile ? updateCodeownersFileResult : addCodeonwersFileResult
+
+            upload({
+                variables: {
+                    repoID: repo.id,
+                    contents,
+                },
+            })
+                .then(result => {
+                    if (result.data) {
+                        if ('updateCodeownersFile' in result.data) {
+                            setCodeownersIngestedFile(result.data.updateCodeownersFile)
+                        } else {
+                            setCodeownersIngestedFile(result.data.addCodeownersFile)
+                        }
+                    } else {
+                        setUploadError(new Error('No data returned from server'))
+                    }
+                })
+                .catch(error => {
+                    if (isErrorLike(error)) {
+                        setUploadError(error)
+                    } else {
+                        setUploadError(new Error('Unknown error'))
+                    }
+                })
+                .finally(() => {
+                    options.reset()
+                })
+        })
+        reader.readAsText(file)
+    }, [
+        addCodeonwersFile,
+        addCodeonwersFileResult,
+        codeownersIngestedFile,
+        repo.id,
+        updateCodeownersFile,
+        updateCodeownersFileResult,
+    ])
+
+    if (loading) {
+        return (
+            <div className="container d-flex justify-content-center mt-3">
+                <LoadingSpinner /> Loading...
+            </div>
+        )
+    }
+
+    if (error) {
+        return <ErrorAlert className="mt-3" error={error} prefix="Error loading ownership info for this repository" />
+    }
 
     return (
         <>
@@ -80,10 +164,18 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
 
                     {isAdmin && (
                         <>
-                            <Button variant="primary">
-                                <Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />
-                                {codeownersIngestedFile ? 'Replace current file' : 'Upload file'}
-                            </Button>
+                            <LoaderButton
+                                icon={<Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />}
+                                label={codeownersIngestedFile ? 'Replace current file' : 'Upload file'}
+                                loading={addCodeonwersFileResult.loading || updateCodeownersFileResult.loading}
+                                variant="primary"
+                                onClick={onUploadClicked}
+                            />
+                            {uploadError && (
+                                <ErrorAlert className="mt-2" error={uploadError} prefix="Error uploading file:" />
+                            )}
+                            {/* Don't show the file input, the nicer-looking button will trigger it programmatically */}
+                            <Input ref={fileInputRef} type="file" className="d-none" onChange={onFileSelected} />
                         </>
                     )}
                 </div>
@@ -124,7 +216,7 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                             Delete uploaded file
                         </Button>
                     </div>
-                    <CodeMirrorEditor ref={editorRef} value={codeownersIngestedFile.contents} extensions={extensions} />
+                    <IngestedFileViewer contents={codeownersIngestedFile.contents} />
                 </div>
             )}
         </>

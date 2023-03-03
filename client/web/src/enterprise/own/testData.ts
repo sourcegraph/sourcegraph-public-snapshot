@@ -1,6 +1,6 @@
-import { CodeownersIngestedFile } from './RepositoryOwnPageContents'
+import { IngestedCodeowners } from '../../graphql-operations'
 
-export const testCodeOwnersIngestedFile: CodeownersIngestedFile = {
+export const testCodeOwnersIngestedFile: IngestedCodeowners = {
     contents: `# Sourcegraph uses CODENOTIFY to make individuals or groups aware of changes that are happening in code they care about,
 # without explicitly requiring those engineers to "own" the code.
 # This is a test CODEOWNERS file generated from all the CODENOTIFY files in this repository. It is not intended as a

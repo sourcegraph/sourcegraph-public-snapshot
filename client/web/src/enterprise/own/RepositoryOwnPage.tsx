@@ -37,7 +37,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     if (status === 'initial') {
         return (
             <div className="container d-flex justify-content-center mt-3">
-                <LoadingSpinner />
+                <LoadingSpinner /> Loading...
             </div>
         )
     }
