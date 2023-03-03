@@ -1059,6 +1059,8 @@ func TestRateLimitRetry(t *testing.T) {
 			w.Write([]byte(`{"message": "Very nice"}`))
 		}))
 
+		t.Cleanup(srv.Close)
+
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
