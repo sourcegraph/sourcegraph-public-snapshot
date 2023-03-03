@@ -57,6 +57,7 @@ func TestNewRuntime(t *testing.T) {
 				workspace.CloneOptions{},
 				command.DockerOptions{},
 				runner,
+				nil,
 			)
 			if test.hasError {
 				require.Error(t, err)

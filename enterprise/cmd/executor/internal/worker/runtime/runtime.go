@@ -39,6 +39,7 @@ func New(
 	cloneOpts workspace.CloneOptions,
 	dockerOpts command.DockerOptions,
 	runner util.CmdRunner,
+	cmd command.Command,
 ) (Runtime, error) {
 	err := util.ValidateDockerTools(runner)
 	if err != nil {
@@ -55,6 +56,7 @@ func New(
 			filesStore:   filesStore,
 			cloneOptions: cloneOpts,
 			dockerOpts:   dockerOpts,
+			cmd:          cmd,
 		}, nil
 	}
 	return nil, ErrNoRuntime
