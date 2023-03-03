@@ -8,7 +8,7 @@ import { Badge, Button, Text } from '@sourcegraph/wildcard'
 
 import styles from './LimitedAccessBanner.module.scss'
 
-interface LimitedAccessBannerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface LimitedAccessBannerProps {
     badgeText?: string
     dismissableTemporarySettingsKey: keyof TemporarySettingsSchema
 }
@@ -20,21 +20,17 @@ export const LimitedAccessBanner: React.FunctionComponent<
     const [dismissed, setDismissed] = useTemporarySetting(props.dismissableTemporarySettingsKey)
 
     if (dismissed) {
-        return (
-            <Button variant="merged" onClick={() => setDismissed(false)}>
-                Undismiss
-            </Button>
-        )
+        return null
     }
 
     return (
-        <div {...props} className={classNames(styles.banner, props.className, 'my-4')}>
-            <div className={styles.content}>
+        <div className={classNames('my-4 p-1', styles.banner)}>
+            <div className={classNames('py-2 px-3', styles.content)}>
                 <div>
                     <Badge className={classNames('mb-2', styles.badge)}>{badgeText}</Badge>
                     <Text className="m-0">{props.children}</Text>
                 </div>
-                <Button className={styles.dismiss} variant="link" onClick={() => setDismissed(true)}>
+                <Button className="align-self-start" variant="link" onClick={() => setDismissed(true)}>
                     Dismiss
                 </Button>
             </div>

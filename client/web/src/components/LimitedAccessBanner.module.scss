@@ -6,19 +6,15 @@
 
 .banner {
     background: var(--marketing-gradient);
-    padding: 0.25rem;
     border-radius: 5px;
 }
 
 .content {
     background-color: var(--color-bg-1);
     border-radius: var(--border-radius);
-    padding: 0.5rem;
     display: flex;
 }
 
-.dismiss {
-    align-self: flex-start;
-}
+
 
 
