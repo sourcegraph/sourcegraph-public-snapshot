@@ -68,6 +68,11 @@ type SlackNotification struct {
 
 	// BuildNotification is the BuildNotification that was used to send this SlackNotification
 	BuildNotification *BuildNotification
+
+	// AuthorMention is the author mention used for notify the teammate for this notification
+	//
+	// Ideally we should not store the mentionn but the actual Teammate. But a teammate
+	AuthorMention string
 }
 
 func (n *SlackNotification) Equals(o *SlackNotification) bool {
@@ -78,12 +83,13 @@ func (n *SlackNotification) Equals(o *SlackNotification) bool {
 	return n.ID == o.ID && n.ChannelID == o.ChannelID && n.SentAt.Equal(o.SentAt)
 }
 
-func NewSlackNotification(id, channel string, info *BuildNotification) *SlackNotification {
+func NewSlackNotification(id, channel string, info *BuildNotification, author string) *SlackNotification {
 	return &SlackNotification{
 		SentAt:            time.Now(),
 		ID:                id,
 		ChannelID:         channel,
 		BuildNotification: info,
+		AuthorMention:     author,
 	}
 }
 
@@ -139,7 +145,7 @@ func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNoti
 	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, info)
+	blocks, err := c.createMessageBlocks(logger, info, previous.AuthorMention)
 	if err != nil {
 		return previous, err
 	}
@@ -155,17 +161,37 @@ func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNoti
 		return previous, err
 	}
 
-	return NewSlackNotification(id, channel, info), nil
+	return NewSlackNotification(id, channel, info, previous.AuthorMention), nil
 }
 
 func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, error) {
 	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, info)
+	author := ""
+	teammate, err := c.GetTeammateForCommit(info.Commit)
+	if err != nil {
+		c.logger.Error("failed to find teammate", log.Error(err))
+		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
+		// so we set author here to that msg, so that the message can be conveyed to the person in slack
+		author = err.Error()
+	} else {
+		logger.Debug("teammate found", log.Object("teammate",
+			log.String("slackID", teammate.SlackID),
+			log.String("key", teammate.Key),
+			log.String("email", teammate.Email),
+			log.String("handbook", teammate.HandbookLink),
+			log.String("slackName", teammate.SlackName),
+			log.String("github", teammate.GitHub),
+		))
+		author = SlackMention(teammate)
+	}
+
+	blocks, err := c.createMessageBlocks(logger, info, author)
 	if err != nil {
 		return nil, err
 	}
+
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 
@@ -178,7 +204,7 @@ func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, er
 	}
 
 	logger.Info("notification posted")
-	return NewSlackNotification(id, channel, info), nil
+	return NewSlackNotification(id, channel, info, author), nil
 }
 
 func commitLink(msg, commit string) string {
@@ -215,7 +241,7 @@ func createStepsSection(status string, items []JobLine, showLimit int) string {
 		section += line
 	}
 
-	return section
+	return section + "\n"
 }
 
 func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
@@ -227,7 +253,7 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 
 }
 
-func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification) ([]slack.Block, error) {
+func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification, author string) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(info.Message, "\n")
 	msg += fmt.Sprintf(" (%s)", info.Commit[:7])
 
@@ -236,27 +262,7 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification)
 	// create a bulleted list of all the failed jobs
 	jobSection := createStepsSection("Fixed", info.Fixed, StepShowLimit)
 	jobSection += createStepsSection("Failed", info.Failed, StepShowLimit)
-
 	section += jobSection
-
-	teammate, err := c.GetTeammateForCommit(info.Commit)
-	author := ""
-	if err != nil {
-		c.logger.Error("failed to find teammate", log.Error(err))
-		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
-		// so we set author here to that msg, so that the message can be conveyed to the person in slack
-		author = err.Error()
-	} else {
-		logger.Debug("teammate found", log.Object("teammate",
-			log.String("slackID", teammate.SlackID),
-			log.String("key", teammate.Key),
-			log.String("email", teammate.Email),
-			log.String("handbook", teammate.HandbookLink),
-			log.String("slackName", teammate.SlackName),
-			log.String("github", teammate.GitHub),
-		))
-		author = SlackMention(teammate)
-	}
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
