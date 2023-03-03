@@ -167,9 +167,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 name: flagName,
                                 ...flagValue,
                             },
-                        }).then(() => {
-                            navigate(`/site-admin/feature-flags/configuration/${flagName}`)
-                        })
+                        }).then(() => navigate(0))
                     }
                 >
                     {updateFlagLoading ? (

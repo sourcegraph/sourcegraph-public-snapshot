@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Icon, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import {
     getCodeMonitoringCreateAction,
@@ -130,6 +131,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
+    // Show/hide ranking toggle
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
+
     return (
         <aside
             role="region"
@@ -142,15 +146,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 <div className={styles.expander} />
 
-                <Label className={styles.toggle}>
-                    Ranking {props.isToggleEnabled ? 'enabled ' : 'disabled '}
-                    <Toggle
-                        value={props.isToggleEnabled}
-                        onToggle={() => props.onToggleRanking(!props.isToggleEnabled)}
-                        title="Enable Ranking"
-                        className="mr-2"
-                    />
-                </Label>
+                {rankingEnabled && (
+                    <Label className={styles.toggle}>
+                        Ranking {props.isToggleEnabled ? 'enabled ' : 'disabled '}
+                        <Toggle
+                            value={props.isToggleEnabled}
+                            onToggle={() => props.onToggleRanking(!props.isToggleEnabled)}
+                            title="Enable Ranking"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         query={props.query}

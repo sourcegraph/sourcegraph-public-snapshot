@@ -15,26 +15,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       <div
         class="expander"
       />
-      <label
-        class="label toggle"
-      >
-        Ranking enabled 
-        <button
-          aria-checked="true"
-          class="toggle mr-2 inlineCenter"
-          role="switch"
-          title="Enable Ranking"
-          type="button"
-          value="1"
-        >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
-      </label>
       <ul
         class="nav align-items-center"
       >
@@ -109,26 +89,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       <div
         class="expander"
       />
-      <label
-        class="label toggle"
-      >
-        Ranking enabled 
-        <button
-          aria-checked="true"
-          class="toggle mr-2 inlineCenter"
-          role="switch"
-          title="Enable Ranking"
-          type="button"
-          value="1"
-        >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
-      </label>
       <ul
         class="nav align-items-center"
       >
@@ -203,26 +163,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       <div
         class="expander"
       />
-      <label
-        class="label toggle"
-      >
-        Ranking enabled 
-        <button
-          aria-checked="true"
-          class="toggle mr-2 inlineCenter"
-          role="switch"
-          title="Enable Ranking"
-          type="button"
-          value="1"
-        >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
-      </label>
       <ul
         class="nav align-items-center"
       >
@@ -297,26 +237,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       <div
         class="expander"
       />
-      <label
-        class="label toggle"
-      >
-        Ranking enabled 
-        <button
-          aria-checked="true"
-          class="toggle mr-2 inlineCenter"
-          role="switch"
-          title="Enable Ranking"
-          type="button"
-          value="1"
-        >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
-      </label>
       <ul
         class="nav align-items-center"
       >
@@ -391,26 +311,6 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       <div
         class="expander"
       />
-      <label
-        class="label toggle"
-      >
-        Ranking enabled 
-        <button
-          aria-checked="true"
-          class="toggle mr-2 inlineCenter"
-          role="switch"
-          title="Enable Ranking"
-          type="button"
-          value="1"
-        >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
-      </label>
       <ul
         class="nav align-items-center"
       >
