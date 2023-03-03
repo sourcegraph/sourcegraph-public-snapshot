@@ -141,7 +141,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                         }}
                     >
                         <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} />
-                        {element.name}
+                        <span data-testid="symbol-name">{element.name}</span>
                     </Link>
                 )
             }}

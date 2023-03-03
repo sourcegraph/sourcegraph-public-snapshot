@@ -456,6 +456,7 @@ function renderNode({
             {...props}
             className={classNames(props.className, 'test-tree-file-link')}
             to={url ?? '#'}
+            data-tree-path={element.path}
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)
