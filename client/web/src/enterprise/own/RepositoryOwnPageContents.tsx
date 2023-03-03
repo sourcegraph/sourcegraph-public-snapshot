@@ -1,38 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { mdiTrashCan, mdiUpload } from '@mdi/js'
+import { useEffect, useState } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H3, Text, Button, Icon, Code, Card, LoadingSpinner, ErrorAlert, Input } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { H3, Text, Code, Card, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../components/LoaderButton'
 import {
-    AddIngestedCodeownersResult,
-    AddIngestedCodeownersVariables,
-    DeleteIngestedCodeownersResult,
-    DeleteIngestedCodeownersVariables,
     GetIngestedCodeownersResult,
     GetIngestedCodeownersVariables,
     IngestedCodeowners,
     RepositoryFields,
-    UpdateIngestedCodeownersResult,
-    UpdateIngestedCodeownersVariables,
 } from '../../graphql-operations'
 
-import {
-    ADD_INGESTED_CODEOWNERS_MUTATION,
-    DELETE_INGESTED_CODEOWNERS_MUTATION,
-    GET_INGESTED_CODEOWNERS_QUERY,
-    UPDATE_INGESTED_CODEOWNERS_MUTATION,
-} from './graphqlQueries'
+import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
+import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'
-
-const MAX_FILE_SIZE_IN_BYTES = 10 * 1024 * 1024 // 10MB
+import { DeleteFileButton } from './DeleteFileButton'
 
 export interface CodeownersIngestedFile {
     contents: string
@@ -64,81 +49,6 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
         }
     }, [data?.node])
 
-    const [uploadError, setUploadError] = useState<ErrorLike | null>(null)
-    const [addCodeonwersFile, addCodeonwersFileResult] = useMutation<
-        AddIngestedCodeownersResult,
-        AddIngestedCodeownersVariables
-    >(ADD_INGESTED_CODEOWNERS_MUTATION)
-    const [updateCodeownersFile, updateCodeownersFileResult] = useMutation<
-        UpdateIngestedCodeownersResult,
-        UpdateIngestedCodeownersVariables
-    >(UPDATE_INGESTED_CODEOWNERS_MUTATION)
-
-    const [deleteError, setDeleteError] = useState<ErrorLike | null>(null)
-    const [deleteCodeownersFile] = useMutation<DeleteIngestedCodeownersResult, DeleteIngestedCodeownersVariables>(
-        DELETE_INGESTED_CODEOWNERS_MUTATION
-    )
-
-    const fileInputRef = useRef<HTMLInputElement | null>(null)
-    const onUploadClicked = useCallback(() => {
-        // Open the system file picker.
-        fileInputRef.current?.click()
-    }, [])
-    const onFileSelected = useCallback(() => {
-        const file = fileInputRef.current?.files?.[0]
-        if (!file) {
-            return
-        }
-
-        if (file.size > MAX_FILE_SIZE_IN_BYTES) {
-            setUploadError(new Error(`File size must be less than ${MAX_FILE_SIZE_IN_BYTES / 1024 / 1024}MB`))
-            return
-        }
-
-        const reader = new FileReader()
-        reader.addEventListener('load', () => {
-            const contents = reader.result as string
-
-            const upload = codeownersIngestedFile ? updateCodeownersFile : addCodeonwersFile
-            const options = codeownersIngestedFile ? updateCodeownersFileResult : addCodeonwersFileResult
-
-            upload({
-                variables: {
-                    repoID: repo.id,
-                    contents,
-                },
-            })
-                .then(result => {
-                    if (result.data) {
-                        if ('updateCodeownersFile' in result.data) {
-                            setCodeownersIngestedFile(result.data.updateCodeownersFile)
-                        } else {
-                            setCodeownersIngestedFile(result.data.addCodeownersFile)
-                        }
-                    } else {
-                        setUploadError(new Error('No data returned from server'))
-                    }
-                })
-                .catch(error => {
-                    if (isErrorLike(error)) {
-                        setUploadError(error)
-                    } else {
-                        setUploadError(new Error('Unknown error'))
-                    }
-                })
-                .finally(() => {
-                    options.reset()
-                })
-        })
-        reader.readAsText(file)
-    }, [
-        addCodeonwersFile,
-        addCodeonwersFileResult,
-        codeownersIngestedFile,
-        repo.id,
-        updateCodeownersFile,
-        updateCodeownersFileResult,
-    ])
 
     if (loading) {
         return (
@@ -163,20 +73,11 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                     </Text>
 
                     {isAdmin && (
-                        <>
-                            <LoaderButton
-                                icon={<Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />}
-                                label={codeownersIngestedFile ? 'Replace current file' : 'Upload file'}
-                                loading={addCodeonwersFileResult.loading || updateCodeownersFileResult.loading}
-                                variant="primary"
-                                onClick={onUploadClicked}
-                            />
-                            {uploadError && (
-                                <ErrorAlert className="mt-2" error={uploadError} prefix="Error uploading file:" />
-                            )}
-                            {/* Don't show the file input, the nicer-looking button will trigger it programmatically */}
-                            <Input ref={fileInputRef} type="file" className="d-none" onChange={onFileSelected} />
-                        </>
+                        <UploadFileButton
+                            repo={repo}
+                            onComplete={setCodeownersIngestedFile}
+                            fileAlreadyExists={!!codeownersIngestedFile}
+                        />
                     )}
                 </div>
 
@@ -211,10 +112,7 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                             The following CODEOWNERS file was uploaded to Sourcegraph{' '}
                             <Timestamp date={codeownersIngestedFile.updatedAt} />.
                         </Text>
-                        <Button variant="danger" outline={true} className="ml-2">
-                            <Icon svgPath={mdiTrashCan} aria-hidden={true} className="mr-2" />
-                            Delete uploaded file
-                        </Button>
+                        <DeleteFileButton repo={repo} onComplete={() => setCodeownersIngestedFile(null)}>
                     </div>
                     <IngestedFileViewer contents={codeownersIngestedFile.contents} />
                 </div>
