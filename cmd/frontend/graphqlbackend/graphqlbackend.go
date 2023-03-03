@@ -438,8 +438,14 @@ func NewSchema(
 	rbacResolver RBACResolver,
 	ownResolver OwnResolver,
 ) (*graphql.Schema, error) {
+	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
-	schemas := []string{mainSchema, outboundWebhooksSchema}
+	schemas := []string{mainSchema, outboundWebhooksSchema, localSchema}
+
+	resolver.localResolver = localResolver{
+		logger: logger,
+		db:     db,
+	}
 
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
@@ -567,7 +573,6 @@ func NewSchema(
 		}
 	}
 
-	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -594,6 +599,8 @@ type schemaResolver struct {
 	repoupdaterClient    *repoupdater.Client
 	nodeByIDFns          map[string]NodeByIDFunc
 	enterpriseSearchJobs jobutil.EnterpriseJobs
+
+	localResolver
 
 	// SubResolvers are assigned using the Schema constructor.
 

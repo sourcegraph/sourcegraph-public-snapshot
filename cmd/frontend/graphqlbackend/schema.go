@@ -83,3 +83,8 @@ var rbacSchema string
 //
 //go:embed own.graphql
 var ownSchema string
+
+// localSchema is the Sourcegraph App local raw graqhql schema.
+//
+//go:embed local.graphql
+var localSchema string
