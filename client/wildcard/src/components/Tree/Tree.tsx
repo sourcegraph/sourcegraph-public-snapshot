@@ -41,7 +41,7 @@ export interface TreeRef {
     focus: () => void
 }
 
-function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref: React.Ref<TreeRef>): React.ReactElement {
+function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<TreeRef>): React.ReactElement {
     const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, ...rest } = props
 
     const treeViewRef = useRef<HTMLUListElement>(null)
@@ -49,6 +49,9 @@ function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref: React.Ref<T
         ref,
         () => ({
             focus: () => {
+                if (treeViewRef.current?.contains(document.activeElement)) {
+                    return
+                }
                 const element = treeViewRef.current?.querySelector("[tabindex]:not([tabindex='-1'])")
                 if (element instanceof HTMLElement) {
                     element.focus()
