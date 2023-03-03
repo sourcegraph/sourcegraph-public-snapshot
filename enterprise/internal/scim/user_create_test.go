@@ -7,13 +7,16 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
 	t.Parallel()
 
-	db := getMockDB()
+	db := getMockDB([]*types.UserForSCIM{
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+	})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	testCases := []struct {
 		name     string
@@ -22,40 +25,45 @@ func TestUserResourceHandler_Create(t *testing.T) {
 	}{
 		{
 			name:     "create user with new username",
-			username: "user5",
+			username: "user2",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
-				assert.Equal(t, "user5", usernameInDB)
-				assert.Equal(t, "user5", usernameInResource)
+				assert.NoError(t, err)
+				assert.Equal(t, "user2", usernameInDB)
+				assert.Equal(t, "user2", usernameInResource)
 			},
 		},
 		{
 			name:     "create user with existing username",
-			username: "user4",
+			username: "user1",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
+				assert.NoError(t, err)
 				assert.Len(t, usernameInDB, 5+1+5) // user4-abcde
-				assert.Equal(t, "user4", usernameInResource)
+				assert.Equal(t, "user1", usernameInResource)
 			},
 		},
 		{
 			name:     "create user with email address as the username",
 			username: "test@company.com",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
+				assert.NoError(t, err)
 				assert.Equal(t, "test", usernameInDB)
 				assert.Equal(t, "test@company.com", usernameInResource)
 			},
 		},
 		{
 			name:     "create user with email address as a duplicate username",
-			username: "user4@company.com",
+			username: "user1@company.com",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
+				assert.NoError(t, err)
 				assert.Len(t, usernameInDB, 5+1+5) // user4-abcde
-				assert.Equal(t, "user4@company.com", usernameInResource)
+				assert.Equal(t, "user1@company.com", usernameInResource)
 			},
 		},
 		{
 			name:     "create user with empty username",
 			username: "",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
+				assert.NoError(t, err)
 				assert.Len(t, usernameInDB, 5) // abcde
 				assert.Equal(t, "", usernameInResource)
 			},
@@ -65,11 +73,9 @@ func TestUserResourceHandler_Create(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			userRes, err := userResourceHandler.Create(&http.Request{}, createUserResourceAttributes(tc.username))
-			assert.NoError(t, err)
-			newUser, err := db.Users().GetByID(context.Background(), 5)
-			assert.NoError(t, err)
+			newUser, _ := db.Users().GetByID(context.Background(), 2)
 			tc.testFunc(t, newUser.Username, userRes.Attributes[AttrUserName].(string), err)
-			_ = db.Users().Delete(context.Background(), 5)
+			_ = db.Users().Delete(context.Background(), 2)
 		})
 	}
 

@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
@@ -59,6 +60,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
+    const isSourcegraphApp: boolean = window.context?.sourcegraphAppMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -70,6 +72,13 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     }, [])
 
     const isLightTheme = useIsLightTheme()
+
+    const wrapOutboundLink = (url: string): string => {
+        if (isSourcegraphApp) {
+            return addSourcegraphAppOutboundUrlParameters(url)
+        }
+        return url
+    }
 
     return (
         <>
@@ -146,7 +155,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         <Link
                             target="_blank"
                             rel="noopener noreferrer"
-                            to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ=="
+                            to={wrapOutboundLink('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ==')}
                         >
                             Find Log4J dependencies <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>
@@ -158,7 +167,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         <Link
                             target="_blank"
                             rel="noopener noreferrer"
-                            to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM="
+                            to={wrapOutboundLink('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM=')}
                         >
                             Learn Sourcegraph / Find code across all of your repositories{' '}
                             <Icon aria-hidden={true} svgPath={mdiOpenInNew} />

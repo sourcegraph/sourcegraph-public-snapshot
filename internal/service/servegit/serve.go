@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -27,8 +26,8 @@ import (
 )
 
 type Serve struct {
-	Addr   string
-	Root   string
+	Config
+
 	Logger log.Logger
 }
 
@@ -179,24 +178,17 @@ func isGitRepo(path string) bool {
 	return string(out) == ".git\n"
 }
 
-// Repos returns a slice of all the git repositories it finds.
+// Repos returns a slice of all the git repositories it finds. It is a wrapper
+// around Walk which removes the need to deal with channels and sorts the
+// response.
 func (s *Serve) Repos() ([]Repo, error) {
-	root, err := filepath.EvalSymlinks(s.Root)
-	if err != nil {
-		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
-		return nil, nil
-	}
-
-	root = filepath.Clean(root)
-
 	var (
-		repoC           = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
-		reposRootIsRepo bool
-		walkErr         error
+		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
+		walkErr error
 	)
 	go func() {
 		defer close(repoC)
-		reposRootIsRepo, walkErr = s.Walk(root, repoC)
+		walkErr = s.Walk(repoC)
 	}()
 
 	var repos []Repo
@@ -214,31 +206,33 @@ func (s *Serve) Repos() ([]Repo, error) {
 		return a.Name < b.Name
 	})
 
-	if !reposRootIsRepo {
-		return repos, nil
-	}
-
-	// Update all names to be relative to the parent of reposRoot. This is to
-	// give a better name than "." for repos root
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return nil, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
-	}
-	rootName := filepath.Base(abs)
-	for i := range repos {
-		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
-	}
-
 	return repos, nil
 }
 
-// Walk is the core repos finding routine. This is only exported for use in
-// app-discover-repos, normally you should use Repos instead which does
-// additional work.
-func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
-	var reposRootIsRepo atomic.Bool
+// Walk is the core repos finding routine.
+func (s *Serve) Walk(repoC chan<- Repo) error {
+	root, err := filepath.EvalSymlinks(s.Root)
+	if err != nil {
+		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
+		return nil
+	}
+	root = filepath.Clean(root)
 
-	ignore := mkIgnoreSubPath(root)
+	if repo, ok, err := rootIsRepo(root); err != nil {
+		return err
+	} else if ok {
+		repoC <- repo
+		return nil
+	}
+
+	ctx := context.Background()
+	if s.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.Timeout)
+		defer cancel()
+	}
+
+	ignore := mkIgnoreSubPath(root, s.MaxDepth)
 
 	// We use fastwalk since it is much faster. Notes for people used to
 	// filepath.WalkDir:
@@ -247,7 +241,11 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
 	//     files (so will only get dirs)
 	//   - filepath.SkipDir has the same meaning
-	err := fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if !typ.IsDir() {
 			return fastwalk.ErrSkipFiles
 		}
@@ -276,10 +274,6 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 		}
 
 		name := filepath.ToSlash(subpath)
-		if name == "." {
-			reposRootIsRepo.Store(true)
-		}
-
 		cloneURI := pathpkg.Join("/repos", name)
 		clonePath := cloneURI
 
@@ -300,12 +294,43 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 		return filepath.SkipDir
 	})
 
-	return reposRootIsRepo.Load(), err
+	// If we timed out return what we found without an error
+	if errors.Is(err, context.DeadlineExceeded) {
+		err = nil
+		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
+	}
+
+	return err
+}
+
+// rootIsRepo is a special case when the root of our search is a repository.
+func rootIsRepo(root string) (Repo, bool, error) {
+	isBare := isBareRepo(root)
+	isGit := isGitRepo(root)
+	if !isGit && !isBare {
+		return Repo{}, false, nil
+	}
+
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
+	}
+
+	clonePath := "/repos"
+	if isGit {
+		clonePath += "/.git"
+	}
+
+	return Repo{
+		Name:      filepath.Base(abs),
+		URI:       "/repos",
+		ClonePath: clonePath,
+	}, true, nil
 }
 
 // mkIgnoreSubPath which acts on subpaths to root. It returns true if the
 // subpath should be ignored.
-func mkIgnoreSubPath(root string) func(string) bool {
+func mkIgnoreSubPath(root string, maxDepth int) func(string) bool {
 	// A list of dirs which cause us trouble and are unlikely to contain
 	// repos.
 	ignoredSubPaths := ignoredPaths(root)
@@ -323,6 +348,10 @@ func mkIgnoreSubPath(root string) func(string) bool {
 	}
 
 	return func(subpath string) bool {
+		if maxDepth > 0 && strings.Count(subpath, string(os.PathSeparator)) >= maxDepth {
+			return true
+		}
+
 		// Previously we recursed into bare repositories which is why this check was here.
 		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
 		base := filepath.Base(subpath)

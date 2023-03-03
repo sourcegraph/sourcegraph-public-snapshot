@@ -22,38 +22,52 @@ const testAddress = "test.local:3939"
 func TestReposHandler(t *testing.T) {
 	cases := []struct {
 		name  string
+		root  string
 		repos []string
+		want  []Repo
 	}{{
 		name: "empty",
 	}, {
 		name:  "simple",
 		repos: []string{"project1", "project2"},
+		want: []Repo{
+			{Name: "project1", URI: "/repos/project1", ClonePath: "/repos/project1/.git"},
+			{Name: "project2", URI: "/repos/project2", ClonePath: "/repos/project2/.git"},
+		},
 	}, {
 		name:  "nested",
 		repos: []string{"project1", "project2", "dir/project3", "dir/project4.bare"},
+		want: []Repo{
+			{Name: "dir/project3", URI: "/repos/dir/project3", ClonePath: "/repos/dir/project3/.git"},
+			{Name: "dir/project4.bare", URI: "/repos/dir/project4.bare", ClonePath: "/repos/dir/project4.bare"},
+			{Name: "project1", URI: "/repos/project1", ClonePath: "/repos/project1/.git"},
+			{Name: "project2", URI: "/repos/project2", ClonePath: "/repos/project2/.git"},
+		},
+	}, {
+		name:  "root-is-repo",
+		root:  "parent",
+		repos: []string{"parent"},
+		want: []Repo{
+			{Name: "parent", URI: "/repos", ClonePath: "/repos/.git"},
+		},
 	}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
+			if tc.root != "" {
+				root = filepath.Join(root, tc.root)
+			}
+
 			h := (&Serve{
 				Logger: logtest.Scoped(t),
-				Addr:   testAddress,
-				Root:   root,
+				Config: Config{
+					Addr: testAddress,
+					Root: root,
+				},
 			}).handler()
 
-			var want []Repo
-			for _, name := range tc.repos {
-				isBare := strings.HasSuffix(name, ".bare")
-				uri := path.Join("/repos", name)
-				clonePath := uri
-				if !isBare {
-					clonePath += "/.git"
-				}
-				want = append(want, Repo{Name: name, URI: uri, ClonePath: clonePath})
-
-			}
-			testReposHandler(t, h, want)
+			testReposHandler(t, h, tc.want)
 		})
 	}
 }
@@ -157,7 +171,9 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 
 	repos, err := (&Serve{
 		Logger: logtest.Scoped(t),
-		Root:   root,
+		Config: Config{
+			Root: root,
+		},
 	}).Repos()
 	if err != nil {
 		t.Fatal(err)

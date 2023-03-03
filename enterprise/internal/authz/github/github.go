@@ -164,10 +164,13 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 // This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
+	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
+
 	client = client.WithAuthenticator(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
@@ -239,8 +242,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
-
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {

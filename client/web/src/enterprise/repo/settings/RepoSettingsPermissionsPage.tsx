@@ -35,11 +35,7 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                 className="mb-3"
                 description={
                     <>
-                        Learn more about{' '}
-                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
-                            background permissions syncing
-                        </Link>
-                        .
+                        Learn more about <Link to="/help/admin/permissions/syncing">permission syncing</Link>.
                     </>
                 }
             />

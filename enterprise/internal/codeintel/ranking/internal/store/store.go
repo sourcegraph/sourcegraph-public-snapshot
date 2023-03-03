@@ -25,6 +25,7 @@ type Store interface {
 
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error)
+	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
 
@@ -158,7 +159,34 @@ WHERE
 	r.blocked IS NULL
 `
 
+func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float64, err error) {
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
+		SELECT CASE
+			WHEN COALESCE(SUM(pr.num_paths), 0) = 0
+				THEN 0.0
+				ELSE SUM(pr.refcount_logsum) / SUM(pr.num_paths)::float
+		END AS logmean
+		FROM codeintel_path_ranks pr
+	`))
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&logmean); err != nil {
+			return 0, err
+		}
+	}
+
+	return logmean, nil
+}
+
 func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64) error {
+	if ranks == nil {
+		ranks = map[string]float64{}
+	}
+
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
