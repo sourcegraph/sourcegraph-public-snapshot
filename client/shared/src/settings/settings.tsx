@@ -257,7 +257,15 @@ interface SettingsProviderProps {
 
 export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProviderProps>> = props => {
     const { children, settingsCascade } = props
-    const context = useMemo(() => ({ settingsCascade }), [settingsCascade])
+    const context = useMemo(
+        () => ({
+            settingsCascade:
+                // When the EMPTY_SETTINGS_CASCADE is used on purpose, we clone the object to avoid
+                // it from mistakenly causing errors to be logged as if no context provider is used
+                settingsCascade === EMPTY_SETTINGS_CASCADE ? { ...EMPTY_SETTINGS_CASCADE } : settingsCascade,
+        }),
+        [settingsCascade]
+    )
     return <SettingsContext.Provider value={context}>{children}</SettingsContext.Provider>
 }
 

@@ -59,6 +59,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     ...createViewerSettingsGraphQLOverride(),
     GlobalAlertsSiteFlags: () => ({
         site: {
+            __typename: 'Site',
             id: 'TestSiteID',
             needsRepositoryConfiguration: false,
             freeUsersExceeded: false,

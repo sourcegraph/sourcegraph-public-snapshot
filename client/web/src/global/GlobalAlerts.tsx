@@ -58,6 +58,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
             settingsURL: authenticatedUser.settingsURL as string,
         }
     }, [authenticatedUser, isSourcegraphDotCom])
+
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
