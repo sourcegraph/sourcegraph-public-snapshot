@@ -206,8 +206,10 @@ nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
     visibility = ["//visibility:public"],  # must have public visibility
+    env =
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/depguard",
         "@org_golang_x_tools//go/analysis/passes/asmdecl:go_default_library",
         "@org_golang_x_tools//go/analysis/passes/assign:go_default_library",
         "@org_golang_x_tools//go/analysis/passes/atomic:go_default_library",
