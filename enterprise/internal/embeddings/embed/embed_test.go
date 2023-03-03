@@ -2,11 +2,8 @@ package embed
 
 import (
 	"context"
-	"fmt"
-	"runtime"
 	"strings"
 	"testing"
-	"unsafe"
 
 	"github.com/stretchr/testify/require"
 
@@ -70,8 +67,6 @@ func TestEmbedRepo(t *testing.T) {
 		}
 		return content, nil
 	}
-	fmt.Println("arch", runtime.GOARCH)
-	fmt.Println("int", unsafe.Sizeof(int(0)))
 
 	t.Run("no files", func(t *testing.T) {
 		index, err := EmbedRepo(ctx, repoName, revision, []string{}, client, splitOptions, readFile)
