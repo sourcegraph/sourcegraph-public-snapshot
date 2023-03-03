@@ -127,7 +127,7 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	if err := store.setDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918}, mockRankingGraphKey); err != nil {
+	if err := store.setDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
 
@@ -135,7 +135,7 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting reference count statistics: %s", err)
 	}
-	if expected := 8.5715; !cmpFloat(logmean, expected) {
+	if expected := 7.8181; !cmpFloat(logmean, expected) {
 		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
 	}
 }
