@@ -65,26 +65,7 @@ class SearchJSON(BaseModel):
     markdownCount: int
 
 
-APP_PATH = "/embeddings"
-SEARCH_ROUTE = APP_PATH + "/search/{codebase_id:path}"
-
-
-@app.get(SEARCH_ROUTE)
-def search_extracted_functions_by_text_get(
-    request: Request,
-    codebase_id: str = "",
-    query: str = "",
-    codeCount: int = 5,
-    markdownCount: int = 5,
-):
-    search = SearchJSON()
-    search.query = query
-    search.codeCount = codeCount
-    search.markdownCount = markdownCount
-    return search_extracted_functions_by_text(request, codebase_id, search)
-
-
-@app.post(SEARCH_ROUTE)
+@app.post("/embeddings/search/{codebase_id:path}")
 def search_extracted_functions_by_text(
         request: Request,
         codebase_id: str = "",
@@ -108,17 +89,7 @@ class AdditionalContextJSON(BaseModel):
     query: str
 
 
-ADDITIONAL_CONTEXT_ROUTE = APP_PATH + "/needs-additional-context"
-
-
-@app.get(ADDITIONAL_CONTEXT_ROUTE)
-def additional_context_get(query: str = ""):
-    body = AdditionalContextJSON()
-    body.query = query
-    return additional_context(body)
-
-
-@app.post(ADDITIONAL_CONTEXT_ROUTE)
+@app.post("/embeddings/needs-additional-context")
 def additional_context(body: AdditionalContextJSON = None):
     return {
         "needsAdditionalContext": query_needs_additional_context(
