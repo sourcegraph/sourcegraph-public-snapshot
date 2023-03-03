@@ -110,8 +110,8 @@ func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) e
 		//
 		// NOTE: It is important to make sure the Sourcegraph Operator authentication
 		// provider is actually enabled.
-		if actor.FromContext(ctx).SourcegraphOperator &&
-			cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() {
+		if cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() && actor.FromContext(ctx).SourcegraphOperator
+			 {
 			return nil
 		}
 
