@@ -150,7 +150,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(a)
+	c := p.NewClient(a)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -178,18 +178,15 @@ type Client struct {
 	Auth                auth.Authenticator
 	externalRateLimiter *ratelimit.Monitor
 	internalRateLimiter *ratelimit.InstrumentedLimiter // Our internal rate limiter
+	waitForRateLimit    bool
 }
 
-// newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
+// NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
 //
 // The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClient(a)
-}
-
 func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
@@ -217,6 +214,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 		Auth:                a,
 		internalRateLimiter: rl,
 		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
 	}
 }
 
