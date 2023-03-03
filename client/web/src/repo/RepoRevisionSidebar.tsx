@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
@@ -90,7 +90,8 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
     const focusSymbolsShortcut = useKeyboardShortcut('focusSymbols')
-    const [focusKey, setFocusKey] = useState('')
+    const [fileTreeFocusKey, setFileTreeFocusKey] = useState('')
+    const [symbolsFocusKey, setSymbolsFocusKey] = useState('')
 
     return (
         <>
@@ -144,7 +145,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                             {enableAccessibleFileTree ? (
                                                 <RepoRevisionSidebarFileTree
                                                     key={initialFilePath}
-                                                    focusKey={focusKey}
+                                                    focusKey={fileTreeFocusKey}
                                                     onExpandParent={onExpandParent}
                                                     repoName={props.repoName}
                                                     revision={props.revision}
@@ -175,7 +176,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                         <TabPanel>
                                             <RepoRevisionSidebarSymbols
                                                 key="symbols"
-                                                focusKey={focusKey}
+                                                focusKey={symbolsFocusKey}
                                                 repoID={props.repoID}
                                                 revision={props.revision}
                                                 activePath={props.filePath}
@@ -204,20 +205,32 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 </Tooltip>
             )}
 
-            {enableBlobPageSwitchAreasShortcuts &&
-                [focusFileTreeShortcut, focusSymbolsShortcut].map((shortcut, tabIndex) =>
-                    shortcut?.keybindings.map((keybinding, index) => (
+            {enableBlobPageSwitchAreasShortcuts && (
+                <>
+                    {focusFileTreeShortcut?.keybindings.map((keybinding, index) => (
                         <Shortcut
                             key={index}
                             {...keybinding}
                             onMatch={() => {
                                 setIsVisible(true)
-                                setPersistedTabIndex(tabIndex)
-                                setFocusKey(Date.now().toString())
+                                setPersistedTabIndex(0)
+                                setFileTreeFocusKey(Date.now().toString())
                             }}
                         />
-                    ))
-                )}
+                    ))}
+                    {focusSymbolsShortcut?.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            onMatch={() => {
+                                setIsVisible(true)
+                                setPersistedTabIndex(1)
+                                setSymbolsFocusKey(Date.now().toString())
+                            }}
+                        />
+                    ))}
+                </>
+            )}
         </>
     )
 }
