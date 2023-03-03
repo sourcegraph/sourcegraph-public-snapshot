@@ -187,7 +187,6 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	return logmean, nil
 }
 
-
 func (s *store) setDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64, graphKey string) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
