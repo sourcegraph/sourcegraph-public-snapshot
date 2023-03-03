@@ -8,6 +8,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
@@ -18,11 +19,13 @@ import { FETCH_OWNERS } from './grapqlQueries'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<{
-    repoID: string
-    revision?: string
-    filePath: string
-}> = ({ repoID, revision, filePath }) => {
+export const FileOwnershipPanel: React.FunctionComponent<
+    {
+        repoID: string
+        revision?: string
+        filePath: string
+    } & TelemetryProps
+> = ({ repoID, revision, filePath }) => {
     const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
