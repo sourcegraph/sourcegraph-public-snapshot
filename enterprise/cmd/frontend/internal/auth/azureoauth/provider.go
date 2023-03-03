@@ -138,6 +138,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 			db:          db,
 			CodeHost:    codeHost,
 			clientID:    azureProvider.ClientID,
+			allowOrgs:   azureProvider.AllowOrgs,
 			allowSignup: azureProvider.AllowSignup,
 		},
 		sessionKey,
