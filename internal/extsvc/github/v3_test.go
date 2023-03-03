@@ -1106,6 +1106,21 @@ func TestRateLimitRetry(t *testing.T) {
 		assert.False(t, succeeded)
 		assert.Equal(t, 1, numRequests)
 	})
+
+	t.Run("retry maximum number of times", func(t *testing.T) {
+		defer done()
+		hitPrimaryLimit = true
+		hitSecondaryLimit = true
+		client.numRateLimitRetries = 2
+
+		_, err = client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		assert.False(t, hitPrimaryLimit)
+		assert.False(t, hitSecondaryLimit)
+		assert.True(t, succeeded)
+		assert.Equal(t, 3, numRequests)
+	})
 }
 
 func TestListPublicRepositories(t *testing.T) {
