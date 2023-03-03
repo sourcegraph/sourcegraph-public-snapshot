@@ -5,6 +5,7 @@ import { createPreloadedQuery, QueryReference } from '../../backend/route-loader
 
 export const siteFlagFieldsFragment = gql`
     fragment SiteFlagFields on Site {
+        id
         needsRepositoryConfiguration
         freeUsersExceeded
         alerts {
@@ -31,7 +32,6 @@ const LAYOUT_PAGE_QUERY = gql`
         # storm and non-storm pages, hence we're duplicating the query and rely fully on the Apollo
         # cache instead of createPreloadedQuery.
         site {
-            id
             ...SiteFlagFields
         }
 

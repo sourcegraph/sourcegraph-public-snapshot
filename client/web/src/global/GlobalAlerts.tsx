@@ -16,12 +16,12 @@ import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+import { siteFlagFieldsFragment } from '../storm/pages/LayoutPage/LayoutPage.loader'
 
 import { GlobalAlert } from './GlobalAlert'
 import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
-import { siteFlagFieldsFragment } from '../storm/pages/LayoutPage/LayoutPage.loader'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
@@ -33,7 +33,6 @@ interface Props {
 const QUERY = gql`
     query GlobalAlertsSiteFlags {
         site {
-            id
             ...SiteFlagFields
         }
     }

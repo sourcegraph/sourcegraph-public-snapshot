@@ -42,10 +42,10 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { AppShellInit } from './storm/app-shell-init'
-import { UserSessionStores } from './UserSessionStores'
-import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 import { Layout } from './storm/pages/LayoutPage/LayoutPage'
 import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
+import { UserSessionStores } from './UserSessionStores'
+import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 export interface StaticSourcegraphWebAppContext {
     setSelectedSearchContextSpec: (spec: string) => void
