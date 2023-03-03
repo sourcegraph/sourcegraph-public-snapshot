@@ -24519,6 +24519,27 @@ Query: `sum(increase(src_codeintel_ranking_num_input_records_deleted_total{job=~
 
 <br />
 
+#### codeintel-ranking: codeintel_ranking_num_rank_records_deleted_total
+
+<p class="subtitle">Rank records removed every 5m</p>
+
+The number of stale rank records removed from Postgres.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100322` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_num_rank_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
 ## Code Intelligence > Uploads
 
 <p class="subtitle">The service at `enterprise/internal/codeintel/uploads`.</p>
