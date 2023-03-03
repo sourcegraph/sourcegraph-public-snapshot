@@ -206,7 +206,7 @@
     },
     {
       "Name": "update_codeintel_path_ranks_statistics_columns",
-      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        SUM(LOG(2, r.v::int)) AS refcount_logsum\n    INTO\n        NEW.num_paths,\n        NEW.refcount_logsum\n    FROM jsonb_each(\n        CASE WHEN NEW.payload::text = 'null'\n            THEN '{}'::jsonb\n            ELSE COALESCE(NEW.payload, '{}'::jsonb)\n        END\n    ) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        SUM(LOG(2, r.v::int + 1)) AS refcount_logsum\n    INTO\n        NEW.num_paths,\n        NEW.refcount_logsum\n    FROM jsonb_each(\n        CASE WHEN NEW.payload::text = 'null'\n            THEN '{}'::jsonb\n            ELSE COALESCE(NEW.payload, '{}'::jsonb)\n        END\n    ) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
     },
     {
       "Name": "update_codeintel_path_ranks_updated_at_column",
