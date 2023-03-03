@@ -39,28 +39,30 @@ func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
 	// Azure DevOps doesn't give us much in the way of differentiating webhook events, so we are going
 	// to try to parse the event message so that we can ideally simulate the different event types.
 	if eventKey == PullRequestUpdatedEventType {
-		var returnTarget any
 		newTarget := target.(*PullRequestUpdatedEvent)
 		text := newTarget.Message.Text
 
 		switch {
 		case strings.Contains(text, PULL_REQUEST_APPROVED_TEXT):
 			newTarget.EventType = PullRequestApprovedEventType
-			returnTarget = PullRequestApprovedEvent(*newTarget)
+			returnTarget := PullRequestApprovedEvent(*newTarget)
+			return &returnTarget, nil
 		case strings.Contains(text, PULL_REQUEST_REJECTED_TEXT):
 			newTarget.EventType = PullRequestRejectedEventType
-			returnTarget = PullRequestRejectedEvent(*newTarget)
+			returnTarget := PullRequestRejectedEvent(*newTarget)
+			return &returnTarget, nil
 		case strings.Contains(text, PULL_REQUEST_WAITING_FOR_AUTHOR_TEXT):
 			newTarget.EventType = PullRequestWaitingForAuthorEventType
-			returnTarget = PullRequestWaitingForAuthorEvent(*newTarget)
+			returnTarget := PullRequestWaitingForAuthorEvent(*newTarget)
+			return &returnTarget, nil
 		case strings.Contains(text, PULL_REQUEST_APPROVED_WITH_SUGGESTIONS_TEXT):
 			newTarget.EventType = PullRequestApprovedWithSuggestionsEventType
-			returnTarget = PullRequestApprovedWithSuggestionsEvent(*newTarget)
+			returnTarget := PullRequestApprovedWithSuggestionsEvent(*newTarget)
+			return &returnTarget, nil
 		default:
 			return target, nil
 		}
 
-		return returnTarget, nil
 	}
 
 	return target, nil

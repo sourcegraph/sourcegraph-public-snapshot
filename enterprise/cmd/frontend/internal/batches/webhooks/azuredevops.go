@@ -93,14 +93,14 @@ func (h *AzureDevOpsWebhook) convertEvent(theirs interface{}) ([]PR, keyer, erro
 	switch e := theirs.(type) {
 	case *azuredevops.PullRequestMergedEvent:
 		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case azuredevops.PullRequestApprovedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(e)), &e, nil
-	case azuredevops.PullRequestApprovedWithSuggestionsEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(e)), &e, nil
-	case azuredevops.PullRequestWaitingForAuthorEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(e)), &e, nil
-	case azuredevops.PullRequestRejectedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(e)), &e, nil
+	case *azuredevops.PullRequestApprovedEvent:
+		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
+	case *azuredevops.PullRequestRejectedEvent:
+		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
 	case *azuredevops.PullRequestUpdatedEvent:
 		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
 
