@@ -121,13 +121,13 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.SetDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}); err != nil {
+	if err := store.setDocumentRanks(ctx, api.RepoName("foo"), 1, map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}); err != nil {
+	if err := store.setDocumentRanks(ctx, api.RepoName("bar"), 1, map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918}); err != nil {
+	if err := store.setDocumentRanks(ctx, api.RepoName("baz"), 1, map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
 
