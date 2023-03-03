@@ -39,8 +39,8 @@ export const UPDATE_INGESTED_CODEOWNERS_MUTATION = gql`
 `
 
 export const DELETE_INGESTED_CODEOWNERS_MUTATION = gql`
-    mutation DeleteIngestedCodeowners($repoID: Int!) {
-        deleteCodeownersFiles(repositoryIDs: [$repoID]) {
+    mutation DeleteIngestedCodeowners($repoID: ID!) {
+        deleteCodeownersFiles(repositories: [{ repoID: $repoID }]) {
             alwaysNil
         }
     }

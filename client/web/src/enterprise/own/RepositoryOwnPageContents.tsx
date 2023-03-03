@@ -11,13 +11,13 @@ import {
     RepositoryFields,
 } from '../../graphql-operations'
 
+import { DeleteFileButton } from './DeleteFileButton'
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
 import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'
-import { DeleteFileButton } from './DeleteFileButton'
 
 export interface CodeownersIngestedFile {
     contents: string
@@ -48,7 +48,6 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
             }
         }
     }, [data?.node])
-
 
     if (loading) {
         return (
@@ -112,7 +111,7 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                             The following CODEOWNERS file was uploaded to Sourcegraph{' '}
                             <Timestamp date={codeownersIngestedFile.updatedAt} />.
                         </Text>
-                        <DeleteFileButton repo={repo} onComplete={() => setCodeownersIngestedFile(null)}>
+                        {isAdmin && <DeleteFileButton repo={repo} onComplete={() => setCodeownersIngestedFile(null)} />}
                     </div>
                     <IngestedFileViewer contents={codeownersIngestedFile.contents} />
                 </div>

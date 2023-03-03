@@ -41,7 +41,7 @@ export const UploadFileButton: React.FunctionComponent<UploadFileButtonProps> = 
         UPDATE_INGESTED_CODEOWNERS_MUTATION
     )
 
-    const [upload, { loading, reset }] = fileAlreadyExists ? updateCodeownersFileMutation : addCodeonwersFileMutation
+    const [upload, { loading }] = fileAlreadyExists ? updateCodeownersFileMutation : addCodeonwersFileMutation
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const onUploadClicked = useCallback(() => {
@@ -88,16 +88,19 @@ export const UploadFileButton: React.FunctionComponent<UploadFileButtonProps> = 
                     }
                 })
                 .finally(() => {
-                    reset()
+                    // Reset the file input so the same file can be reuploaded later.
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
+                    }
                 })
         })
         reader.readAsText(file)
-    }, [onComplete, repo.id, reset, upload])
+    }, [onComplete, repo.id, upload])
 
     return (
         <>
             <LoaderButton
-                icon={<Icon svgPath={mdiUpload} aria-hidden={true} className="mr-2" />}
+                icon={<Icon svgPath={mdiUpload} aria-hidden={true} />}
                 label={fileAlreadyExists ? 'Replace current file' : 'Upload file'}
                 loading={loading}
                 variant="primary"
