@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/sourcegraph/log"
@@ -13,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -54,14 +53,10 @@ func TestSearchWithFiltering(t *testing.T) {
 		}),
 	}
 
-	handler, cleanup := mockServer.NewHandler(logtest.Scoped(t))
-	srv := httptest.NewServer(handler)
-	t.Cleanup(func() {
-		srv.Close()
-		cleanup()
-	})
+	srv := mockServer.NewServer(logtest.Scoped(t))
+	t.Cleanup(srv.Stop)
 
-	DefaultClient.Endpoints = endpoint.Static(srv.URL)
+	DefaultClient.Endpoints = endpoint.Static("http://" + srv.Addr())
 
 	results, err := DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:     "foo",
@@ -151,14 +146,10 @@ func TestDefinitionWithFiltering(t *testing.T) {
 	}
 
 	// Create a new HTTP server that response with path1.
-	handler, cleanup := mockServer.NewHandler(logtest.Scoped(t))
-	srv := httptest.NewServer(handler)
-	t.Cleanup(func() {
-		srv.Close()
-		cleanup()
-	})
+	srv := mockServer.NewServer(logtest.Scoped(t))
+	t.Cleanup(srv.Stop)
 
-	DefaultClient.Endpoints = endpoint.Static(srv.URL)
+	DefaultClient.Endpoints = endpoint.Static("http://" + srv.Addr())
 
 	ctx := context.Background()
 
@@ -206,16 +197,11 @@ type mockSymbolsServer struct {
 	proto.UnimplementedSymbolsServiceServer
 }
 
-func (m *mockSymbolsServer) NewHandler(l log.Logger) (handler http.Handler, cleanup func()) {
+func (m *mockSymbolsServer) NewServer(l log.Logger) *grpctest.MultiplexedServer {
 	grpcServer := defaults.NewServer(l)
 	proto.RegisterSymbolsServiceServer(grpcServer, m)
 
-	handler = internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(m.serveRestHandler))
-	cleanup = func() {
-		grpcServer.Stop()
-	}
-
-	return handler, cleanup
+	return grpctest.NewMultiplexedServer(grpcServer, http.HandlerFunc(m.serveRestHandler))
 }
 
 func (m *mockSymbolsServer) serveRestHandler(w http.ResponseWriter, r *http.Request) {

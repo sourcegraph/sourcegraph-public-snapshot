@@ -145,11 +145,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	grpcServer := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
-		Server: &gitserver,
-	})
-
 	gitserver.RegisterMetrics(observationCtx, db)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
@@ -167,7 +162,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = requestclient.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -188,11 +182,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	gitserver.StartClonePipeline(ctx)
 
 	addr := getAddr()
-	srv := &http.Server{
-		Addr:    addr,
+	httpServer := &http.Server{
 		Handler: handler,
 	}
-	logger.Info("git-server: listening", log.String("addr", srv.Addr))
+
+	grpcServer := defaults.NewServer(logger)
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
+		Server: &gitserver,
+	})
+
+	srv := internalgrpc.NewMultiplexedServer(addr, grpcServer, httpServer)
+
+	logger.Info("git-server: listening", log.String("addr", addr))
 
 	go func() {
 		err := srv.ListenAndServe()
