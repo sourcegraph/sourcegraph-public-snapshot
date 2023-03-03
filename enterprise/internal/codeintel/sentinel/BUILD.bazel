@@ -13,10 +13,10 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/sentinel/internal/background",
         "//enterprise/internal/codeintel/sentinel/internal/store",
+        "//enterprise/internal/codeintel/sentinel/shared",
         "//internal/database",
         "//internal/env",
         "//internal/goroutine",
-        "//internal/metrics",
         "//internal/observation",
     ],
 )
