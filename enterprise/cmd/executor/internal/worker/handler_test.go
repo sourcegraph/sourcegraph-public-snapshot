@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -157,19 +158,109 @@ func TestHandler_Handle(t *testing.T) {
 			options: Options{},
 			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
 			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
-				// Since things will get complicated, it will be much better to push returns instead of setting a default.
-				// This will allow easier copy-paste for other tests/scenarios.
+				// prepareWorkspace (docker)
+				// clone steps
+				cmd.RunFunc.SetDefaultReturn(nil)
+				// jobRunner.Setup() (docker)
+				// nothing to mock
+				// jobRunner.Run() (docker)
+				// nothing to mock
 			},
 			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
-				require.Len(t, cmd.RunFunc.History(), 0)
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 0)
+				require.Len(t, cmd.RunFunc.History(), 6)
+				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
+				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
+				require.Len(t, filesStore.GetFunc.History(), 0)
+			},
+		},
+		{
+			name:    "Legacy Success with srcCli steps",
+			options: Options{},
+			job: types.Job{
+				ID:             42,
+				RepositoryName: "my-repo",
+				Commit:         "cool-commit",
+				CliSteps: []types.CliStep{
+					{
+						Key:      "some-step",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+				},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				// prepareWorkspace (docker)
+				// clone steps
+				cmd.RunFunc.SetDefaultReturn(nil)
+				// jobRunner.Setup() (docker)
+				// nothing to mock
+				// jobRunner.Run() (docker)
+				// nothing to mock
+			},
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
+
+				assert.Equal(t, "step.src.some-step", cmd.RunFunc.History()[6].Arg2.Key)
+				assert.Equal(t, []string{"src", "echo", "hello"}, cmd.RunFunc.History()[6].Arg2.Command)
+				// Temp directory. Value is covered by other tests. We just want to ensure it's not empty.
+				assert.NotEmpty(t, cmd.RunFunc.History()[6].Arg2.Dir)
+				assert.Equal(t, []string{"FOO=bar"}, cmd.RunFunc.History()[6].Arg2.Env)
+				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
+
+				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
+				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
+				require.Len(t, filesStore.GetFunc.History(), 0)
+			},
+		},
+		{
+			name:    "Legacy Success with docker steps",
+			options: Options{},
+			job: types.Job{
+				ID:             42,
+				RepositoryName: "my-repo",
+				Commit:         "cool-commit",
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "some-step",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+				},
+			},
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				// prepareWorkspace (docker)
+				// clone steps
+				cmd.RunFunc.SetDefaultReturn(nil)
+				// jobRunner.Setup() (docker)
+				// nothing to mock
+				// jobRunner.Run() (docker)
+				// nothing to mock
+			},
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
+
+				assert.Equal(t, "step.docker.some-step", cmd.RunFunc.History()[6].Arg2.Key)
+				// There is a temporary directory in the command. We don't want to assert on it. The value of command
+				// is covered by other tests. Just want to ensure it at least contains some expected values.
+				assert.Contains(t, cmd.RunFunc.History()[6].Arg2.Command, "docker")
+				assert.Contains(t, cmd.RunFunc.History()[6].Arg2.Command, "run")
+				assert.Empty(t, cmd.RunFunc.History()[6].Arg2.Dir)
+				assert.Nil(t, cmd.RunFunc.History()[6].Arg2.Env)
+				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
+
+				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 2)
+				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 2)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			nameSet := janitor.NewNameSet()
 			// Used in prepareWorkspace
 			cmdRunner := NewMockCmdRunner()
 			// Used in prepareWorkspace, runner
@@ -180,6 +271,7 @@ func TestHandler_Handle(t *testing.T) {
 			filesStore := NewMockFilesStore()
 
 			h := &handler{
+				nameSet:    nameSet,
 				cmdRunner:  cmdRunner,
 				cmd:        cmd,
 				logStore:   logStore,

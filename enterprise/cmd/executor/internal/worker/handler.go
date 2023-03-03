@@ -100,7 +100,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		return h.handle(ctx, logger, commandLogger, job)
 	}
 
-	if h.jobRuntime != nil {
+	if h.jobRuntime == nil {
 		// For backwards compatibility. If no runtime mode is provided, then use the old handler.
 		logger.Debug("Runtime not configured. Falling back to legacy handler")
 		return h.handle(ctx, logger, commandLogger, job)
@@ -205,19 +205,19 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
 
-	run := runner.NewRunner(h.cmd, ws.Path(), name, commandLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operations)
+	jobRunner := runner.NewRunner(h.cmd, ws.Path(), name, commandLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operations)
 
 	logger.Info("Setting up VM")
 
 	// Setup Firecracker VM (if enabled)
-	if err := run.Setup(ctx); err != nil {
+	if err := jobRunner.Setup(ctx); err != nil {
 		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
-		if teardownErr := run.Teardown(context.Background()); teardownErr != nil {
+		if teardownErr := jobRunner.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)
 		}
 	}()
@@ -243,7 +243,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
 
-		if err := run.Run(ctx, dockerStepCommand); err != nil {
+		if err := jobRunner.Run(ctx, dockerStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
@@ -269,7 +269,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
-		if err := run.Run(ctx, cliStepCommand); err != nil {
+		if err := jobRunner.Run(ctx, cliStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}
