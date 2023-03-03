@@ -40,8 +40,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	if allow, err := s.verifyAllowOrgs(ctx, token); err != nil {
 		return nil, "error in verifying authorized user organizations", err
 	} else if !allow {
-		msg := "user is not part of authorized orgs list"
-		return nil, msg, errors.Newf("%s, must be in one of %v", msg, s.allowOrgs)
+		msg := "User does not belong to any org from the allowed list of organizations. Please contact your site admin."
+		return nil, msg, errors.Newf("%s Must be in one of %v", msg, s.allowOrgs)
 	}
 
 	// allowSignup is true by default in the config schema. If it's not set in the provider config,
