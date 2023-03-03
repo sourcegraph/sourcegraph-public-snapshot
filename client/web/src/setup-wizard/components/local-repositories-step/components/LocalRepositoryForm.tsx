@@ -22,6 +22,7 @@ export const LocalRepositoryForm: FC<LocalRepositoryFormProps> = ({ onCancel, re
         // },
         // onChange: value => configurationField.input.onChange(modify(configurationField.input.value, ['token'], value)),
     })
+    // TODO: On Submit > Implement local repo discovery (getDiscoveredLocalRepos()) --> https://github.com/sourcegraph/sourcegraph/issues/48128
 
     // TODO: How to give BE file picker option for edit mode? When !!repositoryInEdit
 

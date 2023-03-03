@@ -8,9 +8,10 @@ import { Button, Container, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult, ExternalServiceKind, RepositoriesResult } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
-import { FooterWidget, CustomNextButton } from '../setup-steps'
-import { LocalRepositoryForm } from './components/LocalRepositoryForm'
 import { GET_CODE_HOSTS, GET_REPOSITORIES_BY_SERVICE } from '../remote-repositories-step/queries'
+import { FooterWidget, CustomNextButton } from '../setup-steps'
+
+import { LocalRepositoryForm } from './components/LocalRepositoryForm'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -41,7 +42,7 @@ export interface Repository {
         lastError: string | null
         byteSize: string
         shard: string | null
-        corruptionLogs: Array<{ __typename?: 'RepoCorruptionLog'; timestamp: string }>
+        corruptionLogs: { __typename?: 'RepoCorruptionLog'; timestamp: string }[]
     }
     externalRepository: { __typename?: 'ExternalRepository'; serviceType: string; serviceID: string }
 }
@@ -51,6 +52,7 @@ interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
     const [localServices, setLocalServices] = useState<ExternalService[]>()
+
     const [newRepositoryForm, setNewRepositoryForm] = useState<boolean>(false)
     const [repositoryInEdit, setRepositoryInEdit] = useState<Repository | null>(null)
 
@@ -61,7 +63,9 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     })
 
     useEffect(() => {
-        if (!data?.externalServices.nodes) return
+        if (!data?.externalServices.nodes) {
+            return
+        }
 
         const localServicesOnly = data.externalServices.nodes.filter(node => node.kind === ExternalServiceKind.OTHER)
         setLocalServices(localServicesOnly)
@@ -76,17 +80,14 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             externalService: 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0',
         },
     })
-    console.log(repoData)
 
-    const handleRepoPicker = () => {
+    const handleRepoPicker = (): void => {
         if (window.context.runningOnMacOS) {
             // TODO: Implement BE file picker (getAbsolutePath()) --> https://github.com/sourcegraph/sourcegraph/issues/48127
         }
 
-        // TODO: Populate form input
         setNewRepositoryForm(true)
     }
-    // TODO: Implement local repo discovery (getDiscoveredLocalRepos()) --> https://github.com/sourcegraph/sourcegraph/issues/48128
 
     return (
         <div {...attributes} className={classNames(className)}>
