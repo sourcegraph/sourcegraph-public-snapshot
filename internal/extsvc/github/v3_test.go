@@ -1067,6 +1067,7 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 
 	t.Run("secondary rate limit hit", func(t *testing.T) {
+		defer done()
 		hitSecondaryLimit = true
 
 		// We do a simple request to test the retry
