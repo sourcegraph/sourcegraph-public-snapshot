@@ -9,6 +9,8 @@ import {
     CommitMatch,
     getCommitMatchUrl,
     SymbolMatch,
+    PersonMatch,
+    TeamMatch,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -149,6 +151,26 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                             commitURL,
                         ]
                     }),
+            ]
+            break
+        }
+
+        case 'person':
+        case 'team': {
+            content = [
+                ['Match type', 'Handle', 'Email', 'User or team name', 'Display name'],
+                ...searchResults
+                    .filter(
+                        (result: SearchMatch): result is PersonMatch | TeamMatch =>
+                            result.type === 'person' || result.type === 'team'
+                    )
+                    .map(result => [
+                        result.type,
+                        result.handle,
+                        result.email,
+                        result.type === 'person' ? result.user?.username : result.name,
+                        result.type === 'person' ? result.user?.displayName : result.displayName,
+                    ]),
             ]
             break
         }
