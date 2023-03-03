@@ -2,8 +2,13 @@ package embed
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"strings"
 	"testing"
+	"unsafe"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -65,70 +70,40 @@ func TestEmbedRepo(t *testing.T) {
 		}
 		return content, nil
 	}
+	fmt.Println("arch", runtime.GOARCH)
+	fmt.Println("int", unsafe.Sizeof(int(0)))
 
 	t.Run("no files", func(t *testing.T) {
 		index, err := EmbedRepo(ctx, repoName, revision, []string{}, client, splitOptions, readFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if index.CodeIndex != nil {
-			t.Fatal("expected code index to be nil")
-		}
-		if index.TextIndex != nil {
-			t.Fatal("expected text index to be nil")
-		}
+		require.NoError(t, err)
+		require.Len(t, index.CodeIndex.Embeddings, 0)
+		require.Len(t, index.TextIndex.Embeddings, 0)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
 		index, err := EmbedRepo(ctx, repoName, revision, []string{"a.go"}, client, splitOptions, readFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if index.TextIndex != nil {
-			t.Fatal("expected text index to be nil")
-		}
-		if index.CodeIndex == nil {
-			t.Fatal("expected code index to be non-nil")
-		}
-		if len(index.CodeIndex.RowMetadata) != 2 {
-			t.Fatal("expected 2 embedding rows")
-		}
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 6)
+		require.Len(t, index.CodeIndex.RowMetadata, 2)
 	})
 
 	t.Run("text files only", func(t *testing.T) {
 		index, err := EmbedRepo(ctx, repoName, revision, []string{"b.md"}, client, splitOptions, readFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if index.CodeIndex != nil {
-			t.Fatal("expected code index to be nil")
-		}
-		if index.TextIndex == nil {
-			t.Fatal("expected text index to be non-nil")
-		}
-		if len(index.TextIndex.RowMetadata) != 2 {
-			t.Fatal("expected 2 embedding rows")
-		}
+		require.NoError(t, err)
+		require.Len(t, index.CodeIndex.Embeddings, 0)
+		require.Len(t, index.TextIndex.Embeddings, 6)
+		require.Len(t, index.TextIndex.RowMetadata, 2)
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
 		index, err := EmbedRepo(ctx, repoName, revision, files, client, splitOptions, readFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if index.CodeIndex == nil {
-			t.Fatal("expected code index to be non-nil")
-		}
-		if index.TextIndex == nil {
-			t.Fatal("expected text index to be non-nil")
-		}
-		if len(index.CodeIndex.RowMetadata) != 5 {
-			t.Fatalf("expected 5 embedding rows in code index, got %d", len(index.CodeIndex.RowMetadata))
-		}
-		if len(index.TextIndex.RowMetadata) != 2 {
-			t.Fatalf("expected 2 embedding rows in text index, got %d", len(index.TextIndex.RowMetadata))
-		}
+		require.NoError(t, err)
+		require.Len(t, index.CodeIndex.Embeddings, 15)
+		require.Len(t, index.CodeIndex.RowMetadata, 5)
+		require.Len(t, index.TextIndex.Embeddings, 6)
+		require.Len(t, index.TextIndex.RowMetadata, 2)
 	})
 }
 
