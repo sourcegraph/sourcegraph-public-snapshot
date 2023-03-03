@@ -41,7 +41,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     }, [telemetryService])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
-    const { connection, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, loading, error, variables, ...paginationProps } = usePageSwitcherPagination<
         PermissionsSyncJobsResult,
         PermissionsSyncJobsVariables,
         PermissionsSyncJob
@@ -55,18 +55,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
         options: { pollInterval: 5000 },
     })
-
-    useEffect(() => {
-        const newReason = stringToReason(filters.reason)
-        const newState = stringToState(filters.state)
-        if (newReason !== variables.reasonGroup || newState !== variables.state) {
-            refetch({
-                ...variables,
-                reasonGroup: newReason,
-                state: newState,
-            })
-        }
-    }, [filters, refetch, variables])
 
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
