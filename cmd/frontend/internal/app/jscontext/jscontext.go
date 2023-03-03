@@ -84,15 +84,15 @@ type TemporarySettings struct {
 	Contents        string `json:"contents"`
 }
 
-type Permissions struct {
+type Permission struct {
 	GraphQLTypename string     `json:"__typename"`
 	ID              graphql.ID `json:"id"`
 	DisplayName     string     `json:"displayName"`
 }
 
 type PermissionsConnection struct {
-	GraphQLTypename string        `json:"__typename"`
-	Nodes           []Permissions `json:"nodes"`
+	GraphQLTypename string       `json:"__typename"`
+	Nodes           []Permission `json:"nodes"`
 }
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
@@ -442,7 +442,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB, li
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
-		Permissions:         resolverUserPermissions(ctx, userResolver, licenseInfo),
+		Permissions:         resolveUserPermissions(ctx, userResolver, licenseInfo),
 	}
 }
 
@@ -465,13 +465,13 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		User:                   &userID,
 	})
 
-	userPermissions := []Permissions{}
 	nodes, err := permissionResolver.Nodes(ctx)
+	userPermissions := make([]Permission, 0, len(nodes))
 	// When an error occurs, we don't want to return nil - because when that occurs, we assume the user is on a free plan
 	// and doesn't have access to RBAC. Instead we return an empty permission slice.
 	if err == nil {
 		for _, node := range nodes {
-			userPermissions = append(userPermissions, Permissions{
+			userPermissions = append(userPermissions, Permission{
 				GraphQLTypename: "Permission",
 				ID:              node.ID(),
 				DisplayName:     node.DisplayName(),
