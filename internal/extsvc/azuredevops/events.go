@@ -38,6 +38,9 @@ func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
 
 	// Azure DevOps doesn't give us much in the way of differentiating webhook events, so we are going
 	// to try to parse the event message so that we can ideally simulate the different event types.
+	// In the case that we can't match this event to one of our simulated events, this will default
+	// to a regular PullRequestUpdatedEventType, which will just fetch the PullRequest from the API rather
+	// than deriving it from the event payload.
 	if eventKey == PullRequestUpdatedEventType {
 		newTarget := target.(*PullRequestUpdatedEvent)
 		text := newTarget.Message.Text

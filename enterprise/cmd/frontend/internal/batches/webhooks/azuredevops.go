@@ -118,6 +118,9 @@ func azureDevOpsPullRequestEventPRs(e azuredevops.PullRequestEvent) []PR {
 	}
 }
 
+// enqueueAzureDevOpsChangesetSyncFromEvent enqueues a sync request for a specified changeset in repo-updater.
+// This is used instead of deriving the changeset from the incoming webhook event when doing so
+// would be difficult.
 func (h *AzureDevOpsWebhook) enqueueAzureDevOpsChangesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event azuredevops.PullRequestEvent) error {
 	// We need to get our changeset ID for this to work. To get _there_, we need
 	// the repo ID, and then we can use the merge request IID to match the
