@@ -454,6 +454,7 @@ function renderNode({
     return (
         <Link
             {...props}
+            className={classNames(props.className, 'test-tree-file-link')}
             to={url ?? '#'}
             onClick={event => {
                 event.preventDefault()
