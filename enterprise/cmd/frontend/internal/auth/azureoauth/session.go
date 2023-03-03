@@ -14,7 +14,6 @@ import (
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
 )
 
@@ -31,7 +30,7 @@ type sessionIssuerHelper struct {
 	allowSignup *bool
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _, _, _ string) (actr *actor.Actor, safeErrMsg string, err error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
 		return nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
@@ -110,7 +109,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, token *oauth2.Token) (bool, error) {
-	if len(maps.Keys(s.allowOrgs)) == 0 {
+	if len(s.allowOrgs) == 0 {
 		return true, nil
 	}
 

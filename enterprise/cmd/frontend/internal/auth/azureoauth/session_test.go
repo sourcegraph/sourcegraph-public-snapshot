@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
 
@@ -107,9 +108,7 @@ func Test_verifyAllowOrgs(t *testing.T) {
 
 			ctx := context.Background()
 			allow, err := s.verifyAllowOrgs(ctx, &oauth2.Token{AccessToken: "foo"})
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err, "unexpected error")
 
 			if allow != tc.expectedAllow {
 				t.Fatalf("expected allow to be %v, but got %v", tc.expectedAllow, allow)
