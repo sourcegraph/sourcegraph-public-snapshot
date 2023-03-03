@@ -13,7 +13,7 @@ RUN ls '/generated/grafana'
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
 # Use the Chainguard Grafana image
 # TODO: This image was manually uploaded to our registry 2023-03-03
-FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:f4bb4d543348a87ffc8a72c4ecd57299090e7dcb454d718fc5da34fd4488af32 as production
+FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:41a1c106067ecd7bafb05aab7a7c5843c462556df9c4b822f8eaf30d957e13fd as production
 LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"
