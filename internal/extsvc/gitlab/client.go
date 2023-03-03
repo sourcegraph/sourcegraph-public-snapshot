@@ -179,6 +179,7 @@ type Client struct {
 	externalRateLimiter *ratelimit.Monitor
 	internalRateLimiter *ratelimit.InstrumentedLimiter // Our internal rate limiter
 	waitForRateLimit    bool
+	numRateLimitRetries int
 }
 
 // NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -230,8 +231,34 @@ func (c *Client) Urn() string {
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+	if c.internalRateLimiter != nil {
+		err = c.internalRateLimiter.Wait(ctx)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "rate limit")
+		}
+	}
+
+	if c.waitForRateLimit {
+		// We don't care whether this happens or not as it is a preventative measure.
+		c.externalRateLimiter.WaitForRateLimit(ctx)
+	}
+
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, req, result)
+	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
+
+	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
+	numTries := 0
+	for c.waitForRateLimit && numTries < c.numRateLimitRetries && respCode == http.StatusTooManyRequests {
+		if c.externalRateLimiter.WaitForRateLimit(ctx) {
+			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+			numTries += 1
+		} else {
+			// We did not wait because of rate limiting, so we break the loop
+			break
+		}
+	}
+
+	return respHeader, respCode, err
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
@@ -252,19 +279,15 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		span.Finish()
 	}()
 
-	if c.internalRateLimiter != nil {
-		err = c.internalRateLimiter.Wait(ctx)
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "rate limit")
-		}
-	}
-
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
 	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth)
+	if resp != nil {
+		c.externalRateLimiter.Update(resp.Header)
+	}
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, 0, errors.Wrap(err, "request failed")
