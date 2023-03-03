@@ -3124,6 +3124,21 @@ COMMENT ON COLUMN lsif_uploads_visible_at_tip.branch_or_tag_name IS 'The name of
 
 COMMENT ON COLUMN lsif_uploads_visible_at_tip.is_default_branch IS 'Whether the specified branch is the default of the repository. Always false for tags.';
 
+CREATE TABLE lsif_uploads_vulnerability_scan (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE lsif_uploads_vulnerability_scan_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE lsif_uploads_vulnerability_scan_id_seq OWNED BY lsif_uploads_vulnerability_scan.id;
+
 CREATE VIEW lsif_uploads_with_repository_name AS
  SELECT u.id,
     u.commit,
@@ -4508,6 +4523,8 @@ ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan ALTER COLUMN id SET DEFAULT nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass);
+
 ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
@@ -4856,6 +4873,9 @@ ALTER TABLE ONLY lsif_uploads
 
 ALTER TABLE ONLY lsif_uploads_reference_counts
     ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT lsif_uploads_vulnerability_scan_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
@@ -5352,6 +5372,8 @@ CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visib
 
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
+CREATE UNIQUE INDEX lsif_uploads_vulnerability_scan_upload_id ON lsif_uploads_vulnerability_scan USING btree (upload_id);
+
 CREATE INDEX notebook_stars_user_id_idx ON notebook_stars USING btree (user_id);
 
 CREATE INDEX notebooks_blocks_tsvector_idx ON notebooks USING gin (blocks_tsvector);
@@ -5812,6 +5834,9 @@ ALTER TABLE ONLY codeintel_ranking_references_processed
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT fk_upload_id FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY vulnerability_affected_packages
     ADD CONSTRAINT fk_vulnerabilities FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;

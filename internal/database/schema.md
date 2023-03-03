@@ -2274,6 +2274,7 @@ Check constraints:
 Referenced by:
     TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
     TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_uploads_vulnerability_scan" CONSTRAINT "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2392,6 +2393,21 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 **is_default_branch**: Whether the specified branch is the default of the repository. Always false for tags.
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
+
+# Table "public.lsif_uploads_vulnerability_scan"
+```
+     Column      |            Type             | Collation | Nullable |                           Default                           
+-----------------+-----------------------------+-----------+----------+-------------------------------------------------------------
+ id              | bigint                      |           | not null | nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass)
+ upload_id       | integer                     |           | not null | 
+ last_scanned_at | timestamp without time zone |           | not null | now()
+Indexes:
+    "lsif_uploads_vulnerability_scan_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_vulnerability_scan_upload_id" UNIQUE, btree (upload_id)
+Foreign-key constraints:
+    "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
 
 # Table "public.migration_logs"
 ```
