@@ -315,6 +315,11 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx, bcmds...); err != nil {
+		return err
+	}
+
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error {
 		return run.Commands(ctx, env, verbose, cmds...)
