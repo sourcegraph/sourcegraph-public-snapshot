@@ -415,7 +415,7 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		User:                   &userID,
 	})
 
-	userPermissions := []Permission{}
+	userPermissions := make([]Permission, 0, len(nodes))
 	nodes, err := permissionResolver.Nodes(ctx)
 	// When an error occurs, we don't want to return nil - because when that occurs, we assume the user is on a free plan
 	// and doesn't have access to RBAC. Instead we return an empty permission slice.
