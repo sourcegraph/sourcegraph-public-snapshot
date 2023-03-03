@@ -294,6 +294,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         ))}
                     </div>
                 </div>
+
                 {selectedTab === 'notebooks' && (
                     <div className="row mb-5">
                         <div className="d-flex flex-column col-sm-2">
@@ -325,6 +326,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         </div>
                     </div>
                 )}
+
                 {selectedTab === 'getting-started' && (
                     <NotebooksGettingStartedTab
                         telemetryService={telemetryService}
