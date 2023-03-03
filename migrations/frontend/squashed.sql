@@ -802,7 +802,7 @@ CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
     AS $$ BEGIN
     SELECT
         COUNT(r.v) AS num_paths,
-        SUM(LOG(2, r.v::int)) AS refcount_logsum
+        SUM(LOG(2, r.v::int + 1)) AS refcount_logsum
     INTO
         NEW.num_paths,
         NEW.refcount_logsum
