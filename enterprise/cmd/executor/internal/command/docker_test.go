@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -356,8 +355,6 @@ func TestFormatRawOrDockerCommandDockerScriptWithRegistryPrefixAndFullyQualified
 	}
 
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
-		fmt.Println("want: ", expected.Command)
-		fmt.Println("got: ", actual.Command)
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 
