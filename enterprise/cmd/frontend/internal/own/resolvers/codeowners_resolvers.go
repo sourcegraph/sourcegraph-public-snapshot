@@ -120,7 +120,7 @@ func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.Codeowne
 	}
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(*input.RepoID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not unmarshal repository id")
 	}
 	return r.db.Repos().Get(ctx, repoID)
 }
