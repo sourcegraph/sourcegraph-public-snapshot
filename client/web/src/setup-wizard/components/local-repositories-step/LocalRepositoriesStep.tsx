@@ -1,12 +1,12 @@
 import { FC, HTMLAttributes, useState, useEffect } from 'react'
 
-import { mdiInformationOutline, mdiPlus, mdiGit } from '@mdi/js'
+import { mdiInformationOutline, mdiPlus, mdiGit, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Container, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult, RepositoriesResultResult } from '../../../graphql-operations'
+import { GetCodeHostsResult, ExternalServiceKind, RepositoriesResult } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 import { GET_CODE_HOSTS, GET_REPOSITORIES_BY_SERVICE } from '../remote-repositories-step/queries'
@@ -19,10 +19,8 @@ interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
-    const [localRepositories, setLocalRepositories] = useState<RepositoriesResultResult>()
+    const [localServices, setLocalServices] = useState<GetCodeHostsResult>()
     const [repoPickerMode, setRepoPickerMode] = useState<string>('')
-
-    // TODO: Edit action?
 
     /** TODO: Trade out for GetLocalRepositoriesByService() query once query is open
      * -->  query GetLocalRepositoriesService() {
@@ -43,24 +41,23 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     })
     console.log(data)
 
-    const { data: repoData } = useQuery<RepositoriesResultResult>(GET_REPOSITORIES_BY_SERVICE, {
+    // TODO: Map through localServices
+    const { data: repoData } = useQuery<RepositoriesResult>(GET_REPOSITORIES_BY_SERVICE, {
         fetchPolicy: 'cache-and-network',
         variables: {
+            skip: !localServices,
             first: 25,
             externalService: 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0',
         },
     })
-    console.log(repoData)
+    console.log(repoData?.repositories.nodes, repoData)
 
-    // useEffect(() => {
-    //     if (!data?.externalServices.nodes) return
+    useEffect(() => {
+        if (!data?.externalServices.nodes) return
 
-    //     const localRepos = useQuery<RepositoriesResultResult>(GET_REPOSITORIES_BY_SERVICE, {
-    //         fetchPolicy: 'cache-and-network',
-    //         variables: { id: data?.externalServices.nodes[0].id },
-    //     })
-    //     setLocalRepositories(localRepos.data)
-    // }, [data])
+        const localServices = data.externalServices.nodes.filter(node => node.kind === ExternalServiceKind.OTHER)
+        setLocalServices(localServices)
+    }, [data])
 
     /** TODO: Implement BE file picker & local repo discovery
      * --> File picker (https://github.com/sourcegraph/sourcegraph/issues/48127)
@@ -91,33 +88,34 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
             <Container>
                 <ul className={styles.list}>
-                    {/* {localRepositories?.length ? (
-                        localRepositories.map((codeHost, index) => (
+                    {repoData?.repositories?.nodes.length ? (
+                        repoData?.repositories?.nodes.map((codeHost, index) => (
                             <li
                                 key={codeHost.id}
                                 className={classNames(
                                     'p-2 d-flex',
                                     styles.item,
-                                    index + 1 !== localRepositories.length && styles.itemBorder
+                                    index + 1 !== repoData?.repositories?.nodes.length && styles.itemBorder
                                 )}
                             >
                                 <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
                                 <div className="d-flex flex-column">
+                                    {/* TODO: Replace with SG relative path when available */}
                                     <Text weight="medium" className="mb-0">
-                                        {codeHost.displayName}
+                                        {codeHost.name}
                                     </Text>
+                                    {/* TODO: Replace with absolute path when available */}
                                     <Text size="small" className="text-muted mb-0">
-                                        {codeHost.displayName}
+                                        {codeHost.name}
                                     </Text>
                                 </div>
 
-                                // TODO: Edit here
-                                <Tooltip content="Delete repository" placement="right" debounce={0}>
+                                <Tooltip content="Edit repository" placement="right" debounce={0}>
                                     <Button
                                         variant="secondary"
                                         className={classNames('ml-auto px-2 py-0', styles.button)}
                                     >
-                                        <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
+                                        <Icon svgPath={mdiPencil} aria-label="Edit code host connection" />
                                     </Button>
                                 </Tooltip>
                             </li>
@@ -134,7 +132,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                             />
                             To get started, add at least one local repository to Sourcegraph.
                         </Text>
-                    )} */}
+                    )}
 
                     <li className="d-flex">
                         <Button

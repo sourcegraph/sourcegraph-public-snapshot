@@ -6,7 +6,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
-import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHost, GetCodeHostsResult, ExternalServiceKind } from '../../../../../graphql-operations'
 import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
@@ -64,7 +64,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
             {createConnectionType && <CreateCodeHostConnectionCard codeHostType={createConnectionType} />}
             {data.externalServices.nodes
                 // Code Host with kind 'OTHER' are local repositories handled in Local Repository step
-                .filter(codeHost => codeHost.kind !== 'OTHER')
+                .filter(codeHost => codeHost.kind !== ExternalServiceKind.OTHER)
                 .map(codeHost => (
                     <li
                         key={codeHost.id}
