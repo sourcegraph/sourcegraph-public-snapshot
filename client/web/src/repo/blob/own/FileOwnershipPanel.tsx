@@ -25,7 +25,11 @@ export const FileOwnershipPanel: React.FunctionComponent<
         revision?: string
         filePath: string
     } & TelemetryProps
-> = ({ repoID, revision, filePath }) => {
+> = ({ repoID, revision, filePath, telemetryService }) => {
+    React.useEffect(() => {
+        telemetryService.log('OwnershipPanelOpened')
+    }, [telemetryService])
+
     const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
@@ -33,6 +37,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             currentPath: filePath,
         },
     })
+
     if (loading) {
         return (
             <div className={classNames(styles.loaderWrapper, 'text-muted')}>
