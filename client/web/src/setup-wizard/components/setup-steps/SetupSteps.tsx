@@ -39,6 +39,7 @@ interface SetupStepsContextData {
     nextButtonPortal: HTMLDivElement | null
     setFooterPortal: (container: HTMLDivElement | null) => void
     setNextButtonPortal: (container: HTMLDivElement | null) => void
+    onSkip: () => void
     onPrevStep: () => void
     onNextStep: () => void
 }
@@ -50,6 +51,7 @@ const SetupStepsContext = createContext<SetupStepsContextData>({
     nextButtonPortal: null,
     setFooterPortal: noop,
     setNextButtonPortal: noop,
+    onSkip: noop,
     onPrevStep: noop,
     onNextStep: noop,
 })
@@ -129,6 +131,10 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         }
     }, [activeStepIndex, steps, navigate])
 
+    const handleSkipWizard = useCallback(() => {
+        console.log('Skip')
+    }, [])
+
     const cachedContext = useMemo(
         () => ({
             steps,
@@ -137,10 +143,19 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             nextButtonPortal,
             setFooterPortal,
             setNextButtonPortal,
+            onSkip: handleSkipWizard,
             onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [steps, activeStepIndex, footerPortal, nextButtonPortal, handleGoToPrevStep, handleGoToNextStep]
+        [
+            steps,
+            activeStepIndex,
+            footerPortal,
+            nextButtonPortal,
+            handleSkipWizard,
+            handleGoToPrevStep,
+            handleGoToNextStep,
+        ]
     )
 
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
@@ -200,7 +215,7 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
 export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
     const { className, ...attributes } = props
 
-    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onPrevStep, onNextStep } =
+    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onSkip, onPrevStep, onNextStep } =
         useContext(SetupStepsContext)
 
     return (
@@ -210,9 +225,13 @@ export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
             </div>
             <div className={styles.footerNavigation}>
                 <div className={styles.footerInnerNavigation}>
+                    <Button variant="secondary" className={styles.footerSkip} onClick={onSkip}>
+                        Skip setup
+                    </Button>
+
                     {activeStepIndex > 0 && (
                         <Button variant="secondary" onClick={onPrevStep}>
-                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Go to previous step
+                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Previous
                         </Button>
                     )}
 
