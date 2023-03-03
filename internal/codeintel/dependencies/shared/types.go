@@ -1,21 +1,28 @@
 package shared
 
 import (
+	"time"
+
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 )
 
 type PackageRepoReference struct {
-	ID       int
-	Scheme   string
-	Name     reposource.PackageName
-	Versions []PackageRepoRefVersion
+	ID            int
+	Scheme        string
+	Name          reposource.PackageName
+	Versions      []PackageRepoRefVersion
+	Blocked       bool
+	LastCheckedAt *time.Time
 }
 
 type PackageRepoRefVersion struct {
-	ID           int
-	PackageRefID int
-	Version      string
+	ID            int
+	PackageRefID  int
+	Version       string
+	Blocked       bool
+	LastCheckedAt *time.Time
 }
 
 type MinimalPackageRepoRef struct {
@@ -30,11 +37,9 @@ type MinimialVersionedPackageRepo struct {
 	Version string
 }
 
-type PackageFilter struct {
-	ID              int
-	Behaviour       string
-	ExternalService string
-	NameFilter      *struct {
+type MinimalPackageFilter struct {
+	PackageScheme string
+	NameFilter    *struct {
 		PackageGlob string
 	}
 	VersionFilter *struct {
@@ -43,9 +48,17 @@ type PackageFilter struct {
 	}
 }
 
-func (f *PackageFilter) BuildMatcher() (packagerepos.PackageMatcher, error) {
-	if f.NameFilter != nil {
-		return packagerepos.NewPackageNameGlob(f.NameFilter.PackageGlob)
+type PackageFilter struct {
+	ID            int
+	Behaviour     string
+	PackageScheme string
+	NameFilter    *struct {
+		PackageGlob string
 	}
-	return packagerepos.NewVersionGlob(f.VersionFilter.PackageName, f.VersionFilter.VersionGlob)
+	VersionFilter *struct {
+		PackageName string
+		VersionGlob string
+	}
+	DeletedAt pq.NullTime
+	UpdatedAt time.Time
 }

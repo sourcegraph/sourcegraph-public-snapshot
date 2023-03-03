@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -31,11 +30,10 @@ type vcsPackagesSyncer struct {
 	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
 	// commits or tags. The name of this dependency should never be publicly visible,
 	// so it can have any random value.
-	placeholder          reposource.VersionedPackage
-	configDeps           []string
-	allowList, blockList []packagerepos.PackageMatcher
-	source               packagesSource
-	svc                  dependenciesService
+	placeholder reposource.VersionedPackage
+	configDeps  []string
+	source      packagesSource
+	svc         dependenciesService
 }
 
 var _ VCSSyncer = &vcsPackagesSyncer{}
@@ -64,6 +62,7 @@ type packagesDownloadSource interface {
 type dependenciesService interface {
 	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
 func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
@@ -149,8 +148,9 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		return nil
 	}
 
-	if !packagerepos.IsVersionedPackageAllowed(dep.PackageSyntax(), dep.PackageVersion(), s.allowList, s.blockList) {
-		return nil
+	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
+		// if err == nil && !allowed, this will return nil
+		return errors.Wrap(err, "error checking if package repo version is allowed")
 	}
 
 	err = s.gitPushDependencyTag(ctx, string(dir), dep)
@@ -344,9 +344,10 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	}
 
 	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:        s.scheme,
-		Name:          packageName,
-		ExactNameOnly: true,
+		Scheme:         s.scheme,
+		Name:           packageName,
+		ExactNameOnly:  true,
+		IncludeBlocked: false,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")
@@ -355,16 +356,6 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	if len(listedPackages) > 1 {
 		return nil, errors.Newf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName)
 	}
-
-	defer func() {
-		filteredVersions := versions[:0]
-		for _, version := range versions {
-			if packagerepos.IsVersionedPackageAllowed(packageName, version, s.allowList, s.blockList) {
-				filteredVersions = append(filteredVersions, version)
-			}
-		}
-		versions = filteredVersions
-	}()
 
 	if len(listedPackages) == 0 {
 		return combinedVersions, nil

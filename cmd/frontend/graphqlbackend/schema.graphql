@@ -855,17 +855,25 @@ type Mutation {
         Maps to the external service whos config would be updated when used in the
         set query.
         """
-        packageReferenceKind: PackageRepoReferenceKind!
+        kind: PackageRepoReferenceKind!
         """
         The package repo reference matcher to persist.
         """
-        filter: PackageVersionOrNameFilter!
+        filter: PackageVersionOrNameFilterInput!
     ): EmptyResponse!
 
     updatePackageRepoFilter(
         id: ID!
 
-        filter: PackageVersionOrNameFilter!
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+
+        filter: PackageVersionOrNameFilterInput!
     ): EmptyResponse!
 
     deletePackageRepoFilter(id: ID!): EmptyResponse!
@@ -1455,9 +1463,9 @@ type Query {
     """
     packageRepoReferences(
         """
-        The exact scheme value to filter by.
+        The exact package repo reference kind to filter by.
         """
-        scheme: PackageRepoReferenceKind
+        kind: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -1481,15 +1489,13 @@ type Query {
     """
     packageRepoReferencesMatchingFilter(
         """
-        The ecosystem of the package repo reference this matcher should apply to.
-        Maps to the external service whos config would be updated when used in the
-        set query.
+        The kind of the package repo reference this matcher should apply to.
         """
-        packageReferenceKind: PackageRepoReferenceKind!
+        kind: PackageRepoReferenceKind!
         """
         The matcher for which to return matching results.
         """
-        filter: PackageVersionOrNameFilter!
+        filter: PackageVersionOrNameFilterInput!
         """
         Returns the first n package/package version matches from the list.
         """
@@ -3657,10 +3663,10 @@ type PackageRepoReference {
     id: ID!
 
     """
-    The ecosystem/package-manager/indexer scheme under which this package repo
+    The ecosystem/package-manager/indexer kind under which this package repo
     reference is uniquely identified e.g. npm/python/rust-analyzer
     """
-    scheme: PackageRepoReferenceKind!
+    kind: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
@@ -3706,18 +3712,40 @@ enum PackageMatchBehaviour {
     ALLOW
 }
 
-"""
-"""
-input PackageVersionOrNameFilter {
-    nameMatcher: PackageNameFilter
-    versionMatcher: PackageVersionFilter
+type PackageFilter {
+    id: ID!
+
+    behaviour: PackageMatchBehaviour!
+
+    kind: PackageRepoReferenceKind!
+
+    nameFilter: PackageNameFilter
+
+    versionFilter: PackageVersionFilter
 }
 
-input PackageNameFilter {
+type PackageNameFilter {
     packageGlob: String!
 }
 
-input PackageVersionFilter {
+type PackageVersionFilter {
+    packageName: String!
+
+    versionGlob: String!
+}
+
+"""
+"""
+input PackageVersionOrNameFilterInput {
+    nameFilter: PackageNameFilterInput
+    versionFilter: PackageVersionFilterInput
+}
+
+input PackageNameFilterInput {
+    packageGlob: String!
+}
+
+input PackageVersionFilterInput {
     packageName: String!
 
     versionGlob: String!

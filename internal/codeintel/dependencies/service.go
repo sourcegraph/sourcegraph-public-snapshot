@@ -46,6 +46,8 @@ type ListDependencyReposOpts struct {
 	After int
 	// Limit limits the size of the results set to be returned.
 	Limit int
+	// IncludeBlocked also includes those that would not be synced due to filter rules
+	IncludeBlocked bool
 }
 
 func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (_ []PackageRepoReference, total int, err error) {
@@ -89,10 +91,10 @@ func (s *Service) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...i
 }
 
 type ListPackageRepoRefFiltersOpts struct {
-	IDs                 []int
-	ExternalServiceKind string
-	After               int
-	Limit               int
+	IDs           []int
+	PackageScheme string
+	After         int
+	Limit         int
 }
 
 func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
@@ -101,4 +103,24 @@ func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackag
 
 func (s *Service) CreatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
 	return s.store.CreatePackageRepoFilter(ctx, filter)
+}
+
+func (s *Service) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+	return s.store.UpdatePackageRepoFilter(ctx, filter)
+}
+
+func (s *Service) DeletePacakgeRepoFilter(ctx context.Context, id int) (err error) {
+	return s.store.DeletePacakgeRepoFilter(ctx, id)
+}
+
+func (s *Service) IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error) {
+	return s.store.IsPackageRepoVersionAllowed(ctx, scheme, pkg, version)
+}
+
+func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
+	return s.store.IsPackageRepoAllowed(ctx, scheme, pkg)
+}
+
+func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error) {
+	return s.store.PackagesOrVersionsMatchingFilter(ctx, filter, limit, after)
 }

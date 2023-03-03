@@ -1355,10 +1355,6 @@ type Log struct {
 
 // Maven description: Configuration for resolving from Maven repositories.
 type Maven struct {
-	// Allowlist description: An array of either package-name glob patterns or specific package's version glob patterns.
-	Allowlist []any `json:"allowlist,omitempty"`
-	// Blocklist description: An array of either package-name glob patterns or specific package's version glob patterns.
-	Blocklist []any `json:"blocklist,omitempty"`
 	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
 	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of artifact "groupID:artifactID:version" strings specifying which Maven artifacts to mirror on Sourcegraph.

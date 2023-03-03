@@ -21,9 +21,9 @@ import (
 
 type PackageRepoReferenceConnectionArgs struct {
 	graphqlutil.ConnectionArgs
-	After  *string
-	Scheme *string
-	Name   *string
+	After *string
+	Kind  *string
+	Name  *string
 }
 
 var externalServiceToPackageSchemeMap = map[string]string{
@@ -47,12 +47,14 @@ var packageSchemeToExternalServiceMap = map[string]string{
 func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
-	var opts dependencies.ListDependencyReposOpts
+	opts := dependencies.ListDependencyReposOpts{
+		IncludeBlocked: true,
+	}
 
-	if args.Scheme != nil {
-		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Scheme]
+	if args.Kind != nil {
+		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Kind]
 		if !ok {
-			return nil, errors.Errorf("unknown package scheme %q", *args.Scheme)
+			return nil, errors.Errorf("unknown package scheme %q", *args.Kind)
 		}
 		opts.Scheme = packageScheme
 	}
@@ -139,7 +141,7 @@ func (r *packageRepoReferenceResolver) ID() graphql.ID {
 	return relay.MarshalID("PackageRepoReference", r.dep.ID)
 }
 
-func (r *packageRepoReferenceResolver) Scheme() string {
+func (r *packageRepoReferenceResolver) Kind() string {
 	return packageSchemeToExternalServiceMap[r.dep.Scheme]
 }
 

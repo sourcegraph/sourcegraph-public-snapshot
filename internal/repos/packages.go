@@ -11,19 +11,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/packagerepos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A PackagesSource yields dependency repositories from a package (dependencies) host connection.
 type PackagesSource struct {
-	svc                  *types.ExternalService
-	configDeps           []string
-	allowList, blockList []packagerepos.PackageMatcher
-	scheme               string
-	depsSvc              *dependencies.Service
-	src                  packagesSource
+	svc        *types.ExternalService
+	configDeps []string
+	scheme     string
+	depsSvc    *dependencies.Service
+	src        packagesSource
 }
 
 type packagesSource interface {
@@ -52,7 +51,7 @@ func (s *PackagesSource) CheckConnection(ctx context.Context) error {
 }
 
 func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	deps, err := s.configDependencies()
+	staticConfigDeps, err := s.configDependencies()
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
 		return
@@ -60,14 +59,10 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 
 	handledPackages := make(map[reposource.PackageName]struct{})
 
-	for _, dep := range deps {
+	for _, dep := range staticConfigDeps {
 		if err := ctx.Err(); err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
-		}
-
-		if !packagerepos.IsPackageAllowed(dep.PackageSyntax(), s.allowList, s.blockList) {
-			continue
 		}
 
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
@@ -101,6 +96,8 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			Scheme: s.scheme,
 			After:  lastID,
 			Limit:  batchLimit,
+			// deliberate for clarity
+			IncludeBlocked: false,
 		})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -130,10 +127,6 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 					return nil
 				}
 
-				if !packagerepos.IsPackageAllowed(pkg.PackageSyntax(), s.allowList, s.blockList) {
-					return nil
-				}
-
 				repo := s.packageToRepoType(pkg)
 				results <- SourceResult{Source: s, Repo: repo}
 
@@ -149,7 +142,9 @@ func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.R
 		return nil, err
 	}
 
-	if !packagerepos.IsPackageAllowed(parsedPkg.PackageSyntax(), s.allowList, s.blockList) {
+	if allowed, err := s.depsSvc.IsPackageRepoAllowed(ctx, s.scheme, parsedPkg.PackageSyntax()); err != nil {
+		return nil, errors.Wrapf(err, "error checking if package repo (%s, %s) is allowed", s.scheme, parsedPkg.PackageSyntax())
+	} else if !allowed {
 		return nil, &repoupdater.ErrNotFound{
 			Repo:       api.RepoName(repoName),
 			IsNotFound: true,
