@@ -367,7 +367,10 @@ function createBlobPageData<T extends BlobInfo>({
     blobInfo: T
 }): {
     graphqlResults: Pick<WebGraphQlOperations, 'ResolveRepoRev' | 'FileExternalLinks' | 'Blob' | 'FileNames'> &
-        Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'>
+        Pick<
+            SharedGraphQlOperations,
+            'TreeEntries' | 'FileTreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'
+        >
     filePaths: { [k in keyof T]: string }
 } {
     const repositorySourcegraphUrl = `/${repoName}`
