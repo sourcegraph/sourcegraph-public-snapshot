@@ -66,7 +66,7 @@ func main() {
 		repoC := make(chan servegit.Repo, 4)
 		go func() {
 			defer close(repoC)
-			_, err := srv.Walk(filepath.Clean(*root), repoC)
+			err := srv.Walk(filepath.Clean(*root), repoC)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Walk returned error: %v\n", err)
 				os.Exit(1)

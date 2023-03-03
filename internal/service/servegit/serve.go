@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -190,13 +189,12 @@ func (s *Serve) Repos() ([]Repo, error) {
 	root = filepath.Clean(root)
 
 	var (
-		repoC           = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
-		reposRootIsRepo bool
-		walkErr         error
+		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
+		walkErr error
 	)
 	go func() {
 		defer close(repoC)
-		reposRootIsRepo, walkErr = s.Walk(root, repoC)
+		walkErr = s.Walk(root, repoC)
 	}()
 
 	var repos []Repo
@@ -214,29 +212,19 @@ func (s *Serve) Repos() ([]Repo, error) {
 		return a.Name < b.Name
 	})
 
-	if !reposRootIsRepo {
-		return repos, nil
-	}
-
-	// Update all names to be relative to the parent of reposRoot. This is to
-	// give a better name than "." for repos root
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return nil, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
-	}
-	rootName := filepath.Base(abs)
-	for i := range repos {
-		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
-	}
-
 	return repos, nil
 }
 
 // Walk is the core repos finding routine. This is only exported for use in
 // app-discover-repos, normally you should use Repos instead which does
 // additional work.
-func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
-	var reposRootIsRepo atomic.Bool
+func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+	if repo, ok, err := rootIsRepo(root); err != nil {
+		return err
+	} else if ok {
+		repoC <- repo
+		return nil
+	}
 
 	ctx := context.Background()
 	if s.Timeout > 0 {
@@ -287,10 +275,6 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 		}
 
 		name := filepath.ToSlash(subpath)
-		if name == "." {
-			reposRootIsRepo.Store(true)
-		}
-
 		cloneURI := pathpkg.Join("/repos", name)
 		clonePath := cloneURI
 
@@ -317,7 +301,32 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
 	}
 
-	return reposRootIsRepo.Load(), err
+	return err
+}
+
+// rootIsRepo is a special case when the root of our search is a repository.
+func rootIsRepo(root string) (Repo, bool, error) {
+	isBare := isBareRepo(root)
+	isGit := isGitRepo(root)
+	if !isGit && !isBare {
+		return Repo{}, false, nil
+	}
+
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
+	}
+
+	clonePath := "/repos"
+	if isGit {
+		clonePath += "/.git"
+	}
+
+	return Repo{
+		Name:      filepath.Base(abs),
+		URI:       "/repos",
+		ClonePath: clonePath,
+	}, true, nil
 }
 
 // mkIgnoreSubPath which acts on subpaths to root. It returns true if the
