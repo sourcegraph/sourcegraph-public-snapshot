@@ -193,6 +193,16 @@ Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
 
 In the case where your testdata lives in `../**`, Gazelle cannot see those on its own, and you need to create a filegroup manually, see https://github.com/sourcegraph/sourcegraph/pull/47605/commits/93c838aad5436dc69f6695cec933bfb84b8ba59a
 
+#### Manually adding a `go_repository`
+
+Sometimes Gazelle won't be able to generate a `go_repository` for your dependency and you'll need to fill in the attributes yourself. Most of the fields are easy to get, except when you need to provide values for the sum and version.
+
+To retrieve these values:
+1. Create a go.mod in the directory where the dependency is imported.
+2. Run `go mod tidy`. This will populate the `go.mod` file and also generate a `go.sum` file.
+3. You can then locate the version you should use for `go_repository` from the `go.mod` file and the sum from the `go.sum` file.
+4. Delete the `go.mod` and `go.sum` files as they're no longer needed.
+
 ## Resources
 
 - [Core Bazel (book)](https://www.amazon.com/Core-Bazel-Fast-Builds-People/dp/B08DVDM7BZ):

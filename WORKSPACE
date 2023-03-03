@@ -193,7 +193,7 @@ rules_proto_toolchains()
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("//:deps.bzl", "go_dependencies")
-load("//:linters.bzl", "linter_dependencies")
+load("//:linter_deps.bzl", "linter_dependencies")
 
 go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
