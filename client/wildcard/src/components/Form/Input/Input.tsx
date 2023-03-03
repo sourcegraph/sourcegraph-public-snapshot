@@ -30,9 +30,6 @@ export interface InputProps {
     /** Description block shown below the input. */
     message?: ReactNode
 
-    /** To allow multiple files in file type inputs. */
-    multiple?: boolean
-
     /** Custom class name for input element. */
     inputClassName?: string
 
@@ -58,7 +55,6 @@ export const Input = forwardRef(function Input(props, reference) {
         type = 'text',
         variant = 'regular',
         label,
-        multiple,
         message,
         className,
         inputClassName,
@@ -82,7 +78,6 @@ export const Input = forwardRef(function Input(props, reference) {
                     variant={variant}
                     status={error ? InputStatus.error : status}
                     type={type}
-                    multiple={multiple ?? false}
                     autoFocus={autoFocus}
                     className={inputClassName}
                 />

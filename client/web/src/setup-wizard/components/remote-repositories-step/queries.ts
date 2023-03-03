@@ -74,6 +74,7 @@ export const GET_REPOSITORIES_BY_SERVICE = gql`
                 id
                 name
                 description
+                url
             }
         }
     }
