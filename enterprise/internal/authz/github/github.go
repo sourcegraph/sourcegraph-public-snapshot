@@ -166,7 +166,12 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
 
-	client := &ClientAdapter{github.NewV3Client(logger, p.urn, p.codeHost.BaseURL, token, nil)}
+	client, err := p.client()
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+
+	client = client.WithAuthenticator(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
