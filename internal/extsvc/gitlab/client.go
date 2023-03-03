@@ -216,6 +216,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 		internalRateLimiter: rl,
 		externalRateLimiter: rlm,
 		waitForRateLimit:    true,
+		numRateLimitRetries: 2,
 	}
 }
 
@@ -307,8 +308,8 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *Client) ExternalRateLimiter() *ratelimit.Monitor {
 	return c.externalRateLimiter
 }
 

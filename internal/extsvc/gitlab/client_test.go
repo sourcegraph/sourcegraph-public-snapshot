@@ -6,8 +6,10 @@ import (
 	"flag"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -115,6 +117,81 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	var result map[string]any
 	_, _, err = client.doWithBaseURL(ctx, req, &result)
 	require.NoError(t, err)
+}
+
+func TestRateLimitRetries(t *testing.T) {
+	ctx := context.Background()
+	hitRetryAfter := false
+	hitRateLimit := false
+	succeeded := false
+	numRequests := 0
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests += 1
+		if hitRetryAfter {
+			w.Header().Add("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Write([]byte("Try again later"))
+
+			hitRetryAfter = false
+			return
+		}
+
+		if hitRateLimit {
+			w.Header().Add("RateLimit-Name", "test")
+			w.Header().Add("RateLimit-Limit", "60")
+			w.Header().Add("RateLimit-Observed", "67")
+			w.Header().Add("RateLimit-Remaining", "0")
+			resetTime := time.Now().Add(time.Second)
+			w.Header().Add("RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Write([]byte("Try again later"))
+
+			hitRateLimit = false
+			return
+		}
+
+		succeeded = true
+		w.Write([]byte(`{"some": "response"}`))
+	}))
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	provider := NewClientProvider("Test", srvURL, nil)
+	client := provider.getClient(nil)
+
+	done := func() {
+		hitRetryAfter = false
+		hitRateLimit = false
+		succeeded = false
+		numRequests = 0
+		client.waitForRateLimit = true
+	}
+
+	req, err := http.NewRequest(http.MethodGet, "url", nil)
+	require.NoError(t, err)
+	var result map[string]any
+
+	t.Run("retry-after hit", func(t *testing.T) {
+		t.Cleanup(done)
+		hitRetryAfter = true
+
+		_, _, err := client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 2, numRequests)
+		assert.True(t, succeeded)
+	})
+
+	t.Run("rate limit hit", func(t *testing.T) {
+		t.Cleanup(done)
+		hitRateLimit = true
+
+		_, _, err := client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 2, numRequests)
+		assert.True(t, succeeded)
+	})
 }
 
 func TestGetOAuthContext(t *testing.T) {

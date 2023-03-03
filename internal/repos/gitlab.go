@@ -115,7 +115,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	}
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
+		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
 			Remaining: func(n float64) {
 				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
 			},
@@ -280,7 +280,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 
 				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
+				timeutil.SleepWithContext(ctx, s.client.ExternalRateLimiter().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -333,7 +333,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				urlStr = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
+				timeutil.SleepWithContext(ctx, s.client.ExternalRateLimiter().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}
