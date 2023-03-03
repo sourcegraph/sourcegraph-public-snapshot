@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -481,7 +482,7 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
-			remaining, _, _, _ = cli.RateLimitMonitor().Get()
+			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
 		})
 
 		t.Run("second run", func(t *testing.T) {
@@ -499,7 +500,7 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
-			remaining2, _, _, _ := cli.RateLimitMonitor().Get()
+			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
 			if remaining2 < remaining {
 				t.Fatalf("expected cached repsonse, but API quota used")
 			}
@@ -1006,9 +1007,11 @@ func TestRateLimitRetry(t *testing.T) {
 	hitPrimaryLimit := false
 	hitSecondaryLimit := false
 	succeeded := false
+	numRequests := 0
 
 	// Set up server for test
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests += 1
 		if hitPrimaryLimit {
 			w.Header().Add("x-ratelimit-remaining", "0")
 			w.Header().Add("x-ratelimit-limit", "5000")
@@ -1033,15 +1036,17 @@ func TestRateLimitRetry(t *testing.T) {
 		succeeded = true
 		w.Write([]byte(`{"message": "Very nice"}`))
 	}))
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+	client.waitForRateLimit = true
+
 	t.Run("primary rate limit hit", func(t *testing.T) {
+		numRequests = 0
 		hitPrimaryLimit = true
 		succeeded = false
-
-		srvURL, err := url.Parse(srv.URL)
-		require.NoError(t, err)
-
-		client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
-		client.WaitForRateLimit = true
 
 		// We do a simple request to test the retry
 		_, err = client.GetVersion(ctx)
@@ -1050,17 +1055,13 @@ func TestRateLimitRetry(t *testing.T) {
 		// We assert that two requests happened
 		assert.True(t, succeeded)
 		assert.False(t, hitPrimaryLimit)
+		assert.Equal(t, 2, numRequests)
 	})
 
 	t.Run("secondary rate limit hit", func(t *testing.T) {
+		numRequests = 0
 		hitSecondaryLimit = true
 		succeeded = false
-
-		srvURL, err := url.Parse(srv.URL)
-		require.NoError(t, err)
-
-		client := NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
-		client.WaitForRateLimit = true
 
 		// We do a simple request to test the retry
 		_, err = client.GetVersion(ctx)
@@ -1069,6 +1070,38 @@ func TestRateLimitRetry(t *testing.T) {
 		// We assert that two requests happened
 		assert.True(t, succeeded)
 		assert.False(t, hitSecondaryLimit)
+		assert.Equal(t, 2, numRequests)
+	})
+
+	t.Run("no rate limit hit", func(t *testing.T) {
+		hitPrimaryLimit = false
+		hitSecondaryLimit = false
+		succeeded = false
+		numRequests = 0
+
+		_, err = client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		assert.True(t, succeeded)
+		assert.Equal(t, 1, numRequests)
+	})
+
+	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
+		client.waitForRateLimit = false
+		hitPrimaryLimit = true
+		succeeded = false
+		numRequests = 0
+
+		_, err = client.GetVersion(ctx)
+		require.Error(t, err)
+
+		apiError := &APIError{}
+		if errors.As(err, &apiError) && apiError.Code != http.StatusForbidden {
+			t.Fatalf("expected status %d, got %d", http.StatusForbidden, apiError.Code)
+		}
+
+		assert.False(t, succeeded)
+		assert.Equal(t, 1, numRequests)
 	})
 }
 

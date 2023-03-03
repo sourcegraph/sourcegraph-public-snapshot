@@ -57,7 +57,3 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 		V3Client: c.V3Client.WithAuthenticator(auther),
 	}
 }
-
-func (c *ClientAdapter) SetWaitForRateLimit(wait bool) {
-	c.V3Client.WaitForRateLimit = wait
-}

@@ -179,9 +179,9 @@ func newGithubSource(
 	}
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
-		"rest":    v3Client.RateLimitMonitor(),
+		"rest":    v3Client.ExternalRateLimiter(),
 		"graphql": v4Client.RateLimitMonitor(),
-		"search":  searchClient.RateLimitMonitor(),
+		"search":  searchClient.ExternalRateLimiter(),
 	} {
 		// Copy the resource or funcs below will use the last one seen while iterating
 		// the map
@@ -543,7 +543,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 					}
 				}
 
-				remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+				remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 				s.logger.Debug(
 					"github sync: ListOrgRepositories",
 					log.Int("repos", len(repos)),
@@ -611,7 +611,7 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 				fail, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(
 				"github sync: ListUserRepositories",
 				log.Int("repos", len(repos)),
@@ -754,7 +754,7 @@ func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan
 func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(
 				"github sync: ListAffiliated",
 				log.Int("repos", len(repos)),
@@ -1109,7 +1109,7 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		err   error
 	)
 	defer func() {
-		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+		remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 		s.logger.Debug(
 			"github sync: ListAffiliated",
 			log.Int("repos", len(repos)),

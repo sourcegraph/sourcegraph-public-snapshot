@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -59,8 +58,8 @@ type V3Client struct {
 	// rateLimit is our self-imposed rate limiter
 	rateLimit *ratelimit.InstrumentedLimiter
 
-	// If true, the client will wait and retry a request if external rate limits are encountered
-	WaitForRateLimit bool
+	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
+	waitForRateLimit bool
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -127,7 +126,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimit:           rl,
 		externalRateLimiter: rlm,
 		resource:            resource,
-		WaitForRateLimit:    true,
+		waitForRateLimit:    true,
 	}
 }
 
@@ -138,8 +137,14 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
+// SetWaitForRateLimit sets whether the client should respond to external rate
+// limits by waiting and retrying a request.
+func (c *V3Client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
+}
+
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *V3Client) ExternalRateLimiter() *ratelimit.Monitor {
 	return c.externalRateLimiter
 }
 
@@ -209,16 +214,8 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	// If rate limit has already been hit, we need to wait before making a request
-	remaining, reset, retry, known := c.externalRateLimiter.Get()
-	if known {
-		if remaining == 0 {
-			timeutil.SleepWithContext(ctx, reset)
-		}
-
-		if retry > 0 {
-			timeutil.SleepWithContext(ctx, retry)
-		}
+	if c.waitForRateLimit {
+		c.externalRateLimiter.WaitForRateLimit(ctx) // We don't care whether we waited or not, this is a preventative measure.
 	}
 
 	var resp *httpResponseState
@@ -226,16 +223,9 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 
 	// If we receive a StatusForbidden, we might have hit a rate limit
 	apiError := &APIError{}
-	if errors.As(err, &apiError) && c.WaitForRateLimit && apiError.Code == http.StatusForbidden {
-		remaining, reset, retry, known := c.externalRateLimiter.Get()
-
-		if retry > 0 {
-			// If retry > 0 then the secondary rate limit has been hit
-			timeutil.SleepWithContext(ctx, retry)
-			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
-		} else if known && remaining == 0 && reset > 0 {
-			// Otherwise, if the rate limit is known and the remaining tokens are zero, the primary rate limit has been hit
-			timeutil.SleepWithContext(ctx, reset)
+	if errors.As(err, &apiError) && c.waitForRateLimit && apiError.Code == http.StatusForbidden {
+		// If we end up waiting because of an external rate limit, we need to retry the request.
+		if c.externalRateLimiter.WaitForRateLimit(ctx) {
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 		}
 	}
