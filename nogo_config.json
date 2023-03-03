@@ -8,5 +8,16 @@
       ".*_test\\.go": "Exclude bodyclose lint from tests because leaking connections in tests is a non issue",
       "cmd/frontend/internal/gosrc/import_path.go": "temp ignore till we support nolint: comment"
     }
+  },
+  "forbidigo": {
+    "exclude_files": {
+      "external/": "no need to vet third party code",
+      "schema/schema.go": "ignore generated code",
+      "errors/cockroach.go": "ignore generated code",
+      ".*_test\\.go$": "ignore generated code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      "main.go": "ignore main files"
+    }
   }
 }

@@ -208,6 +208,7 @@ nogo(
     visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/forbidigo",
         "@org_golang_x_tools//go/analysis/passes/asmdecl:go_default_library",
         "@org_golang_x_tools//go/analysis/passes/assign:go_default_library",
         "@org_golang_x_tools//go/analysis/passes/atomic:go_default_library",
