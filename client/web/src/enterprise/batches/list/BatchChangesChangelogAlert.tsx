@@ -19,7 +19,7 @@ const CURRENT_VERSION = '4.4'
  * After every release, this will be set back to `false`. Chromatic will also verify
  * changes to this variable via visual regression testing.
  */
-const SHOW_CHANGELOG = true
+const SHOW_CHANGELOG = false
 
 export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
     className,
