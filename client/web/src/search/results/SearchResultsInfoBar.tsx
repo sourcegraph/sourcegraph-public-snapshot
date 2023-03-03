@@ -62,8 +62,8 @@ export interface SearchResultsInfoBarProps
 
     isSourcegraphDotCom: boolean
 
-    isToggleEnabled: boolean
-    onToggleRanking: (newValue: boolean) => void
+    isRankingEnabled: boolean
+    setRankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -148,10 +148,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 {rankingEnabled && (
                     <Label className={styles.toggle}>
-                        Ranking {props.isToggleEnabled ? 'enabled ' : 'disabled '}
+                        Ranking {props.isRankingEnabled ? 'enabled ' : 'disabled '}
                         <Toggle
-                            value={props.isToggleEnabled}
-                            onToggle={() => props.onToggleRanking(!props.isToggleEnabled)}
+                            value={props.isRankingEnabled}
+                            onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
                             title="Enable Ranking"
                             className="mr-2"
                         />

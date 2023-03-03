@@ -97,11 +97,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(
-            () =>
-                [
-                    rankingEnabled ? 'search-ranking' : '-search-ranking',
-                    ...new URLSearchParams(location.search).getAll('feat'),
-                ] ?? [],
+            () => [
+                rankingEnabled ? 'search-ranking' : '-search-ranking',
+                ...new URLSearchParams(location.search).getAll('feat'),
+            ],
             [location.search, rankingEnabled]
         )
     )
@@ -413,8 +412,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
-                        isToggleEnabled={!!rankingEnabled}
-                        onToggleRanking={setRankingEnabled}
+                        isRankingEnabled={!!rankingEnabled}
+                        setRankingEnabled={setRankingEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
