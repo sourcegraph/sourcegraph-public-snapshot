@@ -27,6 +27,7 @@ import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shar
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -184,6 +185,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
@@ -435,15 +437,16 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
-            {focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        editorRef.current?.contentDOM.focus()
-                    }}
-                />
-            ))}
+            {enableBlobPageSwitchAreasShortcuts &&
+                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        onMatch={() => {
+                            editorRef.current?.contentDOM.focus()
+                        }}
+                    />
+                ))}
         </>
     )
 }

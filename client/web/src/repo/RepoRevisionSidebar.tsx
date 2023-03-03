@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
@@ -87,10 +87,9 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         [props.telemetryService]
     )
 
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
     const focusSymbolsShortcut = useKeyboardShortcut('focusSymbols')
-
-    // Value change triggers programmatic focus of elements in the currently opened tab.
     const [focusKey, setFocusKey] = useState('')
 
     return (
@@ -205,28 +204,20 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 </Tooltip>
             )}
 
-            {focusFileTreeShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        setIsVisible(true)
-                        setPersistedTabIndex(0)
-                        setFocusKey(Date.now().toString())
-                    }}
-                />
-            ))}
-            {focusSymbolsShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        setIsVisible(true)
-                        setPersistedTabIndex(1)
-                        setFocusKey(Date.now().toString())
-                    }}
-                />
-            ))}
+            {enableBlobPageSwitchAreasShortcuts &&
+                [focusFileTreeShortcut, focusSymbolsShortcut].map((shortcut, tabIndex) =>
+                    shortcut?.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            onMatch={() => {
+                                setIsVisible(true)
+                                setPersistedTabIndex(tabIndex)
+                                setFocusKey(Date.now().toString())
+                            }}
+                        />
+                    ))
+                )}
         </>
     )
 }
