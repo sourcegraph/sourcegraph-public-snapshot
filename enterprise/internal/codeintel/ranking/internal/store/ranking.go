@@ -543,3 +543,65 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_references_processed),
 	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
 `
+
+func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsSDeleted int, err error) {
+	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	parts := strings.Split(derivativeGraphKey, "-")
+	if len(parts) < 2 {
+		return 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	}
+	// Remove last segment, which indicates the current time bucket
+	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleRanksQuery,
+		derivativeGraphKey,
+		parentGraphKey,
+		derivativeGraphKey,
+	)))
+	return count, err
+}
+
+const vacuumStaleRanksQuery = `
+WITH
+matching_graph_keys AS (
+	SELECT DISTINCT graph_key
+	FROM codeintel_path_ranks
+	-- Implicit delete anything with a different graph key root
+	WHERE graph_key != %s AND graph_key LIKE %s || '-%%'
+),
+valid_graph_keys AS (
+	-- Select the current graph key as well as the highest graph key that
+	-- shares the same parent graph key. Returning both will help bridge
+	-- the gap that happens if we were to flush the entire table at the
+	-- start of a new graph reduction.
+	--
+	-- This may have the effect of returning stale ranking data for a repo
+	-- for which we no longer have SCIP data, but only from the previous
+	-- graph reduction (and changing the parent graph key will flush all
+	-- previous data (see the CTE definition above) if the need arises.
+	SELECT %s AS graph_key
+	UNION (
+		SELECT graph_key
+		FROM matching_graph_keys
+		ORDER BY split_part(graph_key, '-', 2)::int DESC
+		LIMIT 1
+	)
+),
+locked_records AS (
+	-- Lock all path rank records that don't have a recent graph key
+	SELECT repository_id
+	FROM codeintel_path_ranks
+	WHERE graph_key NOT IN (SELECT graph_key FROM valid_graph_keys)
+	ORDER BY repository_id
+	FOR UPDATE
+),
+del AS (
+	DELETE FROM codeintel_path_ranks
+	WHERE repository_id IN (SELECT repository_id FROM locked_records)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
+`
