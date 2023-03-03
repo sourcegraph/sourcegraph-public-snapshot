@@ -586,7 +586,7 @@ valid_graph_keys AS (
 	UNION (
 		SELECT graph_key
 		FROM matching_graph_keys
-		ORDER BY split_part(graph_key, '-', 2)::int DESC
+		ORDER BY reverse(split_part(reverse(graph_key), '-', 1))::int DESC
 		LIMIT 1
 	)
 ),
