@@ -83,7 +83,7 @@ type Permission struct {
 }
 
 type PermissionsConnection struct {
-	Typename string       `json:"__typename"`
+	GraphQLTypename string `json:"__typename"`
 	Nodes    []Permission `json:"nodes"`
 }
 type CurrentUser struct {
