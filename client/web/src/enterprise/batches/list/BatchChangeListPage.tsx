@@ -8,6 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL, addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -23,6 +24,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { LimitedAccessBanner } from '../../../components/LimitedAccessBanner'
 import { Page } from '../../../components/Page'
 import {
     ListBatchChange,
@@ -46,7 +48,6 @@ import { NewBatchChangeButton } from './NewBatchChangeButton'
 import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
-import { LimitedAccessBanner } from '../../../components/LimitedAccessBanner'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     canCreate: boolean
@@ -175,9 +176,20 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             {isSourcegraphApp && (
-                <LimitedAccessBanner>
-                    Batch Changes is currently available to try free while Sourcegraph App is in beta. Pricing and
-                    availability for Batch Changes is subject to change in future releases.
+                <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.batchChanges">
+                    Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
+                    in beta. Pricing and availability for Batch Changes is subject to change in future releases.
+                    <strong>
+                        For unlimited access to Batch Changes,{' '}
+                        <Link
+                            to={addSourcegraphAppOutboundUrlParameters(
+                                buildCloudTrialURL(authenticatedUser),
+                                'batch-changes'
+                            )}
+                        >
+                            sign up for a Cloud Trial.
+                        </Link>
+                    </strong>
                 </LimitedAccessBanner>
             )}
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />

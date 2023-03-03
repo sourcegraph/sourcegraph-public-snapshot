@@ -4,9 +4,11 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { addSourcegraphAppOutboundUrlParameters, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../../../../components/CallToActionBanner'
+import { LimitedAccessBanner } from '../../../../../components/LimitedAccessBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -17,7 +19,6 @@ import { CodeInsightsDescription } from '../getting-started/components/code-insi
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
-import { LimitedAccessBanner } from '../../../../../components/LimitedAccessBanner'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
@@ -57,11 +58,19 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     className="mb-4"
                 />
                 {isSourcegraphApp && (
-                    <LimitedAccessBanner>
+                    <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.codeInsights">
                         Code Insights is currently available to try for free, up to 2 insights, while Sourcegraph App is
-                        in beta. Pricing and availability for Code Insights is subject to change in future releases.{' '}
+                        in beta. Pricing and availability for Code Insights is subject to change in future releases.
                         <strong>
-                            For unlimited access to Insights, <Link>sign up for a Cloud Trial.</Link>
+                            For unlimited access to Insights,{' '}
+                            <Link
+                                to={addSourcegraphAppOutboundUrlParameters(
+                                    buildCloudTrialURL(props.authenticatedUser),
+                                    'code-insights'
+                                )}
+                            >
+                                sign up for a Cloud Trial.
+                            </Link>
                         </strong>
                     </LimitedAccessBanner>
                 )}

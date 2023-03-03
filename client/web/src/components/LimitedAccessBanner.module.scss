@@ -1,6 +1,7 @@
 .badge {
     background-color: var(--logo-purple);
     color: var(--white);
+    text-transform: uppercase;
 }
 
 .banner {
@@ -13,4 +14,11 @@
     background-color: var(--color-bg-1);
     border-radius: var(--border-radius);
     padding: 0.5rem;
+    display: flex;
 }
+
+.dismiss {
+    align-self: flex-start;
+}
+
+

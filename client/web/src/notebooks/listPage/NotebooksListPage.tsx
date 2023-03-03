@@ -13,6 +13,7 @@ import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sour
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
+import { LimitedAccessBanner } from '../../components/LimitedAccessBanner'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
@@ -21,7 +22,6 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
-import { LimitedAccessBanner } from '../../components/LimitedAccessBanner'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -262,7 +262,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 </PageHeader>
 
                 {isSourcegraphApp && (
-                    <LimitedAccessBanner>
+                    <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.notebooks">
                         Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
                         availability for Notebooks is subject to change in future releases.
                     </LimitedAccessBanner>
