@@ -6,8 +6,8 @@ type RepoPathRanks struct {
 	MeanRank float64 `json:"mean_reference_count"`
 
 	// Paths are a map from path name to the normalized number of references for
-	// a symbol defined in that path for a particular repository. Counts include
-	// cross-repository references. The value in the map is the binary log of the
-	// raw number of references.
+	// a symbol defined in that path for a particular repository. Normalized counts
+	// equal log_2({number of references to file} + 1), where references are considered
+	// over all repositories.
 	Paths map[string]float64 `json:"paths"`
 }
