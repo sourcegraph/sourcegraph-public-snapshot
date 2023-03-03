@@ -64,7 +64,7 @@ func TestGenerateHeader(t *testing.T) {
 				ConsecutiveFailure: 4,
 				Fixed:              []JobLine{&jobLine},
 			},
-			want: autogold.Want("fifth failure", ":green_circle: Build 100 fixed"),
+			want: autogold.Want("fifth failure", ":large_green_circle: Build 100 fixed"),
 		},
 	} {
 		t.Run(tc.want.Name(), func(t *testing.T) {
