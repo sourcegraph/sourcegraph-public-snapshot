@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.3-labs
+
 ###################################
 # Build syntect_server statically #
 ###################################
@@ -9,14 +11,19 @@ WORKDIR /repo
 RUN cargo fetch
 
 ARG TARGETARCH
-RUN if [ "$TARGETARCH" = 'arm64' ]; then \
-    export CFLAGS="-mno-outline-atomics"; export RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"; \
-    fi; \
-    cargo test --release --workspace
-RUN if [ "$TARGETARCH" = 'arm64' ]; then \
-    export CFLAGS="-mno-outline-atomics"; export RUSTFLAGS="-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"; \
-    fi; \
-    cargo rustc --release
+
+# Because .cargo/config.toml doesnt support triplet-specific env
+RUN <<EOF
+if [ "${TARGETARCH}" = "arm64" ]; then
+	cat <<- FOE >> .cargo/config.toml
+	[env]
+	CFLAGS="-mno-outline-atomics"
+	FOE
+fi;
+EOF
+
+RUN cargo test --release --workspace
+RUN cargo rustc --release
 RUN ls ./target
 
 RUN cp ./target/release/syntect_server /syntax_highlighter
