@@ -390,16 +390,16 @@ func combineCheckStates(states []btypes.ChangesetCheckState) btypes.ChangesetChe
 
 	switch {
 	case stateMap[btypes.ChangesetCheckStateUnknown]:
-		// If there are unknown states, overall is Pending
+		// If there are unknown states, overall is Pending.
 		return btypes.ChangesetCheckStateUnknown
 	case stateMap[btypes.ChangesetCheckStatePending]:
-		// If there are pending states, overall is Pending
+		// If there are pending states, overall is Pending.
 		return btypes.ChangesetCheckStatePending
 	case stateMap[btypes.ChangesetCheckStateFailed]:
-		// If there are no pending states, but we have errors then overall is Failed
+		// If there are no pending states, but we have errors then overall is Failed.
 		return btypes.ChangesetCheckStateFailed
 	case stateMap[btypes.ChangesetCheckStatePassed]:
-		// No pending or error states then overall is Passed
+		// No pending or error states then overall is Passed.
 		return btypes.ChangesetCheckStatePassed
 	}
 

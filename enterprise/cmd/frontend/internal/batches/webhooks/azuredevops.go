@@ -48,7 +48,7 @@ func (h *AzureDevOpsWebhook) Register(router *fewebhooks.Router) {
 func (h *AzureDevOpsWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
 	ctx = actor.WithInternalActor(ctx)
 
-	// If the event is just a general PR update event, it is best to just not try to derive the state from it and
+	// If the event is: PullRequestUpdatedEvent or PullRequestMergedEvent, it is best to just not try to derive the state from it and
 	// pull it in manually 💪.
 	switch e := event.(type) {
 	case *azuredevops.PullRequestUpdatedEvent:
@@ -123,7 +123,7 @@ func azureDevOpsPullRequestEventPRs(e azuredevops.PullRequestEvent) []PR {
 // would be difficult.
 func (h *AzureDevOpsWebhook) enqueueAzureDevOpsChangesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event azuredevops.PullRequestEvent) error {
 	// We need to get our changeset ID for this to work. To get _there_, we need
-	// the repo ID, and then we can use the merge request IID to match the
+	// the repo ID, and then we can use the merge request ID to match the
 	// external ID.
 	pr := azureDevOpsToPR(event.PullRequest)
 	repo, err := h.getRepoForPR(ctx, h.Store, pr, esID)

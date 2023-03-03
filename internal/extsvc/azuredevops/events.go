@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	PULL_REQUEST_APPROVED_TEXT                  = "approved pull request"
-	PULL_REQUEST_APPROVED_WITH_SUGGESTIONS_TEXT = "has approved and left suggestions in pull request"
-	PULL_REQUEST_REJECTED_TEXT                  = "rejected pull request"
-	PULL_REQUEST_WAITING_FOR_AUTHOR_TEXT        = "is waiting for the author in pull request"
+	PullRequestApprovedText                = "approved pull request"
+	PullRequestApprovedWithSuggestionsText = "has approved and left suggestions in pull request"
+	PullRequestRejectedText                = "rejected pull request"
+	PullRequestWaitingForAuthorText        = "is waiting for the author in pull request"
 
 	PullRequestMergedEventType                  AzureDevOpsEvent = "git.pullrequest.merged"
 	PullRequestUpdatedEventType                 AzureDevOpsEvent = "git.pullrequest.updated"
@@ -46,19 +46,19 @@ func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
 		text := newTarget.Message.Text
 
 		switch {
-		case strings.Contains(text, PULL_REQUEST_APPROVED_TEXT):
+		case strings.Contains(text, PullRequestApprovedText):
 			newTarget.EventType = PullRequestApprovedEventType
 			returnTarget := PullRequestApprovedEvent(*newTarget)
 			return &returnTarget, nil
-		case strings.Contains(text, PULL_REQUEST_REJECTED_TEXT):
+		case strings.Contains(text, PullRequestRejectedText):
 			newTarget.EventType = PullRequestRejectedEventType
 			returnTarget := PullRequestRejectedEvent(*newTarget)
 			return &returnTarget, nil
-		case strings.Contains(text, PULL_REQUEST_WAITING_FOR_AUTHOR_TEXT):
+		case strings.Contains(text, PullRequestWaitingForAuthorText):
 			newTarget.EventType = PullRequestWaitingForAuthorEventType
 			returnTarget := PullRequestWaitingForAuthorEvent(*newTarget)
 			return &returnTarget, nil
-		case strings.Contains(text, PULL_REQUEST_APPROVED_WITH_SUGGESTIONS_TEXT):
+		case strings.Contains(text, PullRequestApprovedWithSuggestionsText):
 			newTarget.EventType = PullRequestApprovedWithSuggestionsEventType
 			returnTarget := PullRequestApprovedWithSuggestionsEvent(*newTarget)
 			return &returnTarget, nil
