@@ -6,6 +6,7 @@ import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
 import { SemVer } from 'semver'
+import semver from 'semver/preload'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -20,6 +21,7 @@ import {
     saveReleaseConfig,
     getReleaseDefinition,
     deactivateAllReleases,
+    setSrcCliVersion,
 } from './config'
 import { getCandidateTags, getPreviousVersion } from './git'
 import {
@@ -32,10 +34,12 @@ import {
     createTag,
     ensureTrackingIssues,
     getAuthenticatedGitHubClient,
+    getBackportLabelForRelease,
     getTrackingIssue,
     IssueLabel,
     localSourcegraphRepo,
     queryIssues,
+    releaseBlockerLabel,
     releaseName,
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
@@ -49,9 +53,12 @@ import {
     ensureSrcCliUpToDate,
     formatDate,
     getAllUpgradeGuides,
+    getLatestSrcCliGithubRelease,
     getLatestTag,
     getReleaseBlockers,
+    nextSrcCliVersionInputWithAutodetect,
     releaseBlockerUri,
+    retryInput,
     timezoneLink,
     updateUpgradeGuides,
     validateNoReleaseBlockers,
@@ -83,6 +90,9 @@ export type StepID =
     | 'release:remove'
     | 'release:activate-release'
     | 'release:deactivate-release'
+    // src-cli
+    | 'release:src-cli'
+    | 'release:verify-src-cli'
     // util
     | 'util:clear-cache'
     | 'util:previous-version'
@@ -245,6 +255,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
+            const srcCliNext = await nextSrcCliVersionInputWithAutodetect()
+
             const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
             const pullRequest = await createChangesets({
@@ -306,6 +318,31 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                                     changelog.divider,
                                     changelog.simpleReleaseTemplate
                                 )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ],
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'src-cli',
+                        base: 'main',
+                        head: `changelog-${srcCliNext.version}`,
+                        title: commitMessage,
+                        body: prBody,
+                        commitMessage,
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${srcCliNext.format()}'`)
+                                const changelogPath = path.join(directory, changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const unreleasedHeader = '## Unreleased'
+                                const unreleasedSection = `${unreleasedHeader}\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n`
+                                const newSection = `${unreleasedSection}## ${srcCliNext.format()}`
+                                changelogContents = changelogContents.replace(unreleasedHeader, newSection)
 
                                 // Update changelog
                                 writeFileSync(changelogPath, changelogContents)
@@ -994,6 +1031,102 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             console.log('Merge the following pull requests:\n')
             for (const set of sets) {
                 console.log(set.pullRequestURL)
+            }
+        },
+    },
+    {
+        id: 'release:src-cli',
+        description: 'Bake static content from src-cli. Only required for minor and major versions',
+        run: async config => {
+            const release = await getActiveRelease(config)
+            const client = await getAuthenticatedGitHubClient()
+
+            // ok, this seems weird that we're cloning src-cli here, so read on -
+            // We have docs that live in the main src/src repo about src-cli. Each version we update these docs for any changes
+            // from the most recent version of src-cli. Cool, makes sense.
+            // The thing is that these docs are generated from src-cli itself (a literal command, src docs).
+            // So our options are either to release a new version of src-cli, wait for the github action to be complete and THEN update the src/src repo,
+            // OR we can assume that main is going to be the new version (which it is). So we will clone it and execute the
+            // commands against the binary directly, saving ourselves a lot of time.
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            const next = await nextSrcCliVersionInputWithAutodetect(workdir)
+            setSrcCliVersion(config, next.version)
+
+            await createChangesets({
+                dryRun: config.dryRun.changesets,
+                requiredCommands: ['comby', 'go'],
+                changes: [
+                    {
+                        base: 'main',
+                        head: `update-src-cli-to-v${next.version}`,
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
+                        body: `Update src-cli to ${next.version}`,
+                        title: `update src-cli to ${next.version}`,
+                        commitMessage: `updating src-cli for ${next.version}`,
+                        edits: [
+                            `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${next.version}\\"" internal/src-cli/consts.go`,
+                            `cd ${workdir}/cmd/src && go build`,
+                            `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
+                        ],
+                        labels: [getBackportLabelForRelease(release), releaseBlockerLabel],
+                    },
+                ],
+            })
+            if (!config.dryRun.changesets) {
+                // actually execute the release
+                await execa('bash', ['-c', 'yes | ./release.sh'], {
+                    stdio: 'inherit',
+                    cwd: workdir,
+                    env: { ...process.env, VERSION: next.version },
+                })
+            } else {
+                console.log(chalk.blue('Skipping src-cli release for dry run'))
+            }
+        },
+    },
+    {
+        id: 'release:verify-src-cli',
+        description: 'Verify src-cli version is available in brew and npm',
+        run: async config => {
+            let passed = true
+            let expected = config.in_progress?.srcCliVersion
+            const formatVersion = function (val: string): string {
+                if (val === expected) {
+                    return chalk.green(val)
+                }
+                passed = false
+                return chalk.red(val)
+            }
+            if (!config.in_progress?.srcCliVersion) {
+                expected = await retryInput(
+                    'Enter the expected version of src-cli: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting src-cli version ${expected} from release config`)
+            }
+
+            const githubRelease = await getLatestSrcCliGithubRelease()
+            console.log(`github:\t${formatVersion(githubRelease)}`)
+
+            const brewVersion = execa.sync('bash', [
+                '-c',
+                "brew info sourcegraph/src-cli/src-cli -q | sed -n 's/.*stable \\([0-9]\\.[0-9]\\.[0-9]\\)/\\1/p'",
+            ]).stdout
+            console.log(`brew:\t${formatVersion(brewVersion)}`)
+
+            const npmVersion = execa.sync('bash', ['-c', 'npm show @sourcegraph/src version']).stdout
+            console.log(`npm:\t${formatVersion(npmVersion)}`)
+
+            if (passed) {
+                console.log(chalk.green('All versions matched expected version!'))
+            } else {
+                console.log(chalk.red('Failed to verify src-cli versions'))
             }
         },
     },

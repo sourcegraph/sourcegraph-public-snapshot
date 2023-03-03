@@ -28,6 +28,17 @@ var (
 	PullRequestMergeStrategyNoFastForward PullRequestMergeStrategy = "notFastForward"
 )
 
+type Org struct {
+	ID   string `json:"accountId"`
+	URI  string `json:"accountUri"`
+	Name string `json:"accountName"`
+}
+
+type ListAuthorizedUserOrgsResponse struct {
+	Count int   `json:"count"`
+	Value []Org `json:"value"`
+}
+
 type OrgProjectRepoArgs struct {
 	Org          string
 	Project      string

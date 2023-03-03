@@ -205,6 +205,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\n STRICT\nAS $function$\nBEGIN\n    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\nEND;\n$function$\n"
     },
     {
+      "Name": "update_codeintel_path_ranks_statistics_columns",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        SUM(LOG(2, r.v::int)) AS refcount_logsum\n    INTO\n        NEW.num_paths,\n        NEW.refcount_logsum\n    FROM jsonb_each(\n        CASE WHEN NEW.payload::text = 'null'\n            THEN '{}'::jsonb\n            ELSE COALESCE(NEW.payload, '{}'::jsonb)\n        END\n    ) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
       "Name": "update_codeintel_path_ranks_updated_at_column",
       "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$function$\n"
     },
@@ -792,6 +796,15 @@
     },
     {
       "Name": "lsif_uploads_audit_logs_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_uploads_vulnerability_scan_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -7542,6 +7555,19 @@
           "Comment": ""
         },
         {
+          "Name": "num_paths",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "payload",
           "Index": 2,
           "TypeName": "jsonb",
@@ -7559,6 +7585,19 @@
           "Index": 3,
           "TypeName": "double precision",
           "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "refcount_logsum",
+          "Index": 7,
+          "TypeName": "double precision",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -7618,6 +7657,14 @@
       ],
       "Constraints": null,
       "Triggers": [
+        {
+          "Name": "insert_codeintel_path_ranks_statistics",
+          "Definition": "CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()"
+        },
+        {
+          "Name": "update_codeintel_path_ranks_statistics",
+          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()"
+        },
         {
           "Name": "update_codeintel_path_ranks_updated_at",
           "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"
@@ -15993,6 +16040,83 @@
       "Triggers": []
     },
     {
+      "Name": "lsif_uploads_vulnerability_scan",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_scanned_at",
+          "Index": 3,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_uploads_vulnerability_scan_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_uploads_vulnerability_scan_pkey ON lsif_uploads_vulnerability_scan USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_uploads_vulnerability_scan_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_uploads_vulnerability_scan_upload_id ON lsif_uploads_vulnerability_scan USING btree (upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "fk_upload_id",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_uploads",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "migration_logs",
       "Comment": "",
       "Columns": [
@@ -22318,7 +22442,7 @@
           "Name": "creator_id",
           "Index": 6,
           "TypeName": "integer",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
