@@ -15,10 +15,10 @@ exports[`RepoFileLink renders 1`] = `
       >
          ›
       </span>
-       
+
       <a
         class="anchorLink"
-        href="/file?subtree=true"
+        href="/file"
       >
         my/
         <strong>
