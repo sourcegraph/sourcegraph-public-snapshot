@@ -55,8 +55,8 @@ type V3Client struct {
 	// externalRateLimiter is the external API rate limit monitor.
 	externalRateLimiter *ratelimit.Monitor
 
-	// rateLimit is our self-imposed rate limiter
-	rateLimit *ratelimit.InstrumentedLimiter
+	// internalRateLimiter is our self-imposed rate limiter
+	internalRateLimiter *ratelimit.InstrumentedLimiter
 
 	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
 	waitForRateLimit bool
@@ -123,7 +123,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		githubDotCom:        urlIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
-		rateLimit:           rl,
+		internalRateLimiter: rl,
 		externalRateLimiter: rlm,
 		resource:            resource,
 		waitForRateLimit:    true,
@@ -202,7 +202,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err := c.rateLimit.Wait(ctx)
+	err := c.internalRateLimiter.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
