@@ -4,7 +4,7 @@ import { mdiAccount } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { LoadingSpinner, PageHeader, Icon, H1 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, Icon, H1, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -54,15 +54,14 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     <>
                         Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
                         CODEOWNERS file.
-                        {/* TODO: Add link to docs
-                        <Link to="/help/own">Learn more</Link>
-                        */}
+                        <Link to="/help/own">Learn more about Sourcegraph Own</Link>
                     </>
                 }
             >
-                <H1 as="h2">
+                <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
                     <span className="ml-2">Ownership</span>
+                    <ProductStatusBadge status="experimental" className="ml-2" />
                 </H1>
             </PageHeader>
 
