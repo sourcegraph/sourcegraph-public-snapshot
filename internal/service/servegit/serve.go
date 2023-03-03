@@ -178,23 +178,17 @@ func isGitRepo(path string) bool {
 	return string(out) == ".git\n"
 }
 
-// Repos returns a slice of all the git repositories it finds.
+// Repos returns a slice of all the git repositories it finds. It is a wrapper
+// around Walk which removes the need to deal with channels and sorts the
+// response.
 func (s *Serve) Repos() ([]Repo, error) {
-	root, err := filepath.EvalSymlinks(s.Root)
-	if err != nil {
-		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
-		return nil, nil
-	}
-
-	root = filepath.Clean(root)
-
 	var (
 		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
 		walkErr error
 	)
 	go func() {
 		defer close(repoC)
-		walkErr = s.Walk(root, repoC)
+		walkErr = s.Walk(repoC)
 	}()
 
 	var repos []Repo
@@ -215,10 +209,15 @@ func (s *Serve) Repos() ([]Repo, error) {
 	return repos, nil
 }
 
-// Walk is the core repos finding routine. This is only exported for use in
-// app-discover-repos, normally you should use Repos instead which does
-// additional work.
-func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+// Walk is the core repos finding routine.
+func (s *Serve) Walk(repoC chan<- Repo) error {
+	root, err := filepath.EvalSymlinks(s.Root)
+	if err != nil {
+		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
+		return nil
+	}
+	root = filepath.Clean(root)
+
 	if repo, ok, err := rootIsRepo(root); err != nil {
 		return err
 	} else if ok {
@@ -242,7 +241,7 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) error {
 	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
 	//     files (so will only get dirs)
 	//   - filepath.SkipDir has the same meaning
-	err := fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
