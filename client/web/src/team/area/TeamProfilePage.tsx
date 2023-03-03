@@ -3,7 +3,8 @@ import { useCallback, useState } from 'react'
 import { mdiPencil } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
-import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Modal, Text } from '@sourcegraph/wildcard'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -58,6 +59,18 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                                 <Icon inline={true} aria-label="Edit team display name" svgPath={mdiPencil} />
                             </Button>
                         )}
+                    </Text>
+                    <H3>Creator</H3>
+                    <Text className="d-flex align-items-center">
+                        {team.creator !== null && (
+                            <>
+                                <UserAvatar user={team.creator} inline={true} className="mr-1" />
+                                <Link to={team.creator.url}>
+                                    {team.creator.displayName ? team.creator.displayName : team.creator.username}
+                                </Link>
+                            </>
+                        )}
+                        {team.creator === null && <span className="text-muted">Deleted user</span>}
                     </Text>
                 </div>
             </Page>
