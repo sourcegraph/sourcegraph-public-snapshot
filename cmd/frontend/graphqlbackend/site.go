@@ -338,8 +338,11 @@ func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.M
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	updateStatus := updatecheck.Last()
-	if updateStatus == nil || !updateStatus.HasUpdate() {
+	if updateStatus == nil {
 		return nil, errors.New("no latest update version available (reload in a few seconds)")
+	}
+	if !updateStatus.HasUpdate() {
+		return nil, nil
 	}
 	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
 	if !ok {
