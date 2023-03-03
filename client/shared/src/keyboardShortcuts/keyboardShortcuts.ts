@@ -69,13 +69,16 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     focusCodeEditor: {
         title: 'Focus editor',
         keybindings: [{ ordered: ['c'] }],
+        hideInHelp: true,
     },
     focusFileTree: {
         title: 'Focus file tree',
         keybindings: [{ ordered: ['f'] }],
+        hideInHelp: true,
     },
     focusSymbols: {
         title: 'Focus symbols',
         keybindings: [{ ordered: ['s'] }],
+        hideInHelp: true,
     },
 }
