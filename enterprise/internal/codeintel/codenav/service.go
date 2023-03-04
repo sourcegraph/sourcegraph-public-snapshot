@@ -1125,10 +1125,7 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	return dedupeRanges(sortedRanges), nil
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
 	return s.uploadSvc.GetDumpsByIDs(ctx, ids)
 }
 
