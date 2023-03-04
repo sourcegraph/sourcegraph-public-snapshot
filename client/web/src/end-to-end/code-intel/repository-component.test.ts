@@ -219,11 +219,11 @@ describe('Repository component', () => {
 
             await driver.page.click('.test-repo-revision-sidebar [data-tree-selected="true"] [data-tree-path]')
             await driver.page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff"]', {
                 visible: true,
             })
             await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff"]', {
                 visible: true,
             })
             await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="diff"]', {
@@ -233,13 +233,13 @@ describe('Repository component', () => {
                 visible: true,
             })
             await driver.page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await assertNumberRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
             await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="diff/testdata"]', {
@@ -255,21 +255,18 @@ describe('Repository component', () => {
             await driver.page.keyboard.press('ArrowDown') // arrow down
             await driver.page.keyboard.press('ArrowDown') // arrow down
             await driver.page.keyboard.press('ArrowDown') // arrow down
-            await driver.page.waitForSelector(
-                '[data-tree-selected="true"] [data-tree-path="diff/testdata/empty_orig.diff"]',
-                {
-                    visible: true,
-                }
-            )
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata/empty_orig.diff"]', {
+                visible: true,
+            })
 
             await driver.page.keyboard.press('ArrowLeft') // arrow left (navigate immediately up to parent directory `diff/testdata`)
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await assertNumberRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
             await driver.page.keyboard.press('ArrowLeft') // arrow left
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             }) // `diff/testdata` still selected
             await assertNumberRowsExpanded(1) // only `diff` directory expanded
