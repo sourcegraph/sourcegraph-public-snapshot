@@ -155,7 +155,7 @@ export interface RepositoryMatch {
     descriptionMatches?: Range[]
 }
 
-export type OwnerMatch = PersonMatch | TeamMatch
+export type OwnerMatch = PersonMatch | UserMatch | TeamMatch
 
 export interface BaseOwnerMatch {
     handle?: string
@@ -166,7 +166,13 @@ export interface PersonMatch extends BaseOwnerMatch {
     type: 'person'
     handle?: string
     email?: string
-    user?: {
+}
+
+export interface UserMatch extends BaseOwnerMatch {
+    type: 'user'
+    handle?: string
+    email?: string
+    user: {
         username: string
         displayName?: string
         avatarURL?: string
@@ -596,7 +602,7 @@ export function getCommitMatchUrl(commitMatch: CommitMatch): string {
 }
 
 export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
-    if (ownerMatch.type === 'person' && ownerMatch.user) {
+    if (ownerMatch.type === 'user') {
         return '/users/' + encodeURI(ownerMatch.user.username)
     }
     if (ownerMatch.type === 'team') {
@@ -629,6 +635,7 @@ export function getMatchUrl(match: SearchMatch): string {
         case 'repo':
             return getRepoMatchUrl(match)
         case 'person':
+        case 'user':
         case 'team':
             return getOwnerMatchUrl(match)
     }

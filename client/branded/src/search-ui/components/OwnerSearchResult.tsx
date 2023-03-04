@@ -29,17 +29,18 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
     const displayName = useMemo(() => {
         let displayName = ''
         if (result.type === 'person') {
-            displayName =
-                result.user?.displayName || result.user?.username || result.handle || result.email || 'Unknown person'
+            displayName = result.handle || result.email || 'Unknown person'
+        } else if (result.type === 'user') {
+            displayName = result.user.displayName || result.user.username
         } else if (result.type === 'team') {
-            displayName = result.displayName || result.name || result.handle || result.email || 'Unknown team'
+            displayName = result.displayName || result.name
         }
         return displayName
     }, [result])
 
     const avatarUser = useMemo(() => {
         const avatarUser: UserAvatarData = { username: displayName, avatarURL: null, displayName }
-        if (result.type === 'person' && result.user) {
+        if (result.type === 'user') {
             avatarUser.username = result.user.username
             avatarUser.avatarURL = result.user.avatarURL || null
         }
@@ -48,7 +49,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
 
     const url = useMemo(() => {
         const url = getOwnerMatchUrl(result)
-        if (result.type === 'person' && !result.user) {
+        if (result.type === 'person') {
             // This is not a real URL, remove it.
             return ''
         }
@@ -83,7 +84,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
                 <div className={resultStyles.matchType}>
                     <small>Owner match</small>
                 </div>
-                {result.type === 'person' && !result.user && (
+                {result.type === 'person' && (
                     <>
                         <div className={resultStyles.dividerVertical} />
                         <small className="d-block font-italic">

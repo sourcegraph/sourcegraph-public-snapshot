@@ -224,6 +224,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             />
                         )
                     case 'person':
+                    case 'user':
                     case 'team':
                         return (
                             <OwnerSearchResult

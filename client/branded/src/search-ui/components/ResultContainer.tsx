@@ -32,6 +32,7 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     path: 'file path',
     commit: 'commit',
     person: 'person',
+    user: 'user',
     team: 'team',
 }
 

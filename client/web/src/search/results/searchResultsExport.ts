@@ -12,6 +12,7 @@ import {
     PersonMatch,
     TeamMatch,
     getOwnerMatchUrl,
+    UserMatch,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -162,8 +163,8 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                 ['Match type', 'Handle', 'Email', 'User or team name', 'Display name', 'Profile URL'],
                 ...searchResults
                     .filter(
-                        (result: SearchMatch): result is PersonMatch | TeamMatch =>
-                            result.type === 'person' || result.type === 'team'
+                        (result: SearchMatch): result is PersonMatch | UserMatch | TeamMatch =>
+                            result.type === 'person' || result.type === 'user' || result.type === 'team'
                     )
                     .map(result => {
                         let profileUrl = getOwnerMatchUrl(result, true)
@@ -175,8 +176,12 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                             result.type,
                             result.handle,
                             result.email,
-                            result.type === 'person' ? result.user?.username : result.name,
-                            result.type === 'person' ? result.user?.displayName : result.displayName,
+                            result.type === 'user' ? result.user.username : result.type === 'team' ? result.name : null,
+                            result.type === 'user'
+                                ? result.user.displayName
+                                : result.type === 'team'
+                                ? result.displayName
+                                : null,
                             profileUrl,
                         ]
                     }),
