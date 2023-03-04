@@ -154,7 +154,6 @@ type Fingerprint struct {
 	GeneratedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=generated_at,json=generatedAt,proto3" json:"generated_at,omitempty"`
 	// identifier is an opaque identifier that represents the state of the
 	// configuration at the time it was generated.
-	// TODO: @ggilmore
 	Identifier uint64 `protobuf:"varint,2,opt,name=identifier,proto3" json:"identifier,omitempty"`
 }
 
@@ -238,10 +237,8 @@ type ZoektIndexOptions struct {
 	Priority float64 `protobuf:"fixed64,9,opt,name=priority,proto3" json:"priority,omitempty"`
 	// document_ranks_version when non-empty will lead to indexing using offline
 	// ranking. When the string changes, this will also causes us to re-index with new ranks.
-	// TODO@ggilmore: The zero-value seems important here.
 	DocumentRanksVersion string `protobuf:"bytes,10,opt,name=document_ranks_version,json=documentRanksVersion,proto3" json:"document_ranks_version,omitempty"`
-	// error, if non-empty, indicates that the request failed for the repo. // TODO@ggilmore: What does this mean?
-	// TODO@ggilmore: The zero-value seems important here.
+	// error, if non-empty, indicates that the request failed for the repo.
 	Error string `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
 }
 
@@ -355,7 +352,6 @@ func (x *ZoektIndexOptions) GetError() string {
 }
 
 // ZoektRepositoryBranch describes an indexed branch of a repository.
-// TODO@ggilmore: Should this live in the Zoekt repository?
 type ZoektRepositoryBranch struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -822,7 +818,6 @@ type UpdateIndexStatusRequest_Repository struct {
 	unknownFields protoimpl.UnknownFields
 
 	// repo_id is the Sourcegraph repository ID.
-	// TODO@ggilmore: Why is this a uint32 where everything else is an int32???
 	RepoId uint32 `protobuf:"varint,1,opt,name=repo_id,json=repoId,proto3" json:"repo_id,omitempty"`
 	// branches is the list of branches that the client has indexed.
 	Branches []*ZoektRepositoryBranch `protobuf:"bytes,2,rep,name=branches,proto3" json:"branches,omitempty"`

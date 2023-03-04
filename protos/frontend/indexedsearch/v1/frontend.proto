@@ -56,7 +56,6 @@ message Fingerprint {
 
   // identifier is an opaque identifier that represents the state of the
   // configuration at the time it was generated.
-  // TODO: @ggilmore
   uint64 identifier = 2;
 }
 
@@ -99,16 +98,13 @@ message ZoektIndexOptions {
 
   // document_ranks_version when non-empty will lead to indexing using offline
   // ranking. When the string changes, this will also causes us to re-index with new ranks.
-  // TODO@ggilmore: The zero-value seems important here.
   string document_ranks_version = 10;
 
-  // error, if non-empty, indicates that the request failed for the repo. // TODO@ggilmore: What does this mean?
-  // TODO@ggilmore: The zero-value seems important here.
+  // error, if non-empty, indicates that the request failed for the repo.
   string error = 11;
 }
 
 // ZoektRepositoryBranch describes an indexed branch of a repository.
-// TODO@ggilmore: Should this live in the Zoekt repository?
 message ZoektRepositoryBranch {
   // name is the name of the branch.
   string name = 1;
@@ -167,7 +163,6 @@ message DocumentRanksResponse {
 message UpdateIndexStatusRequest {
   message Repository {
     // repo_id is the Sourcegraph repository ID.
-    // TODO@ggilmore: Why is this a uint32 where everything else is an int32???
     uint32 repo_id = 1;
 
     // branches is the list of branches that the client has indexed.
@@ -181,6 +176,3 @@ message UpdateIndexStatusRequest {
 message UpdateIndexStatusResponse {
   // Always empty.
 }
-
-// TODO@ggilmore handle URL moved error
-// TODO@gilmore: adopt special error handling logic in cmd/frontend/internal/handlerutil/handler.go
