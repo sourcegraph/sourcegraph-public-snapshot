@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -54,6 +53,4 @@ type AutoIndexingService interface {
 
 type UploadsService = sharedresolvers.UploadsService
 
-type PolicyService interface {
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-}
+type PolicyService = sharedresolvers.PolicyService

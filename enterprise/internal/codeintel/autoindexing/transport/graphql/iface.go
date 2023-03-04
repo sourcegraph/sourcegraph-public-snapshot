@@ -63,6 +63,4 @@ type UploadsService interface {
 	ReindexUploadByID(ctx context.Context, id int) error
 }
 
-type PolicyService interface {
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-}
+type PolicyService = sharedresolvers.PolicyService

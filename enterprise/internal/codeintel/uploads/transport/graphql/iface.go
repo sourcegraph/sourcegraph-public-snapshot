@@ -33,6 +33,4 @@ type AutoIndexingService interface {
 	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
 }
 
-type PolicyService interface {
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-}
+type PolicyService = sharedresolvers.PolicyService
