@@ -7995,6 +7995,26 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_pkey ON codeintel_ranking_path_counts_inputs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository_i ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,

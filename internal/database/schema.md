@@ -1011,6 +1011,8 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i" btree (graph_key, repository_id)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
