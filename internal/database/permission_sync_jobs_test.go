@@ -35,7 +35,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	reposStore := ReposWith(logger, db)
 
 	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1"})
+	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
 	require.NoError(t, err)
 	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
 	require.NoError(t, err)
@@ -137,12 +137,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		{
 			name:     "ID",
 			opts:     ListPermissionSyncJobOpts{ID: jobs[0].ID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "RepoID",
 			opts:     ListPermissionSyncJobOpts{RepoID: jobs[0].RepositoryID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "UserID",
@@ -183,6 +183,46 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			name:     "Reason and ReasonGroup filtering (reason filtering wins)",
 			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync, ReasonGroup: PermissionsSyncJobReasonGroupSchedule},
 			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "Search doesn't work without SearchType",
+			opts:     ListPermissionSyncJobOpts{Query: "where's the search type, Lebowski?"},
+			wantJobs: jobs,
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject (repository)",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search",
+			opts:     ListPermissionSyncJobOpts{Query: "1", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: jobs[:1],
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject (user)",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:3],
+		},
+		{
+			name:     "User display name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "3", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "User name search",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[2:3],
+		},
+		{
+			name:     "User name search with pagination",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			wantJobs: jobs[2:3],
 		},
 	}
 
@@ -617,6 +657,16 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
 	require.Equal(t, 10, count)
+
+	// Counting with user search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser, Query: "hors"})
+	require.NoError(t, err)
+	require.Equal(t, 20, count)
+
+	// Counting with repo search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo, Query: "no :("})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 }
 
 // createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason

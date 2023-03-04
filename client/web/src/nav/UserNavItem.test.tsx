@@ -54,6 +54,7 @@ describe('UserNavItem', () => {
                         showKeyboardShortcutsHelp={() => undefined}
                         authenticatedUser={USER}
                         isSourcegraphDotCom={true}
+                        isSourcegraphApp={false}
                         codeHostIntegrationMessaging="browser-extension"
                         showFeedbackModal={() => undefined}
                     />
@@ -68,6 +69,7 @@ describe('UserNavItem', () => {
                 showKeyboardShortcutsHelp={() => undefined}
                 authenticatedUser={USER}
                 isSourcegraphDotCom={true}
+                isSourcegraphApp={false}
                 codeHostIntegrationMessaging="browser-extension"
                 showFeedbackModal={() => undefined}
             />

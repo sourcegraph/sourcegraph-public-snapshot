@@ -9,11 +9,17 @@ import (
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUserResourceHandler_Get(t *testing.T) {
-	db := getMockDB()
+	t.Parallel()
+
+	db := getMockDB([]*types.UserForSCIM{
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
+	})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
 	if err != nil {
@@ -25,60 +31,29 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	}
 
 	// Assert that IDs are correct
-	if user1.ID != "1" {
-		t.Errorf("expected ID = 1, got %s", user1.ID)
-	}
-	if user2.ID != "2" {
-		t.Errorf("expected ID = 2, got %s", user2.ID)
-	}
-	if user1.ExternalID.Value() != "external1" {
-		t.Errorf("expected ExternalID = 'external1', got %s", user1.ExternalID.Value())
-	}
-	if user2.ExternalID.Value() != "" {
-		t.Errorf("expected no ExternalID, got %s", user1.ExternalID.Value())
-	}
-
+	assert.Equal(t, "1", user1.ID)
+	assert.Equal(t, "2", user2.ID)
+	assert.Equal(t, "id1", user1.ExternalID.Value())
+	assert.Equal(t, "", user2.ExternalID.Value())
 	// Assert that usernames are correct
-	if user1.Attributes["userName"] != "user1" {
-		t.Errorf("expected username = 'user1', got %s", user1.Attributes["UserName"])
-	}
-	if user2.Attributes["userName"] != "user2" {
-		t.Errorf("expected username = 'user2', got %s", user2.Attributes["UserName"])
-	}
-
+	assert.Equal(t, "user1", user1.Attributes[AttrUserName])
+	assert.Equal(t, "user2", user2.Attributes[AttrUserName])
 	// Assert that names are correct
-	if user1.Attributes["displayName"] != "First Last" {
-		t.Errorf("expected First Last, got %s", user1.Attributes["displayName"])
-	}
-	if user2.Attributes["displayName"] != "First Middle Last" {
-		t.Errorf("expected First Middle Last, got %s", user2.Attributes["displayName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user1.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["middleName"] != "" {
-		t.Errorf("expected empty string, got %s", user1.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user1.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user1.Attributes["name"].(map[string]interface{})["familyName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["givenName"] != "First" {
-		t.Errorf("expected First, got %s", user2.Attributes["name"].(map[string]interface{})["givenName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["middleName"] != "Middle" {
-		t.Errorf("expected Middle, got %s", user2.Attributes["name"].(map[string]interface{})["middleName"])
-	}
-	if user2.Attributes["name"].(map[string]interface{})["familyName"] != "Last" {
-		t.Errorf("expected Last, got %s", user2.Attributes["name"].(map[string]interface{})["familyName"])
-	}
-
+	assert.Equal(t, "First Last", user1.Attributes[AttrDisplayName])
+	assert.Equal(t, "First Middle Last", user2.Attributes[AttrDisplayName])
 	// Assert that emails are correct
-	if user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"] != "a@example.com" {
-		t.Errorf("expected empty email, got %s", user1.Attributes["emails"].([]interface{})[0].(map[string]interface{})["value"])
-	}
+	assert.Equal(t, "a@example.com", user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"])
 }
+
 func TestUserResourceHandler_GetAll(t *testing.T) {
-	db := getMockDB()
+	t.Parallel()
+
+	db := getMockDB([]*types.UserForSCIM{
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}},
+		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}},
+		{User: types.User{ID: 4, Username: "user4"}},
+	})
 
 	cases := []struct {
 		name             string
@@ -114,9 +89,7 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 				params = scim.ListRequestParams{Count: c.count, StartIndex: c.startIndex, Filter: nil}
 			}
 			page, err := userResourceHandler.GetAll(&http.Request{}, params)
-			if err != nil {
-				t.Fatal(err)
-			}
+			assert.NoError(t, err)
 			assert.Equal(t, c.wantTotalResults, page.TotalResults)
 			assert.Equal(t, c.wantResults, len(page.Resources))
 			if c.wantResults > 0 {

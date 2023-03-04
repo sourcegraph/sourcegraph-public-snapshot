@@ -39,7 +39,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                     <div className="d-flex">
                         <ButtonLink
                             variant="icon"
-                            className="mr-2"
                             disabled={!person.email}
                             to={person.email ? `mailto:${person.email}` : undefined}
                         >
@@ -48,8 +47,10 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                     </div>
                 </td>
                 <td>
-                    <UserAvatar user={person} className="mx-2" />
-                    <PersonLink person={person} />
+                    <div className="d-flex align-items-center mr-2">
+                        <UserAvatar user={person} className="mx-2" inline={true} />
+                        <PersonLink person={person} />
+                    </div>
                 </td>
                 <td>
                     {reasons.map(reason => (

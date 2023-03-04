@@ -9,13 +9,15 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/internal/background",
         "//enterprise/internal/codeintel/autoindexing/internal/store",
         "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/env",
+        "//internal/gitserver/gitdomain",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//:log",
     ],
 )

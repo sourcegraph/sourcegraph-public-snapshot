@@ -8,7 +8,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -62,7 +61,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: fields})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	offset, err := resolverstubs.DecodeIntCursor(args.After)
 	if err != nil {
 		return nil, err
 	}

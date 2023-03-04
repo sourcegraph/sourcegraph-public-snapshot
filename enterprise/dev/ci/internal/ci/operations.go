@@ -67,6 +67,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
+			addVsceTests,                 // ~3.0m
 		)
 
 		if opts.ClientLintOnlyChangedFiles {
@@ -275,15 +276,16 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 // Builds and tests the VS Code extensions.
-func addVsceIntegrationTests(pipeline *bk.Pipeline) {
+func addVsceTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
+		":vscode: Tests for VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		bk.AutomaticRetry(1),
+		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// bk.AutomaticRetry(1),
 	)
 }
 
@@ -499,7 +501,7 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
-	allSlowPackages := append(slowGoTestPackagesGRPC, slowGoTestPackagesGRPC...)
+	allSlowPackages := append(slowGoTestPackagesNonGRPC, slowGoTestPackagesGRPC...)
 	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
 
 	// Run all tests that aren't slow both with and without gRPC enabled

@@ -741,7 +741,7 @@ Example:
     TLS_CLUSTER_ISSUER: letsencrypt
 ```
 
-Step 4: Include the tls component:
+Step 4: Include the `tls` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -752,6 +752,25 @@ Step 4: Include the tls component:
 ### TLS with Let’s Encrypt
 
 Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+
+### TLS secret name
+
+If the name of your secret for TLS is not `sourcegraph-frontend-tls`, you can replace it using the `$TLS_SECRET_NAME` config key:
+
+```yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
+  data:
+    # [ACTION] Set values below
+    TLS_SECRET_NAME: sourcegraph-tls
+```
+
+Then, include the `tls-secretname` component:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/network/tls-secretname
+```
 
 ---
 

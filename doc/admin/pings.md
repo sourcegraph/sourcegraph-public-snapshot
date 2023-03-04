@@ -88,6 +88,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
       - executor
       - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Aggregated counts of access requests pending, approved, rejected
 - Saved searches usage data
   - Count of saved searches
   - Count of users using saved searches

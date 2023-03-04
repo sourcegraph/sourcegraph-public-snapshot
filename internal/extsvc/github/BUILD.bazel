@@ -63,5 +63,6 @@ go_test(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

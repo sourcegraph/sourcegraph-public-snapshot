@@ -49,10 +49,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
+    sha256 = "dd926a88a564a9246713a9c00b35315f54cbd46b31a26d5d8fb264c07045f05d",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
     ],
 )
 
@@ -101,6 +101,7 @@ load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
+    npm_package_target_name = "{dirname}_pkg",
     npmrc = "//:.npmrc",
     pnpm_lock = "//:pnpm-lock.yaml",
     verify_node_modules_ignored = "//:.bazelignore",
@@ -131,6 +132,46 @@ load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
 
 jest_npm_repositories()
 
+# rules_esbuild setup ===========================
+http_archive(
+    name = "aspect_rules_esbuild",
+    sha256 = "621c8ccb8a1400951c52357377eda4c575c6c901689bb629969881e0be8a8614",
+    strip_prefix = "rules_esbuild-175023fede7d2532dd35d89cb43b43cbe9e75678",
+    url = "https://github.com/aspect-build/rules_esbuild/archive/175023fede7d2532dd35d89cb43b43cbe9e75678.tar.gz",
+)
+
+load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
+
+rules_esbuild_dependencies()
+
+# Register a toolchain containing esbuild npm package and native bindings
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_VERSION", "esbuild_register_toolchains")
+
+esbuild_register_toolchains(
+    name = "esbuild",
+    esbuild_version = LATEST_VERSION,
+)
+
+# rules_webpack setup ===========================
+http_archive(
+    name = "aspect_rules_webpack",
+    sha256 = "4f30fb310d625a4045e37b9e04afb2366c56b547a73c935f308e3d9c31b77519",
+    strip_prefix = "rules_webpack-0.9.1",
+    url = "https://github.com/aspect-build/rules_webpack/releases/download/v0.9.1/rules_webpack-v0.9.1.tar.gz",
+)
+
+load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
+
+rules_webpack_dependencies()
+
+load("@aspect_rules_webpack//webpack:repositories.bzl", "webpack_repositories")
+
+webpack_repositories(name = "webpack")
+
+load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_repositories")
+
+webpack_npm_repositories()
+
 # Go toolchain setup
 
 load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
@@ -151,10 +192,12 @@ rules_proto_toolchains()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+load("//:linter_deps.bzl", "linter_dependencies")
 load("//:deps.bzl", "go_dependencies")
 
 go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
+    build_file_proto_mode = "disable_global",
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
     sum = "h1:0bLhH6DRAqox+g0LatcjGKjjhU6Eudyys6HB6DJVPj8=",
     version = "v1.14.1",
@@ -165,7 +208,12 @@ go_dependencies()
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.3")
+go_register_toolchains(
+    nogo = "@//:sg_nogo",
+    version = "1.19.3",
+)
+
+linter_dependencies()
 
 gazelle_dependencies()
 

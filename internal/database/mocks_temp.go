@@ -10820,6 +10820,9 @@ type MockEventLogStore struct {
 	// object controlling the behavior of the method
 	// MaxTimestampByUserIDAndSource.
 	MaxTimestampByUserIDAndSourceFunc *EventLogStoreMaxTimestampByUserIDAndSourceFunc
+	// OwnershipFeatureActivityFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnershipFeatureActivity.
+	OwnershipFeatureActivityFunc *EventLogStoreOwnershipFeatureActivityFunc
 	// RequestsByLanguageFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestsByLanguage.
 	RequestsByLanguageFunc *EventLogStoreRequestsByLanguageFunc
@@ -10991,6 +10994,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		MaxTimestampByUserIDAndSourceFunc: &EventLogStoreMaxTimestampByUserIDAndSourceFunc{
 			defaultHook: func(context.Context, int32, string) (r0 *time.Time, r1 error) {
+				return
+			},
+		},
+		OwnershipFeatureActivityFunc: &EventLogStoreOwnershipFeatureActivityFunc{
+			defaultHook: func(context.Context, time.Time, ...string) (r0 map[string]*types.OwnershipUsageStatisticsActiveUsers, r1 error) {
 				return
 			},
 		},
@@ -11181,6 +11189,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.MaxTimestampByUserIDAndSource")
 			},
 		},
+		OwnershipFeatureActivityFunc: &EventLogStoreOwnershipFeatureActivityFunc{
+			defaultHook: func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+				panic("unexpected invocation of MockEventLogStore.OwnershipFeatureActivity")
+			},
+		},
 		RequestsByLanguageFunc: &EventLogStoreRequestsByLanguageFunc{
 			defaultHook: func(context.Context) (map[string]int, error) {
 				panic("unexpected invocation of MockEventLogStore.RequestsByLanguage")
@@ -11308,6 +11321,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		MaxTimestampByUserIDAndSourceFunc: &EventLogStoreMaxTimestampByUserIDAndSourceFunc{
 			defaultHook: i.MaxTimestampByUserIDAndSource,
+		},
+		OwnershipFeatureActivityFunc: &EventLogStoreOwnershipFeatureActivityFunc{
+			defaultHook: i.OwnershipFeatureActivity,
 		},
 		RequestsByLanguageFunc: &EventLogStoreRequestsByLanguageFunc{
 			defaultHook: i.RequestsByLanguage,
@@ -14659,6 +14675,128 @@ func (c EventLogStoreMaxTimestampByUserIDAndSourceFuncCall) Args() []interface{}
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreMaxTimestampByUserIDAndSourceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreOwnershipFeatureActivityFunc describes the behavior when the
+// OwnershipFeatureActivity method of the parent MockEventLogStore instance
+// is invoked.
+type EventLogStoreOwnershipFeatureActivityFunc struct {
+	defaultHook func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)
+	hooks       []func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)
+	history     []EventLogStoreOwnershipFeatureActivityFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnershipFeatureActivity delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) OwnershipFeatureActivity(v0 context.Context, v1 time.Time, v2 ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+	r0, r1 := m.OwnershipFeatureActivityFunc.nextHook()(v0, v1, v2...)
+	m.OwnershipFeatureActivityFunc.appendCall(EventLogStoreOwnershipFeatureActivityFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// OwnershipFeatureActivity method of the parent MockEventLogStore instance
+// is invoked and the hook queue is empty.
+func (f *EventLogStoreOwnershipFeatureActivityFunc) SetDefaultHook(hook func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnershipFeatureActivity method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreOwnershipFeatureActivityFunc) PushHook(hook func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreOwnershipFeatureActivityFunc) SetDefaultReturn(r0 map[string]*types.OwnershipUsageStatisticsActiveUsers, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreOwnershipFeatureActivityFunc) PushReturn(r0 map[string]*types.OwnershipUsageStatisticsActiveUsers, r1 error) {
+	f.PushHook(func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreOwnershipFeatureActivityFunc) nextHook() func(context.Context, time.Time, ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreOwnershipFeatureActivityFunc) appendCall(r0 EventLogStoreOwnershipFeatureActivityFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EventLogStoreOwnershipFeatureActivityFuncCall objects describing the
+// invocations of this function.
+func (f *EventLogStoreOwnershipFeatureActivityFunc) History() []EventLogStoreOwnershipFeatureActivityFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreOwnershipFeatureActivityFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreOwnershipFeatureActivityFuncCall is an object that describes
+// an invocation of method OwnershipFeatureActivity on an instance of
+// MockEventLogStore.
+type EventLogStoreOwnershipFeatureActivityFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]*types.OwnershipUsageStatisticsActiveUsers
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c EventLogStoreOwnershipFeatureActivityFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreOwnershipFeatureActivityFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -42655,10 +42793,18 @@ type MockRolePermissionStore struct {
 	// AssignToSystemRoleFunc is an instance of a mock function object
 	// controlling the behavior of the method AssignToSystemRole.
 	AssignToSystemRoleFunc *RolePermissionStoreAssignToSystemRoleFunc
+	// BulkAssignPermissionsToRoleFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BulkAssignPermissionsToRole.
+	BulkAssignPermissionsToRoleFunc *RolePermissionStoreBulkAssignPermissionsToRoleFunc
 	// BulkAssignPermissionsToSystemRolesFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// BulkAssignPermissionsToSystemRoles.
 	BulkAssignPermissionsToSystemRolesFunc *RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc
+	// BulkRevokePermissionsForRoleFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BulkRevokePermissionsForRole.
+	BulkRevokePermissionsForRoleFunc *RolePermissionStoreBulkRevokePermissionsForRoleFunc
 	// GetByPermissionIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByPermissionID.
 	GetByPermissionIDFunc *RolePermissionStoreGetByPermissionIDFunc
@@ -42675,6 +42821,9 @@ type MockRolePermissionStore struct {
 	// RevokeFunc is an instance of a mock function object controlling the
 	// behavior of the method Revoke.
 	RevokeFunc *RolePermissionStoreRevokeFunc
+	// SyncPermissionsToRoleFunc is an instance of a mock function object
+	// controlling the behavior of the method SyncPermissionsToRole.
+	SyncPermissionsToRoleFunc *RolePermissionStoreSyncPermissionsToRoleFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *RolePermissionStoreWithFunc
@@ -42698,8 +42847,18 @@ func NewMockRolePermissionStore() *MockRolePermissionStore {
 				return
 			},
 		},
+		BulkAssignPermissionsToRoleFunc: &RolePermissionStoreBulkAssignPermissionsToRoleFunc{
+			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) (r0 error) {
+				return
+			},
+		},
 		BulkAssignPermissionsToSystemRolesFunc: &RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc{
 			defaultHook: func(context.Context, BulkAssignPermissionsToSystemRolesOpts) (r0 error) {
+				return
+			},
+		},
+		BulkRevokePermissionsForRoleFunc: &RolePermissionStoreBulkRevokePermissionsForRoleFunc{
+			defaultHook: func(context.Context, BulkRevokePermissionsForRoleOpts) (r0 error) {
 				return
 			},
 		},
@@ -42725,6 +42884,11 @@ func NewMockRolePermissionStore() *MockRolePermissionStore {
 		},
 		RevokeFunc: &RolePermissionStoreRevokeFunc{
 			defaultHook: func(context.Context, RevokeRolePermissionOpts) (r0 error) {
+				return
+			},
+		},
+		SyncPermissionsToRoleFunc: &RolePermissionStoreSyncPermissionsToRoleFunc{
+			defaultHook: func(context.Context, SyncPermissionsToRoleOpts) (r0 error) {
 				return
 			},
 		},
@@ -42756,9 +42920,19 @@ func NewStrictMockRolePermissionStore() *MockRolePermissionStore {
 				panic("unexpected invocation of MockRolePermissionStore.AssignToSystemRole")
 			},
 		},
+		BulkAssignPermissionsToRoleFunc: &RolePermissionStoreBulkAssignPermissionsToRoleFunc{
+			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+				panic("unexpected invocation of MockRolePermissionStore.BulkAssignPermissionsToRole")
+			},
+		},
 		BulkAssignPermissionsToSystemRolesFunc: &RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc{
 			defaultHook: func(context.Context, BulkAssignPermissionsToSystemRolesOpts) error {
 				panic("unexpected invocation of MockRolePermissionStore.BulkAssignPermissionsToSystemRoles")
+			},
+		},
+		BulkRevokePermissionsForRoleFunc: &RolePermissionStoreBulkRevokePermissionsForRoleFunc{
+			defaultHook: func(context.Context, BulkRevokePermissionsForRoleOpts) error {
+				panic("unexpected invocation of MockRolePermissionStore.BulkRevokePermissionsForRole")
 			},
 		},
 		GetByPermissionIDFunc: &RolePermissionStoreGetByPermissionIDFunc{
@@ -42786,6 +42960,11 @@ func NewStrictMockRolePermissionStore() *MockRolePermissionStore {
 				panic("unexpected invocation of MockRolePermissionStore.Revoke")
 			},
 		},
+		SyncPermissionsToRoleFunc: &RolePermissionStoreSyncPermissionsToRoleFunc{
+			defaultHook: func(context.Context, SyncPermissionsToRoleOpts) error {
+				panic("unexpected invocation of MockRolePermissionStore.SyncPermissionsToRole")
+			},
+		},
 		WithFunc: &RolePermissionStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) RolePermissionStore {
 				panic("unexpected invocation of MockRolePermissionStore.With")
@@ -42810,8 +42989,14 @@ func NewMockRolePermissionStoreFrom(i RolePermissionStore) *MockRolePermissionSt
 		AssignToSystemRoleFunc: &RolePermissionStoreAssignToSystemRoleFunc{
 			defaultHook: i.AssignToSystemRole,
 		},
+		BulkAssignPermissionsToRoleFunc: &RolePermissionStoreBulkAssignPermissionsToRoleFunc{
+			defaultHook: i.BulkAssignPermissionsToRole,
+		},
 		BulkAssignPermissionsToSystemRolesFunc: &RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc{
 			defaultHook: i.BulkAssignPermissionsToSystemRoles,
+		},
+		BulkRevokePermissionsForRoleFunc: &RolePermissionStoreBulkRevokePermissionsForRoleFunc{
+			defaultHook: i.BulkRevokePermissionsForRole,
 		},
 		GetByPermissionIDFunc: &RolePermissionStoreGetByPermissionIDFunc{
 			defaultHook: i.GetByPermissionID,
@@ -42827,6 +43012,9 @@ func NewMockRolePermissionStoreFrom(i RolePermissionStore) *MockRolePermissionSt
 		},
 		RevokeFunc: &RolePermissionStoreRevokeFunc{
 			defaultHook: i.Revoke,
+		},
+		SyncPermissionsToRoleFunc: &RolePermissionStoreSyncPermissionsToRoleFunc{
+			defaultHook: i.SyncPermissionsToRole,
 		},
 		WithFunc: &RolePermissionStoreWithFunc{
 			defaultHook: i.With,
@@ -43051,6 +43239,115 @@ func (c RolePermissionStoreAssignToSystemRoleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// RolePermissionStoreBulkAssignPermissionsToRoleFunc describes the behavior
+// when the BulkAssignPermissionsToRole method of the parent
+// MockRolePermissionStore instance is invoked.
+type RolePermissionStoreBulkAssignPermissionsToRoleFunc struct {
+	defaultHook func(context.Context, BulkAssignPermissionsToRoleOpts) error
+	hooks       []func(context.Context, BulkAssignPermissionsToRoleOpts) error
+	history     []RolePermissionStoreBulkAssignPermissionsToRoleFuncCall
+	mutex       sync.Mutex
+}
+
+// BulkAssignPermissionsToRole delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRolePermissionStore) BulkAssignPermissionsToRole(v0 context.Context, v1 BulkAssignPermissionsToRoleOpts) error {
+	r0 := m.BulkAssignPermissionsToRoleFunc.nextHook()(v0, v1)
+	m.BulkAssignPermissionsToRoleFunc.appendCall(RolePermissionStoreBulkAssignPermissionsToRoleFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BulkAssignPermissionsToRole method of the parent MockRolePermissionStore
+// instance is invoked and the hook queue is empty.
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BulkAssignPermissionsToRole method of the parent MockRolePermissionStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+		return r0
+	})
+}
+
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) nextHook() func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) appendCall(r0 RolePermissionStoreBulkAssignPermissionsToRoleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RolePermissionStoreBulkAssignPermissionsToRoleFuncCall objects describing
+// the invocations of this function.
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) History() []RolePermissionStoreBulkAssignPermissionsToRoleFuncCall {
+	f.mutex.Lock()
+	history := make([]RolePermissionStoreBulkAssignPermissionsToRoleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RolePermissionStoreBulkAssignPermissionsToRoleFuncCall is an object that
+// describes an invocation of method BulkAssignPermissionsToRole on an
+// instance of MockRolePermissionStore.
+type RolePermissionStoreBulkAssignPermissionsToRoleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 BulkAssignPermissionsToRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RolePermissionStoreBulkAssignPermissionsToRoleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RolePermissionStoreBulkAssignPermissionsToRoleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc describes the
 // behavior when the BulkAssignPermissionsToSystemRoles method of the parent
 // MockRolePermissionStore instance is invoked.
@@ -43158,6 +43455,115 @@ func (c RolePermissionStoreBulkAssignPermissionsToSystemRolesFuncCall) Args() []
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RolePermissionStoreBulkAssignPermissionsToSystemRolesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RolePermissionStoreBulkRevokePermissionsForRoleFunc describes the
+// behavior when the BulkRevokePermissionsForRole method of the parent
+// MockRolePermissionStore instance is invoked.
+type RolePermissionStoreBulkRevokePermissionsForRoleFunc struct {
+	defaultHook func(context.Context, BulkRevokePermissionsForRoleOpts) error
+	hooks       []func(context.Context, BulkRevokePermissionsForRoleOpts) error
+	history     []RolePermissionStoreBulkRevokePermissionsForRoleFuncCall
+	mutex       sync.Mutex
+}
+
+// BulkRevokePermissionsForRole delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRolePermissionStore) BulkRevokePermissionsForRole(v0 context.Context, v1 BulkRevokePermissionsForRoleOpts) error {
+	r0 := m.BulkRevokePermissionsForRoleFunc.nextHook()(v0, v1)
+	m.BulkRevokePermissionsForRoleFunc.appendCall(RolePermissionStoreBulkRevokePermissionsForRoleFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BulkRevokePermissionsForRole method of the parent MockRolePermissionStore
+// instance is invoked and the hook queue is empty.
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) SetDefaultHook(hook func(context.Context, BulkRevokePermissionsForRoleOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BulkRevokePermissionsForRole method of the parent MockRolePermissionStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) PushHook(hook func(context.Context, BulkRevokePermissionsForRoleOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, BulkRevokePermissionsForRoleOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, BulkRevokePermissionsForRoleOpts) error {
+		return r0
+	})
+}
+
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) nextHook() func(context.Context, BulkRevokePermissionsForRoleOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) appendCall(r0 RolePermissionStoreBulkRevokePermissionsForRoleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RolePermissionStoreBulkRevokePermissionsForRoleFuncCall objects
+// describing the invocations of this function.
+func (f *RolePermissionStoreBulkRevokePermissionsForRoleFunc) History() []RolePermissionStoreBulkRevokePermissionsForRoleFuncCall {
+	f.mutex.Lock()
+	history := make([]RolePermissionStoreBulkRevokePermissionsForRoleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RolePermissionStoreBulkRevokePermissionsForRoleFuncCall is an object that
+// describes an invocation of method BulkRevokePermissionsForRole on an
+// instance of MockRolePermissionStore.
+type RolePermissionStoreBulkRevokePermissionsForRoleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 BulkRevokePermissionsForRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RolePermissionStoreBulkRevokePermissionsForRoleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RolePermissionStoreBulkRevokePermissionsForRoleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -43696,6 +44102,115 @@ func (c RolePermissionStoreRevokeFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RolePermissionStoreRevokeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RolePermissionStoreSyncPermissionsToRoleFunc describes the behavior when
+// the SyncPermissionsToRole method of the parent MockRolePermissionStore
+// instance is invoked.
+type RolePermissionStoreSyncPermissionsToRoleFunc struct {
+	defaultHook func(context.Context, SyncPermissionsToRoleOpts) error
+	hooks       []func(context.Context, SyncPermissionsToRoleOpts) error
+	history     []RolePermissionStoreSyncPermissionsToRoleFuncCall
+	mutex       sync.Mutex
+}
+
+// SyncPermissionsToRole delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRolePermissionStore) SyncPermissionsToRole(v0 context.Context, v1 SyncPermissionsToRoleOpts) error {
+	r0 := m.SyncPermissionsToRoleFunc.nextHook()(v0, v1)
+	m.SyncPermissionsToRoleFunc.appendCall(RolePermissionStoreSyncPermissionsToRoleFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SyncPermissionsToRole method of the parent MockRolePermissionStore
+// instance is invoked and the hook queue is empty.
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) SetDefaultHook(hook func(context.Context, SyncPermissionsToRoleOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SyncPermissionsToRole method of the parent MockRolePermissionStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) PushHook(hook func(context.Context, SyncPermissionsToRoleOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, SyncPermissionsToRoleOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, SyncPermissionsToRoleOpts) error {
+		return r0
+	})
+}
+
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) nextHook() func(context.Context, SyncPermissionsToRoleOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) appendCall(r0 RolePermissionStoreSyncPermissionsToRoleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RolePermissionStoreSyncPermissionsToRoleFuncCall objects describing the
+// invocations of this function.
+func (f *RolePermissionStoreSyncPermissionsToRoleFunc) History() []RolePermissionStoreSyncPermissionsToRoleFuncCall {
+	f.mutex.Lock()
+	history := make([]RolePermissionStoreSyncPermissionsToRoleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RolePermissionStoreSyncPermissionsToRoleFuncCall is an object that
+// describes an invocation of method SyncPermissionsToRole on an instance of
+// MockRolePermissionStore.
+type RolePermissionStoreSyncPermissionsToRoleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 SyncPermissionsToRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RolePermissionStoreSyncPermissionsToRoleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RolePermissionStoreSyncPermissionsToRoleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -50422,6 +50937,9 @@ type MockTeamStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *TeamStoreHandleFunc
+	// IsTeamMemberFunc is an instance of a mock function object controlling
+	// the behavior of the method IsTeamMember.
+	IsTeamMemberFunc *TeamStoreIsTeamMemberFunc
 	// ListTeamMembersFunc is an instance of a mock function object
 	// controlling the behavior of the method ListTeamMembers.
 	ListTeamMembersFunc *TeamStoreListTeamMembersFunc
@@ -50484,6 +51002,11 @@ func NewMockTeamStore() *MockTeamStore {
 		},
 		HandleFunc: &TeamStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		IsTeamMemberFunc: &TeamStoreIsTeamMemberFunc{
+			defaultHook: func(context.Context, int32, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -50559,6 +51082,11 @@ func NewStrictMockTeamStore() *MockTeamStore {
 				panic("unexpected invocation of MockTeamStore.Handle")
 			},
 		},
+		IsTeamMemberFunc: &TeamStoreIsTeamMemberFunc{
+			defaultHook: func(context.Context, int32, int32) (bool, error) {
+				panic("unexpected invocation of MockTeamStore.IsTeamMember")
+			},
+		},
 		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
 			defaultHook: func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 				panic("unexpected invocation of MockTeamStore.ListTeamMembers")
@@ -50610,6 +51138,9 @@ func NewMockTeamStoreFrom(i TeamStore) *MockTeamStore {
 		},
 		HandleFunc: &TeamStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		IsTeamMemberFunc: &TeamStoreIsTeamMemberFunc{
+			defaultHook: i.IsTeamMember,
 		},
 		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
 			defaultHook: i.ListTeamMembers,
@@ -51683,6 +52214,117 @@ func (c TeamStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c TeamStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// TeamStoreIsTeamMemberFunc describes the behavior when the IsTeamMember
+// method of the parent MockTeamStore instance is invoked.
+type TeamStoreIsTeamMemberFunc struct {
+	defaultHook func(context.Context, int32, int32) (bool, error)
+	hooks       []func(context.Context, int32, int32) (bool, error)
+	history     []TeamStoreIsTeamMemberFuncCall
+	mutex       sync.Mutex
+}
+
+// IsTeamMember delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) IsTeamMember(v0 context.Context, v1 int32, v2 int32) (bool, error) {
+	r0, r1 := m.IsTeamMemberFunc.nextHook()(v0, v1, v2)
+	m.IsTeamMemberFunc.appendCall(TeamStoreIsTeamMemberFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsTeamMember method
+// of the parent MockTeamStore instance is invoked and the hook queue is
+// empty.
+func (f *TeamStoreIsTeamMemberFunc) SetDefaultHook(hook func(context.Context, int32, int32) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsTeamMember method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreIsTeamMemberFunc) PushHook(hook func(context.Context, int32, int32) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreIsTeamMemberFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreIsTeamMemberFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int32, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *TeamStoreIsTeamMemberFunc) nextHook() func(context.Context, int32, int32) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreIsTeamMemberFunc) appendCall(r0 TeamStoreIsTeamMemberFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreIsTeamMemberFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreIsTeamMemberFunc) History() []TeamStoreIsTeamMemberFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreIsTeamMemberFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreIsTeamMemberFuncCall is an object that describes an invocation
+// of method IsTeamMember on an instance of MockTeamStore.
+type TeamStoreIsTeamMemberFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreIsTeamMemberFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreIsTeamMemberFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // TeamStoreListTeamMembersFunc describes the behavior when the
@@ -55769,6 +56411,9 @@ type MockUserExternalAccountsStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *UserExternalAccountsStoreTransactFunc
+	// UpdateSCIMDataFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateSCIMData.
+	UpdateSCIMDataFunc *UserExternalAccountsStoreUpdateSCIMDataFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserExternalAccountsStoreWithFunc
@@ -55854,6 +56499,11 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 		},
 		TransactFunc: &UserExternalAccountsStoreTransactFunc{
 			defaultHook: func(context.Context) (r0 UserExternalAccountsStore, r1 error) {
+				return
+			},
+		},
+		UpdateSCIMDataFunc: &UserExternalAccountsStoreUpdateSCIMDataFunc{
+			defaultHook: func(context.Context, int32, string, extsvc.AccountData) (r0 error) {
 				return
 			},
 		},
@@ -55950,6 +56600,11 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Transact")
 			},
 		},
+		UpdateSCIMDataFunc: &UserExternalAccountsStoreUpdateSCIMDataFunc{
+			defaultHook: func(context.Context, int32, string, extsvc.AccountData) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.UpdateSCIMData")
+			},
+		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) UserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.With")
@@ -56012,6 +56667,9 @@ func NewMockUserExternalAccountsStoreFrom(i UserExternalAccountsStore) *MockUser
 		},
 		TransactFunc: &UserExternalAccountsStoreTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdateSCIMDataFunc: &UserExternalAccountsStoreUpdateSCIMDataFunc{
+			defaultHook: i.UpdateSCIMData,
 		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
 			defaultHook: i.With,
@@ -57673,6 +58331,121 @@ func (c UserExternalAccountsStoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c UserExternalAccountsStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserExternalAccountsStoreUpdateSCIMDataFunc describes the behavior when
+// the UpdateSCIMData method of the parent MockUserExternalAccountsStore
+// instance is invoked.
+type UserExternalAccountsStoreUpdateSCIMDataFunc struct {
+	defaultHook func(context.Context, int32, string, extsvc.AccountData) error
+	hooks       []func(context.Context, int32, string, extsvc.AccountData) error
+	history     []UserExternalAccountsStoreUpdateSCIMDataFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateSCIMData delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserExternalAccountsStore) UpdateSCIMData(v0 context.Context, v1 int32, v2 string, v3 extsvc.AccountData) error {
+	r0 := m.UpdateSCIMDataFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateSCIMDataFunc.appendCall(UserExternalAccountsStoreUpdateSCIMDataFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateSCIMData
+// method of the parent MockUserExternalAccountsStore instance is invoked
+// and the hook queue is empty.
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) SetDefaultHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateSCIMData method of the parent MockUserExternalAccountsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) PushHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, extsvc.AccountData) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string, extsvc.AccountData) error {
+		return r0
+	})
+}
+
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) nextHook() func(context.Context, int32, string, extsvc.AccountData) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) appendCall(r0 UserExternalAccountsStoreUpdateSCIMDataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserExternalAccountsStoreUpdateSCIMDataFuncCall objects describing the
+// invocations of this function.
+func (f *UserExternalAccountsStoreUpdateSCIMDataFunc) History() []UserExternalAccountsStoreUpdateSCIMDataFuncCall {
+	f.mutex.Lock()
+	history := make([]UserExternalAccountsStoreUpdateSCIMDataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserExternalAccountsStoreUpdateSCIMDataFuncCall is an object that
+// describes an invocation of method UpdateSCIMData on an instance of
+// MockUserExternalAccountsStore.
+type UserExternalAccountsStoreUpdateSCIMDataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 extsvc.AccountData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserExternalAccountsStoreUpdateSCIMDataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserExternalAccountsStoreUpdateSCIMDataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UserExternalAccountsStoreWithFunc describes the behavior when the With

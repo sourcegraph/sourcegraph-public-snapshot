@@ -88,7 +88,7 @@ export const CommitMessageWithLinks = ({
 // https://github.com/sourcegraph/sourcegraph/commit/ad1ea519e5a31bb868be947107bcf43f4f9fc672
 //
 // This function removes those unwanted parts
-const GITHUB_URL_SCHEMA = /^(https?:\/\/[^/]+\/[^/]+\/[^/]+)(.+)$/
+const GITHUB_URL_SCHEMA = /^(https?:\/\/[^/]+\/[^/]+\/[^/]+)(.*)$/
 function githubRepoUrl(url: string): string {
     const match = url.match(GITHUB_URL_SCHEMA)
     if (match?.[1]) {

@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,8 +29,8 @@ type handler struct {
 }
 
 var (
-	_ workerutil.Handler[executor.Job] = &handler{}
-	_ workerutil.WithPreDequeue        = &handler{}
+	_ workerutil.Handler[types.Job] = &handler{}
+	_ workerutil.WithPreDequeue     = &handler{}
 )
 
 // PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
@@ -61,7 +61,7 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueabl
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Job) (err error) {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) (err error) {
 	logger = logger.With(
 		log.Int("jobID", job.ID),
 		log.String("repositoryName", job.RepositoryName),
@@ -207,7 +207,7 @@ func union(a, b map[string]string) map[string]string {
 	return c
 }
 
-func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
+func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
 	fields := map[string]any{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),

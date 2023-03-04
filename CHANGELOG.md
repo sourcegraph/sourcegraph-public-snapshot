@@ -22,15 +22,19 @@ All notable changes to Sourcegraph are documented in this file.
 - Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base cluster that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources. [#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
 - Added the `other.exclude` setting to [Other external service config](https://docs.sourcegraph.com/admin/external_service/other#configuration). It can be configured to exclude mirroring of repositories matching a pattern similar to other external services. This is useful when you want to exclude repositories discovered via `src serve-git`. [#48168](https://github.com/sourcegraph/sourcegraph/pull/48168)
 - The **Site admin > Updates** page displays the upgrade readiness information about schema drift and out-of-band migrations. [#48046](https://github.com/sourcegraph/sourcegraph/pull/48046)
+- When encountering GitHub rate limits, Sourcegraph will now wait the recommended amount of time and retry the request. This prevents sync jobs from failing prematurely due to external rate limits. [#48423](https://github.com/sourcegraph/sourcegraph/pull/48423)
 
 ### Changed
 
 - Experimental GraphQL query, `permissionsSyncJobs` is substituted with new non-experimental query which provides full information about permissions sync jobs stored in the database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Renders `readme.txt` files in the repository page. [#47944](https://github.com/sourcegraph/sourcegraph/pull/47944)
 - Renders GitHub pull request references in all places where a commit message is referenced. [#48183](https://github.com/sourcegraph/sourcegraph/pull/48183)
+- CodeMirror blob view (default) uses selection-driven code navigation. [#48066](https://github.com/sourcegraph/sourcegraph/pull/48066)
+- Older Code Insights data points will now be automatically archived as configured by the site configuration setting `insights.maximumSampleSize`, set to 30 by default. All points can be exported. This behaviour can be disabled using the experimental setting `insightsDataRetention`. [#48259](https://github.com/sourcegraph/sourcegraph/pull/48259)
 
 ### Fixed
 
+- The symbols service `CACHE_DIR` and `MAX_TOTTAL_PATHS_LENGTH` were renamed to have a `SYMBOLS_` prefix in the last version of Sourcegraph; this version fixes a bug where the old names without the `SYMBOLS_` prefix were not respected correctly. Both names now work.
 - Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
 - Enable `auto gc` on fetch when `SRC_ENABLE_GC_AUTO` is set to `true`. [#47852](https://github.com/sourcegraph/sourcegraph/pull/47852)
 - Fixes syntax highlighting and line number issues in the code preview rendered inside the references panel. [#48107](https://github.com/sourcegraph/sourcegraph/pull/48107)

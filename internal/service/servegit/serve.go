@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -13,18 +12,22 @@ import (
 	"os/signal"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 type Serve struct {
-	Addr   string
-	Root   string
+	Config
+
 	Logger log.Logger
 }
 
@@ -175,29 +178,87 @@ func isGitRepo(path string) bool {
 	return string(out) == ".git\n"
 }
 
-// Repos returns a slice of all the git repositories it finds.
+// Repos returns a slice of all the git repositories it finds. It is a wrapper
+// around Walk which removes the need to deal with channels and sorts the
+// response.
 func (s *Serve) Repos() ([]Repo, error) {
-	var repos []Repo
-	var reposRootIsRepo bool
+	var (
+		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
+		walkErr error
+	)
+	go func() {
+		defer close(repoC)
+		walkErr = s.Walk(repoC)
+	}()
 
+	var repos []Repo
+	for r := range repoC {
+		repos = append(repos, r)
+	}
+
+	if walkErr != nil {
+		return nil, walkErr
+	}
+
+	// walk is not deterministic due to concurrency, so introduce determinism
+	// by sorting the results.
+	slices.SortFunc(repos, func(a, b Repo) bool {
+		return a.Name < b.Name
+	})
+
+	return repos, nil
+}
+
+// Walk is the core repos finding routine.
+func (s *Serve) Walk(repoC chan<- Repo) error {
 	root, err := filepath.EvalSymlinks(s.Root)
 	if err != nil {
 		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
-		return nil, nil
+		return nil
+	}
+	root = filepath.Clean(root)
+
+	if repo, ok, err := rootIsRepo(root); err != nil {
+		return err
+	} else if ok {
+		repoC <- repo
+		return nil
 	}
 
-	err = filepath.WalkDir(root, func(path string, fi fs.DirEntry, fileErr error) error {
-		if fileErr != nil {
-			s.Logger.Warn("ignoring error searching", log.String("path", path), log.Error(fileErr))
-			return nil
-		}
-		if !fi.IsDir() {
-			return nil
+	ctx := context.Background()
+	if s.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.Timeout)
+		defer cancel()
+	}
+
+	ignore := mkIgnoreSubPath(root, s.MaxDepth)
+
+	// We use fastwalk since it is much faster. Notes for people used to
+	// filepath.WalkDir:
+	//
+	//   - func is called concurrently
+	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
+	//     files (so will only get dirs)
+	//   - filepath.SkipDir has the same meaning
+	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 
-		// Previously we recursed into bare repositories which is why this check was here.
-		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
-		if filepath.Base(path) == ".git" {
+		if !typ.IsDir() {
+			return fastwalk.ErrSkipFiles
+		}
+
+		subpath, err := filepath.Rel(root, path)
+		if err != nil {
+			// According to WalkFunc docs, path is always filepath.Join(root,
+			// subpath). So Rel should always work.
+			return errors.Wrapf(err, "filepath.Walk returned %s which is not relative to %s", path, root)
+		}
+
+		if ignore(subpath) {
+			s.Logger.Debug("ignoring path", log.String("path", path))
 			return filepath.SkipDir
 		}
 
@@ -209,18 +270,10 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 		if !isGit && !isBare {
 			s.Logger.Debug("not a repository root", log.String("path", path))
-			return nil
-		}
-
-		subpath, err := filepath.Rel(root, path)
-		if err != nil {
-			// According to WalkFunc docs, path is always filepath.Join(root,
-			// subpath). So Rel should always work.
-			return errors.Wrapf(err, "filepath.Walk returned %s which is not relative to %s", path, root)
+			return fastwalk.ErrSkipFiles
 		}
 
 		name := filepath.ToSlash(subpath)
-		reposRootIsRepo = reposRootIsRepo || name == "."
 		cloneURI := pathpkg.Join("/repos", name)
 		clonePath := cloneURI
 
@@ -229,11 +282,11 @@ func (s *Serve) Repos() ([]Repo, error) {
 			clonePath += "/.git"
 		}
 
-		repos = append(repos, Repo{
+		repoC <- Repo{
 			Name:      name,
 			URI:       cloneURI,
 			ClonePath: clonePath,
-		})
+		}
 
 		// At this point we know the directory is either a git repo or a bare git repo,
 		// we don't need to recurse further to save time.
@@ -241,26 +294,121 @@ func (s *Serve) Repos() ([]Repo, error) {
 		return filepath.SkipDir
 	})
 
-	if err != nil {
-		return nil, err
+	// If we timed out return what we found without an error
+	if errors.Is(err, context.DeadlineExceeded) {
+		err = nil
+		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
 	}
 
-	if !reposRootIsRepo {
-		return repos, nil
+	return err
+}
+
+// rootIsRepo is a special case when the root of our search is a repository.
+func rootIsRepo(root string) (Repo, bool, error) {
+	isBare := isBareRepo(root)
+	isGit := isGitRepo(root)
+	if !isGit && !isBare {
+		return Repo{}, false, nil
 	}
 
-	// Update all names to be relative to the parent of reposRoot. This is to
-	// give a better name than "." for repos root
 	abs, err := filepath.Abs(root)
 	if err != nil {
-		return nil, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
-	}
-	rootName := filepath.Base(abs)
-	for i := range repos {
-		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
+		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
 	}
 
-	return repos, nil
+	clonePath := "/repos"
+	if isGit {
+		clonePath += "/.git"
+	}
+
+	return Repo{
+		Name:      filepath.Base(abs),
+		URI:       "/repos",
+		ClonePath: clonePath,
+	}, true, nil
+}
+
+// mkIgnoreSubPath which acts on subpaths to root. It returns true if the
+// subpath should be ignored.
+func mkIgnoreSubPath(root string, maxDepth int) func(string) bool {
+	// A list of dirs which cause us trouble and are unlikely to contain
+	// repos.
+	ignoredSubPaths := ignoredPaths(root)
+
+	// Heuristics on dirs which probably don't have useful source.
+	ignoredSuffix := []string{
+		// no point going into go mod dir.
+		"/pkg/mod",
+
+		// Source code should not be here.
+		"/bin",
+
+		// Downloaded code so ignore repos in it since it can be large.
+		"/node_modules",
+	}
+
+	return func(subpath string) bool {
+		if maxDepth > 0 && strings.Count(subpath, string(os.PathSeparator)) >= maxDepth {
+			return true
+		}
+
+		// Previously we recursed into bare repositories which is why this check was here.
+		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
+		base := filepath.Base(subpath)
+		if base == ".git" {
+			return true
+		}
+
+		// skip hidden dirs
+		if strings.HasPrefix(base, ".") && base != "." {
+			return true
+		}
+
+		if slices.Contains(ignoredSubPaths, subpath) {
+			return true
+		}
+
+		for _, suffix := range ignoredSuffix {
+			if strings.HasSuffix(subpath, suffix) {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+// ignoredPaths returns paths relative to root which should be ignored.
+//
+// In particular this function returns the locations on Mac which trigger
+// permission dialogs. If a user wanted to explore those directories they need
+// to ensure root is the directory.
+func ignoredPaths(root string) []string {
+	if runtime.GOOS != "darwin" {
+		return nil
+	}
+
+	// For simplicity we only trigger this code path if root is a homedir,
+	// which is the most common mistake made. Note: Mac can be case
+	// insensitive on the FS.
+	if !strings.EqualFold("/Users", filepath.Dir(filepath.Clean(root))) {
+		return nil
+	}
+
+	// Hard to find an actual list. This is based on error messages mentioned
+	// in the Entitlement documentation followed by trial and error.
+	// https://developer.apple.com/documentation/bundleresources/information_property_list/nsdocumentsfolderusagedescription
+	return []string{
+		"Applications",
+		"Desktop",
+		"Documents",
+		"Downloads",
+		"Library",
+		"Movies",
+		"Music",
+		"Pictures",
+		"Public",
+	}
 }
 
 func explainAddr(addr string) string {

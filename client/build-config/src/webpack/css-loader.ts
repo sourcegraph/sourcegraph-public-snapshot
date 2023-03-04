@@ -46,3 +46,5 @@ export const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.Rul
         },
     },
 ]
+
+export const getBazelCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => loaders

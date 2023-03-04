@@ -6,14 +6,16 @@ import { isEqual } from 'lodash'
 import { flushSync } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Tree, Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
 
 import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
+
+import styles from './RepoRevisionSidebarSymbols.module.scss'
 
 interface Props {
     symbols: SymbolWithChildren[]
@@ -119,6 +121,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
+            nodeClassName={styles.treeNode}
             renderNode={({ element, handleSelect, props }): React.ReactNode => {
                 const { className, ...rest } = props
 

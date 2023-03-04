@@ -15,7 +15,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/config",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/lazyregexp",
         "//internal/metrics",
@@ -43,7 +43,7 @@ go_test(
     ],
     embed = [":command"],
     deps = [
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",
         "//lib/errors",

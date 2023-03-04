@@ -14,7 +14,7 @@ import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
@@ -27,7 +27,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
+import { useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -73,6 +73,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -455,6 +456,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableOwnershipSearch={enableOwnershipSearch}
                             results={results}
                             allExpanded={allExpanded}
                             assetsRoot={window.context?.assetsRoot || ''}

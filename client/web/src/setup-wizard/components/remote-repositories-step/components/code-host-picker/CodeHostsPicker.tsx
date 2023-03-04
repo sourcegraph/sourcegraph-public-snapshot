@@ -10,7 +10,11 @@ import styles from './CodeHostsPicker.module.scss'
 const SUPPORTED_CODE_HOSTS = [
     ExternalServiceKind.GITHUB,
     ExternalServiceKind.GITLAB,
+    ExternalServiceKind.GERRIT,
     ExternalServiceKind.BITBUCKETCLOUD,
+    ExternalServiceKind.BITBUCKETSERVER,
+    ExternalServiceKind.AWSCODECOMMIT,
+    ExternalServiceKind.GITOLITE,
 ]
 
 export const CodeHostsPicker: FC = () => (
