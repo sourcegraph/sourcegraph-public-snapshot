@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	otelog "github.com/opentracing/opentracing-go/log"
 	baselua "github.com/yuin/gopher-lua"
 	"go.opentelemetry.io/otel/attribute"
@@ -328,11 +329,6 @@ func (s *Service) resolvePaths(
 	ctx, traceLogger, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	pathPattern, err := flattenPatterns(patternsForPaths, false)
-	if err != nil {
-		return nil, err
-	}
-
 	start := time.Now()
 	rateLimitErr := s.limiter.Wait(ctx)
 	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
@@ -340,12 +336,12 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	paths, err := invocationContext.gitService.ListFiles(ctx, invocationContext.repo, invocationContext.commit, pathPattern)
+	paths, err := invocationContext.gitService.ListFiles(ctx, invocationContext.repo, invocationContext.commit, regexp.MustCompile(".+"))
 	if err != nil {
 		return nil, err
 	}
 
-	return paths, err
+	return filterPaths(paths, flattenPatterns(patternsForPaths, false), nil), err
 }
 
 // resolveFileContents requests the content of the paths that match the given combined regular expression.

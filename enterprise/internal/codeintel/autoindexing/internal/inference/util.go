@@ -3,7 +3,7 @@ package inference
 import (
 	"sort"
 
-	"github.com/grafana/regexp"
+	"github.com/becheran/wildmatch-go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
 )
@@ -12,28 +12,26 @@ import (
 // any of the given path patterns. Both patterns and inverted patterns are considered
 // when a path is matched.
 func filterPathsByPatterns(paths []string, patterns []*luatypes.PathPattern) ([]string, error) {
-	pattern, err := flattenPatterns(patterns, false)
-	if err != nil {
-		return nil, err
-	}
-
-	invertedPattern, err := flattenPatterns(patterns, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterPaths(paths, pattern, invertedPattern), nil
+	return filterPaths(
+		paths,
+		flattenPatterns(patterns, false),
+		flattenPatterns(patterns, true),
+	), nil
 }
 
-// flattenPatterns returns a single regular expression composed of an alternation of
-// all patterns reachable from the given path pattern.
-func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) (*regexp.Regexp, error) {
-	return regexp.Compile(luatypes.CombinePatterns(normalizePattterns(luatypes.FlattenPatterns(patterns, inverted))))
+// flattenPatterns converts a tree of patterns into a flat list of compiled glob patterns.
+func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) []*wildmatch.WildMatch {
+	compiledPatterns := make([]*wildmatch.WildMatch, 0, len(patterns))
+	for _, pattern := range normalizePatterns(luatypes.FlattenPatterns(patterns, inverted)) {
+		compiledPatterns = append(compiledPatterns, wildmatch.NewWildMatch(pattern))
+	}
+
+	return compiledPatterns
 }
 
-// normalizePattterns sorts the given slice and removes duplicate elements. This function
+// normalizePatterns sorts the given slice and removes duplicate elements. This function
 // modifies the given slice in place but also returns it to enable method chaining.
-func normalizePattterns(patterns []string) []string {
+func normalizePatterns(patterns []string) []string {
 	sort.Strings(patterns)
 
 	filtered := patterns[:0]
@@ -49,17 +47,29 @@ func normalizePattterns(patterns []string) []string {
 // filterPaths returns a slice containing all of the input paths that match the given
 // pattern but not the given inverted pattern. If the given inverted pattern is empty
 // then it is not considered for filtering. The input slice is NOT modified in-place.
-func filterPaths(paths []string, pattern, invertedPattern *regexp.Regexp) []string {
-	if pattern.String() == "" {
+func filterPaths(paths []string, patterns, invertedPatterns []*wildmatch.WildMatch) []string {
+	if len(patterns) == 0 {
 		return nil
 	}
 
 	filtered := make([]string, 0, len(paths))
 	for _, path := range paths {
-		if pattern.MatchString(path) && (invertedPattern.String() == "" || !invertedPattern.MatchString(path)) {
+		if filterPath(path, patterns, invertedPatterns) {
 			filtered = append(filtered, path)
 		}
 	}
 
 	return filtered
+}
+
+func filterPath(path string, pattern, invertedPattern []*wildmatch.WildMatch) bool {
+	for _, p := range pattern {
+		if p.IsMatch(path) {
+			// Matched an inclusion pattern; ensure we don't match an exclusion pattern
+			return len(invertedPattern) == 0 || !filterPath(path, invertedPattern, nil)
+		}
+	}
+
+	// We didn't match any inclusion pattern
+	return false
 }
