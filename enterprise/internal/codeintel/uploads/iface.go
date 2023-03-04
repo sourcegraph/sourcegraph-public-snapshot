@@ -13,7 +13,6 @@ import (
 type UploadService interface {
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
-	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 }
 
 type Locker = background.Locker

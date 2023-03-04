@@ -9,10 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -77,19 +74,12 @@ func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) 
 	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
-func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (string, error) {
-	return s.store.RepoName(ctx, repositoryID)
-}
-
+// TODO(#48681) - Move to autoindexing/internal/background
 func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-// NOTE: Used by autoindexing (for some reason?)
-func (s *Service) GetDirtyRepositories(ctx context.Context) (map[int]int, error) {
-	return s.store.GetDirtyRepositories(ctx)
-}
-
+// TODO(#48681) - Used by autoindexing/transport/graphql
 func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error) {
 	return s.store.GetIndexers(ctx, opts)
 }
@@ -98,7 +88,6 @@ func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions)
 	return s.store.GetUploads(ctx, opts)
 }
 
-// TODO: Not being used in the resolver layer
 func (s *Service) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
 	return s.store.GetUploadByID(ctx, id)
 }
@@ -117,48 +106,6 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (bool, error) {
 
 func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error {
 	return s.store.DeleteUploads(ctx, opts)
-}
-
-func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error) {
-	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
-}
-
-func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (time.Duration, error) {
-	return s.store.GetRepositoriesMaxStaleAge(ctx)
-}
-
-// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
-// repository and build a map from commits to the policies that apply to them.
-func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg background.ExpirerConfig, now time.Time) (_ map[string][]policiesEnterprise.PolicyMatch, err error) {
-	// TODO - observability?
-
-	var (
-		offset   int
-		policies []types.ConfigurationPolicy
-	)
-
-	for {
-		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-			RepositoryID:     repositoryID,
-			ForDataRetention: true,
-			Limit:            cfg.PolicyBatchSize,
-			Offset:           offset,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
-		}
-
-		offset += len(policyBatch)
-		policies = append(policies, policyBatch...)
-
-		if len(policyBatch) == 0 || offset >= totalCount {
-			break
-		}
-	}
-
-	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
