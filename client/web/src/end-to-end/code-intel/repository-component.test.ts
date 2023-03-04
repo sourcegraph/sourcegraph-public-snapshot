@@ -159,9 +159,6 @@ describe('Repository component', () => {
             )
             await driver.page.waitForSelector('[data-testid="tree-expand-icon"]', { visible: true })
             await driver.page.click('[data-testid="tree-expand-icon"]')
-            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="websocket"]', {
-                visible: true,
-            })
             await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="websocket"]', {
                 visible: true,
             })
@@ -294,12 +291,15 @@ describe('Repository component', () => {
                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
                 symbolNames: [
                     'diff',
-                    'Stat',
-                    'Stat',
-                    'hunkPrefix',
-                    'hunkHeader',
-                    'diffTimeParseLayout',
                     'diffTimeFormatLayout',
+                    'diffTimeParseLayout',
+                    'FileDiff',
+                    'Stat',
+                    'Hunk',
+                    'Stat',
+                    'hunkHeader',
+                    'hunkPrefix',
+                    'Stat',
                     'add',
                 ],
                 symbolTypes: [

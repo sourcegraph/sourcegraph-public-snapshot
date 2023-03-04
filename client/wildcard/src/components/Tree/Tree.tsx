@@ -96,7 +96,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         marginLeft: getMarginLeft(level, isBranch),
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
-                    data-test-id="tree-node"
+                    data-testid="tree-node"
                     data-tree-node-id={element.id}
                     data-tree-active={isSelected}
                     data-tree-selected={isSelected}
