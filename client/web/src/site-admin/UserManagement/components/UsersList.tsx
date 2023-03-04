@@ -13,6 +13,7 @@ import {
     mdiLockReset,
     mdiLogoutVariant,
     mdiSecurity,
+    mdiCogOutline
 } from '@mdi/js'
 import classNames from 'classnames'
 import { endOfDay, formatDistanceToNowStrict, startOfDay } from 'date-fns'
@@ -168,6 +169,11 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         [onActionEnd, refetch, variables]
     )
 
+    const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState<boolean>(false)
+    const toggleRoleAssignmentModal = () => {
+        setShowRoleAssignmentModal((isOpen) => !isOpen)
+    }
+
     const {
         handleDeleteUsers,
         handleDeleteUsersForever,
@@ -179,6 +185,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleResetUserPassword,
         notification,
         handleDismissNotification,
+        handleRoleAssignment,
     } = useUserListActions(handleActionEnd)
 
     const setFiltersWithOffset = useCallback(
@@ -200,6 +207,8 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
             setFilters({ offset: newOffset.toString() })
         }
     }, [limit, offset, setFilters, users?.totalCount])
+
+
 
     return (
         <div className="position-relative">
@@ -293,6 +302,12 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 icon: mdiClipboardPlus,
                                 onClick: handlePromoteToSiteAdmin,
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
+                            },
+                            {
+                                key: 'assign-role',
+                                label: 'Assign role',
+                                icon: mdiCogOutline,
+                                onClick: handleRoleAssignment,
                             },
                             {
                                 key: 'unlock-user',
@@ -578,6 +593,7 @@ export interface UseUserListActionReturnType {
     notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleDismissNotification: () => void
     handleResetUserPassword: ActionHandler
+    handleRoleAssignment: ActionHandler
 }
 
 export const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')
