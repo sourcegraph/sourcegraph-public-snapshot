@@ -23,5 +23,20 @@
     "path": "enterprise/internal/codeintel/ranking/internal/store",
     "prefix": "TestDocumentRanks",
     "reason": "Changed format of table in a feature that wasn't enabled."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestBulkSetAndMergeDocumentRanks",
+    "reason": "Changed format of table in a feature that wasn't enabled."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestLastUpdatedAt",
+    "reason": "Changed format of table in a feature that wasn't enabled."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestUpdatedAfter",
+    "reason": "Changed format of table in a feature that wasn't enabled."
   }
 ]
