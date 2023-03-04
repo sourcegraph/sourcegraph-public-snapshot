@@ -26,6 +26,7 @@ type operations struct {
 	numStaleReferenceRecordsDeleted  prometheus.Counter
 	numMetadataRecordsDeleted        prometheus.Counter
 	numInputRecordsDeleted           prometheus.Counter
+	numRankRecordsDeleted            prometheus.Counter
 }
 
 var (
@@ -99,6 +100,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 		"src_codeintel_ranking_num_input_records_deleted_total",
 		"The number of stale input records removed from Postgres.",
 	)
+	numRankRecordsDeleted := counter(
+		"src_codeintel_ranking_num_rank_records_deleted_total",
+		"The number of stale rank records removed from Postgres.",
+	)
 
 	return &operations{
 		exportRankingGraph: op("ExportRankingGraph"),
@@ -116,5 +121,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		numStaleReferenceRecordsDeleted:  numStaleReferenceRecordsDeleted,
 		numMetadataRecordsDeleted:        numMetadataRecordsDeleted,
 		numInputRecordsDeleted:           numInputRecordsDeleted,
+		numRankRecordsDeleted:            numRankRecordsDeleted,
 	}
 }

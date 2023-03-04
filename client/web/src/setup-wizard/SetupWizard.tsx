@@ -6,6 +6,7 @@ import { H1, H2, Text } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
+import { refreshSiteFlags } from '../site/backend'
 
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
@@ -25,6 +26,17 @@ const CORE_STEPS: StepConfiguration[] = [
         path: '/setup/sync-repositories',
         nextURL: '/search',
         component: SyncRepositoriesStep,
+        onNext: () => {
+            // Mutate initial needsRepositoryConfiguration value
+            // in order to avoid loop in redirection logic
+            // TODO Remove this as soon as we have a proper Sourcegraph context store
+            window.context.needsRepositoryConfiguration = false
+
+            // Update global site flags in order to fix global navigation items about
+            // setup instance state
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            refreshSiteFlags().subscribe()
+        },
     },
 ]
 

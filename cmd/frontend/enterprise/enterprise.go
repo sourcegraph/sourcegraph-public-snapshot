@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -78,7 +79,7 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 type RankingService interface {
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error)
 }
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
@@ -223,6 +224,6 @@ func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoNa
 	return nil, nil
 }
 
-func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
-	return nil, nil
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
+	return types.RepoPathRanks{}, nil
 }

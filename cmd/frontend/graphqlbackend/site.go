@@ -253,53 +253,65 @@ type upgradeReadinessResolver struct {
 	initOnce sync.Once
 	initErr  error
 	runner   cliutil.Runner
-	version  oobmigration.Version
-	patch    int
+	version  string
 }
+
+var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+	"Local file",
+	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	func(filename, _ string) string { return filename },
+	cliutil.ReadSchemaFromFile,
+)
 
 var schemaFactories = append(
 	migratorshared.DefaultSchemaFactories,
 	// Special schema factory for dev environment.
-	cliutil.NewExpectedSchemaFactory(
-		"Local file",
-		[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
-		func(filename, _ string) string { return filename },
-		cliutil.ReadSchemaFromFile,
-	),
+	devSchemaFactory,
 )
 
-func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
+
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, _ error) {
 	r.initOnce.Do(func() {
-		r.runner, r.version, r.patch, r.initErr = func() (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+		r.runner, r.version, r.initErr = func() (cliutil.Runner, string, error) {
 			observationCtx := observation.NewContext(r.logger)
 			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
 			if err != nil {
-				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "new runner")
+				return nil, "", errors.Wrap(err, "new runner")
 			}
 
-			version, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
+			versionStr, ok, err := cliutil.GetRawServiceVersion(ctx, runner)
 			if err != nil {
-				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "get service version")
+				return nil, "", errors.Wrap(err, "get service version")
 			} else if !ok {
-				return nil, oobmigration.Version{}, 0, errors.New("invalid service version")
+				return nil, "", errors.New("invalid service version")
 			}
-			return runner, version, patch, nil
+
+			// Return abbreviated commit hash from insiders version
+			if matches := insidersVersionPattern.FindStringSubmatch(versionStr); len(matches) > 0 {
+				return runner, matches[1], nil
+			}
+
+			v, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
+			if !ok {
+				return nil, "", errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+			}
+
+			if v.Dev {
+				return runner, "dev", nil
+			}
+
+			return runner, v.GitTagWithPatch(patch), nil
 		}()
 	})
-	return r.runner, r.version, r.patch, r.initErr
+
+	return r.runner, r.version, r.initErr
 }
 
 func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
-	runner, v, patch, err := r.init(ctx)
+	runner, version, err := r.init(ctx)
 	if err != nil {
 		return "", err
-	}
-
-	var version string
-	if v.Dev {
-		version = "dev"
-	} else {
-		version = v.GitTagWithPatch(patch)
 	}
 	r.logger.Debug("schema drift", log.String("version", version))
 
@@ -325,8 +337,11 @@ func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.M
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	updateStatus := updatecheck.Last()
-	if updateStatus == nil || !updateStatus.HasUpdate() {
+	if updateStatus == nil {
 		return nil, errors.New("no latest update version available (reload in a few seconds)")
+	}
+	if !updateStatus.HasUpdate() {
+		return nil, nil
 	}
 	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
 	if !ok {

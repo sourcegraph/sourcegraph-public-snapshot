@@ -30,6 +30,10 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 			ID:         strconv.FormatInt(int64(user.ID), 10),
 			ExternalID: getOptionalExternalID(attributes),
 			Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
+			Meta: scim.Meta{
+				Created:      &user.CreatedAt,
+				LastModified: &user.UpdatedAt,
+			},
 		}
 
 		// Set attributes

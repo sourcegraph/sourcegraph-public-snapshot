@@ -236,6 +236,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		// If we end up waiting because of an external rate limit, we need to retry the request.
 		if c.externalRateLimiter.WaitForRateLimit(ctx) {
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+			numRetries++
 		} else {
 			// We did not wait because of rate limiting, so we break the loop
 			break

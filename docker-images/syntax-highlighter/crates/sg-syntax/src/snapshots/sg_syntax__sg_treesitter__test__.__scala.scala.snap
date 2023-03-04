@@ -11,7 +11,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^^ Identifier 
 //             ^^^^^^^^^^ Identifier 
 //                        ^^^^^^^^^ Identifier 
-//                                  ^^^^ Identifier 
+//                                  ^^^^ IdentifierConstant 
   
   // Comment
 //^^^^^^^^^^ Comment 
@@ -29,7 +29,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^ Comment 
   object Foo {
 //^^^^^^ IdentifierKeyword 
-//       ^^^ Identifier 
+//       ^^^ IdentifierConstant 
     val x: Int = 42
 //  ^^^ IdentifierKeyword 
 //      ^ Identifier 
@@ -55,13 +55,13 @@ expression: "dump_document(&document, &contents)"
 //         ^^^ IdentifierType 
 //             ^^^ IdentifierType 
 //                  ^^^ IdentifierType 
-//                         ^^^ Identifier 
+//                         ^^^ IdentifierConstant 
 //                             ^^^^^ Identifier 
     val b: Foo = Foo(x = 42)
 //  ^^^ IdentifierKeyword 
 //      ^ Identifier 
 //         ^^^ IdentifierType 
-//               ^^^ Identifier 
+//               ^^^ IdentifierFunction 
 //                   ^ Identifier 
 //                       ^^ NumericLiteral 
     lazy val c = 'a'
@@ -83,15 +83,26 @@ expression: "dump_document(&document, &contents)"
 //          ^^^^ IdentifierNull 
     def main(args: Array[String]): Unit = {
 //  ^^^ IdentifierKeyword 
-//      ^^^^ Identifier 
+//      ^^^^ IdentifierFunction 
 //           ^^^^ Identifier 
 //                 ^^^^^ IdentifierType 
 //                       ^^^^^^ IdentifierType 
 //                                 ^^^^ IdentifierType 
       println(args.toList)
-//    ^^^^^^^ Identifier 
+//    ^^^^^^^ IdentifierFunction 
 //            ^^^^ Identifier 
 //                 ^^^^^^ Identifier 
+      System.out.println(args.toList)
+//    ^^^^^^ IdentifierConstant 
+//           ^^^ Identifier 
+//               ^^^^^^^ IdentifierFunction 
+//                       ^^^^ Identifier 
+//                            ^^^^^^ Identifier 
+      args(1).indexOf("a")
+//    ^^^^ IdentifierFunction 
+//         ^ NumericLiteral 
+//            ^^^^^^^ IdentifierFunction 
+//                    ^^^ StringLiteral 
       args.toList match {
 //    ^^^^ Identifier 
 //         ^^^^^^ Identifier 
@@ -102,12 +113,12 @@ expression: "dump_document(&document, &contents)"
 //               ^^ Identifier 
 //                  ^ NumericLiteral 
 //                    ^^ Identifier 
-//                       ^^^ Identifier 
+//                       ^^^ IdentifierConstant 
           case a :: Nil =>
 //        ^^^^ IdentifierKeyword 
 //             ^ Identifier 
 //               ^^ Identifier 
-//                  ^^^ Identifier 
+//                  ^^^ IdentifierConstant 
           case Some(x) =>
 //        ^^^^ IdentifierKeyword 
 //             ^^^^ Identifier 
@@ -117,44 +128,45 @@ expression: "dump_document(&document, &contents)"
     private def privateMethod = 42
 //  ^^^^^^^ IdentifierKeyword 
 //          ^^^ IdentifierKeyword 
-//              ^^^^^^^^^^^^^ Identifier 
+//              ^^^^^^^^^^^^^ IdentifierFunction 
 //                              ^^ NumericLiteral 
     protected def protectedMethod = 42
 //  ^^^^^^^^^ IdentifierKeyword 
 //            ^^^ IdentifierKeyword 
-//                ^^^^^^^^^^^^^^^ Identifier 
+//                ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                  ^^ NumericLiteral 
     private[this] def privateThisMethod = 42
 //  ^^^^^^^ IdentifierKeyword 
 //          ^^^^ IdentifierBuiltin 
 //                ^^^ IdentifierKeyword 
-//                    ^^^^^^^^^^^^^^^^^ Identifier 
+//                    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                        ^^ NumericLiteral 
     private[foobar] def privatePackageMethod = 42
 //  ^^^^^^^ IdentifierKeyword 
 //          ^^^^^^ Identifier 
 //                  ^^^ IdentifierKeyword 
-//                      ^^^^^^^^^^^^^^^^^^^^ Identifier 
+//                      ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                             ^^ NumericLiteral 
-    type MyMap[T] = Map[String, T]
+    type MyMap[A, B] = Map[A, B]
 //  ^^^^ IdentifierKeyword 
 //       ^^^^^ IdentifierType 
-//             ^ Identifier 
-//                  ^^^ IdentifierType 
-//                      ^^^^^^ IdentifierType 
-//                              ^ IdentifierType 
+//             ^ IdentifierType 
+//                ^ IdentifierType 
+//                     ^^^ IdentifierType 
+//                         ^ IdentifierType 
+//                            ^ IdentifierType 
     trait MyTrait[T] extends SuperTrait[T]
 //  ^^^^^ IdentifierKeyword 
 //        ^^^^^^^ IdentifierType 
-//                ^ Identifier 
+//                ^ IdentifierType 
 //                   ^^^^^^^ IdentifierKeyword 
 //                           ^^^^^^^^^^ IdentifierType 
 //                                      ^ IdentifierType 
     enum X { case A, B }
 //  ^^^^ IdentifierKeyword 
-//       ^ Identifier 
+//       ^ IdentifierConstant 
 //           ^^^^ IdentifierKeyword 
-//                ^ Identifier 
-//                   ^ Identifier 
+//                ^ IdentifierConstant 
+//                   ^ IdentifierConstant 
   }
 

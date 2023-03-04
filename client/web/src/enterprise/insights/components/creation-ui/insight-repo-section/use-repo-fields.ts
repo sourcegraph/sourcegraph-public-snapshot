@@ -92,7 +92,7 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
 
 function validateRepoQuery(value?: QueryState): ValidationResult {
     if (value && value.query.trim() === '') {
-        return 'Search repositories query is a required filed, please fill in the field.'
+        return 'Search repositories query is a required field, please fill in the field.'
     }
 }
 

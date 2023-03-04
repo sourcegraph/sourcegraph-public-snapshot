@@ -8,7 +8,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -207,7 +206,7 @@ type IndexerKeyQueryArgs struct {
 }
 
 type PreciseIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	After        *string
 	Repo         *graphql.ID
 	Query        *string
@@ -437,7 +436,7 @@ type LocationConnectionResolver interface {
 }
 
 type LSIFDiagnosticsArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 }
 
 type LSIFRangesArgs struct {
@@ -447,7 +446,7 @@ type LSIFRangesArgs struct {
 
 type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	After  *string
 	Filter *string
 }
@@ -725,7 +724,7 @@ func (er *EmptyResponse) AlwaysNil() *string {
 }
 
 type LSIFIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Query *string
 	State *string
 	After *string
@@ -763,7 +762,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 }
 
 type LSIFUploadsQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
@@ -819,7 +818,7 @@ type LSIFUploadsWithRepositoryNamespaceResolver interface {
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Repository       *graphql.ID
 	Query            *string
 	ForDataRetention *bool
@@ -858,14 +857,14 @@ type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type PreviewGitObjectFilterArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Type                         GitObjectType
 	Pattern                      string
 	CountObjectsYoungerThanHours *int32
 }
 
 type PreviewRepositoryFilterArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Patterns []string
 }
 

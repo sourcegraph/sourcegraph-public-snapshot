@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -476,6 +477,66 @@ func TestVacuumStaleGraphs(t *testing.T) {
 
 	// only the non-stale derivative graph key remains
 	assertCounts(1*7, 1*30)
+}
+
+func TestVacuumStaleRanks(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := newInternal(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO repo (name) VALUES ('bar'), ('baz'), ('bonk'), ('foo1'), ('foo2'), ('foo3'), ('foo4'), ('foo5')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	for r, key := range map[string]string{
+		"foo1": mockRankingGraphKey + "-123",
+		"foo2": mockRankingGraphKey + "-123",
+		"foo3": mockRankingGraphKey + "-123",
+		"foo4": mockRankingGraphKey + "-123",
+		"foo5": mockRankingGraphKey + "-123",
+		"bar":  mockRankingGraphKey + "-234",
+		"baz":  mockRankingGraphKey + "-345",
+		"bonk": mockRankingGraphKey + "-456",
+	} {
+		if err := store.setDocumentRanks(ctx, api.RepoName(r), 0, nil, key); err != nil {
+			t.Fatalf("failed to insert document ranks: %s", err)
+		}
+	}
+
+	assertNames := func(expectedNames []string) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		names, err := basestore.ScanStrings(store.Query(ctx, sqlf.Sprintf(`
+			SELECT r.name
+			FROM repo r
+			JOIN codeintel_path_ranks pr ON pr.repository_id = r.id
+			ORDER BY r.name
+		`)))
+		if err != nil {
+			t.Fatalf("failed to fetch names: %s", err)
+		}
+
+		if diff := cmp.Diff(expectedNames, names); diff != "" {
+			t.Errorf("unexpected names (-want +got):\n%s", diff)
+		}
+	}
+
+	// assert initial names
+	assertNames([]string{"bar", "baz", "bonk", "foo1", "foo2", "foo3", "foo4", "foo5"})
+
+	// remove sufficiently stale records associated with other ranking keys
+	rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, mockRankingGraphKey+"-456")
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming stale ranks: %s", err)
+	}
+	if expected := 6; rankRecordsDeleted != expected {
+		t.Fatalf("unexpected number of rank records deleted. want=%d have=%d", expected, rankRecordsDeleted)
+	}
+
+	// stale graph keys have been removed
+	assertNames([]string{"baz", "bonk"})
 }
 
 func getRankingDefinitions(

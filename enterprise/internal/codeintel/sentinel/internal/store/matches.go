@@ -138,43 +138,45 @@ var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error)
 	return flattenMatches(matches), totalCount, nil
 }
 
-func (s *store) ScanMatches(ctx context.Context) (err error) {
+func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, err error) {
 	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	scipSchemeToVulnerabilityLanguage := map[string]string{
-		"gomod": "go",
-		"npm":   "Javascript",
-		// TODO - java mapping
-	}
+	numScanned := 0
+	scanFilteredVulnerabilityMatches := basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m VulnerabilityMatch, _ bool, _ error) {
+		var (
+			version            string
+			versionConstraints []string
+		)
 
-	schemes := make([]string, 0, len(scipSchemeToVulnerabilityLanguage))
-	for scheme := range scipSchemeToVulnerabilityLanguage {
-		schemes = append(schemes, scheme)
-	}
-	sort.Strings(schemes)
+		if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
+			return VulnerabilityMatch{}, false, err
+		}
 
-	mappings := make([]*sqlf.Query, 0, len(schemes))
-	for _, scheme := range schemes {
-		mappings = append(mappings, sqlf.Sprintf("(r.scheme = %s AND vap.language = %s)", scheme, scipSchemeToVulnerabilityLanguage[scheme]))
-	}
+		numScanned++
+		matches, valid := versionMatchesConstraints(version, versionConstraints)
+		_ = valid // TODO - log un-parseable versions
+
+		return m, matches, nil
+	})
 
 	matches, err := scanFilteredVulnerabilityMatches(tx.Query(ctx, sqlf.Sprintf(
 		scanMatchesQuery,
-		sqlf.Join(mappings, " OR "),
+		batchSize,
+		sqlf.Join(makeSchemeTtoVulnerabilityLanguageMappingConditions(), " OR "),
 	)))
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesTemporaryTableQuery)); err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	if err := batch.WithInserter(
@@ -200,25 +202,78 @@ func (s *store) ScanMatches(ctx context.Context) (err error) {
 			return nil
 		},
 	); err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)); err != nil {
-		return err
+	numMatched, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)))
+	if err != nil {
+		return 0, 0, err
 	}
 
-	return nil
+	return numScanned, numMatched, nil
+}
+
+var scipSchemeToVulnerabilityLanguage = map[string]string{
+	"gomod": "go",
+	"npm":   "Javascript",
+	// TODO - java mapping
+}
+
+func makeSchemeTtoVulnerabilityLanguageMappingConditions() []*sqlf.Query {
+	schemes := make([]string, 0, len(scipSchemeToVulnerabilityLanguage))
+	for scheme := range scipSchemeToVulnerabilityLanguage {
+		schemes = append(schemes, scheme)
+	}
+	sort.Strings(schemes)
+
+	mappings := make([]*sqlf.Query, 0, len(schemes))
+	for _, scheme := range schemes {
+		mappings = append(mappings, sqlf.Sprintf("(r.scheme = %s AND vap.language = %s)", scheme, scipSchemeToVulnerabilityLanguage[scheme]))
+	}
+
+	return mappings
 }
 
 const scanMatchesQuery = `
+WITH
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	JOIN repo r ON r.id = u.repository_id
+	WHERE
+		u.state = 'completed' AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		NOT EXISTS (
+			SELECT 1
+			FROM lsif_uploads_vulnerability_scan uvs
+			WHERE
+				uvs.upload_id = u.id AND
+				-- TODO: we'd rather compare this against vuln update times
+				uvs.last_scanned_at < NOW()
+		)
+	ORDER BY u.id
+	LIMIT %s
+),
+locked_candidates AS (
+	INSERT INTO lsif_uploads_vulnerability_scan (upload_id, last_scanned_at)
+	SELECT id, NOW() FROM candidates
+	ON CONFLICT DO NOTHING
+	RETURNING upload_id
+)
 SELECT
 	r.dump_id,
 	vap.id,
 	r.version,
 	vap.version_constraint
-FROM vulnerability_affected_packages vap
--- TODO - do we need the inverse? need to refine? the resulting match?
-JOIN lsif_references r ON r.name LIKE '%%' || vap.package_name || '%%'
+FROM locked_candidates lc
+JOIN lsif_references r ON r.dump_id = lc.upload_id
+JOIN vulnerability_affected_packages vap ON
+	-- NOTE: This is currently a bit of a hack that works to find some
+	-- good matches with the dataset we have. We should have a better
+	-- way to match on a normalized name here, or have rules per types
+	-- of language ecosystem.
+	r.name LIKE '%%' || vap.package_name || '%%'
 WHERE %s
 `
 
@@ -230,31 +285,19 @@ CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
 `
 
 const scanMatchesUpdateQuery = `
-INSERT INTO vulnerability_matches (upload_id, vulnerability_affected_package_id)
-SELECT upload_id, vulnerability_affected_package_id FROM t_vulnerability_affected_packages
-ON CONFLICT DO NOTHING
+WITH ins AS (
+	INSERT INTO vulnerability_matches (upload_id, vulnerability_affected_package_id)
+	SELECT upload_id, vulnerability_affected_package_id FROM t_vulnerability_affected_packages
+	ON CONFLICT DO NOTHING
+	RETURNING 1
+)
+SELECT COUNT(*) FROM ins
 `
 
 type VulnerabilityMatch struct {
 	UploadID                       int
 	VulnerabilityAffectedPackageID int
 }
-
-var scanFilteredVulnerabilityMatches = basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m VulnerabilityMatch, _ bool, _ error) {
-	var (
-		version            string
-		versionConstraints []string
-	)
-
-	if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
-		return VulnerabilityMatch{}, false, err
-	}
-
-	matches, valid := versionMatchesConstraints(version, versionConstraints)
-	_ = valid // TODO - log un-parseable versions
-
-	return m, matches, nil
-})
 
 func versionMatchesConstraints(versionString string, constraints []string) (matches, valid bool) {
 	v, err := version.NewVersion(versionString)
