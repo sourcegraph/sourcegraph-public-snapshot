@@ -343,6 +343,7 @@ export const SEARCH_RESULT: AggregateStreamingSearchResults = {
         },
     ],
     results: [CHUNK_MATCH_RESULT],
+    clicked: false
 }
 
 export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {

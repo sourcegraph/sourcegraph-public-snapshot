@@ -292,6 +292,7 @@ interface BaseAggregateResults {
     alert?: Alert
     filters: Filter[]
     progress: Progress
+    clicked: boolean
 }
 
 interface SuccessfulAggregateResults extends BaseAggregateResults {
@@ -314,6 +315,7 @@ export const emptyAggregateResults: AggregateStreamingSearchResults = {
         matchCount: 0,
         skipped: [],
     },
+    clicked: false
 }
 
 /**

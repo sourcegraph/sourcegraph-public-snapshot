@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -18,6 +18,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {useTemporarySetting} from '@sourcegraph/shared/src/settings/temporary';
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
@@ -102,7 +103,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
-    const firstClick = useRef(true)
+    // This setting represents whether the search used 'intelligent ranking'. If the feature flag
+    // is enabled, we make sure to default it to 'true'.
+    const [rankingEnabled, ] = useTemporarySetting('search.ranking.experimental', false)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -111,12 +114,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
-            if (firstClick.current) {
-                telemetryService.log('search.ranking.first-result-clicked', { index, resultsNumber, type })
-                firstClick.current = false
+            if (results && !results.clicked) {
+                telemetryService.log('search.ranking.first-result-clicked', { index, resultsNumber, rankingEnabled, type })
+                results.clicked = true
             }
         },
-        [telemetryService, resultsNumber]
+        [telemetryService, results, resultsNumber, rankingEnabled]
     )
 
     const renderResult = useCallback(
