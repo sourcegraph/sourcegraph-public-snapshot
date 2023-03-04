@@ -16,7 +16,8 @@
   "peerDependencies": {
     "css-loader": "*",
     "postcss-loader": "*",
-    "sass-loader": "*"
+    "sass-loader": "*",
+    "style-loader": "*"
   },
   "dependencies": {
     "@statoscope/webpack-plugin": "^5.24.0",
