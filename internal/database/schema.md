@@ -4364,24 +4364,6 @@ Foreign-key constraints:
 - bool
 - rollout
 
-# Type lsif_index_state
-
-- queued
-- processing
-- completed
-- errored
-- failed
-
-# Type lsif_upload_state
-
-- uploading
-- queued
-- processing
-- completed
-- errored
-- deleted
-- failed
-
 # Type persistmode
 
 - record

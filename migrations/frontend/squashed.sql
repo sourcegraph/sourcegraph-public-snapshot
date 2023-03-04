@@ -65,24 +65,6 @@ CREATE TYPE feature_flag_type AS ENUM (
     'rollout'
 );
 
-CREATE TYPE lsif_index_state AS ENUM (
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'failed'
-);
-
-CREATE TYPE lsif_upload_state AS ENUM (
-    'uploading',
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'deleted',
-    'failed'
-);
-
 CREATE TYPE lsif_uploads_transition_columns AS (
 	state text,
 	expired boolean,
