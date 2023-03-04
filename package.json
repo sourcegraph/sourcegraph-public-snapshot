@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.24.2"
+    "pnpm": "^7.28.0"
   },
   "scripts": {
     "deduplicate": "pnpm-deduplicate",
