@@ -524,10 +524,7 @@ func (s *Service) invokeLinearizedRecognizer(
 	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	callPaths, callContentsByPath, err := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)
-	if err != nil {
-		return nil, err
-	}
+	callPaths, callContentsByPath := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)
 	if len(callPaths) == 0 && len(callContentsByPath) == 0 {
 		return nil, nil
 	}
@@ -553,7 +550,7 @@ func (s *Service) filterPathsForRecognizer(
 	recognizer *luatypes.Recognizer,
 	paths []string,
 	contentsByPath map[string]string,
-) ([]string, map[string]string, error) {
+) ([]string, map[string]string) {
 	// Filter out paths which are not interesting to this recognizer
 	filteredPaths := filterPathsByPatterns(paths, recognizer.Patterns(false))
 
@@ -566,5 +563,5 @@ func (s *Service) filterPathsForRecognizer(
 		filteredContentsByPath[key] = contentsByPath[key]
 	}
 
-	return filteredPaths, filteredContentsByPath, nil
+	return filteredPaths, filteredContentsByPath
 }
