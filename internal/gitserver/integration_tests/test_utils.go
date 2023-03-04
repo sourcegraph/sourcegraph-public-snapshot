@@ -2,8 +2,6 @@ package inttests
 
 import (
 	"context"
-	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -20,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -41,12 +39,7 @@ func InitGitserver() {
 	os.Setenv("HOME", "/dev/null")
 	logger := sglog.Scoped("gitserver_integration_tests", "")
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		logger.Fatal("listen failed", sglog.Error(err))
-	}
-
-	root, err = os.MkdirTemp("", "test")
+	root, err := os.MkdirTemp("", "test")
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -71,18 +64,10 @@ func InitGitserver() {
 
 	grpcServer := defaults.NewServer(logger)
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
-	srv := &http.Server{
-		Handler: handler,
-	}
-	go func() {
-		if err := srv.Serve(l); err != nil {
-			logger.Fatal(err.Error())
-		}
-	}()
+	srv := grpctest.NewMultiplexedServer(grpcServer, s.Handler())
 
-	serverAddress := l.Addr().String()
+	serverAddress := srv.Addr()
 	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, []string{serverAddress})
 	GitserverAddresses = []string{serverAddress}
 }

@@ -25,7 +25,11 @@ func NewMultiplexedServer(grpcServer *grpc.Server, httpHandler http.Handler) *Mu
 	}
 
 	s := internalgrpc.NewMultiplexedServer(l.Addr().String(), grpcServer, &http.Server{Handler: httpHandler})
-	go s.Serve(l)
+	go func() {
+		if err := s.Serve(l); err != nil {
+			panic("grpctest: failed to serve: " + err.Error())
+		}
+	}()
 
 	return &MultiplexedServer{
 		l: l,

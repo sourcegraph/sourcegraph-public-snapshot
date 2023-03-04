@@ -94,3 +94,23 @@ func (s *MultiplexedServer) Shutdown(ctx context.Context) error {
 		return ctx.Err()
 	}
 }
+
+func (s *MultiplexedServer) AsBackgroundGoroutine() *BackgroundServer {
+	return &BackgroundServer{s}
+}
+
+// BackgroundServer is an implementation of goroutine.BackgroundGoroutine
+// for MultiplexedServer
+type BackgroundServer struct {
+	s *MultiplexedServer
+}
+
+func (bs *BackgroundServer) Start() {
+	go func() {
+		bs.s.ListenAndServe()
+	}()
+}
+
+func (bs *BackgroundServer) Stop() {
+	bs.s.Shutdown(context.Background())
+}

@@ -22,8 +22,8 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
@@ -83,19 +83,20 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	routines = append(routines, newRoutines...)
 
-	// Create HTTP server
-	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	// Create gRPC and HTTP servers
+	grpcServer, handler := api.NewHandlers(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
 
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
-	server := httpserver.NewFromAddr(addr, &http.Server{
+	httpServer := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler:      handler,
-	})
-	routines = append(routines, server)
+	}
+	srv := internalgrpc.NewMultiplexedServer(addr, grpcServer, httpServer)
+	routines = append(routines, srv.AsBackgroundGoroutine())
 
 	// Mark health server as ready and go!
 	ready()

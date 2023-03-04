@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -66,13 +66,13 @@ func TestHandler(t *testing.T) {
 	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
+	grpcServer, handler := NewHandlers(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
-	server := httptest.NewServer(handler)
-	defer server.Close()
+	srv := grpctest.NewMultiplexedServer(grpcServer, handler)
+	t.Cleanup(srv.Stop)
 
 	client := symbolsclient.Client{
-		Endpoints:  endpoint.Static(server.URL),
+		Endpoints:  endpoint.Static("http://" + srv.Addr()),
 		HTTPClient: httpcli.InternalDoer,
 	}
 

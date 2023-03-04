@@ -252,23 +252,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	srv := internalgrpc.NewMultiplexedServer(addr, grpcServer, httpSrv)
 
-	goroutine.MonitorBackgroundRoutines(ctx, &multiplexedBackgroundGoroutine{srv})
+	goroutine.MonitorBackgroundRoutines(ctx, srv.AsBackgroundGoroutine())
 
 	return nil
-}
-
-type multiplexedBackgroundGoroutine struct {
-	*internalgrpc.MultiplexedServer
-}
-
-func (mbg *multiplexedBackgroundGoroutine) Start() {
-	go func() {
-		mbg.ListenAndServe()
-	}()
-}
-
-func (mbg *multiplexedBackgroundGoroutine) Stop() {
-	mbg.Shutdown(context.Background())
 }
 
 func createDebugServerEndpoints(ready chan struct{}, debugserverEndpoints *LazyDebugserverEndpoint) []debugserver.Endpoint {

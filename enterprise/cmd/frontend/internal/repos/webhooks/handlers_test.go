@@ -30,8 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -147,8 +147,8 @@ func TestGitHubHandler(t *testing.T) {
 		json.NewEncoder(w).Encode(res)
 	})
 
-	server := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, mux))
-	defer server.Close()
+	srv := grpctest.NewMultiplexedServer(gs, mux)
+	t.Cleanup(srv.Stop)
 
 	cf := httpcli.NewExternalClientFactory()
 	opts := []httpcli.Opt{}
@@ -157,7 +157,7 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoupdater.DefaultClient = repoupdater.NewClient(server.URL)
+	repoupdater.DefaultClient = repoupdater.NewClient("http://" + srv.Addr())
 	repoupdater.DefaultClient.HTTPClient = doer
 
 	payload, err := os.ReadFile(filepath.Join("testdata", "github-push.json"))
