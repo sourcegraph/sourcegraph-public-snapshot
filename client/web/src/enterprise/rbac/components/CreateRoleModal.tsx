@@ -107,7 +107,7 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
                         loading={formAPI.submitting}
                         variant="primary"
                         alwaysShowLabel={true}
-                        label="Create role"
+                        label="Create"
                     />
                 </div>
             </Form>

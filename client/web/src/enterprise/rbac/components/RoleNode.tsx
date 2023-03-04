@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
-import { PermissionsMap, useDeleteRole } from '../backend'
+import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
@@ -30,7 +30,7 @@ import styles from './RoleNode.module.scss'
 
 interface RoleNodeProps {
     node: RoleFields
-    afterDelete: () => void
+    refetchAll: () => void
     allPermissions: PermissionsMap
 }
 
@@ -38,7 +38,7 @@ interface RoleNodePermissionsFormValues {
     permissions: string[]
 }
 
-export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDelete, allPermissions }) => {
+export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetchAll, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
 
@@ -53,9 +53,9 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         setShowConfirmDeleteModal(false)
     }, [])
 
-    const [deleteRole, { loading, error }] = useDeleteRole(() => {
+    const [deleteRole, { loading: deleteRoleLoading, error: deleteRoleError }] = useDeleteRole(() => {
         closeModal()
-        afterDelete()
+        refetchAll()
     }, closeModal)
 
     const roleName = useMemo(() => {
@@ -74,8 +74,10 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
     const { nodes: permissionNodes } = node.permissions
     const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
 
+    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(refetchAll)
+
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
-        console.log(values, '<======')
+        setPermissions({ variables: { role: node.id, permissions: values.permissions } })
     }
     const defaultFormValues: RoleNodePermissionsFormValues = { permissions: rolePermissionIDs }
     const { formAPI, ref, handleSubmit } = useForm({
@@ -86,6 +88,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         input: { isChecked, onBlur, onChange },
     } = useCheckboxes('permissions', formAPI)
 
+    const error = deleteRoleError || setPermissionsError
     return (
         <li className={styles.roleNode}>
             {showConfirmDeleteModal && (
@@ -128,7 +131,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                             <Button
                                 aria-label="Delete"
                                 onClick={openModal}
-                                disabled={loading}
+                                disabled={deleteRoleLoading}
                                 variant="danger"
                                 size="sm"
                                 className={styles.roleNodeDeleteBtn}
@@ -152,7 +155,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                         onBlur={onBlur}
                         onChange={onChange}
                     />
-                    <LoaderButton alwaysShowLabel={true} variant="primary" type="submit" loading={formAPI.submitting} label="Update" />
+                    <LoaderButton alwaysShowLabel={true} variant="primary" type="submit" loading={setPermissionsLoading} label="Update" />
                 </CollapsePanel>
             </Collapse>
         </li>
