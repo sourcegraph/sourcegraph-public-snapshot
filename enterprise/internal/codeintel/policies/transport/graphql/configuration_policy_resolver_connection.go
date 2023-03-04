@@ -3,21 +3,20 @@ package graphql
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type codeIntelligenceConfigurationPolicyConnectionResolver struct {
-	policySvc  *policies.Service
+	policySvc  PoliciesService
 	policies   []types.ConfigurationPolicy
 	totalCount int
 	errTracer  *observation.ErrCollector
 }
 
 func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
-	policySvc *policies.Service,
+	policySvc PoliciesService,
 	policies []types.ConfigurationPolicy,
 	totalCount int,
 	errTracer *observation.ErrCollector,

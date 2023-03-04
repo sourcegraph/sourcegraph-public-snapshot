@@ -6,7 +6,6 @@ import (
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type UploadService interface {
@@ -17,10 +16,5 @@ type UploadService interface {
 	DeleteUploads(ctx context.Context, opts uploadsshared.DeleteUploadsOptions) (err error)
 }
 
-type AutoIndexingService interface {
-	sharedresolvers.AutoIndexingService
-
-	GetUnsafeDB() database.DB
-}
-
+type AutoIndexingService = sharedresolvers.AutoIndexingService
 type PolicyService = sharedresolvers.PolicyService

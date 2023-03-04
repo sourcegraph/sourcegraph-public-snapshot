@@ -3,16 +3,10 @@ package graphql
 import (
 	"context"
 
-	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type CodeNavService interface {
@@ -27,19 +21,13 @@ type CodeNavService interface {
 	// Uploads Service
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
 	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error)
-
-	GetUnsafeDB() database.DB
 }
 
-type GitserverClient interface {
-	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
-	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
-}
+type GitserverClient = codenav.GitserverClient
 
 type AutoIndexingService interface {
 	sharedresolvers.AutoIndexingService
 
-	GetUnsafeDB() database.DB
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
 

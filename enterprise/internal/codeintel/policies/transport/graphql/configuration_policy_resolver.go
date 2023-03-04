@@ -9,7 +9,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,12 +20,12 @@ import (
 
 type configurationPolicyResolver struct {
 	logger              sglog.Logger
-	policySvc           *policies.Service
+	policySvc           PoliciesService
 	configurationPolicy types.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(policySvc *policies.Service, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(policySvc PoliciesService, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		policySvc:           policySvc,
 		logger:              sglog.Scoped("configurationPolicyResolver", ""),

@@ -8,7 +8,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -20,11 +19,11 @@ import (
 )
 
 type rootResolver struct {
-	policySvc  *policies.Service
+	policySvc  PoliciesService
 	operations *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, policySvc *policies.Service) resolverstubs.PoliciesServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, policySvc PoliciesService) resolverstubs.PoliciesServiceResolver {
 	return &rootResolver{
 		policySvc:  policySvc,
 		operations: newOperations(observationCtx),
