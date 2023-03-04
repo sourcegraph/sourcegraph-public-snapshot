@@ -500,7 +500,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 		"baz":  mockRankingGraphKey + "-345",
 		"bonk": mockRankingGraphKey + "-456",
 	} {
-		if err := store.setDocumentRanks(ctx, api.RepoName(r), 0, nil, key); err != nil {
+		if err := store.setDocumentRanks(ctx, api.RepoName(r), nil, key); err != nil {
 			t.Fatalf("failed to insert document ranks: %s", err)
 		}
 	}

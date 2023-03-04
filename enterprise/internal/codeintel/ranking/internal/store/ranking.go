@@ -358,10 +358,9 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
 	SELECT
 		temp.repository_id,
-		1,
 		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
@@ -372,7 +371,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id, precision) DO UPDATE SET
+	ON CONFLICT (repository_id) DO UPDATE SET
 		graph_key = EXCLUDED.graph_key,
 		payload = CASE
 			WHEN pr.graph_key != EXCLUDED.graph_key
