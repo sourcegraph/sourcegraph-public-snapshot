@@ -74,7 +74,8 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     const { nodes: permissionNodes } = node.permissions
     const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
 
-    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(refetchAll)
+    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] =
+        useSetPermissions(refetchAll)
 
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
         setPermissions({ variables: { role: node.id, permissions: values.permissions } })
@@ -155,7 +156,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
                         onBlur={onBlur}
                         onChange={onChange}
                     />
-                    <LoaderButton alwaysShowLabel={true} variant="primary" type="submit" loading={setPermissionsLoading} label="Update" />
+                    <LoaderButton
+                        alwaysShowLabel={true}
+                        variant="primary"
+                        type="submit"
+                        loading={setPermissionsLoading}
+                        label="Update"
+                    />
                 </CollapsePanel>
             </Collapse>
         </li>
