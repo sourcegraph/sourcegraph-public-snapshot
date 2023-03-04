@@ -49,13 +49,13 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         setPermissions(permissions as PermissionsMap)
     })
 
-    const [showAddModal, setShowAddModal] = useState<boolean>(false)
+    const [showCreateRoleModal, setShowCreateRoleModal] = useState<boolean>(false)
     const openModal = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
-        setShowAddModal(true)
+        setShowCreateRoleModal(true)
     }, [])
     const closeModal = useCallback(() => {
-        setShowAddModal(false)
+        setShowCreateRoleModal(false)
     }, [])
 
     const afterCreate = useCallback(() => {
@@ -85,7 +85,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 </PageHeader.Heading>
             </PageHeader>
 
-            {showAddModal && !loading && (
+            {showCreateRoleModal && !loading && (
                 <CreateRoleModal onCancel={closeModal} afterCreate={afterCreate} allPermissions={permissions} />
             )}
 
