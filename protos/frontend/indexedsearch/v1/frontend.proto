@@ -183,5 +183,4 @@ message UpdateIndexStatusResponse {
 }
 
 // TODO@ggilmore handle URL moved error
-// TODO@gilmore: handle special logic that only logs HTTP errors < 200 or >= 500
 // TODO@gilmore: adopt special error handling logic in cmd/frontend/internal/handlerutil/handler.go
