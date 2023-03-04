@@ -121,7 +121,7 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
 	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
