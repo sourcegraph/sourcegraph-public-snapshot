@@ -141,14 +141,7 @@ func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *pr
 		return nil, err
 	}
 
-	protoRanks := make(map[string]*proto.DocumentRanksResponse_DocumentRank, len(ranks))
-	for name, rank := range ranks {
-		protoRanks[name] = &proto.DocumentRanksResponse_DocumentRank{
-			Ranks: rank,
-		}
-	}
-
-	return &proto.DocumentRanksResponse{Ranks: protoRanks}, nil
+	return repoPathRanksToProto(&ranks), nil
 }
 
 func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *proto.UpdateIndexStatusRequest) (*proto.UpdateIndexStatusResponse, error) {
@@ -599,5 +592,31 @@ func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
 
 	return &proto.UpdateIndexStatusRequest{
 		Repositories: repos,
+	}
+}
+
+func repoPathRanksToProto(r *citypes.RepoPathRanks) *proto.DocumentRanksResponse {
+	paths := make(map[string]float64, len(r.Paths))
+	for path, counts := range r.Paths {
+		paths[path] = counts
+	}
+
+	return &proto.DocumentRanksResponse{
+		Paths:    paths,
+		MeanRank: r.MeanRank,
+	}
+}
+
+func repoPathRanksFromProto(x *proto.DocumentRanksResponse) *citypes.RepoPathRanks {
+	protoPaths := x.GetPaths()
+
+	paths := make(map[string]float64, len(protoPaths))
+	for path, counts := range protoPaths {
+		paths[path] = counts
+	}
+
+	return &citypes.RepoPathRanks{
+		Paths:    paths,
+		MeanRank: x.MeanRank,
 	}
 }

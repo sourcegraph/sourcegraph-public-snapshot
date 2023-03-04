@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -569,4 +570,22 @@ func TestIndexStatusUpdate(t *testing.T) {
 			t.Fatalf("not called")
 		}
 	})
+}
+
+func TestRepoPathRanks_RoundTrip(t *testing.T) {
+	var diff string
+
+	f := func(original citypes.RepoPathRanks) bool {
+		converted := repoPathRanksFromProto(repoPathRanksToProto(&original))
+
+		if diff = cmp.Diff(&original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
 }

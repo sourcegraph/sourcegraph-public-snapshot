@@ -153,26 +153,14 @@ message DocumentRanksRequest {
 
 // DocumentRanksResponse is the response from the DocumentRanks RPC.
 message DocumentRanksResponse {
-  // DocumentRank is a vector of ranks for a given document.
-  message DocumentRank {
-    // ranks is a vector of ranks for a given document. The ranks are ordered as follows:
-    //   - precision                   [0 to 1]
-    //   - generated                   [0 or 1]
-    //   - vendor                      [0 or 1]
-    //   - test                        [0 or 1]
-    //   - global document rank        [0 to 1] (=0 w/o pagerank)
-    //   - name length                 [0 to 1] (=1 w/  pagerank)
-    //   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
-    repeated double ranks = 1; // TODO@ggilmore: Should this have strong types?
-  }
+  // Paths is a map from path name to the normalized number of references for
+  // a symbol defined in that path for a particular repository. Normalized counts
+  // equal log_2({number of references to file} + 1), where references are considered
+  // over all repositories.
+  map<string, double> paths = 1;
 
-  // ranks is a  map from paths within the given repo to their rank vector. Paths are
-  // assumed to be ordered by each pairwise component of the resulting vector, higher ranks coming
-  // earlier.
-  //
-  // We currently rank documents by path name length and lexicographic order, while performing
-  // a few heuristics to sink generated, test, and vendor files lower in the ranking.
-  map<string, DocumentRank> ranks = 1;
+  // mean_rank is the mean rank of all documents in the repository.
+  double mean_rank = 2;
 }
 
 // UpdateIndexStatusRequest is the request to the UpdateIndexStatus RPC.
