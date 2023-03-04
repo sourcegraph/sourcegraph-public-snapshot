@@ -48,7 +48,8 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		{User: types.User{ID: 5, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id5", SCIMAccountData: sampleAccountData},
 		{User: types.User{ID: 6, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData},
 		{User: types.User{ID: 7, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 8, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData}})
+		{User: types.User{ID: 8, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 9, Username: "testuser"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData}})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
 	testCases := []struct {
@@ -158,6 +159,43 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				emails := userRes.Attributes[AttrEmails].([]interface{})
 				assert.Len(t, emails, 1)
 				assert.Contains(t, emails, map[string]interface{}{"value": "replaced@work.com", "primary": true, "type": "home"})
+			},
+		},
+		{
+			name:   "remove non existing field",
+			userId: "7",
+			operations: []scim.PatchOperation{
+				{Op: "remove", Path: createPath(AttrNickName, nil)},
+			},
+			testFunc: func(userRes scim.Resource, err error) {
+				assert.NoError(t, err)
+				//Check nickname still empty
+				assert.Nil(t, userRes.Attributes[AttrNickName])
+			},
+		},
+		{
+			name:   "add non existing field",
+			userId: "8",
+			operations: []scim.PatchOperation{
+				{Op: "add", Path: createPath(AttrNickName, nil), Value: "sampleNickName"},
+			},
+			testFunc: func(userRes scim.Resource, err error) {
+				assert.NoError(t, err)
+				//Check nickname
+				assert.Equal(t, "sampleNickName", userRes.Attributes[AttrNickName])
+			},
+		},
+		{
+			name:   "no change",
+			userId: "9",
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: createPath(AttrName, strPtr(AttrNameGiven)), Value: "Nannie"},
+			},
+			testFunc: func(userRes scim.Resource, err error) {
+				assert.NoError(t, err)
+				//Check name the same
+				name := userRes.Attributes[AttrName].(map[string]interface{})
+				assert.Equal(t, "Nannie", name[AttrNameGiven])
 			},
 		},
 	}
