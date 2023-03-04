@@ -11,6 +11,13 @@ is
 a
 multiline
 string"""
+multiline_string = <<~END_OF_STRING
+  This is a multiline string.
+  It can contain multiple lines of text.
+  And it preserves all whitespace and formatting.
+END_OF_STRING
+
+puts multiline_string
 # Arrays
 array = [1, 2, 3]
 # Hashes
@@ -40,11 +47,13 @@ fido = Dog.new
 puts fido.bark # Prints "Woof!"
 
 class Person
+  @@count = 0
   def initialize(name)
     @name = name
+    @@count += 1
   end
   def greet
-    puts "Hello, I'm #{@name}!"
+    puts "Hello, I'm #{@name}! Count is #{@@count}"
   end
 end
 # Usage:
@@ -75,4 +84,22 @@ def regexp
   # And you can use \ to escape special characters:
   regex = /f\.o/
   # Matches "f.o" (with a literal .)
+end
+
+def interpolation
+  STDERR.puts "Parsing #{something.sub(another_thing, '')}"
+  multiline_interpolation = """This
+  is #{hello}
+  a #{hello}
+  multiline
+  string"""
+end
+
+def more_stuff(mine)
+  text = mine.foos().qux(&:horse).join.strip
+  if text.empty?
+    nil
+  else
+    text
+  end
 end

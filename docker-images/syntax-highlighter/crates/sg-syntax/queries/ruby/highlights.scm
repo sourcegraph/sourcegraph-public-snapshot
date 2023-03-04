@@ -66,7 +66,7 @@
 [
   (class_variable)
   (instance_variable)
-] @identifier
+] @identifier.attribute
 
 ((identifier) @constant.builtin
  (#match? @constant.builtin "^__(FILE|LINE|ENCODING)__$"))
@@ -105,12 +105,17 @@
 ; Literals
 
 [
-  (string)
+  (string_content)
   (bare_string)
   (subshell)
-  (heredoc_body)
-  (heredoc_beginning)
+  ; (heredoc_body)
+  (heredoc_content)
+  ; (heredoc_beginning)
 ] @string
+(string "\"" @string)
+; (string "'" @string)
+; ((string (_) @string .))
+; "''" @string
 
 [
   (simple_symbol)
@@ -134,9 +139,8 @@
 
 (nil) @constant.null
 
-(interpolation
-  "#{" @punctuation.special
-  "}" @punctuation.special) @string.escape
+(interpolation ("#{") @string.escape)
+(interpolation ("}") @string.escape)
 
 (comment) @comment
 

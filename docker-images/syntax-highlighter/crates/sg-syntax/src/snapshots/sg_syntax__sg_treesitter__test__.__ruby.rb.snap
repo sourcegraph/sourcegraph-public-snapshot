@@ -11,7 +11,9 @@ expression: "dump_document(&document, &contents)"
   foo = "bar"
 //^^^ Identifier 
 //    ^ IdentifierOperator 
-//      ^^^^^ StringLiteral 
+//      ^ StringLiteral 
+//       ^^^ StringLiteral 
+//          ^ StringLiteral 
   baz = 1
 //^^^ Identifier 
 //    ^ IdentifierOperator 
@@ -21,21 +23,41 @@ expression: "dump_document(&document, &contents)"
   hello = "Hello world"
 //^^^^^ Identifier 
 //      ^ IdentifierOperator 
-//        ^^^^^^^^^^^^^ StringLiteral 
+//        ^ StringLiteral 
+//         ^^^^^^^^^^^ StringLiteral 
+//                    ^ StringLiteral 
   hello = 'Hello world'
 //^^^^^ Identifier 
 //      ^ IdentifierOperator 
-//        ^^^^^^^^^^^^^ StringLiteral 
+//        ^ StringLiteral 
+//         ^^^^^^^^^^^ StringLiteral 
+//                    ^ StringLiteral 
   multiline_string = """This
 //^^^^^^^^^^^^^^^^ Identifier 
 //                 ^ IdentifierOperator 
-//                   ^^ StringLiteral 
-//                     ^^^^^ StringLiteral 8:21..12:7 
+//                   ^ StringLiteral 
+//                    ^ StringLiteral 
+//                     ^ StringLiteral 
+//                      ^^^^ StringLiteral 8:22..12:6 
   is
   a
   multiline
   string"""
-//       ^^ StringLiteral 
+//      ^ StringLiteral 
+//       ^ StringLiteral 
+//        ^ StringLiteral 
+  multiline_string = <<~END_OF_STRING
+//^^^^^^^^^^^^^^^^ Identifier 
+//                 ^ IdentifierOperator 
+//                                    StringLiteral 13:35..17:0 
+    This is a multiline string.
+    It can contain multiple lines of text.
+    And it preserves all whitespace and formatting.
+  END_OF_STRING
+  
+  puts multiline_string
+//^^^^ IdentifierFunction 
+//     ^^^^^^^^^^^^^^^^ Identifier 
   # Arrays
 //^^^^^^^^ Comment 
   array = [1, 2, 3]
@@ -50,7 +72,9 @@ expression: "dump_document(&document, &contents)"
 //^^^^ Identifier 
 //     ^ IdentifierOperator 
 //        ^^^ CharacterLiteral 
-//             ^^^^^ StringLiteral 
+//             ^ StringLiteral 
+//              ^^^ StringLiteral 
+//                 ^ StringLiteral 
 //                    ^^^ CharacterLiteral 
 //                         ^ NumericLiteral 
   # Ranges
@@ -68,22 +92,32 @@ expression: "dump_document(&document, &contents)"
   if foo == "bar"
 //^^ IdentifierKeyword 
 //   ^^^ Identifier 
-//          ^^^^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^^^ StringLiteral 
+//              ^ StringLiteral 
     puts "Foo is bar!"
 //  ^^^^ IdentifierFunction 
-//       ^^^^^^^^^^^^^ StringLiteral 
+//       ^ StringLiteral 
+//        ^^^^^^^^^^^ StringLiteral 
+//                   ^ StringLiteral 
   elsif foo == "baz"
 //^^^^^ IdentifierKeyword 
 //      ^^^ Identifier 
-//             ^^^^^ StringLiteral 
+//             ^ StringLiteral 
+//              ^^^ StringLiteral 
+//                 ^ StringLiteral 
     puts "Foo is baz!"
 //  ^^^^ IdentifierFunction 
-//       ^^^^^^^^^^^^^ StringLiteral 
+//       ^ StringLiteral 
+//        ^^^^^^^^^^^ StringLiteral 
+//                   ^ StringLiteral 
   else
 //^^^^ IdentifierKeyword 
     puts "Foo is something else!"
 //  ^^^^ IdentifierFunction 
-//       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//       ^ StringLiteral 
+//        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                              ^ StringLiteral 
   end
 //^^^ IdentifierKeyword 
   # Methods
@@ -92,7 +126,9 @@ expression: "dump_document(&document, &contents)"
 //^^^ IdentifierKeyword 
 //    ^^^^^ IdentifierFunction 
     "Hello!"
-//  ^^^^^^^^ StringLiteral 
+//  ^ StringLiteral 
+//   ^^^^^^ StringLiteral 
+//         ^ StringLiteral 
   end
 //^^^ IdentifierKeyword 
   puts hello # Prints "Hello!"
@@ -108,7 +144,9 @@ expression: "dump_document(&document, &contents)"
 //  ^^^ IdentifierKeyword 
 //      ^^^^ IdentifierFunction 
       "Woof!"
-//    ^^^^^^^ StringLiteral 
+//    ^ StringLiteral 
+//     ^^^^^ StringLiteral 
+//          ^ StringLiteral 
     end
 //  ^^^ IdentifierKeyword 
   end
@@ -127,24 +165,38 @@ expression: "dump_document(&document, &contents)"
   class Person
 //^^^^^ IdentifierKeyword 
 //      ^^^^^^ Identifier 
+    @@count = 0
+//  ^^^^^^^ IdentifierAttribute 
+//          ^ IdentifierOperator 
+//            ^ NumericLiteral 
     def initialize(name)
 //  ^^^ IdentifierKeyword 
 //      ^^^^^^^^^^ IdentifierFunction 
 //                 ^^^^ IdentifierParameter 
       @name = name
-//    ^^^^^ Identifier 
+//    ^^^^^ IdentifierAttribute 
 //          ^ IdentifierOperator 
 //            ^^^^ Identifier 
+      @@count += 1
+//    ^^^^^^^ IdentifierAttribute 
+//               ^ NumericLiteral 
     end
 //  ^^^ IdentifierKeyword 
     def greet
 //  ^^^ IdentifierKeyword 
 //      ^^^^^ IdentifierFunction 
-      puts "Hello, I'm #{@name}!"
+      puts "Hello, I'm #{@name}! Count is #{@@count}"
 //    ^^^^ IdentifierFunction 
-//         ^^^^^^^^^^^^ StringLiteral 
-//                       ^^^^^ Identifier 
-//                             ^^ StringLiteral 
+//         ^ StringLiteral 
+//          ^^^^^^^^^^^ StringLiteral 
+//                     ^^ StringLiteralEscape 
+//                       ^^^^^ IdentifierAttribute 
+//                            ^ StringLiteralEscape 
+//                             ^^^^^^^^^^^ StringLiteral 
+//                                        ^^ StringLiteralEscape 
+//                                          ^^^^^^^ IdentifierAttribute 
+//                                                 ^ StringLiteralEscape 
+//                                                  ^ StringLiteral 
     end
 //  ^^^ IdentifierKeyword 
   end
@@ -156,7 +208,9 @@ expression: "dump_document(&document, &contents)"
 //       ^ IdentifierOperator 
 //         ^^^^^^ Identifier 
 //                ^^^ IdentifierFunction 
-//                    ^^^^^^ StringLiteral 
+//                    ^ StringLiteral 
+//                     ^^^^ StringLiteral 
+//                         ^ StringLiteral 
   person.greet # Prints "Hello, I'm John!"
 //^^^^^^ Identifier 
 //       ^^^^^ IdentifierFunction 
@@ -168,14 +222,19 @@ expression: "dump_document(&document, &contents)"
     File.open('foobar', mode: 'w') do |banana|
 //  ^^^^ Identifier 
 //       ^^^^ IdentifierFunction 
-//            ^^^^^^^^ StringLiteral 
+//            ^ StringLiteral 
+//             ^^^^^^ StringLiteral 
+//                   ^ StringLiteral 
 //                      ^^^^ CharacterLiteral 
-//                            ^^^ StringLiteral 
+//                            ^ StringLiteral 
+//                             ^ StringLiteral 
+//                              ^ StringLiteral 
 //                                 ^^ IdentifierKeyword 
 //                                     ^^^^^^ IdentifierParameter 
             banana << "yummy\n"
 //          ^^^^^^ Identifier 
-//                    ^^^^^^ StringLiteral 
+//                    ^ StringLiteral 
+//                     ^^^^^ StringLiteral 
 //                          ^^ StringLiteralEscape 
 //                            ^ StringLiteral 
     end
@@ -191,7 +250,9 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^ Identifier 
 //                       ^^^^^^^ IdentifierFunction 
 //                               ^^ Identifier 
-//                                     ^^^^^^^^^^^^^^^ StringLiteral 
+//                                     ^ StringLiteral 
+//                                      ^^^^^^^^^^^^^ StringLiteral 
+//                                                   ^ StringLiteral 
     end
 //  ^^^ IdentifierKeyword 
   
@@ -205,29 +266,37 @@ expression: "dump_document(&document, &contents)"
     regex = /foo\.bar/
 //  ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//          ^^^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^^^ StringLiteral 
 //              ^^ StringLiteralEscape 
-//                ^^^^ StringLiteral 
+//                ^^^ StringLiteral 
+//                   ^ StringLiteral 
     # Matches "foo.bar"
 //  ^^^^^^^^^^^^^^^^^^^ Comment 
     regex = /foo\.bar/i
 //  ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//          ^^^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^^^ StringLiteral 
 //              ^^ StringLiteralEscape 
-//                ^^^^^ StringLiteral 
+//                ^^^ StringLiteral 
+//                   ^^ StringLiteral 
     # Case insensitive match, matches "foo.bar" or "Foo.Bar" or "FOO.BAR" etc.
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
     regex = /f.*o/
 //  ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//          ^^^^^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^^^^ StringLiteral 
+//               ^ StringLiteral 
     # Uses . as a wildcard, matches "fo", "fido", "f1o", etc.
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
     regex = /f[io]o/
 //  ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//          ^^^^^^^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^^^^^^ StringLiteral 
+//                 ^ StringLiteral 
     # Uses [] for a union, matches "foo" or "fioo"
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
     # And you can use \ to escape special characters:
@@ -235,11 +304,82 @@ expression: "dump_document(&document, &contents)"
     regex = /f\.o/
 //  ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//          ^^ StringLiteral 
+//          ^ StringLiteral 
+//           ^ StringLiteral 
 //            ^^ StringLiteralEscape 
-//              ^^ StringLiteral 
+//              ^ StringLiteral 
+//               ^ StringLiteral 
     # Matches "f.o" (with a literal .)
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  end
+//^^^ IdentifierKeyword 
+  
+  def interpolation
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^^^^ IdentifierFunction 
+    STDERR.puts "Parsing #{something.sub(another_thing, '')}"
+//  ^^^^^^ Identifier 
+//         ^^^^ IdentifierFunction 
+//              ^ StringLiteral 
+//               ^^^^^^^^ StringLiteral 
+//                       ^^ StringLiteralEscape 
+//                         ^^^^^^^^^ Identifier 
+//                                   ^^^ IdentifierFunction 
+//                                       ^^^^^^^^^^^^^ Identifier 
+//                                                      ^ StringLiteral 
+//                                                       ^ StringLiteral 
+//                                                         ^ StringLiteralEscape 
+//                                                          ^ StringLiteral 
+    multiline_interpolation = """This
+//  ^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
+//                          ^ IdentifierOperator 
+//                            ^ StringLiteral 
+//                             ^ StringLiteral 
+//                              ^ StringLiteral 
+//                               ^^^^ StringLiteral 90:31..91:5 
+    is #{hello}
+//     ^^ StringLiteralEscape 
+//       ^^^^^ Identifier 
+//            ^ StringLiteralEscape 
+//              StringLiteral 91:13..92:4 
+    a #{hello}
+//    ^^ StringLiteralEscape 
+//      ^^^^^ Identifier 
+//           ^ StringLiteralEscape 
+//             StringLiteral 92:12..94:8 
+    multiline
+    string"""
+//        ^ StringLiteral 
+//         ^ StringLiteral 
+//          ^ StringLiteral 
+  end
+//^^^ IdentifierKeyword 
+  
+  def more_stuff(mine)
+//^^^ IdentifierKeyword 
+//    ^^^^^^^^^^ IdentifierFunction 
+//               ^^^^ IdentifierParameter 
+    text = mine.foos().qux(&:horse).join.strip
+//  ^^^^ Identifier 
+//       ^ IdentifierOperator 
+//         ^^^^ Identifier 
+//              ^^^^ IdentifierFunction 
+//                     ^^^ IdentifierFunction 
+//                          ^^^^^^ CharacterLiteral 
+//                                  ^^^^ IdentifierFunction 
+//                                       ^^^^^ IdentifierFunction 
+    if text.empty?
+//  ^^ IdentifierKeyword 
+//     ^^^^ Identifier 
+//          ^^^^^^ IdentifierFunction 
+      nil
+//    ^^^ IdentifierNull 
+    else
+//  ^^^^ IdentifierKeyword 
+      text
+//    ^^^^ Identifier 
+    end
+//  ^^^ IdentifierKeyword 
   end
 //^^^ IdentifierKeyword 
 
