@@ -19,13 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type UploadService interface {
-	ExportRankingGraph(ctx context.Context, numRankingRoutines int, numBatchSize int, rankingJobEnabled bool) error
-	MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (int, int, error)
-	ReduceRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (float64, float64, error)
-	VacuumRankingGraph(ctx context.Context) error
-}
-
 type GitserverClient interface {
 	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
 	RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error)

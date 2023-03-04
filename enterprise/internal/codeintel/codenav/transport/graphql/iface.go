@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,13 +52,7 @@ type AutoIndexingService interface {
 	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []autoindexingShared.RepositoryWithAvailableIndexers, totalCount int, err error)
 }
 
-type UploadsService interface {
-	GetUploads(ctx context.Context, opts uploadsshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
-}
+type UploadsService = sharedresolvers.UploadsService
 
 type PolicyService interface {
 	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)

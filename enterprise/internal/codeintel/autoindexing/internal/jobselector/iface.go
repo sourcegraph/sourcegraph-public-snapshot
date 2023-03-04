@@ -6,8 +6,6 @@ import (
 
 	"github.com/grafana/regexp"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -30,13 +28,4 @@ type GitserverClient interface {
 type InferenceService interface {
 	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
 	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
-}
-
-type UploadService interface {
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)                // upload service
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)                    // upload service
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []codeinteltypes.Upload, err error) // upload service
-	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 }

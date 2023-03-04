@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,14 +51,11 @@ type AutoIndexingService interface {
 }
 
 type UploadsService interface {
+	sharedresolvers.UploadsService
+
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadshared.UploadsWithRepositoryNamespace, err error)
-	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	GetIndexers(ctx context.Context, opts uploadshared.GetIndexersOptions) ([]string, error)
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteUploads(ctx context.Context, opts uploadshared.DeleteUploadsOptions) (err error)
