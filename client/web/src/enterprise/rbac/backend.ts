@@ -19,7 +19,7 @@ import {
     PermissionNamespace,
     PermissionFields,
     SetPermissionsResult,
-    SetPermissionsVariables
+    SetPermissionsVariables,
 } from '../../graphql-operations'
 
 export const DEFAULT_PAGE_LIMIT = 10
@@ -138,7 +138,9 @@ export const useDeleteRole = (
     onError: () => void
 ): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE, { onCompleted, onError })
 
-export const useSetPermissions = (onCompleted: () => void): MutationTuple<SetPermissionsResult, SetPermissionsVariables> => useMutation(SET_PERMISSIONS, { onCompleted })
+export const useSetPermissions = (
+    onCompleted: () => void
+): MutationTuple<SetPermissionsResult, SetPermissionsVariables> => useMutation(SET_PERMISSIONS, { onCompleted })
 
 export type PermissionsMap = Record<PermissionNamespace, PermissionFields[]>
 
