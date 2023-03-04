@@ -340,9 +340,12 @@ input_ranks AS (
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
-		NOT pci.processed
+		NOT pci.processed AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
 	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
