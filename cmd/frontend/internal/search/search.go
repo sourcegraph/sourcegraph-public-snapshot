@@ -527,7 +527,7 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			Email:  v.Email,
 		}
 		return person
-	case *codeowners.User:
+	case *result.OwnerUser:
 		person := &streamhttp.EventPersonMatch{
 			Type:   streamhttp.PersonMatchType,
 			Handle: v.Handle,
