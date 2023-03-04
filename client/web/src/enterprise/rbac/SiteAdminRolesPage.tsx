@@ -74,7 +74,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 description="Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality."
                 actions={
                     <Button variant="primary" onClick={openModal}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create Role
                     </Button>
                 }
             >
@@ -94,7 +94,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 {loading && !connection && <ConnectionLoading />}
                 <ConnectionList as="ul" className="list-group" aria-label="Roles">
                     {connection?.nodes?.map(node => (
-                        <RoleNode key={node.id} node={node} afterDelete={refetchAll} allPermissions={permissions} />
+                        <RoleNode key={node.id} node={node} refetchAll={refetchAll} allPermissions={permissions} />
                     ))}
                 </ConnectionList>
                 {connection && (
