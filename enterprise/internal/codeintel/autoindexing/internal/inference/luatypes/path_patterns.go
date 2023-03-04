@@ -32,7 +32,6 @@ func NewCombinedPattern(children []*PathPattern) *PathPattern {
 //
 // Specifically: any path matching one of the given patterns is removed
 func NewExcludePattern(children []*PathPattern) *PathPattern {
-	// TODO - shouldn't this cascade?
 	return &PathPattern{children: children, invert: true}
 }
 

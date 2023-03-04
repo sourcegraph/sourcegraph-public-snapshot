@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
 	otelog "github.com/opentracing/opentracing-go/log"
 	baselua "github.com/yuin/gopher-lua"
 	"go.opentelemetry.io/otel/attribute"
@@ -336,12 +335,19 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	paths, err := invocationContext.gitService.ListFiles(ctx, invocationContext.repo, invocationContext.commit, regexp.MustCompile(".+"))
+	patterns := flattenPatterns(patternsForPaths, false)
+	pathspecs := make([]gitdomain.Pathspec, 0, len(patterns))
+	for _, pattern := range patterns {
+		pathspecs = append(pathspecs, gitdomain.Pathspec(pattern))
+	}
+
+	// Ideally we can pass the globs we explicitly filter by below
+	paths, err := invocationContext.gitService.LsFiles(ctx, invocationContext.repo, invocationContext.commit, pathspecs...)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterPaths(paths, flattenPatterns(patternsForPaths, false), nil), err
+	return filterPaths(paths, compileWildcards(patterns), nil), nil
 }
 
 // resolveFileContents requests the content of the paths that match the given combined regular expression.

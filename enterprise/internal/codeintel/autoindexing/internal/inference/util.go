@@ -14,15 +14,20 @@ import (
 func filterPathsByPatterns(paths []string, patterns []*luatypes.PathPattern) ([]string, error) {
 	return filterPaths(
 		paths,
-		flattenPatterns(patterns, false),
-		flattenPatterns(patterns, true),
+		compileWildcards(flattenPatterns(patterns, false)),
+		compileWildcards(flattenPatterns(patterns, true)),
 	), nil
 }
 
 // flattenPatterns converts a tree of patterns into a flat list of compiled glob patterns.
-func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) []*wildmatch.WildMatch {
+func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) []string {
+	return normalizePatterns(luatypes.FlattenPatterns(patterns, inverted))
+}
+
+// compileWildcards converts a list of wildcard strings into objects that can match inputs.
+func compileWildcards(patterns []string) []*wildmatch.WildMatch {
 	compiledPatterns := make([]*wildmatch.WildMatch, 0, len(patterns))
-	for _, pattern := range normalizePatterns(luatypes.FlattenPatterns(patterns, inverted)) {
+	for _, pattern := range patterns {
 		compiledPatterns = append(compiledPatterns, wildmatch.NewWildMatch(pattern))
 	}
 
