@@ -6,7 +6,7 @@ import (
 
 	"github.com/grafana/regexp"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"

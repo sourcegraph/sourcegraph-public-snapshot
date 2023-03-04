@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -37,8 +36,8 @@ func newService(
 	}
 }
 
-func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
-	return policies.NewMatcher(gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
+func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *Matcher {
+	return NewMatcher(gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
 }
 
 func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
@@ -103,7 +102,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.RetentionExtractor, true, false)
+	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, RetentionExtractor, true, false)
 
 	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
@@ -210,7 +209,7 @@ func (s *Service) GetPreviewGitObjectFilter(
 	ctx, _, endObservation := s.operations.getPreviewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
+	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, NoopExtractor, false, false)
 	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(
 		ctx,
 		repositoryID,
@@ -287,7 +286,7 @@ func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Up
 func (s *Service) populateMatchingCommits(
 	visibleCommits []string,
 	upload types.Upload,
-	matchingPolicies map[string][]policies.PolicyMatch,
+	matchingPolicies map[string][]PolicyMatch,
 	policies []types.ConfigurationPolicy,
 	now time.Time,
 ) ([]types.RetentionPolicyMatchCandidate, map[int]int) {
