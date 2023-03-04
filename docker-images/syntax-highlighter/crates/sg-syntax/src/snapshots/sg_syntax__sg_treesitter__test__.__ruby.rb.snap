@@ -1,0 +1,245 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "dump_document(&document, &contents)"
+---
+  #!/usr/bin/env ruby
+//^^^^^^^^^^^^^^^^^^^ Comment 
+  # Comments - this is a comment
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  # Variables
+//^^^^^^^^^^^ Comment 
+  foo = "bar"
+//^^^ Identifier 
+//    ^ IdentifierOperator 
+//      ^^^^^ StringLiteral 
+  baz = 1
+//^^^ Identifier 
+//    ^ IdentifierOperator 
+//      ^ NumericLiteral 
+  # Strings
+//^^^^^^^^^ Comment 
+  hello = "Hello world"
+//^^^^^ Identifier 
+//      ^ IdentifierOperator 
+//        ^^^^^^^^^^^^^ StringLiteral 
+  hello = 'Hello world'
+//^^^^^ Identifier 
+//      ^ IdentifierOperator 
+//        ^^^^^^^^^^^^^ StringLiteral 
+  multiline_string = """This
+//^^^^^^^^^^^^^^^^ Identifier 
+//                 ^ IdentifierOperator 
+//                   ^^ StringLiteral 
+//                     ^^^^^ StringLiteral 8:21..12:7 
+  is
+  a
+  multiline
+  string"""
+//       ^^ StringLiteral 
+  # Arrays
+//^^^^^^^^ Comment 
+  array = [1, 2, 3]
+//^^^^^ Identifier 
+//      ^ IdentifierOperator 
+//         ^ NumericLiteral 
+//            ^ NumericLiteral 
+//               ^ NumericLiteral 
+  # Hashes
+//^^^^^^^^ Comment 
+  hash = {foo: "bar", baz: 1}
+//^^^^ Identifier 
+//     ^ IdentifierOperator 
+//        ^^^ CharacterLiteral 
+//             ^^^^^ StringLiteral 
+//                    ^^^ CharacterLiteral 
+//                         ^ NumericLiteral 
+  # Ranges
+//^^^^^^^^ Comment 
+  (1..5).each { |n| print n } # Prints 1 2 3 4 5
+// ^ NumericLiteral 
+//    ^ NumericLiteral 
+//       ^^^^ IdentifierFunction 
+//               ^ IdentifierParameter 
+//                  ^^^^^ IdentifierFunction 
+//                        ^ Identifier 
+//                            ^^^^^^^^^^^^^^^^^^ Comment 
+  # Control flow
+//^^^^^^^^^^^^^^ Comment 
+  if foo == "bar"
+//^^ IdentifierKeyword 
+//   ^^^ Identifier 
+//          ^^^^^ StringLiteral 
+    puts "Foo is bar!"
+//  ^^^^ IdentifierFunction 
+//       ^^^^^^^^^^^^^ StringLiteral 
+  elsif foo == "baz"
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+//             ^^^^^ StringLiteral 
+    puts "Foo is baz!"
+//  ^^^^ IdentifierFunction 
+//       ^^^^^^^^^^^^^ StringLiteral 
+  else
+//^^^^ IdentifierKeyword 
+    puts "Foo is something else!"
+//  ^^^^ IdentifierFunction 
+//       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  end
+//^^^ IdentifierKeyword 
+  # Methods
+//^^^^^^^^^ Comment 
+  def hello
+//^^^ IdentifierKeyword 
+//    ^^^^^ IdentifierFunction 
+    "Hello!"
+//  ^^^^^^^^ StringLiteral 
+  end
+//^^^ IdentifierKeyword 
+  puts hello # Prints "Hello!"
+//^^^^ IdentifierFunction 
+//     ^^^^^ Identifier 
+//           ^^^^^^^^^^^^^^^^^ Comment 
+  # Classes
+//^^^^^^^^^ Comment 
+  class Dog
+//^^^^^ IdentifierKeyword 
+//      ^^^ Identifier 
+    def bark
+//  ^^^ IdentifierKeyword 
+//      ^^^^ IdentifierFunction 
+      "Woof!"
+//    ^^^^^^^ StringLiteral 
+    end
+//  ^^^ IdentifierKeyword 
+  end
+//^^^ IdentifierKeyword 
+  fido = Dog.new
+//^^^^ Identifier 
+//     ^ IdentifierOperator 
+//       ^^^ Identifier 
+//           ^^^ IdentifierFunction 
+  puts fido.bark # Prints "Woof!"
+//^^^^ IdentifierFunction 
+//     ^^^^ Identifier 
+//          ^^^^ IdentifierFunction 
+//               ^^^^^^^^^^^^^^^^ Comment 
+  
+  class Person
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ Identifier 
+    def initialize(name)
+//  ^^^ IdentifierKeyword 
+//      ^^^^^^^^^^ IdentifierFunction 
+//                 ^^^^ IdentifierParameter 
+      @name = name
+//    ^^^^^ Identifier 
+//          ^ IdentifierOperator 
+//            ^^^^ Identifier 
+    end
+//  ^^^ IdentifierKeyword 
+    def greet
+//  ^^^ IdentifierKeyword 
+//      ^^^^^ IdentifierFunction 
+      puts "Hello, I'm #{@name}!"
+//    ^^^^ IdentifierFunction 
+//         ^^^^^^^^^^^^ StringLiteral 
+//                       ^^^^^ Identifier 
+//                             ^^ StringLiteral 
+    end
+//  ^^^ IdentifierKeyword 
+  end
+//^^^ IdentifierKeyword 
+  # Usage:
+//^^^^^^^^ Comment 
+  person = Person.new("John")
+//^^^^^^ Identifier 
+//       ^ IdentifierOperator 
+//         ^^^^^^ Identifier 
+//                ^^^ IdentifierFunction 
+//                    ^^^^^^ StringLiteral 
+  person.greet # Prints "Hello, I'm John!"
+//^^^^^^ Identifier 
+//       ^^^^^ IdentifierFunction 
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  
+  def banana
+//^^^ IdentifierKeyword 
+//    ^^^^^^ IdentifierFunction 
+    File.open('foobar', mode: 'w') do |banana|
+//  ^^^^ Identifier 
+//       ^^^^ IdentifierFunction 
+//            ^^^^^^^^ StringLiteral 
+//                      ^^^^ CharacterLiteral 
+//                            ^^^ StringLiteral 
+//                                 ^^ IdentifierKeyword 
+//                                     ^^^^^^ IdentifierParameter 
+            banana << "yummy\n"
+//          ^^^^^^ Identifier 
+//                    ^^^^^^ StringLiteral 
+//                          ^^ StringLiteralEscape 
+//                            ^ StringLiteral 
+    end
+//  ^^^ IdentifierKeyword 
+  
+    if __FILE__ == $0
+//  ^^ IdentifierKeyword 
+//     ^^^^^^^^ IdentifierBuiltin 
+//                 ^^ Identifier 
+      output_path = File.dirname($0) + 'snapshots.txt'
+//    ^^^^^^^^^^^ Identifier 
+//                ^ IdentifierOperator 
+//                  ^^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^ Identifier 
+//                                     ^^^^^^^^^^^^^^^ StringLiteral 
+    end
+//  ^^^ IdentifierKeyword 
+  
+  end
+//^^^ IdentifierKeyword 
+  
+  
+  def regexp
+//^^^ IdentifierKeyword 
+//    ^^^^^^ IdentifierFunction 
+    regex = /foo\.bar/
+//  ^^^^^ Identifier 
+//        ^ IdentifierOperator 
+//          ^^^^ StringLiteral 
+//              ^^ StringLiteralEscape 
+//                ^^^^ StringLiteral 
+    # Matches "foo.bar"
+//  ^^^^^^^^^^^^^^^^^^^ Comment 
+    regex = /foo\.bar/i
+//  ^^^^^ Identifier 
+//        ^ IdentifierOperator 
+//          ^^^^ StringLiteral 
+//              ^^ StringLiteralEscape 
+//                ^^^^^ StringLiteral 
+    # Case insensitive match, matches "foo.bar" or "Foo.Bar" or "FOO.BAR" etc.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    regex = /f.*o/
+//  ^^^^^ Identifier 
+//        ^ IdentifierOperator 
+//          ^^^^^^ StringLiteral 
+    # Uses . as a wildcard, matches "fo", "fido", "f1o", etc.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    regex = /f[io]o/
+//  ^^^^^ Identifier 
+//        ^ IdentifierOperator 
+//          ^^^^^^^^ StringLiteral 
+    # Uses [] for a union, matches "foo" or "fioo"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    # And you can use \ to escape special characters:
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    regex = /f\.o/
+//  ^^^^^ Identifier 
+//        ^ IdentifierOperator 
+//          ^^ StringLiteral 
+//            ^^ StringLiteralEscape 
+//              ^^ StringLiteral 
+    # Matches "f.o" (with a literal .)
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  end
+//^^^ IdentifierKeyword 
+
