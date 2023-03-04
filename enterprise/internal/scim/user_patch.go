@@ -2,6 +2,7 @@ package scim
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
@@ -29,7 +30,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		if err != nil {
 			return err
 		}
-		userRes = h.convertUserToSCIMResource(user)
+		userRes = convertUserToSCIMResource(user)
 
 		// Perform changes on the user resource
 		var changed bool
@@ -96,7 +97,9 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		}
 
 		// Update user
-		return updateUser(r.Context(), tx, user, userRes)
+		var now = time.Now()
+		userRes.Meta.LastModified = &now
+		return updateUser(r.Context(), tx, user, userRes.Attributes)
 	})
 	if err != nil {
 		return scim.Resource{}, err

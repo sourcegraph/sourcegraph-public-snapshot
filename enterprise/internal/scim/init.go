@@ -7,7 +7,6 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
-	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -57,7 +56,6 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 			return
 		}
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
-		observationCtx.Logger.Error("SCIM request", logger.String("method", r.Method), logger.String("path", r.URL.Path)) // TODO for debugging
 		server.ServeHTTP(w, r)
 	})
 

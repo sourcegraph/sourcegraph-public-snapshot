@@ -1,0 +1,22 @@
+[
+  {
+   "accountId": "3b958f8e-017e-4f06-95ce-1b6cdd242b36",
+   "accountUri": "https://vssps.dev.azure.com:443/sgtestazure/",
+   "accountName": "sgtestazure"
+  },
+  {
+   "accountId": "65fd1acc-c89e-43e5-9069-395214eb0c25",
+   "accountUri": "https://vssps.dev.azure.com:443/repo-management/",
+   "accountName": "repo-management"
+  },
+  {
+   "accountId": "e8899f60-b66c-4106-8176-8c75b1710c97",
+   "accountUri": "https://vssps.dev.azure.com:443/indra-foobar/",
+   "accountName": "indra-foobar"
+  },
+  {
+   "accountId": "0b807719-5c78-49cd-a851-b24b694db41c",
+   "accountUri": "https://vssps.dev.azure.com:443/sgtestazure2/",
+   "accountName": "sgtestazure2"
+  }
+ ]

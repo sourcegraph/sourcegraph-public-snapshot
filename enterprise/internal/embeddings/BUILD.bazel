@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "client.go",
         "index_name.go",
+        "index_storage.go",
         "similarity_search.go",
         "tokens.go",
         "types.go",
@@ -27,8 +28,17 @@ go_library(
 
 go_test(
     name = "embeddings_test",
-    srcs = ["similarity_search_test.go"],
+    srcs = [
+        "index_storage_test.go",
+        "similarity_search_test.go",
+    ],
     data = glob(["testdata/**"]),
     embed = [":embeddings"],
-    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+    deps = [
+        "//internal/api",
+        "//internal/uploadstore",
+        "//lib/errors",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
+    ],
 )

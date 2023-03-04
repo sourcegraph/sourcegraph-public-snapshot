@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -122,7 +121,7 @@ func TestReferences(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset},
 		After:          &mockCursor,
 	}
 
@@ -174,7 +173,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
+		ConnectionArgs: resolverstubs.ConnectionArgs{},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -217,7 +216,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != ErrIllegalLimit {
@@ -288,7 +287,7 @@ func TestDiagnostics(t *testing.T) {
 
 	offset := int32(25)
 	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -326,7 +325,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 	)
 
 	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
+		ConnectionArgs: resolverstubs.ConnectionArgs{},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -365,7 +364,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	offset := int32(-1)
 	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != ErrIllegalLimit {
