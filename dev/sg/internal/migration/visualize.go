@@ -20,6 +20,23 @@ func Visualize(database db.Database, filepath string) error {
 	return os.WriteFile(filepath, formatMigrations(definitions), os.ModePerm)
 }
 
+func VisualizeSquash(database db.Database, filepath, commit string) error {
+	definitions, err := readDefinitions(database)
+	if err != nil {
+		return err
+	}
+
+	definitions, leaves, err := selectNewRootMigrationX(database, definitions, commit)
+	if err != nil {
+		return err
+	}
+	// if !ok {
+	// 	return errors.Newf("no migrations exist at commit %s", commit)
+	// }
+
+	return os.WriteFile(filepath, formatMigrationDominators(definitions, leaves), os.ModePerm)
+}
+
 func formatMigrations(definitions *definition.Definitions) []byte {
 	var (
 		all    = definitions.All()
@@ -45,6 +62,33 @@ func formatMigrations(definitions *definition.Definitions) []byte {
 
 	fmt.Fprintf(buf, "    {rank = same; %d; }\n", root.ID)
 	fmt.Fprintf(buf, "    {rank = same; %s; }\n", strings.Join(strLeaves, "; "))
+	fmt.Fprintf(buf, "  }\n")
+	fmt.Fprintf(buf, "}\n")
+
+	return buf.Bytes()
+}
+
+func formatMigrationDominators(definitions *definition.Definitions, leaves []int) []byte {
+	var (
+		all        = definitions.All()
+		dominators = definitions.ImmediateDominators()
+	)
+
+	buf := &bytes.Buffer{}
+	fmt.Fprintf(buf, "digraph migrations {\n")
+	fmt.Fprintf(buf, "  rankdir = TB\n")
+	fmt.Fprintf(buf, "  subgraph {\n")
+
+	for _, id := range leaves {
+		fmt.Fprintf(buf, "    %d [color=red];\n", id)
+	}
+
+	for _, migrationDefinition := range all {
+		if parent := dominators[migrationDefinition.ID]; parent != 0 {
+			fmt.Fprintf(buf, "    %d -> %d\n", parent, migrationDefinition.ID)
+		}
+	}
+
 	fmt.Fprintf(buf, "  }\n")
 	fmt.Fprintf(buf, "}\n")
 

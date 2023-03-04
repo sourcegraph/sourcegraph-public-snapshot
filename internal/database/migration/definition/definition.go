@@ -155,6 +155,55 @@ func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
 	return ds.GetByID(same[0])
 }
 
+// ImmediateDominators returns the immediate dominators of the migration graph.
+func (ds *Definitions) ImmediateDominators() map[int]int {
+	remove := func(vs []int, values ...int) []int {
+		filtered := vs[:0]
+		for _, v1 := range vs {
+			found := false
+			for _, v2 := range values {
+				if v1 == v2 {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				filtered = append(filtered, v1)
+			}
+		}
+
+		return filtered
+	}
+
+	dominators := ds.dominators()
+
+	// Remove self-references
+	for k, vs := range dominators {
+		dominators[k] = remove(vs, k)
+	}
+
+	// Remove non-direct dominator references
+	for k, vs := range dominators {
+		set := []int{}
+		for _, v := range vs {
+			set = append(set, dominators[v]...)
+		}
+
+		dominators[k] = remove(vs, set...)
+	}
+
+	// Flatten them into a tree structure
+	immediateDominators := map[int]int{}
+	for k, vs := range dominators {
+		if len(vs) > 0 {
+			immediateDominators[k] = vs[0]
+		}
+	}
+
+	return immediateDominators
+}
+
 // dominators solves the following dataflow equation for each migration definition.
 //
 // dom(n) = { n } union (intersect dom(p) over { p | preds(n) })
@@ -163,7 +212,7 @@ func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
 // of dominating migrations. Because migrations are acyclic, we can solve this equation
 // with a single pass over the graph rather than needing to iterate until fixed point.
 //
-// Note that due to traversal order, the set of dominators will be inversely ordered by
+// Note that due to traversal order, the set of Dominators2 will be inversely ordered by
 // depth.
 func (ds *Definitions) dominators() map[int][]int {
 	dominators := map[int][]int{}

@@ -157,6 +157,15 @@ var (
 		Action:      visualizeExec,
 	}
 
+	visualizeSquashCommand = &cli.Command{
+		Name:        "visualize-squash",
+		ArgsUsage:   "",
+		Usage:       "Output a DOT visualization of the migration graph's dominators used to find squash targets",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
+		Action:      visualizeSquashExec,
+	}
+
 	rewriteCommand = &cli.Command{
 		Name:        "rewrite",
 		ArgsUsage:   "",
@@ -198,6 +207,7 @@ sg migration squash
 			squashCommand,
 			squashAllCommand,
 			visualizeCommand,
+			visualizeSquashCommand,
 			rewriteCommand,
 		},
 	}
@@ -390,6 +400,36 @@ func visualizeExec(ctx *cli.Context) (err error) {
 	}
 
 	return migration.Visualize(database, outputFilepath)
+}
+
+func visualizeSquashExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
+	if len(args) == 0 {
+		return cli.Exit("no current-version specified", 1)
+	}
+	if len(args) != 1 {
+		return cli.Exit("too many arguments", 1)
+	}
+
+	if outputFilepath == "" {
+		return cli.Exit("Supply an output file with -f", 1)
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+
+	if !ok {
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+	}
+
+	commit, err := findTargetSquashCommit(args[0])
+	if err != nil {
+		return err
+	}
+
+	return migration.VisualizeSquash(database, outputFilepath, commit)
 }
 
 func rewriteExec(ctx *cli.Context) (err error) {

@@ -156,23 +156,24 @@ func Squash(database db.Database, commit string, inContainer, runInTimescaleDBCo
 	return nil
 }
 
-// selectNewRootMigration selects the most recently defined migration that dominates the leaf
+// TODO
+// selectNewRootMigrationX selects the most recently defined migration that dominates the leaf
 // migrations of the schema at the given commit. This ensures that whenever we squash migrations,
 // we do so between a portion of the graph with a single entry and a single exit, which can
 // be easily collapsible into one file that can replace an existing migration node in-place.
-func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
+func selectNewRootMigrationX(database db.Database, ds *definition.Definitions, commit string) (*definition.Definitions, []int, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
-		return definition.Definition{}, false, err
+		return nil, nil, err
 	}
 
 	versionsAtCommit := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
 
 	filteredDefinitions, err := ds.Filter(versionsAtCommit)
 	if err != nil {
-		return definition.Definition{}, false, err
+		return nil, nil, err
 	}
 
 	// Determine the set of parents inside the intersection with children outside of
@@ -194,6 +195,19 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 	flattenedParents := make([]int, 0, len(parentsMap))
 	for id := range parentsMap {
 		flattenedParents = append(flattenedParents, id)
+	}
+
+	return filteredDefinitions, flattenedParents, nil
+}
+
+// selectNewRootMigration selects the most recently defined migration that dominates the leaf
+// migrations of the schema at the given commit. This ensures that whenever we squash migrations,
+// we do so between a portion of the graph with a single entry and a single exit, which can
+// be easily collapsible into one file that can replace an existing migration node in-place.
+func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
+	filteredDefinitions, flattenedParents, err := selectNewRootMigrationX(database, ds, commit)
+	if err != nil {
+		return definition.Definition{}, false, err
 	}
 
 	leafDominator, ok := filteredDefinitions.LeafDominator(flattenedParents...)
