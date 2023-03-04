@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type CodeNavService interface {
@@ -39,16 +37,10 @@ type GitserverClient interface {
 }
 
 type AutoIndexingService interface {
-	GetIndexes(ctx context.Context, opts autoindexingShared.GetIndexesOptions) (_ []types.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
-	GetUnsafeDB() database.DB
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
+	sharedresolvers.AutoIndexingService
 
-	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
-	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingShared.RepositoryWithCount, totalCount int, err error)
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []autoindexingShared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	GetUnsafeDB() database.DB
+	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
 
 type UploadsService = sharedresolvers.UploadsService
