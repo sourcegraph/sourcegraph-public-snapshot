@@ -455,6 +455,7 @@ importers:
       ajv-formats: 2.1.1_ajv@8.11.2
       apollo3-cache-persist: 0.12.1_644btsh2xtpu4bkvh35a7fqf6e
       bloomfilter: 0.0.18
+      buffer: 6.0.3
       case-sensitive-paths-webpack-plugin: 2.4.0
       classnames: 2.3.1
       comlink: 4.3.0
@@ -680,7 +681,6 @@ importers:
       babel-plugin-lodash: 3.3.4
       babel-plugin-webpack-chunkname: 1.2.0
       browserslist: 4.21.4
-      buffer: 6.0.3
       bundlesize2: 0.0.31
       chalk: 4.1.2
       chokidar-cli: 2.1.0
