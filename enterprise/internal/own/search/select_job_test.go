@@ -122,7 +122,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		}
 		want := []result.Match{
 			&result.OwnerMatch{
-				ResolvedOwner: &result.OwnerPerson{User: personOwnerByEmail, Email: "user@email.com"},
+				ResolvedOwner: &result.OwnerUser{User: personOwnerByEmail, Email: "user@email.com"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -136,7 +136,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &result.OwnerPerson{User: personOwnerByHandle, Handle: "testUserHandle"},
+				ResolvedOwner: &result.OwnerUser{User: personOwnerByHandle, Handle: "testUserHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",

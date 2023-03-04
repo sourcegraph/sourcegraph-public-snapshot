@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Service gives access to code ownership data.
@@ -120,49 +119,32 @@ func (s *service) ResolveOwnersWithType(ctx context.Context, protoOwners []*code
 }
 
 func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
-	var resolvedOwner codeowners.ResolvedOwner
-	var err error
 	if handle != "" {
-		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
+		user, err := s.userStore.GetByUsername(ctx, handle)
 		if err != nil {
-			return personOrError(handle, email, err)
-		}
-	} else if email != "" {
-		// Teams cannot be identified by emails, so we do not pass in a team getter here.
-		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
-		if err != nil {
-			return personOrError(handle, email, err)
-		}
-	} else {
-		return nil, nil
-	}
-	resolvedOwner.SetOwnerData(handle, email)
-	return resolvedOwner, nil
-}
-
-type userGetterFunc func(context.Context, string) (*types.User, error)
-type teamGetterFunc func(context.Context, string) (*types.Team, error)
-
-func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userGetterFunc, teamGetter teamGetterFunc) (codeowners.ResolvedOwner, error) {
-	user, err := userGetter(ctx, identifier)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			if teamGetter != nil {
-				team, err := teamGetter(ctx, identifier)
-				if err != nil {
+			if errcode.IsNotFound(err) {
+				team, err := s.teamStore.GetTeamByName(ctx, handle)
+				if err != nil && !errcode.IsNotFound(err) {
 					return nil, err
 				}
-				return &codeowners.Team{Team: team}, nil
+				if team != nil {
+					return &codeowners.Team{Team: team, Handle: handle, Email: email}, nil
+				}
+				return &codeowners.Person{Handle: handle, Email: email}, nil
 			}
+			return nil, err
 		}
-		return nil, err
+		return &codeowners.User{User: user, Handle: handle, Email: email}, nil
+	} else if email != "" {
+		user, err := s.userStore.GetByVerifiedEmail(ctx, email)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return &codeowners.Person{Handle: handle, Email: email}, nil
+			}
+			return nil, err
+		}
+		return &codeowners.User{User: user, Handle: handle, Email: email}, nil
 	}
-	return &codeowners.Person{User: user}, nil
-}
 
-func personOrError(handle, email string, err error) (*codeowners.Person, error) {
-	if errcode.IsNotFound(err) {
-		return &codeowners.Person{Handle: handle, Email: email}, nil
-	}
-	return nil, err
+	return nil, nil
 }

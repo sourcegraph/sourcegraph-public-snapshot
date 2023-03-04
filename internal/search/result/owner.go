@@ -14,15 +14,28 @@ type Owner interface {
 type OwnerPerson struct {
 	Handle string
 	Email  string
-	User   *types.User
 }
 
 func (o OwnerPerson) Identifier() string {
-	return "Person:" + o.Handle + o.Email
+	return o.Handle + o.Email
 }
 
 func (o OwnerPerson) Type() string {
 	return "person"
+}
+
+type OwnerUser struct {
+	Handle string
+	Email  string
+	User   *types.User
+}
+
+func (o OwnerUser) Identifier() string {
+	return o.User.Username
+}
+
+func (o OwnerUser) Type() string {
+	return "user"
 }
 
 type OwnerTeam struct {
@@ -32,7 +45,7 @@ type OwnerTeam struct {
 }
 
 func (o OwnerTeam) Identifier() string {
-	return "Team:" + o.Team.Name
+	return o.Team.Name
 }
 
 func (o OwnerTeam) Type() string {

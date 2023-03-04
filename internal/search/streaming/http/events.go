@@ -246,6 +246,7 @@ const (
 	CommitMatchType
 	PathMatchType
 	PersonMatchType
+	UserMatchType
 	TeamMatchType
 )
 
@@ -263,6 +264,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"path"`), nil
 	case PersonMatchType:
 		return []byte(`"person"`), nil
+	case UserMatchType:
+		return []byte(`"user"`), nil
 	case TeamMatchType:
 		return []byte(`"team"`), nil
 	default:
@@ -283,6 +286,8 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = PathMatchType
 	} else if bytes.Equal(b, []byte(`"person"`)) {
 		*t = PersonMatchType
+	} else if bytes.Equal(b, []byte(`"user"`)) {
+		*t = UserMatchType
 	} else if bytes.Equal(b, []byte(`"team"`)) {
 		*t = TeamMatchType
 	} else {

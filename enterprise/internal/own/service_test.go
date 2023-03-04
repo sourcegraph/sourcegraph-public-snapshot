@@ -128,7 +128,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
-			&codeowners.Person{
+			&codeowners.User{
 				User:   testUser,
 				Handle: handle,
 			},
@@ -152,7 +152,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
-			&codeowners.Person{
+			&codeowners.User{
 				User:  testUser,
 				Email: email,
 			},
@@ -250,8 +250,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		want := []codeowners.ResolvedOwner{
-			&codeowners.Person{User: testUserWithHandle, Handle: userHandle},
-			&codeowners.Person{User: testUserWithEmail, Email: userEmail},
+			&codeowners.User{User: testUserWithHandle, Handle: userHandle},
+			&codeowners.User{User: testUserWithEmail, Email: userEmail},
 			&codeowners.Team{Team: testTeamWithHandle, Handle: teamHandle},
 			testUnknownOwner,
 		}
@@ -282,7 +282,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
-			&codeowners.Person{
+			&codeowners.User{
 				User:  testUser,
 				Email: email,
 			},
@@ -291,7 +291,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err = ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
-			&codeowners.Person{
+			&codeowners.User{
 				User:  testUser,
 				Email: email,
 			},

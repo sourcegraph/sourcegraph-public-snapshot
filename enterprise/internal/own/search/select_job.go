@@ -124,6 +124,12 @@ func ownerToResult(o codeowners.ResolvedOwner) result.Owner {
 		return &result.OwnerPerson{
 			Handle: v.Handle,
 			Email:  v.Email,
+		}
+	}
+	if v, ok := o.(*codeowners.User); ok {
+		return &result.OwnerUser{
+			Handle: v.Handle,
+			Email:  v.Email,
 			User:   v.User,
 		}
 	}

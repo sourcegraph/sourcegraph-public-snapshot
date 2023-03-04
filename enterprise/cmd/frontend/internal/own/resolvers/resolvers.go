@@ -72,8 +72,6 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{}
 }
 
-// ownershipConnectionResolver is a fake graphqlbackend.OwnershipConnectionResolver
-// connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             database.DB
 	resolvedOwners []codeowners.ResolvedOwner
@@ -98,9 +96,6 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 	return resolvers, nil
 }
 
-// ownershipResolver provides a dummy implementation of graphqlbackend.OwnershipResolver
-// which just claims the author of given GitTreeEntryResolver Commit is the owner
-// and is supports it by pointing at line 42 of the CODEOWNERS file.
 type ownershipResolver struct {
 	db            database.DB
 	resolvedOwner codeowners.ResolvedOwner
@@ -125,15 +120,18 @@ type ownerResolver struct {
 func (r *ownerResolver) OwnerField(_ context.Context) (string, error) { return "owner", nil }
 
 func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
-	if r.resolvedOwner.Type() != codeowners.OwnerTypePerson {
+	if r.resolvedOwner.Type() != codeowners.OwnerTypePerson && r.resolvedOwner.Type() != codeowners.OwnerTypeUser {
 		return nil, false
 	}
-	person, ok := r.resolvedOwner.(*codeowners.Person)
-	if !ok {
+	switch co := r.resolvedOwner.(type) {
+	case *codeowners.Person:
+		return graphqlbackend.NewPersonResolver(r.db, co.Handle, co.Email, true), true
+	case *codeowners.User:
+		// TODO: Add a method where we don't need to reload the user, and always match.
+		return graphqlbackend.NewPersonResolver(r.db, co.Handle, co.Email, true), true
+	default:
 		return nil, false
 	}
-	includeUserInfo := true
-	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.Email, includeUserInfo), true
 }
 
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {

@@ -521,19 +521,22 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	switch v := owner.ResolvedOwner.(type) {
 	case *result.OwnerPerson:
-		person := &streamhttp.EventPersonMatch{
+		return &streamhttp.EventPersonMatch{
 			Type:   streamhttp.PersonMatchType,
 			Handle: v.Handle,
 			Email:  v.Email,
 		}
-		if v.User != nil {
-			person.User = &streamhttp.UserMetadata{
+	case *result.OwnerUser:
+		return &streamhttp.EventPersonMatch{
+			Type:   streamhttp.UserMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
+			User: &streamhttp.UserMetadata{
 				Username:    v.User.Username,
 				DisplayName: v.User.DisplayName,
 				AvatarURL:   v.User.AvatarURL,
-			}
+			},
 		}
-		return person
 	case *result.OwnerTeam:
 		return &streamhttp.EventTeamMatch{
 			Type:        streamhttp.TeamMatchType,
