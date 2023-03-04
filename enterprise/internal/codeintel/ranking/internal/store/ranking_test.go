@@ -37,19 +37,16 @@ func TestInsertDefinition(t *testing.T) {
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 	}
@@ -116,19 +113,16 @@ func TestInsertPathRanks(t *testing.T) {
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 	}
@@ -202,25 +196,21 @@ func TestInsertPathCountInputs(t *testing.T) {
 		{
 			UploadID:     42,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     42,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     43,
 			SymbolName:   "baz",
-			Repository:   "cafebabe",
 			DocumentPath: "baz.go",
 		},
 		{
 			UploadID:     43,
 			SymbolName:   "bonk",
-			Repository:   "cafebabe",
 			DocumentPath: "bonk.go",
 		},
 	}
@@ -322,10 +312,10 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	expectedInputs := []pathCountsInput{
-		{Repository: "cafebabe", DocumentPath: "baz.go", Count: 1},
-		{Repository: "cafebabe", DocumentPath: "bonk.go", Count: 1},
-		{Repository: "deadbeef", DocumentPath: "bar.go", Count: 2},
-		{Repository: "deadbeef", DocumentPath: "foo.go", Count: 2},
+		{RepositoryID: 50, DocumentPath: "bar.go", Count: 2},
+		{RepositoryID: 50, DocumentPath: "foo.go", Count: 2},
+		{RepositoryID: 51, DocumentPath: "baz.go", Count: 1},
+		{RepositoryID: 51, DocumentPath: "bonk.go", Count: 1},
 	}
 	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
 		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
@@ -339,11 +329,11 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	mockDefinitions := []shared.RankingDefinitions{
-		{UploadID: 1, SymbolName: "foo", Repository: "deadbeef", DocumentPath: "foo.go"},
-		{UploadID: 1, SymbolName: "bar", Repository: "deadbeef", DocumentPath: "bar.go"},
-		{UploadID: 2, SymbolName: "foo", Repository: "deadbeef", DocumentPath: "foo.go"},
-		{UploadID: 2, SymbolName: "bar", Repository: "deadbeef", DocumentPath: "bar.go"},
-		{UploadID: 3, SymbolName: "baz", Repository: "deadbeef", DocumentPath: "baz.go"},
+		{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"},
+		{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"},
+		{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"},
+		{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"},
+		{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"},
 	}
 	mockReferences := []shared.RankingReferences{
 		{UploadID: 1, SymbolNames: []string{"foo"}},
@@ -433,7 +423,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
-			INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
 	`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
@@ -546,7 +536,7 @@ func getRankingDefinitions(
 	graphKey string,
 ) (_ []shared.RankingDefinitions, err error) {
 	query := fmt.Sprintf(
-		`SELECT upload_id, symbol_name, repository, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
+		`SELECT upload_id, symbol_name, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
 		graphKey,
 	)
 	rows, err := db.QueryContext(ctx, query)
@@ -559,16 +549,14 @@ func getRankingDefinitions(
 	for rows.Next() {
 		var uploadID int
 		var symbolName string
-		var repository string
 		var documentPath string
-		err = rows.Scan(&uploadID, &symbolName, &repository, &documentPath)
+		err = rows.Scan(&uploadID, &symbolName, &documentPath)
 		if err != nil {
 			return nil, err
 		}
 		definitions = append(definitions, shared.RankingDefinitions{
 			UploadID:     uploadID,
 			SymbolName:   symbolName,
-			Repository:   repository,
 			DocumentPath: documentPath,
 		})
 	}
@@ -610,7 +598,7 @@ func getRankingReferences(
 }
 
 type pathCountsInput struct {
-	Repository   string
+	RepositoryID int
 	DocumentPath string
 	Count        int
 }
@@ -622,11 +610,11 @@ func getPathCountsInputs(
 	graphKey string,
 ) (_ []pathCountsInput, err error) {
 	query := sqlf.Sprintf(`
-		SELECT repository, document_path, SUM(count)
+		SELECT repository_id, document_path, SUM(count)
 		FROM codeintel_ranking_path_counts_inputs
 		WHERE graph_key LIKE %s || '%%'
-		GROUP BY repository, document_path
-		ORDER BY repository, document_path
+		GROUP BY repository_id, document_path
+		ORDER BY repository_id, document_path
 	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
@@ -637,7 +625,7 @@ func getPathCountsInputs(
 	var pathCountsInputs []pathCountsInput
 	for rows.Next() {
 		var input pathCountsInput
-		if err := rows.Scan(&input.Repository, &input.DocumentPath, &input.Count); err != nil {
+		if err := rows.Scan(&input.RepositoryID, &input.DocumentPath, &input.Count); err != nil {
 			return nil, err
 		}
 
