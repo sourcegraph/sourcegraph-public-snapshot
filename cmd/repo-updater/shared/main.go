@@ -40,7 +40,6 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -217,12 +216,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		otel.GetTracerProvider(),
 	)(server.Handler())
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
-	reflection.Register(grpcServer)
-
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
-
 	globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
@@ -246,15 +239,36 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			f.ServeHTTP(w, r)
 		}
 	}
-	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
+	httpSrv := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler: instrumentation.HTTPMiddleware("",
 			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
-	})
-	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
+	}
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	reflection.Register(grpcServer)
+
+	srv := internalgrpc.NewMultiplexedServer(addr, grpcServer, httpSrv)
+
+	goroutine.MonitorBackgroundRoutines(ctx, &multiplexedBackgroundGoroutine{srv})
 
 	return nil
+}
+
+type multiplexedBackgroundGoroutine struct {
+	*internalgrpc.MultiplexedServer
+}
+
+func (mbg *multiplexedBackgroundGoroutine) Start() {
+	go func() {
+		mbg.ListenAndServe()
+	}()
+}
+
+func (mbg *multiplexedBackgroundGoroutine) Stop() {
+	mbg.Shutdown(context.Background())
 }
 
 func createDebugServerEndpoints(ready chan struct{}, debugserverEndpoints *LazyDebugserverEndpoint) []debugserver.Endpoint {

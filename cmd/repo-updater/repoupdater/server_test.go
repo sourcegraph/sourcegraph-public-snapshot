@@ -30,8 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -226,10 +226,10 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
 			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
-			defer srv.Close()
+			srv := grpctest.NewMultiplexedServer(gs, s.Handler())
+			t.Cleanup(srv.Stop)
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdater.NewClient("http://" + srv.Addr())
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -673,10 +673,10 @@ func TestServer_RepoLookup(t *testing.T) {
 			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
 			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
-			defer srv.Close()
+			srv := grpctest.NewMultiplexedServer(gs, s.Handler())
+			t.Cleanup(srv.Stop)
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdater.NewClient("http://" + srv.Addr())
 
 			if tc.err == "" {
 				tc.err = "<nil>"

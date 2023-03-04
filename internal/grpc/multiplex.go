@@ -10,6 +10,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// NewMultiplexedServer will create a server that dynamically switches between
+// the provided gRPC server and HTTP server depending on whether the header
+// `content-type: application/grpc` is set.
 func NewMultiplexedServer(addr string, grpcServer *grpc.Server, httpServer *http.Server) *MultiplexedServer {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &MultiplexedServer{
@@ -32,10 +35,8 @@ type MultiplexedServer struct {
 	grpcServer *grpc.Server
 }
 
-func (s *MultiplexedServer) Addr() string {
-	return s.addr
-}
-
+// ListenAndServe listens on the TCP network address addr and then calls
+// Serve to handle requests on incoming connections.
 func (s *MultiplexedServer) ListenAndServe() error {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -45,6 +46,8 @@ func (s *MultiplexedServer) ListenAndServe() error {
 	return s.Serve(l)
 }
 
+// Serve accepts connections on the listener and passes them to the
+// appropriate underlying server.
 func (s *MultiplexedServer) Serve(l net.Listener) error {
 	defer close(s.done)
 

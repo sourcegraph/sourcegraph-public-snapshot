@@ -3,15 +3,13 @@ package gitserver
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -52,23 +50,22 @@ func TestClient_GRPCRouting(t *testing.T) {
 	gs1 := grpc.NewServer()
 	m1 := &mockGitserver{}
 	proto.RegisterGitserverServiceServer(gs1, m1)
-	srv1 := httptest.NewServer(internalgrpc.MultiplexHandlers(gs1, m1))
+	srv1 := grpctest.NewMultiplexedServer(gs1, m1)
+	t.Cleanup(srv1.Stop)
 
 	gs2 := grpc.NewServer()
 	m2 := &mockGitserver{}
 	proto.RegisterGitserverServiceServer(gs2, m2)
-	srv2 := httptest.NewServer(internalgrpc.MultiplexHandlers(gs2, m2))
-
-	u1, _ := url.Parse(srv1.URL)
-	u2, _ := url.Parse(srv2.URL)
+	srv2 := grpctest.NewMultiplexedServer(gs2, m2)
+	t.Cleanup(srv2.Stop)
 
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
-			GitServers: []string{u1.Host, u2.Host},
+			GitServers: []string{srv1.Addr(), srv2.Addr()},
 		},
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				GitServerPinnedRepos: map[string]string{"a": u1.Host, "b": u2.Host},
+				GitServerPinnedRepos: map[string]string{"a": srv1.Addr(), "b": srv2.Addr()},
 			},
 		},
 	})

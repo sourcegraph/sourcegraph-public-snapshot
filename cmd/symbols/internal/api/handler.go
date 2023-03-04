@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -73,12 +73,12 @@ func (s *grpcService) Healthz(ctx context.Context, _ *proto.HealthzRequest) (*pr
 	return &proto.HealthzResponse{}, nil
 }
 
-func NewHandler(
+func NewHandlers(
 	searchFunc types.SearchFunc,
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
-) http.Handler {
+) (*grpc.Server, http.Handler) {
 
 	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
 		// Massage the arguments to ensure that First is set to a reasonable value.
@@ -113,7 +113,7 @@ func NewHandler(
 		mux.HandleFunc("/status", handleStatus)
 	}
 
-	return internalgrpc.MultiplexHandlers(grpcServer, mux)
+	return grpcServer, mux
 }
 
 func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {

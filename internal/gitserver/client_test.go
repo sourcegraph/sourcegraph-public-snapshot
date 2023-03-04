@@ -32,8 +32,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -415,13 +415,10 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-	srv := httptest.NewServer(handler)
+	srv := grpctest.NewMultiplexedServer(grpcServer, s.Handler())
+	t.Cleanup(srv.Stop)
 
-	defer srv.Close()
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
+	addrs := []string{srv.Addr()}
 	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 	ctx := context.Background()

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -49,7 +50,7 @@ var (
 
 const port = "3181"
 
-func shutdownOnSignal(ctx context.Context, server *http.Server) error {
+func shutdownOnSignal(ctx context.Context, server *grpc.MultiplexedServer) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
@@ -186,14 +187,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	})
 
 	addr := getAddr()
-	server := &http.Server{
+	httpServer := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Addr:         addr,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -201,26 +201,28 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				return
 			}
 			handler.ServeHTTP(w, r)
-		})),
+		}),
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	srv := internalgrpc.NewMultiplexedServer(addr, grpcServer, httpServer)
+
+	p := pool.New().WithContext(ctx)
 
 	// Listen
-	g.Go(func() error {
-		logger.Info("listening", log.String("addr", server.Addr))
-		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+	p.Go(func(context.Context) error {
+		logger.Info("listening", log.String("addr", addr))
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			return err
 		}
 		return nil
 	})
 
 	// Shutdown
-	g.Go(func() error {
-		return shutdownOnSignal(ctx, server)
+	p.Go(func(ctx context.Context) error {
+		return shutdownOnSignal(ctx, srv)
 	})
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func getAddr() string {
