@@ -11,12 +11,12 @@ import (
 // filterPathsByPatterns returns a slice containing all of the input paths that match
 // any of the given path patterns. Both patterns and inverted patterns are considered
 // when a path is matched.
-func filterPathsByPatterns(paths []string, patterns []*luatypes.PathPattern) ([]string, error) {
+func filterPathsByPatterns(paths []string, patterns []*luatypes.PathPattern) []string {
 	return filterPaths(
 		paths,
 		compileWildcards(flattenPatterns(patterns, false)),
 		compileWildcards(flattenPatterns(patterns, true)),
-	), nil
+	)
 }
 
 // flattenPatterns converts a tree of patterns into a flat list of compiled glob patterns.

@@ -361,10 +361,7 @@ func (s *Service) resolveFileContents(
 	ctx, traceLogger, endObservation := s.operations.resolveFileContents.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	relevantPaths, err := filterPathsByPatterns(paths, patternsForContent)
-	if err != nil {
-		return nil, err
-	}
+	relevantPaths := filterPathsByPatterns(paths, patternsForContent)
 	if len(relevantPaths) == 0 {
 		return nil, nil
 	}
@@ -558,16 +555,10 @@ func (s *Service) filterPathsForRecognizer(
 	contentsByPath map[string]string,
 ) ([]string, map[string]string, error) {
 	// Filter out paths which are not interesting to this recognizer
-	filteredPaths, err := filterPathsByPatterns(paths, recognizer.Patterns(false))
-	if err != nil {
-		return nil, nil, err
-	}
+	filteredPaths := filterPathsByPatterns(paths, recognizer.Patterns(false))
 
 	// Filter out paths which are not interesting to this recognizer
-	filteredPathsWithContent, err := filterPathsByPatterns(paths, recognizer.Patterns(true))
-	if err != nil {
-		return nil, nil, err
-	}
+	filteredPathsWithContent := filterPathsByPatterns(paths, recognizer.Patterns(true))
 
 	// Copy over content for remaining paths in map
 	filteredContentsByPath := make(map[string]string, len(filteredPathsWithContent))
