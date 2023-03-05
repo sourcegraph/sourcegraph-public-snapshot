@@ -8,13 +8,8 @@ import (
 )
 
 type operations struct {
-	exportRankingGraph *observation.Operation
-	mapRankingGraph    *observation.Operation
-	reduceRankingGraph *observation.Operation
-	getRepoRank        *observation.Operation
-	getDocumentRanks   *observation.Operation
-	indexRepositories  *observation.Operation
-	indexRepository    *observation.Operation
+	getRepoRank      *observation.Operation
+	getDocumentRanks *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -38,12 +33,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		exportRankingGraph: op("ExportRankingGraph"),
-		mapRankingGraph:    op("MapRankingGraph"),
-		reduceRankingGraph: op("ReduceRankingGraph"),
-		getRepoRank:        op("GetRepoRank"),
-		getDocumentRanks:   op("GetDocumentRanks"),
-		indexRepositories:  op("IndexRepositories"),
-		indexRepository:    op("indexRepository"),
+		getRepoRank:      op("GetRepoRank"),
+		getDocumentRanks: op("GetDocumentRanks"),
 	}
 }
