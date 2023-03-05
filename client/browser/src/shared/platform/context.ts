@@ -1,17 +1,15 @@
 import { combineLatest, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { asError } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 
-import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
+import { fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 
 export interface SourcegraphIntegrationURLs {
     /**
@@ -87,28 +85,8 @@ export function createPlatformContext(
                 }
             }
         },
-        updateSettings: async (subject, edit) => {
-            if (subject === 'Client') {
-                // Support storing settings on the client (in the browser extension) so that unauthenticated
-                // Sourcegraph viewers can update settings.
-                await updateSettings(context, subject, edit, () => editClientSettings(edit))
-                return
-            }
-
-            try {
-                await updateSettings(context, subject, edit, mutateSettings)
-            } catch (error) {
-                if (asError(error).message.includes('version mismatch')) {
-                    // The user probably edited the settings in another tab, so
-                    // try once more.
-                    await context.refreshSettings()
-                    await updateSettings(context, subject, edit, mutateSettings)
-                } else {
-                    throw error
-                }
-            }
-            // TODO: We shouldn't need to make another HTTP request to get the latest state
-            await context.refreshSettings()
+        updateSettings: () => {
+            throw new Error('not implemented')
         },
         requestGraphQL,
         getGraphQLClient: getBrowserGraphQLClient,
