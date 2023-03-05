@@ -79,6 +79,10 @@ func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	return s.store.GetDirtyRepositories(ctx)
+}
+
 // TODO(#48681) - Used by autoindexing/transport/graphql
 func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error) {
 	return s.store.GetIndexers(ctx, opts)
@@ -106,6 +110,10 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (bool, error) {
 
 func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error {
 	return s.store.DeleteUploads(ctx, opts)
+}
+
+func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	return s.store.GetRepositoriesMaxStaleAge(ctx)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
