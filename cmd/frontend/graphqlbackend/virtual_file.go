@@ -105,6 +105,7 @@ var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
 })
 
 func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+	fmt.Println("args", args)
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
 	if err != nil {
 		return nil, err
