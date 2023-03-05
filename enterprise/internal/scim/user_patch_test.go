@@ -214,8 +214,8 @@ func createPath(attr string, subAttr *string) *filter.Path {
 }
 
 func parseStringPath(path string) *filter.Path {
-	filter, _ := filter.ParsePath([]byte(path))
-	return &filter
+	f, _ := filter.ParsePath([]byte(path))
+	return &f
 }
 
 func strPtr(s string) *string {
