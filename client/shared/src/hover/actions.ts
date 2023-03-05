@@ -28,7 +28,6 @@ import {
     logger,
 } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { Context } from '@sourcegraph/template-parser'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -82,20 +81,17 @@ export function getHoverActions(
                 ),
         },
         hoverContext
-    ).pipe(switchMap(context => getHoverActionItems(context, extensionsController.extHostAPI)))
+    ).pipe(switchMap(context => getHoverActionItems(extensionsController.extHostAPI)))
 }
 
 /**
  * Gets active hover action items for the given context
  */
 export const getHoverActionItems = (
-    context: Context<TextDocumentPositionParameters>,
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<ActionItemAction[]> =>
     from(extensionHostAPI).pipe(
-        switchMap(extensionHostAPI =>
-            wrapRemoteObservable(extensionHostAPI.getContributions({ extraContext: context }))
-        ),
+        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions())),
         first(),
         map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
     )
@@ -105,7 +101,7 @@ export const getHoverActionItems = (
  *
  * @internal
  */
-export interface HoverActionsContext extends Context<TextDocumentPositionParameters> {
+export interface HoverActionsContext extends TextDocumentPositionParameters {
     ['goToDefinition.showLoading']: boolean
     ['goToDefinition.url']: string | null
     ['goToDefinition.notFound']: boolean
