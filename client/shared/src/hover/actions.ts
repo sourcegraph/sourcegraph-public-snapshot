@@ -16,7 +16,7 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
-import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -36,7 +36,6 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
 import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
-import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
@@ -44,57 +43,6 @@ import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../ut
 import { HoverContext } from './HoverOverlay'
 
 const LOADING = 'loading' as const
-
-/**
- * This function is passed to {@link module:@sourcegraph/codeintellify.createHoverifier}, which uses it to fetch
- * the list of buttons to display on the hover tooltip. This function in turn determines that by looking at all
- * action contributions for the "hover" menu. It also defines two builtin hover actions: "Go to definition" and
- * "Find references".
- */
-export function getHoverActions(
-    {
-        extensionsController,
-        platformContext,
-    }: ExtensionsControllerProps<'extHostAPI'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
-    hoverContext: HoveredToken & HoverContext
-): Observable<ActionItemAction[]> {
-    if (extensionsController === null) {
-        return EMPTY
-    }
-
-    return getHoverActionsContext(
-        {
-            platformContext,
-            getDefinition: parameters =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
-                ),
-            hasReferenceProvidersForDocument: parameters =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.hasReferenceProvidersForDocument(parameters))
-                    )
-                ),
-            getWorkspaceRoots: () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots()))
-                ),
-        },
-        hoverContext
-    ).pipe(switchMap(context => getHoverActionItems(extensionsController.extHostAPI)))
-}
-
-/**
- * Gets active hover action items for the given context
- */
-export const getHoverActionItems = (
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
-): Observable<ActionItemAction[]> =>
-    from(extensionHostAPI).pipe(
-        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions())),
-        first(),
-        map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
-    )
 
 /**
  * The scoped context properties for the hover.
