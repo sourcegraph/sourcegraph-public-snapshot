@@ -22,6 +22,22 @@ type Prefetcher struct {
 	indexCache      map[int]types.Index
 }
 
+type PrefetcherFactory struct {
+	autoindexingSvc AutoIndexingService
+	uploadSvc       UploadsService
+}
+
+func NewPrefetcherFactory(autoindexingSvc AutoIndexingService, uploadSvc UploadsService) *PrefetcherFactory {
+	return &PrefetcherFactory{
+		autoindexingSvc: autoindexingSvc,
+		uploadSvc:       uploadSvc,
+	}
+}
+
+func (f *PrefetcherFactory) Create() *Prefetcher {
+	return NewPrefetcher(f.autoindexingSvc, f.uploadSvc)
+}
+
 // NewPrefetcher returns a prefetcher with an empty cache.
 func NewPrefetcher(autoindexingSvc AutoIndexingService, uploadSvc UploadsService) *Prefetcher {
 	return &Prefetcher{

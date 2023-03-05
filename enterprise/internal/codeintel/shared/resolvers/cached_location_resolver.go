@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,7 +27,8 @@ import (
 type CachedLocationResolver struct {
 	sync.RWMutex
 	repositoryResolvers map[api.RepoID]*cachedRepositoryResolver
-	db                  database.DB
+	cloneURLToRepoName  CloneURLToRepoNameFunc
+	repoStore           database.RepoStore
 	gitserverClient     gitserver.Client
 	logger              log.Logger
 }
@@ -45,11 +45,30 @@ type cachedCommitResolver struct {
 	pathResolvers  map[string]*GitTreeEntryResolver
 }
 
+type CachedLocationResolverFactory struct {
+	cloneURLToRepoName CloneURLToRepoNameFunc
+	repoStore          database.RepoStore
+	gitserverClient    gitserver.Client
+}
+
+func NewCachedLocationResolverFactory(cloneURLToRepoName CloneURLToRepoNameFunc, repoStore database.RepoStore, gitserverClient gitserver.Client) *CachedLocationResolverFactory {
+	return &CachedLocationResolverFactory{
+		cloneURLToRepoName: cloneURLToRepoName,
+		repoStore:          repoStore,
+		gitserverClient:    gitserverClient,
+	}
+}
+
+func (f *CachedLocationResolverFactory) Create() *CachedLocationResolver {
+	return NewCachedLocationResolver(f.cloneURLToRepoName, f.repoStore, f.gitserverClient)
+}
+
 // NewCachedLocationResolver creates a location resolver with an empty cache.
-func NewCachedLocationResolver(db database.DB, gitserverClient gitserver.Client) *CachedLocationResolver {
+func NewCachedLocationResolver(cloneURLToRepoName CloneURLToRepoNameFunc, repoStore database.RepoStore, gitserverClient gitserver.Client) *CachedLocationResolver {
 	return &CachedLocationResolver{
 		logger:              log.Scoped("CachedLocationResolver", ""),
-		db:                  db,
+		cloneURLToRepoName:  cloneURLToRepoName,
+		repoStore:           repoStore,
 		gitserverClient:     gitserverClient,
 		repositoryResolvers: map[api.RepoID]*cachedRepositoryResolver{},
 	}
@@ -205,7 +224,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, id)
+	repo, err := r.repoStore.Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -213,7 +232,7 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 		return nil, err
 	}
 
-	return NewRepositoryResolver(r.db, repo), nil
+	return NewRepositoryResolver(repo), nil
 }
 
 // Commit resolves the git commit with the given repository resolver and commit hash. This method may
@@ -239,5 +258,5 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolvePath(commitResolver *GitCommitResolver, path string) *GitTreeEntryResolver {
-	return NewGitTreeEntryResolver(r.db, commitResolver, CreateFileInfo(path, false))
+	return NewGitTreeEntryResolver(r.cloneURLToRepoName, commitResolver, CreateFileInfo(path, false))
 }
