@@ -67,8 +67,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// avoid mutation
-	repoURL := *r.canonicalRepoRevURL()
+	repoURL := &url.URL{Path: "/" + r.repoResolver.Name()}
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -78,5 +77,5 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	if rev != "" {
 		repoURL.Path += "@" + rev
 	}
-	return &repoURL
+	return repoURL
 }
