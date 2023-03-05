@@ -137,6 +137,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
             })
             .pipe(
                 map(({ data, errors }) => {
+                    console.log({ data, errors })
                     if (!data?.repository?.commit?.file?.highlight) {
                         throw createAggregateError(errors)
                     }

@@ -21,7 +21,7 @@ pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
-use crate::sg_treesitter::treesitter_language;
+use crate::sg_treesitter::{make_highlight_range, treesitter_language, HighlightRange};
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
 
@@ -55,9 +55,9 @@ pub struct SourcegraphQuery {
     #[serde(default)]
     pub filepath: String,
 
-    pub start_line: Option<usize>,
+    pub start_line: Option<i32>,
 
-    pub end_line: Option<usize>,
+    pub end_line: Option<i32>,
 
     // The language defined by the server. Required to tree-sitter to use for the filetype name.
     // default empty string value for backwards compat with clients who do not specify this field.
@@ -302,7 +302,7 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
                 q.code.as_str(),
                 q.line_length_limit,
             )
-            .generate();
+            .generate(make_highlight_range(q.start_line, q.end_line));
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
             Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
         }),

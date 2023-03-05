@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 
 	"github.com/gogo/protobuf/jsonpb"
@@ -99,6 +100,7 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Metadata:           metadata,
 		Format:             gosyntect.GetResponseFormat(args.Format),
 	})
+	fmt.Println("highlightContent", aborted, err)
 
 	resolver.aborted = aborted
 	resolver.response = response

@@ -100,25 +100,23 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
 
     // Get the plain text (unhighlighted) blob lines
     useEffect(() => {
-        let subscription: Subscription | undefined
         if (isVisible && fetchPlainTextFileRangeLines) {
-            subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
+            fetchPlainTextFileRangeLines(startLine, endLine).forEach(blobLinesOrError => {
                 setPlainTextBlobLinesOrError(blobLinesOrError)
             })
         }
-        return () => subscription?.unsubscribe()
+        return () => {}
     }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
-        let subscription: Subscription | undefined
         if (isVisible) {
             const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
-            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
+            observable.pipe(catchError(error => [asError(error)])).forEach(blobLinesOrError => {
                 setHighlightedBlobLinesOrError(blobLinesOrError)
             })
         }
-        return () => subscription?.unsubscribe()
+        return () => {}
     }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches

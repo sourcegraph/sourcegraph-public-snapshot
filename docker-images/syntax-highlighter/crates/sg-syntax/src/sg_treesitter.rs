@@ -187,17 +187,11 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    let mut range: Option<HighlightRange> = None;
-    if let Some(start_line) = q.start_line {
-        if let Some(end_line) = q.end_line {
-            range = Some(HighlightRange {
-                start_line,
-                end_line,
-            });
-        }
-    }
-
-    match index_language_with_range(&filetype, &q.code, range) {
+    match index_language_with_range(
+        &filetype,
+        &q.code,
+        make_highlight_range(q.start_line, q.end_line),
+    ) {
         Ok(document) => {
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
@@ -245,8 +239,23 @@ pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightCo
 }
 
 pub struct HighlightRange {
-    start_line: usize,
-    end_line: usize,
+    pub start_line: usize,
+    pub end_line: usize,
+}
+
+// Construcotor for highlight range that takes two option i32
+// and returns a HighlightRange
+pub fn make_highlight_range(
+    start_line: Option<i32>,
+    end_line: Option<i32>,
+) -> Option<HighlightRange> {
+    match (start_line, end_line) {
+        (Some(start_line), Some(end_line)) => Some(HighlightRange {
+            start_line: start_line as usize,
+            end_line: end_line as usize,
+        }),
+        _ => None,
+    }
 }
 
 pub fn index_language_with_config(
@@ -449,16 +458,12 @@ impl ScipEmitter {
                     start: start_byte,
                     end: end_byte,
                 } => {
-                    let (occurrence_start_line, _) = line_manager.line_and_col(start_byte);
-                    let (occurrence_end_line, _) = line_manager.line_and_col(end_byte);
-                    if occurrence_end_line > end_line {
-                        // TODO: figure out how to get TSHighlighter to actually cancel the iterator
+                    if line_manager.line_and_col(end_byte).0 > end_line {
                         cancellation_flag.store(1, Ordering::Relaxed);
-                        println!("Cancelling at line {}", occurrence_end_line);
+                        // Stop emitting occurrences because we reach past the end of the requested range.
                         break;
-                    } else if occurrence_start_line < start_line {
-                        println!("Skipping occurrence at line {}", occurrence_start_line);
-                        // do nothing
+                    } else if line_manager.line_and_col(start_byte).0 < start_line {
+                        // do nothing because this occurrence appears before the requested range.
                     } else {
                         let mut occurrence = Occurrence::new();
                         occurrence.range = line_manager.range(start_byte, end_byte);

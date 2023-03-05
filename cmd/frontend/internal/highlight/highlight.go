@@ -380,19 +380,23 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return nil, false, ErrBinary
 	}
 	code := string(p.Content)
-	// if p.EndLine != nil {
-	// 	line := int32(0)
-	// 	for i, c := range code {
-	// 		if c == '\n' {
-	// 			line++
-	// 			if line == *p.EndLine {
-	// 				// TODO: handle custom context window size
-	// 				code = code[:i+1]
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-	// }
+	if p.Format == gosyntect.FormatHTMLHighlight && p.EndLine != nil {
+		// Cut off the text after the end line. We can't do this for tree-sitter
+		// highlighting because tree-sitter needs the full file to successfully
+		// parse the contents into an AST. For example, if we cut the file
+		// inside the definition of a struct then the `struct` and `type`
+		// keywords won't get highlighted correctly.
+		line := int32(0)
+		for i, c := range code {
+			if c == '\n' {
+				line++
+				if line == *p.EndLine {
+					code = code[:i+1]
+					break
+				}
+			}
+		}
+	}
 
 	// Trim a single newline from the end of the file. This means that a file
 	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
