@@ -2,10 +2,6 @@ import minimatch from 'minimatch'
 
 import { DocumentFilter, DocumentSelector, Position, TextDocument } from '../../../codeintel/legacy-extensions/api'
 
-// TODO(sqs): can maybe remove some stuff from this file after the bext/vscode/jetbrains migration
-
-import type { DocumentFilter, DocumentSelector, TextDocument } from '../../../codeintel/legacy-extensions/api'
-
 /**
  * Returns whether any of the document selectors match (or "select") the document.
  */
