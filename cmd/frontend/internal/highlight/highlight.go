@@ -75,6 +75,11 @@ type Params struct {
 	// file name + extension.
 	Filepath string
 
+	// Filepath is used to detect the language, it must contain at least the
+	// file name + extension.
+	StartLine *int32
+	EndLine   *int32
+
 	// DisableTimeout indicates whether or not a user has requested to wait as
 	// long as needed to get highlighted results (this should never be on by
 	// default, as some files can take a very long time to highlight).
@@ -375,6 +380,19 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return nil, false, ErrBinary
 	}
 	code := string(p.Content)
+	// if p.EndLine != nil {
+	// 	line := int32(0)
+	// 	for i, c := range code {
+	// 		if c == '\n' {
+	// 			line++
+	// 			if line == *p.EndLine {
+	// 				// TODO: handle custom context window size
+	// 				code = code[:i+1]
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// Trim a single newline from the end of the file. This means that a file
 	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
@@ -416,9 +434,21 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		maxLineLength = 2000
 	}
 
+	if p.StartLine != nil {
+		fmt.Println("startLine: ", p.StartLine)
+	} else {
+		fmt.Println("startLine: nil")
+	}
+	if p.EndLine != nil {
+		fmt.Println("endLine: ", p.EndLine)
+	} else {
+		fmt.Println("endLine: nil")
+	}
 	query := &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
+		StartLine:        p.StartLine,
+		EndLine:          p.EndLine,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,

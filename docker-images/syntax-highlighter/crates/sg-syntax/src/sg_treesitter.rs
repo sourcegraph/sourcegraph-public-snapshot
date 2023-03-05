@@ -1,7 +1,9 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::Write as _; // import without risk of name clashing
+use std::fmt::Write as _;
+use std::sync::atomic::{AtomicUsize, Ordering};
+// import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -28,54 +30,54 @@ use sg_macros::include_project_file_optional;
 //  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
 //  particularly new rust code to be written. You can just modify queries for that)
 const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("boolean",                 SyntaxKind::BooleanLiteral),
-    ("character",               SyntaxKind::CharacterLiteral),
-    ("comment",                 SyntaxKind::Comment),
-    ("conditional",             SyntaxKind::IdentifierKeyword),
-    ("constant",                SyntaxKind::IdentifierConstant),
-    ("identifier.constant",     SyntaxKind::IdentifierConstant),
-    ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("constant.null",           SyntaxKind::IdentifierNull),
-    ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunction),
-    ("identifier.function",     SyntaxKind::IdentifierFunction),
-    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("identifier",              SyntaxKind::Identifier),
-    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
-    ("tag.attribute",           SyntaxKind::TagAttribute),
-    ("include",                 SyntaxKind::IdentifierKeyword),
-    ("keyword",                 SyntaxKind::IdentifierKeyword),
-    ("keyword.function",        SyntaxKind::IdentifierKeyword),
-    ("keyword.return",          SyntaxKind::IdentifierKeyword),
-    ("method",                  SyntaxKind::IdentifierFunction),
-    ("number",                  SyntaxKind::NumericLiteral),
-    ("operator",                SyntaxKind::IdentifierOperator),
-    ("identifier.operator",     SyntaxKind::IdentifierOperator),
-    ("property",                SyntaxKind::Identifier),
-    ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
-    ("string",                  SyntaxKind::StringLiteral),
-    ("string.special",          SyntaxKind::StringLiteral),
-    ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
-    ("type",                    SyntaxKind::IdentifierType),
-    ("identifier.type",         SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
-    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
-    ("regex.join",              SyntaxKind::RegexJoin),
-    ("regex.escape",            SyntaxKind::RegexEscape),
-    ("regex.repeated",          SyntaxKind::RegexRepeated),
-    ("regex.wildcard",          SyntaxKind::RegexWildcard),
-    ("identifier",              SyntaxKind::Identifier),
-    ("variable",                SyntaxKind::Identifier),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
-    ("variable.parameter",      SyntaxKind::IdentifierParameter),
-    ("identifier.module",       SyntaxKind::IdentifierModule),
-    ("variable.module",         SyntaxKind::IdentifierModule),
+    ("boolean", SyntaxKind::BooleanLiteral),
+    ("character", SyntaxKind::CharacterLiteral),
+    ("comment", SyntaxKind::Comment),
+    ("conditional", SyntaxKind::IdentifierKeyword),
+    ("constant", SyntaxKind::IdentifierConstant),
+    ("identifier.constant", SyntaxKind::IdentifierConstant),
+    ("constant.builtin", SyntaxKind::IdentifierBuiltin),
+    ("constant.null", SyntaxKind::IdentifierNull),
+    ("float", SyntaxKind::NumericLiteral),
+    ("function", SyntaxKind::IdentifierFunction),
+    ("identifier.function", SyntaxKind::IdentifierFunction),
+    ("function.builtin", SyntaxKind::IdentifierBuiltin),
+    ("identifier.builtin", SyntaxKind::IdentifierBuiltin),
+    ("identifier", SyntaxKind::Identifier),
+    ("identifier.attribute", SyntaxKind::IdentifierAttribute),
+    ("tag.attribute", SyntaxKind::TagAttribute),
+    ("include", SyntaxKind::IdentifierKeyword),
+    ("keyword", SyntaxKind::IdentifierKeyword),
+    ("keyword.function", SyntaxKind::IdentifierKeyword),
+    ("keyword.return", SyntaxKind::IdentifierKeyword),
+    ("method", SyntaxKind::IdentifierFunction),
+    ("number", SyntaxKind::NumericLiteral),
+    ("operator", SyntaxKind::IdentifierOperator),
+    ("identifier.operator", SyntaxKind::IdentifierOperator),
+    ("property", SyntaxKind::Identifier),
+    ("punctuation", SyntaxKind::UnspecifiedSyntaxKind),
+    ("punctuation.bracket", SyntaxKind::UnspecifiedSyntaxKind),
+    ("punctuation.delimiter", SyntaxKind::PunctuationDelimiter),
+    ("string", SyntaxKind::StringLiteral),
+    ("string.special", SyntaxKind::StringLiteral),
+    ("string.escape", SyntaxKind::StringLiteralEscape),
+    ("tag", SyntaxKind::UnspecifiedSyntaxKind),
+    ("type", SyntaxKind::IdentifierType),
+    ("identifier.type", SyntaxKind::IdentifierType),
+    ("type.builtin", SyntaxKind::IdentifierBuiltinType),
+    ("regex.delimiter", SyntaxKind::RegexDelimiter),
+    ("regex.join", SyntaxKind::RegexJoin),
+    ("regex.escape", SyntaxKind::RegexEscape),
+    ("regex.repeated", SyntaxKind::RegexRepeated),
+    ("regex.wildcard", SyntaxKind::RegexWildcard),
+    ("identifier", SyntaxKind::Identifier),
+    ("variable", SyntaxKind::Identifier),
+    ("identifier.builtin", SyntaxKind::IdentifierBuiltin),
+    ("variable.builtin", SyntaxKind::IdentifierBuiltin),
+    ("identifier.parameter", SyntaxKind::IdentifierParameter),
+    ("variable.parameter", SyntaxKind::IdentifierParameter),
+    ("identifier.module", SyntaxKind::IdentifierModule),
+    ("variable.module", SyntaxKind::IdentifierModule),
 ];
 
 /// Maps a highlight to a syntax kind.
@@ -185,7 +187,17 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    match index_language(&filetype, &q.code) {
+    let mut range: Option<HighlightRange> = None;
+    if let Some(start_line) = q.start_line {
+        if let Some(end_line) = q.end_line {
+            range = Some(HighlightRange {
+                start_line,
+                end_line,
+            });
+        }
+    }
+
+    match index_language_with_range(&filetype, &q.code, range) {
         Ok(document) => {
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
@@ -198,11 +210,19 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     }
 }
 
-pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
+pub fn index_language_with_range(
+    filetype: &str,
+    code: &str,
+    range: Option<HighlightRange>,
+) -> Result<Document, Error> {
     match CONFIGURATIONS.get(filetype) {
-        Some(lang_config) => index_language_with_config(code, lang_config),
+        Some(lang_config) => index_language_with_config(code, lang_config, range),
         None => Err(Error::InvalidLanguage),
     }
+}
+
+pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
+    return index_language_with_range(filetype, code, None);
 }
 
 pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
@@ -224,9 +244,15 @@ pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightCo
     Some(lang)
 }
 
+pub struct HighlightRange {
+    start_line: usize,
+    end_line: usize,
+}
+
 pub fn index_language_with_config(
     code: &str,
     lang_config: &HighlightConfiguration,
+    range: Option<HighlightRange>,
 ) -> Result<Document, Error> {
     // Normalize string to be always only \n endings.
     //  We don't care that the byte offsets are "incorrect" now for this
@@ -239,12 +265,22 @@ pub fn index_language_with_config(
     // Unfortunately, that information isn't currently available when
     // we are iterating in the higlighter.
     let mut highlighter = TSHighlighter::new();
-    let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
-        CONFIGURATIONS.get(l)
-    })?;
+    let cancellation_flag = AtomicUsize::new(0);
+    let highlights = highlighter.highlight(
+        lang_config,
+        code.as_bytes(),
+        Some(&cancellation_flag),
+        |l| CONFIGURATIONS.get(l),
+    )?;
 
     let mut emitter = ScipEmitter::new();
-    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
+    emitter.render(
+        highlights,
+        &code,
+        &get_syntax_kind_for_hl,
+        &cancellation_flag,
+        range,
+    )
 }
 
 struct OffsetManager {
@@ -385,11 +421,15 @@ impl ScipEmitter {
         highlighter: impl Iterator<Item = Result<HighlightEvent, Error>>,
         source: &str,
         _attribute_callback: &F,
+        cancellation_flag: &AtomicUsize,
+        range: Option<HighlightRange>,
     ) -> Result<Document, Error>
     where
         F: Fn(Highlight) -> SyntaxKind,
     {
         let mut doc = Document::new();
+        let start_line = range.as_ref().map(|r| r.start_line).unwrap_or(usize::MIN);
+        let end_line = range.as_ref().map(|r| r.end_line).unwrap_or(usize::MAX);
 
         let line_manager = OffsetManager::new(source)?;
 
@@ -409,12 +449,24 @@ impl ScipEmitter {
                     start: start_byte,
                     end: end_byte,
                 } => {
-                    let mut occurrence = Occurrence::new();
-                    occurrence.range = line_manager.range(start_byte, end_byte);
-                    occurrence.syntax_kind =
-                        get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
+                    let (occurrence_start_line, _) = line_manager.line_and_col(start_byte);
+                    let (occurrence_end_line, _) = line_manager.line_and_col(end_byte);
+                    if occurrence_end_line > end_line {
+                        // TODO: figure out how to get TSHighlighter to actually cancel the iterator
+                        cancellation_flag.store(1, Ordering::Relaxed);
+                        println!("Cancelling at line {}", occurrence_end_line);
+                        break;
+                    } else if occurrence_start_line < start_line {
+                        println!("Skipping occurrence at line {}", occurrence_start_line);
+                        // do nothing
+                    } else {
+                        let mut occurrence = Occurrence::new();
+                        occurrence.range = line_manager.range(start_byte, end_byte);
+                        occurrence.syntax_kind =
+                            get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
 
-                    doc.occurrences.push(occurrence);
+                        doc.occurrences.push(occurrence);
+                    }
                 }
             }
         }

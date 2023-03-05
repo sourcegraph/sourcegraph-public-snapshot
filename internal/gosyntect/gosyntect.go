@@ -49,6 +49,9 @@ type Query struct {
 	// See: https://github.com/sourcegraph/syntect_server#supported-file-extensions
 	Filepath string `json:"filepath"`
 
+	StartLine *int32 `json:"start_line,omitempty"`
+	EndLine   *int32 `json:"end_line,omitempty"`
+
 	// Filetype is the language name.
 	Filetype string `json:"filetype"`
 

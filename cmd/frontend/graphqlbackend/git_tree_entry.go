@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -168,13 +169,23 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+	var startLine *int32
+	var endLine *int32
+	if args.Format == "HTML_PLAINTEXT" {
+		startLine = args.StartLine
+		endLine = args.EndLine
+	}
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
 	if (args.StartLine != nil || args.EndLine != nil) && args.Format != "HTML_PLAINTEXT" {
-		return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +
-			"set startLine or endLine with other formats")
+		fmt.Println("args.StartLine", *args.StartLine)
+		fmt.Println("args.EndLine", *args.EndLine)
+		// args.StartLine = nil
+		// args.EndLine = nil
+		// return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +
+		// 	"set startLine or endLine with other formats")
 	}
 
-	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: startLine, EndLine: endLine})
 	if err != nil {
 		return nil, err
 	}

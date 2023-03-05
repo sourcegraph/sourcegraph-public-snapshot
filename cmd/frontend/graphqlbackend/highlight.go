@@ -94,6 +94,8 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		DisableTimeout:     args.DisableTimeout,
 		HighlightLongLines: args.HighlightLongLines,
 		SimulateTimeout:    simulateTimeout,
+		StartLine:          args.StartLine,
+		EndLine:            args.EndLine,
 		Metadata:           metadata,
 		Format:             gosyntect.GetResponseFormat(args.Format),
 	})

@@ -18,7 +18,9 @@ import { makeRepoURI } from '../util/url'
     As we don't have feature detection implemented for the VSCode extensions yet,
     we omit `format` variable for this query if it comes from the VSCode extension.
 */
-type RequestVariables = Omit<HighlightedFileVariables, 'format'> & { format?: HighlightedFileVariables['format'] }
+type RequestVariables = Omit<HighlightedFileVariables, 'format'> & {
+    format?: HighlightedFileVariables['format']
+}
 
 const IS_VSCE = typeof window !== 'undefined' && typeof (window as any).acquireVsCodeApi === 'function'
 
@@ -27,6 +29,8 @@ const HIGHLIGHTED_FILE_QUERY = gql`
         $repoName: String!
         $commitID: String!
         $filePath: String!
+        $startLine: Int
+        $endLine: Int
         $disableTimeout: Boolean!
         $ranges: [HighlightLineRange!]!
         $format: HighlightResponseFormat!
@@ -36,7 +40,12 @@ const HIGHLIGHTED_FILE_QUERY = gql`
                 file(path: $filePath) {
                     isDirectory
                     richHTML
-                    highlight(disableTimeout: $disableTimeout, format: $format) {
+                    highlight(
+                        disableTimeout: $disableTimeout
+                        format: $format
+                        startLine: $startLine
+                        endLine: $endLine
+                    ) {
                         aborted
                         lineRanges(ranges: $ranges)
                     }
@@ -91,9 +100,22 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         platformContext: Pick<PlatformContext, 'requestGraphQL'>
     }): Observable<string[][]> => {
         let request = HIGHLIGHTED_FILE_QUERY
+
+        let startLine: number | null = null
+        let endLine: number | null = null
+        for (const range of context.ranges) {
+            if (startLine === null || range.startLine < startLine) {
+                startLine = range.startLine
+            }
+            if (endLine === null || range.endLine > endLine) {
+                endLine = range.endLine
+            }
+        }
         const variables: RequestVariables = {
             ...context,
             format,
+            startLine,
+            endLine,
             disableTimeout: Boolean(context.disableTimeout),
         }
 

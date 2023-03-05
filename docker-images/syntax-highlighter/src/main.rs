@@ -8,6 +8,7 @@ use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
+    println!("/: {:?}", q);
     // TODO(slimsag): In an ideal world we wouldn't be relying on catch_unwind
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
@@ -24,6 +25,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
+    // println!("/lsif: {:?}", q);
     match sg_syntax::lsif_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
@@ -32,6 +34,7 @@ fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
+    // println!("/scip: {:?}", q);
     match sg_syntax::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,

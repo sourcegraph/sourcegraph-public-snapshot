@@ -55,6 +55,10 @@ pub struct SourcegraphQuery {
     #[serde(default)]
     pub filepath: String,
 
+    pub start_line: Option<usize>,
+
+    pub end_line: Option<usize>,
+
     // The language defined by the server. Required to tree-sitter to use for the filetype name.
     // default empty string value for backwards compat with clients who do not specify this field.
     pub filetype: Option<String>,
@@ -91,6 +95,9 @@ pub struct ScipHighlightQuery {
 
     // filepath is only used if language is None.
     pub filepath: String,
+
+    pub start_line: Option<i32>,
+    pub end_line: Option<i32>,
 
     // The language defined by the server. Required to tree-sitter to use for the filetype name.
     // default empty string value for backwards compat with clients who do not specify this field.
@@ -279,6 +286,8 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             let sg_query = SourcegraphQuery {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),
+                end_line: None,
+                start_line: None,
                 filetype: q.filetype.clone(),
                 css: true,
                 line_length_limit: None,
