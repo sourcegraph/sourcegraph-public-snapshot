@@ -11,6 +11,7 @@ import { gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -63,7 +64,7 @@ export function createPlatformContext(): PlatformContext {
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        urlToFile: toPrettyWebBlobURL,
+        urlToFile: toPrettyBlobURL,
         sourcegraphURL: window.context.externalURL,
         telemetryService: eventLogger,
     }
