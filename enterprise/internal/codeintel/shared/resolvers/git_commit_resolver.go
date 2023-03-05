@@ -58,7 +58,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	return &url.URL{Path: "/" + string(r.repoResolver.Name()+"@"+string(r.oid))}
+	return &url.URL{Path: "/" + r.repoResolver.Name() + "@" + string(r.oid)}
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
