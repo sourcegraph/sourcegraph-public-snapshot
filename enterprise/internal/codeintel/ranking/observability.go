@@ -12,7 +12,9 @@ type operations struct {
 	getDocumentRanks *observation.Operation
 }
 
-var m = new(metrics.SingletonREDMetrics)
+var (
+	m = new(metrics.SingletonREDMetrics)
+)
 
 func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
