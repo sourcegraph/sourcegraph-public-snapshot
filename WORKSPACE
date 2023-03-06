@@ -237,8 +237,9 @@ rules_rust_dependencies()
 
 rust_register_toolchains(
   edition = "2021",
+  # Keep in sync with docker-images/syntax-highlighter/Dockerfile
   versions = [
-    "1.63.0"
+    "1.67.1"
   ],
 )
 
