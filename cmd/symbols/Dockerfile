@@ -66,7 +66,9 @@ COPY --from=symbols-build /symbols /usr/local/bin/symbols
 # symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
-ENV SYMBOLS_CACHE_DIR=/mnt/cache/symbols
-RUN mkdir -p ${SYMBOLS_CACHE_DIR}
+# Use SYMBOLS_CACHE_DIR to set the cache dir at runtime for the symbols service. Setting CACHE_DIR
+# will also apply to other services and is deprecated.
+ENV CACHE_DIR=/mnt/cache/symbols
+RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]
