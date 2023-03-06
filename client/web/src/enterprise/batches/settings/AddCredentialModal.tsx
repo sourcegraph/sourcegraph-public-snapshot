@@ -54,8 +54,9 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     ),
     [ExternalServiceKind.AZUREDEVOPS]: (
         <span>
-            with <Code>Organization:All accessible organizations</Code>, <Code>Code:Full</Code>, <Code>Code:Status</Code>, <Code>Pull Request Threads:Read & Write</Code>, and{' '}
-            <Code>User Profile:Read</Code> permissions.
+            with <Code>Organization:All accessible organizations</Code>, <Code>Code:Full</Code>,{' '}
+            <Code>Code:Status</Code>, <Code>Pull Request Threads:Read & Write</Code>, and <Code>User Profile:Read</Code>{' '}
+            permissions.
         </span>
     ),
     // These are just for type completeness and serve as placeholders for a bright future.
