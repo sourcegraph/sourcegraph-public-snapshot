@@ -21,6 +21,7 @@ import (
 // At this point only data from CODEOWNERS file is presented, if available.
 type Service interface {
 	// RulesetForRepo returns a CODEOWNERS file ruleset from a given repository at given commit ID.
+	// If a CODEOWNERS file has been manually ingested for the repository, it will prioritise returning that file.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
 	RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error)
 
