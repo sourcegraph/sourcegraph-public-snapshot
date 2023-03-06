@@ -108,8 +108,7 @@ brews:
     license: "Sourcegraph Enterprise License (portions licensed under Apache 2)"
     tap:
       owner: sourcegraph
-      # TODO(sqs): use just sourcegraph/homebrew-sourcegraph
-      name: homebrew-sourcegraph-app
+      name: homebrew-app
     url_template: https://storage.googleapis.com/sourcegraph-app-releases/{{ .Tag }}/{{ .ArtifactName }}
     commit_author:
       name: sourcegraph-buildkite
