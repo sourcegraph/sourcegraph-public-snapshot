@@ -432,10 +432,11 @@ WHERE id = ANY(%s)
 `
 
 type ListPackageRepoRefFiltersOpts struct {
-	IDs           []int
-	PackageScheme string
-	After         int
-	Limit         int
+	IDs            []int
+	PackageScheme  string
+	IncludeDeleted bool
+	After          int
+	Limit          int
 }
 
 func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
@@ -448,9 +449,10 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 	defer endObservation(1, observation.Args{})
 
 	conds := make([]*sqlf.Query, 0, 4)
-	// we never want to surface filters, and the table should be small enough that a
-	// handful of old entries doesnt matter.
-	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+
+	if !opts.IncludeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 
 	if len(opts.IDs) != 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(opts.IDs)))
@@ -462,6 +464,10 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 
 	if opts.After != 0 {
 		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	limit := sqlf.Sprintf("")
@@ -484,9 +490,10 @@ const listPackageRepoRefFiltersQuery = `
 SELECT id, behaviour, scheme, matcher, deleted_at, updated_at
 FROM package_repo_filters
 -- filter
-%s
+WHERE %s
 -- limit
 %s
+ORDER BY id
 `
 
 func deref(s *string) string {

@@ -37,7 +37,9 @@ func NewPackagesFilterApplicator(
 func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 	var pkgsAffected, versionsAffected int
 
-	filters, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
+	filters, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+		IncludeDeleted: true,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to list package repo filters")
 	}

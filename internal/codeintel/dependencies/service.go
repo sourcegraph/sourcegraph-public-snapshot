@@ -92,10 +92,11 @@ func (s *Service) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...i
 }
 
 type ListPackageRepoRefFiltersOpts struct {
-	IDs           []int
-	PackageScheme string
-	After         int
-	Limit         int
+	IDs            []int
+	PackageScheme  string
+	IncludeDeleted bool
+	After          int
+	Limit          int
 }
 
 func deref(s *string) string {
