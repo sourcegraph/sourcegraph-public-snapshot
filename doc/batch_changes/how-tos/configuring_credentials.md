@@ -171,7 +171,7 @@ Follow the steps to [create a PAT](https://learn.microsoft.com/en-us/azure/devop
 
 > NOTE: Click "Show all scopes" at the bottom of the "Create a new PAT" popup to get the full list of available scopes.
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Bitbucket Cloud app password creation page">
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Azure DevOps PAT creation page">
 
 ### SSH access to code host
 
