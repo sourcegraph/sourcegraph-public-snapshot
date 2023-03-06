@@ -13,12 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-// Patch update one or more attributes of a SCIM resource using a sequence of
+// Patch updates one or more attributes of a SCIM resource using a sequence of
 // operations to "add", "remove", or "replace" values.
-// If you return no Resource.Attributes, a 204 No Content status code will be returned.
+// If this returns no Resource.Attributes, a 204 No Content status code will be returned.
 // This case is only valid in the following scenarios:
-// 1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
-// 2. the Remove operation should return No Content when the value to be removed is already absent.
+//    1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
+//    2. the Remove operation should return No Content when the value to be removed is already absent.
 // More information in Section 3.5.2 of RFC 7644: https://tools.ietf.org/html/rfc7644#section-3.5.2
 func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []scim.PatchOperation) (scim.Resource, error) {
 	if err := checkBodyNotEmpty(r); err != nil {
@@ -53,7 +53,8 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				subAttrName = op.Path.AttributePath.SubAttributeName()
 				valueExpr   = op.Path.ValueExpression
 			)
-			// When a filter is present SubAttributeName() isn't populated
+			// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
+			// Populating it manually here.
 			if subAttrName == "" && op.Path.SubAttribute != nil {
 				subAttrName = *op.Path.SubAttribute
 			}
@@ -62,14 +63,14 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			old, ok := userRes.Attributes[attrName]
 			if !ok && op.Op != "remove" {
 				switch {
-				case subAttrName != "":
+				case subAttrName != "": // Add new attribute with a sub-attribute
 					userRes.Attributes[attrName] = map[string]interface{}{
 						subAttrName: op.Value,
 					}
 					changed = true
 				case valueExpr != nil:
-					// TODO: Implement value expression handling
-				default:
+					// Having a value expression for a non-existing attribute is invalid → do nothing
+				default: // Add new attribute
 					userRes.Attributes[attrName] = op.Value
 					changed = true
 				}
@@ -80,16 +81,16 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			switch op.Op {
 			case "add", "replace":
 				switch v := op.Value.(type) {
-				case []interface{}:
+				case []interface{}: // this value has multiple items → append or replace
 					if op.Op == "add" {
 						userRes.Attributes[attrName] = append(old.([]interface{}), v...)
 					} else { // replace
 						userRes.Attributes[attrName] = v
 					}
 					changed = true
-				default:
+				default: // this value has a single item
 					var newlyChanged bool
-					if valueExpr == nil { // no value expression just apply the change
+					if valueExpr == nil { // no value expression → just apply the change
 						if subAttrName != "" {
 							newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
 						} else {
@@ -101,7 +102,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 					// We have a valueExpression to apply which means this must be a slice
 					attributeItems, isArray := userRes.Attributes[attrName].([]interface{})
 					if !isArray {
-						continue // This isn't an slice so nothing will match the expression
+						continue // This isn't a slice, so nothing will match the expression → do nothing
 					}
 					validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
 					for i := 0; i < len(attributeItems); i++ {
@@ -126,7 +127,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				}
 			case "remove":
 				currentValue, ok := userRes.Attributes[attrName]
-				if !ok { // The current attribute does not exist nothing to do
+				if !ok { // The current attribute does not exist - nothing to do
 					continue
 				}
 
@@ -148,7 +149,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 							remainingItems = append(remainingItems, item)
 						}
 					}
-					// Even though this is a "remove" operation since there is a filter we actually replacing
+					// Even though this is a "remove" operation since there is a filter we're actually replacing
 					// the attribute with the items that do not match the filter
 					newlyChanged := applyAttributeChange(userRes.Attributes, attrName, remainingItems, "replace")
 					changed = changed || newlyChanged
