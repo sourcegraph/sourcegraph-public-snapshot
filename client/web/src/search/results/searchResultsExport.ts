@@ -9,6 +9,9 @@ import {
     CommitMatch,
     getCommitMatchUrl,
     SymbolMatch,
+    PersonMatch,
+    TeamMatch,
+    getOwnerMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -147,6 +150,34 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                             sanitizeString(result.message),
                             result.oid,
                             commitURL,
+                        ]
+                    }),
+            ]
+            break
+        }
+
+        case 'person':
+        case 'team': {
+            content = [
+                ['Match type', 'Handle', 'Email', 'User or team name', 'Display name', 'Profile URL'],
+                ...searchResults
+                    .filter(
+                        (result: SearchMatch): result is PersonMatch | TeamMatch =>
+                            result.type === 'person' || result.type === 'team'
+                    )
+                    .map(result => {
+                        let profileUrl = getOwnerMatchUrl(result, true)
+                        if (profileUrl) {
+                            profileUrl = new URL(profileUrl, sourcegraphURL).toString()
+                        }
+
+                        return [
+                            result.type,
+                            result.handle,
+                            result.email,
+                            result.type === 'person' ? result.user?.username : result.name,
+                            result.type === 'person' ? result.user?.displayName : result.displayName,
+                            profileUrl,
                         ]
                     }),
             ]

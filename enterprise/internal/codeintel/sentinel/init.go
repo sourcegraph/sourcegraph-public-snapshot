@@ -35,6 +35,6 @@ func CVEScannerJob(observationCtx *observation.Context, service *Service) []goro
 
 	return []goroutine.BackgroundRoutine{
 		background.NewCVEDownloader(service.store, metrics, ConfigInst.DownloaderInterval),
-		background.NewCVEMatcher(service.store, metrics, ConfigInst.MatcherInterval),
+		background.NewCVEMatcher(service.store, metrics, ConfigInst.MatcherInterval, ConfigInst.BatchSize),
 	}
 }

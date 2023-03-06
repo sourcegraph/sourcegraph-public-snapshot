@@ -49,6 +49,7 @@ tree-sitter-c = "0.20.2"
 tree-sitter-java = "0.20.0"
 tree-sitter-javascript = "0.20.0"
 tree-sitter-rust = "0.20.3"
+tree-sitter-cpp = "0.20.0"
 tree-sitter-typescript = "0.20.2"
 
 [dev-dependencies]

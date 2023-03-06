@@ -33,7 +33,7 @@ func TestVulnerabilityMatchByID(t *testing.T) {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	if err := store.ScanMatches(ctx); err != nil {
+	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
@@ -68,7 +68,7 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	if err := store.ScanMatches(ctx); err != nil {
+	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 

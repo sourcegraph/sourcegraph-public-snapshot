@@ -77,6 +77,11 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
+type TemporarySettings struct {
+	GraphQLTypename string `json:"__typename"`
+	Contents        string `json:"contents"`
+}
+
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -114,8 +119,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
-	CurrentUser         *CurrentUser `json:"currentUser"`
+	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser       `json:"currentUser"`
+	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -247,12 +253,16 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var licenseInfo *hooks.LicenseInfo
 	var user *types.User
+	temporarySettings := "{}"
 	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+		if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+			temporarySettings = settings.Contents
+		}
 	}
 
 	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
@@ -277,6 +287,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
 		CurrentUser:         createCurrentUser(ctx, user, db),
+		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,

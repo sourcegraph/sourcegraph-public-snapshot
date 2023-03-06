@@ -64,6 +64,10 @@ export interface TemporarySettingsSchema {
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
     'own.panelExplanationHidden': boolean
+    // Sourcegraph App banners
+    'app.limitedAccessBannerDismissed.codeInsights': boolean
+    'app.limitedAccessBannerDismissed.batchChanges': boolean
+    'app.limitedAccessBannerDismissed.notebooks': boolean
 }
 
 /**
