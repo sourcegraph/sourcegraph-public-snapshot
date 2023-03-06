@@ -14,6 +14,7 @@ import {
     RepoRevisionSidebarSymbolsProps,
     SYMBOLS_QUERY,
 } from './RepoRevisionSidebarSymbols'
+import delay from 'delay'
 
 const location = {
     pathname: '/github.com/sourcegraph/sourcegraph@some-branch/-/blob/src/index.js',
@@ -119,7 +120,7 @@ describe('RepoRevisionSidebarSymbols', () => {
         // We need to synchronously flush inside the event handler and since this is warning in
         // React 18, we've moved it to a setTimeout. This test needs to wait for this timeout to be
         // flushed
-        await new Promise(resolve => setTimeout(resolve, 0))
+        await delay(0)
 
         expect(renderResult.locationRef.current?.search).toEqual('?L13:14')
     })
