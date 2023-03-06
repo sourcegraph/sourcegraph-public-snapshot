@@ -7,16 +7,16 @@ import (
 )
 
 type indexStepResolver struct {
-	svc   AutoIndexingService
-	index types.Index
-	entry *executor.ExecutionLogEntry
+	siteAdminChecker SiteAdminChecker
+	index            types.Index
+	entry            *executor.ExecutionLogEntry
 }
 
-func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
+func NewIndexStepResolver(siteAdminChecker SiteAdminChecker, index types.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
 	return &indexStepResolver{
-		svc:   svc,
-		index: index,
-		entry: entry,
+		siteAdminChecker: siteAdminChecker,
+		index:            index,
+		entry:            entry,
 	}
 }
 
@@ -25,7 +25,7 @@ func (r *indexStepResolver) Outfile() *string      { return strPtr(r.index.Outfi
 
 func (r *indexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolver {
 	if r.entry != nil {
-		return NewExecutionLogEntryResolver(r.svc, *r.entry)
+		return NewExecutionLogEntryResolver(r.siteAdminChecker, *r.entry)
 	}
 
 	return nil

@@ -10,14 +10,14 @@ import (
 )
 
 type executionLogEntryResolver struct {
-	svc   AutoIndexingService
-	entry executor.ExecutionLogEntry
+	entry            executor.ExecutionLogEntry
+	siteAdminChecker SiteAdminChecker
 }
 
-func NewExecutionLogEntryResolver(svc AutoIndexingService, entry executor.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(siteAdminChecker SiteAdminChecker, entry executor.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
-		svc:   svc,
-		entry: entry,
+		entry:            entry,
+		siteAdminChecker: siteAdminChecker,
 	}
 }
 
@@ -46,7 +46,7 @@ func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.svc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if err != auth.ErrMustBeSiteAdmin {
 			return "", err
 		}
