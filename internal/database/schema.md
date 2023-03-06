@@ -838,91 +838,6 @@ Indexes:
 
 ```
 
-# Table "public.codeintel_lockfile_references"
-```
-          Column          |           Type           | Collation | Nullable |                          Default                          
---------------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id                       | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
- repository_name          | text                     |           | not null | 
- revspec                  | text                     |           | not null | 
- package_scheme           | text                     |           | not null | 
- package_name             | text                     |           | not null | 
- package_version          | text                     |           | not null | 
- repository_id            | integer                  |           |          | 
- commit_bytea             | bytea                    |           |          | 
- last_check_at            | timestamp with time zone |           |          | 
- depends_on               | integer[]                |           |          | '{}'::integer[]
- resolution_lockfile      | text                     |           |          | 
- resolution_repository_id | integer                  |           |          | 
- resolution_commit_bytea  | bytea                    |           |          | 
-Indexes:
-    "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)
-    "codeintel_lockfile_references_last_check_at" btree (last_check_at)
-    "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
-    "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
-
-```
-
-Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
-
-**commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
-
-**depends_on**: IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.
-
-**last_check_at**: Timestamp when background job last checked this row for repository resolution
-
-**package_name**: Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.
-
-**package_scheme**: Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).
-
-**package_version**: Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.
-
-**repository_id**: The identifier of the repo that resolves the associated name, if it is resolvable on this instance.
-
-**repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
-
-**resolution_commit_bytea**: Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.
-
-**resolution_lockfile**: Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.
-
-**resolution_repository_id**: ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.
-
-**revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
-
-# Table "public.codeintel_lockfiles"
-```
-              Column              |           Type           | Collation | Nullable |                     Default                     
-----------------------------------+--------------------------+-----------+----------+-------------------------------------------------
- id                               | integer                  |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
- repository_id                    | integer                  |           | not null | 
- commit_bytea                     | bytea                    |           | not null | 
- codeintel_lockfile_reference_ids | integer[]                |           | not null | 
- lockfile                         | text                     |           |          | 
- fidelity                         | text                     |           | not null | 'flat'::text
- created_at                       | timestamp with time zone |           | not null | now()
- updated_at                       | timestamp with time zone |           | not null | now()
-Indexes:
-    "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
-    "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
-
-```
-
-Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.
-
-**codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
-
-**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
-
-**created_at**: Time when lockfile was indexed
-
-**fidelity**: Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...
-
-**lockfile**: Relative path of a lockfile in the given repository and the given commit.
-
-**updated_at**: Time when lockfile index was updated
-
 # Table "public.codeintel_path_ranks"
 ```
      Column      |           Type           | Collation | Nullable |                     Default                      
@@ -1781,21 +1696,6 @@ Stores data points for a code insight that do not need to be queried directly, b
  completed_at        | timestamp without time zone |           |          | 
 
 ```
-
-# Table "public.last_lockfile_scan"
-```
-        Column         |           Type           | Collation | Nullable | Default 
------------------------+--------------------------+-----------+----------+---------
- repository_id         | integer                  |           | not null | 
- last_lockfile_scan_at | timestamp with time zone |           | not null | 
-Indexes:
-    "last_lockfile_scan_pkey" PRIMARY KEY, btree (repository_id)
-
-```
-
-Tracks the last time repository was checked for lockfile indexing.
-
-**last_lockfile_scan_at**: The last time this repository was considered for lockfile indexing.
 
 # Table "public.lsif_configuration_policies"
 ```

@@ -148,16 +148,6 @@ type PullRequestCommit struct {
 	URL      string `json:"url"`
 }
 
-type PullRequestReviewer struct {
-	ID          string `json:"id"`
-	ReviewerURL string `json:"reviewerUrl"`
-	Vote        int    `json:"vote"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
-	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
-}
-
 type PullRequestUpdateInput struct {
 	Status                *PullRequestStatus           `json:"status"`
 	Title                 *string                      `json:"title"`
