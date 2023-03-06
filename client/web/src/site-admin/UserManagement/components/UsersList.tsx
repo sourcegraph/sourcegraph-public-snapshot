@@ -498,7 +498,7 @@ function RenderUsernameAndEmail({
     displayName,
     deletedAt,
     locked,
-    scimEnabled,
+    scimControlled,
 }: SiteUser): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
@@ -518,8 +518,8 @@ function RenderUsernameAndEmail({
                             <Icon aria-label="Account locked" svgPath={mdiLock} />
                         </Tooltip>
                     )}{' '}
-                    {scimEnabled && (
-                        <Tooltip content="This user is SCIM-enabled—an external system controls some of its attributes.">
+                    {scimControlled && (
+                        <Tooltip content="This user is SCIM-controlled—an external system controls some of its attributes.">
                             <Badge variant="primary" className="mr-1">
                                 SCIM
                             </Badge>
@@ -531,7 +531,7 @@ function RenderUsernameAndEmail({
                 </>
             ) : (
                 <>
-                    {scimEnabled && (
+                    {scimControlled && (
                         <Badge variant="primary" className="mr-1">
                             SCIM
                         </Badge>

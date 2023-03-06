@@ -106,7 +106,7 @@ func (s *siteUserResolver) DeletedAt(ctx context.Context) *string {
 
 func (s *siteUserResolver) SiteAdmin(ctx context.Context) bool { return s.user.SiteAdmin }
 
-func (s *siteUserResolver) SCIMEnabled() bool { return s.user.SCIMEnabled }
+func (s *siteUserResolver) SCIMControlled() bool { return s.user.SCIMControlled }
 
 func (s *siteUserResolver) EventsCount(ctx context.Context) float64 { return s.user.EventsCount }
 
