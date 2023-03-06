@@ -22,8 +22,11 @@ export const personLinkFieldsFragment = gql`
 /**
  * Formats a person name to: "username (Display Name)" or "Display Name"
  */
-export const formatPersonName = ({ user, displayName }: PersonLinkFields): string =>
-    user ? user.username : displayName
+export const formatPersonName = ({ user, displayName, email }: PersonLinkFields): string =>
+    user ? user.displayName || user.username : displayName || email
+
+const formatTooltip = ({ user, email }: PersonLinkFields): string =>
+    user ? `${user.username} ${email ? `<${email}>` : ''}` : email
 
 /**
  * A person's name, with a link to their Sourcegraph user profile if an associated user account is
@@ -41,13 +44,7 @@ export const PersonLink: React.FunctionComponent<
         userClassName?: string
     }>
 > = ({ person, className = '', userClassName = '' }) => (
-    <Tooltip
-        content={
-            person.user && (person.user.displayName || person.displayName)
-                ? `${person.user.displayName || person.displayName} <${person.email}>`
-                : person.email
-        }
-    >
+    <Tooltip content={formatTooltip(person)}>
         <LinkOrSpan to={person.user?.url} className={classNames(className, person.user && userClassName)}>
             {formatPersonName(person)}
         </LinkOrSpan>
