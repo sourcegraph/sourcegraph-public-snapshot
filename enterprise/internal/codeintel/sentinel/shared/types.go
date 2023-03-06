@@ -27,7 +27,7 @@ type Vulnerability struct {
 	AffectedPackages []AffectedPackage
 }
 
-func (v Vulnerability) GetID() int {
+func (v Vulnerability) RecordID() int {
 	return v.ID
 }
 
