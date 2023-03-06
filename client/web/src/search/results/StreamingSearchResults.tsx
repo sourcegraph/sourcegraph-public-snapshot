@@ -106,7 +106,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(
             () => [
-                rankingToggleEnabled ? 'search-ranking' : '-search-ranking',
+                rankingToggleEnabled && rankingEnabled ? 'search-ranking' : '-search-ranking',
                 ...new URLSearchParams(location.search).getAll('feat'),
             ],
             [location.search, rankingToggleEnabled]
