@@ -31,12 +31,12 @@ func searchRepoEmbeddingIndex(
 	}
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && embeddingIndex.CodeIndex != nil {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
+	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
+		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
 	}
 
-	if params.TextResultsCount > 0 && embeddingIndex.TextIndex != nil {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
+	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
+		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
