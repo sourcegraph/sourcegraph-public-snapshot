@@ -1230,9 +1230,6 @@ type MockCmdRunner struct {
 	// CommandContextFunc is an instance of a mock function object
 	// controlling the behavior of the method CommandContext.
 	CommandContextFunc *CmdRunnerCommandContextFunc
-	// IsNotExistFunc is an instance of a mock function object controlling
-	// the behavior of the method IsNotExist.
-	IsNotExistFunc *CmdRunnerIsNotExistFunc
 	// LookPathFunc is an instance of a mock function object controlling the
 	// behavior of the method LookPath.
 	LookPathFunc *CmdRunnerLookPathFunc
@@ -1252,11 +1249,6 @@ func NewMockCmdRunner() *MockCmdRunner {
 		},
 		CommandContextFunc: &CmdRunnerCommandContextFunc{
 			defaultHook: func(context.Context, string, ...string) (r0 *exec.Cmd) {
-				return
-			},
-		},
-		IsNotExistFunc: &CmdRunnerIsNotExistFunc{
-			defaultHook: func(error) (r0 bool) {
 				return
 			},
 		},
@@ -1287,11 +1279,6 @@ func NewStrictMockCmdRunner() *MockCmdRunner {
 				panic("unexpected invocation of MockCmdRunner.CommandContext")
 			},
 		},
-		IsNotExistFunc: &CmdRunnerIsNotExistFunc{
-			defaultHook: func(error) bool {
-				panic("unexpected invocation of MockCmdRunner.IsNotExist")
-			},
-		},
 		LookPathFunc: &CmdRunnerLookPathFunc{
 			defaultHook: func(string) (string, error) {
 				panic("unexpected invocation of MockCmdRunner.LookPath")
@@ -1314,9 +1301,6 @@ func NewMockCmdRunnerFrom(i util.CmdRunner) *MockCmdRunner {
 		},
 		CommandContextFunc: &CmdRunnerCommandContextFunc{
 			defaultHook: i.CommandContext,
-		},
-		IsNotExistFunc: &CmdRunnerIsNotExistFunc{
-			defaultHook: i.IsNotExist,
 		},
 		LookPathFunc: &CmdRunnerLookPathFunc{
 			defaultHook: i.LookPath,
@@ -1557,107 +1541,6 @@ func (c CmdRunnerCommandContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CmdRunnerCommandContextFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// CmdRunnerIsNotExistFunc describes the behavior when the IsNotExist method
-// of the parent MockCmdRunner instance is invoked.
-type CmdRunnerIsNotExistFunc struct {
-	defaultHook func(error) bool
-	hooks       []func(error) bool
-	history     []CmdRunnerIsNotExistFuncCall
-	mutex       sync.Mutex
-}
-
-// IsNotExist delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockCmdRunner) IsNotExist(v0 error) bool {
-	r0 := m.IsNotExistFunc.nextHook()(v0)
-	m.IsNotExistFunc.appendCall(CmdRunnerIsNotExistFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the IsNotExist method of
-// the parent MockCmdRunner instance is invoked and the hook queue is empty.
-func (f *CmdRunnerIsNotExistFunc) SetDefaultHook(hook func(error) bool) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IsNotExist method of the parent MockCmdRunner instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *CmdRunnerIsNotExistFunc) PushHook(hook func(error) bool) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *CmdRunnerIsNotExistFunc) SetDefaultReturn(r0 bool) {
-	f.SetDefaultHook(func(error) bool {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *CmdRunnerIsNotExistFunc) PushReturn(r0 bool) {
-	f.PushHook(func(error) bool {
-		return r0
-	})
-}
-
-func (f *CmdRunnerIsNotExistFunc) nextHook() func(error) bool {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CmdRunnerIsNotExistFunc) appendCall(r0 CmdRunnerIsNotExistFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of CmdRunnerIsNotExistFuncCall objects
-// describing the invocations of this function.
-func (f *CmdRunnerIsNotExistFunc) History() []CmdRunnerIsNotExistFuncCall {
-	f.mutex.Lock()
-	history := make([]CmdRunnerIsNotExistFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CmdRunnerIsNotExistFuncCall is an object that describes an invocation of
-// method IsNotExist on an instance of MockCmdRunner.
-type CmdRunnerIsNotExistFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CmdRunnerIsNotExistFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CmdRunnerIsNotExistFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

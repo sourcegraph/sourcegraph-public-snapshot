@@ -20,8 +20,6 @@ type CmdRunner interface {
 	LookPath(file string) (string, error)
 	// Stat returns a FileInfo describing the named file.
 	Stat(filename string) (os.FileInfo, error)
-	// IsNotExist reports whether the error is known to report that a file or directory does not exist.
-	IsNotExist(err error) bool
 }
 
 // RealCmdRunner is a CmdRunner that actually runs commands.
@@ -43,10 +41,6 @@ func (r *RealCmdRunner) LookPath(file string) (string, error) {
 
 func (r *RealCmdRunner) Stat(filename string) (os.FileInfo, error) {
 	return os.Stat(filename)
-}
-
-func (r *RealCmdRunner) IsNotExist(err error) bool {
-	return os.IsNotExist(err)
 }
 
 func execOutput(ctx context.Context, runner CmdRunner, name string, args ...string) (string, error) {
