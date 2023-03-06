@@ -104,8 +104,8 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         error,
         loading,
         refetch,
-        startPolling,
-        stopPolling,
+        startPolling: startPollingFunction,
+        stopPolling: stopPollingFunction,
     } = useQuery<TResult, TVariables>(query, {
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
@@ -155,16 +155,16 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         await updatePagination({ after: null, first: null, last: pageSize, before: null })
     }, [updatePagination, pageSize])
 
-    const start = useCallback(
+    const startPolling = useCallback(
         (pollInterval: number): void => {
-            startPolling(pollInterval)
+            startPollingFunction(pollInterval)
         },
-        [startPolling]
+        [startPollingFunction]
     )
 
-    const stop = useCallback((): void => {
-        stopPolling()
-    }, [stopPolling])
+    const stopPolling = useCallback((): void => {
+        stopPollingFunction()
+    }, [stopPollingFunction])
 
     return {
         data,
@@ -179,8 +179,8 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         goToPreviousPage,
         goToFirstPage,
         goToLastPage,
-        startPolling: start,
-        stopPolling: stop,
+        startPolling,
+        stopPolling,
     }
 }
 
