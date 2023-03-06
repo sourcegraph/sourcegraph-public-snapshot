@@ -519,7 +519,17 @@ function RenderUsernameAndEmail({
                         </Tooltip>
                     )}{' '}
                     {scimControlled && (
-                        <Tooltip content="This user is SCIM-controlled—an external system controls some of its attributes.">
+                        <Tooltip
+                            content={
+                                <Text>
+                                    This user is{' '}
+                                    <Link to="https://docs.sourcegraph.com/admin/scim" target="_blank" rel="noopener">
+                                        SCIM
+                                    </Link>
+                                    -controlled—an external system controls some of its attributes.
+                                </Text>
+                            }
+                        >
                             <Badge variant="primary" className="mr-1">
                                 SCIM
                             </Badge>
