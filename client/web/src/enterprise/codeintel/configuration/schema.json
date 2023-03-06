@@ -31,14 +31,6 @@
   },
   "type": "object",
   "properties": {
-    "shared_steps": {
-      "description": "A set of pre-index steps that are performed before each index job.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/docker_step"
-      },
-      "additionalItems": false
-    },
     "index_jobs": {
       "description": "The set of index steps to be performed over a repository.",
       "type": "array",
@@ -89,5 +81,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["shared_steps", "index_jobs"]
+  "required": ["index_jobs"]
 }
