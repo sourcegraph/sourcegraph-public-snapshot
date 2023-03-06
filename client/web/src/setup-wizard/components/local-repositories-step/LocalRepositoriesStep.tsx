@@ -4,14 +4,23 @@ import { mdiInformationOutline, mdiPlus, mdiGit, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, Container, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    Icon,
+    Input,
+    Text,
+    Tooltip,
+    getDefaultInputProps,
+    useControlledField,
+} from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult, ExternalServiceKind, RepositoriesResult } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
 import { GET_CODE_HOSTS, GET_REPOSITORIES_BY_SERVICE } from '../remote-repositories-step/queries'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
-import { LocalRepositoryForm } from './components/LocalRepositoryForm'
+import { LoaderButton } from '../../../components/LoaderButton'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -51,10 +60,21 @@ interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
-    const [localServices, setLocalServices] = useState<ExternalService[]>()
+    const [localServices, setLocalServices] = useState<ExternalService>()
+    const [editLocalService, setEditLocalService] = useState<boolean>(false)
 
-    const [newRepositoryForm, setNewRepositoryForm] = useState<boolean>(false)
     const [repositoryInEdit, setRepositoryInEdit] = useState<Repository | null>(null)
+    const repositoryPath = useControlledField({
+        value: repositoryInEdit?.url || '',
+        name: 'repositoryPath',
+        // submitted: form.formAPI.submitted,
+        // formTouched: form.formAPI.touched,
+        // validators: {
+        //     sync: isTabActive ? syncAccessTokenValidator : undefined,
+        //     async: isTabActive ? accessTokenAsyncValidator : undefined,
+        // },
+        // onChange: value => configurationField.input.onChange(modify(configurationField.input.value, ['token'], value)),
+    })
 
     // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER") if/when available
     const { data } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
@@ -67,17 +87,19 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             return
         }
 
-        const localServicesOnly = data.externalServices.nodes.filter(node => node.kind === ExternalServiceKind.OTHER)
+        const localServicesOnly = data.externalServices.nodes.find(
+            node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
+        )
         setLocalServices(localServicesOnly)
     }, [data])
 
-    // TODO: Map through localServices
+    // TODO: How to grab non-hard-coded locally connected service?
     const { data: repoData } = useQuery<RepositoriesResult>(GET_REPOSITORIES_BY_SERVICE, {
         fetchPolicy: 'cache-and-network',
         variables: {
             skip: !localServices,
             first: 25,
-            externalService: 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0',
+            externalService: localServices?.id ?? '',
         },
     })
 
@@ -86,7 +108,15 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             // TODO: Implement BE file picker (getAbsolutePath()) --> https://github.com/sourcegraph/sourcegraph/issues/48127
         }
 
-        setNewRepositoryForm(true)
+        setEditLocalService(true)
+    }
+
+    const onRepositoryDiscovery = (): void => {
+        // run getDiscoveredRepositories(path: String!)
+    }
+
+    const onConnect = (): void => {
+        // run createExternalService(config: String!)
     }
 
     return (
@@ -94,67 +124,126 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             <Text className="mb-2">Add your local repositories.</Text>
 
             <Container>
-                <ul className={styles.list}>
-                    {repoData?.repositories?.nodes.length ? (
-                        repoData?.repositories?.nodes.map((codeHost, index) => (
-                            <li
-                                key={codeHost.id}
-                                className={classNames(
-                                    'p-2 d-flex',
-                                    styles.item,
-                                    index + 1 !== repoData?.repositories?.nodes.length && styles.itemBorder
-                                )}
-                            >
-                                {codeHost.id === repositoryInEdit?.id ? (
-                                    <LocalRepositoryForm
-                                        repositoryInEdit={repositoryInEdit}
-                                        onCancel={() => setRepositoryInEdit(null)}
+                {repoData?.repositories?.nodes.length ? (
+                    <>
+                        {editLocalService ? (
+                            <div className="d-flex w-100">
+                                <Input
+                                    label="Project path"
+                                    {...getDefaultInputProps(repositoryPath)}
+                                    placeholder="user/path/repo-1"
+                                    className="mb-0 col-5"
+                                />
+
+                                <div className="d-flex align-items-end mb-1 col-5">
+                                    <LoaderButton
+                                        type="submit"
+                                        variant="primary"
+                                        size="sm"
+                                        label="Find repositories"
+                                        onClick={onRepositoryDiscovery}
+                                        alwaysShowLabel={true}
+                                        loading={false}
+                                        disabled={false}
                                     />
-                                ) : (
-                                    <>
-                                        <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
-                                        <div className="d-flex flex-column">
-                                            {/* TODO: Replace with SG relative path when available */}
-                                            <Text weight="medium" className="mb-0">
-                                                {codeHost.url}
-                                            </Text>
-                                            {/* TODO: Replace with absolute path when available */}
-                                            <Text size="small" className="text-muted mb-0">
-                                                {codeHost.url}
-                                            </Text>
-                                        </div>
 
-                                        <Tooltip content="Edit repository" placement="right" debounce={0}>
-                                            <Button
-                                                onClick={() => setRepositoryInEdit(codeHost)}
-                                                disabled={!!repositoryInEdit}
-                                                variant="secondary"
-                                                className={classNames('ml-auto px-2 py-0', styles.button)}
-                                            >
-                                                <Icon svgPath={mdiPencil} aria-label="Edit code host connection" />
-                                            </Button>
-                                        </Tooltip>
-                                    </>
-                                )}
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setEditLocalService(false)}
+                                        variant="secondary"
+                                        className="ml-2"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <li className={classNames(styles.item, 'd-flex align-items-center p-2')}>
+                                <Icon svgPath={mdiGit} aria-hidden={true} className="my-auto mr-3" />
+                                <Text weight="medium" className="mb-0">
+                                    Path: /User/Projects
+                                </Text>
+
+                                <Tooltip content="Edit service" placement="right" debounce={0}>
+                                    <Button
+                                        onClick={() => setEditLocalService(true)}
+                                        variant="secondary"
+                                        className={classNames('ml-auto p-2', styles.button)}
+                                    >
+                                        <Icon svgPath={mdiPencil} aria-label="Edit code host connection" />
+                                    </Button>
+                                </Tooltip>
                             </li>
-                        ))
-                    ) : (
-                        <Text weight="bold" className="d-flex align-items-center font-weight-bold text-muted">
-                            <Icon
-                                svgPath={mdiInformationOutline}
-                                className="mr-2 mx-2"
-                                inline={false}
-                                aria-hidden={true}
-                                height={22}
-                                width={22}
-                            />
-                            To get started, add at least one local repository to Sourcegraph.
-                        </Text>
-                    )}
+                        )}
 
-                    <li>
-                        {newRepositoryForm ? (
-                            <LocalRepositoryForm onCancel={() => setNewRepositoryForm(false)} />
+                        <ul className={styles.list}>
+                            {repoData?.repositories?.nodes.map((codeHost, index) => (
+                                <li
+                                    key={codeHost.id}
+                                    className={classNames(
+                                        'ml-3 p-2 d-flex',
+                                        index + 1 !== repoData?.repositories?.nodes.length && styles.itemBorder
+                                    )}
+                                >
+                                    <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
+                                    <div className="d-flex flex-column">
+                                        {/* TODO: Replace with SG relative path when available */}
+                                        <Text weight="medium" className="mb-0">
+                                            {codeHost.url}
+                                        </Text>
+                                        {/* TODO: Replace with absolute path when available */}
+                                        <Text size="small" className="text-muted mb-0">
+                                            {codeHost.url}
+                                        </Text>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <LoaderButton
+                            type="submit"
+                            variant="primary"
+                            className="ml-auto mr-2"
+                            size="sm"
+                            label="Connect"
+                            onClick={onConnect}
+                            alwaysShowLabel={true}
+                            loading={false}
+                            disabled={editLocalService}
+                        />
+                    </>
+                ) : (
+                    <>
+                        {editLocalService ? (
+                            <div className="d-flex w-100">
+                                <Input
+                                    label="Project path"
+                                    {...getDefaultInputProps(repositoryPath)}
+                                    placeholder="user/path/repo-1"
+                                    className="mb-0 col-5"
+                                />
+
+                                <div className="d-flex align-items-end mb-1 col-5">
+                                    <LoaderButton
+                                        type="submit"
+                                        variant="primary"
+                                        size="sm"
+                                        label="Find repositories"
+                                        alwaysShowLabel={true}
+                                        loading={false}
+                                        disabled={false}
+                                    />
+
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setEditLocalService(false)}
+                                        variant="secondary"
+                                        className="ml-2"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
                         ) : (
                             <Button
                                 onClick={handleRepoPicker}
@@ -173,8 +262,20 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                                 </div>
                             </Button>
                         )}
-                    </li>
-                </ul>
+
+                        <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
+                            <Icon
+                                svgPath={mdiInformationOutline}
+                                className="mr-2 mx-2"
+                                inline={false}
+                                aria-hidden={true}
+                                height={22}
+                                width={22}
+                            />
+                            To get started, add at least one local repository to Sourcegraph.
+                        </Text>
+                    </>
+                )}
             </Container>
 
             <FooterWidget>
