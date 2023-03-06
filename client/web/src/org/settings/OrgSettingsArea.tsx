@@ -41,7 +41,6 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
  * an organization's settings.
  */
 export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
-    const location = useLocation()
     const context: OrgSettingsAreaRouteContext = {
         ...props,
     }
