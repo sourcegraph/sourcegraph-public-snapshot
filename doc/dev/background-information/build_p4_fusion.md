@@ -32,7 +32,7 @@ error: hash mismatch in fixed-output derivation '/nix/store/cb2ssx8vykl1ghb4k87y
 error: 1 dependencies of derivation '/nix/store/m409z1rq40bwzvvndbnghrrxm000zd9v-p4-fusion.drv' failed to build
 ```
 
-To update the hashes, use `nix` tools to download the offending archive, unpack it, calculate the hash of the unpacked archive, and convert the format to an SRI representation that includes the type of the hash.
+To update the hashes, we use `nix` tools to calculate the hashes of the unpacked archives, and convert the format to an SRI representation that includes the type of the hash.
 
 Get the URL of the archive from the part of the `srcs` array that matches the OS and architecture of your local system.
 
