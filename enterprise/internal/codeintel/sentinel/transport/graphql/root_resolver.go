@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -20,7 +19,7 @@ import (
 )
 
 type rootResolver struct {
-	sentinelSvc             *sentinel.Service
+	sentinelSvc             SentinelService
 	autoindexSvc            sharedresolvers.AutoIndexingService
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
@@ -34,7 +33,7 @@ type rootResolver struct {
 
 func NewRootResolver(
 	observationCtx *observation.Context,
-	sentinelSvc *sentinel.Service,
+	sentinelSvc SentinelService,
 	autoindexSvc sharedresolvers.AutoIndexingService,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
@@ -269,7 +268,7 @@ func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Sy
 //
 
 type bulkLoaderFactory struct {
-	sentinelSvc *sentinel.Service
+	sentinelSvc SentinelService
 }
 
 func (f *bulkLoaderFactory) Create() *bulkLoader {
@@ -278,12 +277,12 @@ func (f *bulkLoaderFactory) Create() *bulkLoader {
 
 type bulkLoader struct {
 	sync.RWMutex
-	sentinelSvc *sentinel.Service
+	sentinelSvc SentinelService
 	ids         []int
 	cache       map[int]shared.Vulnerability
 }
 
-func NewBulkLoader(sentinelSvc *sentinel.Service) *bulkLoader {
+func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
 	return &bulkLoader{
 		sentinelSvc: sentinelSvc,
 		cache:       map[int]shared.Vulnerability{},
@@ -338,7 +337,7 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 }
 
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      *sentinel.Service
+	sentinelSvc      SentinelService
 	autoindexSvc     sharedresolvers.AutoIndexingService
 	uploadSvc        sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
@@ -445,7 +444,7 @@ func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
 //
 
 type vulnerabilityMatchConnectionResolver struct {
-	sentinelSvc      *sentinel.Service
+	sentinelSvc      SentinelService
 	autoindexSvc     sharedresolvers.AutoIndexingService
 	uploadSvc        sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService

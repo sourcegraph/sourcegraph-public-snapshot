@@ -16,7 +16,7 @@ import (
 )
 
 type rootResolver struct {
-	policySvc        *policies.Service
+	policySvc        PoliciesService
 	repoStore        database.RepoStore
 	operations       *operations
 	siteAdminChecker sharedresolvers.SiteAdminChecker

@@ -1,4 +1,4 @@
-package ranking
+package background
 
 import (
 	"context"
@@ -10,20 +10,27 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBatchSize int) (err error) {
-	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func exportRankingGraph(
+	ctx context.Context,
+	store store.Store,
+	lsifstore lsifstore.LsifStore,
+	metrics *metrics,
+	logger log.Logger,
+	numRoutines int,
+	readBatchSize int,
+	writeBatchSize int,
+) (err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return nil
 	}
 
-	uploads, err := s.store.GetUploadsForRanking(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), "ranking", ConfigInst.SymbolExporterReadBatchSize)
+	uploads, err := store.GetUploadsForRanking(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), "ranking", readBatchSize)
 	if err != nil {
 		return err
 	}
@@ -40,8 +47,10 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBa
 	for i := 0; i < numRoutines; i++ {
 		p.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
-					s.logger.Error(
+				if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+					return setDefinitionsAndReferencesForUpload(ctx, store, metrics, upload, rankingBatchSize, rankingGraphKey, path, document)
+				}); err != nil {
+					logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
 						log.String("repo", upload.Repo),
@@ -52,13 +61,13 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBa
 					return err
 				}
 
-				s.logger.Info(
+				logger.Info(
 					"Processed upload for ranking graph",
 					log.Int("id", upload.ID),
 					log.String("repo", upload.Repo),
 					log.String("root", upload.Root),
 				)
-				s.operations.numUploadsRead.Inc()
+				metrics.numUploadsRead.Inc()
 			}
 
 			return nil
@@ -72,8 +81,10 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRoutines int, numBa
 	return nil
 }
 
-func (s *Service) setDefinitionsAndReferencesForUpload(
+func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
+	store store.Store,
+	metrics *metrics,
 	upload shared.ExportedUpload,
 	rankingBatchNumber int,
 	rankingGraphKey, path string,
@@ -111,78 +122,84 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	}
 
 	if len(definitions) > 0 {
-		if err := s.store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
+		if err := store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
 
-		s.operations.numDefinitionsInserted.Add(float64(len(definitions)))
+		metrics.numDefinitionsInserted.Add(float64(len(definitions)))
 	}
 
 	if len(references) > 0 {
-		if err := s.store.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
+		if err := store.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
 			UploadID:    upload.ID,
 			SymbolNames: references,
 		}); err != nil {
 			return err
 		}
 
-		s.operations.numReferencesInserted.Add(float64(len(references)))
+		metrics.numReferencesInserted.Add(float64(len(references)))
 	}
 
 	return nil
 }
 
-func (s *Service) VacuumRankingGraph(ctx context.Context) error {
-	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey())
+func vacuumRankingGraph(
+	ctx context.Context,
+	store store.Store,
+	metrics *metrics,
+) error {
+	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey())
 	if err != nil {
 		return err
 	}
-	s.operations.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
-	s.operations.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
+	metrics.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
+	metrics.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
 
-	numMetadataRecordsDeleted, numInputRecordsDeleted, err := s.store.VacuumStaleGraphs(ctx, getCurrentGraphKey(time.Now()))
+	numMetadataRecordsDeleted, numInputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, getCurrentGraphKey(time.Now()))
 	if err != nil {
 		return err
 	}
-	s.operations.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
-	s.operations.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
+	metrics.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
+	metrics.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
 
-	numRankRecordsDeleted, err := s.store.VacuumStaleRanks(ctx, getCurrentGraphKey(time.Now()))
+	numRankRecordsDeleted, err := store.VacuumStaleRanks(ctx, getCurrentGraphKey(time.Now()))
 	if err != nil {
 		return err
 	}
-	s.operations.numRankRecordsDeleted.Add(float64(numRankRecordsDeleted))
+	metrics.numRankRecordsDeleted.Add(float64(numRankRecordsDeleted))
 
 	return nil
 }
 
-func (s *Service) MapRankingGraph(ctx context.Context) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
-	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func mapRankingGraph(
+	ctx context.Context,
+	store store.Store,
+	batchSize int,
+) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return s.store.InsertPathCountInputs(
+	return store.InsertPathCountInputs(
 		ctx,
 		getCurrentGraphKey(time.Now()),
-		ConfigInst.MapperBatchSize,
+		batchSize,
 	)
 }
 
-func (s *Service) ReduceRankingGraph(ctx context.Context) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
-	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func reduceRankingGraph(
+	ctx context.Context,
+	store store.Store,
+	batchSize int,
+) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
+	numPathRanksInserted, numPathCountInputsProcessed, err = store.InsertPathRanks(
 		ctx,
 		getCurrentGraphKey(time.Now()),
-		ConfigInst.ReducerBatchSize,
+		batchSize,
 	)
 	if err != nil {
 		return numPathCountInputsProcessed, numPathCountInputsProcessed, err
