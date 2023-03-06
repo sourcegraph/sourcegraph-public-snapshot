@@ -595,8 +595,12 @@ type schemaResolver struct {
 	nodeByIDFns          map[string]NodeByIDFunc
 	enterpriseSearchJobs jobutil.EnterpriseJobs
 
-	// SubResolvers are assigned using the Schema constructor.
+	OptionalResolver
+}
 
+// OptionalResolver are the resolvers that do not have to be set. If a field
+// is non-nil, NewSchema will register the corresponding graphql schema.
+type OptionalResolver struct {
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
