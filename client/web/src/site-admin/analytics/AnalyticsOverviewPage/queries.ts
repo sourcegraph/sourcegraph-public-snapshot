@@ -31,6 +31,9 @@ export const OVERVIEW_STATISTICS = gql`
             averageScore
             netPromoterScore
         }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
+        }
     }
 `
 

@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -186,6 +187,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 		return nil, nil
 	}
 
+	root = filepath.Clean(root)
+
 	var (
 		repoC           = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
 		reposRootIsRepo bool
@@ -235,6 +238,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	var reposRootIsRepo atomic.Bool
 
+	ignore := mkIgnoreSubPath(root)
+
 	// We use fastwalk since it is much faster. Notes for people used to
 	// filepath.WalkDir:
 	//
@@ -244,12 +249,18 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	//   - filepath.SkipDir has the same meaning
 	err := fastwalk.Walk(root, func(path string, typ os.FileMode) error {
 		if !typ.IsDir() {
-			return nil
+			return fastwalk.ErrSkipFiles
 		}
 
-		// Previously we recursed into bare repositories which is why this check was here.
-		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
-		if filepath.Base(path) == ".git" {
+		subpath, err := filepath.Rel(root, path)
+		if err != nil {
+			// According to WalkFunc docs, path is always filepath.Join(root,
+			// subpath). So Rel should always work.
+			return errors.Wrapf(err, "filepath.Walk returned %s which is not relative to %s", path, root)
+		}
+
+		if ignore(subpath) {
+			s.Logger.Debug("ignoring path", log.String("path", path))
 			return filepath.SkipDir
 		}
 
@@ -261,14 +272,7 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 
 		if !isGit && !isBare {
 			s.Logger.Debug("not a repository root", log.String("path", path))
-			return nil
-		}
-
-		subpath, err := filepath.Rel(root, path)
-		if err != nil {
-			// According to WalkFunc docs, path is always filepath.Join(root,
-			// subpath). So Rel should always work.
-			return errors.Wrapf(err, "filepath.Walk returned %s which is not relative to %s", path, root)
+			return fastwalk.ErrSkipFiles
 		}
 
 		name := filepath.ToSlash(subpath)
@@ -297,6 +301,85 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) (bool, error) {
 	})
 
 	return reposRootIsRepo.Load(), err
+}
+
+// mkIgnoreSubPath which acts on subpaths to root. It returns true if the
+// subpath should be ignored.
+func mkIgnoreSubPath(root string) func(string) bool {
+	// A list of dirs which cause us trouble and are unlikely to contain
+	// repos.
+	ignoredSubPaths := ignoredPaths(root)
+
+	// Heuristics on dirs which probably don't have useful source.
+	ignoredSuffix := []string{
+		// no point going into go mod dir.
+		"/pkg/mod",
+
+		// Source code should not be here.
+		"/bin",
+
+		// Downloaded code so ignore repos in it since it can be large.
+		"/node_modules",
+	}
+
+	return func(subpath string) bool {
+		// Previously we recursed into bare repositories which is why this check was here.
+		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
+		base := filepath.Base(subpath)
+		if base == ".git" {
+			return true
+		}
+
+		// skip hidden dirs
+		if strings.HasPrefix(base, ".") && base != "." {
+			return true
+		}
+
+		if slices.Contains(ignoredSubPaths, subpath) {
+			return true
+		}
+
+		for _, suffix := range ignoredSuffix {
+			if strings.HasSuffix(subpath, suffix) {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+// ignoredPaths returns paths relative to root which should be ignored.
+//
+// In particular this function returns the locations on Mac which trigger
+// permission dialogs. If a user wanted to explore those directories they need
+// to ensure root is the directory.
+func ignoredPaths(root string) []string {
+	if runtime.GOOS != "darwin" {
+		return nil
+	}
+
+	// For simplicity we only trigger this code path if root is a homedir,
+	// which is the most common mistake made. Note: Mac can be case
+	// insensitive on the FS.
+	if !strings.EqualFold("/Users", filepath.Dir(filepath.Clean(root))) {
+		return nil
+	}
+
+	// Hard to find an actual list. This is based on error messages mentioned
+	// in the Entitlement documentation followed by trial and error.
+	// https://developer.apple.com/documentation/bundleresources/information_property_list/nsdocumentsfolderusagedescription
+	return []string{
+		"Applications",
+		"Desktop",
+		"Documents",
+		"Downloads",
+		"Library",
+		"Movies",
+		"Music",
+		"Pictures",
+		"Public",
+	}
 }
 
 func explainAddr(addr string) string {

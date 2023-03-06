@@ -220,6 +220,7 @@ var siteConfigSecrets = []struct {
 	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
 	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
 	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
+	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for

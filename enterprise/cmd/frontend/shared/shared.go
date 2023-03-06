@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
@@ -45,6 +46,7 @@ import (
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
+	"search":         search.Init,
 	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,

@@ -6,13 +6,7 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../../../backend/graphql'
-import {
-    ScheduleUserPermissionsSyncResult,
-    ScheduleUserPermissionsSyncVariables,
-    UserPermissionsInfoFields,
-    UserPermissionsInfoResult,
-    UserPermissionsInfoVariables,
-} from '../../../../graphql-operations'
+import { ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables } from '../../../../graphql-operations'
 
 export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
@@ -31,36 +25,46 @@ export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Obse
     )
 }
 
-export function userPermissionsInfo(user: Scalars['ID']): Observable<UserPermissionsInfoFields | null> {
-    return requestGraphQL<UserPermissionsInfoResult, UserPermissionsInfoVariables>(
-        gql`
-            query UserPermissionsInfo($user: ID!) {
-                node(id: $user) {
-                    __typename
-                    ... on User {
-                        permissionsInfo {
-                            ...UserPermissionsInfoFields
-                        }
-                    }
+export const UserPermissionsInfoQuery = gql`
+    query UserPermissionsInfo($userID: ID!, $first: Int, $last: Int, $after: String, $before: String, $query: String) {
+        node(id: $userID) {
+            __typename
+            ... on User {
+                ...UserPermissionsInfoUserNode
+            }
+        }
+    }
+
+    fragment UserPermissionsInfoUserNode on User {
+        permissionsInfo {
+            syncedAt
+            updatedAt
+            repositories(first: $first, last: $last, after: $after, before: $before, query: $query) {
+                nodes {
+                    ...PermissionsInfoRepositoryFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
                 }
             }
+        }
+    }
 
-            fragment UserPermissionsInfoFields on PermissionsInfo {
-                syncedAt
-                updatedAt
+    fragment PermissionsInfoRepositoryFields on PermissionsInfoRepositoryNode {
+        id
+        reason
+        updatedAt
+        repository {
+            id
+            name
+            url
+            externalRepository {
+                serviceType
             }
-        `,
-        { user }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('User not found')
-            }
-            if (data.node.__typename !== 'User') {
-                throw new Error(`Node is a ${data.node.__typename}, not a User`)
-            }
-            return data.node.permissionsInfo
-        })
-    )
-}
+        }
+    }
+`

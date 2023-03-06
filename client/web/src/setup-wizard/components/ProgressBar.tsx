@@ -24,7 +24,7 @@ export const ProgressBar: FC<{}> = () => {
 
     const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
-        pollInterval: 10000,
+        pollInterval: 5000,
     })
 
     useEffect(() => {
@@ -111,7 +111,7 @@ export const ProgressBar: FC<{}> = () => {
     }
 
     return (
-        <section className="d-flex align-items-center py-1">
+        <section className="d-flex align-items-center">
             {statusMessage}
 
             {items.map(item => (

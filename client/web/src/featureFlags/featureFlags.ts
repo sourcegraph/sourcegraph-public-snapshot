@@ -15,7 +15,6 @@ export type FeatureFlagName =
     | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
-    | 'enable-rbac'
     | 'accessible-file-tree'
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
