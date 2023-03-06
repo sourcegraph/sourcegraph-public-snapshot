@@ -36,11 +36,8 @@ type Store interface {
 	UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error)
 	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
 
-	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
-	IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error)
-	PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error)
-	ExistsPackageRepoRefLastCheckedBefore(ctx context.Context, before time.Time) (exists bool, err error)
-	ApplyPackageFilters(ctx context.Context) (pkgsAffected, versionsAffected int, err error)
+	ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error)
+	UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -537,7 +534,11 @@ func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.Minim
 const createPackageRepoFilter = `
 INSERT INTO package_repo_filters (behaviour, scheme, matcher)
 VALUES (%s, %s, %s)
-ON CONFLICT DO NOTHING
+ON CONFLICT (scheme, matcher)
+DO UPDATE
+	SET deleted_at = NULL,
+	updated_at = now()
+	behaviour = EXCLUDED.behaviour
 `
 
 func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
@@ -601,236 +602,148 @@ UPDATE package_repo_filters
 SET deleted_at = now()
 WHERE id = %s`
 
-func (s *store) ExistsPackageRepoRefLastCheckedBefore(ctx context.Context, before time.Time) (exists bool, err error) {
-	ctx, _, endObservation := s.operations.existsPackageRepoRefLastCheckedBefore.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("beforeTime", string(pq.FormatTimestamp(before))),
-	}})
+func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error) {
+	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(existsPackageRepoRefLastCheckedBeforeQuery, before, before)))
+	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
 	return
 }
 
-const existsPackageRepoRefLastCheckedBeforeQuery = `
+const doPackageRepoRefsRequireRefilteringQuery = `
+WITH most_recent_filters_change AS (
+	SELECT COALESCE(deleted_at, updated_at)
+	FROM package_repo_filters
+	ORDER BY COALESCE(deleted_at, updated_at) DESC
+	LIMIT 1
+)
 SELECT 1
 WHERE EXISTS (
 	SELECT 1
 	FROM lsif_dependency_repos
 	WHERE
 		last_checked_at IS NULL
-		OR last_checked_at < %s
+		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
 	LIMIT 1
 ) OR EXISTS (
 	SELECT 1
 	FROM package_repo_versions
 	WHERE
 		last_checked_at IS NULL
-		OR last_checked_at < %s
+		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
 	LIMIT 1
 )
 `
 
-func (s *store) ApplyPackageFilters(ctx context.Context) (pkgsAffected, versionsAffected int, err error) {
-	ctx, _, endObservation := s.operations.applyPackageFilters.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error) {
+	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPackages", len(pkgs)),
+		log.String("startTime", startTime.Format(time.RFC3339)),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("packagesUpdated", pkgsUpdated),
+			log.Int("versionsUpdated", versionsUpdated),
+		}})
+	}()
 
-	return pkgsAffected, versionsAffected, basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
-		return false, s.Scan(&pkgsAffected, &versionsAffected)
-	})(s.db.Query(ctx, sqlf.Sprintf(applyAllFiltersToAllPackageRepoRefsQuery)))
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		for _, tempTableQuery := range []string{temporaryPackageRepoRefsBlockStatusTableQuery, temporaryPackageRepoRefVersionsBlockStatusTableQuery} {
+			if err := tx.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
+				return errors.Wrap(err, "failed to create temporary tables")
+			}
+		}
+
+		err := batch.WithInserter(
+			ctx,
+			tx.Handle(),
+			"t_lsif_dependency_repos",
+			batch.MaxNumPostgresParameters,
+			[]string{"id", "blocked"},
+			func(inserter *batch.Inserter) error {
+				for _, pkg := range pkgs {
+					if err := inserter.Insert(ctx, pkg.ID, pkg.Blocked); err != nil {
+						return errors.Wrapf(err, "error inserting (id=%d,blocked=%t)", pkg.ID, pkg.Blocked)
+					}
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			return errors.Wrap(err, "error inserting into temporary package repos table")
+		}
+
+		err = batch.WithInserter(ctx,
+			tx.Handle(),
+			"t_package_repo_versions",
+			batch.MaxNumPostgresParameters,
+			[]string{"id", "blocked"},
+			func(inserter *batch.Inserter) error {
+				for _, pkg := range pkgs {
+					for _, version := range pkg.Versions {
+						if err := inserter.Insert(ctx, version.ID, version.Blocked); err != nil {
+							return errors.Wrapf(err, "error inserting (id=%d,blocked=%t)", version.ID, version.Blocked)
+						}
+					}
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			return errors.Wrap(err, "error inserting into temporary package repo versions table")
+		}
+
+		err = basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
+			return false, s.Scan(&pkgsUpdated, &versionsUpdated)
+		})(tx.Query(ctx, sqlf.Sprintf(updateAllBlockedStatusesQuery, startTime, startTime)))
+		return errors.Wrap(err, "error scanning update results")
+	})
+
+	return
 }
 
-const applyAllFiltersToAllPackageRepoRefsQuery = `
-WITH
-apply_unversioned_package_filters AS (
-	UPDATE lsif_dependency_repos lr1
+const temporaryPackageRepoRefsBlockStatusTableQuery = `
+CREATE TEMPORARY TABLE t_lsif_dependency_repos (
+	id BIGINT NOT NULL,
+	blocked BOOLEAN NOT NULL
+) ON COMMIT DROP
+`
+
+const temporaryPackageRepoRefVersionsBlockStatusTableQuery = `
+CREATE TEMPORARY TABLE t_package_repo_versions (
+	id BIGINT NOT NULL,
+	blocked BOOLEAN NOT NULL
+) ON COMMIT DROP
+`
+
+const updateAllBlockedStatusesQuery = `
+WITH updated_package_repos AS (
+	UPDATE lsif_dependency_repos new
 	SET
-		blocked = NOT(is_unversioned_package_allowed(lr1.name, lr1.scheme)),
-		last_checked_at = statement_timestamp()
-	FROM lsif_dependency_repos lr2
-	WHERE lr1.id = lr2.id
-	RETURNING lr1.blocked <> lr2.blocked AS changed
+		blocked = temp.blocked,
+		last_checked_at = %s
+	FROM t_lsif_dependency_repos temp
+	JOIN lsif_dependency_repos old
+	ON temp.id = old.id
+	WHERE old.id = new.id
+	RETURNING old.blocked <> new.blocked AS changed
 ),
-apply_versioned_package_filters AS (
-	UPDATE package_repo_versions prv1
+updated_package_repo_versions AS (
+	UPDATE package_repo_versions new
 	SET
-		blocked = NOT(is_versioned_package_allowed(lr.name, prv1.version, lr.scheme)),
-		last_checked_at = statement_timestamp()
-	FROM package_repo_versions prv2
-	JOIN lsif_dependency_repos lr
-	ON prv2.package_id = lr.id
-	WHERE prv1.package_id = lr.id
-	RETURNING prv1.blocked <> prv2.blocked AS changed
+		blocked = temp.blocked,
+		last_checked_at = %s
+	FROM t_package_repo_versions temp
+	JOIN package_repo_versions old
+	ON temp.id = old.id
+	WHERE old.id = new.id
+	RETURNING old.blocked <> new.blocked AS changed
 )
 SELECT (
 	SELECT COUNT(*) FILTER (WHERE changed)
-	FROM apply_unversioned_package_filters
+	FROM updated_package_repos
 ) AS packages_changed, (
 	SELECT COUNT(*) FILTER (WHERE changed)
-	FROM apply_versioned_package_filters
+	FROM updated_package_repo_versions
 ) AS versions_changed
-`
-
-func (s *store) IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error) {
-	ctx, _, endObservation := s.operations.isPackageRepoVersionAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("packageScheme", scheme),
-		log.String("name", string(pkg)),
-		log.String("version", version),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	allowed, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf("SELECT is_versioned_package_allowed(%s, %s, %s)", pkg, version, scheme)))
-	return
-}
-
-func (s *store) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
-	ctx, _, endObservation := s.operations.isPackageRepoAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("packageScheme", scheme),
-		log.String("name", string(pkg)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	allowed, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf("SELECT is_unversioned_package_allowed(%s, %s)", pkg, scheme)))
-	return
-}
-
-func (s *store) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error) {
-	ctx, _, endObservation := s.operations.pkgsOrVersionsMatchingFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("packageScheme", filter.PackageScheme),
-		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
-		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	offsetExpr := sqlf.Sprintf("TRUE")
-	if after > 0 {
-		offsetExpr = sqlf.Sprintf("lr.id > %s", after)
-	}
-
-	limitExpr := sqlf.Sprintf("ALL")
-	if limit > 0 {
-		limitExpr = sqlf.Sprintf("%s", limit)
-	}
-
-	// name filter case
-	if filter.NameFilter != nil {
-		matcherJSON, err := json.Marshal(filter.NameFilter)
-		if err != nil {
-			return nil, 0, errors.Wrapf(err, "error marshalling %+v", filter.NameFilter)
-		}
-
-		pkgs, err := basestore.NewSliceScanner(scanDependencyRepo)(s.db.Query(ctx, sqlf.Sprintf(
-			packagesMatchingFilterQuery,
-			sqlf.Sprintf(packageReposColumns),
-			driver.Value(matcherJSON),
-			filter.PackageScheme,
-			offsetExpr,
-			limitExpr,
-		)))
-		if err != nil {
-			return nil, 0, err
-		}
-
-		count, _, err := basestore.ScanFirstInt(
-			s.db.Query(ctx, sqlf.Sprintf(
-				packagesMatchingFilterQuery,
-				sqlf.Sprintf("COUNT(*)"),
-				driver.Value(matcherJSON),
-				filter.PackageScheme,
-				sqlf.Sprintf("TRUE"),
-				sqlf.Sprintf("ALL"),
-			)),
-		)
-
-		return pkgs, count, err
-	}
-
-	// version filter case
-	matcherJSON, err := json.Marshal(filter.VersionFilter)
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "error marshalling %+v", filter.VersionFilter)
-	}
-
-	pkgs, err := basestore.NewSliceScanner(scanDependencyRepoWithVersions)(s.db.Query(ctx, sqlf.Sprintf(
-		packageVersionsMatchingFilterQuery,
-		sqlf.Sprintf(groupedVersionedPackageReposColumns),
-		driver.Value(matcherJSON),
-		filter.PackageScheme,
-		offsetExpr,
-		limitExpr,
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	count, _, err := basestore.ScanFirstInt(
-		s.db.Query(ctx, sqlf.Sprintf(
-			packageVersionsMatchingFilterQuery,
-			sqlf.Sprintf("COUNT(*)"),
-			driver.Value(matcherJSON),
-			filter.PackageScheme,
-			sqlf.Sprintf("TRUE"),
-			sqlf.Sprintf("ALL"),
-		)),
-	)
-	return pkgs, count, err
-}
-
-const packageVersionsMatchingFilterQuery = `
-WITH parsed_matcher AS (
-	SELECT
-		*,
-		CASE
-			WHEN matcher ? 'VersionGlob' THEN glob_to_regex(matcher->>'VersionGlob')
-			WHEN matcher ? 'PackageGlob' THEN glob_to_regex(matcher->>'PackageGlob')
-		END AS regex
-	FROM (
-		SELECT %s::jsonb AS matcher
-	) AS z
-)
-SELECT %s
-FROM lsif_dependency_repos lr
-JOIN package_repo_versions prv
-ON lr.id = prv.package_id
-WHERE lr.scheme = %s
-AND
-(
-	(
-		parsed_matcher.matcher ? 'PackageGlob'
-		AND package ~ parsed_matcher.regex
-	) OR (
-		parsed_matcher.matcher->>'PackageName' = package
-		AND version ~ parsed_matcher.regex
-	)
-)
-AND %s
-LIMIT %s
-`
-
-const packagesMatchingFilterQuery = `
-WITH parsed_matcher AS (
-	SELECT
-		*,
-		CASE
-			WHEN matcher ? 'VersionGlob' THEN glob_to_regex(matcher->>'VersionGlob')
-			WHEN matcher ? 'PackageGlob' THEN glob_to_regex(matcher->>'PackageGlob')
-		END AS regex
-	FROM (
-		SELECT %s::jsonb AS matcher
-	) AS z
-)
-SELECT %s
-FROM lsif_dependency_repos lr
-WHERE lr.scheme = %s
-AND
-(
-	(
-		parsed_matcher.matcher ? 'PackageGlob'
-		AND package ~ parsed_matcher.regex
-	) OR (
-		parsed_matcher.matcher->>'PackageName' = package
-		AND parsed_matcher.matcher->>'VersionGlob' = '*'
-	)
-)
-AND %s
-LIMIT %s
 `

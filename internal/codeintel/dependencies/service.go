@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
@@ -106,7 +108,7 @@ func deref(s *string) string {
 	return *s
 }
 
-func (s *Service) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
 		log.String("packageScheme", opts.PackageScheme),
@@ -155,7 +157,21 @@ func (s *Service) IsPackageRepoVersionAllowed(ctx context.Context, scheme string
 		log.String("version", version),
 	}})
 	defer endObservation(1, observation.Args{})
-	return s.store.IsPackageRepoVersionAllowed(ctx, scheme, pkg, version)
+
+	filters, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+		PackageScheme:  scheme,
+		IncludeDeleted: false,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	allowlist, blocklist, err := packagefilters.NewFilterLists(filters)
+	if err != nil {
+		return false, err
+	}
+
+	return packagefilters.IsVersionedPackageAllowed(pkg, version, allowlist, blocklist), nil
 }
 
 func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
@@ -164,7 +180,21 @@ func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg r
 		log.String("name", string(pkg)),
 	}})
 	defer endObservation(1, observation.Args{})
-	return s.store.IsPackageRepoAllowed(ctx, scheme, pkg)
+
+	filters, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+		PackageScheme:  scheme,
+		IncludeDeleted: false,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	allowlist, blocklist, err := packagefilters.NewFilterLists(filters)
+	if err != nil {
+		return false, err
+	}
+
+	return packagefilters.IsPackageAllowed(pkg, allowlist, blocklist), nil
 }
 
 func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error) {
@@ -174,5 +204,85 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
 	}})
 	defer endObservation(1, observation.Args{})
-	return s.store.PackagesOrVersionsMatchingFilter(ctx, filter, limit, after)
+
+	var (
+		matcher     packagefilters.PackageMatcher
+		nameToMatch string
+	)
+	if filter.NameFilter != nil {
+		matcher, err = packagefilters.NewPackageNameGlob(filter.NameFilter.PackageGlob)
+	} else {
+		matcher, err = packagefilters.NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
+		nameToMatch = filter.VersionFilter.PackageName
+	}
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to compile glob")
+	}
+
+	var (
+		totalCount   int
+		matchingPkgs = make([]shared.PackageRepoReference, 0, limit)
+	)
+
+	if filter.NameFilter != nil {
+		lastID := after
+
+		for {
+			pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+				Scheme: filter.PackageScheme,
+				After:  lastID,
+				Limit:  limit,
+			})
+			if err != nil {
+				return nil, 0, errors.Wrap(err, "failed to list package repo references")
+			}
+
+			if len(pkgs) == 0 {
+				break
+			}
+
+			lastID = pkgs[len(pkgs)-1].ID
+
+			for _, pkg := range pkgs {
+				if matcher.Matches(string(pkg.Name), "") {
+					totalCount++
+					if len(matchingPkgs) == limit {
+						continue
+					}
+					pkg.Versions = nil
+					matchingPkgs = append(matchingPkgs, pkg)
+				}
+			}
+		}
+	} else {
+		pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+			Scheme:        filter.PackageScheme,
+			Name:          reposource.PackageName(nameToMatch),
+			ExactNameOnly: true,
+			Limit:         1,
+		})
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "failed to list package repo references")
+		}
+
+		if len(pkgs) == 0 {
+			return nil, 0, errors.Newf("package repo reference not found for name %q", nameToMatch)
+		}
+
+		pkg := pkgs[0]
+		versions := pkg.Versions[:0]
+		for _, version := range pkg.Versions {
+			if matcher.Matches(string(pkg.Name), version.Version) {
+				totalCount++
+				if len(versions) == limit {
+					continue
+				}
+				versions = append(versions, version)
+			}
+		}
+		pkg.Versions = versions
+		matchingPkgs = append(matchingPkgs, pkg)
+	}
+
+	return matchingPkgs, totalCount, nil
 }

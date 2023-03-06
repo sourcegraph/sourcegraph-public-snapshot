@@ -18,11 +18,8 @@ type operations struct {
 	updatePackageRepoFilter *observation.Operation
 	deletePackageRepoFilter *observation.Operation
 
-	isPackageRepoVersionAllowed           *observation.Operation
-	isPackageRepoAllowed                  *observation.Operation
-	pkgsOrVersionsMatchingFilter          *observation.Operation
-	existsPackageRepoRefLastCheckedBefore *observation.Operation
-	applyPackageFilters                   *observation.Operation
+	shouldRefilterPackageRepoRefs *observation.Operation
+	updateAllBlockedStatuses      *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -56,10 +53,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		updatePackageRepoFilter: op("UpdatePackageRepoFilter"),
 		deletePackageRepoFilter: op("DeletePackageRepoFilter"),
 
-		isPackageRepoVersionAllowed:           op("IsPackageRepoVersionAllowed"),
-		isPackageRepoAllowed:                  op("IsPackageRepoAllowed"),
-		pkgsOrVersionsMatchingFilter:          op("PkgsOrVersionsMatchingFilter"),
-		existsPackageRepoRefLastCheckedBefore: op("ExistsPackageRepoRefLastCheckedBefore"),
-		applyPackageFilters:                   op("ApplyPackageFilters"),
+		shouldRefilterPackageRepoRefs: op("ShouldRefilterPackageRepoRefs"),
+		updateAllBlockedStatuses:      op("UpdateAllBlockedStatuses"),
 	}
 }
