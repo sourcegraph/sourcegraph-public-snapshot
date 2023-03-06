@@ -2,11 +2,10 @@ import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-import { persistenceMapper } from './persistenceMapper'
+import { getPersistentCache } from './getPersistentCache'
 
 const getHeaders = (): { [header: string]: string } => {
     const headers: { [header: string]: string } = {
@@ -91,18 +90,13 @@ export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
  * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
  * After that, the same instance should be used by all consumers.
  */
-export const getWebGraphQLClient = memoize(() => {
-    // Initilize Apollo Client cache with preloaded data.
-    const hydratedCache = cache.restore({
-        ROOT_QUERY: {
-            temporarySettings: window.context.temporarySettings,
-        },
-    })
+export const getWebGraphQLClient = memoize(async () => {
+    const persistentCache = await getPersistentCache(window.context.isAuthenticatedUser)
 
-    return getGraphQLClient({
-        cache: hydratedCache,
-        persistenceMapper,
-        isAuthenticated: window.context.isAuthenticatedUser,
+    const client = await getGraphQLClient({
+        cache: persistentCache,
         headers: getHeaders(),
     })
+
+    return client
 })
