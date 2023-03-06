@@ -25,7 +25,7 @@ func TestMultilineOccurrence(t *testing.T) {
 	}
 
 	rows := map[int32]bool{}
-	lsifToHTML(code, document, func(row int32) {
+	scipToHTML(code, document, func(row int32) {
 		rows[row] = true
 	}, func(kind scip.SyntaxKind, line string) {}, nil)
 
@@ -63,7 +63,7 @@ func TestMultilineOccurrence2(t *testing.T) {
 	sawNamespaceIdentifier := false
 
 	rowsSeen := map[int32]bool{}
-	lsifToHTML(code, document, func(row int32) {
+	scipToHTML(code, document, func(row int32) {
 		rowsSeen[row] = true
 	}, func(kind scip.SyntaxKind, line string) {
 		if kind == scip.SyntaxKind_IdentifierNamespace {
