@@ -238,7 +238,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                     )}
                                 </span>
                             ) : indexOrError.state === PreciseIndexState.INDEXING ? (
-                                <span>Index is currently being indexed...</span>
+                                <span>Indexing in progress...</span>
                             ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
                                 <span>Index is currently being processed...</span>
                             ) : indexOrError.state === PreciseIndexState.COMPLETED ? (

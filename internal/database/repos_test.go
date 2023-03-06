@@ -758,7 +758,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
 	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
 	{
-		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, precision, updated_at, payload) VALUES ($1, 0, $2, '{}'::jsonb)`, r3.ID, now)
+		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, updated_at, payload) VALUES ($1, $2, '{}'::jsonb)`, r3.ID, now)
 		if err != nil {
 			t.Fatal(err)
 		}

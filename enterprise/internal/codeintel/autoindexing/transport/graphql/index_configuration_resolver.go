@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -16,16 +17,18 @@ import (
 )
 
 type indexConfigurationResolver struct {
-	autoindexSvc AutoIndexingService
-	repositoryID int
-	errTracer    *observation.ErrCollector
+	autoindexSvc     AutoIndexingService
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	repositoryID     int
+	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
+func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminChecker sharedresolvers.SiteAdminChecker, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
 	return &indexConfigurationResolver{
-		autoindexSvc: autoindexSvc,
-		repositoryID: repositoryID,
-		errTracer:    errTracer,
+		autoindexSvc:     autoindexSvc,
+		siteAdminChecker: siteAdminChecker,
+		repositoryID:     repositoryID,
+		errTracer:        errTracer,
 	}
 }
 
@@ -68,9 +71,9 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	_ = json.Indent(&indented, marshaled, "", "\t")
 
 	return &inferredConfigurationResolver{
-		autoindexSvc:  r.autoindexSvc,
-		configuration: indented.String(),
-		limitErr:      limitErr,
+		siteAdminChecker: r.siteAdminChecker,
+		configuration:    indented.String(),
+		limitErr:         limitErr,
 	}, nil
 }
 
@@ -83,7 +86,7 @@ func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*
 		return nil, nil
 	}
 
-	descriptions, err := newDescriptionResolversFromJSON(r.autoindexSvc, *configuration)
+	descriptions, err := newDescriptionResolversFromJSON(r.siteAdminChecker, *configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +95,9 @@ func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*
 }
 
 type inferredConfigurationResolver struct {
-	autoindexSvc  AutoIndexingService
-	configuration string
-	limitErr      error
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	configuration    string
+	limitErr         error
 }
 
 func (r *inferredConfigurationResolver) Configuration() string {
@@ -102,7 +105,7 @@ func (r *inferredConfigurationResolver) Configuration() string {
 }
 
 func (r *inferredConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
-	descriptions, err := newDescriptionResolversFromJSON(r.autoindexSvc, r.configuration)
+	descriptions, err := newDescriptionResolversFromJSON(r.siteAdminChecker, r.configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +122,7 @@ func (r *inferredConfigurationResolver) LimitError() *string {
 	return nil
 }
 
-func newDescriptionResolvers(autoindexSvc AutoIndexingService, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var steps []types.DockerStep
@@ -132,20 +135,20 @@ func newDescriptionResolvers(autoindexSvc AutoIndexingService, indexConfiguratio
 		}
 
 		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			autoindexSvc: autoindexSvc,
-			indexJob:     indexJob,
-			steps:        steps,
+			siteAdminChecker: siteAdminChecker,
+			indexJob:         indexJob,
+			steps:            steps,
 		})
 	}
 
 	return resolvers, nil
 }
 
-func newDescriptionResolversFromJSON(autoindexSvc AutoIndexingService, configuration string) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+func newDescriptionResolversFromJSON(siteAdminChecker sharedresolvers.SiteAdminChecker, configuration string) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
 	if err != nil {
 		return nil, err
 	}
 
-	return newDescriptionResolvers(autoindexSvc, &indexConfiguration)
+	return newDescriptionResolvers(siteAdminChecker, &indexConfiguration)
 }

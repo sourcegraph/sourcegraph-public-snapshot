@@ -1,5 +1,6 @@
 import { FC, useCallback, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -22,6 +23,7 @@ export interface ExternalServiceNodeProps {
 
 export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
             return
@@ -30,14 +32,13 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
             window.location.reload()
         }
-    }, [node])
+    }, [node, client])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
