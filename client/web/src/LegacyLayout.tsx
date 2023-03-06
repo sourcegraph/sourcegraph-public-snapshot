@@ -32,7 +32,7 @@ import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { parseBrowserRepoURL } from './util/url'
 
-import styles from './Layout.module.scss'
+import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
@@ -182,11 +182,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}

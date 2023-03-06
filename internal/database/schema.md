@@ -925,17 +925,18 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 # Table "public.codeintel_path_ranks"
 ```
-     Column      |           Type           | Collation | Nullable | Default 
------------------+--------------------------+-----------+----------+---------
+     Column      |           Type           | Collation | Nullable |                     Default                      
+-----------------+--------------------------+-----------+----------+--------------------------------------------------
  repository_id   | integer                  |           | not null | 
  payload         | jsonb                    |           | not null | 
- precision       | double precision         |           | not null | 
  updated_at      | timestamp with time zone |           | not null | now()
  graph_key       | text                     |           |          | 
  num_paths       | integer                  |           |          | 
  refcount_logsum | double precision         |           |          | 
+ id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
-    "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
+    "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
     insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
@@ -3612,6 +3613,7 @@ Indexes:
  updated_at      | timestamp with time zone |           | not null | 
  synced_at       | timestamp with time zone |           |          | 
  object_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ migrated        | boolean                  |           |          | true
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
@@ -4343,24 +4345,6 @@ Foreign-key constraints:
 
 - bool
 - rollout
-
-# Type lsif_index_state
-
-- queued
-- processing
-- completed
-- errored
-- failed
-
-# Type lsif_upload_state
-
-- uploading
-- queued
-- processing
-- completed
-- errored
-- deleted
-- failed
 
 # Type persistmode
 

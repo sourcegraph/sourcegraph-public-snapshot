@@ -2,7 +2,6 @@
 
 const path = require('path')
 
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
@@ -15,21 +14,18 @@ const { StatsWriterPlugin } = require('webpack-stats-plugin')
 const {
   ROOT_PATH,
   STATIC_ASSETS_PATH,
-  getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
   getBazelCSSLoaders: getCSSLoaders,
   getTerserPlugin,
   getProvidePlugin,
   getCSSModulesLoader,
-  getMonacoCSSRule,
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-// const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -153,8 +149,7 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
-    // TODO(bazel): why does the provide plugin crash?
-    // getProvidePlugin(),
+    getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename:
@@ -175,7 +170,6 @@ const config = {
     }),
     ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
-    // isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({
         filename: '[path][base].gz',

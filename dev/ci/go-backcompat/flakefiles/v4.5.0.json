@@ -21,7 +21,27 @@
   },
   {
     "path": "enterprise/internal/codeintel/ranking/internal/store",
-    "prefix": "TestBulkSetAndMergeDocumentRanks",
+    "prefix": "TestDocumentRanks",
     "reason": "Removing data was only used on DotCom, which has already been migrated away from it."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestBulkSetAndMergeDocumentRanks",
+    "reason": "Changed format of data that was only used on DotCom, which are no longer referenced."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestLastUpdatedAt",
+    "reason": "Changed format of data that was only used on DotCom, which are no longer referenced."
+  },
+  {
+    "path": "enterprise/internal/codeintel/ranking/internal/store",
+    "prefix": "TestUpdatedAfter",
+    "reason": "Changed format of data that was only used on DotCom, which are no longer referenced."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRepos_List_LastChanged",
+    "reason": "Changed format of data that was only used on DotCom, which are no longer referenced."
   }
 ]

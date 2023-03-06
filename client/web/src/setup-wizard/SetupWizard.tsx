@@ -1,5 +1,7 @@
 import { FC, ReactElement, useCallback, useMemo } from 'react'
 
+import { ApolloClient } from '@apollo/client'
+
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { H1, H2, Text } from '@sourcegraph/wildcard'
 
@@ -26,7 +28,7 @@ const CORE_STEPS: StepConfiguration[] = [
         path: '/setup/sync-repositories',
         nextURL: '/search',
         component: SyncRepositoriesStep,
-        onNext: () => {
+        onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
@@ -34,8 +36,10 @@ const CORE_STEPS: StepConfiguration[] = [
 
             // Update global site flags in order to fix global navigation items about
             // setup instance state
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            refreshSiteFlags(client).then(
+                () => {},
+                () => {}
+            )
         },
     },
 ]
