@@ -1181,7 +1181,7 @@ ORDER BY repository_id, commit
 LIMIT %s
 `
 
-// UpdateCommittedAt tupdates the committed_at column for upload matching the given repository and commit.
+// UpdateCommittedAt updates the committed_at column for upload matching the given repository and commit.
 func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) (err error) {
 	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
