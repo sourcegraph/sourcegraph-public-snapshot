@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -17,6 +18,10 @@ type CmdRunner interface {
 	CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error)
 	// LookPath looks for an executable named file in the directories named by the PATH environment variable.
 	LookPath(file string) (string, error)
+	// Stat returns a FileInfo describing the named file.
+	Stat(filename string) (os.FileInfo, error)
+	// IsNotExist reports whether the error is known to report that a file or directory does not exist.
+	IsNotExist(err error) bool
 }
 
 // RealCmdRunner is a CmdRunner that actually runs commands.
@@ -34,6 +39,14 @@ func (r *RealCmdRunner) CombinedOutput(ctx context.Context, name string, args ..
 
 func (r *RealCmdRunner) LookPath(file string) (string, error) {
 	return exec.LookPath(file)
+}
+
+func (r *RealCmdRunner) Stat(filename string) (os.FileInfo, error) {
+	return os.Stat(filename)
+}
+
+func (r *RealCmdRunner) IsNotExist(err error) bool {
+	return os.IsNotExist(err)
 }
 
 func execOutput(ctx context.Context, runner CmdRunner, name string, args ...string) (string, error) {
