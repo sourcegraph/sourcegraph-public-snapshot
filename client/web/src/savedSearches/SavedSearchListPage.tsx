@@ -95,7 +95,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     <Tooltip content="Saved search settings">
                         <Button
                             className="test-edit-saved-search-button"
-                            to={`searches/${this.props.savedSearch.id}`}
+                            to={this.props.savedSearch.id}
                             variant="secondary"
                             size="sm"
                             as={Link}
