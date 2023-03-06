@@ -167,8 +167,8 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 // It returns true if rate limiting was applying, and false if not.
 // This can be used to determine whether or not a request should be retried.
 func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
+	// NOTE: We manually unlock the mutex in this function so that it does not remain locked while sleeping
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	// If the "Retry-After" header was set, we need to wait the specified amount of time.
 	if !c.retry.IsZero() {
 		if remaining := c.retry.Sub(c.now()); remaining > 0 {
@@ -182,6 +182,7 @@ func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
 	// If the external rate limit is unknown, or if there are still remaining tokens,
 	// we don't wait.
 	if !c.known || c.remaining > 0 {
+		c.mu.Unlock()
 		return false
 	}
 
@@ -194,6 +195,7 @@ func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
 		return true
 	}
 
+	c.mu.Unlock()
 	return false
 }
 
