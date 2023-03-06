@@ -594,6 +594,7 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 				}
 				// Docker scripts
 				scriptEntries, err := os.ReadDir(path.Join(tempDir, mountpointDir, ".sourcegraph-executor"))
+				require.NoError(t, err)
 				assert.Len(t, scriptEntries, len(test.expectedDockerScripts))
 				for f, commands := range test.expectedDockerScripts {
 					require.Contains(t, ws.ScriptFilenames(), f)
