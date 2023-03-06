@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -133,7 +134,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			types = append(types, "repo")
 		}
 	}
-
+	fmt.Println("LOGLOGLOG")
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
 		a := actor.FromContext(ctx)
@@ -144,6 +145,36 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			if err != nil {
 				clients.Logger.Warn("Could not log search latency", log.Error(err))
 			}
+
+			if _, _, ok := isOwnershipSearch(q, l.inputs.Features); ok {
+				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
+				if err != nil {
+					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
+				}
+			} else {
+				fmt.Println("NOT file:has.owners")
+			}
+
+			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+				sp, err := filter.SelectPathFromString(v)
+				/// HEREHEHRE this is falsy, but should be truthy
+				fmt.Println("SELECT PATH FROM STRING ERR", err)
+				if err == nil && isSelectOwnersSearch(sp, l.inputs.Features) {
+					fmt.Println("LOLOLOLOL LOG BACKEND SELECT FILE OWNERS SEARCH")
+					err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "SelectFileOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
+					if err != nil {
+						clients.Logger.Warn("Could not log use of select:file.owners", log.Error(err))
+					}
+				} else {
+					fmt.Println("NOT select:file.owners", err, sp)
+				}
+			} else {
+				fmt.Println("NOT select:")
+			}
+		} else {
+			fmt.Println("NOT AUTH")
 		}
+	} else {
+		fmt.Println("NO TYPES")
 	}
 }
