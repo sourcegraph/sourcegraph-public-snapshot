@@ -1250,7 +1250,7 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want := []SyncError{
+	want := []*SyncError{
 		{ServiceID: extSvc1.ID, Message: ""},
 		{ServiceID: extSvc2.ID, Message: ""},
 	}
@@ -1271,7 +1271,7 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want = []SyncError{
+	want = []*SyncError{
 		{ServiceID: extSvc1.ID, Message: failure2},
 		{ServiceID: extSvc2.ID, Message: ""},
 	}
@@ -1287,7 +1287,7 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want = []SyncError{
+	want = []*SyncError{
 		{ServiceID: extSvc1.ID, Message: failure2},
 		{ServiceID: extSvc2.ID, Message: "oops over here"},
 	}

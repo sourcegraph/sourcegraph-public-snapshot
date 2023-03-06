@@ -1350,12 +1350,7 @@ WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
 `)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	return scanSyncErrors(rows, err)
+	return scanSyncErrors(e.Query(ctx, q))
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
