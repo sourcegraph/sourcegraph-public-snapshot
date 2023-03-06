@@ -65,24 +65,6 @@ CREATE TYPE feature_flag_type AS ENUM (
     'rollout'
 );
 
-CREATE TYPE lsif_index_state AS ENUM (
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'failed'
-);
-
-CREATE TYPE lsif_upload_state AS ENUM (
-    'uploading',
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'deleted',
-    'failed'
-);
-
 CREATE TYPE lsif_uploads_transition_columns AS (
 	state text,
 	expired boolean,
@@ -1637,42 +1619,29 @@ CREATE SEQUENCE codeintel_langugage_support_requests_id_seq
 
 ALTER SEQUENCE codeintel_langugage_support_requests_id_seq OWNED BY codeintel_langugage_support_requests.id;
 
-CREATE TABLE codeintel_path_rank_inputs (
-    id bigint NOT NULL,
-    graph_key text NOT NULL,
-    input_filename text NOT NULL,
-    repository_name text NOT NULL,
+CREATE TABLE codeintel_path_ranks (
+    repository_id integer NOT NULL,
     payload jsonb NOT NULL,
-    processed boolean DEFAULT false NOT NULL,
-    "precision" double precision NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    graph_key text,
+    num_paths integer,
+    refcount_logsum double precision,
+    id bigint NOT NULL
 );
 
-COMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';
-
-CREATE SEQUENCE codeintel_path_rank_inputs_id_seq
+CREATE SEQUENCE codeintel_path_ranks_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_inputs.id;
-
-CREATE TABLE codeintel_path_ranks (
-    repository_id integer NOT NULL,
-    payload jsonb NOT NULL,
-    "precision" double precision NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text,
-    num_paths integer,
-    refcount_logsum double precision
-);
+ALTER SEQUENCE codeintel_path_ranks_id_seq OWNED BY codeintel_path_ranks.id;
 
 CREATE TABLE codeintel_ranking_definitions (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_name text NOT NULL,
-    repository text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
     last_scanned_at timestamp with time zone
@@ -1707,11 +1676,11 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
-    repository text NOT NULL,
     document_path text NOT NULL,
     count integer NOT NULL,
     graph_key text NOT NULL,
-    processed boolean DEFAULT false NOT NULL
+    processed boolean DEFAULT false NOT NULL,
+    repository_id integer NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -4120,7 +4089,8 @@ CREATE TABLE user_permissions (
     object_type text NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
-    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
+    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
+    migrated boolean DEFAULT true
 );
 
 CREATE TABLE user_public_repos (
@@ -4371,7 +4341,7 @@ ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_path_rank_inputs_id_seq'::regclass);
+ALTER TABLE ONLY codeintel_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_path_ranks_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_definitions_id_seq'::regclass);
 
@@ -4625,11 +4595,8 @@ ALTER TABLE ONLY codeintel_autoindex_queue
 ALTER TABLE ONLY codeintel_commit_dates
     ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
 
-ALTER TABLE ONLY codeintel_path_rank_inputs
-    ADD CONSTRAINT codeintel_path_rank_inputs_graph_key_input_filename_reposit_key UNIQUE (graph_key, input_filename, repository_name);
-
-ALTER TABLE ONLY codeintel_path_rank_inputs
-    ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY codeintel_path_ranks
+    ADD CONSTRAINT codeintel_path_ranks_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_definitions
     ADD CONSTRAINT codeintel_ranking_definitions_pkey PRIMARY KEY (id);
@@ -5085,9 +5052,7 @@ CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
-CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE (NOT processed);
-
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
+CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
 
@@ -5099,9 +5064,9 @@ CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_defini
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository_i ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository, id) INCLUDE (document_path) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 

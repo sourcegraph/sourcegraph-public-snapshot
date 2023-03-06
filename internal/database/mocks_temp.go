@@ -19128,7 +19128,7 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 			},
 		},
 		GetLatestSyncErrorsFunc: &ExternalServiceStoreGetLatestSyncErrorsFunc{
-			defaultHook: func(context.Context) (r0 map[int64]string, r1 error) {
+			defaultHook: func(context.Context) (r0 []*SyncError, r1 error) {
 				return
 			},
 		},
@@ -19251,7 +19251,7 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 			},
 		},
 		GetLatestSyncErrorsFunc: &ExternalServiceStoreGetLatestSyncErrorsFunc{
-			defaultHook: func(context.Context) (map[int64]string, error) {
+			defaultHook: func(context.Context) ([]*SyncError, error) {
 				panic("unexpected invocation of MockExternalServiceStore.GetLatestSyncErrors")
 			},
 		},
@@ -20374,15 +20374,15 @@ func (c ExternalServiceStoreGetLastSyncErrorFuncCall) Results() []interface{} {
 // the GetLatestSyncErrors method of the parent MockExternalServiceStore
 // instance is invoked.
 type ExternalServiceStoreGetLatestSyncErrorsFunc struct {
-	defaultHook func(context.Context) (map[int64]string, error)
-	hooks       []func(context.Context) (map[int64]string, error)
+	defaultHook func(context.Context) ([]*SyncError, error)
+	hooks       []func(context.Context) ([]*SyncError, error)
 	history     []ExternalServiceStoreGetLatestSyncErrorsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetLatestSyncErrors delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) GetLatestSyncErrors(v0 context.Context) (map[int64]string, error) {
+func (m *MockExternalServiceStore) GetLatestSyncErrors(v0 context.Context) ([]*SyncError, error) {
 	r0, r1 := m.GetLatestSyncErrorsFunc.nextHook()(v0)
 	m.GetLatestSyncErrorsFunc.appendCall(ExternalServiceStoreGetLatestSyncErrorsFuncCall{v0, r0, r1})
 	return r0, r1
@@ -20391,7 +20391,7 @@ func (m *MockExternalServiceStore) GetLatestSyncErrors(v0 context.Context) (map[
 // SetDefaultHook sets function that is called when the GetLatestSyncErrors
 // method of the parent MockExternalServiceStore instance is invoked and the
 // hook queue is empty.
-func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultHook(hook func(context.Context) (map[int64]string, error)) {
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultHook(hook func(context.Context) ([]*SyncError, error)) {
 	f.defaultHook = hook
 }
 
@@ -20400,7 +20400,7 @@ func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushHook(hook func(context.Context) (map[int64]string, error)) {
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushHook(hook func(context.Context) ([]*SyncError, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -20408,20 +20408,20 @@ func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultReturn(r0 map[int64]string, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[int64]string, error) {
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultReturn(r0 []*SyncError, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*SyncError, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushReturn(r0 map[int64]string, r1 error) {
-	f.PushHook(func(context.Context) (map[int64]string, error) {
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushReturn(r0 []*SyncError, r1 error) {
+	f.PushHook(func(context.Context) ([]*SyncError, error) {
 		return r0, r1
 	})
 }
 
-func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) nextHook() func(context.Context) (map[int64]string, error) {
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) nextHook() func(context.Context) ([]*SyncError, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -20461,7 +20461,7 @@ type ExternalServiceStoreGetLatestSyncErrorsFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[int64]string
+	Result0 []*SyncError
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

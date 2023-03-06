@@ -2,7 +2,6 @@ import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -24,9 +23,7 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { Tree } from '../tree/Tree'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -49,15 +46,11 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
-    const location = useLocation()
-    const navigate = useNavigate()
-
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
-    const [enableAccessibleFileTree] = useFeatureFlag('accessible-file-tree')
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -117,6 +110,9 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
+                    // The individual tabs should keep their state when switching around (e.g. scroll
+                    // position, which tree is expanded)
+                    behavior="memoize"
                 >
                     <TabList
                         actions={
@@ -147,35 +143,18 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         {props.repoID && props.commitID && (
                             <TabPanels>
                                 <TabPanel>
-                                    {enableAccessibleFileTree ? (
-                                        <RepoRevisionSidebarFileTree
-                                            key={initialFilePath}
-                                            onExpandParent={onExpandParent}
-                                            repoName={props.repoName}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            initialFilePath={initialFilePath}
-                                            initialFilePathIsDirectory={initialFilePathIsDir}
-                                            filePath={props.filePath}
-                                            filePathIsDirectory={props.isDir}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    ) : (
-                                        <Tree
-                                            key="files"
-                                            repoName={props.repoName}
-                                            repoID={props.repoID}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            location={location}
-                                            navigate={navigate}
-                                            scrollRootSelector=".explorer"
-                                            activePath={props.filePath}
-                                            activePathIsDir={props.isDir}
-                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    )}
+                                    <RepoRevisionSidebarFileTree
+                                        key={initialFilePath}
+                                        onExpandParent={onExpandParent}
+                                        repoName={props.repoName}
+                                        revision={props.revision}
+                                        commitID={props.commitID}
+                                        initialFilePath={initialFilePath}
+                                        initialFilePathIsDirectory={initialFilePathIsDir}
+                                        filePath={props.filePath}
+                                        filePathIsDirectory={props.isDir}
+                                        telemetryService={props.telemetryService}
+                                    />
                                 </TabPanel>
                                 <TabPanel>
                                     <RepoRevisionSidebarSymbols
