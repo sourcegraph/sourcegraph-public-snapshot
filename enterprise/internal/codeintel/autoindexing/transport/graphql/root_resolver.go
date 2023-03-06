@@ -2,6 +2,9 @@ package graphql
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -270,51 +273,43 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, nil
 	}
 
-	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range config.IndexJobs {
-		var steps []types.DockerStep
-		for _, step := range indexJob.Steps {
-			steps = append(steps, types.DockerStep{
-				Root:     step.Root,
-				Image:    step.Image,
-				Commands: step.Commands,
-			})
-		}
-
-		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			root:    indexJob.Root,
-			indexer: types.NewCodeIntelIndexerResolver(indexJob.Indexer),
-			steps: sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
-				DockerSteps:      steps,
-				LocalSteps:       indexJob.LocalSteps,
-				Root:             indexJob.Root,
-				Indexer:          indexJob.Indexer,
-				IndexerArgs:      indexJob.IndexerArgs,
-				Outfile:          indexJob.Outfile,
-				RequestedEnvVars: indexJob.RequestedEnvVars,
-			}),
-		})
-	}
-
-	return resolvers, nil
+	return newDescriptionResolvers(r.autoindexSvc, config)
 }
 
 type autoIndexJobDescriptionResolver struct {
-	root    string
-	indexer resolverstubs.CodeIntelIndexerResolver
-	steps   resolverstubs.IndexStepsResolver
+	autoindexSvc AutoIndexingService
+	indexJob     config.IndexJob
+	steps        []types.DockerStep
 }
 
 func (r *autoIndexJobDescriptionResolver) Root() string {
-	return r.root
+	return r.indexJob.Root
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return r.indexer
+	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer)
+}
+
+func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
+	return comparisonKey(r.indexJob.Root, r.indexJob.Indexer)
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return r.steps
+	return sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
+		DockerSteps:      r.steps,
+		LocalSteps:       r.indexJob.LocalSteps,
+		Root:             r.indexJob.Root,
+		Indexer:          r.indexJob.Indexer,
+		IndexerArgs:      r.indexJob.IndexerArgs,
+		Outfile:          r.indexJob.Outfile,
+		RequestedEnvVars: r.indexJob.RequestedEnvVars,
+	})
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
@@ -510,18 +505,18 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 
 		limitErr = errors.Append(limitErr, err)
 	}
-	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-	if err != nil {
-		if !errors.As(err, &inference.LimitError{}) {
-			return nil, err
-		}
+	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+	// if err != nil {
+	// 	if !errors.As(err, &inference.LimitError{}) {
+	// 		return nil, err
+	// 	}
 
-		limitErr = errors.Append(limitErr, err)
-	}
+	// 	limitErr = errors.Append(limitErr, err)
+	// }
 
 	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {

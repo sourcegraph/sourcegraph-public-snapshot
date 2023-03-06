@@ -1,14 +1,22 @@
 import { FC, ReactNode } from 'react'
 
 import { useQuery } from '@apollo/client'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
-import { GetExternalServiceByIdResult, GetExternalServiceByIdVariables } from '../../../../../graphql-operations'
-import { GET_CODE_HOST_BY_ID } from '../../queries'
+import { LoaderButton } from '../../../../../components/LoaderButton'
+import {
+    AddExternalServiceInput,
+    GetExternalServiceByIdResult,
+    GetExternalServiceByIdVariables,
+    UpdateRemoteCodeHostResult,
+    UpdateRemoteCodeHostVariables,
+} from '../../../../../graphql-operations'
+import { GET_CODE_HOST_BY_ID, UPDATE_CODE_HOST } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
@@ -44,7 +52,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
         GET_CODE_HOST_BY_ID,
         {
-            fetchPolicy: 'cache-and-network',
+            fetchPolicy: 'network-only',
             variables: { id: codehostId! },
         }
     )
@@ -80,14 +88,25 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     return (
         <CodeHostEditView
             key={codehostId}
+            codeHostId={codehostId!}
             codeHostKind={data.node.kind}
             displayName={data.node.displayName}
             configuration={data.node.config}
         >
             {state => (
                 <footer className={styles.footer}>
-                    <Button variant="primary" size="sm" type="submit">
-                        Update
+                    <LoaderButton
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        label={state.submitting ? 'Updating' : 'Update'}
+                        alwaysShowLabel={true}
+                        loading={state.submitting}
+                        disabled={state.submitting}
+                    />
+
+                    <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
+                        Cancel
                     </Button>
 
                     <Button
@@ -98,10 +117,6 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
                     >
                         Delete
                     </Button>
-
-                    <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
-                        Cancel
-                    </Button>
                 </footer>
             )}
         </CodeHostEditView>
@@ -109,6 +124,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
 }
 
 interface CodeHostEditViewProps {
+    codeHostId: string
     codeHostKind: ExternalServiceKind
     displayName: string
     configuration: string
@@ -116,11 +132,21 @@ interface CodeHostEditViewProps {
 }
 
 const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
-    const { codeHostKind, displayName, configuration, children } = props
+    const { codeHostId, codeHostKind, displayName, configuration, children } = props
 
-    const handleSubmit = async (): Promise<void> => {
-        // TODO Connect edit API
-        await Promise.resolve()
+    const navigate = useNavigate()
+    const [updateRemoteCodeHost] = useMutation<UpdateRemoteCodeHostResult, UpdateRemoteCodeHostVariables>(
+        UPDATE_CODE_HOST
+    )
+
+    const handleSubmit = async (input: AddExternalServiceInput): Promise<void> => {
+        await updateRemoteCodeHost({
+            variables: { input: { id: codeHostId, ...input } },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+        })
+
+        navigate('/setup/remote-repositories')
+        // TODO show notification UI that code host has been added successfully
     }
 
     const initialValues: CodeHostConnectFormFields = {
@@ -130,7 +156,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {
         return (
-            <GithubConnectView initialValues={initialValues} onSubmit={handleSubmit}>
+            <GithubConnectView initialValues={initialValues} externalServiceId={codeHostId} onSubmit={handleSubmit}>
                 {children}
             </GithubConnectView>
         )

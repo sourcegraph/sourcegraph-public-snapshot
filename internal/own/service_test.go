@@ -1,9 +1,7 @@
 package own_test
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
 	"sort"
 	"testing"
@@ -31,23 +29,23 @@ type repoPath struct {
 // repoFiles is a fake git client mapping a file
 type repoFiles map[repoPath]string
 
-func (fs repoFiles) NewFileReader(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) (io.ReadCloser, error) {
+func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return io.NopCloser(bytes.NewReader([]byte(content))), nil
+	return []byte(content), nil
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := (&codeownerspb.File{
+	codeownersText := codeowners.NewRuleset((&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	}).Repr()
+	})).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -55,8 +53,8 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
-			git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
-			got, err := own.NewService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+			got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -64,20 +62,20 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 }
 
 func TestOwnersCannotFindFile(t *testing.T) {
-	codeownersFile := &codeownerspb.File{
+	codeownersFile := codeowners.NewRuleset(&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	}
+	})
 	repo := repoFiles{
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
-	git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
-	got, err := own.NewService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
+	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+	got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }

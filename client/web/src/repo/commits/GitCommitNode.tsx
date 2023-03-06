@@ -27,6 +27,9 @@ export interface GitCommitNodeProps {
     /** Display in a single line (more compactly). */
     compact?: boolean
 
+    /** Display in a single line, with less spacing between elements and no SHA. */
+    extraCompact?: boolean
+
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
 
@@ -66,6 +69,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     afterElement,
     className,
     compact,
+    extraCompact,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -94,9 +98,19 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         }, 1500)
     }, [])
 
+    if (extraCompact) {
+        // Implied by extraCompact
+        compact = true
+    }
+
     const messageElement = (
         <div
-            className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
+            className={classNames(
+                !extraCompact && 'flex-grow-1',
+                styles.message,
+                compact && styles.messageSmall,
+                extraCompact && styles.messageExtraSmall
+            )}
             data-testid="git-commit-node-message"
         >
             <span className={classNames('mr-2', styles.messageSubject)}>
@@ -179,8 +193,8 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                 : `${node.parents.length} ${pluralize('parent', node.parents.length)}`}
                             :
                         </span>{' '}
-                        {node.parents.map((parent, index) => (
-                            <div className="d-flex" key={index}>
+                        {node.parents.map(parent => (
+                            <div className="d-flex" key={parent.oid}>
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
                                     <Code>{parent.oid}</Code>
                                 </Link>
@@ -240,7 +254,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     return (
         <WrapperElement
             key={node.id}
-            className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
+            className={classNames(
+                styles.gitCommitNode,
+                compact && styles.gitCommitNodeCompact,
+                extraCompact && styles.gitCommitNodeExtraCompact,
+                className
+            )}
         >
             <>
                 {!compact ? (
@@ -302,7 +321,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {!extraCompact && <Link to={node.canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}

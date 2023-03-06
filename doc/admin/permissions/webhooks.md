@@ -13,11 +13,15 @@ Sourcegraph exposes endpoints to receive webhooks. These endpoints are authentic
 1. Based on the event data, Sourcegraph schedules a permission sync job
 1. Standard permission syncing mechanism handles the scheduled job, leading to a sync of permissions of the relevant user or repository from the code host
 
+## SLA
+
+Sourcegraph SLA is, that **p95 of webhook requests will be processed within 5 minutes**. This means, that
+when the permissions are changed on the code host, it takes at most 5 minutes for the same permissions to be reflected on the Sourcegraph side.
+
 ## Advantages
 
-- the eventual consistency time is the lowest. Our SLA is, that p95 of webhook requests will be processed within 5 minutes. This means, that when the permissions are changed on the code host, it takes at most 5 minutes for the same permissions to be reflected on the Sourcegraph side
+- the eventual consistency time is really low, see [SLA](#sla) above.
 - least amount of resource usage (bandwidth, code host rate limit), as we only ask code host for permission data when there is an actual change
-
 ## Disadvantages
 
 Webhooks are best effort and there is no 100% guarantee that a webhook will be fired from the code host side when the data change.
