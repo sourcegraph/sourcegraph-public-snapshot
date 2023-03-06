@@ -148,7 +148,7 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *reso
 }
 
 func (r *UploadResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 }
 
 func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (resolverstubs.LSIFUploadDocumentPathsConnectionResolver, error) {

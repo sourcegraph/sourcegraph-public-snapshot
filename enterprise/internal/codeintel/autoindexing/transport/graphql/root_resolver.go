@@ -293,7 +293,7 @@ func (r *autoIndexJobDescriptionResolver) Root() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
 }
 
 func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
