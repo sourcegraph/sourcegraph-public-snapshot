@@ -59,10 +59,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 			disposable?.dispose()
 			const config = getConfiguration(vscode.workspace.getConfiguration())
 			const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) ?? null
-			const rgPath = await getRgPath(context.extensionPath)
+			let rgPath = await getRgPath(context.extensionPath)
 			if (!rgPath) {
-				vscode.window.showErrorMessage('could not find path for `rg`')
-				throw new Error('could not find path for `rg`')
+				rgPath = 'rg'
+				vscode.window.showWarningMessage(
+					'Did not find bundled `rg` (if running in development, you probably need to run scripts/download-rg.sh). Falling back to the `rg` on $PATH.'
+				)
 			}
 			disposable = configure(context, config, accessToken, rgPath)
 		} catch (error) {
