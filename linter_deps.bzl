@@ -25,4 +25,10 @@ def linter_dependencies():
       sum = "h1:hlnx5+S2fY9Zo9ePo4AhgYsYHbM2+eAv8m/s1JiCd6Q=",
   )
 
-
+  go_repository(
+      name = "com_github_golangci_gofmt",
+      build_file_proto_mode = "disable_global",
+      importpath = "github.com/golangci/gofmt",
+      version = "v0.0.0-20220901101216-f2edd75033f2",
+      sum = "h1:amWTbTGqOZ71ruzrdA+Nx5WA3tV1N0goTspwmKCQvBY=",
+  )
