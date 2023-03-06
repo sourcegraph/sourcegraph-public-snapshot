@@ -73,7 +73,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "GitLab default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitLab,
-			want:   10.0,
+			want:   rate.Inf,
 		},
 		{
 			name:   "GitHub default",
