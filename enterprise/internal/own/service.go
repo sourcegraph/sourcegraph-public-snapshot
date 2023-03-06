@@ -66,7 +66,7 @@ var codeownersLocations = []string{
 }
 
 // RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
-// from one of the possible codeownersLocations. It returns nil if no match is found.
+// from one of the possible codeownersLocations, or the ingested codeowners files. It returns nil if no match is found.
 func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	ingestedCodeowners, err := s.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
 	if err != nil && !errcode.IsNotFound(err) {
