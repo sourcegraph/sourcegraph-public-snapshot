@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
 	Completion,
 	CompletionsArgs,
+	JSONSerializable,
 	LLMDebugInfo,
 	WSCompletionResponse,
 	WSCompletionsRequest,
@@ -15,7 +16,7 @@ import { WSClient } from './wsclient'
 
 interface CompletionCallbacks {
 	onCompletions(completions: Completion[], debugInfo?: LLMDebugInfo): void
-	onMetadata(metadata: any): void
+	onMetadata(metadata: JSONSerializable): void
 	onDone(): void
 	onError(err: string): void
 }
@@ -58,13 +59,23 @@ export class WSCompletionsClient {
 						default:
 							return false
 					}
-				} catch (error: any) {
-					vscode.window.showErrorMessage(error)
+				} catch (error: unknown) {
+					void vscode.window.showErrorMessage(errorToReadableString(error))
 					return false
 				}
 			}
 		)
 	}
+}
+
+function errorToReadableString(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message
+	}
+	if (typeof error === 'string') {
+		return error
+	}
+	return 'Unknown error'
 }
 
 async function getCompletionsArgs(
@@ -119,8 +130,8 @@ export async function fetchAndShowCompletions(
 				onCompletions(completions: Completion[], debug?: LLMDebugInfo | undefined): void {
 					documentProvider.addCompletions(completionsUri, ext, completions, debug)
 				},
-				onMetadata(metadata: any): void {
-					console.log(`received metadata ${metadata}`)
+				onMetadata(metadata: JSONSerializable): void {
+					console.log(`received metadata ${JSON.stringify(metadata)}`)
 				},
 				onDone(): void {
 					console.log('received done')
@@ -131,8 +142,8 @@ export async function fetchAndShowCompletions(
 				},
 			}
 		)
-	} catch (error: any) {
-		vscode.window.showErrorMessage(error)
+	} catch (error: unknown) {
+		void vscode.window.showErrorMessage(errorToReadableString(error))
 	}
 }
 
@@ -152,28 +163,34 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 			return []
 		}
 
-		return new Promise<vscode.InlineCompletionItem[]>(async (resolve, reject) => {
-			const allCompletions: Completion[] = []
-			await this.wsclient.getCompletions(await getCompletionsArgs(this.history, document, position), {
-				onCompletions(completions: Completion[], debug?: LLMDebugInfo | undefined): void {
-					allCompletions.push(
-						...completions.map(c => ({
-							// Limit inline completions to one line for now
-							...c,
-							insertText: c.insertText.slice(0, Math.max(0, c.insertText.indexOf('\n'))),
-						}))
-					)
-				},
-				onMetadata(metadata: any): void {
-					console.log(`received metadata ${metadata}`)
-				},
-				onDone(): void {
-					resolve(allCompletions.map(c => new vscode.InlineCompletionItem(c.insertText)))
-				},
-				onError(err: string): void {
-					reject(`CodyComplemtionItemProvider: error fetching completions: ${err}`)
-				},
-			})
+		let resolve: (completions: vscode.InlineCompletionItem[]) => void = () => {}
+		let reject: (error: Error) => void = () => {}
+		const result = new Promise<vscode.InlineCompletionItem[]>((innerResolve, innerReject) => {
+			resolve = innerResolve
+			reject = innerReject
 		})
+
+		const allCompletions: Completion[] = []
+		await this.wsclient.getCompletions(await getCompletionsArgs(this.history, document, position), {
+			onCompletions(completions: Completion[]): void {
+				allCompletions.push(
+					...completions.map(completion => ({
+						// Limit inline completions to one line for now
+						...completion,
+						insertText: completion.insertText.slice(0, Math.max(0, completion.insertText.indexOf('\n'))),
+					}))
+				)
+			},
+			onMetadata(metadata: JSONSerializable): void {
+				console.log(`received metadata ${JSON.stringify(metadata)}`)
+			},
+			onDone(): void {
+				resolve(allCompletions.map(completion => new vscode.InlineCompletionItem(completion.insertText)))
+			},
+			onError(err: string): void {
+				reject(new Error(`CodyCompletionItemProvider: error fetching completions: ${err}`))
+			},
+		})
+		return result
 	}
 }

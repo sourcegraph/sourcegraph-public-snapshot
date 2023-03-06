@@ -1,12 +1,13 @@
 import * as path from 'path'
 
 import { runTests } from '@vscode/test-electron'
+
 import * as mockServer from './mock-server'
 
-async function main() {
+async function main(): Promise<void> {
 	// Set this environment variable so the extension exposes hooks to
 	// the test runner.
-	process.env['CODY_TESTING'] = 'true'
+	process.env.CODY_TESTING = 'true'
 
 	try {
 		// The folder containing the Extension Manifest package.json
@@ -30,4 +31,4 @@ async function main() {
 	}
 }
 
-main()
+void main()

@@ -7,9 +7,9 @@ import * as vscode from 'vscode'
 import { Feedback, Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient } from '../embeddings-client'
+import { TestSupport } from '../test-support'
 
 import { renderMarkdown } from './markdown'
-import { TestSupport } from '../test-support'
 import { Transcript } from './prompt'
 import { WSChatClient } from './ws'
 

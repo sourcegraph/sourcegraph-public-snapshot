@@ -3,7 +3,9 @@
 VERSION="v13.0.0-4"
 
 run() {
-	pushd "$(dirname "$(readlink -f "$0")")/../resources/bin" || return
+        RIPGREP_DIR="$(dirname "$(readlink -f "$0")")/../resources/bin"
+        mkdir -p "${RIPGREP_DIR}"
+	pushd "${RIPGREP_DIR}" || return
 	trap 'popd' EXIT
 
 	for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do

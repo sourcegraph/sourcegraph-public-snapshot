@@ -24,7 +24,8 @@
     "bundle": "ts-node --transpileOnly scripts/bundle.ts",
     "download-rg": "scripts/download-rg.sh",
     "vsce:package": "scripts/check-rg.sh && pnpm run --silent bundle && vsce package --no-dependencies -o dist/kodj.vsix",
-    "test": "pnpm bundle && pnpm exec tsc --build && node ./out/test/runTest.js",
+    "test-deps": "scripts/check-rg.sh && pnpm bundle && pnpm exec tsc --build",
+    "test": "pnpm test-deps && node ./out/test/runTest.js",
     "unittest": "mocha ./out/test/unittest"
   },
   "main": "./dist/node/extension.js",

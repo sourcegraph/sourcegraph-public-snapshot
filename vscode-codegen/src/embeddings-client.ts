@@ -13,13 +13,13 @@ export interface EmbeddingSearchResults {
 }
 
 export class EmbeddingsClient {
-	headers: { authorization: string }
+	private headers: { authorization: string }
 
 	constructor(private embeddingsUrl: string, private accessToken: string, private codebaseId: string) {
 		this.headers = { authorization: `Bearer ${this.accessToken}` }
 	}
 
-	async search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
+	public async search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
 		const url = `${this.embeddingsUrl}/embeddings/search/${encodeURIComponent(this.codebaseId)}`
 		const body = {
 			query,
@@ -39,8 +39,9 @@ export class EmbeddingsClient {
 			.then(data => data as EmbeddingSearchResults)
 	}
 
-	async queryNeedsAdditionalContext(query: string): Promise<boolean> {
+	public async queryNeedsAdditionalContext(query: string): Promise<boolean> {
 		const url = `${this.embeddingsUrl}/embeddings/needs-additional-context`
+		// TODO: Type, and check, responses from the API endpoint
 		return fetch(url, {
 			method: 'post',
 			body: JSON.stringify({
@@ -53,13 +54,13 @@ export class EmbeddingsClient {
 		})
 			.then(verifyResponseCode)
 			.then(response => response.json())
-			.then(data => data.needsAdditionalContext as boolean)
+			.then(json => (json as { needsAdditionalContext: boolean }).needsAdditionalContext)
 	}
 }
 
 function verifyResponseCode(response: Response): Response {
 	if (!response.ok) {
-		throw new Error('HTTP status code: ' + response.status)
+		throw new Error(`HTTP status code: ${response.status}`)
 	}
 	return response
 }

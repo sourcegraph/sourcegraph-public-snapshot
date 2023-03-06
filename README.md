@@ -38,6 +38,7 @@ There are four separate components:
 1. Install dependencies:
 
    ```shell
+   brew install wget  # Use your system's package manager
    pnpm install
    (cd embeddings && pip3 install -r requirements.txt)
    ```

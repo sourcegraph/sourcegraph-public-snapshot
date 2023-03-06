@@ -1,14 +1,13 @@
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from './chat/view'
-import { ExtensionApi } from './extension-api'
 import { WSChatClient } from './chat/ws'
 import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
 import { Configuration, ConfigurationUseContext, getConfiguration } from './configuration'
 import { CompletionsDocumentProvider } from './docprovider'
 import { EmbeddingsClient } from './embeddings-client'
+import { ExtensionApi } from './extension-api'
 import { History } from './history'
-import * as path from 'path'
 import { getRgPath } from './rg'
 
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
@@ -27,6 +26,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 				vscode.ConfigurationTarget.Global
 			)
 		}),
+		// VSCode API types extension args as any[]
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
 			const tokenInput = args?.length ? (args[0] as string) : await vscode.window.showInputBox()
 			if (tokenInput === undefined || tokenInput === '') {
@@ -39,7 +40,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 		),
 		vscode.commands.registerCommand('cody.accept-tos', async version => {
 			if (typeof version !== 'number') {
-				vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+				void vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
 				return
 			}
 			await context.globalState.update('cody.tos-version-accepted', version)

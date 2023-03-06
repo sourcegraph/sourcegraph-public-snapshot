@@ -12,16 +12,16 @@ export async function getSymbols(uri: vscode.Uri): Promise<DocumentSymbol[]> {
 	}
 
 	const docSymbols: DocumentSymbol[] = []
-	for (const s of symbols) {
-		const ds = s as DocumentSymbol
-		if (!ds.range) {
-			throw new Error(`Found SymbolInformation ${s.name}, expects only DocumentSymbol instances`)
+	for (const symbol of symbols) {
+		const docSymbol = symbol as DocumentSymbol
+		if (!docSymbol.range) {
+			throw new Error(`Found SymbolInformation ${symbol.name}, expects only DocumentSymbol instances`)
 		}
-		docSymbols.push(ds)
+		docSymbols.push(docSymbol)
 	}
 	return flattenSymbols(docSymbols)
 }
 
 function flattenSymbols(symbols: DocumentSymbol[]): DocumentSymbol[] {
-	return symbols.flatMap(s => [s, ...s.children])
+	return symbols.flatMap(symbol => [symbol, ...symbol.children])
 }

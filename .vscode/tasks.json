@@ -25,6 +25,15 @@
 			"group": {
 				"kind": "build"
 			}
+		},
+		{
+			"label": "vscode-codegen: test-deps",
+			"type": "npm",
+			"script": "test-deps",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
 		}
 	]
 }

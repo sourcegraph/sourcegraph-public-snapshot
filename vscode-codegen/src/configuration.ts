@@ -17,7 +17,11 @@ export interface Configuration {
 export function getConfiguration(config: vscode.WorkspaceConfiguration): Configuration {
 	return {
 		enable: config.get('sourcegraph.cody.enable', true),
+		// FIXME: Remove these lint suppressions when we can supply a default endpoint
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 		serverEndpoint: config.get('cody.serverEndpoint')!,
+		// FIXME: Remove these lint suppressions when we can supply a default endpoint
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 		embeddingsEndpoint: config.get('cody.embeddingsEndpoint')!,
 		codebase: config.get('cody.codebase'),
 		debug: config.get('cody.debug', false),

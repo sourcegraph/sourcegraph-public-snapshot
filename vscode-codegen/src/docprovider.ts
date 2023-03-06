@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { Completion, LLMDebugInfo } from '@sourcegraph/cody-common'
 
 export class CompletionsDocumentProvider implements vscode.TextDocumentContentProvider, vscode.HoverProvider {
-	completionsByUri: {
+	private completionsByUri: {
 		[uri: string]: {
 			groups: CompletionGroup[]
 			status: 'done' | 'notdone'
@@ -18,27 +18,27 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 		this.onDidChangeEmitter.fire(uri)
 	}
 
-	clearCompletions(uri: vscode.Uri) {
+	public clearCompletions(uri: vscode.Uri): void {
 		delete this.completionsByUri[uri.toString()]
 		this.fireDocumentChanged(uri)
 	}
 
-	addCompletions(uri: vscode.Uri, lang: string, completions: Completion[], debug?: LLMDebugInfo) {
+	public addCompletions(uri: vscode.Uri, lang: string, completions: Completion[], debug?: LLMDebugInfo): void {
 		if (!this.completionsByUri[uri.toString()]) {
 			this.completionsByUri[uri.toString()] = { groups: [], status: 'notdone' }
 		}
 		this.completionsByUri[uri.toString()].groups.push({
 			lang,
-			completions: completions.map(c => ({
-				...c,
-				insertText: `${c.prefixText}🡆${c.insertText}`,
+			completions: completions.map(completion => ({
+				...completion,
+				insertText: `${completion.prefixText}🡆${completion.insertText}`,
 			})),
 			debug,
 		})
 		this.fireDocumentChanged(uri)
 	}
 
-	setCompletionsDone(uri: vscode.Uri) {
+	public setCompletionsDone(uri: vscode.Uri): void {
 		const completions = this.completionsByUri[uri.toString()]
 		if (!completions) {
 			return
@@ -47,10 +47,10 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 		this.fireDocumentChanged(uri)
 	}
 
-	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
-	onDidChange = this.onDidChangeEmitter.event
+	public onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+	public onDidChange = this.onDidChangeEmitter.event
 
-	provideTextDocumentContent(uri: vscode.Uri): string {
+	public provideTextDocumentContent(uri: vscode.Uri): string {
 		const completionGroups = this.completionsByUri[uri.toString()]
 		if (!completionGroups) {
 			return 'Loading...'
@@ -60,14 +60,17 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 			completionGroups.groups
 				.map(({ completions, lang }) =>
 					completions
-						.map((completion, i) => {
-							let sectionText = `${headerize(`${completion.label} (${i + 1}/${completions.length})`, 60)}`
+						.map((completion, index) => {
+							let sectionText = `${headerize(
+								`${completion.label} (${index + 1}/${completions.length})`,
+								60
+							)}`
 							if (this.isDebug()) {
 								if (completion.finishReason) {
 									sectionText += '\n> Finish reason:' + completion.finishReason
 								}
 							}
-							sectionText += '\n```' + lang + '\n' + `${completion.insertText}` + '\n```'
+							sectionText += `\n\`\`\`${lang}\n${completion.insertText}\n\`\`\``
 							return sectionText
 						})
 						.join('\n\n')
@@ -76,13 +79,13 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 		)
 	}
 
-	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.ProviderResult<vscode.Hover> {
+	public provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.ProviderResult<vscode.Hover> {
 		const completionGroups = this.completionsByUri[document.uri.toString()]
 		if (!completionGroups) {
 			return null
 		}
 
-		const wordRange = document.getWordRangeAtPosition(position, /[\w:\-]+/)
+		const wordRange = document.getWordRangeAtPosition(position, /[\w:-]+/)
 		if (!wordRange) {
 			return null
 		}
@@ -114,11 +117,11 @@ export interface CompletionGroup {
 	debug?: LLMDebugInfo
 }
 
-function headerize(s: string, width: number): string {
+function headerize(label: string, width: number): string {
 	const prefix = '# ======= '
-	let buffer = width - s.length - prefix.length - 1
+	let buffer = width - label.length - prefix.length - 1
 	if (buffer < 0) {
 		buffer = 0
 	}
-	return `${prefix}${s} ${'='.repeat(buffer)}`
+	return `${prefix}${label} ${'='.repeat(buffer)}`
 }

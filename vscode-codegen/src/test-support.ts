@@ -4,18 +4,17 @@ import { ChatMessage, ChatViewProvider } from './chat/view'
 // available from a writer. Tests use this to wait for the
 // extension to produce a value.
 class Rendezvous<T> {
-	resolve: (value: T) => void
-	promise: Promise<T>
+	private resolve: (value: T) => void
+	private promise: Promise<T>
 
 	constructor() {
-		let self = this
-		this.resolve = unused => {}
+		this.resolve = () => {}
 		this.promise = new Promise(resolve => {
-			self.resolve = resolve
+			this.resolve = resolve
 		})
 	}
 
-	set(value: T) {
+	public set(value: T): void {
 		this.resolve(value)
 		// FIXME: The extension constructs *two* ChatViewProviders.
 		// Tests need to hang onto the second one, so we reset the
@@ -24,7 +23,7 @@ class Rendezvous<T> {
 		this.promise = Promise.resolve(value)
 	}
 
-	get(): Promise<T> {
+	public get(): Promise<T> {
 		return this.promise
 	}
 }

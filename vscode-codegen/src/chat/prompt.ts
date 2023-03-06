@@ -106,12 +106,11 @@ export class Transcript {
 
 		let contextMessages: Message[] | undefined
 
-		const fetchEmbeddingsMessages = () => {
-			return this.getEmbeddingsContextMessages(query, {
+		const fetchEmbeddingsMessages = () =>
+			this.getEmbeddingsContextMessages(query, {
 				numCodeResults: 8,
 				numMarkdownResults: 2,
 			})
-		}
 		switch (this.contextType) {
 			case 'blended':
 				if (this.embeddingsClient) {

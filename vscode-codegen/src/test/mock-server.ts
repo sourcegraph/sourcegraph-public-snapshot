@@ -1,11 +1,12 @@
 import * as http from 'http'
+
 import * as ws from 'ws'
 
 export const SERVER_PORT = 49300
 export const EMBEDDING_PORT = 49301
 
 // Runs a stub Cody service for testing.
-export async function run(callback: () => Promise<any>) {
+export async function run<T>(around: () => Promise<T>): Promise<T> {
 	// TODO: Extend these servers to support expectations.
 	const socketServer = new ws.WebSocketServer({
 		port: SERVER_PORT,
@@ -13,7 +14,8 @@ export async function run(callback: () => Promise<any>) {
 	await new Promise(resolve => {
 		socketServer.on('connection', socket => {
 			socket.on('message', message => {
-				const req = JSON.parse(message.toString())
+				// eslint-disable-next-line @typescript-eslint/no-base-to-string
+				const req = JSON.parse(message.toString()) as { requestId: number }
 				socket.send(`{"requestId": ${req.requestId}, "kind": "response:complete", "message": "hello, world"}`)
 			})
 		})
@@ -29,8 +31,9 @@ export async function run(callback: () => Promise<any>) {
 	})
 	embeddingServer.listen(EMBEDDING_PORT)
 
-	await callback()
+	const result = await around()
 
 	socketServer.close()
 	embeddingServer.close()
+	return result
 }

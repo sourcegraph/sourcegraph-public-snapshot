@@ -1,6 +1,6 @@
-import * as os from 'os'
-import * as fs from 'fs'
 import { exec } from 'child_process'
+import * as fs from 'fs'
+import * as os from 'os'
 import path from 'path'
 
 export async function getRgPath(extensionPath: string): Promise<string | null> {
@@ -16,7 +16,7 @@ export async function getRgPath(extensionPath: string): Promise<string | null> {
 		})
 	})
 	for (const file of files) {
-		if (file.indexOf(target) !== -1) {
+		if (file.includes(target)) {
 			return path.join(resourcesDir, file)
 		}
 	}
@@ -29,8 +29,8 @@ async function isMusl() {
 	let stderr
 	try {
 		stderr = (await exec('ldd --version')).stderr
-	} catch (err) {
-		stderr = (err as any).stderr
+	} catch (error) {
+		stderr = (error as any).stderr
 	}
 	if (stderr.indexOf('musl') > -1) {
 		return true

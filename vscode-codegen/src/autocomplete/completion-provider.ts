@@ -38,32 +38,35 @@ export async function getReferences(
 					const locations = res as vscode.Location[]
 					return locations.length > 3 ? locations.slice(0, 3) : locations
 				} catch (error) {
-					console.error(`failed to fetch references: ${error}`)
+					console.error('failed to fetch references:', error)
 					return []
 				}
 			})
 		)
 	).flat()
 	const filteredLocations = refLocations.filter(
-		location => !excludeRanges.map(er => er.uri === location.uri && er.range.contains(location.range)).some(c => c)
+		location =>
+			!excludeRanges.some(
+				excludedRange => excludedRange.uri === location.uri && excludedRange.range.contains(location.range)
+			)
 	)
 	return Promise.all(
-		filteredLocations.map(async l => {
-			const doc = await vscode.workspace.openTextDocument(l.uri)
+		filteredLocations.map(async location => {
+			const doc = await vscode.workspace.openTextDocument(location.uri)
 			return {
 				filename: doc.uri.path,
-				text: doc.getText(surroundingLine(doc, l.range, 2)),
+				text: doc.getText(surroundingLine(doc, location.range, 2)),
 			}
 		})
 	)
 }
 
 function surroundingLine(doc: TextDocument, range: vscode.Range, numContextLines = 0): vscode.Range {
-	const r = new vscode.Range(
+	const expandedRange = new vscode.Range(
 		Math.max(0, range.start.line - numContextLines),
 		0,
 		range.end.line + 1 + numContextLines,
 		0
 	)
-	return doc.validateRange(r)
+	return doc.validateRange(expandedRange)
 }

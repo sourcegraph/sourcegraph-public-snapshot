@@ -17,11 +17,16 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
+				"${workspaceFolder}/vscode-codegen/src/test/workspace",
+				"--disable-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen",
 				"--extensionTestsPath=${workspaceFolder}/vscode-codegen/out/test/suite/index"
 			],
 			"outFiles": ["${workspaceFolder}/vscode-codegen/out/test/**/*.js"],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "vscode-codegen: test-deps",
+			"env": {
+				"NODE_ENV": "development"
+			}
 		}
 	]
 }
