@@ -55,37 +55,45 @@ type partialRows struct {
 }
 
 // splitRows splits nRows into nWorkers equal (or nearly equal) sized chunks.
-func splitRows(nRows int, nWorkers int) []partialRows {
-	if nWorkers == 1 || nRows <= nWorkers {
-		return []partialRows{{0, nRows}}
+func splitRows(numRows int, numWorkers int, minRowsToSplit int) []partialRows {
+	if numWorkers == 1 || numRows <= numWorkers || numRows <= minRowsToSplit {
+		return []partialRows{{0, numRows}}
 	}
-	nRowsPerWorker := int(math.Ceil(float64(nRows) / float64(nWorkers)))
+	nRowsPerWorker := int(math.Ceil(float64(numRows) / float64(numWorkers)))
 
-	rowsPerWorker := make([]partialRows, nWorkers)
-	for i := 0; i < nWorkers; i++ {
+	rowsPerWorker := make([]partialRows, numWorkers)
+	for i := 0; i < numWorkers; i++ {
 		rowsPerWorker[i] = partialRows{
-			start: min(i*nRowsPerWorker, nRows),
-			end:   min((i+1)*nRowsPerWorker, nRows),
+			start: min(i*nRowsPerWorker, numRows),
+			end:   min((i+1)*nRowsPerWorker, numRows),
 		}
 	}
 	return rowsPerWorker
 }
 
+type WorkerOptions struct {
+	NumWorkers int
+	// MinRowsToSplit indicates the minimum number of rows that should be split
+	// among the workers. If numRows <= MinRowsToSplit, then we use a single worker
+	// to process the index, regardless of the NumWorkers option.
+	MinRowsToSplit int
+}
+
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int, nWorkers int) []*T {
-	if nResults == 0 {
+func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions) []*T {
+	if numResults == 0 {
 		return []*T{}
 	}
 
-	nRows := len(index.RowMetadata)
+	numRows := len(index.RowMetadata)
 	// Cannot request more results then there are rows.
-	nResults = min(nRows, nResults)
+	numResults = min(numRows, numResults)
 	// We need at least 1 worker.
-	nWorkers = max(1, nWorkers)
+	numWorkers := max(1, workerOptions.NumWorkers)
 
 	// Split index rows among the workers. Each worker will run a partial similarity search on the assigned rows.
-	rowsPerWorker := splitRows(nRows, nWorkers)
+	rowsPerWorker := splitRows(numRows, numWorkers, workerOptions.MinRowsToSplit)
 	heaps := make([]*nearestNeighborsHeap, len(rowsPerWorker))
 
 	if len(rowsPerWorker) > 1 {
@@ -93,16 +101,16 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int, 
 		for workerIdx := 0; workerIdx < len(rowsPerWorker); workerIdx++ {
 			// Capture the loop variable value so we can use it in the closure below.
 			workerIdx := workerIdx
-			wg.Go(func() { heaps[workerIdx] = index.partialSimilaritySearch(query, nResults, rowsPerWorker[workerIdx]) })
+			wg.Go(func() { heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx]) })
 		}
 		wg.Wait()
 	} else {
 		// Run the similarity search directly when we have a single worker to eliminate the concurrency overhead.
-		heaps[0] = index.partialSimilaritySearch(query, nResults, rowsPerWorker[0])
+		heaps[0] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[0])
 	}
 
 	// Collect all heap neighbors from workers into a single array.
-	neighbors := make([]nearestNeighbor, 0, len(rowsPerWorker)*nResults)
+	neighbors := make([]nearestNeighbor, 0, len(rowsPerWorker)*numResults)
 	for _, heap := range heaps {
 		if heap != nil {
 			neighbors = append(neighbors, heap.neighbors...)
@@ -112,22 +120,22 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int, 
 	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].similarity > neighbors[j].similarity })
 
 	// Take top neighbors and return them as results.
-	results := make([]*T, nResults)
-	for idx := 0; idx < min(nResults, len(neighbors)); idx++ {
+	results := make([]*T, numResults)
+	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
 		results[idx] = &index.RowMetadata[neighbors[idx].index]
 	}
 	return results
 }
 
-func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, nResults int, partialRows partialRows) *nearestNeighborsHeap {
+func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
 	}
-	nResults = min(nRows, nResults)
+	numResults = min(nRows, numResults)
 
 	nnHeap := newNearestNeighborsHeap()
-	for i := partialRows.start; i < partialRows.start+nResults; i++ {
+	for i := partialRows.start; i < partialRows.start+numResults; i++ {
 		similarity := CosineSimilarity(
 			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
 			query,
@@ -135,7 +143,7 @@ func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, nResult
 		heap.Push(nnHeap, nearestNeighbor{i, similarity})
 	}
 
-	for i := partialRows.start + nResults; i < partialRows.end; i++ {
+	for i := partialRows.start + numResults; i < partialRows.end; i++ {
 		similarity := CosineSimilarity(
 			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
 			query,
@@ -151,7 +159,6 @@ func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, nResult
 	return nnHeap
 }
 
-// TODO: Can potentially inline this for any performance benefits?
 func CosineSimilarity(row []float32, query []float32) float32 {
 	similarity := float32(0.0)
 	for i := 0; i < len(row); i++ {

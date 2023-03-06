@@ -45,14 +45,14 @@ var ranks = [][]int{
 }
 
 func TestSimilaritySearch(t *testing.T) {
-	nRows, nQueries, columnDimension := 16, 3, 3
+	numRows, numQueries, columnDimension := 16, 3, 3
 	index := EmbeddingIndex[RepoEmbeddingRowMetadata]{
 		Embeddings:      embeddings,
 		ColumnDimension: columnDimension,
 		RowMetadata:     []RepoEmbeddingRowMetadata{},
 	}
 
-	for i := 0; i < nRows; i++ {
+	for i := 0; i < numRows; i++ {
 		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
 	}
 
@@ -64,14 +64,14 @@ func TestSimilaritySearch(t *testing.T) {
 		return results
 	}
 
-	for _, nWorkers := range []int{0, 1, 2, 3, 5, 8, 9, 16, 20, 33} {
-		for _, nResults := range []int{0, 1, 2, 4, 9, 16, 32} {
-			for q := 0; q < nQueries; q++ {
-				t.Run(fmt.Sprintf("find nearest neighbors, query=%d, nResults=%d, nWorkers=%d", q, nResults, nWorkers), func(t *testing.T) {
+	for _, numWorkers := range []int{0, 1, 2, 3, 5, 8, 9, 16, 20, 33} {
+		for _, numResults := range []int{0, 1, 2, 4, 9, 16, 32} {
+			for q := 0; q < numQueries; q++ {
+				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, nResults, nWorkers)
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0})
 					expectedResults := getExpectedResults(ranks[q])
-					require.Equal(t, expectedResults[:min(nResults, len(expectedResults))], results)
+					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], results)
 				})
 			}
 		}
@@ -80,47 +80,54 @@ func TestSimilaritySearch(t *testing.T) {
 
 func TestSplitRows(t *testing.T) {
 	tests := []struct {
-		nRows    int
-		nWorkers int
-		want     []partialRows
+		numRows        int
+		numWorkers     int
+		minRowsToSplit int
+		want           []partialRows
 	}{
 		{
-			nRows:    0,
-			nWorkers: 1,
-			want:     []partialRows{{0, 0}},
+			numRows:    0,
+			numWorkers: 1,
+			want:       []partialRows{{0, 0}},
 		},
 		{
-			nRows:    128,
-			nWorkers: 1,
-			want:     []partialRows{{0, 128}},
+			numRows:    128,
+			numWorkers: 1,
+			want:       []partialRows{{0, 128}},
 		},
 		{
-			nRows:    16,
-			nWorkers: 4,
-			want:     []partialRows{{0, 4}, {4, 8}, {8, 12}, {12, 16}},
+			numRows:    16,
+			numWorkers: 4,
+			want:       []partialRows{{0, 4}, {4, 8}, {8, 12}, {12, 16}},
 		},
 		{
-			nRows:    5,
-			nWorkers: 4,
-			want:     []partialRows{{0, 2}, {2, 4}, {4, 5}, {5, 5}},
+			numRows:    5,
+			numWorkers: 4,
+			want:       []partialRows{{0, 2}, {2, 4}, {4, 5}, {5, 5}},
 		},
 		{
-			nRows:    16,
-			nWorkers: 3,
-			want:     []partialRows{{0, 6}, {6, 12}, {12, 16}},
+			numRows:    16,
+			numWorkers: 3,
+			want:       []partialRows{{0, 6}, {6, 12}, {12, 16}},
+		},
+		{
+			numRows:        20,
+			numWorkers:     5,
+			minRowsToSplit: 20,
+			want:           []partialRows{{0, 20}},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("nRows=%d, nWorkers=%d", tt.nRows, tt.nWorkers), func(t *testing.T) {
-			got := splitRows(tt.nRows, tt.nWorkers)
+		t.Run(fmt.Sprintf("numRows=%d numWorkers=%d", tt.numRows, tt.numWorkers), func(t *testing.T) {
+			got := splitRows(tt.numRows, tt.numWorkers, tt.minRowsToSplit)
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func getRandomEmbeddings(prng *rand.Rand, nElements int) []float32 {
-	slice := make([]float32, nElements)
+func getRandomEmbeddings(prng *rand.Rand, numElements int) []float32 {
+	slice := make([]float32, numElements)
 	for idx := range slice {
 		slice[idx] = prng.Float32()
 	}
@@ -130,22 +137,22 @@ func getRandomEmbeddings(prng *rand.Rand, nElements int) []float32 {
 func BenchmarkSimilaritySearch(b *testing.B) {
 	prng := rand.New(rand.NewSource(0))
 
-	nRows := 1_000_000
-	nResults := 100
+	numRows := 1_000_000
+	numResults := 100
 	columnDimension := 1536
 	index := &EmbeddingIndex[RepoEmbeddingRowMetadata]{
-		Embeddings:      getRandomEmbeddings(prng, nRows*columnDimension),
+		Embeddings:      getRandomEmbeddings(prng, numRows*columnDimension),
 		ColumnDimension: columnDimension,
-		RowMetadata:     make([]RepoEmbeddingRowMetadata, nRows),
+		RowMetadata:     make([]RepoEmbeddingRowMetadata, numRows),
 	}
 	query := getRandomEmbeddings(prng, columnDimension)
 
 	b.ResetTimer()
 
-	for _, nWorkers := range []int{1, 2, 4, 8, 16} {
-		b.Run(fmt.Sprintf("nWorkers=%d", nWorkers), func(b *testing.B) {
+	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
+		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_ = index.SimilaritySearch(query, nResults, nWorkers)
+				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers})
 			}
 		})
 	}

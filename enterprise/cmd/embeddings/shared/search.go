@@ -42,6 +42,8 @@ func searchRepoEmbeddingIndex(
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
 }
 
+const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
+
 func searchEmbeddingIndex(
 	ctx context.Context,
 	repoName api.RepoName,
@@ -51,8 +53,8 @@ func searchEmbeddingIndex(
 	query []float32,
 	nResults int,
 ) []embeddings.EmbeddingSearchResult {
-	nWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, nWorkers)
+	numWorkers := runtime.GOMAXPROCS(0)
+	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT})
 
 	results := make([]embeddings.EmbeddingSearchResult, len(rows))
 	for idx, row := range rows {
