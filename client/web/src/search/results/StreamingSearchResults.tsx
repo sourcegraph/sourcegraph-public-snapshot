@@ -109,7 +109,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 rankingToggleEnabled && rankingEnabled ? 'search-ranking' : '-search-ranking',
                 ...new URLSearchParams(location.search).getAll('feat'),
             ],
-            [location.search, rankingToggleEnabled]
+            [location.search, rankingToggleEnabled, rankingEnabled]
         )
     )
     const { addRecentSearch } = useRecentSearches()
