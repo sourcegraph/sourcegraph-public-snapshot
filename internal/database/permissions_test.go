@@ -328,6 +328,100 @@ func TestPermissionCount(t *testing.T) {
 	})
 }
 
+func TestGetPermissionForUser(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Permissions()
+
+	u1, err := db.Users().Create(ctx, NewUser{Username: "username-1"})
+	require.NoError(t, err)
+
+	u2, err := db.Users().Create(ctx, NewUser{Username: "username-2"})
+	require.NoError(t, err)
+
+	r, err := db.Roles().Create(ctx, "TEST-ROLE-1", false)
+	require.NoError(t, err)
+
+	permissionAction := "EXECUTE"
+
+	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
+		Namespace: types.BatchChangesNamespace,
+		Action:    permissionAction,
+	})
+	require.NoError(t, err)
+
+	err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
+		RoleID:       r.ID,
+		PermissionID: p.ID,
+	})
+	require.NoError(t, err)
+
+	err = db.UserRoles().Assign(ctx, AssignUserRoleOpts{
+		UserID: u2.ID,
+		RoleID: r.ID,
+	})
+	require.NoError(t, err)
+
+	t.Run("missing user id", func(t *testing.T) {
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{})
+		require.Nil(t, perm)
+		require.ErrorContains(t, err, "missing user id")
+	})
+
+	t.Run("missing permission namespace", func(t *testing.T) {
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{UserID: u1.ID})
+		require.Nil(t, perm)
+		require.ErrorContains(t, err, "invalid permission namespace")
+	})
+
+	t.Run("invalid permission namespace", func(t *testing.T) {
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
+			UserID:    u1.ID,
+			Namespace: "INVALID_NAMESPACE",
+		})
+		require.Nil(t, perm)
+		require.ErrorContains(t, err, "invalid permission namespace")
+	})
+
+	t.Run("missing action", func(t *testing.T) {
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
+			UserID:    u1.ID,
+			Namespace: types.BatchChangesNamespace,
+		})
+		require.Nil(t, perm)
+		require.ErrorContains(t, err, "missing permission action")
+	})
+
+	t.Run("user without permission", func(t *testing.T) {
+		expectedErr := &PermissionNotFoundErr{
+			Namespace: types.BatchChangesNamespace,
+			Action:    permissionAction,
+		}
+
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
+			UserID:    u1.ID,
+			Namespace: types.BatchChangesNamespace,
+			Action:    permissionAction,
+		})
+		require.Nil(t, perm)
+		require.ErrorContains(t, err, expectedErr.Error())
+	})
+
+	t.Run("user with permission", func(t *testing.T) {
+		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
+			UserID:    u2.ID,
+			Namespace: types.BatchChangesNamespace,
+			Action:    permissionAction,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, perm)
+		require.Equal(t, perm.ID, p.ID)
+		require.Equal(t, perm.Namespace, p.Namespace)
+		require.Equal(t, perm.Action, p.Action)
+	})
+}
+
 func seedPermissionDataForList(ctx context.Context, t *testing.T, store PermissionStore, db DB) (*types.Role, *types.User, int) {
 	t.Helper()
 
