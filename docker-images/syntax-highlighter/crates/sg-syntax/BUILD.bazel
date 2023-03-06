@@ -28,5 +28,6 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    env = {"RUST_BACKTRACE": "1"},
 )
 
