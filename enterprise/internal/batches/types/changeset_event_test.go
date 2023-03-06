@@ -1,10 +1,13 @@
 package types
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -302,6 +305,100 @@ func TestChangesetEvent(t *testing.T) {
 		})
 	}
 
+	{ // azuredevops
+
+		user := "john-doe"
+
+		reviewers := []azuredevops.Reviewer{{
+			ID:         "1",
+			UniqueName: user,
+			Vote:       10,
+		}, {
+			ID:         "2",
+			UniqueName: user,
+			Vote:       5,
+		}, {
+			ID:         "3",
+			UniqueName: user,
+			Vote:       0,
+		}, {
+			ID:         "4",
+			UniqueName: user,
+			Vote:       -5,
+		}, {
+			ID:         "5",
+			UniqueName: user,
+			Vote:       -10,
+		}}
+
+		statuses := []*azuredevops.PullRequestBuildStatus{
+			{
+				ID:    1,
+				State: azuredevops.PullRequestBuildStatusStateSucceeded,
+			},
+			{
+				ID:    2,
+				State: azuredevops.PullRequestBuildStatusStateError,
+			},
+			{
+				ID:    3,
+				State: azuredevops.PullRequestBuildStatusStateFailed,
+			},
+		}
+
+		cases = append(cases, testCase{"azuredevops",
+			Changeset{
+				ID: 24,
+				Metadata: &adobatches.AnnotatedPullRequest{
+					PullRequest: &azuredevops.PullRequest{
+						Reviewers: reviewers,
+					},
+					Statuses: statuses,
+				},
+			},
+			[]*ChangesetEvent{{
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestApproved,
+				Key:         reviewers[0].ID,
+				Metadata:    reviewers[0],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
+				Key:         reviewers[1].ID,
+				Metadata:    reviewers[1],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequesReviewed,
+				Key:         reviewers[2].ID,
+				Metadata:    reviewers[2],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
+				Key:         reviewers[3].ID,
+				Metadata:    reviewers[3],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestRejected,
+				Key:         reviewers[4].ID,
+				Metadata:    reviewers[4],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded,
+				Key:         strconv.Itoa(statuses[0].ID),
+				Metadata:    statuses[0],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildError,
+				Key:         strconv.Itoa(statuses[1].ID),
+				Metadata:    statuses[1],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildFailed,
+				Key:         strconv.Itoa(statuses[2].ID),
+				Metadata:    statuses[2],
+			}},
+		})
+	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
