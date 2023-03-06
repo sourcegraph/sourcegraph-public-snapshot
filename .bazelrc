@@ -15,5 +15,5 @@ import %workspace%/.aspect/bazelrc/performance.bazelrc
 # this file. See https://bazel.build/configure/best-practices#bazelrc-file.
 try-import %workspace%/.aspect/bazelrc/user.bazelrc
 
-# Enable bazel hack for autogold
-test --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
+# Enable bazel hack for autogold; apply to both build & test to avoid busting analysis cache
+build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true

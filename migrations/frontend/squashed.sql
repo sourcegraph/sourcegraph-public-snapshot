@@ -65,24 +65,6 @@ CREATE TYPE feature_flag_type AS ENUM (
     'rollout'
 );
 
-CREATE TYPE lsif_index_state AS ENUM (
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'failed'
-);
-
-CREATE TYPE lsif_upload_state AS ENUM (
-    'uploading',
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'deleted',
-    'failed'
-);
-
 CREATE TYPE lsif_uploads_transition_columns AS (
 	state text,
 	expired boolean,
@@ -1748,12 +1730,21 @@ ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_in
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
-    "precision" double precision NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     graph_key text,
     num_paths integer,
-    refcount_logsum double precision
+    refcount_logsum double precision,
+    id bigint NOT NULL
 );
+
+CREATE SEQUENCE codeintel_path_ranks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_path_ranks_id_seq OWNED BY codeintel_path_ranks.id;
 
 CREATE TABLE codeintel_ranking_definitions (
     id bigint NOT NULL,
@@ -4215,7 +4206,8 @@ CREATE TABLE user_permissions (
     object_type text NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
-    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
+    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
+    migrated boolean DEFAULT true
 );
 
 CREATE TABLE user_public_repos (
@@ -4471,6 +4463,8 @@ ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextv
 ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfiles_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_path_rank_inputs_id_seq'::regclass);
+
+ALTER TABLE ONLY codeintel_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_path_ranks_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_definitions_id_seq'::regclass);
 
@@ -4735,6 +4729,9 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 
 ALTER TABLE ONLY codeintel_path_rank_inputs
     ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_path_ranks
+    ADD CONSTRAINT codeintel_path_ranks_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_definitions
     ADD CONSTRAINT codeintel_ranking_definitions_pkey PRIMARY KEY (id);
@@ -5207,7 +5204,7 @@ CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON c
 
 CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE (NOT processed);
 
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
+CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
 

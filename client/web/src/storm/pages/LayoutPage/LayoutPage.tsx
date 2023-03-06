@@ -12,28 +12,28 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { AppRouterContainer } from './components/AppRouterContainer'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
-import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
-import { useScrollToLocationHash } from './components/useScrollToLocationHash'
-import { useUserHistory } from './components/useUserHistory'
-import { useFeatureFlag } from './featureFlags/useFeatureFlag'
-import { GlobalAlerts } from './global/GlobalAlerts'
-import { useHandleSubmitFeedback } from './hooks'
-import { LegacyLayoutRouteContext } from './LegacyRouteContext'
-import { SurveyToast } from './marketing/toast'
-import { GlobalNavbar } from './nav/GlobalNavbar'
-import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
-import { parseSearchURLQuery } from './search'
-import { NotepadContainer } from './search/Notepad'
-import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { parseBrowserRepoURL } from './util/url'
+import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
+import { AppRouterContainer } from '../../../components/AppRouterContainer'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
+import { LazyFuzzyFinder } from '../../../components/fuzzyFinder/LazyFuzzyFinder'
+import { KeyboardShortcutsHelp } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
+import { useScrollToLocationHash } from '../../../components/useScrollToLocationHash'
+import { useUserHistory } from '../../../components/useUserHistory'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { GlobalAlerts } from '../../../global/GlobalAlerts'
+import { useHandleSubmitFeedback } from '../../../hooks'
+import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
+import { SurveyToast } from '../../../marketing/toast'
+import { GlobalNavbar } from '../../../nav/GlobalNavbar'
+import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
+import { parseSearchURLQuery } from '../../../search'
+import { NotepadContainer } from '../../../search/Notepad'
+import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
+import { parseBrowserRepoURL } from '../../../util/url'
 
-import styles from './Layout.module.scss'
+import styles from './LayoutPage.module.scss'
 
-const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
+const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never
@@ -188,11 +188,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}

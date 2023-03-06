@@ -3,7 +3,9 @@ package embeddings
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -59,12 +61,12 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	index := &RepoEmbeddingIndex{
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
-		CodeIndex: &EmbeddingIndex[RepoEmbeddingRowMetadata]{
+		CodeIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
 			Embeddings:      []float32{0.0, 0.1, 0.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
 		},
-		TextIndex: &EmbeddingIndex[RepoEmbeddingRowMetadata]{
+		TextIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
 			Embeddings:      []float32{1.0, 2.1, 3.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
@@ -81,4 +83,51 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, index, downloadedIndex)
+}
+
+func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex[RepoEmbeddingRowMetadata] {
+	embeddings := make([]float32, nRows*columnDimension)
+	for idx := range embeddings {
+		embeddings[idx] = rand.Float32()
+	}
+
+	rowMetadata := make([]RepoEmbeddingRowMetadata, nRows)
+	for _, row := range rowMetadata {
+		row.StartLine = rand.Int()
+		row.EndLine = rand.Int()
+		row.FileName = fmt.Sprintf("path/to/file/%d_%d.go", row.StartLine, row.EndLine)
+	}
+
+	return EmbeddingIndex[RepoEmbeddingRowMetadata]{
+		Embeddings:      embeddings,
+		ColumnDimension: columnDimension,
+		RowMetadata:     rowMetadata,
+	}
+}
+
+func BenchmarkEmbeddingIndexStorage(b *testing.B) {
+	// Roughly the size of the sourcegraph/sourcegraph index.
+	index := &RepoEmbeddingIndex{
+		RepoName:  api.RepoName("repo"),
+		Revision:  api.CommitID("commit"),
+		CodeIndex: getMockEmbeddingIndex(40_000, 1536),
+		TextIndex: getMockEmbeddingIndex(10_000, 1536),
+	}
+
+	ctx := context.Background()
+	uploadStore := newMockUploadStore()
+
+	err := UploadIndex(ctx, uploadStore, "index", index)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
