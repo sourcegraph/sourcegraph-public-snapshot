@@ -253,7 +253,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+	scipToHTML(h.code, h.document, addRow, addText, validLines)
 
 	stringRows := map[int32]string{}
 	for row, node := range htmlRows {

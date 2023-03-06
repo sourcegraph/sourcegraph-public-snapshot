@@ -118,6 +118,7 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
+// TODO: I can't find any references to this function...?
 func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
 	fmt.Println("==> DecorateFileHunksHTML")
 
