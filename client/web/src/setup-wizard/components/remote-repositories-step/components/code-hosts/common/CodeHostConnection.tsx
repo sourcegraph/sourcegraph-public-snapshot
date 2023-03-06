@@ -3,6 +3,7 @@ import { FC, ReactElement, ReactNode, useState, useMemo } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     Collapse,
@@ -106,6 +107,7 @@ interface CodeHostJSONFormContentProps {
 
 export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): ReactElement {
     const { displayNameField, configurationField, externalServiceOptions } = props
+    const isLightTheme = useIsLightTheme()
 
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
@@ -129,7 +131,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     loading={true}
                     height={400}
                     readOnly={false}
-                    isLightTheme={true}
+                    isLightTheme={isLightTheme}
                     blockNavigationIfDirty={false}
                     onChange={configurationField.input.onChange}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
