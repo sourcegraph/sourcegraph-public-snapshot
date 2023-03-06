@@ -5,27 +5,22 @@ import { Dispatch, SetStateAction, useCallback, useRef, useSyncExternalStore, us
  */
 export const useStorageHook = <T>(storage: Storage, key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] => {
     const subscribe = useMemo(() => subscribeToStorage(key), [key])
-    const getSnapshot = useCallback(() => getStorageValue(storage, key, initialValue), [storage, key, initialValue])
+    const getSnapshot = useMutableSnapshot<T>({ key, storage, initialValue })
 
-    const storedValue = useSyncExternalStore(subscribe, getSnapshot)
-
-    // We want `setValue` to have a stable identity like `setState`, so it shouldn't depend on `storedValue`.
-    // Instead, have it read from a ref which is updated on each render.
-    const storedValueReference = useRef<T>(storedValue)
-    storedValueReference.current = storedValue
+    const storedValue = useSyncExternalStore<{ value: T }>(subscribe, getSnapshot)
 
     const setValue: Dispatch<SetStateAction<T>> = useCallback(
         (value: T | ((previousValue: T) => T)): void => {
             // We need to cast here because T could be a function type itself,
             // but we cannot tell TypeScript that functions are not allowed as T.
             const valueToStore =
-                typeof value === 'function' ? (value as (previousValue: T) => T)(storedValueReference.current) : value
+                typeof value === 'function' ? (value as (previousValue: T) => T)(storedValue.value) : value
             storage.setItem(key, JSON.stringify(valueToStore))
         },
-        [storage, key]
+        [storage, key, storedValue]
     )
 
-    return [storedValue, setValue]
+    return [storedValue.value, setValue]
 }
 
 type Unsubscribe = () => void
@@ -48,11 +43,29 @@ function subscribeToStorage(key: string): Subscribe {
     }
 }
 
-function getStorageValue<T>(storage: Storage, key: string, fallbackValue: T): T {
+interface UseMutableSnapshotProps<T> {
+    key: string
+    storage: Storage
+    initialValue: T
+}
+
+function useMutableSnapshot<T>(props: UseMutableSnapshotProps<T>): () => { value: T } {
+    const { key, storage, initialValue } = props
+    const mutableValue = useRef<{ value: T }>({ value: initialValue })
+
+    return useCallback(() => {
+        const newValue = getStorageValue<T>(storage, key)
+        mutableValue.current.value = newValue ?? initialValue
+
+        return mutableValue.current
+    }, [storage, key, initialValue])
+}
+
+function getStorageValue<T>(storage: Storage, key: string): T | null {
     try {
         const item = storage.getItem(key)
-        return item ? (JSON.parse(item) as T) : fallbackValue
+        return item ? (JSON.parse(item) as T) : null
     } catch {
-        return fallbackValue
+        return null
     }
 }
