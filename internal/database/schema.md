@@ -945,17 +945,18 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
 
 # Table "public.codeintel_path_ranks"
 ```
-     Column      |           Type           | Collation | Nullable | Default 
------------------+--------------------------+-----------+----------+---------
+     Column      |           Type           | Collation | Nullable |                     Default                      
+-----------------+--------------------------+-----------+----------+--------------------------------------------------
  repository_id   | integer                  |           | not null | 
  payload         | jsonb                    |           | not null | 
- precision       | double precision         |           | not null | 
  updated_at      | timestamp with time zone |           | not null | now()
  graph_key       | text                     |           |          | 
  num_paths       | integer                  |           |          | 
  refcount_logsum | double precision         |           |          | 
+ id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
-    "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
+    "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
     insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
