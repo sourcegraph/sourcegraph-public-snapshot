@@ -105,7 +105,7 @@ func NewHandler(
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper, ctagsBinary))
+	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
 
@@ -117,7 +117,7 @@ func NewHandler(
 	return internalgrpc.MultiplexHandlers(grpcServer, mux)
 }
 
-func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc, ctagsBinary string) http.HandlerFunc {
+func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var args search.SymbolsParameters
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
