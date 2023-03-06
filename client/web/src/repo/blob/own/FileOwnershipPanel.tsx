@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useEffect } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { Accordion } from '@reach/accordion'
@@ -26,7 +27,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
         filePath: string
     } & TelemetryProps
 > = ({ repoID, revision, filePath, telemetryService }) => {
-    React.useEffect(() => {
+    useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
