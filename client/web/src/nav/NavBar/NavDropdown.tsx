@@ -198,13 +198,15 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
             </NavItem>
             {/* All nav items for smaller screens */}
             {/* Render the toggle item separately */}
-            <NavItem icon={toggleItem.icon} className="d-flex d-sm-none">
-                <NavLink to={toggleItem.path}>{toggleItem.content}</NavLink>
-            </NavItem>
+            {toggleItem.path !== '#' && (
+                <NavItem icon={toggleItem.icon} className="d-flex d-sm-none">
+                    <NavLink to={toggleItem.path}>{toggleItem.content}</NavLink>
+                </NavItem>
+            )}
             {/* Render the rest of the items and indent them to indicate a hierarchical structure */}
             {items.map(item => (
                 <NavItem key={item.path} className="d-flex d-sm-none">
-                    <NavLink to={item.path} className="pl-2" target={item.target}>
+                    <NavLink to={item.path} className="pl-2" external={item.target === '_blank'}>
                         {item.content}
                     </NavLink>
                 </NavItem>
