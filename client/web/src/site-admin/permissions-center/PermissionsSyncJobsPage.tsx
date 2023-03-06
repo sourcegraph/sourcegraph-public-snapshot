@@ -39,9 +39,9 @@ export const PermissionsSyncJobsPage: React.FunctionComponent<React.PropsWithChi
         <PermissionsSyncJobsTable telemetryService={telemetryService} />
     ) : (
         <>
-            <PageTitle title="Permissions Sync Dashboard - Admin" />
+            <PageTitle title="Permissions Sync - Admin" />
             <PageHeader
-                path={[{ text: 'Permissions Sync Dashboard' }]}
+                path={[{ text: 'Permissions Sync' }]}
                 headingElement="h2"
                 description={
                     <>
