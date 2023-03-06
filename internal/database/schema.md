@@ -952,7 +952,6 @@ Triggers:
  id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
  upload_id       | integer                  |           | not null | 
  symbol_name     | text                     |           | not null | 
- repository      | text                     |           | not null | 
  document_path   | text                     |           | not null | 
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
@@ -986,15 +985,15 @@ Foreign-key constraints:
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- repository    | text    |           | not null | 
  document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
+ repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr" btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i" btree (graph_key, repository_id)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
