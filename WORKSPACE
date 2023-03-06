@@ -83,14 +83,6 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/rules_rust-v0.16.1.tar.gz"],
 )
 
-# Node toolchain setup ==========================
-load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
-
-nodejs_register_toolchains(
-    name = "nodejs",
-    node_version = DEFAULT_NODE_VERSION,
-)
-
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
