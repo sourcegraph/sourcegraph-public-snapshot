@@ -1,4 +1,5 @@
 import { ApolloError } from '@apollo/client'
+
 import { gql } from '@sourcegraph/http-client'
 
 import { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'

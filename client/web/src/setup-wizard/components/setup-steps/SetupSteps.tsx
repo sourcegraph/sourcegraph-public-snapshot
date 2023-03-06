@@ -12,6 +12,7 @@ import {
     PropsWithChildren,
 } from 'react'
 
+import { ApolloClient, useApolloClient } from '@apollo/client'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -28,7 +29,7 @@ export interface StepConfiguration {
     name: string
     nextURL?: string
     component: ComponentType<{ className?: string }>
-    onNext?: () => void
+    onNext?: (client: ApolloClient<{}>) => void
 }
 
 interface SetupStepsContextData {
@@ -99,11 +100,12 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         onStepChange(currentStep)
     }, [currentStep, onStepChange])
 
+    const client = useApolloClient()
     const handleGoToNextStep = useCallback(() => {
         const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
 
-        activeStep.onNext?.()
+        activeStep.onNext?.(client)
 
         if (activeStep.nextURL) {
             navigate(activeStep.nextURL)
@@ -115,7 +117,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
             navigate(nextStep.path)
         }
-    }, [activeStepIndex, steps, navigate])
+    }, [activeStepIndex, steps, navigate, client])
 
     const handleGoToPrevStep = useCallback(() => {
         const prevStepIndex = activeStepIndex - 1
