@@ -519,9 +519,11 @@ function RenderUsernameAndEmail({
                         </Tooltip>
                     )}{' '}
                     {scimEnabled && (
-                        <Badge variant="primary" className="mr-1">
-                            SCIM
-                        </Badge>
+                        <Tooltip content="This user is SCIM-enabled—an external system controls some of its attributes.">
+                            <Badge variant="primary" className="mr-1">
+                                SCIM
+                            </Badge>
+                        </Tooltip>
                     )}
                     <Link to={`/users/${username}`} className="text-truncate">
                         @{username}
