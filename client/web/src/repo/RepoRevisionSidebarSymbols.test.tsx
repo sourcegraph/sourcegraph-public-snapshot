@@ -1,5 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
+import delay from 'delay'
 import { escapeRegExp } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -14,7 +15,6 @@ import {
     RepoRevisionSidebarSymbolsProps,
     SYMBOLS_QUERY,
 } from './RepoRevisionSidebarSymbols'
-import delay from 'delay'
 
 const location = {
     pathname: '/github.com/sourcegraph/sourcegraph@some-branch/-/blob/src/index.js',
