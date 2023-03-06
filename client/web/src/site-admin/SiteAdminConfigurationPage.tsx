@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { FC } from 'react'
 
+import { ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { Subject, Subscription } from 'rxjs'
@@ -212,6 +213,7 @@ const quickConfigureActions: {
 
 interface Props extends TelemetryProps {
     isLightTheme: boolean
+    client: ApolloClient<{}>
 }
 
 interface State {
@@ -226,9 +228,10 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => (
-    <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} />
-)
+export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => {
+    const client = useApolloClient()
+    return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
+}
 
 /**
  * A page displaying the site configuration.
@@ -474,7 +477,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             try {
-                await refreshSiteFlags().toPromise()
+                await refreshSiteFlags(this.props.client)
             } catch (error) {
                 logger.error(error)
             }

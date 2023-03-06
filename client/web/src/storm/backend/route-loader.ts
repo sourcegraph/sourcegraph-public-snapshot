@@ -29,7 +29,7 @@ async function loadQuery(query: LoaderQuery, variables: OperationVariables): Pro
     // rendering work in the component.
     //
     // However it seems like suspending is not properly handled in that
-    // case as the supsense boundaries are triggered. Perhaps an issue
+    // case as the suspense boundaries are triggered. Perhaps an issue
     // in the useSuspenseQuery_experimental implementation? It may not
     // use startTransition in this case.
     await getWebGraphQLClient().then(client => client.query({ query: getDocumentNode(query), variables }))
