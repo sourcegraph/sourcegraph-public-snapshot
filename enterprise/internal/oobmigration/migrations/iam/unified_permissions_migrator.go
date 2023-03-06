@@ -84,7 +84,7 @@ func (m *unifiedPermissionsMigrator) Up(ctx context.Context) (err error) {
 const unifiedPermissionsMigratorQuery = `
 -- Get the userIds to migrate
 WITH candidates AS (
-	SELECT u.user_id
+	SELECT u.user_id, u.permission, u.object_type
 	FROM user_permissions as u
 	WHERE NOT migrated
 	LIMIT %d
@@ -92,9 +92,19 @@ WITH candidates AS (
 ),
 -- Get a row for each pair of user_id, repo_id by unnesting object_ids_ints array
 s AS (
-	SELECT u.user_id, unnest(u.object_ids_ints) as repo_id, u.updated_at as created_at, u.updated_at, 'user_sync' as source
+	SELECT
+		u.user_id,
+		unnest(u.object_ids_ints) as repo_id,
+		u.updated_at as created_at,
+		u.updated_at,
+		'user_sync' as source,
+		u.permission,
+		u.object_type
 	FROM user_permissions as u
-	INNER JOIN candidates ON candidates.user_id = u.user_id
+	INNER JOIN candidates ON
+		candidates.user_id = u.user_id
+		AND candidates.permission = u.permission
+		AND candidates.object_type = u.object_type
 ),
 -- Insert the data to new user_repo_permissions table
 ins AS (
@@ -118,6 +128,8 @@ UPDATE user_permissions
 SET migrated = TRUE
 FROM s
 WHERE user_permissions.user_id = s.user_id
+	AND user_permissions.permission = s.permission
+	AND user_permissions.object_type = s.object_type
 `
 
 func (m *unifiedPermissionsMigrator) Down(_ context.Context) error {
