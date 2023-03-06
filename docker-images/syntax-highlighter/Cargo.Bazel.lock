@@ -1,5 +1,5 @@
 {
-  "checksum": "983d112e7cd7e8b3e3a5d414420cde7b31ea07ef06cda79054c499a2fcfe4d87",
+  "checksum": "636e7a807fd7fe2b71e24ce4f8e6d422aebc808a37dc6106898b36a9a08adec9",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8039,14 +8039,14 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.1": {
+    "scip 0.1.0": {
       "name": "scip",
-      "version": "0.1.1",
+      "version": "0.1.0",
       "repository": {
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Branch": "main"
+            "Rev": "7ff845ef5b78772f65463542d5f384967d329b2c"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -8077,9 +8077,9 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.1"
+        "version": "0.1.0"
       },
-      "license": "Apache-2.0"
+      "license": null
     },
     "scoped-tls 1.0.0": {
       "name": "scoped-tls",
@@ -8581,7 +8581,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.1.0",
               "target": "scip"
             },
             {
@@ -9783,7 +9783,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.1.0",
               "target": "scip"
             },
             {
@@ -11584,7 +11584,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-jsonnet",
           "commitish": {
-            "Branch": "main"
+            "Rev": "009e6f06266f46ae07077dd6c8026ded56ab7dd8"
           }
         }
       },

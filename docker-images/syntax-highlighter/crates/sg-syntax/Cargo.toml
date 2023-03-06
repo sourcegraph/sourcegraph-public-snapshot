@@ -9,7 +9,7 @@ include = ["src/**/*", "queries/**/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syntect = { git = "https://github.com/sourcegraph/syntect", branch="main" }
+syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -25,7 +25,7 @@ once_cell = "1.13.0"
 sg-macros = { path = "../sg-macros" }
 
 # Scip related items
-scip = { git = "https://github.com/sourcegraph/scip" , branch="main"}
+scip = { git = "https://github.com/sourcegraph/scip", rev = "7ff845ef5b78772f65463542d5f384967d329b2c" }
 protobuf = "3"
 
 # Tree-sitter Parsers
@@ -34,11 +34,11 @@ tree-sitter-go = "0.19.1"
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
 # on our own fork.
-tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", branch="main" }
+tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", branch = "main" }
 
 tree-sitter-c-sharp = "0.20.0"
 
-tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", branch="main" }
+tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
 
 # Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
 tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }

@@ -1601,8 +1601,8 @@ dependencies = [
 
 [[package]]
 name = "scip"
-version = "0.1.1"
-source = "git+https://github.com/sourcegraph/scip?branch=main#3050326a91551abf4e6f690af6a471a160581ba4"
+version = "0.1.0"
+source = "git+https://github.com/sourcegraph/scip?rev=7ff845ef5b78772f65463542d5f384967d329b2c#7ff845ef5b78772f65463542d5f384967d329b2c"
 dependencies = [
  "protobuf",
 ]
@@ -2273,7 +2273,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?branch=main#fdc775714afa27fdef823adbaba6ab98f5ae66f2"
+source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?rev=009e6f06266f46ae07077dd6c8026ded56ab7dd8#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
 dependencies = [
  "cc",
  "tree-sitter",

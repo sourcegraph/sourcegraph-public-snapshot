@@ -8,17 +8,17 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.cs
   
   using AngleSharp.Dom;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //                ^ PunctuationBracket  punctuation.separator.namespace.cs
 //                 ^^^ IdentifierNamespace  meta.path.cs
 //                    ^ PunctuationDelimiter  punctuation.terminator.cs
   using Bunit;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^ IdentifierNamespace  meta.path.cs
 //           ^ PunctuationDelimiter  punctuation.terminator.cs
   using Microsoft.AspNetCore.Components;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //               ^ PunctuationBracket  punctuation.separator.namespace.cs
 //                ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
@@ -26,7 +26,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //                                     ^ PunctuationDelimiter  punctuation.terminator.cs
   using Microsoft.AspNetCore.Components.Rendering;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //               ^ PunctuationBracket  punctuation.separator.namespace.cs
 //                ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
@@ -36,11 +36,11 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //                                               ^ PunctuationDelimiter  punctuation.terminator.cs
   using System;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^ IdentifierNamespace  meta.path.cs
 //            ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Collections.Generic;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^ IdentifierNamespace  meta.path.cs
 //            ^ PunctuationBracket  punctuation.separator.namespace.cs
 //             ^^^^^^^^^^^ IdentifierNamespace  meta.path.cs
@@ -48,13 +48,13 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^^^^^ IdentifierNamespace  meta.path.cs
 //                                ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Linq;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^ IdentifierNamespace  meta.path.cs
 //            ^ PunctuationBracket  punctuation.separator.namespace.cs
 //             ^^^^ IdentifierNamespace  meta.path.cs
 //                 ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Text.RegularExpressions;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^^ IdentifierNamespace  meta.path.cs
 //            ^ PunctuationBracket  punctuation.separator.namespace.cs
 //             ^^^^ IdentifierNamespace  meta.path.cs
@@ -62,7 +62,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace  meta.path.cs
 //                                    ^ PunctuationDelimiter  punctuation.terminator.cs
   using Xunit;
-//^^^^^ Keyword  keyword.control.import.cs
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
 //      ^^^^^ IdentifierNamespace  meta.path.cs
 //           ^ PunctuationDelimiter  punctuation.terminator.cs
   namespace Radzen.Blazor.
@@ -74,7 +74,7 @@ expression: "dump_document(&document, &contents)"
   {
 //^ PunctuationBracket  punctuation.section.block.begin.cs
       public class DataGridTests
-//    ^^^^^^ Keyword  storage.modifier.access.cs
+//    ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
 //           ^^^^^ IdentifierType  storage.type.class.cs
 //                 ^^^^^^^^^^^^^ Identifier  entity.name.class.cs
       {
@@ -86,7 +86,7 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^ Identifier  variable.annotation.cs
 //             ^ PunctuationBracket  punctuation.definition.annotation.end.cs
           public void DataGrid_Renders_CssClass()
-//        ^^^^^^ Keyword  storage.modifier.access.cs
+//        ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
 //               ^^^^ IdentifierType  storage.type.cs
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.cs
 //                                             ^ PunctuationBracket  punctuation.section.parameters.begin.cs

@@ -3,8 +3,8 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   export class Foo {
-//^^^^^^ Keyword  keyword.control.import-export.js
-//       ^^^^^ Keyword  storage.type.class.js
+//^^^^^^ IdentifierKeyword  keyword.control.import-export.js
+//       ^^^^^ IdentifierKeyword  storage.type.class.js
 //             ^^^ Identifier  entity.name.class.js
 //                 ^ PunctuationBracket  punctuation.section.block.begin.js
     property = 42
@@ -29,8 +29,8 @@ expression: "dump_document(&document, &contents)"
   }
 //^ PunctuationBracket  punctuation.section.block.end.js
   export function $initHighlight(block, cls) {
-//^^^^^^ Keyword  keyword.control.import-export.js
-//       ^^^^^^^^ Keyword  storage.type.function.js
+//^^^^^^ IdentifierKeyword  keyword.control.import-export.js
+//       ^^^^^^^^ IdentifierKeyword  storage.type.function.js
 //                ^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.js
 //                              ^ PunctuationBracket  punctuation.section.group.begin.js
 //                               ^^^^^ Identifier  variable.parameter.function.js
@@ -39,21 +39,21 @@ expression: "dump_document(&document, &contents)"
 //                                         ^ PunctuationBracket  punctuation.section.group.end.js
 //                                           ^ PunctuationBracket  punctuation.section.block.begin.js
     try {
-//  ^^^ Keyword  keyword.control.exception.try.js
+//  ^^^ IdentifierKeyword  keyword.control.exception.try.js
 //      ^ PunctuationBracket  punctuation.section.block.begin.js
       if (cls.search(/\bno\-highlight\b/) != -1)
-//    ^^ Keyword  keyword.control.conditional.if.js
+//    ^^ IdentifierKeyword  keyword.control.conditional.if.js
 //       ^ PunctuationBracket  punctuation.section.group.begin.js
 //        ^^^ Identifier  variable.other.readwrite.js
 //           ^ PunctuationBracket  punctuation.accessor.js
 //            ^^^^^^ IdentifierFunction  variable.function.js
 //                  ^ PunctuationBracket  punctuation.section.group.begin.js
 //                   ^ StringLiteral  keyword.control.anchor.regexp
-//                    ^^ Keyword  keyword.control.anchor.regexp
+//                    ^^ IdentifierKeyword  keyword.control.anchor.regexp
 //                      ^^ StringLiteral  constant.character.escape.backslash.regexp
 //                        ^^ StringLiteralEscape  constant.character.escape.backslash.regexp
 //                          ^^^^^^^^^ StringLiteral  keyword.control.anchor.regexp
-//                                   ^^ Keyword  keyword.control.anchor.regexp
+//                                   ^^ IdentifierKeyword  keyword.control.anchor.regexp
 //                                     ^ StringLiteral  string.regexp.js
 //                                      ^ PunctuationBracket  punctuation.section.group.end.js
 //                                        ^^ IdentifierOperator  keyword.operator.comparison.js
@@ -61,7 +61,7 @@ expression: "dump_document(&document, &contents)"
 //                                            ^ NumericLiteral  constant.numeric.integer.decimal.js
 //                                             ^ PunctuationBracket  punctuation.section.group.end.js
         return process(block, true, 0x0F) +
-//      ^^^^^^ Keyword  keyword.control.flow.return.js
+//      ^^^^^^ IdentifierKeyword  keyword.control.flow.return.js
 //                    ^ PunctuationBracket  punctuation.section.group.begin.js
 //                     ^^^^^ Identifier  variable.other.readwrite.js
 //                          ^ PunctuationBracket  punctuation.separator.comma.js
@@ -80,7 +80,7 @@ expression: "dump_document(&document, &contents)"
 //                              ^ PunctuationDelimiter  punctuation.terminator.statement.js
     } catch (e) {
 //  ^ PunctuationBracket  punctuation.section.block.end.js
-//    ^^^^^ Keyword  keyword.control.exception.catch.js
+//    ^^^^^ IdentifierKeyword  keyword.control.exception.catch.js
 //          ^ PunctuationBracket  punctuation.section.group.begin.js
 //           ^ Identifier  variable.other.readwrite.js
 //            ^ PunctuationBracket  punctuation.section.group.end.js
@@ -90,7 +90,7 @@ expression: "dump_document(&document, &contents)"
     }
 //  ^ PunctuationBracket  punctuation.section.block.end.js
     for (var i = 0 / 2; i < classes.length; i++) {
-//  ^^^ Keyword  keyword.control.loop.for.js
+//  ^^^ IdentifierKeyword  keyword.control.loop.for.js
 //      ^ PunctuationBracket  punctuation.section.group.js
 //       ^^^ IdentifierType  storage.type.js
 //           ^ Identifier  variable.other.readwrite.js
@@ -109,7 +109,7 @@ expression: "dump_document(&document, &contents)"
 //                                             ^ PunctuationBracket  punctuation.section.group.js
 //                                               ^ PunctuationBracket  punctuation.section.block.begin.js
       if (checkCondition(classes[i]) === undefined)
-//    ^^ Keyword  keyword.control.conditional.if.js
+//    ^^ IdentifierKeyword  keyword.control.conditional.if.js
 //       ^ PunctuationBracket  punctuation.section.group.begin.js
 //        ^^^^^^^^^^^^^^ IdentifierFunction  variable.function.js
 //                      ^ PunctuationBracket  punctuation.section.group.begin.js
@@ -133,7 +133,7 @@ expression: "dump_document(&document, &contents)"
 //  ^ PunctuationBracket  punctuation.section.block.end.js
   
     return (
-//  ^^^^^^ Keyword  keyword.control.flow.return.js
+//  ^^^^^^ IdentifierKeyword  keyword.control.flow.return.js
 //         ^ PunctuationBracket  punctuation.section.group.begin.js
       <div>
 //    ^ PunctuationBracket  punctuation.definition.tag.begin.js
@@ -161,7 +161,7 @@ expression: "dump_document(&document, &contents)"
 //^ PunctuationBracket  punctuation.section.block.end.js
   
   export  $initHighlight;
-//^^^^^^ Keyword  keyword.control.import-export.js
+//^^^^^^ IdentifierKeyword  keyword.control.import-export.js
 //        ^^^^^^^^^^^^^^ Identifier  variable.other.readwrite.js
 //                      ^ PunctuationDelimiter  punctuation.terminator.statement.js
 
