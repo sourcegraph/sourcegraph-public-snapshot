@@ -6,7 +6,7 @@ import (
 )
 
 type Identifier[T any] interface {
-	GetID() T
+	RecordID() T
 }
 
 type MultiFactory[K, V any] interface {
@@ -52,7 +52,7 @@ func (c *DoubleLockedCache[K, V]) GetOrLoad(ctx context.Context, id K) (obj V, o
 		return obj, false, err
 	}
 	for _, obj := range objs {
-		c.cache[obj.GetID()] = obj
+		c.cache[obj.RecordID()] = obj
 	}
 
 	obj, ok = c.cache[id]
