@@ -91,15 +91,17 @@ export const TeamAvatar = React.forwardRef(function TeamAvatar(
         return initials[0]
     }
 
-    const props = {
+    const sharedProps = {
         id: targetID,
         className: classNames(styles.teamAvatar, className),
         children: <span className={styles.initials}>{getInitials(name)}</span>,
     }
 
     if (inline) {
-        return <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="span" aria-hidden={true} {...props} />
+        return (
+            <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="span" aria-hidden={true} {...sharedProps} />
+        )
     }
 
-    return <div ref={reference} {...props} />
+    return <div ref={reference} {...sharedProps} />
 }) as ForwardReferenceComponent<'img', React.PropsWithChildren<TeamAvatarProps>>
