@@ -612,9 +612,9 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids_ints, updated_at, synced_at, migrated)
+  (user_id, permission, object_type, object_ids_ints, updated_at, synced_at)
 VALUES
-  (%s, %s, %s, %s, %s, %s, TRUE)
+  (%s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
