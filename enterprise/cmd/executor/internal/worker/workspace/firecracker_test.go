@@ -562,13 +562,13 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				// Workspace files
-				mountEntries, err := os.ReadDir(tempDir)
+				tempEntries, err := os.ReadDir(tempDir)
 				require.NoError(t, err)
 				// includes workspace-loop and workspace-mountpoints (dir)
-				assert.Len(t, mountEntries, 2)
+				assert.Len(t, tempEntries, 2)
 				// ensure that workspace-loop exists
 				// We use temp dirs, for all this, so the directory name has a random set of numbers as the suffix.
-				for _, entry := range mountEntries {
+				for _, entry := range tempEntries {
 					if strings.HasPrefix(entry.Name(), "workspace-loop") {
 						// ensure this is a file
 						assert.False(t, entry.IsDir())
@@ -578,7 +578,7 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 						t.Fatalf("unexpected file in workspace: %s", entry.Name())
 					}
 				}
-				mountEntries, err = os.ReadDir(path.Join(tempDir, mountpointDir))
+				mountEntries, err := os.ReadDir(path.Join(tempDir, mountpointDir))
 				require.NoError(t, err)
 				// .sourcegraph-executor dir lives in the mountpoint dir
 				additionalEntries := 0
