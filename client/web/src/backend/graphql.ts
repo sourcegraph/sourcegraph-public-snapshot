@@ -91,11 +91,18 @@ export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
  * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
  * After that, the same instance should be used by all consumers.
  */
-export const getWebGraphQLClient = memoize(() =>
-    getGraphQLClient({
-        cache,
+export const getWebGraphQLClient = memoize(() => {
+    // Initilize Apollo Client cache with preloaded data.
+    const hydratedCache = cache.restore({
+        ROOT_QUERY: {
+            temporarySettings: window.context.temporarySettings,
+        },
+    })
+
+    return getGraphQLClient({
+        cache: hydratedCache,
         persistenceMapper,
         isAuthenticated: window.context.isAuthenticatedUser,
         headers: getHeaders(),
     })
-)
+})

@@ -46,28 +46,6 @@
       ]
     },
     {
-      "Name": "lsif_index_state",
-      "Labels": [
-        "queued",
-        "processing",
-        "completed",
-        "errored",
-        "failed"
-      ]
-    },
-    {
-      "Name": "lsif_upload_state",
-      "Labels": [
-        "uploading",
-        "queued",
-        "processing",
-        "completed",
-        "errored",
-        "deleted",
-        "failed"
-      ]
-    },
-    {
       "Name": "persistmode",
       "Labels": [
         "record",
@@ -206,7 +184,7 @@
     },
     {
       "Name": "update_codeintel_path_ranks_statistics_columns",
-      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        SUM(LOG(2, r.v::int)) AS refcount_logsum\n    INTO\n        NEW.num_paths,\n        NEW.refcount_logsum\n    FROM jsonb_each(\n        CASE WHEN NEW.payload::text = 'null'\n            THEN '{}'::jsonb\n            ELSE COALESCE(NEW.payload, '{}'::jsonb)\n        END\n    ) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_statistics_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    SELECT\n        COUNT(r.v) AS num_paths,\n        SUM(LOG(2, r.v::int + 1)) AS refcount_logsum\n    INTO\n        NEW.num_paths,\n        NEW.refcount_logsum\n    FROM jsonb_each(\n        CASE WHEN NEW.payload::text = 'null'\n            THEN '{}'::jsonb\n            ELSE COALESCE(NEW.payload, '{}'::jsonb)\n        END\n    ) r(k, v);\n\n    RETURN NEW;\nEND;\n$function$\n"
     },
     {
       "Name": "update_codeintel_path_ranks_updated_at_column",
@@ -462,7 +440,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "codeintel_path_rank_inputs_id_seq",
+      "Name": "codeintel_path_ranks_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -7407,14 +7385,14 @@
       "Triggers": []
     },
     {
-      "Name": "codeintel_path_rank_inputs",
-      "Comment": "Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.",
+      "Name": "codeintel_path_ranks",
+      "Comment": "",
       "Columns": [
         {
           "Name": "graph_key",
-          "Index": 2,
+          "Index": 5,
           "TypeName": "text",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -7425,128 +7403,10 @@
         },
         {
           "Name": "id",
-          "Index": 1,
+          "Index": 8,
           "TypeName": "bigint",
           "IsNullable": false,
-          "Default": "nextval('codeintel_path_rank_inputs_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "input_filename",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "payload",
-          "Index": 5,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "precision",
-          "Index": 7,
-          "TypeName": "double precision",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "processed",
-          "Index": 6,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repository_name",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_graph_key_input_filename_reposit_key ON codeintel_path_rank_inputs USING btree (graph_key, input_filename, repository_name)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (graph_key, input_filename, repository_name)"
-        },
-        {
-          "Name": "codeintel_path_rank_inputs_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_pkey ON codeintel_path_rank_inputs USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "codeintel_path_rank_inputs_graph_key_repository_name_id_process",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE NOT processed",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": null,
-      "Triggers": []
-    },
-    {
-      "Name": "codeintel_path_ranks",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "graph_key",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
+          "Default": "nextval('codeintel_path_ranks_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -7571,19 +7431,6 @@
           "Name": "payload",
           "Index": 2,
           "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "precision",
-          "Index": 3,
-          "TypeName": "double precision",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -7635,12 +7482,22 @@
       ],
       "Indexes": [
         {
-          "Name": "codeintel_path_ranks_repository_id_precision",
+          "Name": "codeintel_path_ranks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_pkey ON codeintel_path_ranks USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_path_ranks_repository_id",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, \"precision\")",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -7719,19 +7576,6 @@
           "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repository",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -7985,9 +7829,9 @@
           "Comment": ""
         },
         {
-          "Name": "repository",
-          "Index": 2,
-          "TypeName": "text",
+          "Name": "repository_id",
+          "Index": 7,
+          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -8010,22 +7854,22 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_and_repository",
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository_i ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
         {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr",
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -23374,6 +23218,19 @@
       "Name": "user_permissions",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "migrated",
+          "Index": 7,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "true",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "object_ids_ints",
           "Index": 6,

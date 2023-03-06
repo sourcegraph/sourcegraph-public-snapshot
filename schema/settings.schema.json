@@ -177,14 +177,6 @@
             "pointer": true
           }
         },
-        "enableGoImportsSearchQueryTransform": {
-          "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeInsightsCompute": {
           "description": "Enables Compute powered Code Insights",
           "type": "boolean",
@@ -439,11 +431,6 @@
       "type": "integer",
       "minimum": 0,
       "default": 0
-    },
-    "codeIntelligence.clickToGoToDefinition": {
-      "description": "Enable click to go to definition.",
-      "type": "boolean",
-      "default": true
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",

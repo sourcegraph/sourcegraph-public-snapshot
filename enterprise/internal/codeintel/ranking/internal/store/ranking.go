@@ -65,7 +65,6 @@ func (s *store) InsertDefinitionsForRanking(
 		[]string{
 			"upload_id",
 			"symbol_name",
-			"repository",
 			"document_path",
 			"graph_key",
 		},
@@ -88,7 +87,6 @@ func insertDefinitions(
 			ctx,
 			def.UploadID,
 			def.SymbolName,
-			def.Repository,
 			def.DocumentPath,
 			rankingGraphKey,
 		); err != nil {
@@ -266,24 +264,25 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		rd.repository,
+		u.repository_id,
 		rd.document_path,
 		rd.graph_key,
 		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE rd.graph_key = %s
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	GROUP BY u.repository_id, rd.document_path, rd.graph_key
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
-		rx.repository,
+		rx.repository_id,
 		rx.document_path,
 		SUM(rx.count),
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository, rx.document_path
+	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 )
 SELECT
@@ -337,17 +336,17 @@ WITH
 input_ranks AS (
 	SELECT
 		pci.id,
-		r.id AS repository_id,
+		pci.repository_id,
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
-	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
+	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
-	ORDER BY pci.graph_key, pci.repository, pci.id
+	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -358,10 +357,9 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
 	SELECT
 		temp.repository_id,
-		1,
 		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
@@ -372,7 +370,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id, precision) DO UPDATE SET
+	ON CONFLICT (repository_id) DO UPDATE SET
 		graph_key = EXCLUDED.graph_key,
 		payload = CASE
 			WHEN pr.graph_key != EXCLUDED.graph_key
@@ -586,7 +584,7 @@ valid_graph_keys AS (
 	UNION (
 		SELECT graph_key
 		FROM matching_graph_keys
-		ORDER BY split_part(graph_key, '-', 2)::int DESC
+		ORDER BY reverse(split_part(reverse(graph_key), '-', 1))::int DESC
 		LIMIT 1
 	)
 ),

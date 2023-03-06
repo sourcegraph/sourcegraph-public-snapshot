@@ -62,14 +62,9 @@ export const FileOwnershipPanel: React.FunctionComponent<
         data.node.commit.blob.ownership.nodes.length > 0
     ) {
         return (
-            <>
+            <div className={styles.contents}>
                 <OwnExplanation />
-                <Accordion
-                    as="table"
-                    collapsible={true}
-                    multiple={true}
-                    className={classNames(styles.table, styles.contents)}
-                >
+                <Accordion as="table" collapsible={true} multiple={true} className={styles.table}>
                     <thead className="sr-only">
                         <tr>
                             <th>Show details</th>
@@ -93,7 +88,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                         )
                     )}
                 </Accordion>
-            </>
+            </div>
         )
     }
 
@@ -117,7 +112,7 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     }
 
     return (
-        <MarketingBlock contentClassName={styles.ownExplanationContainer}>
+        <MarketingBlock contentClassName={styles.ownExplanationContainer} wrapperClassName="mb-3">
             <div className="d-flex align-items-start">
                 <div className="flex-1">
                     <H3 as={H4} className={styles.ownExplanationTitle}>

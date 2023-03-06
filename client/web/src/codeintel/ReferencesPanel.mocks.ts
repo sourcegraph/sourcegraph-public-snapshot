@@ -108,7 +108,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     }
 
     return {
-        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
+        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}#tab=references`,
         requestMocks: [
             {
                 request: {

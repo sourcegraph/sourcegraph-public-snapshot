@@ -923,39 +923,20 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 **updated_at**: Time when lockfile index was updated
 
-# Table "public.codeintel_path_rank_inputs"
-```
-     Column      |       Type       | Collation | Nullable |                        Default                         
------------------+------------------+-----------+----------+--------------------------------------------------------
- id              | bigint           |           | not null | nextval('codeintel_path_rank_inputs_id_seq'::regclass)
- graph_key       | text             |           | not null | 
- input_filename  | text             |           | not null | 
- repository_name | text             |           | not null | 
- payload         | jsonb            |           | not null | 
- processed       | boolean          |           | not null | false
- precision       | double precision |           | not null | 
-Indexes:
-    "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
-    "codeintel_path_rank_inputs_graph_key_repository_name_id_process" btree (graph_key, repository_name, id) WHERE NOT processed
-
-```
-
-Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.
-
 # Table "public.codeintel_path_ranks"
 ```
-     Column      |           Type           | Collation | Nullable | Default 
------------------+--------------------------+-----------+----------+---------
+     Column      |           Type           | Collation | Nullable |                     Default                      
+-----------------+--------------------------+-----------+----------+--------------------------------------------------
  repository_id   | integer                  |           | not null | 
  payload         | jsonb                    |           | not null | 
- precision       | double precision         |           | not null | 
  updated_at      | timestamp with time zone |           | not null | now()
  graph_key       | text                     |           |          | 
  num_paths       | integer                  |           |          | 
  refcount_logsum | double precision         |           |          | 
+ id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
-    "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
+    "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
     insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
@@ -971,7 +952,6 @@ Triggers:
  id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
  upload_id       | integer                  |           | not null | 
  symbol_name     | text                     |           | not null | 
- repository      | text                     |           | not null | 
  document_path   | text                     |           | not null | 
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
@@ -1005,15 +985,15 @@ Foreign-key constraints:
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- repository    | text    |           | not null | 
  document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
+ repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr" btree (graph_key, repository, id) INCLUDE (document_path) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i" btree (graph_key, repository_id)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed
 
 ```
 
@@ -3632,6 +3612,7 @@ Indexes:
  updated_at      | timestamp with time zone |           | not null | 
  synced_at       | timestamp with time zone |           |          | 
  object_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ migrated        | boolean                  |           |          | true
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
@@ -4363,24 +4344,6 @@ Foreign-key constraints:
 
 - bool
 - rollout
-
-# Type lsif_index_state
-
-- queued
-- processing
-- completed
-- errored
-- failed
-
-# Type lsif_upload_state
-
-- uploading
-- queued
-- processing
-- completed
-- errored
-- deleted
-- failed
 
 # Type persistmode
 

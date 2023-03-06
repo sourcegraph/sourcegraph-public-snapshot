@@ -90,7 +90,6 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 			definitions = append(definitions, shared.RankingDefinitions{
 				UploadID:     upload.ID,
 				SymbolName:   occ.Symbol,
-				Repository:   upload.Repo,
 				DocumentPath: filepath.Join(upload.Root, path),
 			})
 			seenDefinitions[occ.Symbol] = struct{}{}

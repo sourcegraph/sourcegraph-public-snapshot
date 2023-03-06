@@ -4992,6 +4992,29 @@ Query: `sum by (category)(increase(src_frontend_internal_request_duration_second
 
 <br />
 
+#### gitserver: src_gitserver_repo_count
+
+<p class="subtitle">Number of repositories on gitserver</p>
+
+This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+
+It does not indicate any problems with the instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100090` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `src_gitserver_repo_count`
+
+</details>
+
+<br />
+
 ### Git Server: Gitserver: Gitserver API (powered by internal/observation)
 
 #### gitserver: gitserver_api_total
