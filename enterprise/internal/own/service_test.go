@@ -85,7 +85,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
 	codeownersStore := edb.NewMockCodeownersStore()
-	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
 	db := edb.NewMockEnterpriseDB()
 	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 
@@ -124,7 +124,7 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		git.ReadFileFunc.SetDefaultReturn(nil, nil)
 
 		codeownersStore := edb.NewMockCodeownersStore()
-		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 
