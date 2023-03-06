@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useState } from 'react'
+import { FC, ReactElement, ReactNode, useState, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
@@ -48,12 +48,17 @@ interface CodeHostJSONFormProps {
 export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
     const { externalServiceOptions, initialValues, onSubmit, children } = props
 
-    const [localValues, setLocalValues] = useLocalStorage<CodeHostConnectFormFields>(
-        `${externalServiceOptions.kind}-connect-form`,
-        {
+    const initialValue = useMemo(
+        () => ({
             displayName: externalServiceOptions.defaultDisplayName,
             config: externalServiceOptions.defaultConfig,
-        }
+        }),
+        [externalServiceOptions.defaultConfig, externalServiceOptions.defaultDisplayName]
+    )
+
+    const [localValues, setLocalValues] = useLocalStorage<CodeHostConnectFormFields>(
+        `${externalServiceOptions.kind}-connect-form`,
+        initialValue
     )
 
     const form = useForm<CodeHostConnectFormFields>({
