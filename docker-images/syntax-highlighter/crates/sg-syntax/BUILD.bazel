@@ -3,12 +3,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "sg-syntax",
-    srcs = [
-      "src/lib.rs",
-      "src/sg_sciptect.rs",
-      "src/sg_syntect.rs",
-      "src/sg_treesitter.rs"
-    ],
+    srcs = glob(["src/*.rs"]),
     aliases = aliases(),
     deps = all_crate_deps(
         normal = True,
