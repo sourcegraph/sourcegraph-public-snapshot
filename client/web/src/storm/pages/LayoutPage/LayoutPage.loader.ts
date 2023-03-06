@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client'
 import { gql } from '@sourcegraph/http-client'
 
 import { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'
@@ -46,6 +47,17 @@ const LAYOUT_PAGE_QUERY = gql`
 
 const { queryLoader } = createPreloadedQuery<LayoutPageQueryResult, LayoutPageQueryVariables>(LAYOUT_PAGE_QUERY)
 
-export function loader(): Promise<Record<string, QueryReference | undefined>> {
-    return queryLoader({})
+export async function loader(): Promise<Record<string, QueryReference | undefined>> {
+    try {
+        const loader = await queryLoader({})
+        return loader
+    } catch (error) {
+        if (error instanceof ApolloError && (error.networkError as any)?.status === 401) {
+            // When logged out, we do not use the loader data from the layout page. Instead, we need
+            // to be certain that the error boundary is not triggered so we return an empty loader
+            // object.
+            return {}
+        }
+        throw error
+    }
 }
