@@ -211,6 +211,18 @@ func Pods(ctx context.Context, config *Config) ([]validate.Result, error) {
 
 	var results []validate.Result
 
+	if len(pods.Items) == 0 {
+		results = append(results, validate.Result{
+			Status: validate.Warning,
+			Message: fmt.Sprintf(
+				"No pods exist on namespace '%s'. check namespace/cluster",
+				config.namespace,
+			),
+		})
+
+		return results, nil
+	}
+
 	for _, pod := range pods.Items {
 		r := validatePod(&pod)
 		results = append(results, r...)
@@ -291,6 +303,18 @@ func Services(ctx context.Context, config *Config) ([]validate.Result, error) {
 
 	var results []validate.Result
 
+	if len(services.Items) <= 1 {
+		results = append(results, validate.Result{
+			Status: validate.Warning,
+			Message: fmt.Sprintf(
+				"unexpected number of services on namespace '%s'; check namespace/cluster",
+				config.namespace,
+			),
+		})
+
+		return results, nil
+	}
+
 	for _, service := range services.Items {
 		r := validateService(&service)
 		results = append(results, r...)
@@ -325,6 +349,18 @@ func PVCs(ctx context.Context, config *Config) ([]validate.Result, error) {
 	}
 
 	var results []validate.Result
+
+	if len(pvcs.Items) == 0 {
+		results = append(results, validate.Result{
+			Status: validate.Warning,
+			Message: fmt.Sprintf(
+				"no PVCs exist in namespace '%s'; check namespace/cluster",
+				config.namespace,
+			),
+		})
+
+		return results, nil
+	}
 
 	for _, pvc := range pvcs.Items {
 		r := validatePVC(&pvc)
@@ -366,6 +402,18 @@ func Connections(ctx context.Context, config *Config) ([]validate.Result, error)
 	pods, err := config.clientSet.CoreV1().Pods(config.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	if len(pods.Items) == 0 {
+		results = append(results, validate.Result{
+			Status: validate.Warning,
+			Message: fmt.Sprintf(
+				"cannot check connections: zero pods exist in namespace '%s'",
+				config.namespace,
+			),
+		})
+
+		return results, nil
 	}
 
 	// iterate through pods looking for specific pod name prefixes, then construct
