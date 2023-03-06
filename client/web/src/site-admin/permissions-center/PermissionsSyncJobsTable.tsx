@@ -7,6 +7,7 @@ import { Container, Icon, Input, Link, PageHeader, PageSwitcher, Select, useDebo
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
+import { PageTitle } from '../../components/PageTitle'
 import {
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
@@ -27,7 +28,6 @@ import {
 } from './PermissionsSyncJobNode'
 
 import styles from './PermissionsSyncJobsTable.module.scss'
-import { PageTitle } from '../../components/PageTitle'
 
 interface Filters {
     reason: string
