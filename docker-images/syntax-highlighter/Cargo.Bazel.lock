@@ -1,5 +1,5 @@
 {
-  "checksum": "47b9f84510f35bfcae410b68d902b408e1c2775f076ce01ef4aeadee96c94dab",
+  "checksum": "983d112e7cd7e8b3e3a5d414420cde7b31ea07ef06cda79054c499a2fcfe4d87",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8534,6 +8534,15 @@
               "**/*.rs"
             ]
           }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
         }
       ],
       "library_target_name": "sg_syntax",
@@ -8584,6 +8593,10 @@
               "target": "serde_json"
             },
             {
+              "id": "sg-syntax 0.1.0",
+              "target": "build_script_build"
+            },
+            {
               "id": "syntect 4.7.0",
               "target": "syntect"
             },
@@ -8596,8 +8609,12 @@
               "target": "tree_sitter_c"
             },
             {
-              "id": "tree-sitter-c-sharp 0.19.1",
+              "id": "tree-sitter-c-sharp 0.20.0",
               "target": "tree_sitter_c_sharp"
+            },
+            {
+              "id": "tree-sitter-cpp 0.20.0",
+              "target": "tree_sitter_cpp"
             },
             {
               "id": "tree-sitter-go 0.19.1",
@@ -8666,6 +8683,11 @@
           "selects": {}
         },
         "version": "0.1.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
       },
       "license": "MIT"
     },
@@ -11178,15 +11200,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-c-sharp 0.19.1": {
+    "tree-sitter-c-sharp 0.20.0": {
       "name": "tree-sitter-c-sharp",
-      "version": "0.19.1",
+      "version": "0.20.0",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/tree-sitter/tree-sitter-c-sharp",
-          "commitish": {
-            "Branch": "master"
-          }
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tree-sitter-c-sharp/0.20.0/download",
+          "sha256": "b9ab3dc608f34924fa9e10533a95f62dbc14b6de0ddd7107722eba66fe19ae31"
         }
       },
       "targets": [
@@ -11221,14 +11241,80 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c-sharp 0.19.1",
+              "id": "tree-sitter-c-sharp 0.20.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.19.1"
+        "version": "0.20.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-cpp 0.20.0": {
+      "name": "tree-sitter-cpp",
+      "version": "0.20.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tree-sitter-cpp/0.20.0/download",
+          "sha256": "8a869e3c5cef4e5db4e9ab16a8dc84d73010e60ada14cdc60d2f6d8aed17779d"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_cpp",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_cpp",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-cpp 0.20.0",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.20.0"
       },
       "build_script_attrs": {
         "data_glob": [
