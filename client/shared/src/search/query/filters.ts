@@ -184,8 +184,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
     [FilterType.after]: {
         alias: 'since',
-        description: 'Commits made after a certain date (in UTC)',
-        placeholder: '"time frame"',
+        description: 'Commits made after a certain time e.g. yesterday, or 12/31/2022',
+        placeholder: '"last week"',
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
@@ -199,8 +199,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.before]: {
         alias: 'until',
-        description: 'Commits made before a certain date (in UTC)',
-        placeholder: '"time frame"',
+        description: 'Commits made before a certain time, e.g. yesterday, or 12/31/2022',
+        placeholder: '"yesterday"',
     },
     [FilterType.case]: {
         description: 'Treat the search pattern as case-sensitive.',
@@ -288,7 +288,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'repo',
     },
     [FilterType.repohascommitafter]: {
-        description: 'Filter out stale repositories without recent commits',
+        description: 'Filter repositories without commits after a given time. e.g. yesterday, or 12/31/2022',
         placeholder: '"time frame"',
         singular: true,
     },
@@ -305,16 +305,16 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.select]: {
         discreteValues: value => selectorCompletion(value).map(value => ({ label: value })),
-        description: 'Selects the kind of result to display.',
+        description: 'Select repo, file, symbol, content, or commit result types.',
         singular: true,
     },
     [FilterType.timeout]: {
-        description: 'Duration before timeout',
+        description: 'Duration before timeout, e.g. 30s, 1m, 2h, 3d, 4w, 5y.',
         placeholder: 'duration-value',
         singular: true,
     },
     [FilterType.type]: {
-        description: 'Limit results to the specified type.',
+        description: 'Limit results to diffs, commits, file paths, symbols and other entities.',
         discreteValues: () => [
             {
                 label: 'diff',
