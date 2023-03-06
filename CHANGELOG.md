@@ -46,6 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
 - The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- The key `shared_steps` has been removed from auto-indexing configuration descriptions. If you have a custom JSON auto-indexing configuration set for a repository that defines this key, you should inline the content into each index job's `steps` array. [#48770](https://github.com/sourcegraph/sourcegraph/pull/48770)
 
 ## 4.5.1
 
