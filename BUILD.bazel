@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo", "TOOLS_NOGO")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
@@ -206,15 +206,8 @@ nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
     visibility = ["//visibility:public"],  # must have public visibility
-    deps = [
+    deps = TOOLS_NOGO + [
         "//dev/linters/bodyclose",
-        "@org_golang_x_tools//go/analysis/passes/asmdecl:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/assign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomic:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomicalign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/bools:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildssa:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildtag:go_default_library",
     ],
 )
 
