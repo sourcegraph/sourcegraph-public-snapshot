@@ -72,6 +72,13 @@
           "outfile": {
             "description": "The path to the LSIF index relative to the index root.",
             "type": "string"
+          },
+          "requestedEnvVars": {
+            "description": "A list of environment variables made available to the indexer.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false,
