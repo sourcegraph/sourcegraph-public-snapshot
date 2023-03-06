@@ -60,6 +60,7 @@ interface SetupStepsProps {
     initialStepId: string | undefined
     steps: StepConfiguration[]
     children?: ReactNode
+    onSkip: () => void
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
@@ -68,7 +69,7 @@ interface SetupStepURLContext {
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, onStepChange, children } = props
+    const { initialStepId, steps, onSkip, onStepChange, children } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -131,10 +132,6 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         }
     }, [activeStepIndex, steps, navigate])
 
-    const handleSkipWizard = useCallback(() => {
-        console.log('Skip')
-    }, [])
-
     const cachedContext = useMemo(
         () => ({
             steps,
@@ -143,19 +140,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             nextButtonPortal,
             setFooterPortal,
             setNextButtonPortal,
-            onSkip: handleSkipWizard,
+            onSkip,
             onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [
-            steps,
-            activeStepIndex,
-            footerPortal,
-            nextButtonPortal,
-            handleSkipWizard,
-            handleGoToPrevStep,
-            handleGoToNextStep,
-        ]
+        [steps, activeStepIndex, footerPortal, nextButtonPortal, onSkip, handleGoToPrevStep, handleGoToNextStep]
     )
 
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
@@ -225,7 +214,7 @@ export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
             </div>
             <div className={styles.footerNavigation}>
                 <div className={styles.footerInnerNavigation}>
-                    <Button variant="secondary" className={styles.footerSkip} onClick={onSkip}>
+                    <Button variant="link" className={styles.footerSkip} onClick={onSkip}>
                         Skip setup
                     </Button>
 
