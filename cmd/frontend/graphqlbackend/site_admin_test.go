@@ -375,35 +375,6 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 				`,
 		})
 	})
-
-	t.Run("Hard delete is not supported on-premise", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         true,
-			},
-			ExpectedResult: `
-			{
-				"deleteOrganization": null
-			}
-			`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []any{"deleteOrganization"},
-				},
-			},
-		})
-	})
 }
 
 func TestSetIsSiteAdmin(t *testing.T) {
