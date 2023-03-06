@@ -29,6 +29,9 @@ type Upload struct {
 	ShouldReindex     bool
 }
 
+func (u Upload) GetID() int {
+	return u.ID
+}
 func (u Upload) RecordID() int {
 	return u.ID
 }

@@ -35,6 +35,9 @@ type Index struct {
 	RequestedEnvVars   []string                     `json:"requestedEnvVars"`
 }
 
+func (i Index) GetID() int {
+	return i.ID
+}
 func (i Index) RecordID() int {
 	return i.ID
 }
