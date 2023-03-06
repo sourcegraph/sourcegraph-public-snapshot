@@ -29,5 +29,6 @@ go_test(
         "//enterprise/internal/embeddings/split",
         "//internal/api",
         "//lib/errors",
+        "@com_github_stretchr_testify//require",
     ],
 )
