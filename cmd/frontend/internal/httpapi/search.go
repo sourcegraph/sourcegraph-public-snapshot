@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -301,7 +302,7 @@ func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.
 	return serveRank(h.Ranking.GetDocumentRanks, w, r)
 }
 
-func serveRank[T []float64 | map[string][]float64](
+func serveRank[T []float64 | citypes.RepoPathRanks](
 	f func(ctx context.Context, name api.RepoName) (r T, err error),
 	w http.ResponseWriter,
 	r *http.Request,

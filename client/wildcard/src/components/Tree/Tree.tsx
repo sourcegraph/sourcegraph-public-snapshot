@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -37,7 +37,7 @@ interface Props<N extends TreeNode>
     nodeClassName?: string
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, expandedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -133,9 +133,20 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
         [loadedIds, nodeClassName, renderNode]
     )
 
+    // <TreeView /> quirk:
+    //
+    // The root node (id = 0) is not a valid target to be expanded. If it is set accidentally, it
+    // can leave the tree in an invalid state where no tabIndex={0} item is rendered (because the
+    // tabIndex is assumed it has to be on the root node).
+    const validExpandedIds = useMemo(
+        () => (expandedIds ? expandedIds.filter(id => id !== 0) : expandedIds),
+        [expandedIds]
+    )
+
     return (
         <TreeView
             {...rest}
+            expandedIds={validExpandedIds}
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}

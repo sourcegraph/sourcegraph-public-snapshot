@@ -595,7 +595,7 @@ export function getCommitMatchUrl(commitMatch: CommitMatch): string {
     return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
 }
 
-export function getOwnerMatchUrl(ownerMatch: OwnerMatch): string {
+export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
     if (ownerMatch.type === 'person' && ownerMatch.user) {
         return '/users/' + encodeURI(ownerMatch.user.username)
     }
@@ -606,10 +606,14 @@ export function getOwnerMatchUrl(ownerMatch: OwnerMatch): string {
         return `mailto:${ownerMatch.email}`
     }
 
+    if (ignoreUnknownPerson) {
+        return ''
+    }
     // Unknown person with only a handle.
-    // We need some unique dummy data here because this is used
+    // We can't ignore this person and return an empty string, we
+    // need some unique dummy data here because this is used
     // as the key in the virtual list. We can't use the index.
-    // Once we have enough data, we may be able to link to the
+    // In the future we may be able to link to the
     // person's profile page in the external code host.
     return '/unknown-person/' + encodeURI(ownerMatch.handle || 'unknown')
 }

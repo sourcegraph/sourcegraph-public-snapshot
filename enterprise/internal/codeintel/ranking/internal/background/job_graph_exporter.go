@@ -14,14 +14,13 @@ func NewSymbolExporter(
 	numRoutines int,
 	interval time.Duration,
 	batchSize int,
-	rankingJobEnabled bool,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		"ranking.symbol-exporter", "exports SCIP data to ranking definitions and reference tables",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := rankingService.ExportRankingGraph(ctx, numRoutines, batchSize, rankingJobEnabled); err != nil {
+			if err := rankingService.ExportRankingGraph(ctx, numRoutines, batchSize); err != nil {
 				return err
 			}
 
@@ -38,7 +37,6 @@ func NewMapper(
 	observationCtx *observation.Context,
 	rankingService RankingService,
 	interval time.Duration,
-	rankingJobEnabled bool,
 ) goroutine.BackgroundRoutine {
 	operations := newMapperOperations(observationCtx)
 
@@ -47,7 +45,7 @@ func NewMapper(
 		"ranking.file-reference-count-mapper", "maps definitions and references data to path_counts_inputs table in store",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numReferenceRecordsProcessed, numInputsInserted, err := rankingService.MapRankingGraph(ctx, rankingJobEnabled)
+			numReferenceRecordsProcessed, numInputsInserted, err := rankingService.MapRankingGraph(ctx)
 			if err != nil {
 				return err
 			}
@@ -63,7 +61,6 @@ func NewReducer(
 	observationCtx *observation.Context,
 	rankingService RankingService,
 	interval time.Duration,
-	rankingJobEnabled bool,
 ) goroutine.BackgroundRoutine {
 	operations := newReducerOperations(observationCtx)
 
@@ -72,7 +69,7 @@ func NewReducer(
 		"ranking.file-reference-count-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in store.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numPathRanksInserted, numPathCountsInputsProcessed, err := rankingService.ReduceRankingGraph(ctx, rankingJobEnabled)
+			numPathRanksInserted, numPathCountsInputsProcessed, err := rankingService.ReduceRankingGraph(ctx)
 			if err != nil {
 				return err
 			}
