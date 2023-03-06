@@ -14,6 +14,7 @@ import styles from './CodeMonitoringGettingStarted.module.scss'
 
 interface CodeMonitoringGettingStartedProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
 }
 
 interface ExampleCodeMonitor {
@@ -65,7 +66,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ authenticatedUser }) => {
+> = ({ authenticatedUser, isSourcegraphApp }) => {
     const isLightTheme = useIsLightTheme()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
@@ -94,7 +95,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
-                    {authenticatedUser && (
+                    {authenticatedUser && !isSourcegraphApp && (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
@@ -103,20 +104,21 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 </div>
             </Card>
 
-            {isSourcegraphDotCom && (
-                <CallToActionBanner variant="filled">
-                    To monitor changes across your team's private repositories,{' '}
-                    <Link
-                        to="https://about.sourcegraph.com"
-                        onClick={() =>
-                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
-                        }
-                    >
-                        get Sourcegraph Enterprise
-                    </Link>
-                    .
-                </CallToActionBanner>
-            )}
+            {isSourcegraphDotCom ||
+                (isSourcegraphApp && (
+                    <CallToActionBanner variant="filled">
+                        To monitor changes across your team's private repositories,{' '}
+                        <Link
+                            to="https://about.sourcegraph.com"
+                            onClick={() =>
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
+                            }
+                        >
+                            get Sourcegraph Enterprise
+                        </Link>
+                        .
+                    </CallToActionBanner>
+                ))}
 
             <div>
                 <H3 className="mb-3">Example code monitors</H3>
@@ -128,9 +130,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                                 <CardBody className="d-flex flex-column">
                                     <H3>{monitor.title}</H3>
                                     <Text className="text-muted flex-grow-1">{monitor.description}</Text>
-                                    <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
-                                        Create copy of monitor
-                                    </Link>
+                                    {!isSourcegraphApp && (
+                                        <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
+                                            Create copy of monitor
+                                        </Link>
+                                    )}
                                 </CardBody>
                             </Card>
                         </div>
