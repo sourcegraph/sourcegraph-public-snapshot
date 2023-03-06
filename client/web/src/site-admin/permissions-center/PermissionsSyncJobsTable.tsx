@@ -7,6 +7,7 @@ import { Container, Icon, Input, Link, PageHeader, PageSwitcher, Select, useDebo
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
+import { PageTitle } from '../../components/PageTitle'
 import {
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
@@ -86,6 +87,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     return (
         <div>
+            <PageTitle title="Permissions Sync Dashboard - Admin" />
             <PageHeader
                 path={[{ text: 'Permissions Sync Dashboard' }]}
                 headingElement="h2"
