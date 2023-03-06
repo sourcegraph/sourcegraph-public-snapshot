@@ -278,9 +278,6 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				} else {
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
-
-				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.ExternalRateLimiter().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -331,9 +328,6 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					return
 				}
 				urlStr = *nextPageURL
-
-				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.ExternalRateLimiter().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

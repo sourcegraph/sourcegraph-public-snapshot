@@ -30,8 +30,6 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 			return page, nil
 		}
 
-		time.Sleep(c.externalRateLimiter.RecommendedWaitForBackgroundOp(1))
-
 		parsedUrl, err := url.Parse(baseURL)
 		if err != nil {
 			return nil, err
