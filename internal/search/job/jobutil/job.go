@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -554,19 +553,7 @@ func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclu
 func isSelectOwnersSearch(sp filter.SelectPath, features *search.Features) bool {
 	// If the feature flag is enabled, and the filter is for file.owners, this is
 	// a select:file.owners search and we should apply special limits.
-	fmt.Println("??? SELECT IS OWNERS SEARCH")
-	defer fmt.Println("END ???")
-	p := features.CodeOwnershipSearch
-	fmt.Println("FEATURE", p)
-	q := sp.Root() == filter.File
-	fmt.Println("FILE", sp.Root(), filter.File, q)
-	var owners bool
-	if len(sp) == 2 {
-		owners = sp[1] == "owners"
-		fmt.Printf("LEN SP 2, %q, %q\n", sp[1], "owners")
-	}
-	fmt.Println("RESULT", p && q && owners)
-	return p && q && owners
+	return features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
