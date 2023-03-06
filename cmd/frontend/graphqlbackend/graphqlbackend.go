@@ -383,81 +383,42 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{})
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{NotebooksResolver: notebooks})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{NotebooksResolver: notebooks})
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{AuthzResolver: authz})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{AuthzResolver: authz})
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{BatchChangesResolver: batchChanges})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{BatchChangesResolver: batchChanges})
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{CodeMonitorsResolver: codeMonitors})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CodeMonitorsResolver: codeMonitors})
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{LicenseResolver: license})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{LicenseResolver: license})
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{WebhooksResolver: webhooksResolver})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{WebhooksResolver: webhooksResolver})
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{RBACResolver: rbacResolver})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{RBACResolver: rbacResolver})
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
 }
 
 func NewSchema(
-	db database.DB,
-	gitserverClient gitserver.Client,
-	enterpriseJobs jobutil.EnterpriseJobs,
-	batchChanges BatchChangesResolver,
-	codeIntel CodeIntelResolver,
-	insights InsightsResolver,
-	authz AuthzResolver,
-	codeMonitors CodeMonitorsResolver,
-	license LicenseResolver,
-	dotcom DotcomRootResolver,
-	searchContexts SearchContextsResolver,
-	notebooks NotebooksResolver,
-	compute ComputeResolver,
-	insightsAggregation InsightsAggregationResolver,
-	webhooksResolver WebhooksResolver,
-	embeddingsResolver EmbeddingsResolver,
-	rbacResolver RBACResolver,
-	ownResolver OwnResolver,
-) (*graphql.Schema, error) {
-	return NewSchemaGucci(db, gitserverClient, enterpriseJobs, OptionalResolver{
-		BatchChangesResolver:        batchChanges,
-		CodeIntelResolver:           codeIntel,
-		InsightsResolver:            insights,
-		AuthzResolver:               authz,
-		CodeMonitorsResolver:        codeMonitors,
-		LicenseResolver:             license,
-		DotcomRootResolver:          dotcom,
-		SearchContextsResolver:      searchContexts,
-		NotebooksResolver:           notebooks,
-		ComputeResolver:             compute,
-		InsightsAggregationResolver: insightsAggregation,
-		WebhooksResolver:            webhooksResolver,
-		EmbeddingsResolver:          embeddingsResolver,
-		RBACResolver:                rbacResolver,
-		OwnResolver:                 ownResolver,
-	})
-}
-
-func NewSchemaGucci(
 	db database.DB,
 	gitserverClient gitserver.Client,
 	enterpriseJobs jobutil.EnterpriseJobs,
