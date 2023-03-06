@@ -8,7 +8,12 @@ import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
+import {
+    SetUserEmailPrimaryResult,
+    SetUserEmailPrimaryVariables,
+    UserEmailsResult,
+    UserSettingsAreaUserFields,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './SetUserPrimaryEmailForm.module.scss'
@@ -16,7 +21,7 @@ import styles from './SetUserPrimaryEmailForm.module.scss'
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     emails: UserEmail[]
     onDidSet: () => void
 
@@ -60,7 +65,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                                 }
                             }
                         `,
-                        { user, email: primaryEmail }
+                        { user: user.id, email: primaryEmail }
                     ).toPromise()
                 )
 
@@ -91,7 +96,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                             value={primaryEmail}
                             onChange={onPrimaryEmailSelect}
                             required={true}
-                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            disabled={options.length === 1 || statusOrError === 'loading' || user.scimControlled}
                         >
                             {options.map(email => (
                                 <option key={email} value={email}>
@@ -105,7 +110,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                             loading={statusOrError === 'loading'}
                             label="Save"
                             type="submit"
-                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            disabled={options.length === 1 || statusOrError === 'loading' || user.scimControlled}
                             variant="primary"
                         />
                     </div>

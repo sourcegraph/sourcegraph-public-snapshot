@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState, useCallback } from 'react'
+import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,6 +17,7 @@ import {
     UserSettingsEmailsSiteFlagsVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ScimAlert } from '../ScimAlert'
 
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
@@ -92,6 +93,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
 
     return (
         <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
+            {user.scimControlled && <ScimAlert />}
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
@@ -116,6 +118,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                                 onEmailResendVerification={fetchEmails}
                                 onDidRemove={onEmailRemove}
                                 onError={setEmailActionError}
+                                disableControls={user.scimControlled}
                             />
                         </li>
                     ))}
@@ -125,9 +128,9 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 </ul>
             </Container>
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
-            <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
+            <AddUserEmailForm className={styles.emailForm} user={user} onDidAdd={fetchEmails} />
             <hr className="my-4" aria-hidden="true" />
-            <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
+            <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />
         </div>
     )
 }
