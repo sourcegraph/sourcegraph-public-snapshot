@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useEffect } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { Accordion } from '@reach/accordion'
@@ -8,6 +9,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
@@ -18,11 +20,17 @@ import { FETCH_OWNERS } from './grapqlQueries'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<{
-    repoID: string
-    revision?: string
-    filePath: string
-}> = ({ repoID, revision, filePath }) => {
+export const FileOwnershipPanel: React.FunctionComponent<
+    {
+        repoID: string
+        revision?: string
+        filePath: string
+    } & TelemetryProps
+> = ({ repoID, revision, filePath, telemetryService }) => {
+    useEffect(() => {
+        telemetryService.log('OwnershipPanelOpened')
+    }, [telemetryService])
+
     const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
@@ -30,6 +38,7 @@ export const FileOwnershipPanel: React.FunctionComponent<{
             currentPath: filePath,
         },
     })
+
     if (loading) {
         return (
             <div className={classNames(styles.loaderWrapper, 'text-muted')}>
@@ -54,14 +63,9 @@ export const FileOwnershipPanel: React.FunctionComponent<{
         data.node.commit.blob.ownership.nodes.length > 0
     ) {
         return (
-            <>
+            <div className={styles.contents}>
                 <OwnExplanation />
-                <Accordion
-                    as="table"
-                    collapsible={true}
-                    multiple={true}
-                    className={classNames(styles.table, styles.contents)}
-                >
+                <Accordion as="table" collapsible={true} multiple={true} className={styles.table}>
                     <thead className="sr-only">
                         <tr>
                             <th>Show details</th>
@@ -80,7 +84,7 @@ export const FileOwnershipPanel: React.FunctionComponent<{
                         />
                     ))}
                 </Accordion>
-            </>
+            </div>
         )
     }
 
@@ -104,7 +108,7 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     }
 
     return (
-        <MarketingBlock contentClassName={styles.ownExplanationContainer}>
+        <MarketingBlock contentClassName={styles.ownExplanationContainer} wrapperClassName="mb-3">
             <div className="d-flex align-items-start">
                 <div className="flex-1">
                     <H3 as={H4} className={styles.ownExplanationTitle}>

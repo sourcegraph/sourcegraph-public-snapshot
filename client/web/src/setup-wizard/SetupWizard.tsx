@@ -1,7 +1,10 @@
 import { FC, ReactElement, useCallback, useMemo } from 'react'
 
+import { ApolloClient } from '@apollo/client'
+import { useNavigate } from 'react-router-dom'
+
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { H1, H2, Text } from '@sourcegraph/wildcard'
+import { H1, H2, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
@@ -26,7 +29,7 @@ const CORE_STEPS: StepConfiguration[] = [
         path: '/setup/sync-repositories',
         nextURL: '/search',
         component: SyncRepositoriesStep,
-        onNext: () => {
+        onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
@@ -34,8 +37,10 @@ const CORE_STEPS: StepConfiguration[] = [
 
             // Update global site flags in order to fix global navigation items about
             // setup instance state
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            refreshSiteFlags(client).then(
+                () => {},
+                () => {}
+            )
         },
     },
 ]
@@ -57,7 +62,14 @@ interface SetupWizardProps {
 export const SetupWizard: FC<SetupWizardProps> = props => {
     const { isSourcegraphApp } = props
 
+    const navigate = useNavigate()
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
+
+    // We use local storage since async nature of temporal settings doesn't allow us to
+    // use it for wizard redirection logic (see layout component there we read this state
+    // about the setup wizard availability and redirect to the wizard if it wasn't skipped already.
+    // eslint-disable-next-line no-restricted-syntax
+    const [, setSkipWizardState] = useLocalStorage('setup.skipped', false)
     const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
@@ -67,6 +79,11 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
         [setStepId]
     )
 
+    const handleSkip = useCallback(() => {
+        setSkipWizardState(true)
+        navigate('/search')
+    }, [navigate, setSkipWizardState])
+
     if (status !== 'loaded') {
         return null
     }
@@ -74,7 +91,12 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     return (
         <div className={styles.root}>
             <PageTitle title="Setup" />
-            <SetupStepsRoot initialStepId={activeStepId} steps={steps} onStepChange={handleStepChange}>
+            <SetupStepsRoot
+                initialStepId={activeStepId}
+                steps={steps}
+                onSkip={handleSkip}
+                onStepChange={handleStepChange}
+            >
                 <div className={styles.content}>
                     <header className={styles.header}>
                         <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />

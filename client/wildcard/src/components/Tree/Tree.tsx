@@ -96,13 +96,21 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         marginLeft: getMarginLeft(level, isBranch),
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
+                    data-testid="tree-node"
                     data-tree-node-id={element.id}
+                    data-tree-active={isSelected}
+                    data-tree-selected={isSelected}
+                    data-tree-expanded={isExpanded}
                     className={classNames(styles.node, isSelected && styles.selected, nodeClassName)}
                 >
                     {isBranch ? (
                         // We already handle accessibility events for expansion in the <TreeView />
                         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                        <div className={classNames(styles.icon, styles.collapseIcon)} onClick={onClick}>
+                        <div
+                            className={classNames(styles.icon, styles.collapseIcon)}
+                            data-testid="tree-expand-icon"
+                            onClick={onClick}
+                        >
                             {isExpanded &&
                             element.children.length === 0 &&
                             (loadedIds ? !loadedIds.has(element.id) : true) ? (

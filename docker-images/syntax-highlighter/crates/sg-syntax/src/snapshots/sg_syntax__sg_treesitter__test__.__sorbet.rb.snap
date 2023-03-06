@@ -10,8 +10,11 @@ expression: "dump_document(&document, &contents)"
 //                      ^^^^ IdentifierParameter 
 //                            ^^^^^^ Identifier 
     "Hello #{name}"
-//  ^^^^^^^ StringLiteral 
+//  ^ StringLiteral 
+//   ^^^^^^ StringLiteral 
+//         ^^ StringLiteralEscape 
 //           ^^^^ Identifier 
+//               ^ StringLiteralEscape 
 //                ^ StringLiteral 
   end
 //^^^ IdentifierKeyword 
@@ -21,7 +24,9 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierFunction 
 //      ^^^^^^ Identifier 
 //             ^ IdentifierOperator 
-//               ^^^^^^ StringLiteral 
+//               ^ StringLiteral 
+//                ^^^^ StringLiteral 
+//                    ^ StringLiteral 
   # Utilizing union types:
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_example(x: (Integer | String))
@@ -43,7 +48,9 @@ expression: "dump_document(&document, &contents)"
   example_example(x: "abc")  # => 3
 //^^^^^^^^^^^^^^^ IdentifierFunction 
 //                ^ CharacterLiteral 
-//                   ^^^^^ StringLiteral 
+//                   ^ StringLiteral 
+//                    ^^^ StringLiteral 
+//                       ^ StringLiteral 
 //                           ^^^^^^ Comment 
   # Using optional/nullable parameters:
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
@@ -148,7 +155,9 @@ expression: "dump_document(&document, &contents)"
 //^^^ IdentifierKeyword 
   example_structural("abc")      # => 3
 //^^^^^^^^^^^^^^^^^^ IdentifierFunction 
-//                   ^^^^^ StringLiteral 
+//                   ^ StringLiteral 
+//                    ^^^ StringLiteral 
+//                       ^ StringLiteral 
 //                               ^^^^^^ Comment 
   example_structural([1, 2, 3]) # => 3
 //^^^^^^^^^^^^^^^^^^ IdentifierFunction 
@@ -232,7 +241,9 @@ expression: "dump_document(&document, &contents)"
   example_generic(x: "abc") # => "abc"
 //^^^^^^^^^^^^^^^ IdentifierFunction 
 //                ^ CharacterLiteral 
-//                   ^^^^^ StringLiteral 
+//                   ^ StringLiteral 
+//                    ^^^ StringLiteral 
+//                       ^ StringLiteral 
 //                          ^^^^^^^^^^ Comment 
   
   sig { params(name: String).returns(String) }
@@ -247,8 +258,11 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^^^^ IdentifierFunction 
 //                ^^^^ IdentifierParameter 
     "Hello #{name}"
-//  ^^^^^^^ StringLiteral 
+//  ^ StringLiteral 
+//   ^^^^^^ StringLiteral 
+//         ^^ StringLiteralEscape 
 //           ^^^^ Identifier 
+//               ^ StringLiteralEscape 
 //                ^ StringLiteral 
   end
 //^^^ IdentifierKeyword 

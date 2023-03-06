@@ -3,27 +3,27 @@ package embeddings
 import "github.com/sourcegraph/sourcegraph/internal/api"
 
 type EmbeddingIndex[T any] struct {
-	Embeddings      []float32 `json:"embeddings"`
-	ColumnDimension int       `json:"columnDimension"`
-	RowMetadata     []T       `json:"rowMetadata"`
+	Embeddings      []float32
+	ColumnDimension int
+	RowMetadata     []T
 }
 
 type RepoEmbeddingRowMetadata struct {
-	FileName  string `json:"fileName"`
-	StartLine int    `json:"startLine"`
-	EndLine   int    `json:"endLine"`
+	FileName  string
+	StartLine int
+	EndLine   int
 }
 
 type RepoEmbeddingIndex struct {
-	RepoName  api.RepoName                              `json:"repoName"`
-	Revision  api.CommitID                              `json:"revision"`
-	CodeIndex *EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"codeIndex"`
-	TextIndex *EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"textIndex"`
+	RepoName  api.RepoName
+	Revision  api.CommitID
+	CodeIndex EmbeddingIndex[RepoEmbeddingRowMetadata]
+	TextIndex EmbeddingIndex[RepoEmbeddingRowMetadata]
 }
 
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextMeanEmbedding    []float32 `json:"messagesWithAdditionalContextMeanEmbedding"`
-	MessagesWithoutAdditionalContextMeanEmbedding []float32 `json:"messagesWithoutAdditionalContextMeanEmbedding"`
+	MessagesWithAdditionalContextMeanEmbedding    []float32
+	MessagesWithoutAdditionalContextMeanEmbedding []float32
 }
 
 type EmbeddingSearchResults struct {

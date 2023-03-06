@@ -206,13 +206,6 @@ func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Conte
 func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
 		for _, dockerStep := range indexJob.Steps {
 			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,

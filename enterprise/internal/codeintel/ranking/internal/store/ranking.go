@@ -65,7 +65,6 @@ func (s *store) InsertDefinitionsForRanking(
 		[]string{
 			"upload_id",
 			"symbol_name",
-			"repository",
 			"document_path",
 			"graph_key",
 		},
@@ -88,7 +87,6 @@ func insertDefinitions(
 			ctx,
 			def.UploadID,
 			def.SymbolName,
-			def.Repository,
 			def.DocumentPath,
 			rankingGraphKey,
 		); err != nil {
@@ -266,24 +264,25 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		rd.repository,
+		u.repository_id,
 		rd.document_path,
 		rd.graph_key,
 		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE rd.graph_key = %s
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	GROUP BY u.repository_id, rd.document_path, rd.graph_key
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
-		rx.repository,
+		rx.repository_id,
 		rx.document_path,
 		SUM(rx.count),
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository, rx.document_path
+	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 )
 SELECT
@@ -337,17 +336,17 @@ WITH
 input_ranks AS (
 	SELECT
 		pci.id,
-		r.id AS repository_id,
+		pci.repository_id,
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
-	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
+	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
-	ORDER BY pci.graph_key, pci.repository, pci.id
+	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -358,10 +357,9 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
 	SELECT
 		temp.repository_id,
-		1,
 		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
@@ -372,7 +370,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id, precision) DO UPDATE SET
+	ON CONFLICT (repository_id) DO UPDATE SET
 		graph_key = EXCLUDED.graph_key,
 		payload = CASE
 			WHEN pr.graph_key != EXCLUDED.graph_key
@@ -542,4 +540,66 @@ deleted_path_counts_inputs AS (
 SELECT
 	(SELECT COUNT(*) FROM deleted_references_processed),
 	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
+`
+
+func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsSDeleted int, err error) {
+	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	parts := strings.Split(derivativeGraphKey, "-")
+	if len(parts) < 2 {
+		return 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	}
+	// Remove last segment, which indicates the current time bucket
+	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleRanksQuery,
+		derivativeGraphKey,
+		parentGraphKey,
+		derivativeGraphKey,
+	)))
+	return count, err
+}
+
+const vacuumStaleRanksQuery = `
+WITH
+matching_graph_keys AS (
+	SELECT DISTINCT graph_key
+	FROM codeintel_path_ranks
+	-- Implicit delete anything with a different graph key root
+	WHERE graph_key != %s AND graph_key LIKE %s || '-%%'
+),
+valid_graph_keys AS (
+	-- Select the current graph key as well as the highest graph key that
+	-- shares the same parent graph key. Returning both will help bridge
+	-- the gap that happens if we were to flush the entire table at the
+	-- start of a new graph reduction.
+	--
+	-- This may have the effect of returning stale ranking data for a repo
+	-- for which we no longer have SCIP data, but only from the previous
+	-- graph reduction (and changing the parent graph key will flush all
+	-- previous data (see the CTE definition above) if the need arises.
+	SELECT %s AS graph_key
+	UNION (
+		SELECT graph_key
+		FROM matching_graph_keys
+		ORDER BY reverse(split_part(reverse(graph_key), '-', 1))::int DESC
+		LIMIT 1
+	)
+),
+locked_records AS (
+	-- Lock all path rank records that don't have a recent graph key
+	SELECT repository_id
+	FROM codeintel_path_ranks
+	WHERE graph_key NOT IN (SELECT graph_key FROM valid_graph_keys)
+	ORDER BY repository_id
+	FOR UPDATE
+),
+del AS (
+	DELETE FROM codeintel_path_ranks
+	WHERE repository_id IN (SELECT repository_id FROM locked_records)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
 `
