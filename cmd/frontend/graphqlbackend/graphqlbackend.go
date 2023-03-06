@@ -438,10 +438,35 @@ func NewSchema(
 	rbacResolver RBACResolver,
 	ownResolver OwnResolver,
 ) (*graphql.Schema, error) {
+	return NewSchemaGucci(db, gitserverClient, enterpriseJobs, OptionalResolver{
+		BatchChangesResolver:        batchChanges,
+		CodeIntelResolver:           codeIntel,
+		InsightsResolver:            insights,
+		AuthzResolver:               authz,
+		CodeMonitorsResolver:        codeMonitors,
+		LicenseResolver:             license,
+		DotcomRootResolver:          dotcom,
+		SearchContextsResolver:      searchContexts,
+		NotebooksResolver:           notebooks,
+		ComputeResolver:             compute,
+		InsightsAggregationResolver: insightsAggregation,
+		WebhooksResolver:            webhooksResolver,
+		EmbeddingsResolver:          embeddingsResolver,
+		RBACResolver:                rbacResolver,
+		OwnResolver:                 ownResolver,
+	})
+}
+
+func NewSchemaGucci(
+	db database.DB,
+	gitserverClient gitserver.Client,
+	enterpriseJobs jobutil.EnterpriseJobs,
+	optional OptionalResolver,
+) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
-	if batchChanges != nil {
+	if batchChanges := optional.BatchChangesResolver; batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
 		schemas = append(schemas, batchesSchema)
@@ -451,7 +476,7 @@ func NewSchema(
 		}
 	}
 
-	if codeIntel != nil {
+	if codeIntel := optional.CodeIntelResolver; codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
 		schemas = append(schemas, codeIntelSchema)
@@ -461,19 +486,19 @@ func NewSchema(
 		}
 	}
 
-	if insights != nil {
+	if insights := optional.InsightsResolver; insights != nil {
 		EnterpriseResolvers.insightsResolver = insights
 		resolver.InsightsResolver = insights
 		schemas = append(schemas, insightsSchema)
 	}
 
-	if authz != nil {
+	if authz := optional.AuthzResolver; authz != nil {
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
 	}
 
-	if codeMonitors != nil {
+	if codeMonitors := optional.CodeMonitorsResolver; codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
 		schemas = append(schemas, codeMonitorsSchema)
@@ -483,14 +508,14 @@ func NewSchema(
 		}
 	}
 
-	if license != nil {
+	if license := optional.LicenseResolver; license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
 		schemas = append(schemas, licenseSchema)
 		// No NodeByID handlers currently.
 	}
 
-	if dotcom != nil {
+	if dotcom := optional.DotcomRootResolver; dotcom != nil {
 		EnterpriseResolvers.dotcomResolver = dotcom
 		resolver.DotcomRootResolver = dotcom
 		schemas = append(schemas, dotcomSchema)
@@ -500,7 +525,7 @@ func NewSchema(
 		}
 	}
 
-	if searchContexts != nil {
+	if searchContexts := optional.SearchContextsResolver; searchContexts != nil {
 		EnterpriseResolvers.searchContextsResolver = searchContexts
 		resolver.SearchContextsResolver = searchContexts
 		schemas = append(schemas, searchContextsSchema)
@@ -510,7 +535,7 @@ func NewSchema(
 		}
 	}
 
-	if notebooks != nil {
+	if notebooks := optional.NotebooksResolver; notebooks != nil {
 		EnterpriseResolvers.notebooksResolver = notebooks
 		resolver.NotebooksResolver = notebooks
 		schemas = append(schemas, notebooksSchema)
@@ -520,19 +545,19 @@ func NewSchema(
 		}
 	}
 
-	if compute != nil {
+	if compute := optional.ComputeResolver; compute != nil {
 		EnterpriseResolvers.computeResolver = compute
 		resolver.ComputeResolver = compute
 		schemas = append(schemas, computeSchema)
 	}
 
-	if insightsAggregation != nil {
+	if insightsAggregation := optional.InsightsAggregationResolver; insightsAggregation != nil {
 		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
 		resolver.InsightsAggregationResolver = insightsAggregation
 		schemas = append(schemas, insightsAggregationsSchema)
 	}
 
-	if webhooksResolver != nil {
+	if webhooksResolver := optional.WebhooksResolver; webhooksResolver != nil {
 		EnterpriseResolvers.webhooksResolver = webhooksResolver
 		resolver.WebhooksResolver = webhooksResolver
 		// Register NodeByID handlers.
@@ -541,13 +566,13 @@ func NewSchema(
 		}
 	}
 
-	if embeddingsResolver != nil {
+	if embeddingsResolver := optional.EmbeddingsResolver; embeddingsResolver != nil {
 		EnterpriseResolvers.embeddingsResolver = embeddingsResolver
 		resolver.EmbeddingsResolver = embeddingsResolver
 		schemas = append(schemas, embeddingsSchema)
 	}
 
-	if rbacResolver != nil {
+	if rbacResolver := optional.RBACResolver; rbacResolver != nil {
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
 		schemas = append(schemas, rbacSchema)
@@ -557,7 +582,7 @@ func NewSchema(
 		}
 	}
 
-	if ownResolver != nil {
+	if ownResolver := optional.OwnResolver; ownResolver != nil {
 		EnterpriseResolvers.ownResolver = ownResolver
 		resolver.OwnResolver = ownResolver
 		schemas = append(schemas, ownSchema)
