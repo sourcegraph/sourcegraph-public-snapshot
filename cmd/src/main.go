@@ -47,6 +47,7 @@ The commands are:
 	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
 	upload          upload an index to a Sourcegraph instance
 	users,user      manages users
+	codeowners      manages code ownership information
 	version         display and compare the src-cli version against the recommended version for your instance
 
 Use "src [command] -h" for more information about a command.
