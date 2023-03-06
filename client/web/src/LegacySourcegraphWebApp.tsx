@@ -45,7 +45,7 @@ import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
+import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
 import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
 import { LegacyRouteContextProvider } from './LegacyRouteContext'
 import { PageError } from './PageError'
@@ -254,7 +254,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <SettingsProvider settingsCascade={this.state.settingsCascade} />,
                     <ErrorBoundary location={null} />,
                     <TraceSpanProvider name={SharedSpanName.AppMount} />,
-                    <FeatureFlagsProvider />,
+                    <FeatureFlagsLocalOverrideAgent />,
                     <ShortcutProvider />,
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,
