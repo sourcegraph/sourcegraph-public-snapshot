@@ -76,8 +76,8 @@ export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTea
                 path={[{ text: 'Create a new team' }]}
                 description={
                     <>
-                        A team is a group of users. See <Link to="/help/admin/teams/teams">Teams documentation</Link>{' '}
-                        for information about configuring teams.
+                        A team is a group of users. See <Link to="/help/admin/teams">Teams documentation</Link> for
+                        information about configuring teams.
                     </>
                 }
                 className="mb-3"

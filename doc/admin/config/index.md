@@ -16,6 +16,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Configure search scopes](../../code_search/how-to/snippets.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
 - [Add organizations](../organizations.md)
+- [Add teams](../teams) <span class="badge badge-experimental">Experimental</span>
 - [Set up HTTPS](../http_https_configuration.md)
 - [Use a custom domain](../url.md)
 - [Configure email sending / SMTP server](email.md)
