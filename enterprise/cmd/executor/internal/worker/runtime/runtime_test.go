@@ -1,52 +1,55 @@
 package runtime_test
 
 import (
-	"context"
 	"os/exec"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 )
 
 func TestNewRuntime(t *testing.T) {
 	tests := []struct {
-		name         string
-		mockFunc     func(runner *fakeCmdRunner)
-		expectedName runtime.Name
-		hasError     bool
+		name           string
+		mockFunc       func(cmdRunner *runtime.MockCmdRunner)
+		expectedName   runtime.Name
+		hasError       bool
+		assertMockFunc func(t *testing.T, cmdRunner *runtime.MockCmdRunner)
 	}{
 		{
 			name: "Docker",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").Return("", nil)
-				runner.On("LookPath", "git").Return("", nil)
-				runner.On("LookPath", "src").Return("", nil)
+			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
+				cmdRunner.LookPathFunc.SetDefaultReturn("", nil)
 			},
 			expectedName: runtime.NameDocker,
+			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPathFunc.History(), 3)
+				assert.Equal(t, "docker", cmdRunner.LookPathFunc.History()[0].Arg0)
+				assert.Equal(t, "git", cmdRunner.LookPathFunc.History()[1].Arg0)
+				assert.Equal(t, "src", cmdRunner.LookPathFunc.History()[2].Arg0)
+			},
 		},
 		{
 			name: "No Runtime",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").Return("", exec.ErrNotFound)
-				runner.On("LookPath", "git").Return("", exec.ErrNotFound)
-				runner.On("LookPath", "src").Return("", exec.ErrNotFound)
+			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
+				cmdRunner.LookPathFunc.PushReturn("", exec.ErrNotFound)
 			},
 			hasError: true,
+			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPathFunc.History(), 3)
+			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			runner := new(fakeCmdRunner)
+			cmdRunner := runtime.NewMockCmdRunner()
 			if test.mockFunc != nil {
-				test.mockFunc(runner)
+				test.mockFunc(cmdRunner)
 			}
 			logger := logtest.Scoped(t)
 			// Most of the arguments can be nil/empty since we are not doing anything with them
@@ -55,8 +58,8 @@ func TestNewRuntime(t *testing.T) {
 				nil,
 				nil,
 				workspace.CloneOptions{},
-				command.DockerOptions{},
-				runner,
+				runner.Options{},
+				cmdRunner,
 				nil,
 			)
 			if test.hasError {
@@ -68,26 +71,8 @@ func TestNewRuntime(t *testing.T) {
 				require.NotNil(t, r)
 				assert.Equal(t, test.expectedName, r.Name())
 			}
+
+			test.assertMockFunc(t, cmdRunner)
 		})
 	}
-}
-
-type fakeCmdRunner struct {
-	mock.Mock
-}
-
-func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	panic("not needed")
-}
-
-var _ util.CmdRunner = &fakeCmdRunner{}
-
-func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	calledArgs := f.Called(ctx, name, args)
-	return calledArgs.Get(0).([]byte), calledArgs.Error(1)
-}
-
-func (f *fakeCmdRunner) LookPath(file string) (string, error) {
-	args := f.Called(file)
-	return args.String(0), args.Error(1)
 }

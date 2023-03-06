@@ -9,8 +9,10 @@ package runtime
 import (
 	"context"
 	"io"
+	"os/exec"
 	"sync"
 
+	util "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -1579,4 +1581,417 @@ func (c WorkspaceScriptFilenamesFuncCall) Args() []interface{} {
 // invocation.
 func (c WorkspaceScriptFilenamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockCmdRunner is a mock implementation of the CmdRunner interface (from
+// the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util)
+// used for unit testing.
+type MockCmdRunner struct {
+	// CombinedOutputFunc is an instance of a mock function object
+	// controlling the behavior of the method CombinedOutput.
+	CombinedOutputFunc *CmdRunnerCombinedOutputFunc
+	// CommandContextFunc is an instance of a mock function object
+	// controlling the behavior of the method CommandContext.
+	CommandContextFunc *CmdRunnerCommandContextFunc
+	// LookPathFunc is an instance of a mock function object controlling the
+	// behavior of the method LookPath.
+	LookPathFunc *CmdRunnerLookPathFunc
+}
+
+// NewMockCmdRunner creates a new mock of the CmdRunner interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockCmdRunner() *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: func(context.Context, string, ...string) (r0 []byte, r1 error) {
+				return
+			},
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: func(context.Context, string, ...string) (r0 *exec.Cmd) {
+				return
+			},
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: func(string) (r0 string, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCmdRunner creates a new mock of the CmdRunner interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockCmdRunner() *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: func(context.Context, string, ...string) ([]byte, error) {
+				panic("unexpected invocation of MockCmdRunner.CombinedOutput")
+			},
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: func(context.Context, string, ...string) *exec.Cmd {
+				panic("unexpected invocation of MockCmdRunner.CommandContext")
+			},
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: func(string) (string, error) {
+				panic("unexpected invocation of MockCmdRunner.LookPath")
+			},
+		},
+	}
+}
+
+// NewMockCmdRunnerFrom creates a new mock of the MockCmdRunner interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockCmdRunnerFrom(i util.CmdRunner) *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: i.CombinedOutput,
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: i.CommandContext,
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: i.LookPath,
+		},
+	}
+}
+
+// CmdRunnerCombinedOutputFunc describes the behavior when the
+// CombinedOutput method of the parent MockCmdRunner instance is invoked.
+type CmdRunnerCombinedOutputFunc struct {
+	defaultHook func(context.Context, string, ...string) ([]byte, error)
+	hooks       []func(context.Context, string, ...string) ([]byte, error)
+	history     []CmdRunnerCombinedOutputFuncCall
+	mutex       sync.Mutex
+}
+
+// CombinedOutput delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCmdRunner) CombinedOutput(v0 context.Context, v1 string, v2 ...string) ([]byte, error) {
+	r0, r1 := m.CombinedOutputFunc.nextHook()(v0, v1, v2...)
+	m.CombinedOutputFunc.appendCall(CmdRunnerCombinedOutputFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CombinedOutput
+// method of the parent MockCmdRunner instance is invoked and the hook queue
+// is empty.
+func (f *CmdRunnerCombinedOutputFunc) SetDefaultHook(hook func(context.Context, string, ...string) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CombinedOutput method of the parent MockCmdRunner instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CmdRunnerCombinedOutputFunc) PushHook(hook func(context.Context, string, ...string) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerCombinedOutputFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, ...string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerCombinedOutputFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, string, ...string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *CmdRunnerCombinedOutputFunc) nextHook() func(context.Context, string, ...string) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerCombinedOutputFunc) appendCall(r0 CmdRunnerCombinedOutputFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerCombinedOutputFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerCombinedOutputFunc) History() []CmdRunnerCombinedOutputFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerCombinedOutputFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerCombinedOutputFuncCall is an object that describes an invocation
+// of method CombinedOutput on an instance of MockCmdRunner.
+type CmdRunnerCombinedOutputFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CmdRunnerCombinedOutputFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerCombinedOutputFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CmdRunnerCommandContextFunc describes the behavior when the
+// CommandContext method of the parent MockCmdRunner instance is invoked.
+type CmdRunnerCommandContextFunc struct {
+	defaultHook func(context.Context, string, ...string) *exec.Cmd
+	hooks       []func(context.Context, string, ...string) *exec.Cmd
+	history     []CmdRunnerCommandContextFuncCall
+	mutex       sync.Mutex
+}
+
+// CommandContext delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCmdRunner) CommandContext(v0 context.Context, v1 string, v2 ...string) *exec.Cmd {
+	r0 := m.CommandContextFunc.nextHook()(v0, v1, v2...)
+	m.CommandContextFunc.appendCall(CmdRunnerCommandContextFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CommandContext
+// method of the parent MockCmdRunner instance is invoked and the hook queue
+// is empty.
+func (f *CmdRunnerCommandContextFunc) SetDefaultHook(hook func(context.Context, string, ...string) *exec.Cmd) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommandContext method of the parent MockCmdRunner instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CmdRunnerCommandContextFunc) PushHook(hook func(context.Context, string, ...string) *exec.Cmd) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerCommandContextFunc) SetDefaultReturn(r0 *exec.Cmd) {
+	f.SetDefaultHook(func(context.Context, string, ...string) *exec.Cmd {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerCommandContextFunc) PushReturn(r0 *exec.Cmd) {
+	f.PushHook(func(context.Context, string, ...string) *exec.Cmd {
+		return r0
+	})
+}
+
+func (f *CmdRunnerCommandContextFunc) nextHook() func(context.Context, string, ...string) *exec.Cmd {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerCommandContextFunc) appendCall(r0 CmdRunnerCommandContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerCommandContextFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerCommandContextFunc) History() []CmdRunnerCommandContextFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerCommandContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerCommandContextFuncCall is an object that describes an invocation
+// of method CommandContext on an instance of MockCmdRunner.
+type CmdRunnerCommandContextFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *exec.Cmd
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CmdRunnerCommandContextFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerCommandContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CmdRunnerLookPathFunc describes the behavior when the LookPath method of
+// the parent MockCmdRunner instance is invoked.
+type CmdRunnerLookPathFunc struct {
+	defaultHook func(string) (string, error)
+	hooks       []func(string) (string, error)
+	history     []CmdRunnerLookPathFuncCall
+	mutex       sync.Mutex
+}
+
+// LookPath delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCmdRunner) LookPath(v0 string) (string, error) {
+	r0, r1 := m.LookPathFunc.nextHook()(v0)
+	m.LookPathFunc.appendCall(CmdRunnerLookPathFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LookPath method of
+// the parent MockCmdRunner instance is invoked and the hook queue is empty.
+func (f *CmdRunnerLookPathFunc) SetDefaultHook(hook func(string) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LookPath method of the parent MockCmdRunner instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CmdRunnerLookPathFunc) PushHook(hook func(string) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerLookPathFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(string) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerLookPathFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(string) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *CmdRunnerLookPathFunc) nextHook() func(string) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerLookPathFunc) appendCall(r0 CmdRunnerLookPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerLookPathFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerLookPathFunc) History() []CmdRunnerLookPathFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerLookPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerLookPathFuncCall is an object that describes an invocation of
+// method LookPath on an instance of MockCmdRunner.
+type CmdRunnerLookPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CmdRunnerLookPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerLookPathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
