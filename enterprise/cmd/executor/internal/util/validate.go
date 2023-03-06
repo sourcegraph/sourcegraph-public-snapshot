@@ -160,7 +160,7 @@ func ValidateCNIInstalled(cmdRunner CmdRunner) error {
 	var missingPlugins []string
 	missingIsolationPlugin := false
 	if stat, err := cmdRunner.Stat(config.CNIBinDir); err != nil {
-		if cmdRunner.IsNotExist(err) {
+		if os.IsNotExist(err) {
 			errs = errors.Append(errs, errors.Newf("Cannot find directory %s. Are the CNI plugins for firecracker installed correctly?", config.CNIBinDir))
 			missingPlugins = append([]string{}, config.RequiredCNIPlugins...)
 			missingIsolationPlugin = true
