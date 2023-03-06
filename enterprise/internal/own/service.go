@@ -22,7 +22,7 @@ import (
 type Service interface {
 	// RulesetForRepo returns a CODEOWNERS file ruleset from a given repository at given commit ID.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error)
+	RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error)
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
@@ -66,12 +66,7 @@ var codeownersLocations = []string{
 
 // RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
 // from one of the possible codeownersLocations. It returns nil if no match is found.
-func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
-	repo, err := s.db.Repos().GetByName(ctx, repoName)
-	if err != nil {
-		return nil, err
-	}
-	repoID := repo.ID
+func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	ingestedCodeowners, err := s.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err

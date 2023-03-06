@@ -276,8 +276,10 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				}
 				return []byte(content), nil
 			})
+			
+			db := database.NewMockDB()
 
-			rules := NewRulesCache(gitserverClient, database.NewMockDB())
+			rules := NewRulesCache(gitserverClient, db)
 
 			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 
