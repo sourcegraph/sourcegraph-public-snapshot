@@ -81,9 +81,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
 
     const handleSkip = useCallback(() => {
         setSkipWizardState(true)
-        requestAnimationFrame(() => {
-            navigate('/search')
-        })
+        navigate('/search')
     }, [navigate, setSkipWizardState])
 
     if (status !== 'loaded') {

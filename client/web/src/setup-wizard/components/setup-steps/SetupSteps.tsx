@@ -73,6 +73,8 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
+    const client = useApolloClient()
+
     const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
     const [footerPortal, setFooterPortal] = useState<HTMLDivElement | null>(null)
 
@@ -103,7 +105,6 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         onStepChange(currentStep)
     }, [currentStep, onStepChange])
 
-    const client = useApolloClient()
     const handleGoToNextStep = useCallback(() => {
         const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
