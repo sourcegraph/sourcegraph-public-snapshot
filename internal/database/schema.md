@@ -945,17 +945,21 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
 
 # Table "public.codeintel_path_ranks"
 ```
-    Column     |           Type           | Collation | Nullable | Default 
----------------+--------------------------+-----------+----------+---------
- repository_id | integer                  |           | not null | 
- payload       | jsonb                    |           | not null | 
- precision     | double precision         |           | not null | 
- updated_at    | timestamp with time zone |           | not null | now()
- graph_key     | text                     |           |          | 
+     Column      |           Type           | Collation | Nullable | Default 
+-----------------+--------------------------+-----------+----------+---------
+ repository_id   | integer                  |           | not null | 
+ payload         | jsonb                    |           | not null | 
+ precision       | double precision         |           | not null | 
+ updated_at      | timestamp with time zone |           | not null | now()
+ graph_key       | text                     |           |          | 
+ num_paths       | integer                  |           |          | 
+ refcount_logsum | double precision         |           |          | 
 Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
+    insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
+    update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
     update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
 
 ```
@@ -2274,6 +2278,7 @@ Check constraints:
 Referenced by:
     TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
     TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_uploads_vulnerability_scan" CONSTRAINT "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2392,6 +2397,21 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 **is_default_branch**: Whether the specified branch is the default of the repository. Always false for tags.
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
+
+# Table "public.lsif_uploads_vulnerability_scan"
+```
+     Column      |            Type             | Collation | Nullable |                           Default                           
+-----------------+-----------------------------+-----------+----------+-------------------------------------------------------------
+ id              | bigint                      |           | not null | nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass)
+ upload_id       | integer                     |           | not null | 
+ last_scanned_at | timestamp without time zone |           | not null | now()
+Indexes:
+    "lsif_uploads_vulnerability_scan_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_vulnerability_scan_upload_id" UNIQUE, btree (upload_id)
+Foreign-key constraints:
+    "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
 
 # Table "public.migration_logs"
 ```
@@ -3468,7 +3488,7 @@ Foreign-key constraints:
  display_name   | text                     |           |          | 
  readonly       | boolean                  |           | not null | false
  parent_team_id | integer                  |           |          | 
- creator_id     | integer                  |           | not null | 
+ creator_id     | integer                  |           |          | 
  created_at     | timestamp with time zone |           | not null | now()
  updated_at     | timestamp with time zone |           | not null | now()
 Indexes:
