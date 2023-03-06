@@ -90,7 +90,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [allExpanded, setAllExpanded] = useState(false)
     const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
-    const [rankingEnabled, setRankingEnabled] = useTemporarySetting('search.ranking.experimental', false)
+    const [rankingEnabled, setRankingEnabled] = useTemporarySetting('search.ranking.experimental', true)
 
     // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
