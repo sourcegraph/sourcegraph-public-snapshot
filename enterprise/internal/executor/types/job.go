@@ -266,8 +266,6 @@ type DockerStep struct {
 }
 
 // CliStep is a step that runs a src-cli command.
-//
-// Deprecated: Eventually use native SSBC.
 type CliStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
