@@ -185,7 +185,7 @@ func TestPermissionDelete(t *testing.T) {
 		deleted, err := store.GetByID(ctx, GetPermissionOpts{ID: p.ID})
 		require.Nil(t, deleted)
 		require.Error(t, err)
-		require.Equal(t, err, &PermissionNotFoundErr{p.ID})
+		require.Equal(t, err, &PermissionNotFoundErr{ID: p.ID})
 	})
 
 	t.Run("non-existent role", func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 		deleted, err := store.GetByID(ctx, GetPermissionOpts{ID: ps[0].ID})
 		require.Nil(t, deleted)
 		require.Error(t, err)
-		require.Equal(t, err, &PermissionNotFoundErr{ps[0].ID})
+		require.Equal(t, err, &PermissionNotFoundErr{ID: ps[0].ID})
 	})
 }
 
