@@ -389,8 +389,8 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
             alerts.push(
                 <Alert key="cody-beta-notice" className={styles.alert} variant="info">
                     By turning on completions for "Cody beta," you have read the{' '}
-                    <Link to="TODO">Cody Documentation</Link> and agree to the{' '}
-                    <Link to="https://about.sourcegraph.com/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    <Link to="https://docs.sourcegraph.com/cody">Cody Documentation</Link> and agree to the{' '}
+                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
                     particular, some code snippets will be sent to a third-party language model provider when you use
                     Cody questions.
                 </Alert>
