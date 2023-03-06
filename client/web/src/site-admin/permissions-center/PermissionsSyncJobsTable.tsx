@@ -1,9 +1,19 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from 'react'
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, Icon, Input, Link, PageHeader, PageSwitcher, Select, useDebounce } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    Icon,
+    Input,
+    Link,
+    PageHeader,
+    PageSwitcher,
+    Select,
+    useDebounce,
+} from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
@@ -42,6 +52,7 @@ const DEFAULT_FILTERS = {
     searchType: '',
     query: '',
 }
+const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
 
 interface Props extends TelemetryProps {}
 
@@ -55,22 +66,29 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
 
-    const { connection, loading, error, variables, ...paginationProps } = usePageSwitcherPagination<
-        PermissionsSyncJobsResult,
-        PermissionsSyncJobsVariables,
-        PermissionsSyncJob
-    >({
-        query: PERMISSIONS_SYNC_JOBS_QUERY,
-        variables: {
-            first: 20,
-            reasonGroup: stringToReason(filters.reason),
-            state: stringToState(filters.state),
-            searchType: stringToSearchType(filters.searchType),
-            query: debouncedQuery,
-        } as PermissionsSyncJobsVariables,
-        getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
-        options: { pollInterval: 5000 },
-    })
+    const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
+        usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
+            query: PERMISSIONS_SYNC_JOBS_QUERY,
+            variables: {
+                first: 20,
+                reasonGroup: stringToReason(filters.reason),
+                state: stringToState(filters.state),
+                searchType: stringToSearchType(filters.searchType),
+                query: debouncedQuery,
+            } as PermissionsSyncJobsVariables,
+            getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
+            options: { pollInterval: PERMISSIONS_SYNC_JOBS_POLL_INTERVAL },
+        })
+
+    const [polling, setPolling] = useState(true)
+    const togglePolling = useCallback(() => {
+        if (polling) {
+            stopPolling()
+        } else {
+            startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
+        }
+        setPolling(!polling)
+    }, [polling, startPolling, stopPolling])
 
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
@@ -96,6 +114,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         List of permissions sync jobs. Learn more about{' '}
                         <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
                     </>
+                }
+                actions={
+                    <Button variant="secondary" onClick={togglePolling}>
+                        {polling ? 'Pause polling' : 'Resume polling'}
+                    </Button>
                 }
                 className="mb-3"
             />
