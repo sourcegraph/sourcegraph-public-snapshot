@@ -46,7 +46,7 @@ var (
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
-	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
+	BeforeSetUserIsSiteAdmin func(ctx context.Context, isSiteAdmin bool) error
 )
 
 // UserStore provides access to the `users` table.
@@ -798,7 +798,7 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 // to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
-		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+		if err := BeforeSetUserIsSiteAdmin(ctx, isSiteAdmin); err != nil {
 			return err
 		}
 	}
