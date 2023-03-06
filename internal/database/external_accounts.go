@@ -197,6 +197,9 @@ AND deleted_at IS NULL
 		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
 	}
 
+	// Log action
+	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+
 	return
 }
 
