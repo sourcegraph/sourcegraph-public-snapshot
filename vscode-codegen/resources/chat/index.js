@@ -39,6 +39,12 @@ class ChatController {
 		})
 		this.inputElement.addEventListener('input', () => this.resizeInput())
 
+		// Focus input when the view is focused.
+		this.inputElement.focus()
+		window.addEventListener('focus', () => {
+			setTimeout(() => this.inputElement.focus(), 1)
+		})
+
 		this.submitElement.addEventListener('click', () => {
 			if (this.inputElement.value.trim().length === 0) {
 				return
