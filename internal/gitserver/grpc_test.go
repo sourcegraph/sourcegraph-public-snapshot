@@ -3,7 +3,11 @@ package gitserver
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -11,8 +15,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/grpctest"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestClient_AddrMatchesTarget(t *testing.T) {
@@ -33,16 +35,24 @@ func TestClient_AddrMatchesTarget(t *testing.T) {
 // mockGitserver implements both a gRPC server and an HTTP server that just tracks
 // whether or not it was called.
 type mockGitserver struct {
+	mu     sync.Mutex
 	called bool
+
 	proto.UnimplementedGitserverServiceServer
 }
 
 func (m *mockGitserver) Exec(*proto.ExecRequest, proto.GitserverService_ExecServer) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.called = true
 	return nil
 }
 
 func (m *mockGitserver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.called = true
 }
 

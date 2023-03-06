@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/soheilhy/cmux"
 	"github.com/sourcegraph/conc/pool"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewMultiplexedServer will create a server that dynamically switches between
