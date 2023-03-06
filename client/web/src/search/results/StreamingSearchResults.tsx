@@ -75,7 +75,15 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-    const [rankingEnabled, setRankingEnabled] = useTemporarySetting('search.ranking.experimental', true)
+
+    // Use new ranking if the feature flag is enabled and the user has not explicitly disabled it
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental')
+    useEffect(() => {
+        if (rankingEnabled && rankingToggleEnabled === undefined) {
+            setRankingToggleEnabled(rankingEnabled)
+        }
+    }, [rankingEnabled, rankingToggleEnabled, setRankingToggleEnabled])
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -98,10 +106,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(
             () => [
-                rankingEnabled ? 'search-ranking' : '-search-ranking',
+                rankingToggleEnabled ? 'search-ranking' : '-search-ranking',
                 ...new URLSearchParams(location.search).getAll('feat'),
             ],
-            [location.search, rankingEnabled]
+            [location.search, rankingToggleEnabled]
         )
     )
     const { addRecentSearch } = useRecentSearches()
@@ -412,8 +420,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
-                        isRankingEnabled={!!rankingEnabled}
-                        setRankingEnabled={setRankingEnabled}
+                        isRankingEnabled={!!rankingToggleEnabled}
+                        setRankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
