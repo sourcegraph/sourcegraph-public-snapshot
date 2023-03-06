@@ -5,28 +5,52 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type localResolver struct {
+type LocalDirectoryArgs struct {
+	Dir string
+}
+
+type AppResolver interface {
+	LocalDirectoryPicker(ctx context.Context) (LocalDirectoryResolver, error)
+	LocalDirectory(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
+}
+
+type LocalDirectoryResolver interface {
+	Path() string
+	Repositories() ([]LocalRepositoryResolver, error)
+}
+
+type LocalRepositoryResolver interface {
+	Name() string
+	Path() string
+}
+
+type appResolver struct {
 	logger log.Logger
 	db     database.DB
 }
 
-func (r *localResolver) checkLocalDirectoryAccess(ctx context.Context) error {
-	if !deploy.IsDeployTypeSingleProgram(deploy.Type()) {
-		return errors.New("local directory APIs only available on Sourcegraph App")
-	}
+var _ AppResolver = &appResolver{}
 
+func NewAppResolver(logger log.Logger, db database.DB) *appResolver {
+	return &appResolver{
+		logger: logger,
+		db:     db,
+	}
+}
+
+func (r *appResolver) checkLocalDirectoryAccess(ctx context.Context) error {
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }
 
-func (r *localResolver) LocalDirectoryPicker(ctx context.Context) (*localDirectoryResolver, error) {
+func (r *appResolver) LocalDirectoryPicker(ctx context.Context) (LocalDirectoryResolver, error) {
 	// 🚨 SECURITY: Only site admins on app may use API which accesses local filesystem.
 	if err := r.checkLocalDirectoryAccess(ctx); err != nil {
 		return nil, err
@@ -45,7 +69,7 @@ func (r *localResolver) LocalDirectoryPicker(ctx context.Context) (*localDirecto
 	return &localDirectoryResolver{path: path}, nil
 }
 
-func (r *localResolver) LocalDirectory(ctx context.Context, args *struct{ Dir string }) (*localDirectoryResolver, error) {
+func (r *appResolver) LocalDirectory(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error) {
 	// 🚨 SECURITY: Only site admins on app may use API which accesses local filesystem.
 	if err := r.checkLocalDirectoryAccess(ctx); err != nil {
 		return nil, err
@@ -67,7 +91,7 @@ func (r *localDirectoryResolver) Path() string {
 	return r.path
 }
 
-func (r *localDirectoryResolver) Repositories() ([]localRepositoryResolver, error) {
+func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, error) {
 	var c servegit.Config
 	c.Load()
 	c.Root = r.path
@@ -82,7 +106,7 @@ func (r *localDirectoryResolver) Repositories() ([]localRepositoryResolver, erro
 		return nil, err
 	}
 
-	local := make([]localRepositoryResolver, 0, len(repos))
+	local := make([]LocalRepositoryResolver, 0, len(repos))
 	for _, repo := range repos {
 		local = append(local, localRepositoryResolver{
 			name: repo.Name,

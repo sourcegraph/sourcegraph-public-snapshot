@@ -383,39 +383,43 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil, nil, nil)
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil, nil)
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own, nil)
+}
+
+func NewSchemaWithAppResolver(db database.DB, app AppResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, app)
 }
 
 func NewSchema(
@@ -437,15 +441,10 @@ func NewSchema(
 	embeddingsResolver EmbeddingsResolver,
 	rbacResolver RBACResolver,
 	ownResolver OwnResolver,
+	appResolver AppResolver,
 ) (*graphql.Schema, error) {
-	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
-	schemas := []string{mainSchema, outboundWebhooksSchema, localSchema}
-
-	resolver.localResolver = localResolver{
-		logger: logger,
-		db:     db,
-	}
+	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
@@ -573,6 +572,13 @@ func NewSchema(
 		}
 	}
 
+	if appResolver != nil {
+		// Not under enterpriseResolvers, as this is a OSS schema extension.
+		resolver.AppResolver = appResolver
+		schemas = append(schemas, appSchema)
+	}
+
+	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -600,8 +606,6 @@ type schemaResolver struct {
 	nodeByIDFns          map[string]NodeByIDFunc
 	enterpriseSearchJobs jobutil.EnterpriseJobs
 
-	localResolver
-
 	// SubResolvers are assigned using the Schema constructor.
 
 	BatchChangesResolver
@@ -619,6 +623,7 @@ type schemaResolver struct {
 	EmbeddingsResolver
 	RBACResolver
 	OwnResolver
+	AppResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
