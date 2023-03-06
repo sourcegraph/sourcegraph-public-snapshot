@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -30,14 +29,20 @@ func getEnv(name string, defaultValue int) int {
 	return defaultValue
 }
 
-func NewUnifiedPermissionsMigrator(store *basestore.Store, batchSize, intervalSeconds int) *unifiedPermissionsMigrator {
-	computedBatchSize := getEnv("UNIFIED_PERMISSIONS_MIGRATOR_BATCH_SIZE", batchSize)
-	computedInterval := getEnv("UNIFIED_PERMISSIONS_MIGRATOR_INTERVAL_SECONDS", intervalSeconds)
+var (
+	unifiedPermsMigratorBatchSize       = getEnv("UNIFIED_PERMISSIONS_MIGRATOR_BATCH_SIZE", 100)
+	unifiedPermsMigratorIntervalSeconds = getEnv("UNIFIED_PERMISSIONS_MIGRATOR_INTERVAL_SECONDS", 60)
+)
 
+func NewUnifiedPermissionsMigrator(store *basestore.Store) *unifiedPermissionsMigrator {
+	return newUnifiedPermissionsMigrator(store, unifiedPermsMigratorBatchSize, unifiedPermsMigratorIntervalSeconds)
+}
+
+func newUnifiedPermissionsMigrator(store *basestore.Store, batchSize, intervalSeconds int) *unifiedPermissionsMigrator {
 	return &unifiedPermissionsMigrator{
 		store:           store,
-		batchSize:       computedBatchSize,
-		intervalSeconds: computedInterval,
+		batchSize:       batchSize,
+		intervalSeconds: intervalSeconds,
 	}
 }
 
@@ -68,76 +73,51 @@ func (m *unifiedPermissionsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// get the next batch of userIDs to migrate
-	userIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf(unifiedPermissionsNonMigratedUsersQuery, m.batchSize)))
-	if err != nil {
-		return err
-	}
-
 	// write data to user_repo_permissions table
-	err = tx.Exec(ctx, sqlf.Sprintf(unifiedPermissionsMigratorQuery, pq.Array(userIds)))
-	if err != nil {
-		return err
-	}
-
-	// mark the userIDs as migrated
-	updates := make([]*sqlf.Query, 0, len(userIds))
-	for _, userID := range userIds {
-		updates = append(updates, sqlf.Sprintf("(%s::integer)", userID))
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(unifiedPermissionsMigratorMarkAsMigratedQuery, sqlf.Join(updates, ", "))); err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Exec(ctx, sqlf.Sprintf(unifiedPermissionsMigratorQuery, m.batchSize))
 }
 
 // The migration is based on user_permissions table, because current customer instances
 // usually have only a few thousand users and potentially tens of thousands of repositories.
 // So it should be more efficient to cycle through users instead of repositories.
 
-// Query to get the userIds to migrate
-const unifiedPermissionsNonMigratedUsersQuery = `
-SELECT u.user_id
+const unifiedPermissionsMigratorQuery = `
+-- Get the userIds to migrate
+WITH candidates AS (
+	SELECT u.user_id
 	FROM user_permissions as u
 	WHERE NOT migrated
-	LIMIT %s
+	LIMIT %d
 	FOR UPDATE SKIP LOCKED
-`
-
-// Migration of data to new unified table
-const unifiedPermissionsMigratorQuery = `
--- First get a row for each pair of user_id, repo_id by unnesting object_ids_ints array
-WITH s AS (
+),
+-- Get a row for each pair of user_id, repo_id by unnesting object_ids_ints array
+s AS (
 	SELECT u.user_id, unnest(u.object_ids_ints) as repo_id, u.updated_at as created_at, u.updated_at, 'user_sync' as source
 	FROM user_permissions as u
-	WHERE u.user_id = ANY(%s)
+	INNER JOIN candidates ON candidates.user_id = u.user_id
+),
+-- Insert the data to new user_repo_permissions table
+ins AS (
+	INSERT INTO user_repo_permissions(user_id, user_external_account_id, repo_id, created_at, updated_at, source)
+	SELECT s.user_id, ua.id as user_external_account_id, s.repo_id, s.created_at, s.updated_at, s.source
+	FROM s
+	-- Need to join with repo table to not transfer permissions for deleted repos
+	INNER JOIN repo AS r ON
+	r.deleted_at IS NULL AND r.id = s.repo_id
+	-- Need to join with the user_external_accounst table to get the user_external_account_id
+	INNER JOIN user_external_accounts AS ua ON
+	ua.user_id = s.user_id AND ua.deleted_at IS NULL
+	AND ua.service_type = r.external_service_type
+	AND ua.service_id = r.external_service_id
+	-- It might be that some of the rows are already there because of repo-centric permission sync
+	-- In that case do nothing
+	ON CONFLICT (user_id, user_external_account_id, repo_id) DO NOTHING
 )
--- Insert the data here
-INSERT INTO user_repo_permissions(user_id, user_external_account_id, repo_id, created_at, updated_at, source)
-SELECT s.user_id, ua.id as user_external_account_id, s.repo_id, s.created_at, s.updated_at, s.source
-FROM
-  s
--- Need to join with repo table to not transfer permissions for deleted repos
-INNER JOIN repo AS r ON
-  r.deleted_at IS NULL AND r.id = s.repo_id
--- Need to join with the user_external_accounst table to get the user_external_account_id
-INNER JOIN user_external_accounts AS ua ON
-  ua.user_id = s.user_id AND ua.deleted_at IS NULL
-  AND ua.service_type = r.external_service_type
-  AND ua.service_id = r.external_service_id
--- It might be that some of the rows are already there because of repo-centric permission sync
--- In that case do nothing
-ON CONFLICT (user_id, user_external_account_id, repo_id) DO NOTHING
-RETURNING user_repo_permissions.id
-`
-
-// Mark the userIDs as migrated
-const unifiedPermissionsMigratorMarkAsMigratedQuery = `
+-- Mark the user_permissions rows as migrated
 UPDATE user_permissions
 SET migrated = TRUE
-FROM (VALUES %s) AS updates(user_id)
-WHERE user_permissions.user_id = updates.user_id
+FROM s
+WHERE user_permissions.user_id = s.user_id
 `
 
 func (m *unifiedPermissionsMigrator) Down(_ context.Context) error {

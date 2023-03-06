@@ -2,7 +2,6 @@ package iam
 
 import (
 	"context"
-	"os"
 	"strconv"
 	"testing"
 
@@ -109,22 +108,22 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 
-	t.Run("Migrator uses params provided", func(t *testing.T) {
-		migrator := NewUnifiedPermissionsMigrator(store, 100, 30)
+	t.Run("Migrator uses default values for params", func(t *testing.T) {
+		migrator := NewUnifiedPermissionsMigrator(store)
 		assert.Equal(t, 100, migrator.batchSize)
-		assert.Equal(t, 30, int(migrator.Interval().Seconds()))
+		assert.Equal(t, 60, int(migrator.Interval().Seconds()))
 	})
 
-	t.Run("Env overrides hardcoded parameters", func(t *testing.T) {
-		os.Setenv("UNIFIED_PERMISSIONS_MIGRATOR_BATCH_SIZE", "20")
-		os.Setenv("UNIFIED_PERMISSIONS_MIGRATOR_INTERVAL_SECONDS", "120")
+	t.Run("Params can be overriden", func(t *testing.T) {
+		unifiedPermsMigratorBatchSize = 20
+		unifiedPermsMigratorIntervalSeconds = 120
 
-		defer func() {
-			os.Unsetenv("UNIFIED_PERMISSIONS_MIGRATOR_BATCH_SIZE")
-			os.Unsetenv("UNIFIED_PERMISSIONS_MIGRATOR_INTERVAL_SECONDS")
-		}()
+		t.Cleanup(func() {
+			unifiedPermsMigratorBatchSize = 100
+			unifiedPermsMigratorIntervalSeconds = 60
+		})
 
-		migrator := NewUnifiedPermissionsMigrator(store, 100, 30)
+		migrator := NewUnifiedPermissionsMigrator(store)
 		assert.Equal(t, 20, migrator.batchSize)
 		assert.Equal(t, 120, int(migrator.Interval().Seconds()))
 	})
@@ -141,7 +140,8 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		}
 
 		// Ensure there is no progress before migration
-		migrator := NewUnifiedPermissionsMigrator(store, 10, 10)
+		migrator := newUnifiedPermissionsMigrator(store, 10, 60)
+		require.Equal(t, 10, migrator.batchSize)
 
 		progress, err := migrator.Progress(ctx, false)
 		require.NoError(t, err)
@@ -172,7 +172,7 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		addRepos(t, ctx, store, []*extsvc.Account{}, 1)
 
 		// Ensure there is no progress before migration
-		migrator := NewUnifiedPermissionsMigrator(store, 100, 10)
+		migrator := NewUnifiedPermissionsMigrator(store)
 
 		progress, err := migrator.Progress(ctx, false)
 		require.NoError(t, err)
