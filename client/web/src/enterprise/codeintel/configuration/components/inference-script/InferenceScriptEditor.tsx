@@ -14,11 +14,13 @@ export interface InferenceScriptEditorProps extends TelemetryProps {
     script: string
     authenticatedUser: AuthenticatedUser | null
     setPreviewScript: (script: string | null) => void
+    setTab: (index: number) => void
 }
 
 export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps> = ({
     script: inferenceScript,
     setPreviewScript,
+    setTab,
     authenticatedUser,
     telemetryService,
 }) => {
@@ -46,7 +48,7 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
         () => ({
             saveToolbar: props => (
                 <SaveToolbar childrenPosition="start" {...props}>
-                    <Button variant="success" className="mr-2">
+                    <Button variant="success" className="mr-2" onClick={() => setTab(1)}>
                         Preview
                     </Button>
                 </SaveToolbar>
@@ -62,7 +64,7 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
                 return mergedProps
             },
         }),
-        [dirty, isUpdating]
+        [dirty, isUpdating, setTab]
     )
 
     return (

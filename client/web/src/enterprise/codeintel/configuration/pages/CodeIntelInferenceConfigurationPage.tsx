@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from 'react'
+import { FunctionComponent, useState, useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
@@ -19,8 +19,12 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
     authenticatedUser,
     ...props
 }) => {
+    const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
     const [previewScript, setPreviewScript] = useState<string | null>(null)
     const { inferenceScript, loadingScript, fetchError } = useInferenceScript()
+    const setTab = useCallback((index: number) => {
+        setActiveTabIndex(index)
+    }, [])
 
     return (
         <>
@@ -38,7 +42,7 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
             />
             {fetchError && <ErrorAlert prefix="Error fetching inference script" error={fetchError} />}
             {loadingScript && <LoadingSpinner />}
-            <Tabs size="large">
+            <Tabs size="large" index={activeTabIndex} onChange={setTab} lazy={true}>
                 <TabList>
                     <Tab key="script">Script</Tab>
                     <Tab key="preview">Preview</Tab>
@@ -49,11 +53,12 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                             script={inferenceScript}
                             authenticatedUser={authenticatedUser}
                             setPreviewScript={setPreviewScript}
+                            setTab={setTab}
                             {...props}
                         />
                     </TabPanel>
                     <TabPanel className={styles.panel}>
-                        <InferenceScriptPreview script={previewScript} />
+                        <InferenceScriptPreview script={previewScript} setTab={setTab} />
                     </TabPanel>
                 </TabPanels>
             </Tabs>

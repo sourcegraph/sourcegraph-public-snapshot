@@ -1,6 +1,17 @@
-import React from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+
+import { defaultKeymap, history } from '@codemirror/commands'
+import { StreamLanguage, syntaxHighlighting, defaultHighlightStyle, HighlightStyle } from '@codemirror/language'
+import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { EditorState, Extension } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
+import { tags } from '@lezer/highlight'
+import { mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
+import { useCodeMirror, defaultSyntaxHighlighting } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     LoadingSpinner,
     ErrorAlert,
@@ -10,6 +21,7 @@ import {
     getDefaultInputProps,
     useField,
     useForm,
+    Icon,
     Form,
     Label,
     Container,
@@ -17,6 +29,7 @@ import {
     H3,
 } from '@sourcegraph/wildcard'
 
+import { LogOutput } from '../../../../../components/LogOutput'
 import {
     GetRepoIdResult,
     GetRepoIdVariables,
@@ -37,6 +50,7 @@ interface InferenceScriptPreviewFormValues {
 
 interface InferenceScriptPreviewProps {
     script: string | null
+    setTab: (index: number) => void
 }
 
 export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPreviewProps> = ({ script }) => {
@@ -89,12 +103,13 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
                     </div>
                 </Form>
             )}
+            {/* // TODO: ul */}
             {data && (
-                <div className={styles.resultsContainer}>
+                <>
                     {data.inferAutoIndexJobsForRepo.map((job, index) => (
                         <IndexJobNode key={job.root} node={job} jobNumber={index + 1} />
                     ))}
-                </div>
+                </>
             )}
         </div>
     )
@@ -106,11 +121,12 @@ interface IndexJobNodeProps {
 }
 
 const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ node, jobNumber }) => {
-    // Fields
-    const root = node.root
+    // TODO: Check that '' === '/'
+    const root = node.root === '' ? '/' : node.root
+
     const indexer = node.indexer ? node.indexer.name : ''
-    const indexerArgs = node.steps.index.indexerArgs.length > 0 ? node.steps.index.indexerArgs.join(' ') : ''
-    const outfile = node.steps.index.outfile ? node.steps.index.outfile : ''
+    const indexerArgs = node.steps.index.indexerArgs
+    const outfile = node.steps.index.outfile
     const steps = node.steps.preIndex
 
     // TODO: No localSteps?
@@ -120,15 +136,53 @@ const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ node, jobNum
     // const requestedEnvVars = node.steps.setup
 
     return (
-        <Container className="my-3">
-            <H3>Index job {jobNumber}</H3>
-            <IndexJobField label="Root" value={root} />
-            <IndexJobField label="Indexer" value={indexer} />
-            <IndexJobField label="Indexer args" value={indexerArgs} />
-            <IndexJobField label="Outfile" value={outfile} />
-            {steps.map((step, index) => (
-                <IndexStepNode key={step.root} step={step} stepNumber={index + 1} />
-            ))}
+        <Container className={styles.job}>
+            <H3 className={styles.jobHeader}>Job #{jobNumber}</H3>
+            <ul className={styles.jobContent}>
+                <IndexJobLabel label="Root">
+                    <Input value={root} readOnly={true} className={styles.jobInput} />
+                </IndexJobLabel>
+                <IndexJobLabel label="Indexer">
+                    <CodeMirrorCommandInput value={indexer} disabled={true} className={styles.jobInput} />
+                </IndexJobLabel>
+                <IndexJobLabel label="Indexer arg">
+                    <div className={styles.jobCommandContainer}>
+                        {indexerArgs.map((arg, index) => (
+                            <CodeMirrorCommandInput
+                                key={index}
+                                value={arg}
+                                disabled={true}
+                                className={styles.jobInput}
+                            />
+                        ))}
+                        <Button variant="secondary" className="mt-2" size="sm">
+                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                            Add arg
+                        </Button>
+                    </div>
+                </IndexJobLabel>
+                <IndexJobLabel label="Outfile">
+                    {outfile ? (
+                        <Input value={outfile} readOnly={true} className={styles.jobInput} />
+                    ) : (
+                        <Button variant="secondary" className="mt-2" size="sm" className={styles.jobInputAction}>
+                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                            Add outflile
+                        </Button>
+                    )}
+                </IndexJobLabel>
+                {steps.length > 0 && (
+                    <Container className={styles.jobStepContainer} as="li">
+                        {steps.map((step, index) => (
+                            <IndexStepNode key={step.root} step={step} stepNumber={index + 1} />
+                        ))}
+                    </Container>
+                )}
+                <Button variant="secondary" className="d-block mt-2 ml-auto">
+                    <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                    Add step
+                </Button>
+            </ul>
         </Container>
     )
 }
@@ -139,30 +193,121 @@ interface IndexStepNodeProps {
 }
 
 const IndexStepNode: React.FunctionComponent<IndexStepNodeProps> = ({ step, stepNumber }) => {
-    const root = step.root
-    const indexer = step.image ? step.image : ''
-    const commands = step.commands.length > 0 ? step.commands.join(' ') : ''
+    // TODO: Check that '' === '/'
+    const root = step.root === '' ? '/' : step.root
+
+    const image = step.image ? step.image : ''
+    const commands = step.commands
 
     return (
-        <Container className={styles.step}>
-            <H4>Step {stepNumber}</H4>
-            <IndexJobField label="Root" value={root} />
-            <IndexJobField label="Indexer" value={indexer} />
-            <IndexJobField label="Commands" value={commands} />
-        </Container>
+        <div className={styles.jobStep}>
+            <H4 className={styles.jobStepHeader}>Step #{stepNumber}</H4>
+            <ul className={styles.jobStepContent}>
+                <IndexJobLabel label="Root">
+                    <Input value={root} readOnly={true} className={styles.jobInput} />
+                </IndexJobLabel>
+                <IndexJobLabel label="Image">
+                    <CodeMirrorCommandInput value={image} disabled={true} className={styles.jobInput} />
+                </IndexJobLabel>
+                <IndexJobLabel label="Commands">
+                    <div className={styles.jobCommandContainer}>
+                        {commands.map((command, index) => (
+                            <CodeMirrorCommandInput
+                                key={index}
+                                value={command}
+                                disabled={false}
+                                className={styles.jobInput}
+                            />
+                        ))}
+                        <Button variant="secondary" className="mt-2" size="sm">
+                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                            Add command
+                        </Button>
+                    </div>
+                </IndexJobLabel>
+            </ul>
+        </div>
     )
 }
 
 interface IndexJobFieldProps {
     label: string
-    value: string
 }
 
-const IndexJobField: React.FunctionComponent<IndexJobFieldProps> = ({ label, value }) => {
-    return (
-        <Label className={styles.label}>
-            {label}:
-            <Input value={value} disabled={true} className="ml-2" />
-        </Label>
-    )
+const IndexJobLabel: React.FunctionComponent<React.PropsWithChildren<IndexJobFieldProps>> = ({ label, children }) => (
+    <>
+        <li className={styles.jobField}>
+            <Label className={styles.jobLabel}>{label}:</Label>
+            {children}
+        </li>
+    </>
+)
+
+interface CodeMirrorCommandInputProps {
+    value: string
+    onChange?: (value: string) => void
+    className?: string
+    disabled?: boolean
 }
+
+export const shellHighlighting: Extension = [
+    syntaxHighlighting(HighlightStyle.define([{ tag: [tags.keyword], class: 'hljs-keyword' }])),
+    defaultSyntaxHighlighting,
+]
+
+export const CodeMirrorCommandInput: React.FunctionComponent<CodeMirrorCommandInputProps> = React.memo(
+    function CodeMirrorComandInput({ value, className, disabled = false, onChange = () => {} }) {
+        const containerRef = useRef<HTMLDivElement | null>(null)
+        const editorRef = useRef<EditorView | null>(null)
+
+        useCodeMirror(
+            editorRef,
+            containerRef,
+            value,
+            useMemo(
+                () => [
+                    EditorState.readOnly.of(disabled),
+                    keymap.of(defaultKeymap),
+                    history(),
+                    EditorView.theme({
+                        '&': {
+                            flex: 1,
+                            backgroundColor: 'var(--input-bg)',
+                            borderRadius: 'var(--border-radius)',
+                            borderColor: 'var(--border-color)',
+                            marginRight: '0.5rem',
+                        },
+                        '&.cm-editor.cm-focused': {
+                            outline: 'none',
+                        },
+                        '.cm-scroller': {
+                            overflowX: 'hidden',
+                        },
+                        '.cm-content': {
+                            caretColor: 'var(--search-query-text-color)',
+                            fontFamily: 'var(--code-font-family)',
+                            fontSize: 'var(--code-font-size)',
+                        },
+                        '.cm-content.focus-visible': {
+                            boxShadow: 'none',
+                        },
+                        '.cm-line': {
+                            padding: '0',
+                        },
+                    }),
+                    StreamLanguage.define(shell),
+                    shellHighlighting,
+                    EditorView.updateListener.of(update => {
+                        if (update.docChanged) {
+                            console.log(JSON.stringify(update.state.sliceDoc()))
+                            onChange(update.state.sliceDoc())
+                        }
+                    }),
+                ],
+                [disabled, onChange]
+            )
+        )
+
+        return <div ref={containerRef} data-editor="codemirror6" className={classNames('form-control', className)} />
+    }
+)
