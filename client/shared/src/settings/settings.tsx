@@ -268,7 +268,10 @@ export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProvider
  */
 export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
-    if (settingsCascade === EMPTY_SETTINGS_CASCADE && process.env.JEST_WORKER_ID === undefined) {
+    if (
+        settingsCascade === EMPTY_SETTINGS_CASCADE &&
+        (typeof globalThis.process === 'undefined' || process.env.JEST_WORKER_ID === undefined)
+    ) {
         logger.error(
             'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
         )
