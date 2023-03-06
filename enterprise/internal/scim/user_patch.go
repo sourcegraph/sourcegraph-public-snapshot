@@ -17,8 +17,9 @@ import (
 // operations to "add", "remove", or "replace" values.
 // If this returns no Resource.Attributes, a 204 No Content status code will be returned.
 // This case is only valid in the following scenarios:
-//    1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
-//    2. the Remove operation should return No Content when the value to be removed is already absent.
+//  1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
+//  2. the Remove operation should return No Content when the value to be removed is already absent.
+//
 // More information in Section 3.5.2 of RFC 7644: https://tools.ietf.org/html/rfc7644#section-3.5.2
 func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []scim.PatchOperation) (scim.Resource, error) {
 	if err := checkBodyNotEmpty(r); err != nil {
@@ -264,6 +265,7 @@ func applyMapChanges(m map[string]interface{}, items map[string]interface{}) (ch
 	return changed
 }
 
+// getExtensionSchemas extracts the schemas from the provided schema extensions.
 func getExtensionSchemas(extensions []scim.SchemaExtension) []schema.Schema {
 	extensionSchemas := make([]schema.Schema, 0, len(extensions))
 	for _, ext := range extensions {
@@ -272,18 +274,16 @@ func getExtensionSchemas(extensions []scim.SchemaExtension) []schema.Schema {
 	return extensionSchemas
 }
 
-// arrayItemMatchesFilter Checks if an item from a resource array passed the provided filter given to the validator
-// PassesFilter checks if the entire resource matches the filter
-// so here we make a "new" resource that only contains a single item
-// so that we can check if it should remain
-// an error here indicates that the item does not match
+// arrayItemMatchesFilter checks if a resource array item passes the filter of the given validator.
 func arrayItemMatchesFilter(attrName string, item interface{}, validator sgfilter.Validator) bool {
+	// PassesFilter checks entire resources so here we make a "new" resource that only contains a single item.
 	tmp := map[string]interface{}{attrName: []interface{}{item}}
+	// A returned error indicates that the item does not match
 	return validator.PassesFilter(tmp) == nil
 }
 
-// buildFilterString converts filter.Expression back to a string.
-// Uses the attribute name so that the expression will work with a Validator
+// buildFilterString converts filter.Expression (originally built from a string) back to a string.
+// It uses the attribute name so that the expression will work with a Validator.
 func buildFilterString(valueExpression filter.Expression, attrName string) string {
 	switch t := valueExpression.(type) {
 	case fmt.Stringer:
