@@ -54,8 +54,6 @@ type Job struct {
 	// CliSteps describe a series of src commands to be invoked in the workspace.
 	// These run after all docker commands have been completed successfully. This
 	// may be done inside or outside a Firecracker virtual machine.
-	//
-	// Deprecated: Eventually use native SSBC.
 	CliSteps []CliStep `json:"cliSteps"`
 
 	// RedactedValues is a map from strings to replace to their replacement in the command
