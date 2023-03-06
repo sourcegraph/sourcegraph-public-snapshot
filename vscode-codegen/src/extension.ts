@@ -8,6 +8,8 @@ import { Configuration, ConfigurationUseContext, getConfiguration } from './conf
 import { CompletionsDocumentProvider } from './docprovider'
 import { EmbeddingsClient } from './embeddings-client'
 import { History } from './history'
+import * as path from 'path'
+import { getRgPath } from './rg'
 
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
@@ -53,10 +55,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 		dispose: () => disposable?.dispose(),
 	})
 	const doConfigure = async (): Promise<void> => {
-		disposable?.dispose()
-		const config = getConfiguration(vscode.workspace.getConfiguration())
-		const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) ?? null
-		disposable = configure(context, config, accessToken)
+		try {
+			disposable?.dispose()
+			const config = getConfiguration(vscode.workspace.getConfiguration())
+			const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) ?? null
+			const rgPath = await getRgPath(context.extensionPath)
+			if (!rgPath) {
+				vscode.window.showErrorMessage('could not find path for `rg`')
+				throw new Error('could not find path for `rg`')
+			}
+			disposable = configure(context, config, accessToken, rgPath)
+		} catch (error) {
+			vscode.window.showErrorMessage(`error in doConfigure: ${error}`)
+		}
 	}
 
 	// Watch all relevant configuration and secrets for changes.
@@ -83,7 +94,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 function configure(
 	context: Pick<vscode.ExtensionContext, 'extensionPath' | 'secrets'>,
 	config: Configuration,
-	accessToken: string | null
+	accessToken: string | null,
+	rgPath: string
 ): vscode.Disposable {
 	if (!config.enable || !accessToken) {
 		if (config.enable) {
@@ -139,7 +151,8 @@ function configure(
 		wsChatClient,
 		embeddingsClient,
 		useContext,
-		config.debug
+		config.debug,
+		rgPath
 	)
 
 	const executeRecipe = async (recipe: string): Promise<void> => {

@@ -7,7 +7,7 @@ import { ContextMessage, Message, QueryInfo, TranscriptChunk } from '@sourcegrap
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
 
-import { getKeywordContextMessages } from './context'
+import { LocalKeywordFetcher } from './context'
 import { ContextSearchOptions } from './context-search-options'
 import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes/index'
@@ -24,13 +24,17 @@ const CHARS_PER_TOKEN = 4
 
 export class Transcript {
 	private transcript: TranscriptChunk[] = []
+	private keywords: LocalKeywordFetcher
 
 	constructor(
 		private embeddingsClient: EmbeddingsClient | null,
 		private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
 		private serverUrl: string,
-		private accessToken: string
-	) {}
+		private accessToken: string,
+		private rgPath: string
+	) {
+		this.keywords = new LocalKeywordFetcher(rgPath)
+	}
 
 	getTranscript(): TranscriptChunk[] {
 		return this.transcript
@@ -113,17 +117,17 @@ export class Transcript {
 				if (this.embeddingsClient) {
 					contextMessages = await fetchEmbeddingsMessages()
 					if (needsCodebaseContext && contextMessages.length === 0) {
-						contextMessages = await getKeywordContextMessages(query)
+						contextMessages = await this.keywords.getContextMessages(query)
 					}
 				} else {
-					contextMessages = await getKeywordContextMessages(query)
+					contextMessages = await this.keywords.getContextMessages(query)
 				}
 				break
 			case 'embeddings':
 				contextMessages = await fetchEmbeddingsMessages()
 				break
 			case 'keyword':
-				contextMessages = await getKeywordContextMessages(query)
+				contextMessages = await this.keywords.getContextMessages(query)
 				break
 			case 'none':
 			default:

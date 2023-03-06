@@ -12,24 +12,207 @@ import { getContextMessageWithResponse, populateCodeContextTemplate } from './pr
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
-export async function getKeywordContextMessages(query: string): Promise<Message[]> {
-	console.log('fetching keyword matches')
-	const rootPath = getRootPath()
-	if (!rootPath) {
-		return []
+export class LocalKeywordFetcher {
+	constructor(private rgPath: string) {}
+
+	async getContextMessages(query: string): Promise<Message[]> {
+		console.log('fetching keyword matches')
+		const rootPath = getRootPath()
+		if (!rootPath) {
+			return []
+		}
+
+		const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
+		const top10 = filesnamesWithScores.slice(0, 10)
+		const messagePairs = await Promise.all(
+			top10.map(async ({ filename }) => {
+				const uri = vscode.Uri.file(path.join(rootPath, filename))
+				const text = (await vscode.workspace.openTextDocument(uri)).getText()
+				const messageText = populateCodeContextTemplate(text, filename)
+				return getContextMessageWithResponse(messageText, filename)
+			})
+		)
+		return messagePairs.reverse().flat()
 	}
 
-	const filesnamesWithScores = await fetchKeywordFiles(rootPath, query)
-	const top10 = filesnamesWithScores.slice(0, 10)
-	const messagePairs = await Promise.all(
-		top10.map(async ({ filename }) => {
-			const uri = vscode.Uri.file(path.join(rootPath, filename))
-			const text = (await vscode.workspace.openTextDocument(uri)).getText()
-			const messageText = populateCodeContextTemplate(text, filename)
-			return getContextMessageWithResponse(messageText, filename)
+	async fetchFileStats(
+		keywords: string[],
+		rootPath: string
+	): Promise<{ [filename: string]: { bytesSearched: number } }> {
+		const regexQuery = `\\b(?:${keywords.join('|')})`
+		const proc = spawn(this.rgPath, [...fileExtRipgrepParams, '--json', regexQuery, './'], {
+			cwd: rootPath,
+			stdio: ['ignore', 'pipe', process.stderr],
 		})
-	)
-	return messagePairs.reverse().flat()
+		const fileTermCounts: {
+			[filename: string]: {
+				bytesSearched: number
+			}
+		} = {}
+		await new Promise<void>((resolve, reject) => {
+			try {
+				const fp = ''
+				proc.stdout
+					.pipe(StreamValues.withParser())
+					.on('data', data => {
+						try {
+							switch (data.value.type) {
+								case 'end':
+									if (!fileTermCounts[data.value.data.path.text]) {
+										fileTermCounts[data.value.data.path.text] = {} as any
+									}
+									fileTermCounts[data.value.data.path.text].bytesSearched =
+										data.value.data.stats.bytes_searched
+
+									break
+							}
+						} catch (error) {
+							reject(error)
+						}
+					})
+					.on('end', () => resolve())
+			} catch (error) {
+				reject(error)
+			}
+		})
+		return fileTermCounts
+	}
+
+	async fetchFileMatches(
+		keywords: string[],
+		rootPath: string
+	): Promise<{
+		totalFiles: number
+		fileTermCounts: { [filename: string]: { [term: string]: number } }
+		termTotalFiles: { [term: string]: number }
+	}> {
+		const termFileCountsArr: { fileCounts: { [filename: string]: number }; filesSearched: number }[] =
+			await Promise.all(
+				keywords.map(async term => {
+					const out = await new Promise<string>((resolve, reject) => {
+						execFile(
+							this.rgPath,
+							[...fileExtRipgrepParams, '--count-matches', '--stats', `\\b${term}`, './'],
+							{
+								cwd: rootPath,
+								maxBuffer: 1024 * 1024 * 1024,
+							},
+							(error, stdout, stderr) => {
+								if (error?.code === 2) {
+									reject(`${error}: ${stderr}`)
+								} else {
+									resolve(stdout)
+								}
+							}
+						)
+					})
+					const fileCounts: { [filename: string]: number } = {}
+					const lines = out.split('\n')
+					let filesSearched = -1
+					for (const line of lines) {
+						const terms = line.split(':')
+						if (terms.length !== 2) {
+							const matches = /^(\d+) files searched$/.exec(line)
+							if (matches && matches.length === 2) {
+								try {
+									filesSearched = parseInt(matches[1])
+								} catch {
+									console.error(`failed to parse number of files matched from string: ${matches[1]}`)
+								}
+							}
+							continue
+						}
+						try {
+							const count = parseInt(terms[1])
+							fileCounts[terms[0]] = count
+						} catch {
+							console.error(`could not parse count from ${terms[1]}`)
+						}
+					}
+					return { fileCounts, filesSearched }
+				})
+			)
+
+		let totalFilesSearched = -1
+		for (const { filesSearched } of termFileCountsArr) {
+			if (totalFilesSearched >= 0 && totalFilesSearched !== filesSearched) {
+				throw new Error('filesSearched did not match')
+			}
+			totalFilesSearched = filesSearched
+		}
+
+		const fileTermCounts: { [filename: string]: { [term: string]: number } } = {}
+		const termTotalFiles: { [term: string]: number } = {}
+		for (let i = 0; i < keywords.length; i++) {
+			const term = keywords[i]
+			const fileCounts = termFileCountsArr[i].fileCounts
+			termTotalFiles[term] = Object.keys(fileCounts).length
+
+			for (const [filename, count] of Object.entries(fileCounts)) {
+				if (!fileTermCounts[filename]) {
+					fileTermCounts[filename] = {}
+				}
+				fileTermCounts[filename][term] = count
+			}
+		}
+
+		return {
+			totalFiles: totalFilesSearched,
+			termTotalFiles,
+			fileTermCounts,
+		}
+	}
+
+	async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
+		const terms = query.split(/\W+/)
+		const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
+		// unique stemmed keywords, our representation of the user query
+		const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
+
+		const fileMatchesPromise = this.fetchFileMatches(filteredTerms, rootPath)
+		const fileStatsPromise = this.fetchFileStats(filteredTerms, rootPath)
+
+		const fileMatches = await fileMatchesPromise
+		const fileStats = await fileStatsPromise
+
+		const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
+		const idfDict = idf(termTotalFiles, totalFiles)
+
+		const queryTf = tf(
+			filteredTerms,
+			Object.fromEntries(filteredTerms.map(term => [term, 1])),
+			filteredTerms.map(t => t.length).reduce((a, b) => a + b + 1, 0)
+		)
+		const queryVec = tfidf(filteredTerms, queryTf, idfDict)
+		const filenamesWithScores = Object.entries(fileTermCounts)
+			.map(([filename, termCounts]) => {
+				if (fileStats[filename] === undefined) {
+					throw new Error(`filename ${filename} missing from fileStats`)
+				}
+				const tfVec = tf(filteredTerms, termCounts, fileStats[filename].bytesSearched)
+				const tfidfVec = tfidf(filteredTerms, tfVec, idfDict)
+				const cosineScore = cosine(tfidfVec, queryVec)
+				let { score, scoreComponents } = idfLogScore(filteredTerms, termCounts, idfDict)
+
+				const b = fileStats[filename].bytesSearched
+				if (b > 10000) {
+					score *= 0.1 // downweight very large files
+				}
+
+				return {
+					filename,
+					cosineScore,
+					termCounts,
+					tfVec,
+					idfDict,
+					score,
+					scoreComponents,
+				}
+			})
+			.sort(({ score: score1 }, { score: score2 }) => score2 - score1)
+
+		return filenamesWithScores
+	}
 }
 
 function getRootPath(): string | null {
@@ -46,188 +229,6 @@ function getRootPath(): string | null {
 		return vscode.workspace.workspaceFolders[0].uri.fsPath
 	}
 	return null
-}
-
-async function fetchFileStats(
-	keywords: string[],
-	rootPath: string
-): Promise<{ [filename: string]: { bytesSearched: number } }> {
-	const regexQuery = `\\b(?:${keywords.join('|')})`
-	const proc = spawn('rg', [...fileExtRipgrepParams, '--json', regexQuery, './'], {
-		cwd: rootPath,
-		stdio: ['ignore', 'pipe', process.stderr],
-	})
-	const fileTermCounts: {
-		[filename: string]: {
-			bytesSearched: number
-		}
-	} = {}
-	await new Promise<void>((resolve, reject) => {
-		try {
-			const fp = ''
-			proc.stdout
-				.pipe(StreamValues.withParser())
-				.on('data', data => {
-					try {
-						switch (data.value.type) {
-							case 'end':
-								if (!fileTermCounts[data.value.data.path.text]) {
-									fileTermCounts[data.value.data.path.text] = {} as any
-								}
-								fileTermCounts[data.value.data.path.text].bytesSearched =
-									data.value.data.stats.bytes_searched
-
-								break
-						}
-					} catch (error) {
-						reject(error)
-					}
-				})
-				.on('end', () => resolve())
-		} catch (error) {
-			reject(error)
-		}
-	})
-	return fileTermCounts
-}
-
-async function fetchFileMatches(
-	keywords: string[],
-	rootPath: string
-): Promise<{
-	totalFiles: number
-	fileTermCounts: { [filename: string]: { [term: string]: number } }
-	termTotalFiles: { [term: string]: number }
-}> {
-	const termFileCountsArr: { fileCounts: { [filename: string]: number }; filesSearched: number }[] =
-		await Promise.all(
-			keywords.map(async term => {
-				const out = await new Promise<string>((resolve, reject) => {
-					execFile(
-						'rg',
-						[...fileExtRipgrepParams, '--count-matches', '--stats', `\\b${term}`, './'],
-						{
-							cwd: rootPath,
-							maxBuffer: 1024 * 1024 * 1024,
-						},
-						(error, stdout, stderr) => {
-							if (error?.code === 2) {
-								reject(`${error}: ${stderr}`)
-							} else {
-								resolve(stdout)
-							}
-						}
-					)
-				})
-				const fileCounts: { [filename: string]: number } = {}
-				const lines = out.split('\n')
-				let filesSearched = -1
-				for (const line of lines) {
-					const terms = line.split(':')
-					if (terms.length !== 2) {
-						const matches = /^(\d+) files searched$/.exec(line)
-						if (matches && matches.length === 2) {
-							try {
-								filesSearched = parseInt(matches[1])
-							} catch {
-								console.error(`failed to parse number of files matched from string: ${matches[1]}`)
-							}
-						}
-						continue
-					}
-					try {
-						const count = parseInt(terms[1])
-						fileCounts[terms[0]] = count
-					} catch {
-						console.error(`could not parse count from ${terms[1]}`)
-					}
-				}
-				return { fileCounts, filesSearched }
-			})
-		)
-
-	let totalFilesSearched = -1
-	for (const { filesSearched } of termFileCountsArr) {
-		if (totalFilesSearched >= 0 && totalFilesSearched !== filesSearched) {
-			throw new Error('filesSearched did not match')
-		}
-		totalFilesSearched = filesSearched
-	}
-
-	const fileTermCounts: { [filename: string]: { [term: string]: number } } = {}
-	const termTotalFiles: { [term: string]: number } = {}
-	for (let i = 0; i < keywords.length; i++) {
-		const term = keywords[i]
-		const fileCounts = termFileCountsArr[i].fileCounts
-		termTotalFiles[term] = Object.keys(fileCounts).length
-
-		for (const [filename, count] of Object.entries(fileCounts)) {
-			if (!fileTermCounts[filename]) {
-				fileTermCounts[filename] = {}
-			}
-			fileTermCounts[filename][term] = count
-		}
-	}
-
-	return {
-		totalFiles: totalFilesSearched,
-		termTotalFiles,
-		fileTermCounts,
-	}
-}
-
-export async function fetchKeywordFiles(
-	rootPath: string,
-	query: string
-): Promise<{ filename: string; score: number }[]> {
-	const terms = query.split(/\W+/)
-	const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
-	// unique stemmed keywords, our representation of the user query
-	const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
-
-	const fileMatchesPromise = fetchFileMatches(filteredTerms, rootPath)
-	const fileStatsPromise = fetchFileStats(filteredTerms, rootPath)
-
-	const fileMatches = await fileMatchesPromise
-	const fileStats = await fileStatsPromise
-
-	const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
-	const idfDict = idf(termTotalFiles, totalFiles)
-
-	const queryTf = tf(
-		filteredTerms,
-		Object.fromEntries(filteredTerms.map(term => [term, 1])),
-		filteredTerms.map(t => t.length).reduce((a, b) => a + b + 1, 0)
-	)
-	const queryVec = tfidf(filteredTerms, queryTf, idfDict)
-	const filenamesWithScores = Object.entries(fileTermCounts)
-		.map(([filename, termCounts]) => {
-			if (fileStats[filename] === undefined) {
-				throw new Error(`filename ${filename} missing from fileStats`)
-			}
-			const tfVec = tf(filteredTerms, termCounts, fileStats[filename].bytesSearched)
-			const tfidfVec = tfidf(filteredTerms, tfVec, idfDict)
-			const cosineScore = cosine(tfidfVec, queryVec)
-			let { score, scoreComponents } = idfLogScore(filteredTerms, termCounts, idfDict)
-
-			const b = fileStats[filename].bytesSearched
-			if (b > 10000) {
-				score *= 0.1 // downweight very large files
-			}
-
-			return {
-				filename,
-				cosineScore,
-				termCounts,
-				tfVec,
-				idfDict,
-				score,
-				scoreComponents,
-			}
-		})
-		.sort(({ score: score1 }, { score: score2 }) => score2 - score1)
-
-	return filenamesWithScores
 }
 
 function idfLogScore(

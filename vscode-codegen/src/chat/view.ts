@@ -44,12 +44,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		private wsclient: Promise<WSChatClient | null>,
 		private embeddingsClient: EmbeddingsClient | null,
 		private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-		private debug: boolean
+		private debug: boolean,
+		private rgPath: string
 	) {
 		if (TestSupport.instance) {
 			TestSupport.instance.chatViewProvider.set(this)
 		}
-		this.prompt = new Transcript(this.embeddingsClient, this.contextType, this.serverUrl, this.accessToken)
+		this.prompt = new Transcript(
+			this.embeddingsClient,
+			this.contextType,
+			this.serverUrl,
+			this.accessToken,
+			this.rgPath
+		)
 	}
 
 	async resolveWebviewView(
