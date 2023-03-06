@@ -212,7 +212,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                         <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
-                <Notices className="my-3 text-center" location="home" settingsCascade={settingsCascade} />
+                <Notices className="my-3 text-center" location="home" />
             </Form>
         </div>
     )

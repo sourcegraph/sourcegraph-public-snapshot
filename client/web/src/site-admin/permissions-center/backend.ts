@@ -47,8 +47,26 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         }
     }
 
-    query PermissionsSyncJobs($first: Int, $last: Int, $after: String, $before: String) {
-        permissionsSyncJobs(first: $first, last: $last, after: $after, before: $before) {
+    query PermissionsSyncJobs(
+        $first: Int
+        $last: Int
+        $after: String
+        $before: String
+        $reasonGroup: PermissionsSyncJobReasonGroup
+        $state: PermissionsSyncJobState
+        $searchType: PermissionsSyncJobsSearchType
+        $query: String
+    ) {
+        permissionsSyncJobs(
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+            reasonGroup: $reasonGroup
+            state: $state
+            searchType: $searchType
+            query: $query
+        ) {
             totalCount
             pageInfo {
                 hasNextPage

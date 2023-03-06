@@ -40,7 +40,6 @@ go_test(
     ],
     embed = [":graphql"],
     deps = [
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
