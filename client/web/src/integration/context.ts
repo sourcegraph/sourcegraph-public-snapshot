@@ -93,6 +93,9 @@ export const createWebIntegrationTestContext = async ({
             response.status(200).type('text/event-stream').send(responseContent)
         })
 
+    // Let browser handle data: URIs
+    sharedTestContext.server.get('data:*rest').passthrough()
+
     return {
         ...sharedTestContext,
         overrideJsContext: overrides => {
