@@ -46,28 +46,6 @@
       ]
     },
     {
-      "Name": "lsif_index_state",
-      "Labels": [
-        "queued",
-        "processing",
-        "completed",
-        "errored",
-        "failed"
-      ]
-    },
-    {
-      "Name": "lsif_upload_state",
-      "Labels": [
-        "uploading",
-        "queued",
-        "processing",
-        "completed",
-        "errored",
-        "deleted",
-        "failed"
-      ]
-    },
-    {
       "Name": "persistmode",
       "Labels": [
         "record",
