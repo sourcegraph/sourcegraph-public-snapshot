@@ -8,7 +8,7 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-To model your internal team structure in Sourcegraph, you can utilize Sourcegraph teams. Teams are groupings of users into a common handle. Teams are structured as a tree, so teams can have child teams.
+Teams in Sourcegraph are groups of users with a common handle. Teams are structured as a tree, so teams can have child teams.
 
 Example team structure that can be modeled:
 
@@ -32,11 +32,11 @@ Teams can either be defined directly in Sourcegraph, or be ingested from externa
 
 ### From the UI
 
-Go to **Teams** from the user navbar item. On this page, click "Create team". The team has to consist of at least be a unique name and can optionally take a display name. Additionally, you can define a teams parent team to build a tree structure as outlined above.
+Go to **Teams** from the user navbar item. On this page, click "Create team". A team needs to have a unique name and can optionally take a display name. Additionally, you can add a parent team to build a tree structure as outlined above.
 
 After hitting create, you will be redirected to the team page where you can add Sourcegraph users as team members.
 
-> NOTE: Teams defined from src-cli using the `-readonly` flag cannot be modified from the UI to prevent state drift from external systems ingesting the data.
+> NOTE: It's common to define teams in Sourcegraph from a third party system. Teams defined from src-cli using the `-readonly` flag cannot be modified from the UI to prevent state drift from external systems.
 
 ### From the CLI
 
@@ -67,13 +67,13 @@ src teams members remove -team-name=<name> [-email=<email>] [-username=<username
 
 #### User account matching
 
-Matching a user account in Sourcegraph from an external system can be achieved in a few different ways:
+Matching a user account in Sourcegraph from an external system can be achieved in a few different ways: Sourcegraph User ID, Sourcegraph account email, Sourcegraph username or an explicit external-account mapping can be provided.
 
-Any of Sourcegraph User ID, Sourcegraph account email, Sourcegraph username or external-account mapping can be provided.
-
-The matching order is as follows: Try ID, then try email, then try username, then try external-account.
-
-If one doesn't match anything, the next option is tried.
+The matching order is as follows:
+- try Sourcegraph user ID
+- then try email
+- then try username
+- then try external-account
 
 Example for external account matching with configured GitHub auth provider:
 
@@ -94,8 +94,7 @@ src teams members add \
 
 ### Permissions in teams
 
-For now, team permissions are based on membership. Read-only teams are only editable by site-admins.
-The creator of a team can always modify it, even if they are not a member of it.
+For now, team permissions are based on membership. Read-only teams are only editable by site-admins. The creator of a team can always modify it, even if they are not a member of it.
 
 **Action**|**Site-admin**|**Regular user**|**Direct team member**
 :-----:|:-----:|:-----:|:-----:
