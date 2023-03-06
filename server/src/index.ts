@@ -37,6 +37,15 @@ const feedbackServiceAccount = process.env.FEEDBACK_SERVICE_ACCOUNT
 const feedbackServiceAccountKey: string = (process.env.FEEDBACK_SERVICE_ACCOUNT_KEY || '').replace(/\\n/gm, '\n')
 const feedbackSheetID = process.env.FEEDBACK_SHEET_ID
 const feedbackSheetTitle = process.env.FEEDBACK_SHEET_TITLE
+const telemetrySheetTitle = process.env.TELEMETRY_SHEET_TITLE
+const telemetryVersion = 'v0'
+
+if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !feedbackSheetTitle) {
+	console.error('feedback disabled')
+}
+if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !telemetrySheetTitle) {
+	console.error('telemetry disabled')
+}
 
 // Character length of this preamble is 806 chars or ~230 tokens (at a conservative rate of 3.5 chars per token).
 // If this is modified, then `PROMPT_PREAMBLE_LENGTH` in prompt.ts should be updated.
@@ -152,6 +161,39 @@ app.post('/feedback', (req, res) => {
 	}
 })
 
+async function postAction(user: User | null, data: any): Promise<void> {
+	if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !telemetrySheetTitle) {
+		return
+	}
+	const event = {
+		name: user?.name,
+		email: user?.email,
+		...data,
+	}
+
+	try {
+		const doc = new GoogleSpreadsheet(feedbackSheetID)
+		await doc.useServiceAccountAuth({
+			client_email: feedbackServiceAccount,
+			private_key: feedbackServiceAccountKey,
+		})
+
+		await doc.loadInfo()
+		const sheet = doc.sheetsByTitle[telemetrySheetTitle]
+		if (!sheet) {
+			throw new Error(`sheet title "${telemetrySheetTitle}" not found`)
+		}
+		await sheet.addRow({
+			name: user?.name || '',
+			email: user?.email || '',
+			event: JSON.stringify(data),
+			telemetryVersion,
+		})
+	} catch (error) {
+		console.error('postAction error', error)
+	}
+}
+
 async function postFeedback(user: User, feedback: Feedback): Promise<void> {
 	if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !feedbackSheetTitle) {
 		return
@@ -177,7 +219,18 @@ async function postFeedback(user: User, feedback: Feedback): Promise<void> {
 }
 
 const wssChat = new WebSocketServer({ noServer: true })
-wssChat.on('connection', ws => {
+wssChat.on('connection', (ws, initReq) => {
+	if (!initReq.url) {
+		console.error('error: expected request url to be non-empty')
+		return
+	}
+	const { search } = parse(initReq.url)
+	const user = authenticate(
+		initReq.headers.authorization,
+		new URLSearchParams(search || '').get('access_token'),
+		getUsers(usersPath)
+	)
+
 	console.log('chat:connection')
 	// TODO(beyang): Close connection after timeout. Probably should keep connection around,
 	// rather than closing after every response?
@@ -189,6 +242,9 @@ wssChat.on('connection', ws => {
 			console.error(`invalid request ${data.toString()}`)
 			return
 		}
+
+		postAction(user, { event: req.metadata }) // telemetry
+
 		claudeBackend.chat(req.messages, {
 			onChange: message => {
 				const msg: WSChatResponseChange = { requestId: req.requestId, kind: 'response:change', message }

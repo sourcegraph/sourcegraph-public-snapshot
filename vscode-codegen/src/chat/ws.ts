@@ -1,4 +1,4 @@
-import { Message, WSChatRequest, WSChatResponse } from '@sourcegraph/cody-common'
+import { ChatMetadata, Message, WSChatRequest, WSChatResponse } from '@sourcegraph/cody-common'
 
 import { WSClient } from '../wsclient'
 
@@ -19,11 +19,12 @@ export class WSChatClient {
 
 	constructor(private wsclient: WSClient<Omit<WSChatRequest, 'requestId'>, WSChatResponse>) {}
 
-	public chat(messages: Message[], callbacks: ChatCallbacks): Promise<() => void> {
+	public chat(messages: Message[], metadata: ChatMetadata, callbacks: ChatCallbacks): Promise<() => void> {
 		return this.wsclient.sendRequest(
 			{
 				kind: 'request',
 				messages,
+				metadata,
 			},
 			resp => {
 				switch (resp.kind) {

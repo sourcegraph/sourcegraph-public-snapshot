@@ -113,6 +113,11 @@ export interface WSChatMessage {
 export interface WSChatRequest extends WSChatMessage {
 	kind: 'request'
 	messages: Message[]
+	metadata?: ChatMetadata
+}
+export interface ChatMetadata {
+	displayMessageLength: number
+	recipeId: string | null
 }
 export type WSChatResponse = WSChatResponseChange | WSChatResponseComplete | WSChatResponseError
 export interface WSChatResponseChange extends WSChatMessage {

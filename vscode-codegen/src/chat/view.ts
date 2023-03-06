@@ -4,7 +4,7 @@ import path from 'path'
 import fetch from 'node-fetch'
 import * as vscode from 'vscode'
 
-import { Feedback, Message } from '@sourcegraph/cody-common'
+import { ChatMetadata, Feedback, Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient } from '../embeddings-client'
 import { TestSupport } from '../test-support'
@@ -125,7 +125,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		await resp.json()
 	}
 
-	private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
+	private async sendPrompt(promptMessages: Message[], metadata: ChatMetadata, responsePrefix = ''): Promise<void> {
 		const wsclient = await this.wsclient
 		if (!wsclient) {
 			return
@@ -134,7 +134,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		await this.closeConnectionInProgress()
 		await this.logSendPrompt(promptMessages)
 
-		this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, {
+		this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, metadata, {
 			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
 			onComplete: text => {
 				const botMessage = this.reformatBotMessage(text, responsePrefix)
@@ -196,19 +196,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		}
 		this.onNewMessageSubmitted(text)
 		const prompt = await this.prompt.addHumanMessage(text)
-		await this.sendPrompt(prompt)
+		await this.sendPrompt(prompt, { displayMessageLength: this.prompt.getDisplayMessages().length, recipeId: null })
 	}
 
-	async executeRecipe(recipeID: string): Promise<void> {
+	async executeRecipe(recipeId: string): Promise<void> {
 		if (this.messageInProgress) {
 			vscode.window.showErrorMessage(
 				'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
 			)
 		}
 
-		const messageInfo = await this.prompt.resetToRecipe(recipeID)
+		const messageInfo = await this.prompt.resetToRecipe(recipeId)
 		if (!messageInfo) {
-			console.error('unrecognized recipe prompt:', recipeID)
+			console.error('unrecognized recipe prompt:', recipeId)
 			return
 		}
 		const { display, prompt, botResponsePrefix } = messageInfo
@@ -223,7 +223,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		this.transcript.push(
 			...display.map(({ speaker, text }) => ({ speaker, displayText: text, timestamp: getShortTimestamp() }))
 		)
-		return this.sendPrompt(prompt, botResponsePrefix)
+		return this.sendPrompt(
+			prompt,
+			{ displayMessageLength: this.prompt.getDisplayMessages().length, recipeId },
+			botResponsePrefix
+		)
 	}
 
 	private reformatBotMessage(text: string, prefix: string): string {
