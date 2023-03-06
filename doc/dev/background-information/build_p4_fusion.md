@@ -41,9 +41,25 @@ Get the URL of the archive from the part of the `srcs` array that matches the OS
 Replace `<url of archive>` with the value of the archive url from `srcs`
 
 ```bash
-hash_type=sha256
-hash_value=$(nix-prefetch-url --type "${hash_type}" --unpack <url of archive>)
-nix --extra-experimental-features nix-command hash to-sri "${hash_type}:${hash_value}"
+$ hash_type=sha256
+$ hash_value=$(nix-prefetch-url --type "${hash_type}" --unpack <url of archive>)
+$ nix --extra-experimental-features nix-command hash to-sri "${hash_type}:${hash_value}"
 ```
 
 Copy the output from that sequence of commands and paste it into the value of the `hash` field in the `fetchzip` attribute set.
+
+Since when one changes, they all probably change, here is an example of getting the updated hashes for all of the archives ([current archive URLs; double-check that they are still correct](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/nix/p4-fusion.nix))
+
+```bash
+hash_type=sha256
+for url in \
+"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz" \
+"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz" \
+"https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz"
+do
+  echo "${url}"
+  hash_value=$(nix-prefetch-url --type "${hash_type}" --unpack "${url}")
+  nix --extra-experimental-features nix-command hash to-sri "${hash_type}:${hash_value}"
+  echo
+done
+```
