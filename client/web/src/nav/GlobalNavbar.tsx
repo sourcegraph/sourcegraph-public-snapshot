@@ -149,7 +149,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
 
-    const showSentinel = sentinelEnabled
+    const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in

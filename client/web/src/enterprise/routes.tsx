@@ -3,6 +3,7 @@ import { Navigate, RouteObject } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
+import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
@@ -61,7 +62,12 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.Sentinel,
-        element: <LegacyRoute render={props => <SentinelRouter {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <SentinelRouter {...props} />}
+                condition={props => isSentinelEnabled(props)}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Contexts,
