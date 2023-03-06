@@ -53,6 +53,10 @@ type FirecrackerOptions struct {
 	DockerRegistryMirrorURLs []string
 	// DockerOptions
 	DockerOptions command.DockerOptions
+	// KeepWorkspaces prevents deletion of a workspace after a job completes. Setting
+	// this value to true will continually use more and more disk, so it should only
+	// be used as a debugging mechanism.
+	KeepWorkspaces bool
 }
 
 var _ Runner = &firecrackerRunner{}
