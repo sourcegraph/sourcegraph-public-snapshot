@@ -10,6 +10,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -104,7 +105,7 @@ func NewHandler(
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
+	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper, ctagsBinary))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
 
@@ -116,7 +117,7 @@ func NewHandler(
 	return internalgrpc.MultiplexHandlers(grpcServer, mux)
 }
 
-func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {
+func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc, ctagsBinary string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var args search.SymbolsParameters
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
@@ -152,6 +153,15 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 
 func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+		if isSingleProgram && ctagsBinary == "" {
+			// app: ctags is not available
+			var mapping map[string][]string
+			if err := json.NewEncoder(w).Encode(mapping); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		mapping, err := ctags.ListLanguageMappings(r.Context(), ctagsBinary)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
