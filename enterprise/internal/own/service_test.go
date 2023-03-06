@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
@@ -38,14 +39,14 @@ func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := codeowners.NewRuleset((&codeownerspb.File{
+	codeownersText := codeowners.NewRuleset(&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	})).Repr()
+	}).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -54,7 +55,13 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+
+			codeownersStore := edb.NewMockCodeownersStore()
+			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			db := edb.NewMockEnterpriseDB()
+			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+			got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -75,7 +82,13 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+
+	codeownersStore := edb.NewMockCodeownersStore()
+	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+	db := edb.NewMockEnterpriseDB()
+	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+	got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
