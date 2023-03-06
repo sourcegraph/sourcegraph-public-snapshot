@@ -27,6 +27,7 @@ import {
 } from './PermissionsSyncJobNode'
 
 import styles from './PermissionsSyncJobsTable.module.scss'
+import { PageTitle } from '../../components/PageTitle'
 
 interface Filters {
     reason: string
@@ -86,6 +87,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     return (
         <div>
+            <PageTitle title="Permissions Sync Dashboard - Admin" />
             <PageHeader
                 path={[{ text: 'Permissions Sync Dashboard' }]}
                 headingElement="h2"
