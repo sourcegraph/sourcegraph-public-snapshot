@@ -55,5 +55,5 @@ tree-sitter-cpp = "0.20.0"
 tree-sitter-typescript = "0.20.2"
 
 [dev-dependencies]
-insta = "1.11.0"
+insta = "1.28.0"
 pretty_assertions = "1.2.1"

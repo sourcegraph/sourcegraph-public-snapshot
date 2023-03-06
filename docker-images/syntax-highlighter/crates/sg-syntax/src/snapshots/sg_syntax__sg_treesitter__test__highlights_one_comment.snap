@@ -1,8 +1,0 @@
----
-source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 374
-expression: "dump_document(document, src)"
----
-  // Hello World
-//^^^^^^^^^^^^^^ Comment
-

@@ -518,37 +518,49 @@ mod test {
 
     use super::*;
 
+    fn run_insta_test<E>(f: impl FnOnce() -> Result<(), E>) -> Result<(), E> {
+        let mut settings = insta::Settings::clone_current();
+        settings.set_snapshot_path("../snapshots");
+        settings.bind(f)
+    }
+
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
-        let src = "// Hello World";
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+        run_insta_test(|| {
+            let src = "// Hello World";
+            let document = index_language("go", src)?;
+            insta::assert_snapshot!(dump_document(&document, src));
 
-        Ok(())
+            Ok(())
+        })
     }
 
     #[test]
     fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
-        let src = r#"package main
+        run_insta_test(|| {
+            let src = r#"package main
 
 const MySqlQuery = `
 SELECT * FROM my_table
 `
 "#;
 
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+            let document = index_language("go", src)?;
+            insta::assert_snapshot!(dump_document(&document, src));
 
-        Ok(())
+            Ok(())
+        })
     }
 
     #[test]
     fn test_highlight_csharp_file() -> Result<(), Error> {
-        let src = "using System;";
-        let document = index_language("c_sharp", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+        run_insta_test(|| {
+            let src = "using System;";
+            let document = index_language("c_sharp", src)?;
+            insta::assert_snapshot!(dump_document(&document, src));
 
-        Ok(())
+            Ok(())
+        })
     }
 
     #[test]
