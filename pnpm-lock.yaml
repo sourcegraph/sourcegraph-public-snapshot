@@ -922,6 +922,7 @@ importers:
     specifiers:
       '@statoscope/webpack-plugin': ^5.24.0
       '@types/sass': 1.16.1
+      buffer: ^6.0.3
       css-loader: '*'
       enhanced-resolve: ^5.9.3
       esbuild: ^0.17.7
@@ -930,14 +931,17 @@ importers:
       postcss-cli: ^10.1.0
       postcss-loader: '*'
       postcss-modules: ^6.0.0
+      process: ^0.11.10
       sass: ^1.32.4
       sass-loader: '*'
       signale: ^1.4.0
+      style-loader: '*'
       terser-webpack-plugin: ^5.3.6
       typed-scss-modules: ^4.1.1
       webpack: '5'
     dependencies:
       '@statoscope/webpack-plugin': 5.24.0_webpack@5.75.0
+      buffer: 6.0.3
       css-loader: 6.7.2_webpack@5.75.0
       enhanced-resolve: 5.10.0
       esbuild: 0.17.8
@@ -946,9 +950,11 @@ importers:
       postcss-cli: 10.1.0_postcss@8.4.21
       postcss-loader: 7.0.2_6jdsrmfenkuhhw3gx4zvjlznce
       postcss-modules: 6.0.0_postcss@8.4.21
+      process: 0.11.10
       sass: 1.32.4
       sass-loader: 13.2.0_sass@1.32.4+webpack@5.75.0
       signale: 1.4.0
+      style-loader: 3.3.1_webpack@5.75.0
       terser-webpack-plugin: 5.3.6_6hyl5w2uqyeivowpusuiulbmoy
       typed-scss-modules: 4.1.1_sass@1.32.4
       webpack: 5.75.0_esbuild@0.17.8
@@ -31067,8 +31073,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
-    dev: true
+      webpack: 5.75.0_esbuild@0.17.8
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
