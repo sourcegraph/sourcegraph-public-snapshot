@@ -224,6 +224,7 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
 func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, value interface{}, op string) (changed bool) {
+	// apply remove operation
 	if op == "remove" {
 		delete(attributes, attrName)
 		return true
@@ -240,6 +241,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 		}
 	}
 
+	// apply replace operation (or add operation for non-array and non-map values)
 	attributes[attrName] = value
 	return true
 }
