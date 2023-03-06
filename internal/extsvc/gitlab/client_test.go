@@ -192,6 +192,26 @@ func TestRateLimitRetries(t *testing.T) {
 		assert.Equal(t, 2, numRequests)
 		assert.True(t, succeeded)
 	})
+
+	t.Run("no rate limit hit", func(t *testing.T) {
+		t.Cleanup(done)
+
+		_, _, err := client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 1, numRequests)
+		assert.True(t, succeeded)
+	})
+
+	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
+		t.Cleanup(done)
+		client.waitForRateLimit = false
+		hitRateLimit = true
+
+		_, _, err := client.do(ctx, req, &result)
+		require.Error(t, err)
+		assert.Equal(t, 1, numRequests)
+		assert.False(t, succeeded)
+	})
 }
 
 func TestGetOAuthContext(t *testing.T) {
