@@ -1020,13 +1020,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const mainBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
-                ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), false), // in the next main branch this will reflect the guessed next version
+                ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
             ]
 
             const releaseBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
-                ...batchChangesInAppChangelog(release.version, true),
+                ...batchChangesInAppChangelog(release.version, false),
             ]
 
             const prDetails = {

@@ -29,12 +29,13 @@ export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
     ]
 }
 
-export function batchChangesInAppChangelog(version: SemVer, show: boolean): Edit[] {
+export function batchChangesInAppChangelog(version: SemVer, resetShow: boolean): Edit[] {
     const path = 'client/web/src/enterprise/batches/list/BatchChangesChangelogAlert.tsx'
-    return [
-        combyReplace("const CURRENT_VERSION = ':[1]'", `${version.major}.${version.minor}`, path),
-        combyReplace('const SHOW_CHANGELOG = :[1]', show ? 'true' : 'false', path),
-    ]
+    const steps = [combyReplace("const CURRENT_VERSION = ':[1]'", `${version.major}.${version.minor}`, path)]
+    if (resetShow) {
+        steps.push(combyReplace('const SHOW_CHANGELOG = :[1]','false', path))
+    }
+    return steps
 }
 
 // given a comby pattern such as 'const MinimumVersion = ":[1]"' generate the comby expression to replace with provided substitution
