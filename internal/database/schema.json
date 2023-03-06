@@ -23375,6 +23375,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "migrated",
+          "Index": 7,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "true",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "object_ids_ints",
           "Index": 6,
           "TypeName": "integer[]",

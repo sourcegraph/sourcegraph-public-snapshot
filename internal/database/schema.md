@@ -3632,6 +3632,7 @@ Indexes:
  updated_at      | timestamp with time zone |           | not null | 
  synced_at       | timestamp with time zone |           |          | 
  object_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ migrated        | boolean                  |           |          | true
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
