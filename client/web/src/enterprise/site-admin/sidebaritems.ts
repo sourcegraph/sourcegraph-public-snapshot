@@ -158,6 +158,10 @@ const usersGroup: SiteAdminSideBarGroup = {
             label: 'Roles',
             to: '/site-admin/roles',
         },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
+        },
     ],
 }
 
