@@ -242,6 +242,35 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
+                    {isSourcegraphApp && (
+                        <NavDropdown
+                            routeMatch="something-that-never-matches"
+                            toggleItem={{
+                                path: '#',
+                                content: 'Feedback',
+                                variant: navLinkVariant,
+                            }}
+                            mobileHomeItem={{ content: 'Feedback' }}
+                            items={[
+                                {
+                                    content: 'Join our Discord',
+                                    path: 'https://about.sourcegraph.com/community',
+                                    target: '_blank',
+                                },
+                                {
+                                    content: 'Follow us on Twitter',
+                                    path: 'https://twitter.com/sourcegraph',
+                                    target: '_blank',
+                                },
+                                { content: 'Email us', path: 'mailto:taylor.sperry@sourcegraph.com', target: '_blank' },
+                                {
+                                    content: 'File an issue',
+                                    path: 'https://github.com/sourcegraph/app',
+                                    target: '_blank',
+                                },
+                            ]}
+                        />
+                    )}
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (

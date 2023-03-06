@@ -14,11 +14,12 @@ import navItemStyles from './NavItem.module.scss'
 export interface NavDropdownItem {
     content: React.ReactNode | string
     path: string
+    target?: '_blank'
 }
 
 interface NavDropdownProps {
     toggleItem: NavDropdownItem & {
-        icon: React.ComponentType<{ className?: string }>
+        icon?: React.ComponentType<{ className?: string }>
         // Alternative path to match against if item is active
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
@@ -135,11 +136,13 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                         ref={linkReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
-                                            <Icon
-                                                className={navItemStyles.icon}
-                                                as={toggleItem.icon}
-                                                aria-hidden={true}
-                                            />
+                                            {toggleItem.icon && (
+                                                <Icon
+                                                    className={navItemStyles.icon}
+                                                    as={toggleItem.icon}
+                                                    aria-hidden={true}
+                                                />
+                                            )}
                                             <span
                                                 className={classNames(navItemStyles.text, navItemStyles.iconIncluded, {
                                                     [navItemStyles.isCompact]: toggleItem.variant === 'compact',
@@ -184,7 +187,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     {mobileHomeItem.content}
                                 </MenuLink>
                                 {items.map(item => (
-                                    <MenuLink as={Link} key={item.path} to={item.path}>
+                                    <MenuLink as={Link} key={item.path} to={item.path} target={item.target}>
                                         {item.content}
                                     </MenuLink>
                                 ))}
@@ -201,7 +204,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
             {/* Render the rest of the items and indent them to indicate a hierarchical structure */}
             {items.map(item => (
                 <NavItem key={item.path} className="d-flex d-sm-none">
-                    <NavLink to={item.path} className="pl-2">
+                    <NavLink to={item.path} className="pl-2" target={item.target}>
                         {item.content}
                     </NavLink>
                 </NavItem>
