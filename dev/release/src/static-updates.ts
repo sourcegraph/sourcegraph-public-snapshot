@@ -33,7 +33,7 @@ export function batchChangesInAppChangelog(version: SemVer, resetShow: boolean):
     const path = 'client/web/src/enterprise/batches/list/BatchChangesChangelogAlert.tsx'
     const steps = [combyReplace("const CURRENT_VERSION = ':[1]'", `${version.major}.${version.minor}`, path)]
     if (resetShow) {
-        steps.push(combyReplace('const SHOW_CHANGELOG = :[1]','false', path))
+        steps.push(combyReplace('const SHOW_CHANGELOG = :[1]', 'false', path))
     }
     return steps
 }
