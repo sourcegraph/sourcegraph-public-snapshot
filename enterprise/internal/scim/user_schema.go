@@ -8,9 +8,6 @@ import (
 
 // createCoreSchema creates a SCIM core schema for users.
 func createCoreSchema() schema.Schema {
-	// TODO: This is currently a verbatim copy of this: https://sourcegraph.com/github.com/elimity-com/scim/-/blob/schema/schemas.go?L219&subtree=true
-	// except for the commented-out "roles" section.
-	// If we don't need any customizations to this, we should just use the library's schema. It's visible.
 	return schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
 		Name:        optional.NewString("User"),

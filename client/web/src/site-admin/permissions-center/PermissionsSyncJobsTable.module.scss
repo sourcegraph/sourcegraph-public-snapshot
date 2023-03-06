@@ -10,8 +10,12 @@
 .filters {
     &__grid {
         display: grid;
-        grid-template-columns: [reason] max-content [state] max-content [searchType] minmax(auto, 1fr) [search] auto;
+        grid-template-columns: [reason] max-content [state] max-content [searchType] max-content [search] auto;
         column-gap: 1rem;
         align-items: center;
     }
+}
+
+.search-input {
+    margin-top: 0.6rem;
 }

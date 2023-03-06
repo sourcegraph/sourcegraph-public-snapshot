@@ -797,6 +797,26 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    SELECT
+        COUNT(r.v) AS num_paths,
+        SUM(LOG(2, r.v::int + 1)) AS refcount_logsum
+    INTO
+        NEW.num_paths,
+        NEW.refcount_logsum
+    FROM jsonb_each(
+        CASE WHEN NEW.payload::text = 'null'
+            THEN '{}'::jsonb
+            ELSE COALESCE(NEW.payload, '{}'::jsonb)
+        END
+    ) r(k, v);
+
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -1730,7 +1750,9 @@ CREATE TABLE codeintel_path_ranks (
     payload jsonb NOT NULL,
     "precision" double precision NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text
+    graph_key text,
+    num_paths integer,
+    refcount_logsum double precision
 );
 
 CREATE TABLE codeintel_ranking_definitions (
@@ -3124,6 +3146,21 @@ COMMENT ON COLUMN lsif_uploads_visible_at_tip.branch_or_tag_name IS 'The name of
 
 COMMENT ON COLUMN lsif_uploads_visible_at_tip.is_default_branch IS 'Whether the specified branch is the default of the repository. Always false for tags.';
 
+CREATE TABLE lsif_uploads_vulnerability_scan (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE lsif_uploads_vulnerability_scan_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE lsif_uploads_vulnerability_scan_id_seq OWNED BY lsif_uploads_vulnerability_scan.id;
+
 CREATE VIEW lsif_uploads_with_repository_name AS
  SELECT u.id,
     u.commit,
@@ -4037,7 +4074,7 @@ CREATE TABLE teams (
     display_name text,
     readonly boolean DEFAULT false NOT NULL,
     parent_team_id integer,
-    creator_id integer NOT NULL,
+    creator_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT teams_display_name_max_length CHECK ((char_length(display_name) <= 255)),
@@ -4179,7 +4216,8 @@ CREATE TABLE user_permissions (
     object_type text NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
-    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
+    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
+    migrated boolean DEFAULT true
 );
 
 CREATE TABLE user_public_repos (
@@ -4227,7 +4265,8 @@ CREATE TABLE versions (
     service text NOT NULL,
     version text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    first_version text NOT NULL
+    first_version text NOT NULL,
+    auto_upgrade boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE vulnerabilities (
@@ -4506,6 +4545,8 @@ ALTER TABLE ONLY lsif_retention_configuration ALTER COLUMN id SET DEFAULT nextva
 ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id_seq'::regclass);
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan ALTER COLUMN id SET DEFAULT nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass);
 
 ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
 
@@ -4855,6 +4896,9 @@ ALTER TABLE ONLY lsif_uploads
 
 ALTER TABLE ONLY lsif_uploads_reference_counts
     ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT lsif_uploads_vulnerability_scan_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
@@ -5351,6 +5395,8 @@ CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visib
 
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
+CREATE UNIQUE INDEX lsif_uploads_vulnerability_scan_upload_id ON lsif_uploads_vulnerability_scan USING btree (upload_id);
+
 CREATE INDEX notebook_stars_user_id_idx ON notebook_stars USING btree (user_id);
 
 CREATE INDEX notebooks_blocks_tsvector_idx ON notebooks USING gin (blocks_tsvector);
@@ -5517,6 +5563,8 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE 
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
 
+CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
+
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
@@ -5558,6 +5606,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
@@ -5811,6 +5861,9 @@ ALTER TABLE ONLY codeintel_ranking_references_processed
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT fk_upload_id FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY vulnerability_affected_packages
     ADD CONSTRAINT fk_vulnerabilities FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;
