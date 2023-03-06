@@ -142,6 +142,38 @@ env:
 
 That works for all the other `env` variables in `sg.config.yaml` too.
 
+#### Defining a custom environment by setting a `commandset`
+
+You can customize what boots up in your development environment by defining a `commandSet` in your `sg.config.overwrite.yaml`.
+
+For example, the following defines a commandset called `minimal-batches` that boots up a minimal environment to work on Batch Changes:
+
+```yaml
+commandsets:
+  minimal-batches:
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - caddy
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - batches-executor-firecracker
+```
+
+With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batches`.
+
 #### Run `gitserver` in a Docker container
 
 `sg start` runs many of the services (defined in the `commands` section of `sg.config.yaml`) as binaries that it compiles and runs according to the settings in their `cmd` and `install` sections. Sometimes while developing, you need to run some of the services isolated from your local environment. This example shows what to add to `sg.config.overwrite.yaml` so that `gitserver` will run in a Docker container. The `gitserver` service already has a build script that generates a Docker image; this configuration will use that script in the `install` section, and use the `env` defined in `sg.config.yaml` to pass environment variables to `docker` in the `run` section.
@@ -197,38 +229,6 @@ commands:
     env:
       GITSERVER_INDEX: 1
 ```
-
-#### Defining a custom environment by setting a `commandset`
-
-You can customize what boots up in your development environment by defining a `commandSet` in your `sg.config.overwrite.yaml`.
-
-For example, the following defines a commandset called `minimal-batches` that boots up a minimal environment to work on Batch Changes:
-
-```yaml
-commandsets:
-  minimal-batches:
-    checks:
-      - docker
-      - redis
-      - postgres
-    commands:
-      - enterprise-frontend
-      - enterprise-worker
-      - enterprise-repo-updater
-      - enterprise-web
-      - gitserver
-      - searcher
-      - symbols
-      - caddy
-      - github-proxy
-      - zoekt-indexserver-0
-      - zoekt-indexserver-1
-      - zoekt-webserver-0
-      - zoekt-webserver-1
-      - batches-executor-firecracker
-```
-
-With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batches`.
 
 ### Attach a debugger
 
