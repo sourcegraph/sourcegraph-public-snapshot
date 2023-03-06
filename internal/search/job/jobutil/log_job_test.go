@@ -43,72 +43,43 @@ func (s *fakeEventLogStore) loggedEventNames() []string {
 	return names
 }
 
-func TestEventNamesFileHasOwnerSearch(t *testing.T) {
-	q, err := query.ParseLiteral("file:has.owner(one@example.com)")
-	if err != nil {
-		t.Fatalf("ParseLiteral: %s", err)
-	}
-	inputs := &search.Inputs{
-		UserSettings:        &schema.Settings{},
-		PatternType:         query.SearchTypeLiteral,
-		Protocol:            search.Streaming,
-		OnSourcegraphDotCom: true,
-		Features: &search.Features{
-			CodeOwnershipSearch: true,
-		},
-		Query: q,
-	}
-	db := database.NewMockDB()
-	eventStore := &fakeEventLogStore{}
-	db.EventLogsFunc.SetDefaultReturn(eventStore)
-	ctx := actor.WithActor(context.Background(), actor.FromUser(42))
-	childJob := mockjob.NewMockJob()
-	childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-		return nil, nil
-	})
-	voidCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {})
-	logJob := jobutil.NewLogJob(inputs, childJob)
-	if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, voidCollector); err != nil {
-		t.Fatalf("LogJob.Run: %s", err)
-	}
-	got := eventStore.loggedEventNames()
-	want := []string{"FileHasOwnersSearch", "search.latencies.file"}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Errorf("logged events, -want+got: %s", diff)
-	}
-}
+func TestOwnSearchEventNames(t *testing.T) {
+	for literal, wantEventNames := range map[string][]string{
+		"file:has.owner(one@example.com)": []string{"FileHasOwnersSearch", "search.latencies.file"},
+		"select:file.owners":              []string{"SelectFileOwnersSearch", "search.latencies.repo"},
+	} {
+		t.Run(literal, func(t *testing.T) {
+			q, err := query.ParseLiteral(literal)
+			if err != nil {
+				t.Fatalf("ParseLiteral: %s", err)
+			}
+			inputs := &search.Inputs{
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            search.Streaming,
+				OnSourcegraphDotCom: true,
+				Features: &search.Features{
+					CodeOwnershipSearch: true,
+				},
+				Query: q,
+			}
+			db := database.NewMockDB()
+			eventStore := &fakeEventLogStore{}
+			db.EventLogsFunc.SetDefaultReturn(eventStore)
+			ctx := actor.WithActor(context.Background(), actor.FromUser(42))
+			childJob := mockjob.NewMockJob()
+			childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+				return nil, nil
+			})
+			voidCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {})
+			logJob := jobutil.NewLogJob(inputs, childJob)
+			if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, voidCollector); err != nil {
+				t.Fatalf("LogJob.Run: %s", err)
+			}
+			if diff := cmp.Diff(wantEventNames, eventStore.loggedEventNames()); diff != "" {
+				t.Errorf("logged events, -want+got: %s", diff)
+			}
 
-func TestEventNamesSelectFileOwnersSearch(t *testing.T) {
-	q, err := query.ParseLiteral("select:file.owners")
-	if err != nil {
-		t.Fatalf("ParseLiteral: %s", err)
-	}
-	inputs := &search.Inputs{
-		UserSettings:        &schema.Settings{},
-		PatternType:         query.SearchTypeLiteral,
-		Protocol:            search.Streaming,
-		OnSourcegraphDotCom: true,
-		Features: &search.Features{
-			CodeOwnershipSearch: true,
-		},
-		Query: q,
-	}
-	db := database.NewMockDB()
-	eventStore := &fakeEventLogStore{}
-	db.EventLogsFunc.SetDefaultReturn(eventStore)
-	ctx := actor.WithActor(context.Background(), actor.FromUser(42))
-	childJob := mockjob.NewMockJob()
-	childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-		return nil, nil
-	})
-	voidCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {})
-	logJob := jobutil.NewLogJob(inputs, childJob)
-	if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, voidCollector); err != nil {
-		t.Fatalf("LogJob.Run: %s", err)
-	}
-	got := eventStore.loggedEventNames()
-	want := []string{"SelectFileOwnersSearch", "search.latencies.repo"}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Errorf("logged events, -want+got: %s", diff)
+		})
 	}
 }
