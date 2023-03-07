@@ -255,6 +255,11 @@ export class Driver {
          */
         await this.page.goto(this.sourcegraphBaseUrl)
 
+        // Skip setup wizard
+        await this.page.evaluate(() => {
+            localStorage.setItem('setup.skipped', 'true')
+        })
+
         /**
          * In case a user is not authenticated, and site-init is NOT required, one redirect happens:
          * 1. Redirect to /sign-in?returnTo=%2F
@@ -264,10 +269,6 @@ export class Driver {
             await this.page.waitForSelector('.test-signin-form', { timeout: 10000 })
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
-            // Skip setup wizard
-            await this.page.evaluate(() => {
-                localStorage.setItem('setup.skipped', 'true')
-            })
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
