@@ -356,6 +356,12 @@
           "type": "boolean",
           "default": false
         },
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
+        },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
