@@ -1,6 +1,12 @@
--- shrimple as that
-DROP TABLE IF EXISTS package_repo_filters CASCADE;
+-- handles trigger_package_repo_filters_updated_at, constraints and unique index
+DROP TABLE IF EXISTS package_repo_filters;
 
-DROP FUNCTION IF EXISTS glob_to_regex(text);
-DROP FUNCTION IF EXISTS is_unversioned_package_allowed(text, text);
-DROP FUNCTION IF EXISTS is_versioned_package_allowed(text, text, text);
+DROP FUNCTION IF EXISTS func_package_repo_filters_updated_at();
+
+ALTER TABLE lsif_dependency_repos
+    DROP COLUMN IF EXISTS blocked,
+    DROP COLUMN IF EXISTS last_checked_at;
+
+ALTER TABLE package_repo_versions
+    DROP COLUMN IF EXISTS blocked,
+    DROP COLUMN IF EXISTS last_checked_at;

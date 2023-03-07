@@ -845,6 +845,9 @@ type Mutation {
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
 
+    """
+    Create a new package repo reference filter.
+    """
     addPackageRepoFilter(
         """
         Whether the matcher should be for allowlisting or blocklisting.
@@ -862,7 +865,13 @@ type Mutation {
         filter: PackageVersionOrNameFilterInput!
     ): PackageFilter!
 
+    """
+    Updates a package repo reference filter.
+    """
     updatePackageRepoFilter(
+        """
+        The ID of the package repo reference filter to update.
+        """
         id: ID!
 
         behaviour: PackageMatchBehaviour!
@@ -876,6 +885,9 @@ type Mutation {
         filter: PackageVersionOrNameFilterInput!
     ): EmptyResponse!
 
+    """
+    Deletes a package repo reference filter.
+    """
     deletePackageRepoFilter(id: ID!): EmptyResponse!
 }
 
@@ -1482,6 +1494,9 @@ type Query {
         after: String
     ): PackageRepoReferenceConnection!
 
+    """
+    Query package repo reference filters.
+    """
     packageRepoFilters(
         """
         Whether the matcher should be for allowlisting or blocklisting.
@@ -3726,47 +3741,113 @@ type PackageRepoReferenceVersion {
     version: String!
 }
 
+"""
+Whether a package repo reference filter is part of the allowlist or blocklist
+"""
 enum PackageMatchBehaviour {
+    """
+    Blocks a package repo reference from syncing.
+    """
     BLOCK
+    """
+    Allows a package repo reference to be synced.
+    """
     ALLOW
 }
 
+"""
+Filters package repo references of the matching scheme/kind, applying to either
+references of matching names or versions of a specific package name.
+One of either nameFilter or versionFilter must be provided.
+"""
 type PackageFilter {
+    """
+    Opaque ID string.
+    """
     id: ID!
 
+    """
+    The behaviour of the filter when applied to a matching package repo reference or version.
+    """
     behaviour: PackageMatchBehaviour!
 
+    """
+    The schemes/kinds of package repo references this filter should apply to only.
+    """
     kind: PackageRepoReferenceKind!
 
+    """
+    Optional name-matching filter.
+    """
     nameFilter: PackageNameFilter
 
+    """
+    Optional package-specific version-matching filter.
+    """
     versionFilter: PackageVersionFilter
 }
 
+"""
+A package repo reference filter that matches names.
+"""
 type PackageNameFilter {
+    """
+    Glob string to match names.
+    """
     packageGlob: String!
 }
 
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
 type PackageVersionFilter {
+    """
+    Exact package name to match.
+    """
     packageName: String!
 
+    """
+    Glob string to match versions.
+    """
     versionGlob: String!
 }
 
 """
+A name or version matching filter for. One of either nameFilter or versionFilter must be provided.
 """
 input PackageVersionOrNameFilterInput {
+    """
+    Optional name-matching filter.
+    """
     nameFilter: PackageNameFilterInput
+    """
+    Optional package-specific version-matching filter.
+    """
     versionFilter: PackageVersionFilterInput
 }
 
+"""
+A package repo reference filter that matches names.
+"""
 input PackageNameFilterInput {
+    """
+    Glob string to match names.
+    """
     packageGlob: String!
 }
 
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
 input PackageVersionFilterInput {
+    """
+    Exact package name to match.
+    """
     packageName: String!
 
+    """
+    Glob string to match versions.
+    """
     versionGlob: String!
 }
 
