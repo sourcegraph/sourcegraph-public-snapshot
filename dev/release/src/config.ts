@@ -83,7 +83,7 @@ export function newRelease(
     captainSlack: string
 ): ScheduledReleaseDefinition {
     return {
-        ...releaseDates(releaseDate),
+        ...releaseDates(releaseDate, version.patch === 0),
         current: version.version,
         captainGitHubUsername: captainGithub,
         captainSlackUsername: captainSlack,
@@ -124,13 +124,26 @@ export async function newReleaseFromInput(versionOverride?: SemVer): Promise<Sch
     return rel
 }
 
-function releaseDates(releaseDate: DateTime): ReleaseDates {
+function releaseDates(releaseDate: DateTime, includePatches?: boolean): ReleaseDates {
     releaseDate = releaseDate.set({ hour: 10 })
     return {
         codeFreezeDate: releaseDate.plus({ days: -7 }).toString(),
         securityApprovalDate: releaseDate.plus({ days: -7 }).toString(),
         releaseDate: releaseDate.toString(),
+        patches: includePatches
+            ? generatePatchDates(releaseDate, releaseDate.plus({ months: 3 }), 2).map(rdate => rdate.toString())
+            : undefined,
     }
+}
+
+function generatePatchDates(start: DateTime, end: DateTime, intervalWeeks: number): DateTime[] {
+    const patches = []
+    let current: DateTime = start
+    while (current < end.minus({ weeks: intervalWeeks })) {
+        current = current.plus({ weeks: intervalWeeks })
+        patches.push(current)
+    }
+    return patches
 }
 
 export function addScheduledRelease(config: ReleaseConfig, release: ScheduledReleaseDefinition): ReleaseConfig {
@@ -147,6 +160,7 @@ export interface ReleaseDates {
     releaseDate: string
     codeFreezeDate: string
     securityApprovalDate: string
+    patches?: string[]
 }
 
 export interface ActiveRelease extends ReleaseCaptainInformation, ReleaseDates {
