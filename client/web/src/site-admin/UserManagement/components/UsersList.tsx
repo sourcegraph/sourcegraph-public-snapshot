@@ -523,7 +523,7 @@ function RenderUsernameAndEmail({
                             content={
                                 <Text>
                                     This user is{' '}
-                                    <Link to="https://docs.sourcegraph.com/admin/scim" target="_blank" rel="noopener">
+                                    <Link to="/help/admin/scim" target="_blank" rel="noopener">
                                         SCIM
                                     </Link>
                                     -controlled—an external system controls some of its attributes.
