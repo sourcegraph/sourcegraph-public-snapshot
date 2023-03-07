@@ -141,7 +141,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      */
     site: Pick<
         SiteConfiguration,
-        'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry' | 'authz.enforceForSiteAdmins'
+        'auth.public' | 'update.channel' | 'authz.enforceForSiteAdmins'
     >
 
     /** Whether access tokens are enabled. */
