@@ -77,7 +77,12 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                         />
                         <Route
                             path=":codehostId/edit"
-                            element={<CodeHostEdit onCodeHostDelete={setCodeHostToDelete} />}
+                            element={
+                                <CodeHostEdit
+                                    telemetryService={telemetryService}
+                                    onCodeHostDelete={setCodeHostToDelete}
+                                />
+                            }
                         />
                     </Routes>
                 </Container>
