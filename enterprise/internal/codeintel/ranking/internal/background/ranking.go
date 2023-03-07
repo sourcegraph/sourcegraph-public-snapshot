@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,7 +30,9 @@ func exportRankingGraph(
 		return nil
 	}
 
-	uploads, err := store.GetUploadsForRanking(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), "ranking", readBatchSize)
+	graphKey := rankingshared.GraphKey()
+
+	uploads, err := store.GetUploadsForRanking(ctx, graphKey, "ranking", readBatchSize)
 	if err != nil {
 		return err
 	}
@@ -43,7 +45,6 @@ func exportRankingGraph(
 	}
 	close(sharedUploads)
 
-	graphKey := conf.CodeIntelRankingDocumentReferenceCountsGraphKey()
 	for i := 0; i < numRoutines; i++ {
 		p.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
@@ -148,21 +149,24 @@ func vacuumRankingGraph(
 	store store.Store,
 	metrics *metrics,
 ) error {
-	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, conf.CodeIntelRankingDocumentReferenceCountsGraphKey())
+	graphKey := rankingshared.GraphKey()
+	derivativeGraphKey := rankingshared.DerivativeGraphKeyFromTime(time.Now())
+
+	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, graphKey)
 	if err != nil {
 		return err
 	}
 	metrics.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
 	metrics.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
 
-	numMetadataRecordsDeleted, numInputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, getCurrentGraphKey(time.Now()))
+	numMetadataRecordsDeleted, numInputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, derivativeGraphKey)
 	if err != nil {
 		return err
 	}
 	metrics.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
 	metrics.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
 
-	numRankRecordsDeleted, err := store.VacuumStaleRanks(ctx, getCurrentGraphKey(time.Now()))
+	numRankRecordsDeleted, err := store.VacuumStaleRanks(ctx, derivativeGraphKey)
 	if err != nil {
 		return err
 	}
@@ -182,7 +186,7 @@ func mapRankingGraph(
 
 	return store.InsertPathCountInputs(
 		ctx,
-		getCurrentGraphKey(time.Now()),
+		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
 		batchSize,
 	)
 }
@@ -198,7 +202,7 @@ func reduceRankingGraph(
 
 	numPathRanksInserted, numPathCountInputsProcessed, err = store.InsertPathRanks(
 		ctx,
-		getCurrentGraphKey(time.Now()),
+		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
 		batchSize,
 	)
 	if err != nil {
@@ -206,19 +210,4 @@ func reduceRankingGraph(
 	}
 
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
-}
-
-// getCurrentGraphKey returns a derivative key from the configured parent used for exports
-// as well as the current "bucket" of time containing the current instant. Each bucket of
-// time is the same configurable length, packed end-to-end since the Unix epoch.
-//
-// Constructing a graph key for the mapper and reducer jobs in this way ensures that begin
-// a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
-// parent graph key will also create a new map/reduce job (without switching buckets).
-func getCurrentGraphKey(now time.Time) string {
-	return fmt.Sprintf("%s-%s-%d",
-		conf.CodeIntelRankingDocumentReferenceCountsGraphKey(),
-		conf.CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix(),
-		now.UTC().Unix()/int64(conf.CodeIntelRankingStaleResultAge().Seconds()),
-	)
 }
