@@ -17,7 +17,8 @@ import {
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
     CHUNK_MATCH_RESULT,
-    LINE_MATCH_RESULT, SEARCH_RESULT,
+    LINE_MATCH_RESULT,
+    SEARCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
@@ -185,11 +186,13 @@ describe('StreamingSearchResults', () => {
             log: logSpy,
         }
 
-        renderWrapper(<StreamingSearchResults
+        renderWrapper(
+            <StreamingSearchResults
                 {...defaultProps}
                 telemetryService={telemetryService}
                 streamSearch={() => of(SEARCH_RESULT)}
-        />)
+            />
+        )
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')

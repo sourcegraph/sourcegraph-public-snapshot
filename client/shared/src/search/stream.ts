@@ -315,7 +315,7 @@ export const emptyAggregateResults: AggregateStreamingSearchResults = {
         matchCount: 0,
         skipped: [],
     },
-    clicked: false
+    clicked: false,
 }
 
 /**

@@ -18,7 +18,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import {useTemporarySetting} from '@sourcegraph/shared/src/settings/temporary';
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
@@ -105,7 +105,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
     // This setting represents whether the search used 'intelligent ranking'. If the feature flag
     // is enabled, we make sure to default it to 'true'.
-    const [rankingEnabled, ] = useTemporarySetting('search.ranking.experimental', false)
+    const [rankingEnabled] = useTemporarySetting('search.ranking.experimental', false)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -115,7 +115,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             if (results && !results.clicked) {
-                telemetryService.log('search.ranking.first-result-clicked', { index, resultsNumber, rankingEnabled, type })
+                telemetryService.log('search.ranking.first-result-clicked', {
+                    index,
+                    resultsNumber,
+                    rankingEnabled,
+                    type,
+                })
                 results.clicked = true
             }
         },
