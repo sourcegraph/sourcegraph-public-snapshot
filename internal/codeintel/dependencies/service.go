@@ -122,15 +122,19 @@ func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRe
 	return s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts(opts))
 }
 
-func (s *Service) CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error) {
+func (s *Service) CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error) {
 	ctx, _, endObservation := s.operations.createPackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("packageScheme", filter.PackageScheme),
-		log.String("behaviour", deref(filter.Behaviour)),
-		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
-		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+		log.String("packageScheme", input.PackageScheme),
+		log.String("behaviour", deref(input.Behaviour)),
+		log.String("versionFilter", fmt.Sprintf("%+v", input.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", input.NameFilter)),
 	}})
-	defer endObservation(1, observation.Args{})
-	return s.store.CreatePackageRepoFilter(ctx, filter)
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("filterID", filter.ID),
+		}})
+	}()
+	return s.store.CreatePackageRepoFilter(ctx, input)
 }
 
 func (s *Service) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {

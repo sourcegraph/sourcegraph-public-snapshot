@@ -860,7 +860,7 @@ type Mutation {
         The package repo reference matcher to persist.
         """
         filter: PackageVersionOrNameFilterInput!
-    ): EmptyResponse!
+    ): PackageFilter!
 
     updatePackageRepoFilter(
         id: ID!

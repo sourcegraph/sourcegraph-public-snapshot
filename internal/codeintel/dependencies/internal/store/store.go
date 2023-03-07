@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -32,8 +33,8 @@ type Store interface {
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 
 	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, error)
-	CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error)
-	UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error)
+	CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error)
+	UpdatePackageRepoFilter(ctx context.Context, input shared.PackageRepoFilter) (err error)
 	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
 
 	ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error)
@@ -506,35 +507,43 @@ func deref(s *string) string {
 	return *s
 }
 
-func (s *store) CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error) {
+func (s *store) CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error) {
 	ctx, _, endObservation := s.operations.createPackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("packageScheme", filter.PackageScheme),
-		log.String("behaviour", deref(filter.Behaviour)),
-		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
-		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+		log.String("packageScheme", input.PackageScheme),
+		log.String("behaviour", *input.Behaviour),
+		log.String("versionFilter", fmt.Sprintf("%+v", input.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", input.NameFilter)),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	var matcherJSON driver.Value
-	if filter.NameFilter != nil {
-		matcherJSON, err = json.Marshal(filter.NameFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.NameFilter)
-	} else if filter.VersionFilter != nil {
-		matcherJSON, err = json.Marshal(filter.VersionFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.VersionFilter)
+	if input.NameFilter != nil {
+		matcherJSON, err = json.Marshal(input.NameFilter)
+		err = errors.Wrapf(err, "error marshalling %+v", input.NameFilter)
+	} else if input.VersionFilter != nil {
+		matcherJSON, err = json.Marshal(input.VersionFilter)
+		err = errors.Wrapf(err, "error marshalling %+v", input.VersionFilter)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(createPackageRepoFilter, filter.Behaviour, filter.PackageScheme, matcherJSON))
+	hydrated := &shared.PackageRepoFilter{
+		Behaviour:     *input.Behaviour,
+		PackageScheme: input.PackageScheme,
+		NameFilter:    input.NameFilter,
+		VersionFilter: input.VersionFilter,
+		DeletedAt:     nil,
+	}
+
+	err = basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
+		return false, s.Scan(&hydrated.ID, &hydrated.UpdatedAt)
+	})(s.db.Query(ctx, sqlf.Sprintf(createPackageRepoFilter, input.Behaviour, input.PackageScheme, matcherJSON)))
 	if err != nil {
-		return errors.Wrap(err, "error inserting package repo filter")
+		return nil, errors.Wrap(err, "error inserting package repo filter")
 	}
-	if n, _ := result.RowsAffected(); n != 1 {
-		return errors.New("package repo filter already exists")
-	}
-	return nil
+
+	return hydrated, nil
 }
 
 const createPackageRepoFilter = `
@@ -545,6 +554,7 @@ DO UPDATE
 	SET deleted_at = NULL,
 	updated_at = now(),
 	behaviour = EXCLUDED.behaviour
+RETURNING id, updated_at
 `
 
 func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {
@@ -569,8 +579,23 @@ func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.Packa
 		return err
 	}
 
-	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(updatePackageRepoFilterQuery, filter.Behaviour, filter.PackageScheme, matcherJSON, filter.ID))
+	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(
+		updatePackageRepoFilterQuery,
+		filter.PackageScheme,
+		matcherJSON,
+		filter.ID,
+		filter.ID,
+		filter.Behaviour,
+		filter.PackageScheme,
+		matcherJSON,
+		filter.ID,
+	))
 	if err != nil {
+		var pgerr *pgconn.PgError
+		// check if conflict error code
+		if errors.As(err, &pgerr) && pgerr.Code == "23505" {
+			return errors.Newf("conflicting package repo filter found for (scheme=%s,matcher=%s)", filter.PackageScheme, string(matcherJSON.([]byte)))
+		}
 		return err
 	}
 	if n, _ := result.RowsAffected(); n != 1 {
@@ -580,12 +605,31 @@ func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.Packa
 }
 
 const updatePackageRepoFilterQuery = `
-UPDATE package_repo_filters
+-- hard-delete a conflicting one if its soft-deleted
+WITH delete_conflicting_deleted AS (
+	DELETE FROM package_repo_filters
+	WHERE
+		scheme = %s AND
+		matcher = %s AND
+		deleted_at IS NOT NULL
+	RETURNING %s::integer AS id
+),
+-- if the above matches nothing, we still need to return something
+-- else we join on nothing below and attempt update nothing, hence union
+always_id AS (
+	SELECT id
+	FROM delete_conflicting_deleted
+	UNION
+	SELECT %s::integer AS id
+)
+UPDATE package_repo_filters prv
 SET
 	behaviour = %s,
 	scheme = %s,
 	matcher = %s
-WHERE id = %s`
+FROM always_id
+WHERE prv.id = %s AND prv.id = always_id.id
+`
 
 func (s *store) DeletePacakgeRepoFilter(ctx context.Context, id int) (err error) {
 	ctx, _, endObservation := s.operations.deletePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -606,7 +650,8 @@ func (s *store) DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
 const deletePackagRepoFilterQuery = `
 UPDATE package_repo_filters
 SET deleted_at = now()
-WHERE id = %s`
+WHERE id = %s
+`
 
 func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error) {
 	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})

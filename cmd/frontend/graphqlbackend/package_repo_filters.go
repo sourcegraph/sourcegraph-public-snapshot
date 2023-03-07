@@ -155,7 +155,7 @@ func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 	Kind      string
 	Filter    inputPackageFilter
 },
-) (*EmptyResponse, error) {
+) (*packageRepoFilterResolver, error) {
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
 		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
@@ -173,7 +173,8 @@ func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 		VersionFilter: args.Filter.VersionFilter,
 	}
 
-	return &EmptyResponse{}, depsService.CreatePackageRepoFilter(ctx, filter)
+	newFilter, err := depsService.CreatePackageRepoFilter(ctx, filter)
+	return &packageRepoFilterResolver{*newFilter}, err
 }
 
 func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *struct {
