@@ -1,6 +1,14 @@
+"Bazel go dependencies"
+
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 def go_dependencies():
+    """The go dependencies in this macro are auto-updated by gazelle
+
+    To update run,
+
+        bazel run //:gazelle-update-repos
+    """
     go_repository(
         name = "cc_mvdan_gofumpt",
         build_file_proto_mode = "disable_global",
