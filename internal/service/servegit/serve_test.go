@@ -23,15 +23,10 @@ const testAddress = "test.local:3939"
 func testRepoWithPaths(fixedEndpoint string, root string, pathWithName string) Repo {
 	var sb strings.Builder
 	delimiter := "/"
-	sb.WriteString(delimiter)
-	sb.WriteString(strings.Trim(fixedEndpoint, delimiter))
 
-	// if empty root we're constructing repo in root path and can skip
-	if root != "" {
-		for _, str := range []string{root, pathWithName} {
-			sb.WriteString(delimiter)
-			sb.WriteString(strings.Trim(str, delimiter))
-		}
+	for _, str := range []string{fixedEndpoint, root, pathWithName} {
+		sb.WriteString(delimiter)
+		sb.WriteString(strings.Trim(str, delimiter))
 	}
 
 	uri := sb.String()
@@ -81,24 +76,9 @@ func TestReposHandler(t *testing.T) {
 				}
 			}
 
-			infixPath := root
-
-			// To test repos in root we use a root fixed in the temp directory where we want to generate test repos
-			// and use the temp directory root for testing URI / ClonePath
-			if tc.root != "" {
-				root = filepath.Join(root, tc.root)
-				mockDirFn = func(name string) string {
-					return filepath.Join(root, filepath.FromSlash(name))
-				}
-
-				t.Cleanup(func() { mockDirFn = nil })
-
-				infixPath = ""
-			}
-
 			var want []Repo
 			for _, path := range tc.repos {
-				want = append(want, testRepoWithPaths("repos", infixPath, path))
+				want = append(want, testRepoWithPaths("repos", root, path))
 			}
 
 			h := (&Serve{

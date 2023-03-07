@@ -114,8 +114,6 @@ type Repo struct {
 	ClonePath string
 }
 
-var mockDirFn func(name string) string
-
 func (s *Serve) handler() http.Handler {
 	mux := &http.ServeMux{}
 
@@ -142,10 +140,8 @@ func (s *Serve) handler() http.Handler {
 
 		repos, err := s.Repos(req.Root)
 		if err != nil {
-			if err != filepath.SkipDir {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		resp := struct {
@@ -160,18 +156,13 @@ func (s *Serve) handler() http.Handler {
 		_ = enc.Encode(&resp)
 	})
 
-	dirFn := func(name string) string {
-		// The cloneURL we generate is an absolute path. But gitservice
-		// returns the name with the leading / missing. So we add it in before
-		// calling FromSlash.
-		return filepath.FromSlash("/" + name)
-	}
-	if mockDirFn != nil {
-		dirFn = mockDirFn
-	}
-
 	svc := &gitservice.Handler{
-		Dir: dirFn,
+		Dir: func(name string) string {
+			// The cloneURL we generate is an absolute path. But gitservice
+			// returns the name with the leading / missing. So we add it in before
+			// calling FromSlash.
+			return filepath.FromSlash("/" + name)
+		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
@@ -349,14 +340,17 @@ func rootIsRepo(root string) (Repo, bool, error) {
 		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
 	}
 
-	clonePath := "/repos"
+	cloneURI := pathpkg.Join("/repos", filepath.ToSlash(root))
+	clonePath := cloneURI
+
+	// Regular git repos won't clone without the full path to the .git directory.
 	if isGit {
 		clonePath += "/.git"
 	}
 
 	return Repo{
 		Name:      filepath.Base(abs),
-		URI:       "/repos",
+		URI:       cloneURI,
 		ClonePath: clonePath,
 	}, true, nil
 }
