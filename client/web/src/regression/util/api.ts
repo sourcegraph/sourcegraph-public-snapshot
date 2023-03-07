@@ -495,13 +495,13 @@ export function deleteOrganization(
 ): Observable<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>({
         request: gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        variables: { organization, hard: null },
+        variables: { organization },
         mightContainPrivateInfo: true,
     }).pipe(
         map(dataOrThrowErrors),

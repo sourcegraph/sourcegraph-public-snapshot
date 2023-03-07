@@ -44,11 +44,7 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<
         SourcegraphContext,
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'experimentalFeatures'
-        | 'authPasswordPolicy'
-        | 'authMinPasswordLength'
+        'authProviders' | 'sourcegraphDotComMode' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service.

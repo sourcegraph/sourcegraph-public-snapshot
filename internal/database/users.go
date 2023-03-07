@@ -1468,15 +1468,6 @@ func validPassword(hash, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-const (
-	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
-	// private code through external services they own.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// TagAllowUserExternalServicePublic if set on a user, allows them to add
-	// public code through external services they own.
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
-)
-
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
 // error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
 // not an error.

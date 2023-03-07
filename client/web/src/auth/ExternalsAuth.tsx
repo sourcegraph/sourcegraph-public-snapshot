@@ -10,7 +10,7 @@ import { AuthProvider, SourcegraphContext } from '../jscontext'
 import styles from './CloudSignUpPage.module.scss'
 
 interface ExternalsAuthProps {
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
+    context: Pick<SourcegraphContext, 'authProviders'>
     githubLabel: string
     gitlabLabel: string
     onClick: (type: AuthProvider['serviceType']) => void

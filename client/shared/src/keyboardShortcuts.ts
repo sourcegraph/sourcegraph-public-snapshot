@@ -33,6 +33,7 @@ const KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
     '†': 't',
     ArrowUp: '↑',
     ArrowDown: '↓',
+    Enter: isMacPlatform() ? 'Return' : 'Enter',
 }
 KEY_TO_NAME.Mod = KEY_TO_NAME[getModKey()]
 
