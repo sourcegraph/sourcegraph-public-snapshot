@@ -106,7 +106,7 @@ func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail strin
 	otherEmails = make([]string, 0, len(emails))
 	for _, emailRaw := range emails {
 		email := emailRaw.(map[string]interface{})
-		if email["primary"] == true {
+		if email["primary"] == true && primaryEmail == "" {
 			primaryEmail = email["value"].(string)
 			continue
 		}
