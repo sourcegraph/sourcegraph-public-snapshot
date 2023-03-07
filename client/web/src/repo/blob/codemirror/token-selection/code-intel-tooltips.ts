@@ -100,7 +100,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
              * outside the editor instead of focusing the editor itself.
              *
-             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&subtree=true).
+             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&).
              */
             Prec.high(
                 EditorView.contentAttributes.compute([field], state => ({

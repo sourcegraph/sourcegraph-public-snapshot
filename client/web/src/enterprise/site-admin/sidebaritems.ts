@@ -47,6 +47,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',

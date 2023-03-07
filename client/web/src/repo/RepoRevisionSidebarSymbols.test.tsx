@@ -1,5 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
+import delay from 'delay'
 import { escapeRegExp } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -110,11 +111,16 @@ describe('RepoRevisionSidebarSymbols', () => {
         expect(renderResult.getByText('1 symbol total')).toBeVisible()
     })
 
-    it('clicking symbol updates route', () => {
+    it('clicking symbol updates route', async () => {
         expect(renderResult.locationRef.current?.search).toEqual('')
 
         const symbol = renderResult.getByText('firstSymbol')
         fireEvent.click(symbol)
+
+        // We need to synchronously flush inside the event handler and since this is warning in
+        // React 18, we've moved it to a setTimeout. This test needs to wait for this timeout to be
+        // flushed
+        await delay(0)
 
         expect(renderResult.locationRef.current?.search).toEqual('?L13:14')
     })

@@ -106,29 +106,6 @@ describe('HoverOverlay', () => {
         ).toMatchSnapshot()
     })
 
-    test('actions, hover and alert present', () => {
-        expect(
-            render(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError={{
-                        contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
-                        alerts: [
-                            {
-                                summary: {
-                                    kind: MarkupKind.Markdown,
-                                    value: 'Testing `markdown` rendering.',
-                                },
-                                type: 'test-alert-dismissalType',
-                            },
-                        ],
-                    }}
-                />
-            ).asFragment()
-        ).toMatchSnapshot()
-    })
-
     test('actions present, hover loading', () => {
         expect(
             render(

@@ -3,8 +3,7 @@ package config
 import "strings"
 
 type IndexConfiguration struct {
-	SharedSteps []DockerStep `json:"shared_steps" yaml:"shared_steps"`
-	IndexJobs   []IndexJob   `json:"index_jobs" yaml:"index_jobs"`
+	IndexJobs []IndexJob `json:"index_jobs" yaml:"index_jobs"`
 }
 
 type IndexJob struct {

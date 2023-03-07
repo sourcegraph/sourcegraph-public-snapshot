@@ -7,16 +7,16 @@ import (
 )
 
 type preIndexStepResolver struct {
-	svc   AutoIndexingService
-	step  types.DockerStep
-	entry *executor.ExecutionLogEntry
+	siteAdminChecker SiteAdminChecker
+	step             types.DockerStep
+	entry            *executor.ExecutionLogEntry
 }
 
-func NewPreIndexStepResolver(svc AutoIndexingService, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
+func NewPreIndexStepResolver(siteAdminChecker SiteAdminChecker, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
 	return &preIndexStepResolver{
-		svc:   svc,
-		step:  step,
-		entry: entry,
+		siteAdminChecker: siteAdminChecker,
+		step:             step,
+		entry:            entry,
 	}
 }
 
@@ -26,7 +26,7 @@ func (r *preIndexStepResolver) Commands() []string { return r.step.Commands }
 
 func (r *preIndexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolver {
 	if r.entry != nil {
-		return NewExecutionLogEntryResolver(r.svc, *r.entry)
+		return NewExecutionLogEntryResolver(r.siteAdminChecker, *r.entry)
 	}
 
 	return nil
