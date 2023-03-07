@@ -614,6 +614,9 @@ type ReposListOptions struct {
 	// A set of filters to select only repos with a given set of key-value pairs.
 	KVPFilters []RepoKVPFilter
 
+	// A set of filters to select only repos with the given set of topics
+	TopicFilters []RepoTopicFilter
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -757,6 +760,13 @@ type RepoKVPFilter struct {
 	// If IgnoreValue is true, this filter will select only repos that
 	// have the given key, regardless of its value
 	KeyOnly bool
+}
+
+type RepoTopicFilter struct {
+	Topic string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated topic
+	Negated bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -1163,6 +1173,19 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 				}
 				ands = append(ands, sqlf.Sprintf(q, filter.Key))
 			}
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
+	}
+
+	if len(opt.TopicFilters) > 0 {
+		var ands []*sqlf.Query
+		ands = append(ands, sqlf.Sprintf("external_service_type = 'github'"))
+		for _, filter := range opt.TopicFilters {
+			cond := `metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			if filter.Negated {
+				cond = `NOT ` + cond
+			}
+			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
