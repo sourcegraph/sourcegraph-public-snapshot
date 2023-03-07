@@ -33,7 +33,7 @@ type fakeOwnService struct {
 	Ruleset *codeowners.Ruleset
 }
 
-func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error) {
+func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
 	return s.Ruleset, nil
 }
 
