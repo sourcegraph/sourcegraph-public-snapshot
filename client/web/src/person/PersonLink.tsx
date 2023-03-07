@@ -20,7 +20,9 @@ export const personLinkFieldsFragment = gql`
 `
 
 /**
- * Formats a person name to: "username (Display Name)" or "Display Name"
+ * Formats a person name to display in the UI.
+ * If the person has a user account, the user's display name is used if it exsits, otherwise the username is used.
+ * If the person does not have a user account, the display name is used if it exists, otherwise the email is used.
  */
 export const formatPersonName = ({ user, displayName, email }: PersonLinkFields): string =>
     user ? user.displayName || user.username : displayName || email
