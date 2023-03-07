@@ -1,10 +1,11 @@
-import { FC, ReactNode, useMemo } from 'react'
+import { FC, ReactNode, useMemo, useEffect } from 'react'
 
 import { Reference } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
@@ -18,13 +19,25 @@ import { GithubConnectView } from './github/GithubConnectView'
 
 import styles from './CodeHostCreation.module.scss'
 
+interface CodeHostCreationProps extends TelemetryProps {}
+
 /**
- * Renders creation UI for any supported code hosts (Github, Gitlab) based on
+ * Renders creation UI for any supported code hosts (GitHub, Gitlab) based on
  * "codeHostType" URL param see root component routing logic.
  */
-export const CodeHostCreation: FC = () => {
+export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
+    const { telemetryService } = props
+
     const { codeHostType } = useParams()
     const codeHostKind = getCodeHostKindFromURLParam(codeHostType!)
+
+    useEffect(() => {
+        if (codeHostKind === null) {
+            return
+        }
+
+        telemetryService.log('SetupWizardCodeHostCreation', { kind: codeHostKind }, { kind: codeHostKind })
+    }, [telemetryService, codeHostKind])
 
     if (codeHostKind === null) {
         return (
@@ -38,7 +51,7 @@ export const CodeHostCreation: FC = () => {
     // We render content inside react fragment because this view is rendered
     // within Container UI (avoid unnecessary DOM nesting)
     return (
-        <CodeHostCreationView codeHostKind={codeHostKind}>
+        <CodeHostCreationView codeHostKind={codeHostKind} telemetryService={telemetryService}>
             {state => (
                 <footer className={styles.footer}>
                     <LoaderButton
@@ -59,7 +72,7 @@ export const CodeHostCreation: FC = () => {
     )
 }
 
-interface CodeHostCreationFormProps {
+interface CodeHostCreationFormProps extends TelemetryProps {
     codeHostKind: ExternalServiceKind
     children: (state: CodeHostJSONFormState) => ReactNode
 }
@@ -70,7 +83,7 @@ interface CodeHostCreationFormProps {
  * UI with pickers and other form UI.
  */
 const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
-    const { codeHostKind, children } = props
+    const { codeHostKind, children, telemetryService } = props
 
     const navigate = useNavigate()
     const externalServiceOptions = defaultExternalServices[codeHostKind]
@@ -133,6 +146,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             },
         })
 
+        telemetryService.log('SetupWizardConnectRemoteCodeHost', { kind: codeHostKind }, { kind: codeHostKind })
         // Reset local storage values
         setLocalValues(defaultConnectionValues)
         navigate('/setup/remote-repositories')
@@ -141,7 +155,12 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {
         return (
-            <GithubConnectView initialValues={localValues} onChange={handleFormChange} onSubmit={handleFormSubmit}>
+            <GithubConnectView
+                initialValues={localValues}
+                telemetryService={telemetryService}
+                onChange={handleFormChange}
+                onSubmit={handleFormSubmit}
+            >
                 {children}
             </GithubConnectView>
         )
