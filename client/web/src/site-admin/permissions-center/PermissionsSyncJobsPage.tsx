@@ -21,13 +21,14 @@ export const PermissionsSyncJobsPage: React.FunctionComponent<React.PropsWithChi
         <PermissionsSyncJobsTable telemetryService={telemetryService} />
     ) : (
         <>
-            <PageTitle title="Permissions Sync - Admin" />
+            <PageTitle title="Permissions - Admin" />
             <PageHeader
-                path={[{ text: 'Permissions Sync' }]}
+                path={[{ text: 'Permissions' }]}
                 headingElement="h2"
                 description={
                     <>
-                        List of permissions sync jobs. Learn more about{' '}
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for a given
+                        repository or user from the respective code host. Learn more about{' '}
                         <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
                     </>
                 }
