@@ -19,7 +19,7 @@ export interface NavDropdownItem {
 
 interface NavDropdownProps {
     toggleItem: NavDropdownItem & {
-        icon?: React.ComponentType<{ className?: string }>
+        icon: React.ComponentType<{ className?: string }>
         // Alternative path to match against if item is active
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
@@ -136,13 +136,11 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                         ref={linkReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
-                                            {toggleItem.icon && (
-                                                <Icon
-                                                    className={navItemStyles.icon}
-                                                    as={toggleItem.icon}
-                                                    aria-hidden={true}
-                                                />
-                                            )}
+                                            <Icon
+                                                className={navItemStyles.icon}
+                                                as={toggleItem.icon}
+                                                aria-hidden={true}
+                                            />
                                             <span
                                                 className={classNames(navItemStyles.text, navItemStyles.iconIncluded, {
                                                     [navItemStyles.isCompact]: toggleItem.variant === 'compact',

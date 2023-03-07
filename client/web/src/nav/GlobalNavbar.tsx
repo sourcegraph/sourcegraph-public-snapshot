@@ -3,6 +3,7 @@ import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, use
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
+import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
@@ -247,6 +248,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             routeMatch="something-that-never-matches"
                             toggleItem={{
                                 path: '#',
+                                icon: CommentQuoteOutline,
                                 content: 'Feedback',
                                 variant: navLinkVariant,
                             }}
