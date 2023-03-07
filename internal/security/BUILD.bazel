@@ -42,7 +42,9 @@ go_test(
     #                 Test:       	TestAddrValidation/git@sourcegraph.com
     # FAIL
     # TODO(bazel): fix test; failing on CI only
-    # tags = ["manual"],
+    # TODO(JH): those are making external network calls.
+    #           -> ask Vincent about the relevance of those tests.
+    tags = ["manual"],
     deps = [
         "//internal/conf",
         "//schema",
