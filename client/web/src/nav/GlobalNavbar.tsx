@@ -260,12 +260,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     target: '_blank',
                                 },
                                 {
-                                    content: 'Follow us on Twitter',
-                                    path: 'https://twitter.com/sourcegraph',
-                                    target: '_blank',
-                                },
-                                { content: 'Email us', path: 'mailto:taylor.sperry@sourcegraph.com', target: '_blank' },
-                                {
                                     content: 'File an issue',
                                     path: 'https://github.com/sourcegraph/app',
                                     target: '_blank',
