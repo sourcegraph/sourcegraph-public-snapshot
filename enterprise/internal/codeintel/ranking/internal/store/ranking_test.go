@@ -227,6 +227,20 @@ func TestInsertPathCountInputs(t *testing.T) {
 		SymbolNames: []string{
 			mockDefinitions[0].SymbolName,
 			mockDefinitions[1].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	// Same ID split over two batches
+	mockReferences = shared.RankingReferences{
+		UploadID: 90,
+		SymbolNames: []string{
 			mockDefinitions[2].SymbolName,
 		},
 	}
