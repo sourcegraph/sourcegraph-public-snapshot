@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -33,10 +34,11 @@ func main() {
 	var c servegit.Config
 	c.Load()
 
-	root := flag.String("root", c.Root, "the directory we search from.")
+	root := flag.String("root", c.CWDRoot, "the directory we search from.")
 	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
 	picker := flag.Bool("picker", false, "try run the file picker.")
-	verbose := flag.Bool("v", false, "verbose output")
+	lsRemote := flag.Bool("git-ls-remote", false, "run git ls-remote on each CloneURL to validate git.")
+	verbose := flag.Bool("v", false, "verbose output.")
 
 	flag.Parse()
 
@@ -47,19 +49,22 @@ func main() {
 		} else {
 			path, err := p(context.Background())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "filepicker error: %v\n", err)
-				os.Exit(1)
+				fatalf("filepicker error: %v\n", err)
 			}
 			fmt.Fprintf(os.Stderr, "filepicker picked %q\n", path)
 			*root = path
 		}
 	}
 
-	c.Root = *root
-
 	srv := &servegit.Serve{
-		Config: c,
-		Logger: log.Scoped("serve", ""),
+		ServeConfig: c.ServeConfig,
+		Logger:      log.Scoped("serve", ""),
+	}
+
+	if *lsRemote {
+		if err := srv.Start(); err != nil {
+			fatalf("failed to start server: %v\n", err)
+		}
 	}
 
 	printRepo := func(r servegit.Repo) {
@@ -68,13 +73,22 @@ func main() {
 		} else {
 			fmt.Println(r.Name)
 		}
+		if *lsRemote {
+			cloneURL := fmt.Sprintf("http://%s/%s", srv.Addr, strings.TrimPrefix(r.ClonePath, "/"))
+			fmt.Printf("running git ls-remote %s HEAD\n", cloneURL)
+			cmd := exec.Command("git", "ls-remote", cloneURL, "HEAD")
+			cmd.Stderr = os.Stderr
+			cmd.Stdout = os.Stdout
+			if err := cmd.Run(); err != nil {
+				fatalf("failed to run ls-remote: %v", err)
+			}
+		}
 	}
 
 	if *block {
-		repos, err := srv.Repos()
+		repos, err := srv.Repos(*root)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Repos returned error: %v\n", err)
-			os.Exit(1)
+			fatalf("Repos returned error: %v\n", err)
 		}
 		for _, r := range repos {
 			printRepo(r)
@@ -83,14 +97,18 @@ func main() {
 		repoC := make(chan servegit.Repo, 4)
 		go func() {
 			defer close(repoC)
-			err := srv.Walk(repoC)
+			err := srv.Walk(*root, repoC)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Walk returned error: %v\n", err)
-				os.Exit(1)
+				fatalf("Walk returned error: %v\n", err)
 			}
 		}()
 		for r := range repoC {
 			printRepo(r)
 		}
 	}
+}
+
+func fatalf(format string, a ...any) {
+	_, _ = fmt.Fprintf(os.Stderr, format, a...)
+	os.Exit(1)
 }
