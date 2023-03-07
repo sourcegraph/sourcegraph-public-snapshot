@@ -199,8 +199,6 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	}
 }
 
-func strPtr(s string) *string { return &s }
-
 func TestListReposWithLastError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
