@@ -9,7 +9,6 @@ TRUNCATE codeintel_ranking_definitions CASCADE;
 TRUNCATE codeintel_ranking_references CASCADE;
 TRUNCATE codeintel_ranking_path_counts_inputs CASCADE;
 TRUNCATE codeintel_path_ranks CASCADE;
-TRUNCATE codeintel_path_ranks CASCADE;
 
 CREATE INDEX IF NOT EXISTS codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions(graph_key, symbol_name, upload_id, document_path);
 CREATE INDEX IF NOT EXISTS codeintel_ranking_references_graph_key_id ON codeintel_ranking_references(graph_key, id);
