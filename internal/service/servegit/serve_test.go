@@ -103,7 +103,7 @@ func TestReposHandler(t *testing.T) {
 
 			h := (&Serve{
 				Logger: logtest.Scoped(t),
-				Config: Config{
+				ServeConfig: ServeConfig{
 					Addr: testAddress,
 				},
 			}).handler()

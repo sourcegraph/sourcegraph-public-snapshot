@@ -33,12 +33,7 @@ func main() {
 	var c servegit.Config
 	c.Load()
 
-	defaultRoot := ""
-	if pwd, err := os.Getwd(); err == nil {
-		defaultRoot = pwd
-	}
-
-	root := flag.String("root", defaultRoot, "the directory we search from.")
+	root := flag.String("root", c.CWDRoot, "the directory we search from.")
 	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
 	picker := flag.Bool("picker", false, "try run the file picker.")
 	verbose := flag.Bool("v", false, "verbose output")
@@ -61,8 +56,8 @@ func main() {
 	}
 
 	srv := &servegit.Serve{
-		Config: c,
-		Logger: log.Scoped("serve", ""),
+		ServeConfig: c.ServeConfig,
+		Logger:      log.Scoped("serve", ""),
 	}
 
 	printRepo := func(r servegit.Repo) {

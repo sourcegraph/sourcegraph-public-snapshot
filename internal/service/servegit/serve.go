@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -20,13 +21,37 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
+type ServeConfig struct {
+	env.BaseConfig
+
+	Addr string
+
+	Timeout  time.Duration
+	MaxDepth int
+}
+
+func (c *ServeConfig) Load() {
+	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
+	if err != nil {
+		c.AddError(errors.Wrapf(err, "failed to parse SRC_SERVE_GIT_URL"))
+	} else if url.Scheme != "http" {
+		c.AddError(errors.Errorf("only support http scheme for SRC_SERVE_GIT_URL got scheme %q", url.Scheme))
+	} else {
+		c.Addr = url.Host
+	}
+
+	c.Timeout = c.GetInterval("SRC_DISCOVER_TIMEOUT", "5s", "The maximum amount of time we spend looking for repositories.")
+	c.MaxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The maximum depth we will recurse when discovery for repositories.")
+}
+
 type Serve struct {
-	Config
+	ServeConfig
 
 	Logger log.Logger
 }

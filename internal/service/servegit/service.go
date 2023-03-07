@@ -2,8 +2,7 @@ package servegit
 
 import (
 	"context"
-	"net/url"
-	"time"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -13,26 +12,23 @@ import (
 )
 
 type Config struct {
-	env.BaseConfig
+	ServeConfig
 
-	Addr string
-
-	Timeout  time.Duration
-	MaxDepth int
+	// LocalRoot is the code to sync based on where app is run from. This is
+	// different to the repos a user explicitly adds via the setup wizard.
+	// This should not be used as the root value in the service.
+	CWDRoot string
 }
 
 func (c *Config) Load() {
-	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
-	if err != nil {
-		c.AddError(errors.Wrapf(err, "failed to parse SRC_SERVE_GIT_URL"))
-	} else if url.Scheme != "http" {
-		c.AddError(errors.Errorf("only support http scheme for SRC_SERVE_GIT_URL got scheme %q", url.Scheme))
-	} else {
-		c.Addr = url.Host
+	// We bypass BaseConfig since it doesn't handle variables being empty.
+	if src, ok := os.LookupEnv("SRC"); ok {
+		c.CWDRoot = src
+	} else if pwd, err := os.Getwd(); err == nil {
+		c.CWDRoot = pwd
 	}
 
-	c.Timeout = c.GetInterval("SRC_DISCOVER_TIMEOUT", "5s", "The maximum amount of time we spend looking for repositories.")
-	c.MaxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The maximum depth we will recurse when discovery for repositories.")
+	c.ServeConfig.Load()
 }
 
 type svc struct{}
@@ -53,18 +49,23 @@ func (s svc) Start(ctx context.Context, observationCtx *observation.Context, rea
 	// Start servegit which walks Root to find repositories and exposes
 	// them over HTTP for Sourcegraph's syncer to discover and clone.
 	srv := &Serve{
-		Config: *config,
-		Logger: observationCtx.Logger,
+		ServeConfig: config.ServeConfig,
+		Logger:      observationCtx.Logger,
 	}
 	if err := srv.Start(); err != nil {
 		return errors.Wrap(err, "failed to start servegit server which discovers local repositories")
+	}
+
+	if config.CWDRoot == "" {
+		observationCtx.Logger.Warn("skipping local code since the environment variable SRC is not set")
+		return nil
 	}
 
 	// Now that servegit is running, we can add the external service which
 	// connects to it.
 	//
 	// Note: src.Addr is updated to reflect the actual listening address.
-	if err := ensureExtSVC(observationCtx, "http://"+srv.Addr); err != nil {
+	if err := ensureExtSVC(observationCtx, "http://"+srv.Addr, config.CWDRoot); err != nil {
 		return errors.Wrap(err, "failed to create external service which imports local repositories")
 	}
 
