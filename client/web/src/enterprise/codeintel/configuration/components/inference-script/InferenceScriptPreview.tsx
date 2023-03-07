@@ -43,7 +43,7 @@ import { RepositoryField } from '../../../../insights/components'
 import { GET_REPO_ID, INFER_JOBS_SCRIPT } from './backend'
 
 import styles from './InferenceScriptPreview.module.scss'
-import { InferenceForm } from './InferenceForm'
+import { InferenceForm } from '../inference-form/InferenceForm'
 
 interface InferenceScriptPreviewFormValues {
     repository: string
