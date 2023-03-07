@@ -67,9 +67,13 @@ func main() {
 		}
 	}
 
+	if *verbose {
+		fmt.Printf("%s\t%s\t%s\t%s\n", "Name", "URI", "ClonePath", "AbsFilePath")
+	}
+
 	printRepo := func(r servegit.Repo) {
 		if *verbose {
-			fmt.Printf("%s\t%s\t%s\n", r.Name, r.URI, r.ClonePath)
+			fmt.Printf("%s\t%s\t%s\t%s\n", r.Name, r.URI, r.ClonePath, r.AbsFilePath)
 		} else {
 			fmt.Println(r.Name)
 		}
