@@ -53,6 +53,8 @@ fn should_skip_scope(scope: &Scope) -> bool {
 
 // Maps scopes to SyntaxKind. Runs after checking if a scope is in IGNORED_SCOPES
 static SCOPE_MATCHES: OnceCell<Vec<(Scope, SyntaxKind)>> = OnceCell::new();
+
+#[rustfmt::skip]
 fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
     let scope_matches: &Vec<(Scope, SyntaxKind)> = SCOPE_MATCHES.get_or_init(|| {
         use SyntaxKind::*;
@@ -69,7 +71,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
         // These are IN ORDER.
         //  If you want something to resolve to something more specifically or as a higher priority
         //  make sure to place the scope(...) at the beginning of the list.
-        #[rustfmt::skip]
         vec![
             (scope("comment"), Comment),
             (scope("meta.documentation"), Comment),
