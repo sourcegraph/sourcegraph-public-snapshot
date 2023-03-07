@@ -51,9 +51,9 @@ type GitserverRepoStore interface {
 	// a matching row does not yet exist a new one will be created.
 	// If the size value hasn't changed, the row will not be updated.
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
-	// IterateWithNonemptyLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
+	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
-	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo api.RepoName) error) error
+	ListReposWithLastError(ctx context.Context) ([]*api.RepoName, error)
 	// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
 	// are cloned on disk but have been deleted or blocked.
 	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
@@ -148,28 +148,19 @@ WHERE
 	AND es.cloud_default IS TRUE
 `
 
-func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo api.RepoName) error) (err error) {
+func (s *gitserverRepoStore) ListReposWithLastError(ctx context.Context) ([]*api.RepoName, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
-	if err != nil {
-		return errors.Wrap(err, "fetching repos with nonempty last_error")
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
+	return scanLastErroredRepos(rows, err)
+}
 
-	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return errors.Wrap(err, "scanning row")
-		}
-		err := repoFn(name)
-		if err != nil {
-			// Abort
-			return errors.Wrap(err, "calling repoFn")
-		}
-	}
+type lastErroredRepo struct {
+	Name string
+}
 
-	return nil
+func scanLastErroredRepoRow(scanner dbutil.Scanner) (*api.RepoName, error) {
+	var name api.RepoName
+	err := scanner.Scan(&name)
+	return &name, err
 }
 
 const nonemptyLastErrorQuery = `
@@ -184,6 +175,8 @@ WHERE
 	AND repo.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
+
+var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
 
 type IteratePurgableReposOptions struct {
 	// DeletedBefore will filter the deleted repos to only those that were deleted
