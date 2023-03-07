@@ -2,6 +2,7 @@ use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Write as _; // import without risk of name clashing
+use tree_sitter::Parser;
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -169,10 +170,10 @@ lazy_static::lazy_static! {
 
 // Handle special cases where syntect language names don't match treesitter names.
 pub fn treesitter_language(syntect_language: &str) -> &str {
-    return match syntect_language {
+    match syntect_language {
         "c++" => "cpp",
         _ => syntect_language,
-    };
+    }
 }
 
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
@@ -187,11 +188,11 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    match index_language(&filetype, &q.code) {
+    match index_language(&filetype, &q.code, false) {
         Ok(document) => {
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"data": base64::encode(encoded), "plaintext": false}))
         }
         Err(Error::InvalidLanguage) => Err(json!({
             "error": format!("{} is not a valid filetype for treesitter", filetype)
@@ -200,9 +201,11 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     }
 }
 
-pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
+pub fn index_language(filetype: &str, code: &str, include_locals: bool) -> Result<Document, Error> {
     match CONFIGURATIONS.get(filetype) {
-        Some(lang_config) => index_language_with_config(code, lang_config),
+        Some(lang_config) => {
+            index_language_with_config(filetype, code, lang_config, include_locals)
+        }
         None => Err(Error::InvalidLanguage),
     }
 }
@@ -227,8 +230,10 @@ pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightCo
 }
 
 pub fn index_language_with_config(
+    filetype: &str,
     code: &str,
     lang_config: &HighlightConfiguration,
+    include_locals: bool,
 ) -> Result<Document, Error> {
     // Normalize string to be always only \n endings.
     //  We don't care that the byte offsets are "incorrect" now for this
@@ -246,7 +251,129 @@ pub fn index_language_with_config(
     })?;
 
     let mut emitter = ScipEmitter::new();
-    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
+    let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
+    doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
+
+    // dbg!(include_locals);
+    // if include_locals
+    if filetype == "go" {
+        let language = lang_config.language;
+        // {{{
+        let query = r#"
+    ;; (source
+      ;; (scope: Something)
+      ;; (scope: Another
+        ;; call Something))
+
+    (func_literal) @scope
+    (function_declaration) @scope
+    (method_declaration) @scope
+    (expression_switch_statement) @scope
+    (if_statement) @scope
+    (for_statement) @scope
+    (block) @scope
+
+    (short_var_declaration
+      left: (expression_list (identifier) @definition.term))
+
+    ;; TODO: We should talk about these: they could be params instead
+    (parameter_declaration name: (identifier) @definition.term)
+    (variadic_parameter_declaration (identifier) @definition.var)
+
+    ;; import (
+    ;;   f "fmt"
+    ;;   ^- This is the spot that gets matched
+    ;; )
+    ;;
+    (import_spec_list
+      (import_spec
+        name: (package_identifier) @definition.namespace))
+
+    (var_spec
+      name: (identifier) @definition.var)
+
+    (for_statement
+     (range_clause
+       left: (expression_list
+               (identifier) @definition.var)))
+
+    (const_declaration
+     (const_spec
+      name: (identifier) @definition.var))
+
+    (type_declaration
+      (type_spec
+        name: (type_identifier) @definition.type))
+
+    ;; reference
+    (identifier) @reference
+    (type_identifier) @reference
+    (field_identifier) @reference
+                "#;
+        // }}}
+
+        let query = tree_sitter::Query::new(language, query).expect("to parse query");
+
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
+
+        let tree = parser.parse(code.as_bytes(), None).expect("to parse tree");
+
+        let mut config = scip_semantic::languages::LocalConfiguration {
+            language,
+            query,
+            parser,
+        };
+
+        let mut local_occs = scip_semantic::locals::parse_tree(&mut config, &tree, code.as_bytes())
+            .expect("to get locals");
+        local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
+
+        let mut next_doc_idx = 0;
+        while let Some(local) = local_occs.pop() {
+            let x = match doc
+                .occurrences
+                .iter_mut()
+                .enumerate()
+                .skip(next_doc_idx)
+                .find(|(_, occ)| occ.range[0] == local.range[0] && occ.range[1] == local.range[1])
+            {
+                Some(found) => found,
+                None => break,
+            };
+
+            next_doc_idx = x.0;
+            let occ = x.1;
+
+            // Update occurrence with new information from locals
+            occ.symbol = local.symbol;
+            occ.symbol_roles = local.symbol_roles;
+
+            dbg!(occ);
+            // let mut doc_occ = match doc.occurrences.get_mut(next_doc_idx) {
+            //     Some(o) => o,
+            //     None => break,
+            // };
+            //
+            // while doc_occ.range[0] < occ.range[0] {
+            //     next_doc_idx += 1;
+            //     doc_occ = match doc.occurrences.get_mut(next_doc_idx) {
+            //         Some(o) => o,
+            //         None => break,
+            //     };
+            // }
+            //
+            // if doc_occ.range[0] == occ.range[0] && doc_occ.range[1] == occ.range[1] {
+            //     println!("Found a match! {:?} {:?}", occ, doc_occ);
+            // }
+
+            // doc.occurrences[next_doc_idx].symbol
+        }
+
+        // dbg!(&doc.occurrences);
+    }
+
+    Ok(doc)
 }
 
 struct OffsetManager {
@@ -521,7 +648,7 @@ mod test {
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
         let src = "// Hello World";
-        let document = index_language("go", src)?;
+        let document = index_language("go", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -536,7 +663,7 @@ SELECT * FROM my_table
 `
 "#;
 
-        let document = index_language("go", src)?;
+        let document = index_language("go", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -545,7 +672,7 @@ SELECT * FROM my_table
     #[test]
     fn test_highlight_csharp_file() -> Result<(), Error> {
         let src = "using System;";
-        let document = index_language("c_sharp", src)?;
+        let document = index_language("c_sharp", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -573,7 +700,7 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            let indexed = index_language(filetype, &contents);
+            let indexed = index_language(filetype, &contents, false);
             if indexed.is_err() {
                 // assert failure
                 panic!("unknown filetype {:?}", filetype);
