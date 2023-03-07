@@ -10,17 +10,22 @@ import (
 
 func NewFilterLists(filters []shared.PackageRepoFilter) (allowlist, blocklist []PackageMatcher, err error) {
 	for _, filter := range filters {
+		var matcher PackageMatcher
 		if filter.NameFilter != nil {
-			matcher, err := NewPackageNameGlob(filter.NameFilter.PackageGlob)
+			matcher, err = NewPackageNameGlob(filter.NameFilter.PackageGlob)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q", filter.NameFilter.PackageGlob)
 			}
-			blocklist = append(blocklist, matcher)
 		} else {
-			matcher, err := NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
+			matcher, err = NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q %q", filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
 			}
+		}
+		switch filter.Behaviour {
+		case "ALLOW":
+			allowlist = append(allowlist, matcher)
+		case "BLOCK":
 			blocklist = append(blocklist, matcher)
 		}
 	}
