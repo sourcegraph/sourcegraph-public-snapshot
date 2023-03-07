@@ -196,7 +196,7 @@ func (r *codeIntelRepositoryWithConfigurationResolver) Indexers() []resolverstub
 	var resolvers []resolverstubs.IndexerWithCountResolver
 	for indexer, meta := range r.availableIndexers {
 		resolvers = append(resolvers, &indexerWithCountResolver{
-			indexer: types.NewCodeIntelIndexerResolver(indexer),
+			indexer: types.NewCodeIntelIndexerResolver(indexer, ""),
 			count:   int32(len(meta.Roots)),
 		})
 	}
@@ -271,7 +271,7 @@ func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsW
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer), indexer.Roots))
+		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
 	return resolvers
 }

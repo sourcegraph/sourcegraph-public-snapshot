@@ -74,20 +74,15 @@ export const FileOwnershipPanel: React.FunctionComponent<
                             <th>Reason</th>
                         </tr>
                     </thead>
-                    {data.node.commit.blob?.ownership.nodes.map(ownership =>
-                        ownership.owner.__typename === 'Person' ? (
-                            <FileOwnershipEntry
-                                key={ownership.owner.email}
-                                person={ownership.owner}
-                                reasons={ownership.reasons.filter(
-                                    reason => reason.__typename === 'CodeownersFileEntry'
-                                )}
-                            />
-                        ) : (
-                            // TODO #48303: Add support for teams.
-                            <></>
-                        )
-                    )}
+                    {data.node.commit.blob?.ownership.nodes.map((ownership, index) => (
+                        <FileOwnershipEntry
+                            // This list is not expected to change, so it's safe to use the index as a key.
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={index}
+                            owner={ownership.owner}
+                            reasons={ownership.reasons}
+                        />
+                    ))}
                 </Accordion>
             </div>
         )

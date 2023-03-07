@@ -105,13 +105,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     return (
         <div>
-            <PageTitle title="Permissions Sync Dashboard - Admin" />
+            <PageTitle title="Permissions - Admin" />
             <PageHeader
-                path={[{ text: 'Permissions Sync Dashboard' }]}
+                path={[{ text: 'Permissions' }]}
                 headingElement="h2"
                 description={
                     <>
-                        List of permissions sync jobs. Learn more about{' '}
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for a given
+                        repository or user from the respective code host. Learn more about{' '}
                         <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
                     </>
                 }

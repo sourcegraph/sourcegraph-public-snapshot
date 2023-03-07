@@ -1390,9 +1390,11 @@ func (s *store) GetUploadIDsWithReferences(
 		filtered[packageReference.DumpID] = struct{}{}
 	}
 
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
-		attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	if trace != nil {
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+			attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	}
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {

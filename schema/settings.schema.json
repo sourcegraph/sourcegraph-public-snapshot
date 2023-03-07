@@ -549,11 +549,6 @@
       "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"
     },
-    "codeHost.useNativeTooltips": {
-      "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
-      "type": "boolean",
-      "default": false
-    },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",

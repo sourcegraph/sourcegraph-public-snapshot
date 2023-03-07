@@ -334,7 +334,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 

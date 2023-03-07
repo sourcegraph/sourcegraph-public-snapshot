@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,7 +23,7 @@ type zoektIndexOptions struct {
 	Name string
 
 	// RepoID is the Sourcegraph Repository ID.
-	RepoID int32
+	RepoID api.RepoID
 
 	// Public is true if the repository is public and does not require auth
 	// filtering.
@@ -64,7 +65,7 @@ type RepoIndexOptions struct {
 	Name string
 
 	// RepoID is the Sourcegraph Repository ID.
-	RepoID int32
+	RepoID api.RepoID
 
 	// Public is true if the repository is public and does not require auth
 	// filtering.
@@ -90,15 +91,15 @@ type RepoIndexOptions struct {
 	GetVersion func(branch string) (string, error)
 }
 
-type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
+type getRepoIndexOptsFn func(repoID api.RepoID) (*RepoIndexOptions, error)
 
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
-	getSearchContextRevisions func(repoID int32) ([]string, error),
-	repos ...int32,
+	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
+	repos ...api.RepoID,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
@@ -125,9 +126,9 @@ func GetIndexOptions(
 
 func getIndexOptions(
 	c *schema.SiteConfiguration,
-	repoID int32,
-	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
-	getSearchContextRevisions func(repoID int32) ([]string, error),
+	repoID api.RepoID,
+	getRepoIndexOptions func(repoID api.RepoID) (*RepoIndexOptions, error),
+	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
 	getSiteConfigRevisions revsRuleFunc,
 ) []byte {
 	opts, err := getRepoIndexOptions(repoID)

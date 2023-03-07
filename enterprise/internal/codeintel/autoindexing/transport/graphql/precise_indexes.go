@@ -41,7 +41,7 @@ func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.Inde
 
 	keyMap := map[string]struct{}{}
 	for _, indexer := range indexers {
-		keyMap[types.NewCodeIntelIndexerResolver(indexer).Key()] = struct{}{}
+		keyMap[types.NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
 	}
 
 	var keys []string

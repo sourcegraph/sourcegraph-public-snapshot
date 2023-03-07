@@ -25,6 +25,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Greatly improves keyboard handling and accessibility of the files and symbol tree on the repository pages. [#12916](https://github.com/sourcegraph/sourcegraph/issues/12916)
 - The file tree on the repository page now automatically expands into single-child directories. [#47117](https://github.com/sourcegraph/sourcegraph/pull/47117)
 - When encountering GitHub rate limits, Sourcegraph will now wait the recommended amount of time and retry the request. This prevents sync jobs from failing prematurely due to external rate limits. [#48423](https://github.com/sourcegraph/sourcegraph/pull/48423)
+- Added a dashboard with information about user and repository background permissions sync jobs. [#46317](https://github.com/sourcegraph/sourcegraph/issues/46317)
+- When encountering GitHub or GitLab rate limits, Sourcegraph will now wait the recommended amount of time and retry the request. This prevents sync jobs from failing prematurely due to external rate limits. [#48423](https://github.com/sourcegraph/sourcegraph/pull/48423), [#48616](https://github.com/sourcegraph/sourcegraph/pull/48616)
+- Added "SCIM" badges for SCIM-controlled users on the User admin page. [#48727](https://github.com/sourcegraph/sourcegraph/pull/48727)
 
 ### Changed
 
@@ -40,12 +43,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
 - Enable `auto gc` on fetch when `SRC_ENABLE_GC_AUTO` is set to `true`. [#47852](https://github.com/sourcegraph/sourcegraph/pull/47852)
 - Fixes syntax highlighting and line number issues in the code preview rendered inside the references panel. [#48107](https://github.com/sourcegraph/sourcegraph/pull/48107)
+- The ordering of code host sync error messages in the notifications menu will now be persistent. Previously the order was not guaranteed on a refresh of the status messages, which would make the code host sync error messages jump positions, giving a false sense of change to the site admins. [#48722](https://github.com/sourcegraph/sourcegraph/pull/48722)
 
 ### Removed
 
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
 - The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- The key `shared_steps` has been removed from auto-indexing configuration descriptions. If you have a custom JSON auto-indexing configuration set for a repository that defines this key, you should inline the content into each index job's `steps` array. [#48770](https://github.com/sourcegraph/sourcegraph/pull/48770)
 
 ## 4.5.1
 

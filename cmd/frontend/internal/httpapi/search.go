@@ -165,14 +165,14 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
 	}
 
-	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
+	getRepoIndexOptions := func(repoID api.RepoID) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
 		}
 		// Replicate what database.Repos.GetByName would do here:
-		repo, ok := reposMap[api.RepoID(repoID)]
+		repo, ok := reposMap[repoID]
 		if !ok {
-			return nil, &database.RepoNotFoundErr{ID: api.RepoID(repoID)}
+			return nil, &database.RepoNotFoundErr{ID: repoID}
 		}
 
 		getVersion := func(branch string) (string, error) {
@@ -192,13 +192,13 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
 		var documentRanksVersion string
-		if t, ok := rankingLastUpdatedAt[api.RepoID(repoID)]; ok {
+		if t, ok := rankingLastUpdatedAt[repoID]; ok {
 			documentRanksVersion = t.String()
 		}
 
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
-			RepoID:     int32(repo.ID),
+			RepoID:     repo.ID,
 			Public:     !repo.Private,
 			Priority:   priority,
 			Fork:       repo.Fork,
@@ -210,25 +210,18 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, indexedIDs)
-	getSearchContextRevisions := func(repoID int32) ([]string, error) {
+	getSearchContextRevisions := func(repoID api.RepoID) ([]string, error) {
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
 		}
-		return revisionsForRepo[api.RepoID(repoID)], nil
-	}
-
-	// searchbackend uses int32 instead of api.RepoID currently, so build
-	// up a slice of that.
-	repoIDs := make([]int32, len(indexedIDs))
-	for i := range indexedIDs {
-		repoIDs[i] = int32(indexedIDs[i])
+		return revisionsForRepo[repoID], nil
 	}
 
 	b := searchbackend.GetIndexOptions(
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
-		repoIDs...,
+		indexedIDs...,
 	)
 	_, _ = w.Write(b)
 	return nil

@@ -32,7 +32,7 @@ import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } fro
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
-import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
+import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
 import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
@@ -286,7 +286,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
-                <FeatureFlagsProvider />,
+                <FeatureFlagsLocalOverrideAgent />,
                 <ShortcutProvider />,
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,

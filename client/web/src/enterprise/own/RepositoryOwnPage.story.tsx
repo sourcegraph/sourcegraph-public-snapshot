@@ -5,7 +5,7 @@ import { subDays } from 'date-fns'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { WebStory } from '../../components/WebStory'
-import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
+import { createFlagMock } from '../../featureFlags/createFlagMock'
 import {
     ExternalServiceKind,
     GetIngestedCodeownersResult,
@@ -59,23 +59,21 @@ const empyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCodeo
     },
 }
 
+const searchOwnershipFlagMock = createFlagMock('search-ownership', true)
+
 export const EmptyNonAdmin: Story = () => (
-    <WebStory mocks={[empyResponse]}>
+    <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <MockedFeatureFlagsProvider overrides={{ 'search-ownership': true }}>
-                <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
-            </MockedFeatureFlagsProvider>
+            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
         )}
     </WebStory>
 )
 EmptyNonAdmin.storyName = 'Empty (non-admin)'
 
 export const EmptyAdmin: Story = () => (
-    <WebStory mocks={[empyResponse]}>
+    <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <MockedFeatureFlagsProvider overrides={{ 'search-ownership': true }}>
-                <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
-            </MockedFeatureFlagsProvider>
+            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
         )}
     </WebStory>
 )
@@ -104,22 +102,18 @@ const populatedResponse: MockedResponse<GetIngestedCodeownersResult, GetIngested
 }
 
 export const PopulatedNonAdmin: Story = () => (
-    <WebStory mocks={[populatedResponse]}>
+    <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <MockedFeatureFlagsProvider overrides={{ 'search-ownership': true }}>
-                <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
-            </MockedFeatureFlagsProvider>
+            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
         )}
     </WebStory>
 )
 PopulatedNonAdmin.storyName = 'Populated (non-admin)'
 
 export const PopulatedAdmin: Story = () => (
-    <WebStory mocks={[populatedResponse]}>
+    <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <MockedFeatureFlagsProvider overrides={{ 'search-ownership': true }}>
-                <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
-            </MockedFeatureFlagsProvider>
+            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
         )}
     </WebStory>
 )

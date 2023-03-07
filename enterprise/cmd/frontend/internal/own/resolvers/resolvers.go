@@ -57,9 +57,10 @@ func (r *ownResolver) GitBlobOwnership(
 	if err != nil {
 		return nil, err
 	}
-	repoName := blob.Repository().RepoName()
+	repo := blob.Repository()
+	repoID, repoName := repo.IDInt32(), repo.RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
+	rs, err := r.ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
 	if err != nil {
 		return nil, err
 	}

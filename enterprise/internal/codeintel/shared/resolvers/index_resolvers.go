@@ -128,5 +128,5 @@ func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTre
 }
 
 func (r *indexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return types.NewCodeIntelIndexerResolver(r.index.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
 }

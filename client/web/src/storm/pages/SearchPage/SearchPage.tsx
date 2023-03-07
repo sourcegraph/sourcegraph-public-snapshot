@@ -10,7 +10,7 @@ export const SearchPage: FC = () => {
     const { authenticatedUser } = useLegacyContext_onlyInStormRoutes()
 
     const shouldShowAddCodeHostWidget = getShouldShowAddCodeHostWidget({
-        isAddCodeHostWidgetEnabled: !!data?.evaluateFeatureFlag,
+        isAddCodeHostWidgetEnabled: !!data?.codehostWidgetFlag,
         isSiteAdmin: authenticatedUser?.siteAdmin,
         externalServicesCount: data?.externalServices.totalCount,
     })
