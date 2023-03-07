@@ -42,6 +42,15 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.SoftFail())
 		}
 
+		cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+			Message:     ":alert: :bazel: test failed",
+			ChannelName: "dev-experience-alerts",
+			Conditions: bk.SlackStepNotifyPayloadConditions{
+				Failed:   true,
+				Branches: []string{"main"},
+			},
+		}))
+
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
@@ -70,6 +79,16 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 		if optional {
 			cmds = append(cmds, bk.SoftFail())
 		}
+
+		cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+			Message:     ":alert: :bazel: build failed",
+			ChannelName: "dev-experience-alerts",
+			Conditions: bk.SlackStepNotifyPayloadConditions{
+				Failed:   true,
+				Branches: []string{"main"},
+			},
+		}))
+
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
