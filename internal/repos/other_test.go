@@ -123,14 +123,6 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 		}},
 	}}
 
-	//Conn: &schema.OtherExternalServiceConnection{
-	//	Url:                   "http://test",
-	//	Repos:                 []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
-	//	Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
-	//	RepositoryPathPattern: "{repo}",
-	//},
-	//Config: extsvc.NewUnencryptedConfig(string(config)),
-
 	ctx := context.Background()
 	source, err := NewOtherSource(ctx, &types.ExternalService{
 		ID:     1,
