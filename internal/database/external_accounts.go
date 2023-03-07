@@ -197,7 +197,7 @@ AND deleted_at IS NULL
 		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
 	}
 
-	// Log action
+	// This logs an audit event for account changes but only if they are initiated via SCIM
 	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
 
 	return
