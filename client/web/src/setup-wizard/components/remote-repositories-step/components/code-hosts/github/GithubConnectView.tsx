@@ -264,6 +264,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                 label="Access token"
                 placeholder="Input your access token"
                 message="Create a new access token on GitHub.com with repo or public_repo scope."
+                type="password"
                 {...getDefaultInputProps(accessTokenField)}
             />
 
