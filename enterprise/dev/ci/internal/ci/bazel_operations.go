@@ -34,7 +34,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
@@ -72,7 +72,7 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
