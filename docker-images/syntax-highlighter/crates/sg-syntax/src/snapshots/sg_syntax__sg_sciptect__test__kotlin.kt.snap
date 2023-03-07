@@ -3,24 +3,24 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   package foobar
-//^^^^^^^ IdentifierKeyword  keyword.other.kotlin
+//^^^^^^^ Keyword  keyword.other.kotlin
 //        ^^^^^^ Identifier  entity.name.package.kotlin
   
   import java.nio.channels.FileChannel
-//^^^^^^ IdentifierKeyword  keyword.other.kotlin
+//^^^^^^ Keyword  keyword.other.kotlin
   
   fun Mat.put(indices: IntArray, data: UShortArray)  = this.put(indices, data.asShortArray())
-//^^^ IdentifierKeyword  keyword.other.kotlin
+//^^^ Keyword  keyword.other.kotlin
 //        ^^^ IdentifierFunction  entity.name.function.kotlin
 //            ^^^^^^^ Identifier  variable.parameter.function.kotlin
 //                   ^ IdentifierOperator  keyword.operator.declaration.kotlin
 //                     ^^^^^^^^ IdentifierType  storage.type.buildin.array.kotlin
-//                               ^^^^ IdentifierKeyword  storage.modifier.kotlin
+//                               ^^^^ Keyword  storage.modifier.kotlin
 //                                   ^ IdentifierOperator  keyword.operator.declaration.kotlin
 //                                                   ^ IdentifierOperator  keyword.operator.assignment.kotlin
 //                                                     ^^^^ IdentifierBuiltin  constant.language.kotlin
 //                                                         ^ IdentifierOperator  keyword.operator.dot.kotlin
-//                                                                       ^^^^ IdentifierKeyword  storage.modifier.kotlin
+//                                                                       ^^^^ Keyword  storage.modifier.kotlin
 //                                                                           ^ IdentifierOperator  keyword.operator.dot.kotlin
   
   /***
@@ -34,9 +34,9 @@ expression: "dump_document(&document, &contents)"
   @Suppress("UNCHECKED_CAST")
 //          ^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.kotlin
   inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
-//^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//       ^^^ IdentifierKeyword  keyword.other.kotlin
-//            ^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
+//^^^^^^ Keyword  storage.modifier.kotlin
+//       ^^^ Keyword  keyword.other.kotlin
+//            ^^^^^^^ Keyword  storage.modifier.kotlin
 //                    ^ IdentifierType  storage.type.generic.kotlin
 //                           ^^ IdentifierFunction  entity.name.function.kotlin
 //                              ^^^ Identifier  variable.parameter.function.kotlin
@@ -48,7 +48,7 @@ expression: "dump_document(&document, &contents)"
 //                                                  ^ IdentifierOperator  keyword.operator.declaration.kotlin
 //                                                              ^ IdentifierOperator  keyword.operator.assignment.kotlin
       when (T::class) {
-//    ^^^^ IdentifierKeyword  keyword.control.kotlin
+//    ^^^^ Keyword  keyword.control.kotlin
 //           ^^ IdentifierOperator  keyword.operator.kotlin
           UShort::class -> AtableUShort(this, row, col) as Atable<T>
 //              ^^ IdentifierOperator  keyword.operator.kotlin
@@ -56,9 +56,9 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^^ IdentifierBuiltin  constant.language.kotlin
 //                                                      ^^ IdentifierOperator  keyword.operator.kotlin
           else -> throw RuntimeException("Unsupported class type")
-//        ^^^^ IdentifierKeyword  keyword.control.kotlin
+//        ^^^^ Keyword  keyword.control.kotlin
 //             ^^ IdentifierOperator  keyword.operator.declaration.kotlin
-//                ^^^^^ IdentifierKeyword  keyword.control.catch-exception.kotlin
+//                ^^^^^ Keyword  keyword.control.catch-exception.kotlin
 //                                       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.kotlin
       }
   
@@ -72,8 +72,8 @@ expression: "dump_document(&document, &contents)"
 //                  ^ IdentifierOperator  keyword.operator.dot.kotlin
 //                                ^ IdentifierOperator  keyword.operator.dot.kotlin
   internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
-//^^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//         ^^^^^ IdentifierKeyword  storage.modifier.kotlin
+//^^^^^^^^ Keyword  storage.modifier.kotlin
+//         ^^^^^ Keyword  storage.modifier.kotlin
 //               ^^^^^^^^^^^^^^ IdentifierType  entity.name.type.class.kotlin
 //                              ^^^^^^^ Identifier  variable.parameter.function.kotlin
 //                                     ^ IdentifierOperator  keyword.operator.declaration.kotlin
@@ -86,29 +86,29 @@ expression: "dump_document(&document, &contents)"
    DataAccess(filePath) {
   
    private data class DataItem(
-// ^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//         ^^^^ IdentifierKeyword  storage.modifier.kotlin
-//              ^^^^^ IdentifierKeyword  storage.modifier.kotlin
+// ^^^^^^^ Keyword  storage.modifier.kotlin
+//         ^^^^ Keyword  storage.modifier.kotlin
+//              ^^^^^ Keyword  storage.modifier.kotlin
 //                    ^^^^^^^^ IdentifierType  entity.name.type.class.kotlin
     val id: Long,
-//  ^^^ IdentifierKeyword  storage.modifier.kotlin
+//  ^^^ Keyword  storage.modifier.kotlin
 //      ^^ Identifier  variable.parameter.function.kotlin
 //        ^ IdentifierOperator  keyword.operator.declaration.kotlin
 //          ^^^^ IdentifierType  storage.type.buildin.kotlin
     val mediaType: String
-//  ^^^ IdentifierKeyword  storage.modifier.kotlin
+//  ^^^ Keyword  storage.modifier.kotlin
 //      ^^^^^^^^^ Identifier  variable.parameter.function.kotlin
 //               ^ IdentifierOperator  keyword.operator.declaration.kotlin
 //                 ^^^^^^ IdentifierType  storage.type.buildin.kotlin
    )
   
    companion object {
-// ^^^^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//           ^^^^^^ IdentifierKeyword  storage.modifier.kotlin
+// ^^^^^^^^^^ Keyword  storage.modifier.kotlin
+//           ^^^^^^ Keyword  storage.modifier.kotlin
   
     private val PROJECTION = arrayOf(
-//  ^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//          ^^^ IdentifierKeyword  keyword.other.kotlin
+//  ^^^^^^^ Keyword  storage.modifier.kotlin
+//          ^^^ Keyword  keyword.other.kotlin
 //              ^^^^^^^^^^ Identifier  entity.name.variable.kotlin
 //                         ^ IdentifierOperator  keyword.operator.assignment.kotlin
      MediaStore.Files.FileColumns._ID
@@ -118,9 +118,9 @@ expression: "dump_document(&document, &contents)"
     )
   
     private const val SELECTION_BY_PATH = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ? " +
-//  ^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//          ^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//                ^^^ IdentifierKeyword  keyword.other.kotlin
+//  ^^^^^^^ Keyword  storage.modifier.kotlin
+//          ^^^^^ Keyword  storage.modifier.kotlin
+//                ^^^ Keyword  keyword.other.kotlin
 //                    ^^^^^^^^^^^^^^^^^ Identifier  entity.name.variable.kotlin
 //                                      ^ IdentifierOperator  keyword.operator.assignment.kotlin
 //                                        ^ StringLiteral  variable.parameter.template.kotlin
@@ -133,8 +133,8 @@ expression: "dump_document(&document, &contents)"
 //                                                      ^^^^^ StringLiteral  string.quoted.double.kotlin
   
     private fun getSelectionByPathArguments(path: String): Array<String> {
-//  ^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//          ^^^ IdentifierKeyword  keyword.other.kotlin
+//  ^^^^^^^ Keyword  storage.modifier.kotlin
+//          ^^^ Keyword  keyword.other.kotlin
 //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.kotlin
 //                                          ^^^^ Identifier  variable.parameter.function.kotlin
 //                                              ^ IdentifierOperator  keyword.operator.declaration.kotlin
@@ -143,23 +143,23 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^^^^^ IdentifierType  storage.type.buildin.collection.kotlin
 //                                                               ^^^^^^ IdentifierType  storage.type.buildin.kotlin
      return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
-//   ^^^^^^ IdentifierKeyword  keyword.control.kotlin
+//   ^^^^^^ Keyword  keyword.control.kotlin
     }
    }
    override val fileChannel: FileChannel
-// ^^^^^^^^ IdentifierKeyword  storage.modifier.kotlin
-//          ^^^ IdentifierKeyword  keyword.other.kotlin
+// ^^^^^^^^ Keyword  storage.modifier.kotlin
+//          ^^^ Keyword  keyword.other.kotlin
 //              ^^^^^^^^^^^ Identifier  entity.name.variable.kotlin
 //                         ^ IdentifierOperator  keyword.operator.declaration.kotlin
   
    init {
     val contentResolver = context.contentResolver
-//  ^^^ IdentifierKeyword  keyword.other.kotlin
+//  ^^^ Keyword  keyword.other.kotlin
 //      ^^^^^^^^^^^^^^^ Identifier  entity.name.variable.kotlin
 //                      ^ IdentifierOperator  keyword.operator.assignment.kotlin
 //                               ^ IdentifierOperator  keyword.operator.dot.kotlin
     val dataItems = queryByPath(context, filePath)
-//  ^^^ IdentifierKeyword  keyword.other.kotlin
+//  ^^^ Keyword  keyword.other.kotlin
 //      ^^^^^^^^^ Identifier  entity.name.variable.kotlin
 //                ^ IdentifierOperator  keyword.operator.assignment.kotlin
   

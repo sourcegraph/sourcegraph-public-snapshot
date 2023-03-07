@@ -181,7 +181,7 @@ func (t *htmlManager) process() {
 }
 
 func (t *htmlManager) processRow() {
-	if !t.isRowValid(t.row) {
+	if !t.validRow(t.row) {
 		return
 	}
 
@@ -197,7 +197,9 @@ func (t *htmlManager) processRow() {
 
 	// Add the rest of the line with no syntax highlighting (since it may not be covered by an occurrence).
 	line := t.currentLine()
-	t.addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
+	if lineCharacter != int32(len(line)) {
+		t.addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
+	}
 }
 
 func (t *htmlManager) processOneOcc(occ *scip.Occurrence, lineCharacter int32) int32 {
@@ -210,9 +212,9 @@ func (t *htmlManager) processOneOcc(occ *scip.Occurrence, lineCharacter int32) i
 	}
 
 	// Only add the "missed" text if
-	if startRow == t.row {
-		currentLine := t.lines[t.row]
-		t.addText(occ.SyntaxKind, safeSlice(currentLine, lineCharacter, startCharacter))
+	if startRow == t.row && lineCharacter != startCharacter {
+		currentLine := t.currentLine()
+		t.addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(currentLine, lineCharacter, startCharacter))
 	}
 
 	if startRow == endRow {
@@ -225,25 +227,32 @@ func (t *htmlManager) processOneOcc(occ *scip.Occurrence, lineCharacter int32) i
 }
 
 func (t *htmlManager) processMultiLineOcc(occ *scip.Occurrence, lineCharacter, startRow, startCharacter, endRow, endCharacter int32) {
+	maxRow := int32(len(t.lines))
+
 	// Process the first line
 	if t.row == startRow {
-		line := t.lines[t.row]
+		line := t.currentLine()
 		t.addText(occ.SyntaxKind, safeSlice(line, startCharacter, int32(len(line))))
 		t.nextRow()
 		t.addRow(t.row)
 	}
 
 	// Process all middle lines (which are fully contained by this occurrence)
-	for t.row < endRow {
-		t.addText(occ.SyntaxKind, string(t.lines[t.row]))
+	for t.row < endRow && t.row < maxRow {
+		t.addText(occ.SyntaxKind, string(t.currentLine()))
 		t.nextRow()
+
+		if t.row >= maxRow {
+			break
+		}
+
 		t.addRow(t.row)
 	}
 
 	// Process the last line.
 	//   There may be other matches on this line
-	if t.row == endRow {
-		t.addText(occ.SyntaxKind, safeSlice(t.lines[t.row], 0, endCharacter))
+	if t.row == endRow && t.row < maxRow {
+		t.addText(occ.SyntaxKind, safeSlice(t.currentLine(), 0, endCharacter))
 		// NOTE:
 		//   We do not add nextRow()
 		//   This is because this is always handled above. So do not add that here.
@@ -259,9 +268,16 @@ func (t *htmlManager) processSingleLineOcc(occ *scip.Occurrence, startRow, start
 	t.addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter))
 }
 
-func (t *htmlManager) isRowValid(row int32) bool { return t.validLines == nil || t.validLines[row] }
-func (t *htmlManager) nextRow()                  { t.row += 1 }
-func (t *htmlManager) currentLine() []rune       { return t.lines[t.row] }
+func (t *htmlManager) validRow(row int32) bool { return t.validLines == nil || t.validLines[row] }
+func (t *htmlManager) nextRow()                { t.row += 1 }
+
+func (t *htmlManager) currentLine() []rune {
+	if t.row >= int32(len(t.lines)) {
+		return []rune{}
+	}
+
+	return t.lines[t.row]
+}
 
 // appendTextToNode formats the text to the right css class and appends to the current
 // html node
