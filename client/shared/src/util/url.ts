@@ -606,6 +606,10 @@ export const addSourcegraphAppOutboundUrlParameters = (url: string, campaign?: s
         urlObject.searchParams.append('app_os', os)
     }
 
+    const version = window.context?.version as string | undefined
+    if (version) {
+        urlObject.searchParams.append('app_version', version)
+    }
     return urlObject.toString()
 }
 
