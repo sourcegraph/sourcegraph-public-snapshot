@@ -1,0 +1,267 @@
+{
+  "name": "cody",
+  "displayName": "cody",
+  "private": true,
+  "publisher": "sourcegraph",
+  "license": "Enterprise",
+  "description": "vsce",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/cody"
+  },
+  "icon": "public/cody.png",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:cody.recipe.explain-code"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cody",
+          "title": "Sourcegraph Cody",
+          "icon": "public/cody.png",
+          "when": "sourcegraph.cody.activated"
+        }
+      ]
+    },
+    "views": {
+      "cody": [
+        {
+          "type": "webview",
+          "id": "cody.chat",
+          "name": "Chat",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "sourcegraph.cody.toggleEnabled",
+        "title": "Cody: Toggle Enabled/Disabled"
+      },
+      {
+        "command": "cody.experimental.suggest",
+        "title": "Ask Cody: View Suggestions"
+      },
+      {
+        "command": "cody.recipe.explain-code",
+        "title": "Ask Cody: Explain Code in Detail"
+      },
+      {
+        "command": "cody.recipe.explain-code-high-level",
+        "title": "Ask Cody: Explain Code at a High Level"
+      },
+      {
+        "command": "cody.recipe.generate-unit-test",
+        "title": "Ask Cody: Generate Unit Test"
+      },
+      {
+        "command": "cody.recipe.generate-docstring",
+        "title": "Ask Cody: Generate Docstring"
+      },
+      {
+        "command": "cody.recipe.translate-to-language",
+        "title": "Ask Cody: Translate to Language"
+      },
+      {
+        "command": "cody.recipe.git-history",
+        "title": "Ask Cody: Recent History"
+      },
+      {
+        "command": "cody.set-access-token",
+        "title": "Cody: Set Access Token"
+      },
+      {
+        "command": "cody.delete-access-token",
+        "title": "Cody: Delete Access Token"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cody.recipe.explain-code-high-level",
+        "key": "ctrl+alt+c",
+        "mac": "ctrl+alt+c",
+        "when": "sourcegraph.cody.activated"
+      }
+    ],
+    "submenus": [
+      {
+        "label": "Ask Cody",
+        "id": "cody.submenu"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "sourcegraph.cody.toggleEnabled"
+        },
+        {
+          "command": "cody.experimental.suggest",
+          "when": "config.cody.experimental.suggest && sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.explain-code",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.explain-code-high-level",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.generate-unit-test",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.generate-docstring",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.translate-to-language",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.recipe.git-history",
+          "when": "sourcegraph.cody.activated"
+        },
+        {
+          "command": "cody.set-access-token"
+        },
+        {
+          "command": "cody.delete-access-token"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "cody.submenu",
+          "group": "7_modification",
+          "when": "sourcegraph.cody.activated"
+        }
+      ],
+      "cody.submenu": [
+        {
+          "command": "cody.recipe.explain-code"
+        },
+        {
+          "command": "cody.recipe.explain-code-high-level"
+        },
+        {
+          "command": "cody.recipe.generate-unit-test"
+        },
+        {
+          "command": "cody.recipe.generate-docstring"
+        },
+        {
+          "command": "cody.recipe.translate-to-language"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Cody settings",
+      "properties": {
+        "sourcegraph.cody.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Cody"
+        },
+        "cody.serverEndpoint": {
+          "type": "string",
+          "default": "https://cody.sgdev.org",
+          "description": "URL to the Cody server",
+          "example": "https://cody.sgdev.org"
+        },
+        "cody.embeddingsEndpoint": {
+          "type": "string",
+          "default": "https://cody.sgdev.org",
+          "description": "URL to the Cody embeddings API",
+          "example": "https://cody.sgdev.org"
+        },
+        "cody.codebase": {
+          "type": "string",
+          "examples": "sourcegraph.sourcegraph"
+        },
+        "cody.debug": {
+          "type": "boolean"
+        },
+        "cody.useContext": {
+          "type": "string",
+          "enum": [
+            "embeddings",
+            "keyword",
+            "none",
+            "blended"
+          ],
+          "default": "embeddings"
+        },
+        "cody.experimental.suggest": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  },
+  "scripts": {
+    "web:dev": "vite",
+    "web:watch": "vite build --watch",
+    "web:build": "vite build",
+    "build": "tsc && vite build",
+    "vscode:prepublish": "pnpm run package",
+    "compile": "webpack",
+    "watch:webpack": "webpack --watch",
+    "watch": "concurrently \"webpack --watch\" \"pnpm web:watch\"",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "concurrently": "^7.6.0",
+    "cross-fetch": "^3.1.5",
+    "escape-html": "^1.0.3",
+    "highlight.js": "^11.7.0",
+    "isomorphic-ws": "^5.0.0",
+    "marked": "^4.2.5",
+    "natural": "github:NaturalNode/natural#master",
+    "openai": "^3.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sanitize-html": "^2.8.1",
+    "stopword": "^2.0.7",
+    "stream-json": "^1.7.5",
+    "ws": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "@types/vscode": "^1.76.0",
+    "@typescript-eslint/eslint-plugin": "^5.53.0",
+    "@typescript-eslint/parser": "^5.53.0",
+    "@vitejs/plugin-react": "^3.1.0",
+    "@vscode/test-electron": "^2.2.3",
+    "eslint": "^8.34.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "@sourcegraph/build-config": "workspace:*"
+  }
+}

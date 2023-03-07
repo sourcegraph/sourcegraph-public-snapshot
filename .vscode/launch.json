@@ -37,6 +37,15 @@
       "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"]
     },
     {
+      "name": "Launch Cody Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/client/cody", "--disable-extension=hpargecruos.kodj"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/client/cody/dist/*.js"]
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Browser extension E2E Tests",

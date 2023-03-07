@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2021",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext", "ES2021"],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "jsx": "react-jsx",
+    "rootDir": ".",
+    "outDir": "dist",
+    "noImplicitAny": false,
+    /* Additional Checks */
+    // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
+    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+  },
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
+  "exclude": ["node_modules", ".vscode-test", "src/test", "../../node_modules", "dist", "out"],
+  "references": [
+    {
+      "path": "../build-config",
+    },
+  ],
+}

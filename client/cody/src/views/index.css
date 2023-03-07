@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono&family=Nunito:wght@400;700&display=swap');
+@import url(./utils/highlight.css);
+
+:root {
+  --human-bubble-color: #565eb9;
+  --bot-bubble-color: #303443;
+  --bubble-text-color: white;
+  --code-background: var(--vscode-textCodeBlock-background);
+}
+
+body[data-vscode-theme-kind='vscode-light'],
+body[data-vscode-theme-kind='vscode-high-contrast-light'] {
+  --human-bubble-color: #c2c7fb;
+  --bot-bubble-color: #dce2f9;
+  --bubble-text-color: black;
+  --code-background: #333333;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.mt-5 {
+  margin-top: 5rem;
+}
