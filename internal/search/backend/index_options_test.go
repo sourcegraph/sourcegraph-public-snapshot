@@ -9,13 +9,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexOptions(t *testing.T) {
 	const (
-		REPO = int32(iota + 1)
+		REPO = api.RepoID(iota + 1)
 		FOO
 		NOT_IN_VERSION_CONTEXT
 		PRIORITY
@@ -25,11 +26,11 @@ func TestGetIndexOptions(t *testing.T) {
 		RANKED
 	)
 
-	name := func(repo int32) string {
+	name := func(repo api.RepoID) string {
 		return fmt.Sprintf("repo-%.2d", repo)
 	}
 
-	withBranches := func(c schema.SiteConfiguration, repo int32, branches ...string) schema.SiteConfiguration {
+	withBranches := func(c schema.SiteConfiguration, repo api.RepoID, branches ...string) schema.SiteConfiguration {
 		if c.ExperimentalFeatures == nil {
 			c.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
@@ -45,7 +46,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name              string
 		conf              schema.SiteConfiguration
 		searchContextRevs []string
-		repo              int32
+		repo              api.RepoID
 		want              zoektIndexOptions
 	}
 
@@ -250,7 +251,7 @@ func TestGetIndexOptions(t *testing.T) {
 		})
 	}
 
-	var getRepoIndexOptions getRepoIndexOptsFn = func(repo int32) (*RepoIndexOptions, error) {
+	var getRepoIndexOptions getRepoIndexOptsFn = func(repo api.RepoID) (*RepoIndexOptions, error) {
 		var priority float64
 		if repo == PRIORITY {
 			priority = 10
@@ -276,7 +277,7 @@ func TestGetIndexOptions(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
+			getSearchContextRevisions := func(api.RepoID) ([]string, error) { return tc.searchContextRevs, nil }
 
 			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
 
@@ -294,7 +295,7 @@ func TestGetIndexOptions(t *testing.T) {
 
 func TestGetIndexOptions_getVersion(t *testing.T) {
 	conf := schema.SiteConfiguration{}
-	getSearchContextRevs := func(int32) ([]string, error) { return []string{"b1", "b2"}, nil }
+	getSearchContextRevs := func(api.RepoID) ([]string, error) { return []string{"b1", "b2"}, nil }
 
 	boom := errors.New("boom")
 	cases := []struct {
@@ -344,7 +345,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 	}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
+			getRepoIndexOptions := func(repo api.RepoID) (*RepoIndexOptions, error) {
 				return &RepoIndexOptions{
 					GetVersion: tc.f,
 				}, nil
@@ -372,14 +373,14 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 }
 
 func TestGetIndexOptions_batch(t *testing.T) {
-	isError := func(repo int32) bool {
+	isError := func(repo api.RepoID) bool {
 		return repo%20 == 0
 	}
 	var (
-		repos []int32
+		repos []api.RepoID
 		want  []zoektIndexOptions
 	)
-	for repo := int32(1); repo < 100; repo++ {
+	for repo := api.RepoID(1); repo < 100; repo++ {
 		repos = append(repos, repo)
 		if isError(repo) {
 			want = append(want, zoektIndexOptions{Error: "error"})
@@ -392,7 +393,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 			})
 		}
 	}
-	getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
+	getRepoIndexOptions := func(repo api.RepoID) (*RepoIndexOptions, error) {
 		return &RepoIndexOptions{
 			GetVersion: func(branch string) (string, error) {
 				if isError(repo) {
@@ -403,7 +404,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 		}, nil
 	}
 
-	getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
+	getSearchContextRevs := func(api.RepoID) ([]string, error) { return nil, nil }
 
 	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
