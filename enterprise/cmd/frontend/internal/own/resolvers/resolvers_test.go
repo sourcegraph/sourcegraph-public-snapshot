@@ -280,7 +280,7 @@ func TestOwnershipPagination(t *testing.T) {
 			owners = append(owners, n.Owner.DisplayName)
 		}
 		paginatedOwners = append(paginatedOwners, owners)
-		if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage == hasCursor {
+		if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage != hasCursor {
 			cursor := "<nil>"
 			if ownership.PageInfo.EndCursor != nil {
 				cursor = fmt.Sprintf("&%q", *ownership.PageInfo.EndCursor)
