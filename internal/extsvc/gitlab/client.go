@@ -172,14 +172,14 @@ type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
 
-	baseURL             *url.URL
-	httpClient          httpcli.Doer
-	projCache           *rcache.Cache
-	Auth                auth.Authenticator
-	externalRateLimiter *ratelimit.Monitor
-	internalRateLimiter *ratelimit.InstrumentedLimiter // Our internal rate limiter
-	waitForRateLimit    bool
-	numRateLimitRetries int
+	baseURL                *url.URL
+	httpClient             httpcli.Doer
+	projCache              *rcache.Cache
+	Auth                   auth.Authenticator
+	externalRateLimiter    *ratelimit.Monitor
+	internalRateLimiter    *ratelimit.InstrumentedLimiter // Our internal rate limiter
+	waitForRateLimit       bool
+	maxNumRateLimitRetries int
 }
 
 // NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -208,15 +208,15 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
-		urn:                 p.urn,
-		baseURL:             p.baseURL,
-		httpClient:          p.httpClient,
-		projCache:           projCache,
-		Auth:                a,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
-		waitForRateLimit:    true,
-		numRateLimitRetries: 2,
+		urn:                    p.urn,
+		baseURL:                p.baseURL,
+		httpClient:             p.httpClient,
+		projCache:              projCache,
+		Auth:                   a,
+		internalRateLimiter:    rl,
+		externalRateLimiter:    rlm,
+		waitForRateLimit:       true,
+		maxNumRateLimitRetries: 2,
 	}
 }
 
@@ -241,18 +241,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 
 	if c.waitForRateLimit {
 		// We don't care whether this happens or not as it is a preventative measure.
-		c.externalRateLimiter.WaitForRateLimit(ctx)
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx)
 	}
 
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
 
 	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
-	numTries := 0
-	for c.waitForRateLimit && numTries < c.numRateLimitRetries && respCode == http.StatusTooManyRequests {
+	numRetries := 0
+	for c.waitForRateLimit && numRetries < c.maxNumRateLimitRetries && respCode == http.StatusTooManyRequests {
 		if c.externalRateLimiter.WaitForRateLimit(ctx) {
 			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
-			numTries += 1
+			numRetries += 1
 		} else {
 			// We did not wait because of rate limiting, so we break the loop
 			break
