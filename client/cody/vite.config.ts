@@ -8,6 +8,7 @@ export default defineConfig({
     base: '/kodj/',
     build: {
         emptyOutDir: false,
+        sourcemap: true,
         outDir: 'dist',
         rollupOptions: {
             external: [/^vscode/],

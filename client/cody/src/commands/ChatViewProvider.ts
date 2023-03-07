@@ -1,5 +1,3 @@
-import path from 'path'
-
 import 'cross-fetch/polyfill'
 import * as vscode from 'vscode'
 
@@ -22,12 +20,6 @@ export interface ChatMessage extends Omit<Message, 'text'> {
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-    private readonly staticDir = path.join('resources', 'chat')
-    private readonly staticFiles = {
-        css: ['vscode.css', 'tabs.css', 'style.css', 'highlight.css'],
-        js: ['tabs.js', 'index.js'],
-    }
-
     private transcript: ChatMessage[] = []
     private messageInProgress: ChatMessage | null = null
 
@@ -68,15 +60,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     public async makeWSChatClient(): Promise<WSChatClient | null> {
         try {
-            const wsclient = await WSChatClient.new(`${this.serverUrl}/chat`, this.accessToken)
-            return wsclient
+            if (this.accessToken && this.serverUrl) {
+                const wsclient = await WSChatClient.new(`${this.serverUrl}/chat`, this.accessToken)
+                return wsclient
+            }
+            return null
         } catch (error) {
             console.error(error)
             return null
         }
     }
 
-    private makeEmbeddingClient() {
+    private makeEmbeddingClient(): EmbeddingsClient | null {
         if (this.codebase && this.accessToken && this.embeddingsEndpoint && this.contextType === 'embeddings') {
             const embeddingsClient = new EmbeddingsClient(this.embeddingsEndpoint, this.accessToken, this.codebase)
 
@@ -89,19 +84,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
 
             return embeddingsClient
-        } else {
-            return null
         }
+        return null
     }
 
-    async resolveWebviewView(
+    public async resolveWebviewView(
         webviewView: vscode.WebviewView,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _context: vscode.WebviewViewResolveContext<unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _token: vscode.CancellationToken
     ): Promise<void> {
-        // const tosVersion = await vscode.commands.executeCommand(
-        //   'cody.get-accepted-tos-version'
-        // );
+        // const tosVersion = await vscode.commands.executeCommand('cody.get-accepted-tos-version')
 
         this.webview = webviewView.webview
         const extensionPath = vscode.Uri.parse(this.extensionPath)
@@ -120,37 +114,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
 
-        webviewView.webview.html = decoded.replaceAll('/kodj', `${resources.toString()}/`)
+        webviewView.webview.html = decoded.replaceAll('/kodj/', `${resources.toString()}/`)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                this.sendTranscript()
+                await this.sendTranscript()
                 break
             case 'reset':
-                this.onResetChat()
+                await this.onResetChat()
                 break
             case 'submit':
-                this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text)
                 break
             case 'executeRecipe':
-                this.executeRecipe(message.recipe)
+                await this.executeRecipe(message.recipe)
                 break
             case 'feedback':
-                this.sendFeedback(message.feedback)
+                await this.sendFeedback(message.feedback)
                 break
             case 'acceptTOS':
-                this.acceptTOS(message.version)
+                await this.acceptTOS(message.version)
                 break
             case 'set-token':
                 await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.value)
                 break
             case 'settings':
-                vscode.workspace.getConfiguration('cody').update('serverEndpoint', message.serverURL)
-                this.serverUrl = message.value
+                await vscode.workspace.getConfiguration('cody').update('serverEndpoint', message.serverURL)
+                this.serverUrl = message.value as string
                 await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                this.accessToken = message.accessToken
+                this.accessToken = message.accessToken as string
                 if (this.accessToken && this.serverUrl) {
                     this.wsclient = this.makeWSChatClient()
                 }
@@ -160,21 +154,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 break
             case 'get-token':
                 const accessToken = await this.secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
-                webview.postMessage({
+
+                await webview?.postMessage({
                     type: 'auth',
                     value: accessToken || '',
                 })
-                if (accessToken) {
-                    this.wsclient = this.makeWSChatClient()
-                }
+                // if (accessToken) {
+                //     this.wsclient = this.makeWSChatClient()
+                // }
                 break
             default:
                 console.error('Invalid request type from Webview')
         }
     }
 
-    private async acceptTOS(version: number) {
-        vscode.commands.executeCommand('cody.accept-tos', version)
+    private async acceptTOS(version: number): Promise<void> {
+        await vscode.commands.executeCommand('cody.accept-tos', version)
     }
 
     private async sendFeedback(feedback: Feedback): Promise<void> {
@@ -206,17 +201,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
             onComplete: text => {
                 const botMessage = this.reformatBotMessage(text, responsePrefix)
-                this.logReceivedBotResponse(botMessage)
-                this.onBotMessageComplete(botMessage)
+
+                this.logReceivedBotResponse(botMessage).catch(error => console.error(error))
+                this.onBotMessageComplete(botMessage).catch(error => console.error(error))
             },
             onError: err => {
-                vscode.window.showErrorMessage(err)
+                // eslint-disable-next-line no-void
+                void vscode.window.showErrorMessage(err)
             },
         })
     }
 
-    private logReceivedBotResponse(response: string) {
-        this.webview?.postMessage({
+    private async logReceivedBotResponse(response: string): Promise<void> {
+        await this.webview?.postMessage({
             type: 'debug',
             message: `RESPONSE (${response.length} characters):\n${response}`,
         })
@@ -225,7 +222,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async logSendPrompt(promptMessages: Message[]): Promise<void> {
         const promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
         const debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
-        this.webview?.postMessage({ type: 'debug', message: debugMessage })
+        await this.webview?.postMessage({ type: 'debug', message: debugMessage })
     }
 
     private async closeConnectionInProgress(): Promise<void> {
@@ -242,10 +239,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.messageInProgress = null
         this.transcript = []
         this.prompt.reset()
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
-    private onNewMessageSubmitted(text: string): void {
+    private async onNewMessageSubmitted(text: string): Promise<void> {
         this.messageInProgress = {
             speaker: 'bot',
             displayText: '',
@@ -258,21 +255,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             timestamp: getShortTimestamp(),
         })
 
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         if (this.messageInProgress) {
             return
         }
-        this.onNewMessageSubmitted(text)
+        await this.onNewMessageSubmitted(text)
         const prompt = await this.prompt.addHumanMessage(text)
         await this.sendPrompt(prompt)
     }
 
-    async executeRecipe(recipeID: string): Promise<void> {
+    public async executeRecipe(recipeID: string): Promise<void> {
         if (this.messageInProgress) {
-            vscode.window.showErrorMessage(
+            await vscode.window.showErrorMessage(
                 'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
             )
         }
@@ -284,7 +281,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         const { display, prompt, botResponsePrefix } = messageInfo
 
-        this.showTab('ask')
+        await this.showTab('ask')
 
         this.messageInProgress = {
             speaker: 'bot',
@@ -300,12 +297,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }))
         )
 
-        this.webview &&
-            this.webview.postMessage({
-                type: 'transcripts',
-                messages: this.transcript,
-                messageInProgress: this.messageInProgress,
-            })
+        await this.webview?.postMessage({
+            type: 'transcripts',
+            messages: this.transcript,
+            messageInProgress: this.messageInProgress,
+        })
 
         return this.sendPrompt(prompt, botResponsePrefix)
     }
@@ -321,7 +317,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return fixOpenMarkdownCodeBlock(reformattedMessage)
     }
 
-    private onBotMessageChange(text: string): void {
+    private async onBotMessageChange(text: string): Promise<void> {
         this.messageInProgress = {
             speaker: 'bot',
             displayText: renderMarkdown(text),
@@ -329,10 +325,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextFiles: this.prompt.getLastContextFiles(),
         }
 
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
-    private onBotMessageComplete(text: string): void {
+    private async onBotMessageComplete(text: string): Promise<void> {
         this.messageInProgress = null
         this.closeConnectionInProgressPromise = null
         this.transcript.push({
@@ -344,22 +340,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         this.prompt.addBotMessage(text)
 
-        this.sendTranscript()
+        await this.sendTranscript()
 
-        this.webview &&
-            this.webview.postMessage({
-                type: 'transcripts',
-                messages: this.transcript,
-                messageInProgress: this.messageInProgress,
-            })
+        await this.webview?.postMessage({
+            type: 'transcripts',
+            messages: this.transcript,
+            messageInProgress: this.messageInProgress,
+        })
     }
 
-    private showTab(tab: string): void {
-        this.webview?.postMessage({ type: 'showTab', tab })
+    private async showTab(tab: string): Promise<void> {
+        await this.webview?.postMessage({ type: 'showTab', tab })
     }
 
-    private sendTranscript() {
-        this.webview?.postMessage({
+    private async sendTranscript(): Promise<void> {
+        await this.webview?.postMessage({
             type: 'transcript',
             messages: this.transcript,
             messageInProgress: this.messageInProgress,
@@ -374,6 +369,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     //     }
     //     return this.transcript;
     //   }
+
+    public getNonce(): string {
+        let text = ''
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length))
+        }
+        return text
+    }
 }
 
 function fixOpenMarkdownCodeBlock(text: string): string {
@@ -391,13 +395,4 @@ function padTimePart(timePart: number): string {
 function getShortTimestamp(): string {
     const date = new Date()
     return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
-}
-
-function getNonce() {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
-    return text
 }

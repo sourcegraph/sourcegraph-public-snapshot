@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import './App.css'
-import { Header, About, LoadingPage } from './About'
-import { Chat } from './Chat'
-import { vscodeAPI, MessageFromWebview } from './utils/vscodeAPI'
-import Login from './Login'
-import Recipes from './Recipes'
-import { NavBar } from './NavBar'
 import { ChatMessage } from '../commands/ChatViewProvider'
 
-function App() {
+import { Header, About, LoadingPage } from './About'
+import { Chat } from './Chat'
+import Login from './Login'
+import { NavBar } from './NavBar'
+import Recipes from './Recipes'
+import { vscodeAPI, MessageFromWebview } from './utils/vscodeAPI'
+
+function App(): JSX.Element {
     const devMode = false
     const [view, setView] = useState(10)
     const [token, setToken] = useState<string | null>(null)
-    const [isLoggedIn, setIsLoggedIn] = useState(devMode ? true : false)
+    const [isLoggedIn, setIsLoggedIn] = useState(!!devMode)
     const [endpoint, setEndpoint] = useState('https://cody.sgdev.org')
     const [userInput, setUserInput] = useState('')
     const [transcript, setTranscript] = useState<ChatMessage | null>(null)
