@@ -114,6 +114,10 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 			succeeded:          true,
 			numRequests:        2,
 		},
+		"no rate limit hit": {
+			succeeded:   true,
+			numRequests: 1,
+		},
 	}
 
 	for name, tt := range tests {
