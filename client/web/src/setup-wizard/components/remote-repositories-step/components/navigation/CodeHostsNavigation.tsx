@@ -4,7 +4,7 @@ import { QueryResult } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip } from '@sourcegraph/wildcard'
+import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
 import { CodeHost, GetCodeHostsResult, ExternalServiceKind } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
