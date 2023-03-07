@@ -204,15 +204,9 @@ nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
     visibility = ["//visibility:public"],  # must have public visibility
+    vet = True,
     deps = [
         "//dev/linters/bodyclose",
-        "@org_golang_x_tools//go/analysis/passes/asmdecl:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/assign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomic:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomicalign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/bools:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildssa:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildtag:go_default_library",
     ],
 )
 
