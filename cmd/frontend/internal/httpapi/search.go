@@ -214,7 +214,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
 		}
-		return revisionsForRepo[api.RepoID(repoID)], nil
+		return revisionsForRepo[repoID], nil
 	}
 
 	b := searchbackend.GetIndexOptions(
