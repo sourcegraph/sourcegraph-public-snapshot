@@ -20,6 +20,7 @@ export const INFER_JOBS_SCRIPT = gql`
         root
         indexer {
             key
+            imageName
             name
             url
         }
@@ -29,16 +30,11 @@ export const INFER_JOBS_SCRIPT = gql`
     }
 
     fragment AutoIndexLsifIndexStepsFields on IndexSteps {
-        setup {
-            key
-            command
-        }
         preIndex {
             ...AutoIndexLsifPreIndexFields
         }
         index {
-            indexerArgs
-            outfile
+            ...AutoIndexLsifIndexFields
         }
     }
 
@@ -46,5 +42,12 @@ export const INFER_JOBS_SCRIPT = gql`
         root
         image
         commands
+    }
+
+    fragment AutoIndexLsifIndexFields on IndexStep {
+        indexerArgs
+        outfile
+        commands
+        requestedEnvVars
     }
 `

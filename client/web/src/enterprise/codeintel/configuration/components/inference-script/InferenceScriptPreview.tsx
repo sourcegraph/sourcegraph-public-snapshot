@@ -43,6 +43,7 @@ import { RepositoryField } from '../../../../insights/components'
 import { GET_REPO_ID, INFER_JOBS_SCRIPT } from './backend'
 
 import styles from './InferenceScriptPreview.module.scss'
+import { InferenceForm } from './InferenceForm'
 
 interface InferenceScriptPreviewFormValues {
     repository: string
@@ -81,35 +82,38 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
 
     return (
         <div className={styles.container}>
-            {called && loading && <LoadingSpinner className="d-block mx-auto mt-3" />}
-            {called && error && <ErrorAlert error={error} />}
-            {!called && (
-                <Form className={styles.actionContainer} ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
-                    <Label id="preview-label">Run your script against a repository</Label>
-                    <div className="d-flex align-items-center">
-                        <Input
-                            as={RepositoryField}
-                            required={true}
-                            autoFocus={true}
-                            aria-label="Repository"
-                            placeholder="Example: github.com/sourcegraph/sourcegraph"
-                            {...getDefaultInputProps(repository)}
-                            className={styles.actionInput}
-                        />
+            <Form className={styles.actionContainer} ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
+                <Label id="preview-label">Run your script against a repository</Label>
+                <div className="d-flex align-items-center">
+                    <Input
+                        as={RepositoryField}
+                        required={true}
+                        autoFocus={true}
+                        aria-label="Repository"
+                        placeholder="Example: github.com/sourcegraph/sourcegraph"
+                        {...getDefaultInputProps(repository)}
+                        className={styles.actionInput}
+                    />
 
-                        <Button variant="success" type="submit">
-                            Preview results
-                        </Button>
-                    </div>
-                </Form>
-            )}
-            {/* // TODO: ul */}
-            {data && (
+                    <Button variant="success" type="submit">
+                        Preview results
+                    </Button>
+                </div>
+            </Form>
+            {loading ? (
+                <LoadingSpinner className="d-block mx-auto mt-3" />
+            ) : error ? (
+                <ErrorAlert error={error} />
+            ) : data ? (
                 <>
-                    {data.inferAutoIndexJobsForRepo.map((job, index) => (
+                    {/* // TODO: ul */}
+                    <InferenceForm jobs={data.inferAutoIndexJobsForRepo} readOnly={false} />
+                    {/* {data.inferAutoIndexJobsForRepo.map((job, index) => (
                         <IndexJobNode key={job.root} node={job} jobNumber={index + 1} />
-                    ))}
+                    ))} */}
                 </>
+            ) : (
+                <></>
             )}
         </div>
     )
@@ -124,16 +128,12 @@ const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ node, jobNum
     // TODO: Check that '' === '/'
     const root = node.root === '' ? '/' : node.root
 
-    const indexer = node.indexer ? node.indexer.name : ''
+    const indexer = node.indexer?.imageName ? node.indexer.imageName : ''
     const indexerArgs = node.steps.index.indexerArgs
     const outfile = node.steps.index.outfile
     const steps = node.steps.preIndex
-
-    // TODO: No localSteps?
-    // const localSteps = node.steps.setup
-
-    // TODO: No requestedEnvVars?
-    // const requestedEnvVars = node.steps.setup
+    const localSteps = node.steps.index.commands
+    const requestedEnvVars = node.steps.index.requestedEnvVars ?? []
 
     return (
         <Container className={styles.job}>
@@ -145,7 +145,7 @@ const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ node, jobNum
                 <IndexJobLabel label="Indexer">
                     <CodeMirrorCommandInput value={indexer} disabled={true} className={styles.jobInput} />
                 </IndexJobLabel>
-                <IndexJobLabel label="Indexer arg">
+                <IndexJobLabel label="Indexer args">
                     <div className={styles.jobCommandContainer}>
                         {indexerArgs.map((arg, index) => (
                             <CodeMirrorCommandInput
@@ -161,11 +161,47 @@ const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ node, jobNum
                         </Button>
                     </div>
                 </IndexJobLabel>
+                <IndexJobLabel label="Requested env vars">
+                    {requestedEnvVars.length > 0 && (
+                        <div className={styles.jobCommandContainer}>
+                            {requestedEnvVars.map((envVar, index) => (
+                                <CodeMirrorCommandInput
+                                    key={index}
+                                    value={envVar}
+                                    disabled={true}
+                                    className={styles.jobInput}
+                                />
+                            ))}
+                            <Button variant="secondary" className="mt-2" size="sm">
+                                <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                                Add env var
+                            </Button>
+                        </div>
+                    )}
+                </IndexJobLabel>
+                <IndexJobLabel label="Local steps">
+                    {localSteps.length > 0 && (
+                        <div className={styles.jobCommandContainer}>
+                            {localSteps.map((localStep, index) => (
+                                <CodeMirrorCommandInput
+                                    key={index}
+                                    value={localStep}
+                                    disabled={true}
+                                    className={styles.jobInput}
+                                />
+                            ))}
+                            <Button variant="secondary" className="mt-2" size="sm">
+                                <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                                Add local step
+                            </Button>
+                        </div>
+                    )}
+                </IndexJobLabel>
                 <IndexJobLabel label="Outfile">
                     {outfile ? (
                         <Input value={outfile} readOnly={true} className={styles.jobInput} />
                     ) : (
-                        <Button variant="secondary" className="mt-2" size="sm" className={styles.jobInputAction}>
+                        <Button variant="secondary" size="sm" className={styles.jobInputAction}>
                             <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
                             Add outflile
                         </Button>

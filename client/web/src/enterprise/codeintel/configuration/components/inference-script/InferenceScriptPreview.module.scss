@@ -5,16 +5,13 @@
 .actionContainer {
     height: 100%;
     width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .actionInput {
     margin-right: 0.5rem;
     width: 25rem;
+    flex: 1;
 }
 
 // IndexJob
@@ -32,11 +29,11 @@
 .job-step-container {
     padding: 0 1rem;
     margin-top: 1rem;
-    border: 2px solid var(--border-color);
+    border: 3px solid var(--subtle-bg);
 }
 .job-step {
     padding: 1rem 0;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 3px solid var(--subtle-bg);
 
     &:last-of-type {
         border-bottom: none;
@@ -101,5 +98,5 @@
 .job-command-container {
     grid-area: value;
     padding: 1rem;
-    border: 2px solid var(--border-color);
+    border: 3px solid var(--subtle-bg);
 }
