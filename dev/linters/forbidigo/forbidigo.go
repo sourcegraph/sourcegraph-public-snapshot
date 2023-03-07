@@ -1,7 +1,6 @@
 package forbidigo
 
 import (
-	"fmt"
 	"go/ast"
 
 	"github.com/ashanbrown/forbidigo/forbidigo"
@@ -41,7 +40,7 @@ func runAnalysis(pass *analysis.Pass) (interface{}, error) {
 		forbidigo.OptionAnalyzeTypes(config.AnalyzeTypes),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to configure linter: %w", err)
+		return nil, err
 	}
 	nodes := make([]ast.Node, 0, len(pass.Files))
 	for _, f := range pass.Files {
