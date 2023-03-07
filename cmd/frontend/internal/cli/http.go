@@ -169,8 +169,7 @@ func newInternalHTTPHandler(
 				internalRouter,
 			),
 		),
-	),
-	)
+	))
 
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
