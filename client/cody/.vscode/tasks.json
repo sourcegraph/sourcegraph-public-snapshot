@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "tsc: build",
+			"type": "shell",
+			"command": "node_modules/.bin/tsc",
+			"args": ["--build", "--watch"],
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"runOptions": { "runOn": "folderOpen" }
+		},
+		{
+			"label": "vscode-codegen: bundle",
+			"type": "npm",
+			"script": "bundle",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"label": "vscode-codegen: test-deps",
+			"type": "npm",
+			"script": "test-deps",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
+		}
+	]
+}
