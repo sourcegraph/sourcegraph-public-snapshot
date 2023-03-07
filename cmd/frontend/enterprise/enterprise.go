@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,28 +47,14 @@ type Services struct {
 	// Handler for completions stream.
 	NewCompletionsStreamHandler NewCompletionsStreamHandler
 
-	PermissionsGitHubWebhook    webhooks.Registerer
-	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
-	RankingService              RankingService
-	NewExecutorProxyHandler     NewExecutorProxyHandler
-	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
-	NewComputeStreamHandler     NewComputeStreamHandler
-	EnterpriseSearchJobs        jobutil.EnterpriseJobs
-	AuthzResolver               graphqlbackend.AuthzResolver
-	BatchChangesResolver        graphqlbackend.BatchChangesResolver
-	CodeIntelResolver           graphqlbackend.CodeIntelResolver
-	InsightsResolver            graphqlbackend.InsightsResolver
-	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
-	LicenseResolver             graphqlbackend.LicenseResolver
-	DotcomResolver              graphqlbackend.DotcomRootResolver
-	SearchContextsResolver      graphqlbackend.SearchContextsResolver
-	NotebooksResolver           graphqlbackend.NotebooksResolver
-	ComputeResolver             graphqlbackend.ComputeResolver
-	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
-	WebhooksResolver            graphqlbackend.WebhooksResolver
-	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
-	RBACResolver                graphqlbackend.RBACResolver
-	OwnResolver                 graphqlbackend.OwnResolver
+	PermissionsGitHubWebhook  webhooks.Registerer
+	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
+	RankingService            RankingService
+	NewExecutorProxyHandler   NewExecutorProxyHandler
+	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
+	NewComputeStreamHandler   NewComputeStreamHandler
+	EnterpriseSearchJobs      jobutil.EnterpriseJobs
+	graphqlbackend.OptionalResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -78,7 +65,7 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 type RankingService interface {
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error)
 }
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
@@ -223,6 +210,6 @@ func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoNa
 	return nil, nil
 }
 
-func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
-	return nil, nil
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
+	return types.RepoPathRanks{}, nil
 }

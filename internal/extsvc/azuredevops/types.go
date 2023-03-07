@@ -28,6 +28,17 @@ var (
 	PullRequestMergeStrategyNoFastForward PullRequestMergeStrategy = "notFastForward"
 )
 
+type Org struct {
+	ID   string `json:"accountId"`
+	URI  string `json:"accountUri"`
+	Name string `json:"accountName"`
+}
+
+type ListAuthorizedUserOrgsResponse struct {
+	Count int   `json:"count"`
+	Value []Org `json:"value"`
+}
+
 type OrgProjectRepoArgs struct {
 	Org          string
 	Project      string
@@ -135,16 +146,6 @@ type PullRequest struct {
 type PullRequestCommit struct {
 	CommitID string `json:"commitId"`
 	URL      string `json:"url"`
-}
-
-type PullRequestReviewer struct {
-	ID          string `json:"id"`
-	ReviewerURL string `json:"reviewerUrl"`
-	Vote        int    `json:"vote"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
-	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
 }
 
 type PullRequestUpdateInput struct {

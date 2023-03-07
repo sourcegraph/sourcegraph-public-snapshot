@@ -341,7 +341,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
 
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
-    }, [editorRef])
+    }, [])
 
     const toggleHistoryMode = useCallback(() => {
         if (editorRef.current) {
@@ -369,7 +369,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         {mode && <span className="ml-1">{mode}:</span>}
                     </div>
                     <div ref={editorContainerRef} className="d-contents" />
-                    {children}
+                    {!mode && children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
             </div>

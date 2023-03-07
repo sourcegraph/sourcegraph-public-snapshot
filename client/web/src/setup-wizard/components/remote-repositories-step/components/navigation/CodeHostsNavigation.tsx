@@ -98,11 +98,6 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     </Tooltip>
                 </li>
             ))}
-            <li className={styles.itemWithMoreLink}>
-                <Link to="/setup/remote-repositories" className={classNames(styles.moreLink)}>
-                    <Icon svgPath={mdiPlus} aria-hidden={true} /> Add more code hosts
-                </Link>
-            </li>
         </ul>
     )
 }

@@ -222,5 +222,9 @@ func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 		ID:         strconv.FormatInt(int64(user.ID), 10),
 		ExternalID: getOptionalExternalID(attributes),
 		Attributes: attributes,
+		Meta: scim.Meta{
+			Created:      &user.CreatedAt,
+			LastModified: &user.UpdatedAt,
+		},
 	}
 }

@@ -131,6 +131,11 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeAzureDevOps)
 
+	allowedOrgs := map[string]struct{}{}
+	for _, org := range azureProvider.AllowOrgs {
+		allowedOrgs[org] = struct{}{}
+	}
+
 	sessionHandler := oauth.SessionIssuer(
 		logger,
 		db,
@@ -138,6 +143,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 			db:          db,
 			CodeHost:    codeHost,
 			clientID:    azureProvider.ClientID,
+			allowOrgs:   allowedOrgs,
 			allowSignup: azureProvider.AllowSignup,
 		},
 		sessionKey,
@@ -179,7 +185,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		},
 		SourceConfig: sourceCfg,
 		StateConfig:  oauth.GetStateConfig(stateCookie),
-		ServiceID:    parsedURL.String(),
+		ServiceID:    azuredevops.AzureDevOpsAPIURL,
 		ServiceType:  extsvc.TypeAzureDevOps,
 		Login:        loginHandler,
 		Callback: func(config oauth2.Config) http.Handler {

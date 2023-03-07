@@ -7,7 +7,9 @@ import (
 )
 
 type Metrics struct {
-	numTodo prometheus.Counter
+	numReferencesScanned       prometheus.Counter
+	numVulnerabilityMatches    prometheus.Counter
+	numVulnerabilitiesInserted prometheus.Counter
 }
 
 func NewMetrics(observationCtx *observation.Context) *Metrics {
@@ -21,12 +23,22 @@ func NewMetrics(observationCtx *observation.Context) *Metrics {
 		return counter
 	}
 
-	numTodo := counter(
-		"src_codeintel_sentinel_todo_total",
-		"TODO",
+	numVulnerabilitiesInserted := counter(
+		"src_codeintel_sentinel_num_vulnerabilities_inserted_total",
+		"The number of vulnerability records inserted into Postgres.",
+	)
+	numReferencesScanned := counter(
+		"src_codeintel_sentinel_num_references_scanned_total",
+		"The total number of references scanned for vulnerabilities.",
+	)
+	numVulnerabilityMatches := counter(
+		"src_codeintel_sentinel_num_vulnerability_matches_total",
+		"The total number of vulnerability matches found.",
 	)
 
 	return &Metrics{
-		numTodo: numTodo,
+		numReferencesScanned:       numReferencesScanned,
+		numVulnerabilityMatches:    numVulnerabilityMatches,
+		numVulnerabilitiesInserted: numVulnerabilitiesInserted,
 	}
 }

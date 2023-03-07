@@ -29,11 +29,11 @@ func TestVulnerabilityMatchByID(t *testing.T) {
 
 	setupReferences(t, db)
 
-	if err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
+	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	if err := store.ScanMatches(ctx); err != nil {
+	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
@@ -64,11 +64,11 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 
 	setupReferences(t, db)
 
-	if err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
+	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	if err := store.ScanMatches(ctx); err != nil {
+	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 

@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useRef, useMemo } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -41,8 +41,8 @@ export interface TreeRef {
     focus: () => void
 }
 
-function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<TreeRef>): React.ReactElement {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, ...rest } = props
+function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<TreeRef>): JSX.Element {
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, expandedIds, ...rest } = props
 
     const treeViewRef = useRef<HTMLUListElement>(null)
     useImperativeHandle(
@@ -118,13 +118,21 @@ function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<
                         marginLeft: getMarginLeft(level, isBranch),
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
+                    data-testid="tree-node"
                     data-tree-node-id={element.id}
+                    data-tree-active={isSelected}
+                    data-tree-selected={isSelected}
+                    data-tree-expanded={isExpanded}
                     className={classNames(styles.node, isSelected && styles.selected, nodeClassName)}
                 >
                     {isBranch ? (
                         // We already handle accessibility events for expansion in the <TreeView />
                         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                        <div className={classNames(styles.icon, styles.collapseIcon)} onClick={onClick}>
+                        <div
+                            className={classNames(styles.icon, styles.collapseIcon)}
+                            data-testid="tree-expand-icon"
+                            onClick={onClick}
+                        >
                             {isExpanded &&
                             element.children.length === 0 &&
                             (loadedIds ? !loadedIds.has(element.id) : true) ? (
@@ -155,10 +163,21 @@ function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<
         [loadedIds, nodeClassName, renderNode]
     )
 
+    // <TreeView /> quirk:
+    //
+    // The root node (id = 0) is not a valid target to be expanded. If it is set accidentally, it
+    // can leave the tree in an invalid state where no tabIndex={0} item is rendered (because the
+    // tabIndex is assumed it has to be on the root node).
+    const validExpandedIds = useMemo(
+        () => (expandedIds ? expandedIds.filter(id => id !== 0) : expandedIds),
+        [expandedIds]
+    )
+
     return (
         <TreeView
             {...rest}
             ref={treeViewRef}
+            expandedIds={validExpandedIds}
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}
@@ -172,7 +191,7 @@ function TreeComponent<N extends TreeNode>(props: TreeProps<N>, ref?: React.Ref<
 // Workaround to create a generic component as output of React.forwardRef: https://stackoverflow.com/a/58473012
 export const Tree = forwardRef(TreeComponent) as <N extends TreeNode>(
     p: TreeProps<N> & { ref?: React.Ref<TreeRef> }
-) => React.ReactElement
+) => JSX.Element
 
 function getMarginLeft(level: number, isBranch: boolean): string {
     if (isBranch) {

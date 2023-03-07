@@ -20,6 +20,7 @@ export type FeatureFlagName =
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
     | 'cody'
+    | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
 
 interface OrgFlagOverride {

@@ -211,7 +211,7 @@ var scanVulnerabilitiesAndCount = func(rows basestore.Rows, queryErr error) ([]s
 	return flattenVulnerabilities(values), totalCount, nil
 }
 
-func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (err error) {
+func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error) {
 	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -219,15 +219,15 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := batch.WithInserter(
@@ -278,7 +278,7 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 
 			return nil
 		}); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := batch.WithInserter(
@@ -322,20 +322,21 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 
 			return nil
 		}); err != nil {
-		return err
+		return 0, err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)); err != nil {
-		return err
+	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)))
+	if err != nil {
+		return 0, err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedPackagesUpdateQuery)); err != nil {
-		return err
+		return 0, err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedSymbolsUpdateQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return count, nil
 }
 
 const insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery = `
@@ -372,42 +373,46 @@ CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
 `
 
 const insertVulnerabilitiesUpdateQuery = `
-INSERT INTO vulnerabilities (
-	source_id,
-	summary,
-	details,
-	cpes,
-	cwes,
-	aliases,
-	related,
-	data_source,
-	urls,
-	severity,
-	cvss_vector,
-	cvss_score,
-	published_at,
-	modified_at,
-	withdrawn_at
+WITH ins AS (
+	INSERT INTO vulnerabilities (
+		source_id,
+		summary,
+		details,
+		cpes,
+		cwes,
+		aliases,
+		related,
+		data_source,
+		urls,
+		severity,
+		cvss_vector,
+		cvss_score,
+		published_at,
+		modified_at,
+		withdrawn_at
+	)
+	SELECT
+		source_id,
+		summary,
+		details,
+		cpes,
+		cwes,
+		aliases,
+		related,
+		data_source,
+		urls,
+		severity,
+		cvss_vector,
+		cvss_score,
+		published_at,
+		modified_at,
+		withdrawn_at
+	FROM t_vulnerabilities
+	-- TODO - we'd prefer to update rather than keep first write
+	ON CONFLICT DO NOTHING
+	RETURNING 1
 )
-SELECT
-	source_id,
-	summary,
-	details,
-	cpes,
-	cwes,
-	aliases,
-	related,
-	data_source,
-	urls,
-	severity,
-	cvss_vector,
-	cvss_score,
-	published_at,
-	modified_at,
-	withdrawn_at
-FROM t_vulnerabilities
--- TODO - we'd prefer to update rather than keep first write
-ON CONFLICT DO NOTHING
+SELECT COUNT(*) FROM ins
 `
 
 const insertVulnerabilitiesAffectedPackagesUpdateQuery = `

@@ -219,6 +219,11 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
 			wantJobs: jobs[2:3],
 		},
+		{
+			name:     "User name search with pagination",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			wantJobs: jobs[2:3],
+		},
 	}
 
 	for _, tt := range listTests {
@@ -652,6 +657,16 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
 	require.Equal(t, 10, count)
+
+	// Counting with user search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser, Query: "hors"})
+	require.NoError(t, err)
+	require.Equal(t, 20, count)
+
+	// Counting with repo search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo, Query: "no :("})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 }
 
 // createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason

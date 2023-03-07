@@ -171,7 +171,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests,
+			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
 
@@ -190,8 +190,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-			// addVsceIntegrationTests,
+			addVsceTests,
 		)
 
 	case runtype.AppSnapshotRelease:

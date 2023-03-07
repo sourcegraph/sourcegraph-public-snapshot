@@ -2,6 +2,7 @@ import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
 import { FetchOwnershipResult } from '../../../graphql-operations'
@@ -89,7 +90,11 @@ export const Default: Story = () => (
     <WebStory>
         {() => (
             <MockedProvider mocks={[mockResponse]}>
-                <FileOwnershipPanel repoID="github.com/sourcegraph/sourcegraph" filePath="README.md" />
+                <FileOwnershipPanel
+                    repoID="github.com/sourcegraph/sourcegraph"
+                    filePath="README.md"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
             </MockedProvider>
         )}
     </WebStory>

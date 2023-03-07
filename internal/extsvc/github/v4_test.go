@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -849,6 +851,10 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
 		Visibility:       "internal",
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+			{Topic: Topic{Name: "topic1"}},
+			{Topic: Topic{Name: "topic2"}},
+		}},
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -888,7 +894,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		"nodes": [
+		  {
+		    "topic": {
+			  "name": "topic1"
+			}
+		  },
+		  {
+			"topic": {
+			  "name": "topic2"
+			}
+		  }
+	    ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -924,7 +944,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		  "nodes": [
+			  {
+				  "topic": {
+					  "name": "topic1"
+				  }
+			  },
+			  {
+				  "topic": {
+					  "name": "topic2"
+				  }
+			  }
+		  ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": null
   },
@@ -1000,8 +1034,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
 			sort.Slice(repos, newSortFunc(repos))
 
-			if !repoListsAreEqual(repos, tc.wantRepos) {
-				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			if diff := cmp.Diff(repos, tc.wantRepos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("got repositories:\n%s", diff)
 			}
 		})
 	}

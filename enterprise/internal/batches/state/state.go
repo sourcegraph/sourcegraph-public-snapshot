@@ -117,7 +117,6 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 	case *bbcs.AnnotatedPullRequest:
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
-		// TODO: @varsanojidan Not implemmented yet : return computeAzureDevOpsBuildState(c.UpdatedAt, m, events)
 		return computeAzureDevOpsBuildState(m)
 	}
 
@@ -266,8 +265,6 @@ func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.
 		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsBuildState(status.State)
 	}
 
-	// TODO: @varsanojidan handle events.
-
 	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
 	for _, v := range stateMap {
 		states = append(states, v)
@@ -393,16 +390,16 @@ func combineCheckStates(states []btypes.ChangesetCheckState) btypes.ChangesetChe
 
 	switch {
 	case stateMap[btypes.ChangesetCheckStateUnknown]:
-		// If are pending, overall is Pending
+		// If there are unknown states, overall is Pending.
 		return btypes.ChangesetCheckStateUnknown
 	case stateMap[btypes.ChangesetCheckStatePending]:
-		// If are pending, overall is Pending
+		// If there are pending states, overall is Pending.
 		return btypes.ChangesetCheckStatePending
 	case stateMap[btypes.ChangesetCheckStateFailed]:
-		// If no pending, but have errors then overall is Failed
+		// If there are no pending states, but we have errors then overall is Failed.
 		return btypes.ChangesetCheckStateFailed
 	case stateMap[btypes.ChangesetCheckStatePassed]:
-		// No pending or errors then overall is Passed
+		// No pending or error states then overall is Passed.
 		return btypes.ChangesetCheckStatePassed
 	}
 
@@ -647,7 +644,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			switch reviewer.Vote {
 			case 10:
 				states[btypes.ChangesetReviewStateApproved] = true
-			case 5, -5:
+			case 5, -5, -10:
 				states[btypes.ChangesetReviewStateChangesRequested] = true
 			default:
 				states[btypes.ChangesetReviewStatePending] = true
