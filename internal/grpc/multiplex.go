@@ -17,14 +17,9 @@ import (
 // the provided gRPC server and HTTP server depending on whether the header
 // `content-type: application/grpc` is set.
 func NewMultiplexedServer(addr string, grpcServer *grpc.Server, httpServer *http.Server) *MultiplexedServer {
-	ctx, cancel := context.WithCancel(context.Background())
-
 	return &MultiplexedServer{
-		ctx: ctx,
-
-		shutdownCMuxListener: cancel,
-
-		backgroundTasksDone: make(chan struct{}),
+		shutdownCMuxListener: make(chan struct{}),
+		backgroundTasksDone:  make(chan struct{}),
 
 		addr:       addr,
 		httpServer: httpServer,
@@ -33,11 +28,8 @@ func NewMultiplexedServer(addr string, grpcServer *grpc.Server, httpServer *http
 }
 
 type MultiplexedServer struct {
-	ctx context.Context
-
-	shutdownCMuxListener func()
-
-	backgroundTasksDone chan struct{}
+	shutdownCMuxListener chan struct{}
+	backgroundTasksDone  chan struct{}
 
 	addr       string
 	httpServer *http.Server
@@ -83,7 +75,7 @@ func (s *MultiplexedServer) Serve(l net.Listener) error {
 	})
 
 	p.Go(func() error {
-		<-s.ctx.Done()
+		<-s.shutdownCMuxListener
 		m.Close()
 		return nil
 	})
@@ -105,7 +97,7 @@ func (s *MultiplexedServer) Serve(l net.Listener) error {
 
 // Shutdown gracefully shuts down the server without interrupting any
 // active connections.
-
+//
 // Shutdown works by first by preventing new connections from being accepted
 // and then waiting for all existing gRPC RPCs to complete and all HTTP
 // connections to become idle. Finally, the underlying listener is closed.
@@ -130,7 +122,7 @@ func (s *MultiplexedServer) doShutdown(ctx context.Context) error {
 	httpErr := s.httpServer.Shutdown(ctx)
 
 	// Then, close the underlying listener
-	s.shutdownCMuxListener()
+	close(s.shutdownCMuxListener)
 
 	err := errors.Append(grpcErr, httpErr)
 	if err != nil {
