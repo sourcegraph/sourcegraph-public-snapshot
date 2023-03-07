@@ -4,6 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 rust_library(
     name = "sg-syntax",
     srcs = glob(["src/*.rs"]),
+    compile_data = glob(["queries/**"], allow_empty=False),
     aliases = aliases(),
     deps = all_crate_deps(
         normal = True,
@@ -28,6 +29,7 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    size = "small",
     env = {"RUST_BACKTRACE": "1"},
 )
 

@@ -518,14 +518,24 @@ mod test {
         assert_eq!(Document::default(), output);
     }
 
-
+    // Same as in src/sg_treesitter.rs
+    fn snapshot_test_init() {
+        if std::env::var("BAZEL_TEST").is_ok() {
+            std::env::set_var("INSTA_WORKSPACE_ROOT", ".");
+        }
+    }
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
+        snapshot_test_init();
         let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
-        let dir = read_dir("./src/snapshots/syntect_files/")?;
+        let crate_root: std::path::PathBuf =
+            std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let input_dir = crate_root.join("src").join("snapshots").join("syntect_files");
+
+        let dir = read_dir(&input_dir)?;
 
         let filter = env::args()
             .last()
@@ -561,9 +571,10 @@ mod test {
             match std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath
-                        .to_str()
+                        .strip_prefix(&input_dir)
                         .unwrap()
-                        .replace("/src/snapshots/syntect_files", ""),
+                        .to_str()
+                        .unwrap(),
                     dump_document(&document, &contents)
                 );
             }) {
