@@ -80,11 +80,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Use new ranking if the feature flag is enabled and the user has not explicitly disabled it
     const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental')
-    useEffect(() => {
-        if (rankingEnabled && rankingToggleEnabled === undefined) {
-            setRankingToggleEnabled(rankingEnabled)
-        }
-    }, [rankingEnabled, rankingToggleEnabled, setRankingToggleEnabled])
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
