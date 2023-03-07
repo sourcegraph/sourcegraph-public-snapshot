@@ -5,11 +5,12 @@ import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
+import { DateTime } from 'luxon'
 import { readFile, writeFile } from 'mz/fs'
 import open from 'open'
 
 import { readLine, cacheFolder } from './util'
-import { DateTime } from 'luxon'
+
 
 export interface Installed {
     client_id?: string
