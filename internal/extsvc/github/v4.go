@@ -51,11 +51,17 @@ type V4Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
+	// externalRateLimiter is the API rate limit monitor.
+	externalRateLimiter *ratelimit.Monitor
 
-	// rateLimit is our self imposed rate limiter.
-	rateLimit *ratelimit.InstrumentedLimiter
+	// internalRateLimiter is our self imposed rate limiter.
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+
+	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
+	waitForRateLimit bool
+
+	// numRateLimitRetries determines how many times we retry requests due to rate limits
+	numRateLimitRetries int
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -92,14 +98,14 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:              log.Scoped("github.v4", "github v4 client"),
-		urn:              urn,
-		apiURL:           apiURL,
-		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		auth:             a,
-		httpClient:       cli,
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
+		log:                 log.Scoped("github.v4", "github v4 client"),
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
 	}
 }
 
@@ -110,9 +116,9 @@ func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
 	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *V4Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]any, result any) (err error) {
@@ -151,14 +157,14 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "estimating graphql cost")
 	}
 
-	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
+	if err := c.internalRateLimiter.WaitN(ctx, cost); err != nil {
 		return errors.Wrap(err, "rate limit")
 	}
 
 	// Wait for the rate limit, or return if context has been canceled.
-	timeutil.SleepWithContext(ctx, c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+	timeutil.SleepWithContext(ctx, c.externalRateLimiter.RecommendedWaitForBackgroundOp(cost))
 
-	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
+	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 
