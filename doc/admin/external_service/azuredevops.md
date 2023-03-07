@@ -6,7 +6,7 @@ To connect Azure DevOps to Sourcegraph:
 
 1. Go to **Site admin > Manage code hosts > Add repositories**.
 2. Select **Azure DevOps**.
-3. Next you will have to provide a [configuration](#configuration) for the Gerrit code host connection. Here is an example configuration:
+3. Next you will have to provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
 ```json
 {
   "url": "https://dev.azure.com/",
