@@ -24,8 +24,7 @@ func NewMultiplexedServer(addr string, grpcServer *grpc.Server, httpServer *http
 
 		shutdownCMuxListener: cancel,
 
-		backgroundTasksDone:  make(chan struct{}),
-		serverShutdownCalled: make(chan struct{}),
+		backgroundTasksDone: make(chan struct{}),
 
 		addr:       addr,
 		httpServer: httpServer,
@@ -38,8 +37,7 @@ type MultiplexedServer struct {
 
 	shutdownCMuxListener func()
 
-	backgroundTasksDone  chan struct{}
-	serverShutdownCalled chan struct{}
+	backgroundTasksDone chan struct{}
 
 	addr       string
 	httpServer *http.Server
@@ -72,58 +70,16 @@ func (s *MultiplexedServer) Serve(l net.Listener) error {
 
 	p := pool.New().WithErrors()
 
-	// possibleShutdownErrors are errors that can possibly be returned from any of the
-	// underlying server's Serve() when they are torn down. If someone explicitly calls MultiplexedServer.Shutdown(),
-	// we avoid returning these errors from Serve() itself to avoid confusion.
-	possibleShutdownErrors := []error{
-		net.ErrClosed,          // returned when someone tries to write to a closed connection
-		cmux.ErrListenerClosed, // returned by the cmux listener when the underlying listener is closed
-		cmux.ErrServerClosed,   // returned by the cmux listener when the server itself is closed
-	}
-
 	p.Go(func() error {
-		err := s.grpcServer.Serve(grpcL)
-
-		select {
-		case <-s.serverShutdownCalled:
-			if errors.IsAny(err, possibleShutdownErrors...) {
-				return nil
-			}
-
-			return err
-		default:
-			return err
-		}
+		return s.grpcServer.Serve(grpcL)
 	})
 
 	p.Go(func() error {
-		err := s.httpServer.Serve(httpL)
-
-		select {
-		case <-s.serverShutdownCalled:
-			if errors.IsAny(err, possibleShutdownErrors...) {
-				return nil
-			}
-
-			return err
-		default:
-			return err
-		}
+		return s.httpServer.Serve(httpL)
 	})
 
 	p.Go(func() error {
-		err := m.Serve()
-
-		select {
-		case <-s.serverShutdownCalled:
-			if errors.IsAny(err, possibleShutdownErrors...) {
-				return nil
-			}
-
-			return err
-		default:
-			return err
-		}
+		return m.Serve()
 	})
 
 	p.Go(func() error {
@@ -132,7 +88,19 @@ func (s *MultiplexedServer) Serve(l net.Listener) error {
 		return nil
 	})
 
-	return p.Wait()
+	err := p.Wait()
+
+	// possibleShutdownErrors are errors that can possibly be returned from any of the
+	// underlying server's Serve() when they are torn down. If someone explicitly calls MultiplexedServer.Shutdown(),
+	// we avoid returning these errors from Serve() itself to avoid confusion.
+	possibleShutdownErrors := []error{
+		net.ErrClosed,          // returned when someone tries to write to a closed connection
+		cmux.ErrListenerClosed, // returned by the cmux listener when the underlying listener is closed
+		cmux.ErrServerClosed,   // returned by the cmux listener when the server itself is closed
+	}
+	err = errors.Ignore(err, errors.IsAnyPred(possibleShutdownErrors...))
+
+	return err
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
@@ -157,16 +125,15 @@ func (s *MultiplexedServer) Shutdown(ctx context.Context) error {
 }
 
 func (s *MultiplexedServer) doShutdown(ctx context.Context) error {
-	close(s.serverShutdownCalled) // signal that the server has been shutdown
-
 	// First, shutdown the underlying gRPC and HTTP servers
-	s.grpcServer.GracefulStop()
+	grpcErr := ShutdownGRPCServer(ctx, s.grpcServer)
 	httpErr := s.httpServer.Shutdown(ctx)
 
 	// Then, close the underlying listener
 	s.shutdownCMuxListener()
 
-	if httpErr != nil {
+	err := errors.Append(grpcErr, httpErr)
+	if err != nil {
 		return httpErr
 	}
 
@@ -180,6 +147,24 @@ func (s *MultiplexedServer) doShutdown(ctx context.Context) error {
 
 func (s *MultiplexedServer) AsBackgroundGoroutine() *BackgroundServer {
 	return &BackgroundServer{s}
+}
+
+// ShutdownGRPCServer tries to stop the gRPC server gracefully, but if the
+// context is canceled before that happens, it returns early with the context error.
+func ShutdownGRPCServer(ctx context.Context, grpcServer *grpc.Server) error {
+	stoppedGracefully := make(chan struct{})
+	go func() {
+		defer close(stoppedGracefully)
+		grpcServer.GracefulStop()
+	}()
+
+	select {
+	case <-stoppedGracefully:
+		return nil
+	case <-ctx.Done():
+		grpcServer.Stop()
+		return ctx.Err()
+	}
 }
 
 // BackgroundServer is an implementation of goroutine.BackgroundGoroutine

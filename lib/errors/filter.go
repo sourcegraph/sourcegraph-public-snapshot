@@ -49,6 +49,13 @@ func IsPred(target error) ErrorPredicate {
 	}
 }
 
+// IsAnyPred returns an ErrorPredicate that returns true for errors that uwrap to any of the target errors
+func IsAnyPred(targets ...error) ErrorPredicate {
+	return func(err error) bool {
+		return IsAny(err, targets...)
+	}
+}
+
 func IsContextCanceled(err error) bool {
 	return Is(err, context.Canceled)
 }
