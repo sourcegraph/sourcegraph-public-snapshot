@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
@@ -14,7 +13,8 @@ import (
 )
 
 type packagesFilterApplicatorJob struct {
-	store store.Store
+	store      store.Store
+	operations *operations
 }
 
 func NewPackagesFilterApplicator(
@@ -22,7 +22,8 @@ func NewPackagesFilterApplicator(
 	db database.DB,
 ) goroutine.BackgroundRoutine {
 	job := packagesFilterApplicatorJob{
-		store: store.New(obsctx, db),
+		store:      store.New(obsctx, db),
+		operations: newOperations(obsctx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(
@@ -33,7 +34,8 @@ func NewPackagesFilterApplicator(
 }
 
 func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
-	var pkgsUpdated, versionsUpdated int
+	ctx, _, endObservation := j.operations.packagesFilterApplicator.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	if needsFiltering, err := j.store.ShouldRefilterPackageRepoRefs(ctx); !needsFiltering || err != nil {
 		// returns nil if err is nil, so its fine
@@ -50,7 +52,11 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 		return err
 	}
 
-	startTime := time.Now()
+	var (
+		totalPkgsUpdated     int
+		totalVersionsUpdated int
+		startTime            = time.Now()
+	)
 
 	for lastID := 0; ; {
 		pkgs, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
@@ -76,12 +82,16 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 			pkgs[i] = pkg
 		}
 
-		pkgsUpdated, versionsUpdated, err = j.store.UpdateAllBlockedStatuses(ctx, pkgs, startTime)
+		pkgsUpdated, versionsUpdated, err := j.store.UpdateAllBlockedStatuses(ctx, pkgs, startTime)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to update blocked statuses")
 		}
+		totalPkgsUpdated += pkgsUpdated
+		totalVersionsUpdated += versionsUpdated
 	}
 
-	fmt.Println("DOING THE THING", pkgsUpdated, versionsUpdated, err)
+	j.operations.versionsUpdated.Add(float64(totalVersionsUpdated))
+	j.operations.packagesUpdated.Add(float64(totalPkgsUpdated))
+
 	return err
 }

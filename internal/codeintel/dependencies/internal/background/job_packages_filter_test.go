@@ -41,7 +41,7 @@ func TestPackageRepoFilters(t *testing.T) {
 	}
 
 	bhvr := "BLOCK"
-	if err := s.CreatePackageRepoFilter(ctx, shared.MinimalPackageFilter{
+	if _, err := s.CreatePackageRepoFilter(ctx, shared.MinimalPackageFilter{
 		Behaviour:     &bhvr,
 		PackageScheme: "npm",
 		NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
@@ -50,7 +50,8 @@ func TestPackageRepoFilters(t *testing.T) {
 	}
 
 	job := packagesFilterApplicatorJob{
-		store: s,
+		store:      s,
+		operations: newOperations(&observation.TestContext),
 	}
 
 	if err := job.handle(ctx); err != nil {
