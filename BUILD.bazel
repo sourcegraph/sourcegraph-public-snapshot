@@ -207,6 +207,7 @@ nogo(
     vet = True,
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/ineffassign",
     ],
 )
 
