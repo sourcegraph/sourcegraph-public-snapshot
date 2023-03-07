@@ -79,6 +79,12 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 	return val
 }
 
+// squashRange maps a value in the range [0, inf) to a value in the range
+// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
+func squashRange(j float64) float64 {
+	return j / (1 + j)
+}
+
 // GetDocumentRank returns a map from paths within the given repo to their reference count.
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
@@ -99,7 +105,7 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 	paths := map[string]float64{}
 	for path, rank := range documentRanks {
-		paths[path] = math.Log2(rank[1])
+		paths[path] = math.Log2(rank)
 	}
 
 	return types.RepoPathRanks{
@@ -110,14 +116,4 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
 	return s.store.LastUpdatedAt(ctx, repoIDs)
-}
-
-func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {
-	return s.store.UpdatedAfter(ctx, t)
-}
-
-// squashRange maps a value in the range [0, inf) to a value in the range
-// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
-func squashRange(j float64) float64 {
-	return j / (1 + j)
 }

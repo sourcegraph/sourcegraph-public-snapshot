@@ -19,7 +19,7 @@ Learn more about [how this fits into our product strategy](https://handbook.sour
 **macOS:** via homebrew:
 
 ```sh
-brew install sourcegraph/sourcegraph-app/sourcegraph
+brew install sourcegraph/app/sourcegraph
 ```
 
 **Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.200198-snapshot+20230220-35357c/sourcegraph_0.0.200198-snapshot+20230220-35357c_linux_amd64.deb) installer:

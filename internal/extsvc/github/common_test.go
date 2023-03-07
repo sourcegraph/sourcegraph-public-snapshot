@@ -47,15 +47,3 @@ func stringForRepoList(repos []*Repository) string {
 	}
 	return "{\n" + strings.Join(repoStrings, ",\n") + "}\n"
 }
-
-func repoListsAreEqual(a []*Repository, b []*Repository) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		if *a[i] != *b[i] {
-			return false
-		}
-	}
-	return true
-}

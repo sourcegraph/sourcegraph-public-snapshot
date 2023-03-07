@@ -8,9 +8,9 @@ import (
 
 	"github.com/hexops/autogold/v2"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -277,7 +277,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				return []byte(content), nil
 			})
 
-			rules := NewRulesCache(gitserverClient, database.NewMockDB())
+			codeownersStore := edb.NewMockCodeownersStore()
+			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			db := edb.NewMockEnterpriseDB()
+			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+			rules := NewRulesCache(gitserverClient, db)
 
 			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 

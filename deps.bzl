@@ -1,6 +1,14 @@
+"Bazel go dependencies"
+
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 def go_dependencies():
+    """The go dependencies in this macro are auto-updated by gazelle
+
+    To update run,
+
+        bazel run //:gazelle-update-repos
+    """
     go_repository(
         name = "cc_mvdan_gofumpt",
         build_file_proto_mode = "disable_global",
@@ -5715,8 +5723,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:YbrRL79OskPjGKBg6HtJABAP3pOnMQ+Y0P6MSBkpQbw=",
-        version = "v0.0.0-20230302171514-a4018300b272",
+        sum = "h1:XO7th5aa0YMebq14wz6HC8guKkz9pjvlW1QKIbXchZk=",
+        version = "v0.0.0-20230303172250-3b0248719b12",
     )
 
     go_repository(

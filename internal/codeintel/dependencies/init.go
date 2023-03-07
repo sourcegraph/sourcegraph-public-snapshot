@@ -13,7 +13,7 @@ func NewService(observationCtx *observation.Context, db database.DB) *Service {
 }
 
 // TestService creates a new dependencies service with noop observation contexts.
-func TestService(db database.DB, _ GitserverClient) *Service {
+func TestService(db database.DB) *Service {
 	store := dependenciesstore.New(&observation.TestContext, db)
 
 	return newService(&observation.TestContext, store)

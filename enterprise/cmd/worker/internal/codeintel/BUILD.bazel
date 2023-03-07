@@ -27,7 +27,6 @@ go_library(
         "//enterprise/cmd/worker/shared/init/codeintel",
         "//enterprise/internal/codeintel/autoindexing",
         "//enterprise/internal/codeintel/policies",
-        "//enterprise/internal/codeintel/policies/enterprise",
         "//enterprise/internal/codeintel/ranking",
         "//enterprise/internal/codeintel/sentinel",
         "//enterprise/internal/codeintel/shared/gitserver",

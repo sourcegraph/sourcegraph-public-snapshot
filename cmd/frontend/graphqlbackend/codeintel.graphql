@@ -2008,6 +2008,11 @@ The configuration and execution summary of the indexer.
 """
 type IndexStep {
     """
+    Commands to run in the same image as the indexer but before the indexer is invoked.
+    """
+    commands: [String!]!
+
+    """
     The arguments to supply to the indexer container.
     """
     indexerArgs: [String!]!
@@ -2016,6 +2021,11 @@ type IndexStep {
     The path to the index file relative to the root directory (dump.lsif by default).
     """
     outfile: String
+
+    """
+    A list of environment variables (VAR=VAL) that should be made available to the indexer.
+    """
+    requestedEnvVars: [String!]
 
     """
     The execution summary (if completed or errored) of the index command.
@@ -2221,6 +2231,11 @@ type CodeIntelIndexer {
     URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
     """
     url: String!
+
+    """
+    A Docker image name used to distribute the indexer to the executor for via auto-indexing.
+    """
+    imageName: String
 }
 
 """

@@ -547,6 +547,8 @@ type Completions struct {
 	AccessToken string `json:"accessToken"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
+	// Model description: The model used for completions.
+	Model string `json:"model"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
@@ -747,12 +749,12 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
+	// EnableGRPC description: Enables gRPC for communication between internal services
+	EnableGRPC bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
-	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
-	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
@@ -840,9 +842,9 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
+	delete(m, "enableGRPC")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")
-	delete(m, "enablePostSignupFlow")
 	delete(m, "enableStorm")
 	delete(m, "eventLogging")
 	delete(m, "gitServerPinnedRepos")
@@ -1989,8 +1991,6 @@ type Settings struct {
 	BasicCodeIntelIndexOnly bool `json:"basicCodeIntel.indexOnly,omitempty"`
 	// BasicCodeIntelUnindexedSearchTimeout description: The timeout (in milliseconds) for un-indexed search requests.
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
-	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
-	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
 	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
@@ -2001,8 +2001,6 @@ type Settings struct {
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
-	// CodeIntelligenceClickToGoToDefinition description: Enable click to go to definition.
-	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
@@ -2096,13 +2094,11 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "basicCodeIntel.includeForks")
 	delete(m, "basicCodeIntel.indexOnly")
 	delete(m, "basicCodeIntel.unindexedSearchTimeout")
-	delete(m, "codeHost.useNativeTooltips")
 	delete(m, "codeIntel.disableRangeQueries")
 	delete(m, "codeIntel.disableSearchBased")
 	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
 	delete(m, "codeIntel.traceExtension")
 	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
-	delete(m, "codeIntelligence.clickToGoToDefinition")
 	delete(m, "experimentalFeatures")
 	delete(m, "fileSidebarVisibleByDefault")
 	delete(m, "history.defaultPageSize")
@@ -2155,8 +2151,6 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
-	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
-	EnableGoImportsSearchQueryTransform *bool `json:"enableGoImportsSearchQueryTransform,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
@@ -2240,7 +2234,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRepositoryBadge")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableCodeMirrorFileView")
-	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
 	delete(m, "enableSearchFilePrefetch")
@@ -2370,9 +2363,11 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix description: An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).
+	CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix string `json:"codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsEnabled description: Enables/disables the document reference counts feature. Currently experimental.
 	CodeIntelRankingDocumentReferenceCountsEnabled *bool `json:"codeIntelRanking.documentReferenceCountsEnabled,omitempty"`
-	// CodeIntelRankingDocumentReferenceCountsGraphKey description: The string used to group document reference counts for a single graph
+	// CodeIntelRankingDocumentReferenceCountsGraphKey description: An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
@@ -2602,6 +2597,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")

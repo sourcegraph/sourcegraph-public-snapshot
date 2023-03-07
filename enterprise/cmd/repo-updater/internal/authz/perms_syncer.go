@@ -455,9 +455,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
 					}
-				} else if len(currentRepos) == 0 {
+				} else {
 					// Use the old user_permissions table if feature flag is off
-					// TODO: refactor to be bulletproof once we have the OOB migration ready
 					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
@@ -637,15 +636,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
-	// Get the value of feature flag to store in the unified user_repo_permissions table
-	unifiedEnabled := conf.ExperimentalFeatures().UnifiedPermissions
-
 	for acctID, repoIDs := range results.repoPerms {
-		if unifiedEnabled {
-			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
-			if err != nil {
-				return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
-			}
+		// write to new user_repo_permissions table by default
+		err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+		if err != nil {
+			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 		}
 
 		for _, repoID := range repoIDs {
@@ -845,10 +840,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if conf.ExperimentalFeatures().UnifiedPermissions {
-		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
-			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
-		}
+	// write to new user_repo_permissions table by default
+	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
+		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
 	if err != nil {

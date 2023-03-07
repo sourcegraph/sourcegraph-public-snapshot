@@ -2,7 +2,8 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { UserAvatar, UserAvatarData } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { getOwnerMatchUrl, OwnerMatch } from '@sourcegraph/shared/src/search/stream'
 import { Link } from '@sourcegraph/wildcard'
 
@@ -37,15 +38,6 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
         return displayName
     }, [result])
 
-    const avatarUser = useMemo(() => {
-        const avatarUser: UserAvatarData = { username: displayName, avatarURL: null, displayName }
-        if (result.type === 'person' && result.user) {
-            avatarUser.username = result.user.username
-            avatarUser.avatarURL = result.user.avatarURL || null
-        }
-        return avatarUser
-    }, [result, displayName])
-
     const url = useMemo(() => {
         const url = getOwnerMatchUrl(result)
         if (result.type === 'person' && !result.user) {
@@ -57,8 +49,24 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
 
     const title = (
         <div className="d-flex align-items-center">
-            {/* TODO #48303: Use TeamAvatar for teams. */}
-            <UserAvatar user={avatarUser} className={styles.avatar} size={16} />
+            {result.type === 'person' ? (
+                <UserAvatar
+                    user={{
+                        username: result.user?.username || displayName,
+                        avatarURL: result.user?.avatarURL || null,
+                        displayName,
+                    }}
+                    className={styles.avatar}
+                    size={16}
+                />
+            ) : (
+                <TeamAvatar
+                    team={{ avatarURL: null, displayName: result.displayName || null, name: result.name }}
+                    className={styles.avatar}
+                    size={16}
+                />
+            )}
+
             {url ? (
                 <Link to={url} className="text-muted">
                     {displayName}
@@ -79,7 +87,10 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
             url="#"
             onClick={onSelect}
         >
-            <div className={classNames(resultStyles.searchResultMatch, 'p-2 flex-column')}>
+            <div
+                className={classNames(resultStyles.searchResultMatch, 'p-2 flex-column')}
+                data-testid="owner-search-result"
+            >
                 <div className={resultStyles.matchType}>
                     <small>Owner match</small>
                 </div>

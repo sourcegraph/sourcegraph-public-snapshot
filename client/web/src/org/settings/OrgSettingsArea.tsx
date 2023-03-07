@@ -3,21 +3,15 @@ import React, { FC } from 'react'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Routes, Route } from 'react-router-dom'
 
-import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import {
-    OrgAreaOrganizationFields,
-    OrgFeatureFlagValueResult,
-    OrgFeatureFlagValueVariables,
-} from '../../graphql-operations'
+import { OrgAreaOrganizationFields } from '../../graphql-operations'
 import { RouteV6Descriptor } from '../../util/contributions'
 import { OrgAreaRouteContext } from '../area/OrgArea'
-import { GET_ORG_FEATURE_FLAG_VALUE, ORG_DELETION_FEATURE_FLAG_NAME } from '../backend'
 
 import { OrgSettingsSidebar, OrgSettingsSidebarItems } from './OrgSettingsSidebar'
 
@@ -40,7 +34,6 @@ export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
 
 export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
     org: OrgAreaOrganizationFields
-    showOrgDeletion: boolean
 }
 
 /**
@@ -48,18 +41,8 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
  * an organization's settings.
  */
 export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
-    const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        GET_ORG_FEATURE_FLAG_VALUE,
-        {
-            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME },
-            fetchPolicy: 'cache-and-network',
-            skip: !props.authenticatedUser || !props.org.id,
-        }
-    )
-
     const context: OrgSettingsAreaRouteContext = {
         ...props,
-        showOrgDeletion: orgDeletionFlag.data?.organizationFeatureFlagValue || false,
     }
 
     return (

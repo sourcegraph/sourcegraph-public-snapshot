@@ -1520,10 +1520,7 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
 	ptr := func(i int32) *int32 { return &i }
 	for name, testCase := range map[string]struct {
 		now             time.Time
@@ -1741,6 +1738,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := context.Background()
 			for _, e := range testCase.events {
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
 					t.Fatalf("failed inserting test data: %s", err)
