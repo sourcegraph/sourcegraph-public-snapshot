@@ -10,7 +10,7 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
 import { AppRouterContainer } from '../../../components/AppRouterContainer'
@@ -76,6 +76,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
 
+    // eslint-disable-next-line no-restricted-syntax
+    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
         setupWizard: features.setupWizard,
         // enable fuzzy finder by default unless it's explicitly disabled in settings
@@ -155,7 +157,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (setupWizard && window.context.needsRepositoryConfiguration) {
+    if (setupWizard && window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 

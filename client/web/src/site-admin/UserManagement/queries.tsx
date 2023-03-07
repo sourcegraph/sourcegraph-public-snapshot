@@ -55,6 +55,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                     lastActiveAt
                     deletedAt
                     locked
+                    scimControlled
                 }
             }
         }

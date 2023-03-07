@@ -1710,27 +1710,28 @@ func UnifiedPermsEnabled() bool {
 const legacyUsersWithNoPermsQuery = `
 SELECT users.id, NULL
 FROM users
+LEFT OUTER JOIN user_permissions AS rp ON rp.user_id = users.id
 WHERE
 	users.deleted_at IS NULL
 AND %s
-AND NOT EXISTS (
-	SELECT
-	FROM user_permissions
-	WHERE user_id = users.id
-)
+AND rp.user_id IS NULL
 `
 
 const unifiedUsersWithNoPermsQuery = `
+WITH rp AS (
+	-- Filter out users with permissions
+	SELECT DISTINCT user_id FROM user_repo_permissions
+	UNION
+	-- Filter out users with completed sync jobs
+	SELECT user_id FROM permission_sync_jobs WHERE user_id IS NOT NULL
+)
 SELECT users.id, NULL
 FROM users
+LEFT OUTER JOIN rp ON rp.user_id = users.id
 WHERE
 	users.deleted_at IS NULL
 AND %s
-AND NOT EXISTS (
-	SELECT
-	FROM user_repo_permissions
-	WHERE user_id = users.id
-)
+AND rp.user_id IS NULL
 `
 
 func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
@@ -1760,16 +1761,48 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	return ids, nil
 }
 
+const legacyRepoIDsWithNoPermsQuery = `
+WITH rp AS (
+	SELECT perms.repo_id FROM repo_permissions AS perms
+	UNION
+	SELECT pending.repo_id FROM repo_pending_permissions AS pending
+)
+SELECT r.id, NULL
+FROM repo AS r
+LEFT OUTER JOIN rp ON rp.repo_id = r.id
+WHERE r.deleted_at IS NULL
+AND r.private = TRUE
+AND rp.repo_id IS NULL
+`
+
+const unifiedRepoIDsWithNoPermsQuery = `
+WITH rp AS (
+	-- Filter out repos with permissions
+	SELECT DISTINCT perms.repo_id FROM user_repo_permissions AS perms
+	UNION
+	-- Filter out repos with pending permissions
+	SELECT pending.repo_id FROM repo_pending_permissions AS pending
+	UNION
+	-- Filter out repos with sync jobs
+	SELECT syncs.repository_id AS repo_id FROM permission_sync_jobs AS syncs
+		WHERE syncs.repository_id IS NOT NULL
+)
+SELECT r.id, NULL
+FROM repo AS r
+LEFT OUTER JOIN rp ON rp.repo_id = r.id
+WHERE r.deleted_at IS NULL
+AND r.private = TRUE
+AND rp.repo_id IS NULL
+`
+
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
-	q := sqlf.Sprintf(`
-SELECT repo.id, NULL FROM repo
-WHERE repo.deleted_at IS NULL
-AND repo.private = TRUE
-AND repo.id NOT IN
-	(SELECT perms.repo_id FROM repo_permissions AS perms
-	 UNION
-	 SELECT pending.repo_id FROM repo_pending_permissions AS pending)
-`)
+	query := unifiedRepoIDsWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyRepoIDsWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query)
 
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
