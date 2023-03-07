@@ -149,7 +149,7 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.InPath("psql")),
-				Fix:   cmdFix("brew install postgresql"),
+				Fix:   cmdFix("brew install postgresql@14"),
 			},
 			{
 				Name: "Start Postgres",
