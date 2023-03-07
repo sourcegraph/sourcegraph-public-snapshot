@@ -616,6 +616,22 @@ Search only inside repositories that contain file content matching the regular e
 
 _Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
+### Repo has topic
+
+<script>
+ComplexDiagram(
+    Terminal("has.topic"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that have the given GitHub topic.
+
+**Example:** [`repo:has.topic(go)` ↗](https://sourcegraph.com/search?q=context:global+repo:has.topic%28go%29&patternType=standard&sm=0&groupBy=repo)
+
+_Note:_ topic search is currently only supported for GitHub repos.
+
 ### Repo has commit after
 
 <script>
