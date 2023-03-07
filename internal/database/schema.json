@@ -18031,7 +18031,7 @@
           "ConstraintDefinition": "CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))"
         },
         {
-          "Name": "package_repo_filters_oneof_glob",
+          "Name": "package_repo_filters_valid_oneof_glob",
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,

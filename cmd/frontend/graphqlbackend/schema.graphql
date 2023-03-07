@@ -3691,8 +3691,8 @@ type PackageRepoReference {
     id: ID!
 
     """
-    The ecosystem/package-manager/indexer kind under which this package repo
-    reference is uniquely identified e.g. npm/python/rust-analyzer
+    The external service kind under which this package repo
+    reference is uniquely identified.
     """
     kind: PackageRepoReferenceKind!
 
