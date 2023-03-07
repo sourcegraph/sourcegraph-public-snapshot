@@ -10,6 +10,7 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -125,8 +126,8 @@ func getUniqueExternalID(attributes scim.ResourceAttributes) string {
 	if attributes[AttrExternalId] != nil {
 		return attributes[AttrExternalId].(string)
 	}
-
-	return "no-external-id-" + extractPrimaryEmail(attributes)
+	primary, _ := extractPrimaryEmail(attributes)
+	return "no-external-id-" + primary
 }
 
 // getOptionalExternalID extracts the external identifier of the given attributes.

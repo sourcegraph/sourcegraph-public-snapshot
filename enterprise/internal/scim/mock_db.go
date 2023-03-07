@@ -107,6 +107,20 @@ func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 		return
 	})
 
+	userEmailsStore := database.NewMockUserEmailsStore()
+	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, s2 *string) error {
+		for _, user := range users {
+			if user.ID == userID {
+				user.Emails = append(user.Emails, email)
+			}
+		}
+		return nil
+	})
+
+	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
+		return nil
+	})
+
 	// Create DB
 	db := database.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, tx func(database.DB) error) error {
@@ -114,6 +128,7 @@ func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 	})
 	db.UsersFunc.SetDefaultReturn(userStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+	db.UserEmailsFunc.SetDefaultReturn(userEmailsStore)
 	return db
 }
 
