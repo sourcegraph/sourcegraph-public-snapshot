@@ -328,7 +328,7 @@ func makeInternalAPI(
 		return nil, err
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := defaults.NewServer(logger)
 
 	// The internal HTTP handler does not include the auth handlers.
 	internalHandler := newInternalHTTPHandler(
@@ -341,8 +341,6 @@ func makeInternalAPI(
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
-
-	reflection.Register(grpcServer)
 	internalHandler = internalgrpc.MultiplexHandlers(grpcServer, internalHandler)
 
 	httpServer := &http.Server{
