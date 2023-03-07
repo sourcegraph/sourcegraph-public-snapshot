@@ -176,16 +176,7 @@ func (s *Serve) handler() http.Handler {
 			}
 		},
 	}
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Use git service if git is trying to clone. Otherwise show http.FileServer for convenience
-		for _, suffix := range []string{"/info/refs", "/git-upload-pack"} {
-			if strings.HasSuffix(r.URL.Path, suffix) {
-				svc.ServeHTTP(w, r)
-				return
-			}
-		}
-		w.WriteHeader(http.StatusNoContent)
-	})))
+	mux.Handle("/repos/", http.StripPrefix("/repos/", svc))
 
 	return http.HandlerFunc(mux.ServeHTTP)
 }
