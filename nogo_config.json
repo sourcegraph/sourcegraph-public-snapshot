@@ -2,6 +2,7 @@
   "_base": {
     "description": "Base config which all analyzers will inherit, even unspecified",
     "exclude_files": {
+      "rules_go.*/*": "ignore rules_go working dir",
       "external/*": "no need to vet third party code",
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code"
@@ -19,6 +20,7 @@
   },
   "goimports": {
     "exclude_files": {
+      "rules_go.*/*": "ignore rules_go working dir",
       "external/*": "no need to vet third party code",
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code",
