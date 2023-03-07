@@ -1805,7 +1805,9 @@ jest_test(
 # webpack dev environment -------------------
 WEBPACK_CONFIG_DEPS = [
     ":node_modules/@sourcegraph/build-config",
+    "//:node_modules/@pmmmwh/react-refresh-webpack-plugin",
     "//:node_modules/@sentry/webpack-plugin",
+    "//:node_modules/buffer",
     "//:node_modules/css-loader",
     "//:node_modules/style-loader",
     "//:node_modules/css-minimizer-webpack-plugin",
@@ -1813,6 +1815,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/mini-css-extract-plugin",
     "//:node_modules/path-browserify",
     "//:node_modules/punycode",
+    "//:node_modules/util",
     "//:node_modules/webpack-manifest-plugin",
     "//:node_modules/webpack-stats-plugin",
     "//:node_modules/monaco-editor",
@@ -1821,6 +1824,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/webpack",
     "//:node_modules/react-refresh",
     "//client/web/dev",
+    "//client/web/src/integration",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
 
     # HACKS: bundle-time css import
