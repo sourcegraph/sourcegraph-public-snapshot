@@ -32,6 +32,7 @@ type (
 	PackageRepoRefVersion        = shared.PackageRepoRefVersion
 	MinimalPackageRepoRef        = shared.MinimalPackageRepoRef
 	MinimialVersionedPackageRepo = shared.MinimialVersionedPackageRepo
+	PackageRepoFilter            = shared.PackageRepoFilter
 )
 
 type ListDependencyReposOpts struct {
@@ -96,6 +97,7 @@ func (s *Service) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...i
 type ListPackageRepoRefFiltersOpts struct {
 	IDs            []int
 	PackageScheme  string
+	Behaviour      string
 	IncludeDeleted bool
 	After          int
 	Limit          int
@@ -108,12 +110,13 @@ func deref(s *string) string {
 	return *s
 }
 
-func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
 		log.String("packageScheme", opts.PackageScheme),
 		log.Int("after", opts.After),
 		log.Int("limit", opts.Limit),
+		log.String("behaviour", opts.Behaviour),
 	}})
 	defer endObservation(1, observation.Args{})
 	return s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts(opts))
@@ -130,7 +133,7 @@ func (s *Service) CreatePackageRepoFilter(ctx context.Context, filter shared.Min
 	return s.store.CreatePackageRepoFilter(ctx, filter)
 }
 
-func (s *Service) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+func (s *Service) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {
 	ctx, _, endObservation := s.operations.updatePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", filter.ID),
 		log.String("packageScheme", filter.PackageScheme),

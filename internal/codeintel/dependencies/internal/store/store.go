@@ -31,9 +31,9 @@ type Store interface {
 	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 
-	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageFilter, error)
+	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, error)
 	CreatePackageRepoFilter(ctx context.Context, filter shared.MinimalPackageFilter) (err error)
-	UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error)
+	UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error)
 	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
 
 	ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error)
@@ -431,21 +431,23 @@ WHERE id = ANY(%s)
 type ListPackageRepoRefFiltersOpts struct {
 	IDs            []int
 	PackageScheme  string
+	Behaviour      string
 	IncludeDeleted bool
 	After          int
 	Limit          int
 }
 
-func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageFilter, err error) {
+func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
 		log.String("packageScheme", opts.PackageScheme),
 		log.Int("after", opts.After),
 		log.Int("limit", opts.Limit),
+		log.String("behaviour", opts.Behaviour),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := make([]*sqlf.Query, 0, 4)
+	conds := make([]*sqlf.Query, 0, 6)
 
 	if !opts.IncludeDeleted {
 		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
@@ -461,6 +463,10 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 
 	if opts.After != 0 {
 		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+	}
+
+	if opts.Behaviour != "" {
+		conds = append(conds, sqlf.Sprintf("behaviour = %s", opts.Behaviour))
 	}
 
 	if len(conds) == 0 {
@@ -537,11 +543,11 @@ VALUES (%s, %s, %s)
 ON CONFLICT (scheme, matcher)
 DO UPDATE
 	SET deleted_at = NULL,
-	updated_at = now()
+	updated_at = now(),
 	behaviour = EXCLUDED.behaviour
 `
 
-func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageFilter) (err error) {
+func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {
 	ctx, _, endObservation := s.operations.updatePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", filter.ID),
 		log.String("packageScheme", filter.PackageScheme),
@@ -606,7 +612,7 @@ func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool,
 	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
+	exists, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
 	return
 }
 
@@ -617,8 +623,7 @@ WITH most_recent_filters_change AS (
 	ORDER BY COALESCE(deleted_at, updated_at) DESC
 	LIMIT 1
 )
-SELECT 1
-WHERE EXISTS (
+SELECT EXISTS (
 	SELECT 1
 	FROM lsif_dependency_repos
 	WHERE

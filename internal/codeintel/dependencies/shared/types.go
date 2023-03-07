@@ -3,8 +3,6 @@ package shared
 import (
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
@@ -49,7 +47,7 @@ type MinimalPackageFilter struct {
 	}
 }
 
-type PackageFilter struct {
+type PackageRepoFilter struct {
 	ID            int
 	Behaviour     string
 	PackageScheme string
@@ -60,6 +58,6 @@ type PackageFilter struct {
 		PackageName string
 		VersionGlob string
 	}
-	DeletedAt pq.NullTime
+	DeletedAt *time.Time
 	UpdatedAt time.Time
 }

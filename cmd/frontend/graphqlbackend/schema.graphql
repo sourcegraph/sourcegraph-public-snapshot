@@ -1482,6 +1482,19 @@ type Query {
         after: String
     ): PackageRepoReferenceConnection!
 
+    packageRepoFilters(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind
+    ): [PackageFilter!]
+
     """
     Returns either a list of package repo references,
     or the versions of a single package repo reference,
@@ -3678,6 +3691,12 @@ type PackageRepoReference {
     The versions of this package known to the sourcegraph instance.
     """
     versions: [PackageRepoReferenceVersion!]!
+
+    """
+    Indicates whether a package repo reference has been blocked by a blocklist entry and/or
+    no matching entry in a non-empty allowlist
+    """
+    blocked: Boolean!
 
     """
     The synthetic repository (aka the package repo) created to store the contents of the

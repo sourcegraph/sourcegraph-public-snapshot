@@ -157,6 +157,10 @@ func (r *packageRepoReferenceResolver) Versions() []*packageRepoReferenceVersion
 	return versions
 }
 
+func (r *packageRepoReferenceResolver) Blocked() bool {
+	return r.dep.Blocked
+}
+
 func (r *packageRepoReferenceResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
 	repoName, err := dependencyRepoToRepoName(r.dep)
 	if err != nil {

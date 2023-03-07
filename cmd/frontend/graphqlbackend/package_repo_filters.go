@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type packageFilter struct {
+type inputPackageFilter struct {
 	NameFilter *struct {
 		PackageGlob string
 	}
@@ -25,7 +25,7 @@ type packageFilter struct {
 
 func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	Kind   string
-	Filter packageFilter
+	Filter inputPackageFilter
 	graphqlutil.ConnectionArgs
 	After *string
 },
@@ -62,10 +62,98 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 	}, err
 }
 
+type packageRepoFilterResolver struct {
+	filter dependencies.PackageRepoFilter
+}
+
+func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
+	Behaviour *string
+	Kind      *string
+},
+) (resolvers *[]*packageRepoFilterResolver, err error) {
+	var opts dependencies.ListPackageRepoRefFiltersOpts
+
+	if args.Behaviour != nil {
+		opts.Behaviour = *args.Behaviour
+	}
+
+	if args.Kind != nil {
+		opts.PackageScheme = externalServiceToPackageSchemeMap[*args.Kind]
+	}
+
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	filters, err := depsService.ListPackageRepoFilters(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "error listing package repo filters")
+	}
+
+	resolvers = new([]*packageRepoFilterResolver)
+	*resolvers = make([]*packageRepoFilterResolver, 0, len(filters))
+
+	for _, filter := range filters {
+		*resolvers = append(*resolvers, &packageRepoFilterResolver{
+			filter: filter,
+		})
+	}
+
+	return resolvers, nil
+}
+
+func (r *packageRepoFilterResolver) ID() graphql.ID {
+	return relay.MarshalID("PackageRepoFilter", r.filter.ID)
+}
+
+func (r *packageRepoFilterResolver) Behaviour() string {
+	return r.filter.Behaviour
+}
+
+func (r *packageRepoFilterResolver) Kind() string {
+	return packageSchemeToExternalServiceMap[r.filter.PackageScheme]
+}
+
+func (r *packageRepoFilterResolver) NameFilter() *packageRepoNameFilterResolver {
+	if r.filter.NameFilter != nil {
+		return &packageRepoNameFilterResolver{*r.filter.NameFilter}
+	}
+	return nil
+}
+
+func (r *packageRepoFilterResolver) VersionFilter() *packageRepoVersionFilterResolver {
+	if r.filter.VersionFilter != nil {
+		return &packageRepoVersionFilterResolver{*r.filter.VersionFilter}
+	}
+	return nil
+}
+
+type packageRepoVersionFilterResolver struct {
+	filter struct {
+		PackageName string
+		VersionGlob string
+	}
+}
+
+func (r *packageRepoVersionFilterResolver) PackageName() string {
+	return r.filter.PackageName
+}
+
+func (r *packageRepoVersionFilterResolver) VersionGlob() string {
+	return r.filter.VersionGlob
+}
+
+type packageRepoNameFilterResolver struct {
+	filter struct {
+		PackageGlob string
+	}
+}
+
+func (r *packageRepoNameFilterResolver) PackageGlob() string {
+	return r.filter.PackageGlob
+}
+
 func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 	Behaviour string
 	Kind      string
-	Filter    packageFilter
+	Filter    inputPackageFilter
 },
 ) (*EmptyResponse, error) {
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
@@ -92,7 +180,7 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 	ID        graphql.ID
 	Behaviour string
 	Kind      string
-	Filter    packageFilter
+	Filter    inputPackageFilter
 },
 ) (*EmptyResponse, error) {
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
@@ -110,7 +198,7 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 		return nil, err
 	}
 
-	return &EmptyResponse{}, depsService.UpdatePackageRepoFilter(ctx, shared.PackageFilter{
+	return &EmptyResponse{}, depsService.UpdatePackageRepoFilter(ctx, shared.PackageRepoFilter{
 		ID:            filterID,
 		Behaviour:     args.Behaviour,
 		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],

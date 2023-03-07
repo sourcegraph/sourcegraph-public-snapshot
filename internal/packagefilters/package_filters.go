@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewFilterLists(filters []shared.PackageFilter) (allowlist, blocklist []PackageMatcher, err error) {
+func NewFilterLists(filters []shared.PackageRepoFilter) (allowlist, blocklist []PackageMatcher, err error) {
 	for _, filter := range filters {
 		if filter.NameFilter != nil {
 			matcher, err := NewPackageNameGlob(filter.NameFilter.PackageGlob)

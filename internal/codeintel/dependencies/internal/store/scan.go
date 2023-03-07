@@ -70,8 +70,8 @@ func scanDependencyRepo(s dbutil.Scanner) (shared.PackageRepoReference, error) {
 	return ref, err
 }
 
-func scanPackageFilter(s dbutil.Scanner) (shared.PackageFilter, error) {
-	var filter shared.PackageFilter
+func scanPackageFilter(s dbutil.Scanner) (shared.PackageRepoFilter, error) {
+	var filter shared.PackageRepoFilter
 	var data []byte
 	err := s.Scan(
 		&filter.ID,
@@ -82,7 +82,7 @@ func scanPackageFilter(s dbutil.Scanner) (shared.PackageFilter, error) {
 		&filter.UpdatedAt,
 	)
 	if err != nil {
-		return shared.PackageFilter{}, err
+		return shared.PackageRepoFilter{}, err
 	}
 
 	b := bytes.NewReader(data)
