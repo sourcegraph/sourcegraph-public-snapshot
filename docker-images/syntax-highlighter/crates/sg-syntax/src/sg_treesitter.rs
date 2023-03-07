@@ -568,8 +568,7 @@ SELECT * FROM my_table
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
         snapshot_test_init();
-        let crate_root: std::path::PathBuf =
-            std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
         let input_dir = crate_root.join("src").join("snapshots").join("files");
         let dir = read_dir(&input_dir).unwrap();
         for entry in dir {
@@ -596,11 +595,7 @@ SELECT * FROM my_table
             }
             let document = indexed.unwrap();
             insta::assert_snapshot!(
-                filepath
-                    .strip_prefix(&input_dir)
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
+                filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                 dump_document(&document, &contents)
             );
         }
