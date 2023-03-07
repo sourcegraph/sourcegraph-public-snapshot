@@ -13,12 +13,8 @@ To connect Azure DevOps to Sourcegraph:
   "url": "https://dev.azure.com/",
   "username": "<admin username>",
   "token": "<admin token>",
-  "projects": [
-    "org1/project1"
-  ],
-  "orgs": [
-    "org2"
-  ]
+  "projects": ["org1/project1"],
+  "orgs": ["org2"]
 }
 ```
 
@@ -48,13 +44,13 @@ Please consult [this page](../config/webhooks.md) in order to configure webhooks
 
 ## Permissions syncing
 
-User level permissions syncing is supported for Azure DevOps code host connections. Here is the list of prerequisites:
+[User-level permissions](../permissions/syncing.md#permission-syncing) syncing is supported for Azure DevOps code host connections. Here is the list of prerequisites:
 
 1. Configure Azure DevOps as an OAuth provider by consulting [this page](../config/authorization_and_authentication.md#azure-devops-services)
 2. Next verify that users can now sign up / login to your Sourcegraph instance with your Azure DevOps OAuth provider
 3. Set the following to your Azure DevOps code host configuration:
 
-```
+```json
   "enforcePermissions": true
 ```
 

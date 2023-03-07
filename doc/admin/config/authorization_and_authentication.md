@@ -126,11 +126,11 @@ Follow the steps to [sync Bitbucket Server / Bitbucket Data Center permissions](
 
 ### Azure DevOps Services
 
-We support authentication through OAuth for Azure DevOps Services (https://dev.azure.com) and it is also a prerequisite for permissions syncing.
+We support authentication through OAuth for [Azure DevOps Services (dev.azure.com)](https://dev.azure.com) and it is also a prerequisite for [permissions syncing](../permissions/index.md).
 
-#### Register a new OAuth app
+#### Register a new OAuth application
 
-Visit the URL [here](https://app.vsaex.visualstudio.com/app/register) and follow the instructions below:
+[Create a new Azure DevOps OAuth application](https://app.vsaex.visualstudio.com/app/register) and follow the instructions below:
 
 1. In the `Application website` field set the URL of your Sourcegraph instance, for example if the instance is https://sourcegraph.com, then use `https://sourcegraph.com` as the value of this field
 2. Similarly, set the `Authorization callback URL` field to `https://sourcegraph.com/.auth/azuredevops/callback` if your Sourcegraph instance URL is https://sourcegraph.com
@@ -144,7 +144,7 @@ Visit the URL [here](https://app.vsaex.visualstudio.com/app/register) and follow
 
 Add the following to the `auth.providers` key in the site config:
 
-```
+```json
 {
   "auth.providers": [
     // Other auth providers may also be here.
@@ -168,19 +168,19 @@ It is **important** to ensure that:
 
 Optionally, you may want to restrict the sign up to only users who belong to a specific list of organizations. To do this add the following to the `auth.providers` configuration above:
 
-```
+```json
       "allowOrgs": ["your-org-1", "your-org-2"],
 ```
 
 Finally, if you want to prevent new users from signing up to your Sourcegraph instance, set the following (default to `true`) in the `auth.providers` configuration above:
 
-```
+```json
       "allowSignup": false
 ```
 
 The final and complete `auth.providers` configuration may look like this:
 
-```
+```json
 {
   "auth.providers": [
     // Other auth providers may also be here.
@@ -192,7 +192,7 @@ The final and complete `auth.providers` configuration may look like this:
       "apiScope": "vso.code,vso.identity,vso.project",
       "allowOrgs": ["your-org-1", "your-org-2"],
       "allowSignup": false
-    },
+    }
   ]
 }
 ```
