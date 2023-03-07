@@ -5,7 +5,7 @@ authors = [
     "TJ DeVries <devries.timothyj@gmail.com>",
     "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
 ]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 [dependencies]

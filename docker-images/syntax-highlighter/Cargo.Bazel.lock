@@ -1,5 +1,5 @@
 {
-  "checksum": "527efe0133ce7fa7c7a5d7a74165035e4751b53b4c75a8e378efd672b61b31ff",
+  "checksum": "724abb6a7e29bb5c57db5392ea09759c64866b119871b7dd0b3430d3b491d626",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9742,7 +9742,7 @@
           ],
           "selects": {}
         },
-        "edition": "2018",
+        "edition": "2021",
         "version": "1.0.1"
       },
       "license": "MIT"
