@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	"github.com/elimity-com/scim"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_UserResourceHandler_Replace(t *testing.T) {
@@ -18,7 +20,10 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		{User: types.User{ID: 1}},
 		{User: types.User{ID: 2, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 3}},
-	})
+	},
+		map[int32][]*database.UserEmail{
+			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
+		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
 	testCases := []struct {
@@ -56,6 +61,11 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 			testFunc: func(userRes scim.Resource, err error) {
 				assert.NoError(t, err)
 				assert.Nil(t, userRes.Attributes[AttrUserName])
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, _ := db.Users().GetByID(context.Background(), int32(userID))
+				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, userEmails, 1)
+				assert.Equal(t, "email@address.test", userEmails[0].Email)
 			},
 		},
 		{

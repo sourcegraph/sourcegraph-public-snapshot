@@ -9,6 +9,7 @@ import (
 	"github.com/scim2/filter-parser/v2"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -44,12 +45,22 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		{User: types.User{ID: 1}},
 		{User: types.User{ID: 2, Username: "test-user2", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id2"},
 		{User: types.User{ID: 3}},
-		{User: types.User{ID: 4, Username: "test-user4"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id4", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 5, Username: "test-user5"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id5", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 6, Username: "test-user6"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 7, Username: "test-user7"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id7", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 8, Username: "test-user8"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id8", SCIMAccountData: sampleAccountData},
-		{User: types.User{ID: 9, Username: "test-user9"}, Emails: []string{"primary@work.com"}, SCIMExternalID: "id9", SCIMAccountData: sampleAccountData}})
+		{User: types.User{ID: 4, Username: "test-user4"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id4", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 5, Username: "test-user5"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id5", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 6, Username: "test-user6"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id6", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 7, Username: "test-user7"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id7", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 8, Username: "test-user8"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id8", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 9, Username: "test-user9"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id9", SCIMAccountData: sampleAccountData},
+	},
+		map[int32][]*database.UserEmail{
+			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
+			4: {&database.UserEmail{UserID: 4, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 4, Email: "secondary@work.com"}},
+			5: {&database.UserEmail{UserID: 5, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 5, Email: "secondary@work.com"}},
+			6: {&database.UserEmail{UserID: 6, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 6, Email: "secondary@work.com"}},
+			7: {&database.UserEmail{UserID: 7, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 7, Email: "secondary@work.com"}},
+			8: {&database.UserEmail{UserID: 8, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 8, Email: "secondary@work.com"}},
+			9: {&database.UserEmail{UserID: 9, Email: "primary@work.com", VerifiedAt: &verifiedDate}, &database.UserEmail{UserID: 9, Email: "secondary@work.com"}},
+		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
 	testCases := []struct {
@@ -126,6 +137,12 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				user, err := db.Users().GetByID(context.Background(), int32(userID))
 				assert.NoError(t, err)
 				assert.Equal(t, "updatedUN", user.Username)
+
+				// Check db email changes
+				dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, dbEmails, 2)
+				assert.True(t, containsEmail(dbEmails, "nicolas@breitenbergbartell.uk", true))
+				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true))
 			},
 		},
 		{
@@ -144,6 +161,16 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				// Check name attributes
 				name := userRes.Attributes[AttrName].(map[string]interface{})
 				assert.Nil(t, name[AttrNameMiddle])
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+
+				// Check db email changes
+				dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, dbEmails, 1)
+				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true))
 			},
 		},
 		{
@@ -157,6 +184,16 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				emails := userRes.Attributes[AttrEmails].([]interface{})
 				assert.Len(t, emails, 1)
 				assert.Contains(t, emails, map[string]interface{}{"value": "replaced@work.com", "primary": true, "type": "home"})
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+
+				// Check db email changes
+				dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, dbEmails, 1)
+				assert.True(t, containsEmail(dbEmails, "replaced@work.com", true))
 			},
 		},
 		{
@@ -227,4 +264,13 @@ func toInterfaceSlice(maps ...map[string]interface{}) []interface{} {
 		s = append(s, m)
 	}
 	return s
+}
+
+func containsEmail(emails []*database.UserEmail, email string, verified bool) bool {
+	for _, e := range emails {
+		if e.Email == email && ((e.VerifiedAt == nil) == verified) {
+			return true
+		}
+	}
+	return false
 }
