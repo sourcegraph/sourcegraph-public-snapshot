@@ -1703,6 +1703,36 @@ AND expired_at IS NULL
 	return userIDs, nil
 }
 
+func UnifiedPermsEnabled() bool {
+	return conf.ExperimentalFeatures().UnifiedPermissions
+}
+
+const legacyUsersWithNoPermsQuery = `
+SELECT users.id, NULL
+FROM users
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND NOT EXISTS (
+	SELECT
+	FROM user_permissions
+	WHERE user_id = users.id
+)
+`
+
+const unifiedUsersWithNoPermsQuery = `
+SELECT users.id, NULL
+FROM users
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND NOT EXISTS (
+	SELECT
+	FROM user_repo_permissions
+	WHERE user_id = users.id
+)
+`
+
 func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	// By default, site admins can access any repo
 	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
@@ -1711,18 +1741,13 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	q := sqlf.Sprintf(`
-SELECT users.id, NULL
-FROM users
-WHERE
-	users.deleted_at IS NULL
-AND %s
-AND NOT EXISTS (
-		SELECT
-		FROM user_permissions
-		WHERE user_id = users.id
-	)
-`, filterSiteAdmins)
+	query := unifiedUsersWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyUsersWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query, filterSiteAdmins)
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err

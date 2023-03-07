@@ -553,6 +553,12 @@ func NewSchema(
 		}
 	}
 
+	if appResolver := optional.AppResolver; appResolver != nil {
+		// Not under enterpriseResolvers, as this is a OSS schema extension.
+		resolver.AppResolver = appResolver
+		schemas = append(schemas, appSchema)
+	}
+
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
@@ -602,6 +608,7 @@ type OptionalResolver struct {
 	EmbeddingsResolver
 	RBACResolver
 	OwnResolver
+	AppResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some

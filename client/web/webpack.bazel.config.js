@@ -238,6 +238,7 @@ const config = {
       path: require.resolve('path-browserify'),
       punycode: require.resolve('punycode'),
       util: require.resolve('util'),
+      events: require.resolve('events'),
     },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM

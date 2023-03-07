@@ -161,7 +161,7 @@ var Ubuntu = []category{
 				},
 				Description: `Sourcegraph requires the PostgreSQL database to be running.
 
-We recommend installing it with Homebrew and starting it as a system service.
+We recommend installing it with your OS package manager  and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
 For example: you can use https://postgresapp.com/
 

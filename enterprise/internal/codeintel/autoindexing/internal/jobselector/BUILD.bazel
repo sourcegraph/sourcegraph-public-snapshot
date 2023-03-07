@@ -11,13 +11,10 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/store",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/env",
-        "//internal/gitserver/gitdomain",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//:log",
     ],
 )

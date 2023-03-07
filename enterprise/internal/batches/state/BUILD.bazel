@@ -42,8 +42,10 @@ go_test(
     ],
     embed = [":state"],
     deps = [
+        "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/types",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",

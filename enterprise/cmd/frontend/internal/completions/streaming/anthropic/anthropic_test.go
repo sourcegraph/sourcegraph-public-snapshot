@@ -36,7 +36,7 @@ func getMockClient(responseBody []byte) types.CompletionStreamClient {
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, "")
+	}, "", "")
 }
 
 func TestValidAnthropicStream(t *testing.T) {
