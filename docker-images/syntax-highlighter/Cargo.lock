@@ -1623,6 +1623,14 @@ dependencies = [
 [[package]]
 name = "scip-macros"
 version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "scip-macros"
+version = "0.1.0"
 source = "git+https://github.com/sourcegraph/scip-semantic#5da4804de4fef0dc005b828d9fdb1f374c2eb038"
 dependencies = [
  "quote",
@@ -1641,9 +1649,9 @@ dependencies = [
  "protobuf",
  "rustc-hash",
  "scip",
- "scip-macros",
+ "scip-macros 0.1.0 (git+https://github.com/sourcegraph/scip-semantic)",
  "scip-treesitter",
- "scip-treesitter-languages",
+ "scip-treesitter-languages 0.1.0 (git+https://github.com/sourcegraph/scip-semantic)",
  "tree-sitter",
  "walkdir",
 ]
@@ -1654,6 +1662,33 @@ version = "0.1.0"
 source = "git+https://github.com/sourcegraph/scip-semantic#5da4804de4fef0dc005b828d9fdb1f374c2eb038"
 dependencies = [
  "tree-sitter",
+]
+
+[[package]]
+name = "scip-treesitter-languages"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "paste",
+ "scip",
+ "scip-macros 0.1.0",
+ "tree-sitter",
+ "tree-sitter-c",
+ "tree-sitter-c-sharp",
+ "tree-sitter-cpp",
+ "tree-sitter-go",
+ "tree-sitter-highlight",
+ "tree-sitter-java",
+ "tree-sitter-javascript",
+ "tree-sitter-jsonnet",
+ "tree-sitter-perl",
+ "tree-sitter-python",
+ "tree-sitter-ruby",
+ "tree-sitter-rust",
+ "tree-sitter-scala",
+ "tree-sitter-sql",
+ "tree-sitter-typescript",
+ "tree-sitter-xlsg",
 ]
 
 [[package]]
@@ -1726,15 +1761,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sg-macros"
-version = "0.1.0"
-dependencies = [
- "pretty_assertions",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "sg-syntax"
 version = "0.1.0"
 dependencies = [
@@ -1750,26 +1776,12 @@ dependencies = [
  "rocket 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
  "scip",
  "scip-semantic",
+ "scip-treesitter-languages 0.1.0",
  "serde",
  "serde_json",
- "sg-macros",
  "syntect",
  "tree-sitter",
- "tree-sitter-c",
- "tree-sitter-c-sharp",
- "tree-sitter-cpp",
- "tree-sitter-go",
  "tree-sitter-highlight",
- "tree-sitter-java",
- "tree-sitter-javascript",
- "tree-sitter-jsonnet",
- "tree-sitter-python",
- "tree-sitter-ruby",
- "tree-sitter-rust",
- "tree-sitter-scala",
- "tree-sitter-sql",
- "tree-sitter-typescript",
- "tree-sitter-xlsg",
 ]
 
 [[package]]
@@ -2313,6 +2325,15 @@ dependencies = [
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-perl"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-perl#b2f7157c97ffa3a4bd73ac3c9375c08785091915"
 dependencies = [
  "cc",
  "tree-sitter",

@@ -48,7 +48,9 @@ pub fn include_project_file_optional(input: TokenStream) -> TokenStream {
     let literals = parse_macro_input!(input as IncludeOptional).literals;
 
     // project files are always relative to the Cargo.toml of the compiling project.
-    let base = std::env::var("CARGO_MANIFEST_DIR").unwrap() + "/";
+    // let base = std::env::var("CARGO_MANIFEST_DIR").unwrap() + "/";
+    panic!("{:?}", std::env::var("CARGO_MANIFEST_DIR"));
+    let base = "/".to_string();
     let filepath: PathBuf = literals.iter().fold(base, |acc, lit| acc + lit).into();
 
     if filepath.exists() {
@@ -56,7 +58,7 @@ pub fn include_project_file_optional(input: TokenStream) -> TokenStream {
             .to_str()
             .expect("Filepath must be expandable at this point");
 
-        quote! { include_str!(#filepath) }.into()
+        quote! { include_str!(concat!(env!("CARGO_MANIFEST_DIR"), #filepath)) }.into()
     } else {
         quote! { "" }.into()
     }

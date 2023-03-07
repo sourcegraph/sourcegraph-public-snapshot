@@ -9,52 +9,24 @@ include = ["src/**/*", "queries/**/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syntect = { workspace = true }
-rocket = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-lazy_static = "1.0"
-tree-sitter = "0.20.7"
+scip.workspace = true
+protobuf.workspace = true
+tree-sitter.workspace = true
 tree-sitter-highlight = "0.20"
+
+syntect = { git = "https://github.com/sourcegraph/syntect" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+lazy_static = "1.0"
 base64 = "0.13.0"
 anyhow = "1"
 libloading = "0.7"
 paste = "1.0.6"
 once_cell = "1.13.0"
 
-sg-macros = { path = "../sg-macros" }
-
-# Scip related items
-scip = { workspace = true }
-protobuf = "3"
-
-# Tree-sitter Parsers
-tree-sitter-go = "0.19.1"
-
-# As of 2022 Apr 06, the upstream crate seems to have paused development,
-# and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
-# on our own fork.
-tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", branch = "main" }
-
-tree-sitter-c-sharp = "0.20.0"
-
-tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
-
-# Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
-tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }
-
-tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg" }
-
-tree-sitter-c = "0.20.2"
-tree-sitter-java = "0.20.0"
-tree-sitter-javascript = "0.20.0"
-tree-sitter-python = "0.20.2"
-tree-sitter-ruby = "0.20.0"
-tree-sitter-rust = "0.20.3"
-tree-sitter-cpp = "0.20.0"
-tree-sitter-typescript = "0.20.2"
-
 scip-semantic = { git = "https://github.com/sourcegraph/scip-semantic" }
+scip-treesitter-languages = { path = "../scip-treesitter-languages" }
 
 [dev-dependencies]
 insta = "1.11.0"
