@@ -411,40 +411,6 @@ CREATE FUNCTION func_lsif_uploads_update() RETURNS trigger
     END;
 $$;
 
-CREATE FUNCTION func_package_repo_filters_globtoregex() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF NOT(NEW.matcher ? 'VersionGlob') AND NOT(NEW.matcher ? 'PackageGlob') THEN
-        RAISE check_violation USING
-            MESSAGE = 'new row for relation "package_repo_filters" must provide either "VersionGlob" or "PackageGlob" for column "matcher" of type JSONB',
-            DETAIL = 'Failing row contains' || format('%s', NEW) || '.';
-    END IF;
-
-    IF NEW.matcher ? 'VersionGlob' AND NEW.matcher ? 'PackageGlob' THEN
-        RAISE check_violation USING
-            MESSAGE = 'new row for relation "package_repo_filters" must provide one, not both, of "VersionGlob" or "PackageGlob" for column "matcher" of type JSONB',
-            DETAIL = 'Failing row contains' || format('%s', NEW) || '.';
-    END IF;
-
-    IF NEW.matcher ? 'VersionGlob' THEN
-        IF NEW.matcher->>'VersionGlob' = '' THEN
-            RAISE check_violation USING
-                MESSAGE = 'new row for relation "package_repo_filters" must provide non-empty value for "VersionGlob" for column "matcher" of type JSONB',
-                DETAIL = 'Failing row contains' || format('%s', NEW) || '.';
-        END IF;
-        NEW.internal_regex := glob_to_regex(NEW.matcher->>'VersionGlob');
-    ELSE
-        IF NEW.matcher->>'PackageGlob' = '' THEN
-            RAISE check_violation USING
-                MESSAGE = 'new row for relation "package_repo_filters" must provide non-empty value for "PackageGlob" for column "matcher" of type JSONB',
-                DETAIL = 'Failing row contains' || format('%s', NEW) || '.';
-        END IF;
-        NEW.internal_regex := glob_to_regex(NEW.matcher->>'PackageGlob');
-    END IF;
-    RETURN NEW;
-END $$;
-
 CREATE FUNCTION func_package_repo_filters_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -473,171 +439,6 @@ CREATE FUNCTION func_row_to_lsif_uploads_transition_columns(rec record) RETURNS 
     END;
 $$;
 
-CREATE FUNCTION glob_to_regex(pat text) RETURNS text
-    LANGUAGE plpgsql
-    AS $_$
-DECLARE
-    res text[] := array[]::text[];
-    i int := 0;
-    n int := length(pat) + 1;
-BEGIN
-    WHILE i < n LOOP
-        DECLARE
-            c text := substring(pat, i + 1, 1);
-        BEGIN
-            i := i + 1;
-            IF c = '*' THEN
-                -- compress consecutive `*` into one
-                IF (array_length(res, 1) IS NULL OR res[array_length(res, 1)] IS NOT NULL) THEN
-                    res := array_append(res, NULL);
-                END IF;
-            ELSIF c = '?' THEN
-                res := array_append(res, '.');
-            ELSIF c = '[' THEN
-                DECLARE
-                    j int := i;
-                BEGIN
-                    IF substring(pat, j + 1, 1) = '!' THEN
-                        j := j + 1;
-                    END IF;
-                    IF substring(pat, j + 1, 1) = ']' THEN
-                        j := j + 1;
-                    END IF;
-                    WHILE substring(pat, j + 1, 1) <> ']' LOOP
-                        j := j + 1;
-                    END LOOP;
-                    IF j >= n THEN
-                        res := array_append(res, '\[');
-                    ELSE
-                        DECLARE
-                            stuff text := substring(pat, i, j - i + 1);
-                        BEGIN
-                            IF position('-' IN stuff) = 0 THEN
-                                stuff := replace(stuff, '\\', '\\\\');
-                            ELSE
-                                DECLARE
-                                    chunks text[] := '{}';
-                                    k int := i + 2;
-                                BEGIN
-                                    IF substring(pat, i + 1, 1) = '!' THEN
-                                        k := k + 1;
-                                    END IF;
-                                    WHILE TRUE LOOP
-                                        k := position('-' in substring(pat, k, j - k + 1));
-                                        IF k = 0 THEN
-                                            EXIT;
-                                        END IF;
-                                        chunks := array_append(chunks, substring(pat, i, k - i));
-                                        i := k + 1;
-                                        k := k + 3;
-                                    END LOOP;
-                                    DECLARE
-                                        chunk text := substring(pat, i, j - i + 1);
-                                    BEGIN
-                                        IF chunk <> '' THEN
-                                            chunks := array_append(chunks, chunk);
-                                        ELSE
-                                            chunks[array_length(chunks, 1)] := chunks[array_length(chunks, 1)] || '-';
-                                        END IF;
-                                        -- Remove empty ranges -- invalid in RE.
-                                        FOR k IN REVERSE 1 .. array_length(chunks, 1) - 1 LOOP
-                                            IF substring(chunks[k - 1], array_length(chunks[k - 1], 1), 1) > substring(chunks[k], 1, 1) THEN
-                                                chunks[k - 1] := substring(chunks[k - 1], 1, array_length(chunks[k - 1], 1) - 1) || substring(chunks[k], 2);
-                                                chunks := array_remove(chunks, k);
-                                            END IF;
-                                        END LOOP;
-                                        -- Escape backslashes and hyphens for set difference (--).
-                                        -- Hyphens that create ranges shouldn't be escaped.
-                                        stuff := array_to_string(chunks, '-', true);
-                                    END;
-                                END;
-                            END IF;
-                            -- Escape set operations (&&, ~~ and ||).
-                            stuff := replace(stuff, '([&~|])', '\\\\\1');
-                            i := j + 1;
-                            IF stuff = '' THEN
-                                -- Empty range: never match.
-                                res := array_append(res, '(?!)');
-                            ELSIF stuff = '!' THEN
-                                -- Negated empty range: match any character.
-                                res := array_append(res, '.');
-                            ELSE
-                                IF substring(stuff, 1, 1) = '!' THEN
-                                    stuff := '^' || substring(stuff, 2);
-                                ELSIF substring(stuff, 1, 1) IN ('^', '[') THEN
-                                    stuff := '\\' || stuff;
-                                END IF;
-                                res := array_append(res, format('[%s]', stuff));
-                            END IF;
-                        END;
-                    END IF;
-                END;
-            ELSE
-                -- regex escape
-                res := array_append(res, replace(replace(replace(replace(replace(
-                replace(replace(replace(replace(replace(
-                replace(replace(replace(replace(replace(
-                replace(replace(replace(replace(replace(
-                replace(replace(replace(replace(c,
-                '(', '\('), ')', '\)'), '[', '\['), ']', '\]'), '{', '\{'),
-                '}', '\}'), '?', '\?'), '*', '\*'), '+', '\+'), '-', '\-'),
-                '|', '\|'), '^', '\^'), '$', '\$'), '\', '\\'), '.', '\.'),
-                '&', '\&'), '~', '\~'), '#', '\#'), ' ', '\ '), chr(9), '\t'),
-                chr(10), '\n'), chr(13), '\r'), chr(11), '\x0b'), chr(12), '\x0c'));
-            END IF;
-        END;
-    END LOOP;
-    ASSERT i = n, format('%s != %s', i, n);
-    -- Deal with STARs.
-    DECLARE
-        inp text[] := res;
-        res text[] := array[]::text[];
-        i int := 1;
-        n int := array_length(inp, 1)+1;
-    BEGIN
-        -- Fixed pieces at the start?
-        WHILE i < n AND inp[i] IS NOT NULL LOOP
-            res := array_append(res, inp[i]);
-            i := i + 1;
-        END LOOP;
-        -- Now deal with STAR fixed STAR fixed ...
-        -- For an interior `STAR fixed` pairing, we want to do a minimal
-        -- .*? match followed by `fixed`, with no possibility of backtracking.
-        -- Atomic groups ("(?>...)") allow us to spell that directly.
-        -- Note: people rely on the undocumented ability to join multiple
-        -- translate() results together via "|" to build large regexps matching
-        -- "one of many" shell patterns.
-        WHILE i < n LOOP
-            ASSERT inp[i] IS NULL, format('%s at %s IS NOT NULL', inp[i], i);
-            i := i + 1;
-            IF i = n THEN
-                res := array_append(res, '.*');
-                EXIT;
-            END IF;
-            ASSERT inp[i] IS NOT NULL, format('%s IS NULL', i);
-            DECLARE
-                fixed text[] := '{}';
-                fixed1 text := '';
-            BEGIN
-                WHILE i < n AND inp[i] IS NOT NULL LOOP
-                    fixed := array_append(fixed, inp[i]);
-                    i := i + 1;
-                END LOOP;
-                fixed1 := array_to_string(fixed, '');
-                IF i = n THEN
-                    res := array_append(res, '.*');
-                    res := array_append(res, fixed1);
-                ELSE
-                    res := array_append(res, format('(.*?%s)', fixed1));
-                END IF;
-            END;
-        END LOOP;
-        ASSERT i = n, format('%s != %s', i, n);
-        RETURN format('^%s$', array_to_string(res, ''));
-    END;
-END;
-$_$;
-
 CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -648,135 +449,6 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
         END IF;
     RETURN NEW;
     END;
-$$;
-
-CREATE FUNCTION is_unversioned_package_allowed(package text, pkgscheme text) RETURNS boolean
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    blocked boolean;
-    allowed boolean;
-BEGIN
-    blocked := (
-        SELECT COALESCE(bool_or(m.matches), FALSE)
-        FROM (
-            SELECT TRUE AS matches
-            FROM package_repo_filters f
-            WHERE f.behaviour = 'BLOCK'
-            AND f.scheme = pkgscheme
-            AND (
-                (
-                    f.matcher ? 'PackageGlob'
-                    AND package ~ f.internal_regex
-                ) OR (
-                    -- non-all-encompassing version globs don't apply to unversioned packages,
-		            -- likely we're at too-early point in the syncing process to know, but also
-		            -- we may still want the package to browse versions that _dont_ match this
-                    f.matcher->>'PackageName' = package
-                    AND f.matcher->>'VersionGlob' = '*'
-                )
-            )
-        ) as m
-    );
-
-    -- blacklist takes priority, can't poke holes out
-    IF blocked = TRUE THEN
-        RETURN FALSE;
-    END IF;
-
-    -- default allow if no allowlist and not blocked so far
-    allowed := (
-        SELECT COUNT(*) = 0
-        FROM package_repo_filters f
-        WHERE f.behaviour = 'ALLOW'
-        AND f.scheme = pkgscheme
-    );
-
-    allowed := allowed OR (
-        SELECT COALESCE(bool_or(m.matches), FALSE)
-        FROM (
-            SELECT TRUE AS matches
-            FROM package_repo_filters f
-            WHERE f.behaviour = 'ALLOW'
-            AND f.scheme = pkgscheme
-            AND (
-                    (
-                    f.matcher ? 'PackageGlob'
-                    AND package ~ f.internal_regex
-                ) OR (
-                    f.matcher->>'PackageName' = package
-                    AND f.matcher->>'VersionGlob' = '*'
-                )
-            )
-        ) AS m
-    );
-
-    RETURN allowed;
-END;
-$$;
-
-CREATE FUNCTION is_versioned_package_allowed(package text, version text, pkgscheme text) RETURNS boolean
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    blocked boolean;
-    allowed boolean;
-BEGIN
-    blocked := (
-        SELECT COALESCE(bool_or(m.matches), FALSE)
-        FROM (
-            SELECT TRUE AS matches
-            FROM package_repo_filters f
-            WHERE f.behaviour = 'BLOCK'
-            AND f.scheme = 'rust-analyzer'
-            AND
-            (
-                (
-                    f.matcher ? 'PackageGlob'
-                    AND package ~ f.internal_regex
-                ) OR (
-                    f.matcher->>'PackageName' = package
-                    AND version ~ f.internal_regex
-                )
-            )
-        ) as m
-    );
-
-    -- blacklist takes priority, can't poke holes out
-    IF blocked = TRUE THEN
-        RETURN FALSE;
-    END IF;
-
-    -- default allow if no allowlist and not blocked so far
-    allowed := (
-        SELECT COUNT(*) = 0
-        FROM package_repo_filters f
-        WHERE behaviour = 'ALLOW'
-        AND f.scheme = pkgscheme
-    );
-
-    allowed := allowed OR (
-        SELECT COALESCE(bool_or(m.matches), FALSE)
-        FROM (
-            SELECT TRUE AS matches
-            FROM package_repo_filters f
-            WHERE f.behaviour = 'ALLOW'
-            AND f.scheme = pkgscheme
-            AND
-            (
-                (
-                    f.matcher ? 'PackageGlob'
-                    AND package ~ f.internal_regex
-                ) OR (
-                    f.matcher->>'PackageName' = package
-                    AND version ~ f.internal_regex
-                )
-            )
-        ) AS m
-    );
-
-    RETURN allowed;
-END;
 $$;
 
 CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
@@ -3741,11 +3413,11 @@ CREATE TABLE package_repo_filters (
     behaviour text NOT NULL,
     scheme text NOT NULL,
     matcher jsonb NOT NULL,
-    internal_regex text NOT NULL,
     deleted_at timestamp with time zone,
     updated_at timestamp with time zone DEFAULT statement_timestamp() NOT NULL,
     CONSTRAINT package_repo_filters_behaviour_is_allow_or_block CHECK ((behaviour = ANY ('{BLOCK,ALLOW}'::text[]))),
-    CONSTRAINT package_repo_filters_is_pkgrepo_scheme CHECK ((scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[])))
+    CONSTRAINT package_repo_filters_is_pkgrepo_scheme CHECK ((scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))),
+    CONSTRAINT package_repo_filters_oneof_glob CHECK ((((matcher ? 'VersionGlob'::text) AND ((matcher ->> 'VersionGlob'::text) <> ''::text) AND ((matcher ->> 'PackageName'::text) <> ''::text) AND (NOT (matcher ? 'PackageGlob'::text))) OR ((matcher ? 'PackageGlob'::text) AND ((matcher ->> 'PackageGlob'::text) <> ''::text) AND (NOT (matcher ? 'VersionGlob'::text)))))
 );
 
 CREATE SEQUENCE package_repo_filters_id_seq
@@ -5826,10 +5498,6 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
-
-CREATE TRIGGER trigger_package_repo_filters_insert_globtoregex BEFORE INSERT ON package_repo_filters FOR EACH ROW EXECUTE FUNCTION func_package_repo_filters_globtoregex();
-
-CREATE TRIGGER trigger_package_repo_filters_update_globtoregex BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN ((old.matcher <> new.matcher)) EXECUTE FUNCTION func_package_repo_filters_globtoregex();
 
 CREATE TRIGGER trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN ((old.* IS DISTINCT FROM new.*)) EXECUTE FUNCTION func_package_repo_filters_updated_at();
 

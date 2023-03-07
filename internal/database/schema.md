@@ -2707,24 +2707,22 @@ Referenced by:
 
 # Table "public.package_repo_filters"
 ```
-     Column     |           Type           | Collation | Nullable |                     Default                      
-----------------+--------------------------+-----------+----------+--------------------------------------------------
- id             | integer                  |           | not null | nextval('package_repo_filters_id_seq'::regclass)
- behaviour      | text                     |           | not null | 
- scheme         | text                     |           | not null | 
- matcher        | jsonb                    |           | not null | 
- internal_regex | text                     |           | not null | 
- deleted_at     | timestamp with time zone |           |          | 
- updated_at     | timestamp with time zone |           | not null | statement_timestamp()
+   Column   |           Type           | Collation | Nullable |                     Default                      
+------------+--------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                  |           | not null | nextval('package_repo_filters_id_seq'::regclass)
+ behaviour  | text                     |           | not null | 
+ scheme     | text                     |           | not null | 
+ matcher    | jsonb                    |           | not null | 
+ deleted_at | timestamp with time zone |           |          | 
+ updated_at | timestamp with time zone |           | not null | statement_timestamp()
 Indexes:
     "package_repo_filters_pkey" PRIMARY KEY, btree (id)
     "package_repo_filters_unique_matcher_per_scheme" UNIQUE, btree (scheme, matcher)
 Check constraints:
     "package_repo_filters_behaviour_is_allow_or_block" CHECK (behaviour = ANY ('{BLOCK,ALLOW}'::text[]))
     "package_repo_filters_is_pkgrepo_scheme" CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))
+    "package_repo_filters_oneof_glob" CHECK (matcher ? 'VersionGlob'::text AND (matcher ->> 'VersionGlob'::text) <> ''::text AND (matcher ->> 'PackageName'::text) <> ''::text AND NOT matcher ? 'PackageGlob'::text OR matcher ? 'PackageGlob'::text AND (matcher ->> 'PackageGlob'::text) <> ''::text AND NOT matcher ? 'VersionGlob'::text)
 Triggers:
-    trigger_package_repo_filters_insert_globtoregex BEFORE INSERT ON package_repo_filters FOR EACH ROW EXECUTE FUNCTION func_package_repo_filters_globtoregex()
-    trigger_package_repo_filters_update_globtoregex BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.matcher <> new.matcher) EXECUTE FUNCTION func_package_repo_filters_globtoregex()
     trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION func_package_repo_filters_updated_at()
 
 ```
