@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,8 +59,8 @@ type V4Client struct {
 	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
 	waitForRateLimit bool
 
-	// numRateLimitRetries determines how many times we retry requests due to rate limits
-	numRateLimitRetries int
+	// maxNumRateLimitRetries determines how many times we retry requests due to rate limits
+	maxNumRateLimitRetries int
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -161,11 +160,23 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "rate limit")
 	}
 
-	// Wait for the rate limit, or return if context has been canceled.
-	timeutil.SleepWithContext(ctx, c.externalRateLimiter.RecommendedWaitForBackgroundOp(cost))
+	if c.waitForRateLimit {
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, cost)
+	}
 
-	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody); err != nil {
-		return err
+	_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+
+	apiError := &APIError{}
+	numRetries := 0
+
+	for c.waitForRateLimit && err != nil && numRetries < c.maxNumRateLimitRetries &&
+		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
+			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+			numRetries++
+		} else {
+			break
+		}
 	}
 
 	// If the GraphQL response has errors, still attempt to unmarshal the data portion, as some

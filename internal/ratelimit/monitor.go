@@ -162,28 +162,27 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
 }
 
-func (c *Monitor) calcRateLimitWaitTime() time.Duration {
+func (c *Monitor) calcRateLimitWaitTime(cost int) time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if !c.retry.IsZero() {
-		if remaining := c.retry.Sub(c.now()); remaining > 0 {
+		if timeRemaining := c.retry.Sub(c.now()); timeRemaining > 0 {
 			// Unlock before sleeping
-			return remaining
+			return timeRemaining
 		}
 	}
 
-	// If the external rate limit is unknown, or if there are still remaining tokens,
-	// we don't wait.
-	if !c.known || c.remaining > 0 {
+	// If the external rate limit is unknown, or if there are still enough remaining tokens, we don't wait.
+	if !c.known || c.remaining >= cost {
 		return time.Duration(0)
 	}
 
 	// If the rate limit reset is still in the future, we wait until the limit is reset.
 	// If it is in the past, the rate limit is outdated and we don't need to wait.
-	if remaining := c.reset.Sub(c.now()); remaining > 0 {
+	if timeRemaining := c.reset.Sub(c.now()); timeRemaining > 0 {
 		// Unlock before sleeping
-		return remaining
+		return timeRemaining
 	}
 
 	return time.Duration(0)
@@ -193,8 +192,8 @@ func (c *Monitor) calcRateLimitWaitTime() time.Duration {
 // and sleeps an amount of time recommended by the external rate limiter.
 // It returns true if rate limiting was applying, and false if not.
 // This can be used to determine whether or not a request should be retried.
-func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
-	sleepDuration := c.calcRateLimitWaitTime()
+func (c *Monitor) WaitForRateLimit(ctx context.Context, cost int) bool {
+	sleepDuration := c.calcRateLimitWaitTime(cost)
 
 	if sleepDuration == 0 {
 		return false

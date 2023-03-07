@@ -241,7 +241,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 
 	if c.waitForRateLimit {
 		// We don't care whether this happens or not as it is a preventative measure.
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx)
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
 	req.URL = c.baseURL.ResolveReference(req.URL)
@@ -250,7 +250,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
 	numRetries := 0
 	for c.waitForRateLimit && numRetries < c.maxNumRateLimitRetries && respCode == http.StatusTooManyRequests {
-		if c.externalRateLimiter.WaitForRateLimit(ctx) {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
 			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
 			numRetries += 1
 		} else {

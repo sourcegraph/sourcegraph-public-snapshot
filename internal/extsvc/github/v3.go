@@ -61,8 +61,8 @@ type V3Client struct {
 	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
 	waitForRateLimit bool
 
-	// numRateLimitRetries determines how many times we retry requests due to rate limits
-	numRateLimitRetries int
+	// maxNumRateLimitRetries determines how many times we retry requests due to rate limits
+	maxNumRateLimitRetries int
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -121,16 +121,16 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 				log.String("urn", urn),
 				log.String("resource", resource),
 			),
-		urn:                 urn,
-		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
-		auth:                a,
-		httpClient:          cli,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
-		resource:            resource,
-		waitForRateLimit:    true,
-		numRateLimitRetries: 2,
+		urn:                    urn,
+		apiURL:                 apiURL,
+		githubDotCom:           urlIsGitHubDotCom(apiURL),
+		auth:                   a,
+		httpClient:             cli,
+		internalRateLimiter:    rl,
+		externalRateLimiter:    rlm,
+		resource:               resource,
+		waitForRateLimit:       true,
+		maxNumRateLimitRetries: 2,
 	}
 }
 
@@ -219,7 +219,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	}
 
 	if c.waitForRateLimit {
-		c.externalRateLimiter.WaitForRateLimit(ctx) // We don't care whether we waited or not, this is a preventative measure.
+		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
 	}
 
 	var resp *httpResponseState
@@ -231,10 +231,10 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	// 1. We've exceeded the number of retries
 	// 2. The error returned is not a rate limit error
 	// 3. We succeed
-	for c.waitForRateLimit && err != nil && numRetries < c.numRateLimitRetries &&
+	for c.waitForRateLimit && err != nil && numRetries < c.maxNumRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
 		// If we end up waiting because of an external rate limit, we need to retry the request.
-		if c.externalRateLimiter.WaitForRateLimit(ctx) {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 			numRetries++
 		} else {
