@@ -329,6 +329,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                         </>
                     }
                     className="mb-3"
+                    actions={<Button variant="secondary">Manage package filters</Button>}
                 />
 
                 <Container className="mb-3">
