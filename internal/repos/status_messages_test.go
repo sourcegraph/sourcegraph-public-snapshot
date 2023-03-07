@@ -313,8 +313,8 @@ func TestStatusMessages(t *testing.T) {
 				if err != nil {
 					externalServices := database.NewMockExternalServiceStore()
 					externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
-						map[int64]string{
-							extSvc.ID: err.Error(),
+						[]*database.SyncError{
+							{ServiceID: extSvc.ID, Message: err.Error()},
 						},
 						nil,
 					)

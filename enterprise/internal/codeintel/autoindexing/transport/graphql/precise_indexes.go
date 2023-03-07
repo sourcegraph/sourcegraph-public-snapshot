@@ -14,9 +14,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,7 +41,7 @@ func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.Inde
 
 	keyMap := map[string]struct{}{}
 	for _, indexer := range indexers {
-		keyMap[types.NewCodeIntelIndexerResolver(indexer).Key()] = struct{}{}
+		keyMap[types.NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
 	}
 
 	var keys []string
@@ -221,11 +219,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor = ""
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	db := r.autoindexSvc.GetUnsafeDB()
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+	prefetcher := r.prefetcherFactory.Create()
 
 	for _, pair := range pairs {
 		if pair.upload != nil && pair.upload.AssociatedIndexID != nil {
@@ -235,7 +229,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, pair.upload, pair.index)
+		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, pair.upload, pair.index)
 		if err != nil {
 			return nil, err
 		}
@@ -257,19 +251,13 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	db := r.autoindexSvc.GetUnsafeDB()
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
-
 	if uploadID != 0 {
 		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, uploadID)
 		if err != nil || !ok {
 			return nil, err
 		}
 
-		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, &upload, nil)
+		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, &upload, nil)
 	}
 	if indexID != 0 {
 		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, indexID)
@@ -277,7 +265,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, nil, &index)
+		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, nil, &index)
 	}
 
 	return nil, errors.New("invalid identifier")
@@ -288,7 +276,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 	ctx, _, endObservation := r.operations.deletePreciseIndex.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -314,7 +302,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 	ctx, _, endObservation := r.operations.deletePreciseIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -372,7 +360,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 	ctx, _, endObservation := r.operations.reindexPreciseIndex.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -398,7 +386,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 	ctx, _, endObservation := r.operations.reindexPreciseIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 

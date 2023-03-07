@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
@@ -15,7 +14,7 @@ import (
 func TestMakeGetIndexesOptions(t *testing.T) {
 	opts, err := makeGetIndexesOptions(&resolverstubs.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &resolverstubs.LSIFIndexesQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
+			ConnectionArgs: resolverstubs.ConnectionArgs{
 				First: intPtr(5),
 			},
 			Query: strPtr("q"),

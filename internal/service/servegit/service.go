@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -15,16 +16,19 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	Addr      string
-	ReposRoot string
+	Addr string
+	Root string
+
+	Timeout  time.Duration
+	MaxDepth int
 }
 
 func (c *Config) Load() {
 	// We bypass BaseConfig since it doesn't handle variables being empty.
 	if src, ok := os.LookupEnv("SRC"); ok {
-		c.ReposRoot = src
+		c.Root = src
 	} else if pwd, err := os.Getwd(); err == nil {
-		c.ReposRoot = pwd
+		c.Root = pwd
 	}
 
 	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
@@ -35,6 +39,9 @@ func (c *Config) Load() {
 	} else {
 		c.Addr = url.Host
 	}
+
+	c.Timeout = c.GetInterval("SRC_DISCOVER_TIMEOUT", "5s", "The maximum amount of time we spend looking for repositories.")
+	c.MaxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The maximum depth we will recurse when discovery for repositories.")
 }
 
 type svc struct{}
@@ -52,16 +59,15 @@ func (s svc) Configure() (env.Config, []debugserver.Endpoint) {
 func (s svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
 	config := configI.(*Config)
 
-	if config.ReposRoot == "" {
+	if config.Root == "" {
 		observationCtx.Logger.Warn("skipping local code since the environment variable SRC is not set")
 		return nil
 	}
 
-	// Start servegit which walks ReposRoot to find repositories and exposes
+	// Start servegit which walks Root to find repositories and exposes
 	// them over HTTP for Sourcegraph's syncer to discover and clone.
 	srv := &Serve{
-		Addr:   config.Addr,
-		Root:   config.ReposRoot,
+		Config: *config,
 		Logger: observationCtx.Logger,
 	}
 	if err := srv.Start(); err != nil {

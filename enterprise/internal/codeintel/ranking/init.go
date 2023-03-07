@@ -15,13 +15,11 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
-	gitserverClient GitserverClient,
 ) *Service {
 	return newService(
 		scopedContext("service", observationCtx),
 		store.New(scopedContext("store", observationCtx), db),
 		lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB),
-		gitserverClient,
 		conf.DefaultClient(),
 	)
 }
@@ -30,11 +28,12 @@ func NewSymbolExporter(observationCtx *observation.Context, rankingService *Serv
 	return []goroutine.BackgroundRoutine{
 		background.NewSymbolExporter(
 			observationCtx,
-			rankingService,
+			rankingService.store,
+			rankingService.lsifstore,
 			ConfigInst.SymbolExporterNumRoutines,
 			ConfigInst.SymbolExporterInterval,
+			ConfigInst.SymbolExporterReadBatchSize,
 			ConfigInst.SymbolExporterWriteBatchSize,
-			ConfigInst.DocumentReferenceCountsEnabled,
 		),
 	}
 }
@@ -43,9 +42,9 @@ func NewMapper(observationCtx *observation.Context, rankingService *Service) []g
 	return []goroutine.BackgroundRoutine{
 		background.NewMapper(
 			observationCtx,
-			rankingService,
+			rankingService.store,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
+			ConfigInst.MapperBatchSize,
 		),
 	}
 }
@@ -54,9 +53,9 @@ func NewReducer(observationCtx *observation.Context, rankingService *Service) []
 	return []goroutine.BackgroundRoutine{
 		background.NewReducer(
 			observationCtx,
-			rankingService,
+			rankingService.store,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
+			ConfigInst.ReducerBatchSize,
 		),
 	}
 }

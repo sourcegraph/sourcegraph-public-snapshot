@@ -1,10 +1,13 @@
 package ratelimit
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // DefaultMonitorRegistry is the default global rate limit monitor registry. It will hold rate limit mappings
@@ -157,6 +160,48 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 	// an integer type, and drops fractions. We get more accurate
 	// calculations computing this the other way around:
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
+}
+
+func (c *Monitor) calcRateLimitWaitTime() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if !c.retry.IsZero() {
+		if remaining := c.retry.Sub(c.now()); remaining > 0 {
+			// Unlock before sleeping
+			return remaining
+		}
+	}
+
+	// If the external rate limit is unknown, or if there are still remaining tokens,
+	// we don't wait.
+	if !c.known || c.remaining > 0 {
+		return time.Duration(0)
+	}
+
+	// If the rate limit reset is still in the future, we wait until the limit is reset.
+	// If it is in the past, the rate limit is outdated and we don't need to wait.
+	if remaining := c.reset.Sub(c.now()); remaining > 0 {
+		// Unlock before sleeping
+		return remaining
+	}
+
+	return time.Duration(0)
+}
+
+// WaitForRateLimit determines whether or not an external rate limit is being applied
+// and sleeps an amount of time recommended by the external rate limiter.
+// It returns true if rate limiting was applying, and false if not.
+// This can be used to determine whether or not a request should be retried.
+func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
+	sleepDuration := c.calcRateLimitWaitTime()
+
+	if sleepDuration == 0 {
+		return false
+	}
+
+	timeutil.SleepWithContext(ctx, sleepDuration)
+	return true
 }
 
 // Update updates the monitor's rate limit information based on the HTTP response headers.

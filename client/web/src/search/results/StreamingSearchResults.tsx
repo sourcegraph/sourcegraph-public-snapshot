@@ -73,8 +73,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+
+    // Use new ranking if the feature flag is enabled and the user has not explicitly disabled it
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental')
+    useEffect(() => {
+        if (rankingEnabled && rankingToggleEnabled === undefined) {
+            setRankingToggleEnabled(rankingEnabled)
+        }
+    }, [rankingEnabled, rankingToggleEnabled, setRankingToggleEnabled])
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -95,7 +105,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
-        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+        useMemo(
+            () => [
+                rankingToggleEnabled && rankingEnabled ? 'search-ranking' : '-search-ranking',
+                ...new URLSearchParams(location.search).getAll('feat'),
+            ],
+            [location.search, rankingToggleEnabled, rankingEnabled]
+        )
     )
     const { addRecentSearch } = useRecentSearches()
 
@@ -405,6 +421,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
+                        isRankingEnabled={!!rankingToggleEnabled}
+                        setRankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
@@ -455,6 +473,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableOwnershipSearch={enableOwnershipSearch}
                             results={results}
                             allExpanded={allExpanded}
                             assetsRoot={window.context?.assetsRoot || ''}

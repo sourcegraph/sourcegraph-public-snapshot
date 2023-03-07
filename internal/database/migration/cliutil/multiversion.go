@@ -270,21 +270,25 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-// GetServiceVersion returns the frontend service version information for the
-// given runner. Both of the return values `ok` and `error` should be checked to
-// ensure a valid version is returned.
-func GetServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
+// GetRawServiceVersion returns the frontend service version information for the given runner as a raw string.
+func GetRawServiceVersion(ctx context.Context, r Runner) (_ string, ok bool, _ error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
-		return oobmigration.Version{}, 0, false, err
+		return "", false, err
 	}
 
-	versionStr, ok, err := upgradestore.New(db).GetServiceVersion(ctx, "frontend")
+	return upgradestore.New(db).GetServiceVersion(ctx, "frontend")
+}
+
+// GetServiceVersion returns the frontend service version information for the given runner as a parsed version.
+// Both of the return values `ok` and `error` should be checked to ensure a valid version is returned.
+func GetServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
+	versionStr, ok, err := GetRawServiceVersion(ctx, r)
 	if err != nil {
 		return oobmigration.Version{}, 0, false, err
 	}
 	if !ok {
-		return oobmigration.Version{}, 0, false, nil
+		return oobmigration.Version{}, 0, false, err
 	}
 
 	version, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)

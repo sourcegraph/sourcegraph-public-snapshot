@@ -24,7 +24,6 @@ import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
 import { RepoView } from './RepoView'
@@ -99,8 +98,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         setAllExpanded(oldValue => !oldValue)
         platformContext.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, platformContext])
-
-    const [showSavedSearchForm, setShowSavedSearchForm] = useState(false)
 
     // Update local query state on sidebar query state updates.
     useDeepCompareEffectNoCheck(() => {
@@ -360,8 +357,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 <div className={styles.resultsViewScrollContainer}>
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
-                        showSavedSearchForm={showSavedSearchForm}
-                        setShowSavedSearchForm={setShowSavedSearchForm}
                         extensionCoreAPI={extensionCoreAPI}
                         patternType={context.submittedSearchQueryState.searchPatternType}
                         authenticatedUser={authenticatedUser}
@@ -381,17 +376,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         instanceURL={instanceURL}
                         fullQuery={fullQuery}
                     />
-                    {authenticatedUser && showSavedSearchForm && (
-                        <SavedSearchCreateForm
-                            authenticatedUser={authenticatedUser}
-                            submitLabel="Add saved search"
-                            title="Add saved search"
-                            fullQuery={`${fullQuery} patternType:${context.submittedSearchQueryState.searchPatternType}`}
-                            onComplete={() => setShowSavedSearchForm(false)}
-                            platformContext={platformContext}
-                            instanceURL={instanceURL}
-                        />
-                    )}
                     <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
                             settingsCascade={settingsCascade}
@@ -412,6 +396,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             showQueryExamplesOnNoResultsPage={true}
                             setQueryState={setUserQueryState}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}
+                            // TODO: No access to feature flags in vscode.
+                            enableOwnershipSearch={false}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

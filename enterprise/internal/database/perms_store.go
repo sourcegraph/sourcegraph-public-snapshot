@@ -620,7 +620,8 @@ ON CONFLICT ON CONSTRAINT
 DO UPDATE SET
   object_ids_ints = excluded.object_ids_ints,
   updated_at = excluded.updated_at,
-  synced_at = excluded.synced_at
+  synced_at = excluded.synced_at,
+  migrated = TRUE
 `
 
 	if p.UpdatedAt.IsZero() {
@@ -1702,6 +1703,36 @@ AND expired_at IS NULL
 	return userIDs, nil
 }
 
+func UnifiedPermsEnabled() bool {
+	return conf.ExperimentalFeatures().UnifiedPermissions
+}
+
+const legacyUsersWithNoPermsQuery = `
+SELECT users.id, NULL
+FROM users
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND NOT EXISTS (
+	SELECT
+	FROM user_permissions
+	WHERE user_id = users.id
+)
+`
+
+const unifiedUsersWithNoPermsQuery = `
+SELECT users.id, NULL
+FROM users
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND NOT EXISTS (
+	SELECT
+	FROM user_repo_permissions
+	WHERE user_id = users.id
+)
+`
+
 func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	// By default, site admins can access any repo
 	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
@@ -1710,18 +1741,13 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	q := sqlf.Sprintf(`
-SELECT users.id, NULL
-FROM users
-WHERE
-	users.deleted_at IS NULL
-AND %s
-AND NOT EXISTS (
-		SELECT
-		FROM user_permissions
-		WHERE user_id = users.id
-	)
-`, filterSiteAdmins)
+	query := unifiedUsersWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyUsersWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query, filterSiteAdmins)
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
@@ -2135,8 +2161,8 @@ WITH accessible_repos AS (
 		repo.id,
 		repo.name
 	FROM repo
-	WHERE 
-		repo.deleted_at IS NULL 
+	WHERE
+		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
 	ORDER BY %s
 	%s -- Limit
@@ -2145,8 +2171,8 @@ WITH accessible_repos AS (
 SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
-	CASE 
-		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync' 
+	CASE
+		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync'
 		ELSE 'Unrestricted' -- If no user_permissions entry is found then the accessible repo must be unrestricted
 	END AS permission_reason
 FROM

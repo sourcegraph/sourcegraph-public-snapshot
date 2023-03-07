@@ -5,7 +5,6 @@ import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs
 import * as sourcegraph from 'sourcegraph'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'
-import { ExposedToClient } from '../api/client/mainthread-api'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../api/contract'
 import { InitData, startExtensionHost } from '../api/extension/extensionHost'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
@@ -40,13 +39,7 @@ const FIXTURE_INIT_DATA: TestInitData = {
 interface Mocks
     extends Pick<
         PlatformContext,
-        | 'settings'
-        | 'updateSettings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'clientApplication'
-        | 'showMessage'
-        | 'showInputBox'
+        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
     > {}
 
 const NOOP_MOCKS: Mocks = {
@@ -70,7 +63,6 @@ export async function integrationTestContext(
         extensionAPI: typeof sourcegraph
         extensionHostAPI: Remote<FlatExtensionHostAPI>
         mainThreadAPI: MainThreadAPI
-        exposedToClient: ExposedToClient
     } & Unsubscribable
 > {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
@@ -93,11 +85,7 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    const {
-        api: extensionHostAPI,
-        mainThreadAPI,
-        exposedToClient,
-    } = await createExtensionHostClientConnection(
+    const { api: extensionHostAPI, mainThreadAPI } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
             subscription: new Subscription(),
@@ -116,7 +104,6 @@ export async function integrationTestContext(
         extensionAPI,
         extensionHostAPI,
         mainThreadAPI,
-        exposedToClient,
         unsubscribe: () => extensionHost.unsubscribe(),
     }
 }

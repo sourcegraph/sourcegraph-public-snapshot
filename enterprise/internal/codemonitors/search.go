@@ -261,7 +261,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 		default:
 			if len(j.Children()) == 0 {
 				if err == nil {
-					err = errors.Errorf("found invalid atom job type %T for code monitor search", j)
+					err = errors.New("all branches of query must be of type:diff or type:commit. If you have an AND/OR operator in your query, ensure that both sides have type:commit or type:diff.")
 				}
 			}
 			return j

@@ -7,15 +7,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func New(db database.DB, ownService own.Service) *ownResolver {
+func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:         db,
+		db:         edb.NewEnterpriseDB(db),
+		gitserver:  gitserver,
 		ownService: ownService,
 	}
 }
@@ -24,18 +27,20 @@ var (
 	_ graphqlbackend.OwnResolver = &ownResolver{}
 )
 
-// ownResolver is a dummy graphqlbackend.OwnResolver that reutns a single owner
+// ownResolver is a dummy graphqlbackend.OwnResolver that returns a single owner
 // that is the author of currently viewed commit, and fake ownership reason
 // pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct {
-	db         database.DB
+	db         edb.EnterpriseDB
+	gitserver  gitserver.Client
 	ownService own.Service
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
-	repoName := blob.Repository().RepoName()
+	repo := blob.Repository()
+	repoID, repoName := repo.IDInt32(), repo.RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
+	rs, err := r.ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +100,7 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 }
 
 // ownershipResolver provides a dummy implementation of graphqlbackend.OwnershipResolver
-// which just claims the the auhthor of given GitTreeEntryResolver Commit is the owner
+// which just claims the author of given GitTreeEntryResolver Commit is the owner
 // and is supports it by pointing at line 42 of the CODEOWNERS file.
 type ownershipResolver struct {
 	db            database.DB

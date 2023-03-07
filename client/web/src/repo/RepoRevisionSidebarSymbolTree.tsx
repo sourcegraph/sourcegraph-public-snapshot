@@ -15,6 +15,8 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
+import styles from './RepoRevisionSidebarSymbols.module.scss'
+
 interface Props {
     symbols: SymbolWithChildren[]
     onClick: () => void
@@ -62,12 +64,14 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             //
             // Note: React errors when calling flushSync from lifecycle method, so we move this into
             // an async timeout instead.
-            queueMicrotask(() =>
-                flushSync(() => {
-                    onClick()
-                    setSelectedSymbolUrl(element.url)
-                    navigate(element.url)
-                })
+            setTimeout(
+                () =>
+                    flushSync(() => {
+                        onClick()
+                        setSelectedSymbolUrl(element.url)
+                        navigate(element.url)
+                    }),
+                0
             )
         },
         [navigate, onClick, selectedSymbolUrl, setSelectedSymbolUrl]
@@ -119,6 +123,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
+            nodeClassName={styles.treeNode}
             renderNode={({ element, handleSelect, props }): React.ReactNode => {
                 const { className, ...rest } = props
 
@@ -136,7 +141,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                         }}
                     >
                         <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} />
-                        {element.name}
+                        <span data-testid="symbol-name">{element.name}</span>
                     </Link>
                 )
             }}

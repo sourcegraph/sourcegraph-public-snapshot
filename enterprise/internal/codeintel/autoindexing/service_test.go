@@ -25,15 +25,6 @@ func init() {
 
 func TestQueueIndexesExplicit(t *testing.T) {
 	conf := `{
-		"shared_steps": [
-			{
-				"root": "/",
-				"image": "node:12",
-				"commands": [
-					"yarn install --frozen-lockfile --non-interactive",
-				],
-			}
-		],
 		"index_jobs": [
 			{
 				"steps": [
@@ -100,11 +91,6 @@ func TestQueueIndexesExplicit(t *testing.T) {
 			State:        "queued",
 			DockerSteps: []types.DockerStep{
 				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-				{
 					Image:    "go:latest",
 					Commands: []string{"go mod vendor"},
 				},
@@ -116,17 +102,11 @@ func TestQueueIndexesExplicit(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []types.DockerStep{
-				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-			},
-			Root:        "web/",
-			Indexer:     "scip-typescript",
-			IndexerArgs: []string{"index", "--no-progress-bar"},
-			Outfile:     "lsif.dump",
+			DockerSteps:  nil,
+			Root:         "web/",
+			Indexer:      "scip-typescript",
+			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
@@ -139,15 +119,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		ID:           1,
 		RepositoryID: 42,
 		Data: []byte(`{
-			"shared_steps": [
-				{
-					"root": "/",
-					"image": "node:12",
-					"commands": [
-						"yarn install --frozen-lockfile --non-interactive",
-					],
-				}
-			],
 			"index_jobs": [
 				{
 					"steps": [
@@ -230,11 +201,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 			State:        "queued",
 			DockerSteps: []types.DockerStep{
 				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-				{
 					Image:    "go:latest",
 					Commands: []string{"go mod vendor"},
 				},
@@ -246,17 +212,11 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []types.DockerStep{
-				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-			},
-			Root:        "web/",
-			Indexer:     "scip-typescript",
-			IndexerArgs: []string{"index", "--no-progress-bar"},
-			Outfile:     "lsif.dump",
+			DockerSteps:  nil,
+			Root:         "web/",
+			Indexer:      "scip-typescript",
+			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
@@ -265,12 +225,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 }
 
 var yamlIndexConfiguration = []byte(`
-shared_steps:
-  - root: /
-    image: node:12
-    commands:
-      - yarn install --frozen-lockfile --non-interactive
-
 index_jobs:
   -
     steps:
@@ -340,11 +294,6 @@ func TestQueueIndexesInRepository(t *testing.T) {
 			State:        "queued",
 			DockerSteps: []types.DockerStep{
 				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-				{
 					Image:    "go:latest",
 					Commands: []string{"go mod vendor"},
 				},
@@ -356,17 +305,11 @@ func TestQueueIndexesInRepository(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []types.DockerStep{
-				{
-					Root:     "/",
-					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-				},
-			},
-			Root:        "web/",
-			Indexer:     "scip-typescript",
-			IndexerArgs: []string{"index", "--no-progress-bar"},
-			Outfile:     "lsif.dump",
+			DockerSteps:  nil,
+			Root:         "web/",
+			Indexer:      "scip-typescript",
+			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {

@@ -113,3 +113,111 @@ type CodeownersFileEntry {
     """
     ruleLineMatch: Int!
 }
+
+"""
+CodeownersIngestedFile represents a manually ingested Codeowners file.
+"""
+type CodeownersIngestedFile implements Node {
+    """
+    A graphql ID for this file.
+    """
+    id: ID!
+    """
+    The string contents of the codeowners file.
+    """
+    contents: String!
+    """
+    The repository this codeowners file has been manually ingested for.
+    """
+    repository: Repository!
+    """
+    The creation date of this codeowners file.
+    """
+    createdAt: DateTime!
+    """
+    The last updated date of this codeowners file.
+    """
+    updatedAt: DateTime!
+}
+
+extend type Mutation {
+    """
+    addCodeownersFile creates a new Codeowners file for the given repository and file contents.
+    """
+    addCodeownersFile(input: CodeownersFileInput!): CodeownersIngestedFile!
+    """
+    updateCodeownersFile updates an existing Codeowners file for a repository.
+    """
+    updateCodeownersFile(input: CodeownersFileInput!): CodeownersIngestedFile!
+    """
+    deleteCodeownersFiles deletes any existing Codeowners file for the given repositories.
+    """
+    deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
+}
+
+"""
+A repository to pass to the deleteCodeownersFiles mutation. Either repoID or repoName
+must be provided.
+"""
+input DeleteCodeownersFilesInput {
+    """
+    The repo ID to ingest the file for. Cannot be set with repositoryName.
+    """
+    repoID: ID
+    """
+    The repo name to ingest the file for. Cannot be set with repositoryID.
+    """
+    repoName: String
+}
+
+"""
+CodeownersFileInput represents the input for ingesting codeowners files
+"""
+input CodeownersFileInput {
+    """
+    fileContents is the text of the codeowners file
+    """
+    fileContents: String!
+    """
+    The repo ID to ingest the file for. Cannot be set with repositoryName.
+    """
+    repoID: ID
+    """
+    The repo name to ingest the file for. Cannot be set with repositoryID.
+    """
+    repoName: String
+}
+
+extend type Query {
+    """
+    codeownersIngestedFiles returns all existing manually ingested codeowners files.
+    """
+    codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
+}
+
+"""
+A list of CodeownersIngestedFiles.
+"""
+type CodeownersIngestedFileConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of codeowners files in this connection.
+    """
+    nodes: [CodeownersIngestedFile!]!
+}
+
+extend type Repository {
+    """
+    A file containing manually ingested codeowners data, if any. Null if no data has been uploaded.
+    """
+    ingestedCodeowners: CodeownersIngestedFile
+}

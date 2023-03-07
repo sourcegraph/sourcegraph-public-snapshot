@@ -130,7 +130,6 @@ export class HovercardView implements TooltipView {
                         // hovercard to render
                         overlayPosition={dummyOverlayPosition}
                         hoveredToken={hoveredToken}
-                        onAlertDismissed={() => repositionTooltips(this.view)}
                         pinOptions={{
                             showCloseButton: pinned,
                             onCloseButtonClick: () => {

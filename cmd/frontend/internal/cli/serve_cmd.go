@@ -203,25 +203,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		enterpriseServices.OptionalResolver.AppResolver = graphqlbackend.NewAppResolver(logger, db)
+	}
+
 	schema, err := graphqlbackend.NewSchema(
 		db,
 		gitserver.NewClient(),
 		enterpriseServices.EnterpriseSearchJobs,
-		enterpriseServices.BatchChangesResolver,
-		enterpriseServices.CodeIntelResolver,
-		enterpriseServices.InsightsResolver,
-		enterpriseServices.AuthzResolver,
-		enterpriseServices.CodeMonitorsResolver,
-		enterpriseServices.LicenseResolver,
-		enterpriseServices.DotcomResolver,
-		enterpriseServices.SearchContextsResolver,
-		enterpriseServices.NotebooksResolver,
-		enterpriseServices.ComputeResolver,
-		enterpriseServices.InsightsAggregationResolver,
-		enterpriseServices.WebhooksResolver,
-		enterpriseServices.EmbeddingsResolver,
-		enterpriseServices.RBACResolver,
-		enterpriseServices.OwnResolver,
+		enterpriseServices.OptionalResolver,
 	)
 	if err != nil {
 		return err
@@ -285,6 +275,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
 			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:    enterprise.BatchesBitbucketCloudWebhook,
+			BatchesAzureDevOpsWebhook:       enterprise.BatchesAzureDevOpsWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
