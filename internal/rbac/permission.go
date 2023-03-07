@@ -27,7 +27,7 @@ func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permissi
 		return auth.ErrNotAuthenticated
 	}
 
-	namespace, action, err := parsePermissionDisplayName(permission)
+	namespace, action, err := ParsePermissionDisplayName(permission)
 	if err != nil {
 		return err
 	}
