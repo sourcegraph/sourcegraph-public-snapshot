@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -22,6 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 // userCtx returns a context where give user ID identifies logged in user.
@@ -170,6 +172,77 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	})
 }
 
+var paginationQuery = `
+query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
+	node(id: $repo) {
+		... on Repository {
+			commit(rev: $revision) {
+				blob(path: $currentPath) {
+					ownership(first: 2, after: $after) {
+						totalCount
+						pageInfo {
+							endCursor
+							hasNextPage
+						}
+						nodes {
+							owner {
+								...on Person {
+									displayName
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}`
+
+type paginationResponse struct {
+	Node struct {
+		Commit struct {
+			Blob struct {
+				Ownership struct {
+					TotalCount int
+					PageInfo   struct {
+						EndCursor   *string
+						HasNextPage bool
+					}
+					Nodes []struct {
+						Owner struct {
+							DisplayName string
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func (r paginationResponse) hasNextPage() bool {
+	return r.Node.Commit.Blob.Ownership.PageInfo.HasNextPage
+}
+
+func (r paginationResponse) consistentPageInfo() error {
+	ownership := r.Node.Commit.Blob.Ownership
+	if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage != hasCursor {
+		cursor := "<nil>"
+		if ownership.PageInfo.EndCursor != nil {
+			cursor = fmt.Sprintf("&%q", *ownership.PageInfo.EndCursor)
+		}
+		return errors.Newf("PageInfo.HasNextPage %v but PageInfo.EndCursor %s", nextPage, cursor)
+	}
+	return nil
+}
+
+func (r paginationResponse) ownerNames() []string {
+	var owners []string
+	for _, n := range r.Node.Commit.Blob.Ownership.Nodes {
+		owners = append(owners, n.Owner.DisplayName)
+	}
+	return owners
+}
+
 // TestOwnershipPagination issues a number of queries using ownership(first) parameter
 // to limit number of responses. It expects to see correct pagination behavior, that is:
 // *  all results are eventually returned, in the expected order;
@@ -205,63 +278,20 @@ func TestOwnershipPagination(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	query := `
-		query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
-			node(id: $repo) {
-				... on Repository {
-					commit(rev: $revision) {
-						blob(path: $currentPath) {
-							ownership(first: 2, after: $after) {
-								totalCount
-								pageInfo {
-									endCursor
-									hasNextPage
-								}
-								nodes {
-									owner {
-										...on Person {
-											displayName
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}`
 	var after string
 	var paginatedOwners [][]string
+	var lastResponseData *paginationResponse
 	// Limit iterations to number of owners total, so that the test
 	// has a stop condition in case something malfunctions.
 	for i := 0; i < len(rule.Owner); i++ {
-		var responseData struct {
-			Node struct {
-				Commit struct {
-					Blob struct {
-						Ownership struct {
-							TotalCount int
-							PageInfo   struct {
-								EndCursor   *string
-								HasNextPage bool
-							}
-							Nodes []struct {
-								Owner struct {
-									DisplayName string
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		var responseData paginationResponse
 		variables := map[string]any{
 			"repo":        string(relay.MarshalID("Repository", 42)),
 			"revision":    "revision",
 			"currentPath": "foo/bar.js",
 			"after":       after,
 		}
-		response := schema.Exec(ctx, query, "", variables)
+		response := schema.Exec(ctx, paginationQuery, "", variables)
 		for _, err := range response.Errors {
 			t.Errorf("GraphQL Exec, errors: %s", err)
 		}
@@ -275,23 +305,21 @@ func TestOwnershipPagination(t *testing.T) {
 		if got, want := ownership.TotalCount, len(rule.Owner); got != want {
 			t.Errorf("TotalCount, got %d want %d", got, want)
 		}
-		var owners []string
-		for _, n := range ownership.Nodes {
-			owners = append(owners, n.Owner.DisplayName)
+		paginatedOwners = append(paginatedOwners, responseData.ownerNames())
+		if err := responseData.consistentPageInfo(); err != nil {
+			t.Error(err)
 		}
-		paginatedOwners = append(paginatedOwners, owners)
-		if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage != hasCursor {
-			cursor := "<nil>"
-			if ownership.PageInfo.EndCursor != nil {
-				cursor = fmt.Sprintf("&%q", *ownership.PageInfo.EndCursor)
-			}
-			t.Errorf("PageInfo.HasNextPage %v but PageInfo.EndCursor %s", nextPage, cursor)
-		}
+		lastResponseData = &responseData
 		if ownership.PageInfo.HasNextPage {
 			after = *ownership.PageInfo.EndCursor
 		} else {
 			break
 		}
+	}
+	if lastResponseData == nil {
+		t.Error("No response received.")
+	} else if lastResponseData.hasNextPage() {
+		t.Error("Last responce has next page information - result is not exhaustive.")
 	}
 	wantPaginatedOwners := [][]string{
 		{

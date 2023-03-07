@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -69,6 +70,11 @@ func (r *ownResolver) GitBlobOwnership(
 		return &ownershipConnectionResolver{db: r.db}, nil
 	}
 	owners := rs.FindOwners(blob.Path())
+	sort.Slice(owners, func(i, j int) bool {
+		iText := ownerText(owners[i])
+		jText := ownerText(owners[j])
+		return iText < jText
+	})
 	total := len(owners)
 	for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
 		owners = owners[1:]
