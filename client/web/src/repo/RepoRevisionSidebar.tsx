@@ -100,7 +100,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         />
                         <Tabs
                             className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
-                            defaultIndex={persistedTabIndex}
+                            index={persistedTabIndex}
                             onChange={setPersistedTabIndex}
                             lazy={true}
                             // The individual tabs should keep their state when switching around (e.g. scroll
@@ -193,7 +193,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             {...keybinding}
                             allowDefault={true}
                             onMatch={() => {
-                                setIsVisible(true)
+                                handleSidebarToggle(true)
                                 setPersistedTabIndex(0)
                                 setFileTreeFocusKey(Date.now().toString())
                             }}
@@ -205,7 +205,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             {...keybinding}
                             allowDefault={true}
                             onMatch={() => {
-                                setIsVisible(true)
+                                handleSidebarToggle(true)
                                 setPersistedTabIndex(1)
                                 setSymbolsFocusKey(Date.now().toString())
                             }}
