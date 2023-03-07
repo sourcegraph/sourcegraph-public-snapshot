@@ -24,8 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -2823,7 +2825,12 @@ func cleanupUsersTable(t *testing.T, s *permsStore) {
 		return
 	}
 
-	q := `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
+	q := `DELETE FROM user_external_accounts;`
+	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
+		t.Fatal(err)
+	}
+
+	q = `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
 	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
@@ -2893,22 +2900,46 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	}
 }
 
-func testPermsStore_UserIDsWithNoPerms(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
+func mockUnifiedPermsConfig(val bool) {
+	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: val,
+		},
+	}}
+	conf.Mock(cfg)
+}
+
+func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	runTest := func(t *testing.T) {
+		t.Helper()
+
 		logger := logtest.Scoped(t)
 		s := perms(logger, db, time.Now)
 		t.Cleanup(func() {
-			cleanupUsersTable(t, s)
 			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 		})
 
 		ctx := context.Background()
 
-		// Create test users "alice" and "bob"
+		// Create test users "alice" and "bob", test repo and test external account
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                    // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),                      // ID=2
 			sqlf.Sprintf(`INSERT INTO users(username, deleted_at) VALUES('cindy', NOW())`), // ID=3
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),   // ID=1
+			sqlf.Sprintf(`INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2929,11 +2960,15 @@ func testPermsStore_UserIDsWithNoPerms(db database.DB) func(*testing.T) {
 		}
 
 		// Give "alice" some permissions
-		_, err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(1),
-		})
+		if UnifiedPermsEnabled() {
+			err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 1, ExternalAccountID: 1}, []int32{1})
+		} else {
+			_, err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(1),
+			})
+		}
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2949,6 +2984,20 @@ func testPermsStore_UserIDsWithNoPerms(db database.DB) func(*testing.T) {
 			t.Fatal(diff)
 		}
 	}
+
+	t.Run("With legacy permissions table", func(t *testing.T) {
+		t.Cleanup(func() { conf.Mock(nil) })
+		mockUnifiedPermsConfig(false)
+
+		runTest(t)
+	})
+
+	t.Run("With new permissions tables", func(t *testing.T) {
+		t.Cleanup(func() { conf.Mock(nil) })
+		mockUnifiedPermsConfig(true)
+
+		runTest(t)
+	})
 }
 
 func cleanupReposTable(t *testing.T, s *permsStore) {
