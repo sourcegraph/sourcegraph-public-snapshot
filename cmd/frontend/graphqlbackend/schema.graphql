@@ -7782,6 +7782,10 @@ type SiteUser {
     """
     siteAdmin: Boolean!
     """
+    Whether the user is controlled through SCIM.
+    """
+    scimControlled: Boolean!
+    """
     Total number of user's event_logs.
     """
     eventsCount: Float!
