@@ -120,100 +120,110 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRateLimitRetries(t *testing.T) {
+func TestRateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	ctx := context.Background()
-	hitRetryAfter := false
-	hitRateLimit := false
-	succeeded := false
-	numRequests := 0
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		numRequests += 1
-		if hitRetryAfter {
-			w.Header().Add("Retry-After", "1")
-			w.WriteHeader(http.StatusTooManyRequests)
-			w.Write([]byte("Try again later"))
+	type test struct {
+		client *Client
 
-			hitRetryAfter = false
-			return
-		}
-
-		if hitRateLimit {
-			w.Header().Add("RateLimit-Name", "test")
-			w.Header().Add("RateLimit-Limit", "60")
-			w.Header().Add("RateLimit-Observed", "67")
-			w.Header().Add("RateLimit-Remaining", "0")
-			resetTime := time.Now().Add(time.Second)
-			w.Header().Add("RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
-			w.WriteHeader(http.StatusTooManyRequests)
-			w.Write([]byte("Try again later"))
-
-			hitRateLimit = false
-			return
-		}
-
-		succeeded = true
-		w.Write([]byte(`{"some": "response"}`))
-	}))
-
-	srvURL, err := url.Parse(srv.URL)
-	require.NoError(t, err)
-
-	provider := NewClientProvider("Test", srvURL, nil)
-	client := provider.getClient(nil)
-
-	done := func() {
-		hitRetryAfter = false
-		hitRateLimit = false
-		succeeded = false
-		numRequests = 0
-		client.waitForRateLimit = true
+		rateLimitWasHit  bool
+		retryAfterWasHit bool
+		succeeded        bool
+		numRequests      int
 	}
 
-	req, err := http.NewRequest(http.MethodGet, "url", nil)
-	require.NoError(t, err)
+	buildNewTest := func(t *testing.T, useRateLimit, useRetryAfter bool) (*test, *httptest.Server) {
+		testCase := &test{}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			testCase.numRequests += 1
+			if useRetryAfter {
+				w.Header().Add("Retry-After", "1")
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte("Try again later"))
+
+				useRetryAfter = false
+				testCase.retryAfterWasHit = true
+				return
+			}
+
+			if useRateLimit {
+				w.Header().Add("RateLimit-Name", "test")
+				w.Header().Add("RateLimit-Limit", "60")
+				w.Header().Add("RateLimit-Observed", "67")
+				w.Header().Add("RateLimit-Remaining", "0")
+				resetTime := time.Now().Add(time.Second)
+				w.Header().Add("RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte("Try again later"))
+
+				useRateLimit = false
+				testCase.rateLimitWasHit = true
+				return
+			}
+
+			testCase.succeeded = true
+			w.Write([]byte(`{"some": "response"}`))
+		}))
+
+		t.Cleanup(srv.Close)
+
+		srvURL, err := url.Parse(srv.URL)
+		require.NoError(t, err)
+
+		provider := NewClientProvider("Test", srvURL, nil)
+		testCase.client = provider.getClient(nil)
+
+		return testCase, srv
+	}
+
 	var result map[string]any
 
 	t.Run("retry-after hit", func(t *testing.T) {
-		t.Cleanup(done)
-		hitRetryAfter = true
-
-		_, _, err := client.do(ctx, req, &result)
+		req, err := http.NewRequest(http.MethodGet, "url", nil)
 		require.NoError(t, err)
-		assert.Equal(t, 2, numRequests)
-		assert.True(t, succeeded)
+		test, _ := buildNewTest(t, false, true)
+
+		_, _, err = test.client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 2, test.numRequests)
+		assert.True(t, test.succeeded)
 	})
 
 	t.Run("rate limit hit", func(t *testing.T) {
-		t.Cleanup(done)
-		hitRateLimit = true
-
-		_, _, err := client.do(ctx, req, &result)
+		req, err := http.NewRequest(http.MethodGet, "url", nil)
 		require.NoError(t, err)
-		assert.Equal(t, 2, numRequests)
-		assert.True(t, succeeded)
+		test, _ := buildNewTest(t, true, false)
+
+		_, _, err = test.client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 2, test.numRequests)
+		assert.True(t, test.succeeded)
 	})
 
 	t.Run("no rate limit hit", func(t *testing.T) {
-		t.Cleanup(done)
-
-		_, _, err := client.do(ctx, req, &result)
+		req, err := http.NewRequest(http.MethodGet, "url", nil)
 		require.NoError(t, err)
-		assert.Equal(t, 1, numRequests)
-		assert.True(t, succeeded)
+		test, _ := buildNewTest(t, false, false)
+
+		_, _, err = test.client.do(ctx, req, &result)
+		require.NoError(t, err)
+		assert.Equal(t, 1, test.numRequests)
+		assert.True(t, test.succeeded)
 	})
 
 	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
-		t.Cleanup(done)
-		client.waitForRateLimit = false
-		hitRateLimit = true
+		req, err := http.NewRequest(http.MethodGet, "url", nil)
+		require.NoError(t, err)
+		test, _ := buildNewTest(t, true, false)
+		test.client.waitForRateLimit = false
 
-		_, _, err := client.do(ctx, req, &result)
+		_, _, err = test.client.do(ctx, req, &result)
 		require.Error(t, err)
-		assert.Equal(t, 1, numRequests)
-		assert.False(t, succeeded)
+		assert.Equal(t, 1, test.numRequests)
+		assert.False(t, test.succeeded)
 	})
 }
 
