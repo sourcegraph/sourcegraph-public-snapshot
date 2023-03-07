@@ -4066,13 +4066,13 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 <br />
 
-### Frontend: Ranking
+### Frontend: Search: Ranking
 
-#### frontend: mean_position_of_clicked_search_result_6h
+#### frontend: percent_file_clicks_on_top_search_result
 
-<p class="subtitle">Mean position of clicked search result over 6h</p>
+<p class="subtitle">Percent of file clicks on top search result over 6h</p>
 
-The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.
+The percent of file clicks that were on the top search result, excluding searches with very few results (3 or fewer).
 
 This panel has no related alerts.
 
@@ -4083,17 +4083,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))`
+Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="1",resultsLength=">3",type="fileMatch"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type="fileMatch"}[6h])) * 100`
 
 </details>
 
 <br />
 
-#### frontend: distribution_of_clicked_search_result_type_over_6h_in_percent
+#### frontend: percent_file_clicks_on_top_3_search_results
 
-<p class="subtitle">Distribution of clicked search result type over 6h in %</p>
+<p class="subtitle">Percent of file clicks on top 3 search results over 6h</p>
 
-The distribution of clicked search results by result type. At every point in time, the values should sum to 100.
+The percent of file clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).
 
 This panel has no related alerts.
 
@@ -4104,7 +4104,49 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001`
 <details>
 <summary>Technical details</summary>
 
-Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)`
+Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="3",resultsLength=">3",type="fileMatch"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type="fileMatch"}[6h])) * 100`
+
+</details>
+
+<br />
+
+#### frontend: distribution_of_clicked_search_result_type_over_6h_in_percent
+
+<p class="subtitle">Distribution of clicked search result type over 6h</p>
+
+The distribution of clicked search results by result type. At every point in time, the values should sum to 100.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `round(sum(increase(src_search_ranking_result_clicked_count{type="repo"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100`
+
+</details>
+
+<br />
+
+#### frontend: percent_zoekt_searches_hitting_flush_limit
+
+<p class="subtitle">Percent of zoekt searches that hit the flush time limit</p>
+
+The percent of Zoekt searches that hit the flush time limit. These searches don`t visit all matches, so they could be missing relevant results, or be non-deterministic.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103003` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(zoekt_final_aggregate_size_count{reason="timer_expired"}[1d])) / sum(increase(zoekt_final_aggregate_size_count[1d])) * 100`
 
 </details>
 
