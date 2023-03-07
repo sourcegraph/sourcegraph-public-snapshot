@@ -138,8 +138,8 @@ function releaseDates(releaseDate: DateTime, includePatches?: boolean): ReleaseD
 
 function generatePatchDates(start: DateTime, end: DateTime, intervalWeeks: number): DateTime[] {
     const patches = []
-    let current: DateTime = start.plus({weeks: intervalWeeks})
-    while (current < end.minus({weeks: 1})) {
+    let current: DateTime = start.plus({ weeks: intervalWeeks })
+    while (current < end.minus({ weeks: 1 })) {
         patches.push(current)
         current = current.plus({ weeks: intervalWeeks })
     }
