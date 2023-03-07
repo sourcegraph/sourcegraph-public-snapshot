@@ -19,18 +19,7 @@ type EvaluateError = unknown
 const MINUTE = 60000
 const FEATURE_FLAG_CACHE_TTL = MINUTE * 10
 
-/**
- * 1. [undefined] We don't have flag value yet -> its name is not present in this Map.
- *
- * 2. [valid] We got the fresh value of the flag from the API -> name is added to this map
- * with the `valid` status. It means that there's an in-flight `setTimeout` for
- * this flag which will make it `stale` after `cacheTTL` ms.
- *
- * 3. [stale] The flag TTL just elapsed -> the flag state is set to `stale`, and refetch is called.
- *
- * 4. [refetch] The refetch is completed -> the flag state is removed to restart the cycle.
- */
-const FLAG_STATES = new Map<FlagName, 'valid' | 'stale' | 'refetch'>()
+const FLAG_STATES = new Map<FlagName, 'new_value' | 'valid' | 'stale' | 'refetch'>()
 
 /**
  * Evaluates the feature flag via GraphQL query and returns the value.
@@ -42,7 +31,13 @@ const FLAG_STATES = new Map<FlagName, 'valid' | 'stale' | 'refetch'>()
 export function useFeatureFlag(
     flagName: FeatureFlagName,
     defaultValue = false,
+    /**
+     * Used for tests only
+     */
     cacheTTL = FEATURE_FLAG_CACHE_TTL,
+    /**
+     * Used for tests only
+     */
     flagStates = FLAG_STATES
 ): [boolean, FetchStatus, EvaluateError?] {
     const overriddenValue = getFeatureFlagOverrideValue(flagName)
@@ -66,36 +61,49 @@ export function useFeatureFlag(
     }
 
     if (data) {
+        /**
+         * Flag states are shared between all instances of the React hook, which
+         * eliminates the possibility of race conditions and ensures that each flag
+         * can have only one scheduled refetch call.
+         *
+         * Switch cases are defined in chronological order.
+         */
         switch (flagStates.get(flagName)) {
             /**
-             * Do nothing. Either `setTimeout` or `refetch` is in progress,
-             * and we can use the cached value for now.
+             * Upon receiving the new value from the API, we start the timer unique
+             * for the feature flag, marking it as stale after `cacheTTL`.
+             */
+            case undefined:
+            case 'new_value': {
+                flagStates.set(flagName, 'valid')
+                setTimeout(() => flagStates.set(flagName, 'stale'), cacheTTL)
+                break
+            }
+
+            /**
+             * Do nothing. The `setTimeout` is in progress and we can use the cached value for now.
              */
             case 'valid':
-            case 'refetch':
                 break
 
             /**
              * If we have the stale value, initiate the refetch with the `network-only`
              * strategy. The hook will be re-rendered only if the value has changed after the refetch.
-             * On refetch success, we mark the value as the new one by removing the flag status.
+             * On refetch success, we mark the value as the new one to restart the state cycle.
              */
             case 'stale': {
                 flagStates.set(flagName, 'refetch')
                 refetch()
-                    .then(() => flagStates.delete(flagName))
+                    .then(() => flagStates.set(flagName, 'new_value'))
                     .catch(logger.error)
                 break
             }
 
             /**
-             * After receiving the new value from the API, we start the timer unique
-             * for the feature flag, marking it as stale after `cacheTTL`.
+             * Do nothing. The `refetch` is in progress and we can use the cached value for now.
              */
-            default: {
-                flagStates.set(flagName, 'valid')
-                setTimeout(() => flagStates.set(flagName, 'stale'), cacheTTL)
-            }
+            case 'refetch':
+                break
         }
     }
 
