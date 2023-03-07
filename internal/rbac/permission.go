@@ -38,6 +38,12 @@ func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permissi
 		Action:    action,
 	})
 	if err != nil {
+		if errors.Is(err, &database.PermissionNotFoundErr{
+			Namespace: namespace,
+			Action:    action,
+		}) {
+			return ErrNotAuthorized
+		}
 		return err
 	}
 	// if permission is nil, it means the user doesn't have that permission
