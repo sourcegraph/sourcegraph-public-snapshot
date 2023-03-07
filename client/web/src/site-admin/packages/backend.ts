@@ -35,3 +35,36 @@ export const packageRepoFilterQuery = gql`
 
     ${packageRepoMatchFragment}
 `
+
+export const addPackageRepoFilterMutation = gql`
+    mutation AddPackageRepoFilter(
+        $kind: PackageRepoReferenceKind!
+        $filter: PackageVersionOrNameFilterInput!
+        $behaviour: PackageMatchBehaviour!
+    ) {
+        addPackageRepoFilter(kind: $kind, filter: $filter, behaviour: $behaviour) {
+            alwaysNil
+        }
+    }
+`
+
+export const deletePackageRepoFilterMutation = gql`
+    mutation DeletePackageRepoFilter($id: ID!) {
+        deletePackageRepoFilter(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export const updatePackageRepoFilterMutation = gql`
+    mutation UpdatePackageRepoFilter(
+        $id: ID!
+        $kind: PackageRepoReferenceKind!
+        $filter: PackageVersionOrNameFilterInput!
+        $behaviour: PackageMatchBehaviour!
+    ) {
+        updatePackageRepoFilter(id: $id, kind: $kind, filter: $filter, behaviour: $behaviour) {
+            alwaysNil
+        }
+    }
+`

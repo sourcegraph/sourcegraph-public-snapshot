@@ -1,25 +1,27 @@
 .modal {
     width: 100%;
-    max-width: 35rem;
+    max-width: 50rem;
 }
 
 .header {
     border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
     margin-bottom: 1rem;
-    padding: 0 0.5rem 0.5rem;
-
-    text-align: center;
+    flex-flow: nowrap;
 }
 
 .content {
     min-height: 5rem;
 }
 
-.actions {
+.actions-container {
     border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
     margin-top: 1rem;
-    padding: 1rem 0.5rem 0;
+}
 
+.actions {
+    padding: 1rem 0.5rem 0;
     display: flex;
     justify-content: flex-end;
 }
@@ -35,9 +37,14 @@
 
 .list {
     max-height: 15rem;
-    overflow-y: scroll;
+    overflow-y: auto;
+}
+
+.list-container {
+    // Ensure no layout shifts regardless of content/error
+    min-height: 3rem;
 }
 
 .select {
-    width: 6rem;
+    max-width: 6rem;
 }
