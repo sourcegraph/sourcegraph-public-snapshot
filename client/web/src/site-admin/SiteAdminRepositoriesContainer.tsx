@@ -376,7 +376,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
 
     return (
         <>
-            <Container className="py-3 mb-3">
+            <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
                 {legends && <ValueLegendList items={legends} />}
             </Container>

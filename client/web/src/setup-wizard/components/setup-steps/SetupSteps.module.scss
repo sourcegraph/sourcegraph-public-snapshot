@@ -114,7 +114,7 @@
     &-inner-navigation {
         display: flex;
         flex-grow: 1;
-        gap: 0.5rem;
+        gap: 0.25rem;
         padding: 0.5rem;
         width: 100%;
         max-width: 55rem;
@@ -144,8 +144,7 @@
         display: none;
     }
 
-    &-next-portal,
-    &-next {
-        margin-left: auto;
+    &-skip {
+        margin-right: auto;
     }
 }
