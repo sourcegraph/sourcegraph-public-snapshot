@@ -1,9 +1,8 @@
-import { FC, ReactElement, ReactNode, useState, useMemo } from 'react'
+import { FC, ReactElement, ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     Collapse,
@@ -49,17 +48,12 @@ interface CodeHostJSONFormProps {
 export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
     const { externalServiceOptions, initialValues, onSubmit, children } = props
 
-    const initialValue = useMemo(
-        () => ({
-            displayName: externalServiceOptions.defaultDisplayName,
-            config: externalServiceOptions.defaultConfig,
-        }),
-        [externalServiceOptions.defaultConfig, externalServiceOptions.defaultDisplayName]
-    )
-
     const [localValues, setLocalValues] = useLocalStorage<CodeHostConnectFormFields>(
         `${externalServiceOptions.kind}-connect-form`,
-        initialValue
+        {
+            displayName: externalServiceOptions.defaultDisplayName,
+            config: externalServiceOptions.defaultConfig,
+        }
     )
 
     const form = useForm<CodeHostConnectFormFields>({
@@ -107,7 +101,6 @@ interface CodeHostJSONFormContentProps {
 
 export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): ReactElement {
     const { displayNameField, configurationField, externalServiceOptions } = props
-    const isLightTheme = useIsLightTheme()
 
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
@@ -131,7 +124,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     loading={true}
                     height={400}
                     readOnly={false}
-                    isLightTheme={isLightTheme}
+                    isLightTheme={true}
                     blockNavigationIfDirty={false}
                     onChange={configurationField.input.onChange}
                     telemetryService={NOOP_TELEMETRY_SERVICE}

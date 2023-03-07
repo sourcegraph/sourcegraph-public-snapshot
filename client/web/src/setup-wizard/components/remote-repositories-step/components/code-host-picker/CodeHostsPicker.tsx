@@ -1,9 +1,9 @@
 import { FC } from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
-import { CodeHostIcon, getCodeHostName, getCodeHostURLParam } from '../../helpers'
+import { getCodeHostIcon, getCodeHostName, getCodeHostURLParam } from '../../helpers'
 
 import styles from './CodeHostsPicker.module.scss'
 
@@ -34,7 +34,7 @@ export const CodeHostsPicker: FC = () => (
                         outline={true}
                         className={styles.item}
                     >
-                        <CodeHostIcon codeHostType={codeHostType} aria-hidden={true} />
+                        <Icon svgPath={getCodeHostIcon(codeHostType)} aria-hidden={true} />
                         <span>{getCodeHostName(codeHostType)}</span>
                     </Button>
                 </li>
