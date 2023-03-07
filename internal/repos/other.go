@@ -223,7 +223,7 @@ func (s OtherSource) srcExposeRequest() (req *http.Request, validSrcExpose bool,
 
 func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, bool, error) {
 	req, validSrcExposeConfiguration, err := s.srcExposeRequest()
-	if !validSrcExposeConfiguration {
+	if !validSrcExposeConfiguration || err != nil {
 		// OtherSource configuration not supported for srcExpose
 		return nil, validSrcExposeConfiguration, err
 	}
