@@ -8,7 +8,7 @@ const path = require('path')
 const logger = require('signale')
 
 // TODO(bazel): drop when non-bazel removed.
-if (!(process.env.JS_BINARY__TARGET || process.env.BAZEL_TEST)) {
+if (!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)) {
   throw new Error(__filename + ' is only for use with Bazel')
 }
 
