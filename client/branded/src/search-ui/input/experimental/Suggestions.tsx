@@ -159,9 +159,9 @@ const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
             {option.info && renderStringOrRenderer(option.info, option)}
             {!option.info && (
                 <>
-                    <ActionInfo action={option.action} shortcut="Return" />{' '}
+                    <ActionInfo action={option.action} shortcut="Enter" />{' '}
                     {option.alternativeAction && (
-                        <ActionInfo action={option.alternativeAction} shortcut="Shift+Return" />
+                        <ActionInfo action={option.alternativeAction} shortcut="Shift+Enter" />
                     )}
                 </>
             )}
