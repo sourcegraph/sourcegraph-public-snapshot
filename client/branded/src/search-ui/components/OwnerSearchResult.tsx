@@ -91,9 +91,12 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
                 className={classNames(resultStyles.searchResultMatch, 'p-2 flex-column')}
                 data-testid="owner-search-result"
             >
-                <div className={resultStyles.matchType}>
-                    <small>Owner match</small>
-                </div>
+                <small className={resultStyles.matchType}>
+                    <span>Owner match</span>
+                    <Link to="" className={styles.filesLink}>
+                        Which files?
+                    </Link>
+                </small>
                 {result.type === 'person' && !result.user && (
                     <>
                         <div className={resultStyles.dividerVertical} />
