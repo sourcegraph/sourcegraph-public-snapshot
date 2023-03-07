@@ -9,7 +9,7 @@ use syntect::{
 
 static EMPTY_SCOPE: OnceCell<Scope> = OnceCell::new();
 fn empty_scope() -> Scope {
- *EMPTY_SCOPE.get_or_init(|| Scope::new("").unwrap())
+    *EMPTY_SCOPE.get_or_init(|| Scope::new("").unwrap())
 }
 // Whenever a scope matches any of the scopes in IGNORED_SCOPES,
 // it will not emit an occurrence for that range. The most specific
@@ -77,12 +77,23 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("entity.name.type"), IdentifierType),
-
             // TODO: optimization opportunity, skip testing language-specific scopes.
-            (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.keyof.tsx"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.tsx"), IdentifierKeyword),
+            (
+                scope("keyword.operator.expression.keyof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.keyof.tsx"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.tsx"),
+                IdentifierKeyword,
+            ),
             (scope("storage.type.namespace.ts"), IdentifierKeyword),
             (scope("storage.type.namespace.tsx"), IdentifierKeyword),
             (scope("storage.type.module.js"), IdentifierKeyword),
@@ -106,7 +117,10 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.ts"), IdentifierKeyword),
             (scope("storage.type.tsx"), IdentifierKeyword),
             (scope("keyword.operator.logical.sql"), IdentifierKeyword),
-            (scope("keyword.operator.assignment.alias.sql"), IdentifierKeyword),
+            (
+                scope("keyword.operator.assignment.alias.sql"),
+                IdentifierKeyword,
+            ),
             (scope("meta.mapping.key.json"), StringLiteralKey),
             (scope("entity.name.tag.yaml"), StringLiteralKey),
             (scope("entity.other.attribute-name.class.css"), Identifier),
@@ -117,7 +131,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.function.scala"), IdentifierKeyword),
             (scope("storage.type.volatile.scala"), IdentifierKeyword),
             // (scope("entity.name.section.markdown"), IdentifierType),
-
             (scope("meta.tag"), Identifier),
             (scope("markup.bold"), Identifier),
             (scope("markup.underline"), Identifier),
@@ -149,7 +162,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("support.class"), IdentifierType),
             (scope("support.function"), IdentifierFunction),
             (scope("support.variable"), Identifier),
-
             (scope("entity.other.attribute-name"), TagAttribute),
             (scope("entity.name"), Identifier),
             (scope("entity.other"), Identifier),
@@ -255,7 +267,9 @@ impl HighlightManager {
         // (see the documentation above for HighlightManager)
         if let Some(last_hl) = self.highlights.last_mut() {
             // TODO: Avoid this hack to get string literal keys to take priority over strings for JSON.
-            if last_hl.kind == Some(SyntaxKind::StringLiteralKey) && hl.kind == Some(SyntaxKind::StringLiteral) {
+            if last_hl.kind == Some(SyntaxKind::StringLiteralKey)
+                && hl.kind == Some(SyntaxKind::StringLiteral)
+            {
                 return Some(last_hl.clone());
             }
             if let Some(_kind) = last_hl.kind {
@@ -370,7 +384,8 @@ impl<'a> DocumentGenerator<'a> {
                                 Some(kind) => {
                                     // Uncomment to debug what scopes are picked up
                                     // println!("SCOPE {row:>3}:{character:<3} {:50} {kind:?}", format!("{}", scope));
-                                    let partial_hl = HighlightStart::some(row, character, kind, scope);
+                                    let partial_hl =
+                                        HighlightStart::some(row, character, kind, scope);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
                                         push_document_occurence(
@@ -395,7 +410,13 @@ impl<'a> DocumentGenerator<'a> {
                             //  (never pop past what we've pushed) and still easily skip the
                             //  highlights that are useless.
                             if let Some(partial_hl) = highlight_manager.pop_hl(row, character) {
-                                push_document_occurence(&mut document, partial_hl.scope, &partial_hl, row, character);
+                                push_document_occurence(
+                                    &mut document,
+                                    partial_hl.scope,
+                                    &partial_hl,
+                                    row,
+                                    character,
+                                );
                             }
                         }
                     }
@@ -432,7 +453,13 @@ impl<'a> DocumentGenerator<'a> {
             .map(|(row, line)| (row, line.chars().count()))
         {
             while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-                push_document_occurence(&mut document, partial_hl.scope, &partial_hl, end_of_line.0, end_of_line.1);
+                push_document_occurence(
+                    &mut document,
+                    partial_hl.scope,
+                    &partial_hl,
+                    end_of_line.0,
+                    end_of_line.1,
+                );
             }
         }
 
@@ -459,12 +486,11 @@ fn push_document_occurence(
         Some(kind) => document.occurrences.push(new_occurence(
             vec![partial_hl.row, partial_hl.col, row, col],
             kind,
-            scope
+            scope,
         )),
         None => (),
     }
 }
-
 
 fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occurrence {
     let syntax_kind = EnumOrUnknown::new(syntax_kind);
@@ -479,12 +505,16 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         _ => range,
     };
 
-        let symbol = if cfg!(test) { scope.to_string() } else  {String::default() };
+    let symbol = if cfg!(test) {
+        scope.to_string()
+    } else {
+        String::default()
+    };
     Occurrence {
         range,
         syntax_kind,
         symbol_roles: 0,
-        symbol:  symbol,
+        symbol: symbol,
         override_documentation: vec![],
         diagnostics: vec![],
         special_fields: SpecialFields::default(),
@@ -531,9 +561,11 @@ mod test {
         let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
-        let crate_root: std::path::PathBuf =
-            std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
-        let input_dir = crate_root.join("src").join("snapshots").join("syntect_files");
+        let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let input_dir = crate_root
+            .join("src")
+            .join("snapshots")
+            .join("syntect_files");
 
         let dir = read_dir(&input_dir)?;
 
@@ -570,11 +602,7 @@ mod test {
             // with all the failed files (if applicable)
             match std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
-                    filepath
-                        .strip_prefix(&input_dir)
-                        .unwrap()
-                        .to_str()
-                        .unwrap(),
+                    filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                     dump_document(&document, &contents)
                 );
             }) {
