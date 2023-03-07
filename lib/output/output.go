@@ -94,25 +94,18 @@ var newOutputPlatformQuirks func(o *Output) error
 var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	caps, detectionErr := detectCapabilities(opts)
+	// Not being able to detect capabilities is alright. It might mean output will look
+	// weird but that should not prevent us from running.
+	// Before, we logged an error
+	// "An error was returned when detecting the terminal size and capabilities"
+	// but it was super noisy and confused people into thinking something would be broken.
+	caps, _ := detectCapabilities(opts)
 
 	o := &Output{caps: caps, verbose: opts.Verbose, w: w}
 	if newOutputPlatformQuirks != nil {
 		if err := newOutputPlatformQuirks(o); err != nil {
 			o.Verbosef("Error handling platform quirks: %v", err)
 		}
-	}
-
-	// If we got an error earlier, now is where we'll report it to the user.
-	if detectionErr != nil {
-		block := o.Block(Linef(EmojiWarning, StyleWarning, "An error was returned when detecting the terminal size and capabilities:"))
-		block.Write("")
-		block.Write(detectionErr.Error())
-		block.Write("")
-		block.Write("Execution will continue, but please report this, along with your operating")
-		block.Write("system, terminal, and any other details, to:")
-		block.Write("  https://github.com/sourcegraph/sourcegraph/issues/new")
-		block.Close()
 	}
 
 	// Set up a watcher so we can adjust the size of the output if the terminal
