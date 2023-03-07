@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,8 +31,8 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 0)
-		assert.Len(t, deleted, 0)
+		require.Len(t, added, 0)
+		require.Len(t, deleted, 0)
 	})
 
 	t.Run("permissions deleted", func(t *testing.T) {
@@ -50,8 +50,8 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 0)
-		assert.Len(t, deleted, 2)
+		require.Len(t, added, 0)
+		require.Len(t, deleted, 2)
 		if diff := cmp.Diff(want, deleted, cmpopts.SortSlices(sortDeletePermissionOptSlice)); diff != "" {
 			t.Error(diff)
 		}
@@ -76,8 +76,8 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 4)
-		assert.Len(t, deleted, 0)
+		require.Len(t, added, 4)
+		require.Len(t, deleted, 0)
 		if diff := cmp.Diff(want, added); diff != "" {
 			t.Error(diff)
 		}
@@ -110,12 +110,12 @@ func TestComparePermissions(t *testing.T) {
 		// do stuff
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 4)
+		require.Len(t, added, 4)
 		if diff := cmp.Diff(wantAdded, added); diff != "" {
 			t.Error(diff)
 		}
 
-		assert.Len(t, deleted, 2)
+		require.Len(t, deleted, 2)
 		less := func(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
 		if diff := cmp.Diff(wantDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
 			t.Error(diff)
