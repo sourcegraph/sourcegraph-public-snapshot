@@ -109,9 +109,10 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 type Repo struct {
-	Name      string
-	URI       string
-	ClonePath string
+	Name        string
+	URI         string
+	ClonePath   string
+	AbsFilePath string
 }
 
 func (s *Serve) handler() http.Handler {
@@ -307,9 +308,10 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) error {
 		}
 
 		repoC <- Repo{
-			Name:      name,
-			URI:       cloneURI,
-			ClonePath: clonePath,
+			Name:        name,
+			URI:         cloneURI,
+			ClonePath:   clonePath,
+			AbsFilePath: path,
 		}
 
 		// At this point we know the directory is either a git repo or a bare git repo,

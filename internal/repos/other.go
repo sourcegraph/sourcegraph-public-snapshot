@@ -34,9 +34,10 @@ type (
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
 	srcExposeItem struct {
-		URI       string `json:"uri"`
-		Name      string `json:"name"`
-		ClonePath string `json:"clonePath"`
+		URI         string `json:"uri"`
+		Name        string `json:"name"`
+		ClonePath   string `json:"clonePath"`
+		AbsFilePath string
 	}
 )
 
@@ -294,6 +295,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, bool, error)
 		}
 		repo.Metadata = &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
+			AbsFilePath:  r.AbsFilePath,
 		}
 		// The only required field left is Name
 		name := r.Name
