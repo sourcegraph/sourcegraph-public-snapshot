@@ -35,6 +35,7 @@ go_library(
         "//internal/executor",
         "//internal/extsvc",
         "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
