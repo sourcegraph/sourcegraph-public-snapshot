@@ -29,6 +29,7 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
         matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
         skipped: [],
     },
+    clicked: false
 }
 
 const defaultProps: StreamingSearchResultsProps = {
@@ -105,6 +106,7 @@ export const NoResults: Story = () => {
             matchCount: 0,
             skipped: [],
         },
+        clicked: false,
     }
 
     return (
@@ -177,6 +179,7 @@ export const ProgressWithWarning: Story = () => {
                 },
             ],
         },
+        clicked: false,
     }
 
     return (
@@ -214,6 +217,7 @@ export const LoadingWithSomeResults: Story = () => {
             matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
+        clicked: false,
     }
 
     return (
@@ -244,6 +248,7 @@ export const ServerSideAlert: Story = () => {
             title: 'Test alert',
             description: 'This is an alert',
         },
+        clicked: false,
     }
 
     return (
@@ -274,6 +279,7 @@ export const ServerSideAlertNoResults: Story = () => {
             title: 'Test Alert',
             description: 'This is a test alert',
         },
+        clicked: false,
     }
 
     return (
@@ -300,6 +306,7 @@ export const ErrorWithNoResults: Story = () => {
             skipped: [],
         },
         error: new Error('test error'),
+        clicked: false,
     }
 
     return (
@@ -326,6 +333,7 @@ export const ErrorWithSomeResults: Story = () => {
             skipped: [],
         },
         error: new Error('test error'),
+        clicked: false,
     }
 
     return (
@@ -358,6 +366,7 @@ export const LimitHitWithSomeResults: Story = () => {
                 },
             ],
         },
+        clicked: false,
     }
 
     return (

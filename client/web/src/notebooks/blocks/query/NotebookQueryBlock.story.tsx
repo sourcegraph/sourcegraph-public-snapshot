@@ -33,6 +33,7 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
         matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
         skipped: [],
     },
+    clicked: false
 }
 
 const noopBlockCallbacks = {
