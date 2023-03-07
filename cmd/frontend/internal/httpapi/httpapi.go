@@ -232,7 +232,7 @@ func RegisterInternalServices(
 	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
-	s.RegisterService(&proto.IndexedSearchConfigurationService_ServiceDesc, &searchIndexerGRPCServer{server: indexer})
+	proto.RegisterIndexedSearchConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
