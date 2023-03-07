@@ -203,10 +203,17 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </MenuLink>
                             )}
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                {isSourcegraphApp ? 'Documentation' : 'Help'}{' '}
+                                <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
 
-                            <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                            {isSourcegraphApp ? (
+                                <MenuLink as={AnchorLink} to="/user/settings/product-research">
+                                    Feedback
+                                </MenuLink>
+                            ) : (
+                                <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                            )}
 
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
