@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import { mdiPencil } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } from '@sourcegraph/wildcard'
 
@@ -10,7 +11,6 @@ import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
 import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
-import { TeamAvatar } from '../TeamAvatar'
 
 import { useChangeTeamDisplayName } from './backend'
 import { TeamHeader } from './TeamHeader'

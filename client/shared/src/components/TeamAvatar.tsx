@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 
@@ -6,17 +6,17 @@ import { ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
 
 import { Maybe } from '../graphql-operations'
 
-import styles from './UserAvatar.module.scss'
+import styles from './TeamAvatar.module.scss'
 
-export interface UserAvatarData {
-    avatarURL: Maybe<string>
-    displayName: Maybe<string>
-    username?: Maybe<string>
-}
+export interface TeamAvatarProps {
+    team: {
+        name: Maybe<string>
+        avatarURL: Maybe<string>
+        displayName: Maybe<string>
+    }
 
-interface Props {
     size?: number
-    user: UserAvatarData
+
     className?: string
     targetID?: string
     alt?: string
@@ -27,28 +27,26 @@ interface Props {
 }
 
 /**
- * UserAvatar displays the avatar of a user.
+ * TeamAvatar displays the avatar of a team.
  */
-export const UserAvatar = React.forwardRef(function UserAvatar(
+export const TeamAvatar = React.forwardRef(function TeamAvatar(
     {
         size,
-        user,
+        team,
         className,
         targetID,
         inline,
         // Exclude children since neither <img /> nor mdi-react icons receive them
         children,
         ...otherProps
-    }: React.PropsWithChildren<Props>,
+    }: React.PropsWithChildren<TeamAvatarProps>,
     reference
 ) {
-    if (user?.avatarURL) {
-        let url = user.avatarURL
+    if (team.avatarURL) {
+        let url = team.avatarURL
         try {
-            const urlObject = new URL(user.avatarURL)
-            // Add a size param for non-data URLs. This will resize the image
-            // if it is hosted on certain places like Gravatar and GitHub.
-            if (size && !user.avatarURL.startsWith('data:')) {
+            const urlObject = new URL(team.avatarURL)
+            if (size) {
                 urlObject.searchParams.set('s', size.toString())
             }
             url = urlObject.href
@@ -57,7 +55,7 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
         }
 
         const imgProps = {
-            className: classNames(styles.userAvatar, className),
+            className: classNames(styles.teamAvatar, className),
             src: url,
             id: targetID,
             role: 'presentation',
@@ -66,16 +64,26 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
 
         if (inline) {
             return (
-                <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="img" aria-hidden={true} {...imgProps} />
+                <Icon
+                    ref={reference as React.ForwardedRef<SVGSVGElement>}
+                    as="img"
+                    aria-hidden={true}
+                    alt=""
+                    {...imgProps}
+                />
             )
         }
 
         return <img ref={reference} alt="" {...imgProps} />
     }
 
-    const name = user?.displayName || user?.username || ''
+    const name = team.displayName || team.name || ''
     const getInitials = (fullName: string): string => {
-        const names = fullName.split(' ')
+        const names = fullName.includes(' ')
+            ? fullName.split(' ')
+            : fullName.includes('-')
+            ? fullName.split('-')
+            : fullName.split('.')
         const initials = names.map(name => name.charAt(0).toLowerCase())
         if (initials.length > 1) {
             return `${initials[0]}${initials[initials.length - 1]}`
@@ -85,16 +93,15 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
 
     const sharedProps = {
         id: targetID,
-        className: classNames(styles.userAvatar, className),
+        className: classNames(styles.teamAvatar, className),
         children: <span className={styles.initials}>{getInitials(name)}</span>,
     }
 
     if (inline) {
         return (
-            <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="div" aria-hidden={true} {...sharedProps} />
+            <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="span" aria-hidden={true} {...sharedProps} />
         )
     }
 
     return <div ref={reference} {...sharedProps} />
-}) as ForwardReferenceComponent<'img', React.PropsWithChildren<Props>>
-UserAvatar.displayName = 'UserAvatar'
+}) as ForwardReferenceComponent<'img', React.PropsWithChildren<TeamAvatarProps>>

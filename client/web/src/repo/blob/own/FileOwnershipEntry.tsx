@@ -3,8 +3,9 @@ import React, { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Badge, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
@@ -12,15 +13,18 @@ import { PersonLink } from '../../../person/PersonLink'
 import styles from './FileOwnershipEntry.module.scss'
 
 interface Props {
-    person: OwnerFields
+    owner: OwnerFields
     reasons: CodeownersFileEntryFields[]
 }
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, reasons }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
+
+    const email = owner.__typename === 'Person' ? owner.email : undefined
+
     return (
         <AccordionItem as="tbody">
             <tr>
@@ -37,19 +41,29 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                 </td>
                 <td>
                     <div className="d-flex">
-                        <ButtonLink
-                            variant="icon"
-                            disabled={!person.email}
-                            to={person.email ? `mailto:${person.email}` : undefined}
-                        >
+                        <ButtonLink variant="icon" disabled={!email} to={email ? `mailto:${email}` : undefined}>
                             <Icon svgPath={mdiEmail} aria-label="email" />
                         </ButtonLink>
                     </div>
                 </td>
                 <td>
                     <div className="d-flex align-items-center mr-2">
-                        <UserAvatar user={person} className="mx-2" inline={true} />
-                        <PersonLink person={person} />
+                        {owner.__typename === 'Person' && (
+                            <>
+                                <UserAvatar user={owner} className="mx-2" inline={true} />
+                                <PersonLink person={owner} />
+                            </>
+                        )}
+                        {owner.__typename === 'Team' && (
+                            <>
+                                <TeamAvatar
+                                    team={{ ...owner, displayName: owner.teamDisplayName }}
+                                    className="mx-2"
+                                    inline={true}
+                                />
+                                <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                            </>
+                        )}
                     </div>
                 </td>
                 <td>
