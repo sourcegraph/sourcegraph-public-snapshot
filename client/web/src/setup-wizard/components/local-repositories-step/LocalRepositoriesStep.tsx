@@ -78,7 +78,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         variables: {
             skip: !localServices,
             first: 25,
-            externalService: localServices?.id ?? 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0',
+            externalService: localServices?.id ?? '',
         },
     })
 
