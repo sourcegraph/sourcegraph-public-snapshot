@@ -3,7 +3,6 @@ package servegit
 import (
 	"context"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -17,20 +16,12 @@ type Config struct {
 	env.BaseConfig
 
 	Addr string
-	Root string
 
 	Timeout  time.Duration
 	MaxDepth int
 }
 
 func (c *Config) Load() {
-	// We bypass BaseConfig since it doesn't handle variables being empty.
-	if src, ok := os.LookupEnv("SRC"); ok {
-		c.Root = src
-	} else if pwd, err := os.Getwd(); err == nil {
-		c.Root = pwd
-	}
-
 	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
 	if err != nil {
 		c.AddError(errors.Wrapf(err, "failed to parse SRC_SERVE_GIT_URL"))
@@ -58,11 +49,6 @@ func (s svc) Configure() (env.Config, []debugserver.Endpoint) {
 
 func (s svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
 	config := configI.(*Config)
-
-	if config.Root == "" {
-		observationCtx.Logger.Warn("skipping local code since the environment variable SRC is not set")
-		return nil
-	}
 
 	// Start servegit which walks Root to find repositories and exposes
 	// them over HTTP for Sourcegraph's syncer to discover and clone.

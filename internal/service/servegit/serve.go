@@ -40,7 +40,7 @@ func (s *Serve) Start() error {
 	// Update Addr to what listener actually used.
 	s.Addr = ln.Addr().String()
 
-	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr), log.String("root", s.Root))
+	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr))
 
 	srv := &http.Server{Handler: s.handler()}
 
@@ -89,6 +89,8 @@ type Repo struct {
 	ClonePath string
 }
 
+var mockDirFn func(name string) string
+
 func (s *Serve) handler() http.Handler {
 	mux := &http.ServeMux{}
 
@@ -97,7 +99,7 @@ func (s *Serve) handler() http.Handler {
 		err := indexHTML.Execute(w, map[string]interface{}{
 			"Explain": explainAddr(s.Addr),
 			"Links": []string{
-				"/v1/list-repos",
+				"/v1/list-repos-for-path",
 				"/repos/",
 			},
 		})
@@ -106,11 +108,19 @@ func (s *Serve) handler() http.Handler {
 		}
 	})
 
-	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		repos, err := s.Repos()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	mux.HandleFunc("/v1/list-repos-for-path", func(w http.ResponseWriter, r *http.Request) {
+		var req ListReposRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
+		}
+
+		repos, err := s.Repos(req.Root)
+		if err != nil {
+			if err != filepath.SkipDir {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		resp := struct {
@@ -125,11 +135,15 @@ func (s *Serve) handler() http.Handler {
 		_ = enc.Encode(&resp)
 	})
 
-	fs := http.FileServer(http.Dir(s.Root))
+	dirFn := func(name string) string {
+		return filepath.Join(string(filepath.Separator), filepath.FromSlash(name))
+	}
+	if mockDirFn != nil {
+		dirFn = mockDirFn
+	}
+
 	svc := &gitservice.Handler{
-		Dir: func(name string) string {
-			return filepath.Join(s.Root, filepath.FromSlash(name))
-		},
+		Dir: dirFn,
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
@@ -145,7 +159,7 @@ func (s *Serve) handler() http.Handler {
 				return
 			}
 		}
-		fs.ServeHTTP(w, r)
+		w.WriteHeader(http.StatusNoContent)
 	})))
 
 	return http.HandlerFunc(mux.ServeHTTP)
@@ -181,14 +195,14 @@ func isGitRepo(path string) bool {
 // Repos returns a slice of all the git repositories it finds. It is a wrapper
 // around Walk which removes the need to deal with channels and sorts the
 // response.
-func (s *Serve) Repos() ([]Repo, error) {
+func (s *Serve) Repos(root string) ([]Repo, error) {
 	var (
 		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
 		walkErr error
 	)
 	go func() {
 		defer close(repoC)
-		walkErr = s.Walk(repoC)
+		walkErr = s.Walk(root, repoC)
 	}()
 
 	var repos []Repo
@@ -210,8 +224,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 }
 
 // Walk is the core repos finding routine.
-func (s *Serve) Walk(repoC chan<- Repo) error {
-	root, err := filepath.EvalSymlinks(s.Root)
+func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+	root, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
 		return nil
@@ -274,7 +288,7 @@ func (s *Serve) Walk(repoC chan<- Repo) error {
 		}
 
 		name := filepath.ToSlash(subpath)
-		cloneURI := pathpkg.Join("/repos", name)
+		cloneURI := pathpkg.Join("/repos", filepath.ToSlash(path))
 		clonePath := cloneURI
 
 		// Regular git repos won't clone without the full path to the .git directory.
@@ -417,4 +431,8 @@ func explainAddr(addr string) string {
 See https://docs.sourcegraph.com/admin/external_service/src_serve_git for
 instructions to configure in Sourcegraph.
 `, addr)
+}
+
+type ListReposRequest struct {
+	Root string `json:"root"`
 }

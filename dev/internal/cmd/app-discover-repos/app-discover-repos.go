@@ -33,7 +33,12 @@ func main() {
 	var c servegit.Config
 	c.Load()
 
-	root := flag.String("root", c.Root, "the directory we search from.")
+	defaultRoot := ""
+	if pwd, err := os.Getwd(); err == nil {
+		defaultRoot = pwd
+	}
+
+	root := flag.String("root", defaultRoot, "the directory we search from.")
 	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
 	picker := flag.Bool("picker", false, "try run the file picker.")
 	verbose := flag.Bool("v", false, "verbose output")
@@ -55,8 +60,6 @@ func main() {
 		}
 	}
 
-	c.Root = *root
-
 	srv := &servegit.Serve{
 		Config: c,
 		Logger: log.Scoped("serve", ""),
@@ -71,7 +74,7 @@ func main() {
 	}
 
 	if *block {
-		repos, err := srv.Repos()
+		repos, err := srv.Repos(*root)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Repos returned error: %v\n", err)
 			os.Exit(1)
@@ -83,7 +86,7 @@ func main() {
 		repoC := make(chan servegit.Repo, 4)
 		go func() {
 			defer close(repoC)
-			err := srv.Walk(repoC)
+			err := srv.Walk(*root, repoC)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Walk returned error: %v\n", err)
 				os.Exit(1)
