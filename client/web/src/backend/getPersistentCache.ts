@@ -17,6 +17,8 @@ const getApolloPersistCacheKey = (isAuthenticated: boolean): string =>
  * data preloaded on the server and transferred to the client via `window.context`.
  */
 class LocalStorageWrapper implements PersistentStorage<CacheObject | null> {
+    constructor(private preloadedQueries: Record<string, unknown>) {}
+
     public removeItem(key: string): void {
         window.localStorage.removeItem(key)
     }
@@ -34,7 +36,7 @@ class LocalStorageWrapper implements PersistentStorage<CacheObject | null> {
             [ROOT_QUERY_KEY]: {
                 __typename: 'Query',
                 ...persistedData[ROOT_QUERY_KEY],
-                temporarySettings: window.context.temporarySettings,
+                ...this.preloadedQueries,
             },
         }
 
@@ -42,20 +44,27 @@ class LocalStorageWrapper implements PersistentStorage<CacheObject | null> {
     }
 }
 
-export async function getPersistentCache(isAuthenticated: boolean): Promise<InMemoryCache> {
+interface GetPersistentCacheOptions {
+    isAuthenticatedUser: boolean
+    preloadedQueries: Record<string, unknown>
+}
+
+export async function getPersistentCache(options: GetPersistentCacheOptions): Promise<InMemoryCache> {
+    const { isAuthenticatedUser, preloadedQueries } = options
+
     const persistor = new CachePersistor<NormalizedCacheObject>({
         cache,
         persistenceMapper,
         // Use max 4 MB for persistent cache. Leave 1 MB for other means out of 5 MB available.
         // If exceeded, persistence will pause and app will start up cold on next launch.
         maxSize: 1024 * 1024 * 4,
-        key: getApolloPersistCacheKey(isAuthenticated),
-        storage: new LocalStorageWrapper() as any, // `as any` is required because third-party types are incorrect.
+        key: getApolloPersistCacheKey(isAuthenticatedUser),
+        storage: new LocalStorageWrapper(preloadedQueries) as any, // `as any` is required because third-party types are incorrect.
         serialize: false as true, // `as true` is required because third-party types are incorrect.
     })
 
-    // 🚨 SECURITY: Drop persisted cache item in case `isAuthenticated` value changed.
-    localStorage.removeItem(getApolloPersistCacheKey(!isAuthenticated))
+    // 🚨 SECURITY: Drop persisted cache item in case `isAuthenticatedUser` value changed.
+    localStorage.removeItem(getApolloPersistCacheKey(!isAuthenticatedUser))
     await persistor.restore()
 
     return cache

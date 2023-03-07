@@ -91,7 +91,12 @@ export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
  * After that, the same instance should be used by all consumers.
  */
 export const getWebGraphQLClient = memoize(async () => {
-    const persistentCache = await getPersistentCache(window.context.isAuthenticatedUser)
+    const persistentCache = await getPersistentCache({
+        isAuthenticatedUser: window.context.isAuthenticatedUser,
+        preloadedQueries: {
+            temporarySettings: window.context.temporarySettings,
+        },
+    })
 
     const client = await getGraphQLClient({
         cache: persistentCache,
