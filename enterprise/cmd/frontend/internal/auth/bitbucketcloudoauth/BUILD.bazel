@@ -56,7 +56,10 @@ go_test(
     # system, terminal, and any other details, to:
     #     https://github.com/sourcegraph/sourcegraph/issues/new
     # TODO(bazel): fix test
-    # tags = ["manual"],
+    tags = [
+        "requires-network",
+        # "manual"
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",
