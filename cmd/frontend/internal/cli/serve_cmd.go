@@ -207,21 +207,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		db,
 		gitserver.NewClient(),
 		enterpriseServices.EnterpriseSearchJobs,
-		enterpriseServices.BatchChangesResolver,
-		enterpriseServices.CodeIntelResolver,
-		enterpriseServices.InsightsResolver,
-		enterpriseServices.AuthzResolver,
-		enterpriseServices.CodeMonitorsResolver,
-		enterpriseServices.LicenseResolver,
-		enterpriseServices.DotcomResolver,
-		enterpriseServices.SearchContextsResolver,
-		enterpriseServices.NotebooksResolver,
-		enterpriseServices.ComputeResolver,
-		enterpriseServices.InsightsAggregationResolver,
-		enterpriseServices.WebhooksResolver,
-		enterpriseServices.EmbeddingsResolver,
-		enterpriseServices.RBACResolver,
-		enterpriseServices.OwnResolver,
+		enterpriseServices.OptionalResolver,
 	)
 	if err != nil {
 		return err

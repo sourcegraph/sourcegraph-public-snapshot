@@ -47,28 +47,14 @@ type Services struct {
 	// Handler for completions stream.
 	NewCompletionsStreamHandler NewCompletionsStreamHandler
 
-	PermissionsGitHubWebhook    webhooks.Registerer
-	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
-	RankingService              RankingService
-	NewExecutorProxyHandler     NewExecutorProxyHandler
-	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
-	NewComputeStreamHandler     NewComputeStreamHandler
-	EnterpriseSearchJobs        jobutil.EnterpriseJobs
-	AuthzResolver               graphqlbackend.AuthzResolver
-	BatchChangesResolver        graphqlbackend.BatchChangesResolver
-	CodeIntelResolver           graphqlbackend.CodeIntelResolver
-	InsightsResolver            graphqlbackend.InsightsResolver
-	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
-	LicenseResolver             graphqlbackend.LicenseResolver
-	DotcomResolver              graphqlbackend.DotcomRootResolver
-	SearchContextsResolver      graphqlbackend.SearchContextsResolver
-	NotebooksResolver           graphqlbackend.NotebooksResolver
-	ComputeResolver             graphqlbackend.ComputeResolver
-	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
-	WebhooksResolver            graphqlbackend.WebhooksResolver
-	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
-	RBACResolver                graphqlbackend.RBACResolver
-	OwnResolver                 graphqlbackend.OwnResolver
+	PermissionsGitHubWebhook  webhooks.Registerer
+	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
+	RankingService            RankingService
+	NewExecutorProxyHandler   NewExecutorProxyHandler
+	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
+	NewComputeStreamHandler   NewComputeStreamHandler
+	EnterpriseSearchJobs      jobutil.EnterpriseJobs
+	graphqlbackend.OptionalResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
