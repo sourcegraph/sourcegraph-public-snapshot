@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { LoadingSpinner, PageHeader, Icon, H1, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -18,7 +19,7 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'> {
+export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
@@ -29,10 +30,17 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb,
     repo,
     authenticatedUser,
+    telemetryService,
 }) => {
     useBreadcrumb(BREADCRUMB)
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
+
+    useEffect(() => {
+        if (status !== 'initial' && ownEnabled) {
+            telemetryService.log('repoPage:ownerTab:viewed')
+        }
+    }, [status, ownEnabled, telemetryService])
 
     if (status === 'initial') {
         return (

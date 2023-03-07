@@ -3,6 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 import { createFlagMock } from '../../featureFlags/createFlagMock'
@@ -64,7 +65,12 @@ const searchOwnershipFlagMock = createFlagMock('search-ownership', true)
 export const EmptyNonAdmin: Story = () => (
     <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: false }}
+                useBreadcrumb={useBreadcrumb}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )
@@ -73,7 +79,12 @@ EmptyNonAdmin.storyName = 'Empty (non-admin)'
 export const EmptyAdmin: Story = () => (
     <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: true }}
+                useBreadcrumb={useBreadcrumb}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )
@@ -104,7 +115,12 @@ const populatedResponse: MockedResponse<GetIngestedCodeownersResult, GetIngested
 export const PopulatedNonAdmin: Story = () => (
     <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: false }}
+                useBreadcrumb={useBreadcrumb}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )
@@ -113,7 +129,12 @@ PopulatedNonAdmin.storyName = 'Populated (non-admin)'
 export const PopulatedAdmin: Story = () => (
     <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: true }}
+                useBreadcrumb={useBreadcrumb}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )
