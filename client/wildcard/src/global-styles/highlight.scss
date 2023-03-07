@@ -494,7 +494,7 @@
     .hl-typed-PunctuationBracket {
         color: var(--hl-gray-0);
     }
-    .hl-typed-IdentifierKeyword {
+    .hl-typed-IdentifierKeyword, .hl-typed-Keyword{
         color: var(--hl-green);
     }
     .hl-typed-IdentifierOperator {
@@ -532,7 +532,7 @@
     .hl-typed-IdentifierShadowed {
         color: var(--hl-blue);
     }
-    .hl-typed-IdentifierModule {
+    .hl-typed-IdentifierModule, .hl-typed-IdentifierNamespace {
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierFunction {
@@ -914,7 +914,7 @@
     .hl-typed-PunctuationBracket {
         color: var(--hl-gray-2);
     }
-    .hl-typed-IdentifierKeyword {
+    .hl-typed-IdentifierKeyword, .hl-typed-Keyword{
         color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierOperator {
@@ -955,7 +955,7 @@
     .hl-typed-IdentifierShadowed {
         color: var(--hl-blue);
     }
-    .hl-typed-IdentifierModule {
+    .hl-typed-IdentifierModule, .hl-typed-IdentifierNamespace {
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierFunctionDefinition {
