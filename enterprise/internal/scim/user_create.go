@@ -58,7 +58,6 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			}
 			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -70,7 +69,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	}
 
 	// If there were additional emails provided, now that the user has been created
-	// we can try to add and verify them each in a seperate trx so that if it fails we can ignore
+	// we can try to add and verify them each in a separate trx so that if it fails we can ignore
 	// the error because they are not required.
 	if len(otherEmails) > 0 {
 		for _, email := range otherEmails {
