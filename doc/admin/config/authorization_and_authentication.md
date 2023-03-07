@@ -132,9 +132,9 @@ We support authentication through OAuth for Azure DevOps Services (https://dev.a
 
 Visit the URL [here](https://app.vsaex.visualstudio.com/app/register) and follow the instructions below:
 
-1. In the `Application website` field set the URL of your Sourcegraph instance, for example, if the instance is https://sourcegraph.com, then use `https://sourcegraph.com` as the value of this field
-2. Similarly, set the Authorization callback URL to `https://sourcegraph.com/.auth/azuredevops/callback` if your Sourcegraph instance URL is https://sourcegraph.com`
-3. Authorize the following scopes:
+1. In the `Application website` field set the URL of your Sourcegraph instance, for example if the instance is https://sourcegraph.com, then use `https://sourcegraph.com` as the value of this field
+2. Similarly, set the `Authorization callback URL` field to `https://sourcegraph.com/.auth/azuredevops/callback` if your Sourcegraph instance URL is https://sourcegraph.com
+3. Add the following scopes:
    - `User profile (read)`
    - `Identity (read)`
    - `Code (read)`
@@ -147,6 +147,7 @@ Add the following to the `auth.providers` key in the site config:
 ```
 {
   "auth.providers": [
+    // Other auth providers may also be here.
     {
       "type": "azureDevOps",
       "displayName": "Azure DevOps",
@@ -158,9 +159,14 @@ Add the following to the `auth.providers` key in the site config:
 }
 ```
 
-Ensure that you set the value of `App ID` as the `clientID` field and the value of `Client Secret` in the `clientSecret` field (not the `App secret`) from OAuth application. Finally ensure that the `apiScope` string is a comma separated string and reflects the scopes from your OAuth application accurately.
+It is **important** to ensure that:
 
-Optionally, you may want to restrict the sign up to only users who belong to a specific list of organizations. To do this add the following to the `auth.providres` configuration above:
+1. The value of `App ID` from your OAuth application is set as the value of the `clientID` field
+2. The value of `Client Secret` (and not the `App secret`) from your OAuth application is set as the value of the `clientSecret` field
+3. The value of `apiScope` string is a comma separated string and reflects the scopes from your OAuth application accurately
+4. The `type` field has no typos and is **exactly** the same as the example above
+
+Optionally, you may want to restrict the sign up to only users who belong to a specific list of organizations. To do this add the following to the `auth.providers` configuration above:
 
 ```
       "allowOrgs": ["your-org-1", "your-org-2"],
@@ -170,6 +176,25 @@ Finally, if you want to prevent new users from signing up to your Sourcegraph in
 
 ```
       "allowSignup": false
+```
+
+The final and complete `auth.providers` configuration may look like this:
+
+```
+{
+  "auth.providers": [
+    // Other auth providers may also be here.
+    {
+      "type": "azureDevOps",
+      "displayName": "Azure DevOps",
+      "clientID": "your-client-id-here",
+      "clientSecret": "a-strong-client-secret-here",
+      "apiScope": "vso.code,vso.identity,vso.project",
+      "allowOrgs": ["your-org-1", "your-org-2"],
+      "allowSignup": false
+    },
+  ]
+}
 ```
 
 ### Explicit Permissions API authorization
