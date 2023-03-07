@@ -1179,12 +1179,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 
 	if len(opt.TopicFilters) > 0 {
 		var ands []*sqlf.Query
-		ands = append(ands, sqlf.Sprintf("external_service_type = 'github'"))
 		for _, filter := range opt.TopicFilters {
-			cond := `metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
 			if filter.Negated {
-				cond = `NOT ` + cond
+				// Use Coalesce in case the topics evaluates to NULL
+				cond = `NOT COALESCE(` + cond + `, false)`
 			}
+			fmt.Println(cond)
 			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))

@@ -1301,6 +1301,78 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	}
 }
 
+func TestRepos_List_topics(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+
+	services := typestest.MakeExternalServices()
+	githubService := services[0]
+	gitlabService := services[1]
+	if err := db.ExternalServices().Create(ctx, confGet, githubService); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Create(ctx, confGet, gitlabService); err != nil {
+		t.Fatal(err)
+	}
+
+	setTopics := func(topics ...string) func(r *types.Repo) {
+		return func(r *types.Repo) {
+			if ghr, ok := r.Metadata.(*github.Repository); ok {
+				for _, topic := range topics {
+					ghr.RepositoryTopics.Nodes = append(ghr.RepositoryTopics.Nodes, github.RepositoryTopic{
+						Topic: github.Topic{Name: topic},
+					})
+				}
+			}
+		}
+	}
+
+	ids := func(id int) func(r *types.Repo) {
+		return func(r *types.Repo) {
+			r.ExternalRepo.ID = strconv.Itoa(id)
+			r.Name = api.RepoName(strconv.Itoa(id))
+		}
+	}
+
+	r1 := typestest.MakeGithubRepo().With(ids(1), setTopics("topic1", "topic2"))
+	r2 := typestest.MakeGithubRepo().With(ids(2), setTopics("topic2", "topic3"))
+	r3 := typestest.MakeGithubRepo().With(ids(3), setTopics("topic1", "topic2", "topic3"))
+	r4 := typestest.MakeGitlabRepo().With(ids(4))
+	r5 := typestest.MakeGithubRepo().With(ids(5))
+	if err := db.Repos().Create(ctx, r1, r2, r3, r4, r5); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"topic1", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic1"}}}, []*types.Repo{r1, r3}},
+		{"topic2", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic2"}}}, []*types.Repo{r1, r2, r3}},
+		{"topic3", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic3"}}}, []*types.Repo{r2, r3}},
+		{"not topic1", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic1", Negated: true}}}, []*types.Repo{r2, r4, r5}},
+		{
+			"topic3 not topic1",
+			ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic3"}, {Topic: "topic1", Negated: true}}},
+			[]*types.Repo{r2},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, test.want, repos)
+		})
+	}
+}
+
 func TestRepos_ListMinimalRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
