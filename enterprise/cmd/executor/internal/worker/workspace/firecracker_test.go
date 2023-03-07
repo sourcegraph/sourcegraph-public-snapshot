@@ -562,13 +562,13 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				// Workspace files
-				entries, err := os.ReadDir(tempDir)
+				tempEntries, err := os.ReadDir(tempDir)
 				require.NoError(t, err)
 				// includes workspace-loop and workspace-mountpoints (dir)
-				assert.Len(t, entries, 2)
+				assert.Len(t, tempEntries, 2)
 				// ensure that workspace-loop exists
 				// We use temp dirs, for all this, so the directory name has a random set of numbers as the suffix.
-				for _, entry := range entries {
+				for _, entry := range tempEntries {
 					if strings.HasPrefix(entry.Name(), "workspace-loop") {
 						// ensure this is a file
 						assert.False(t, entry.IsDir())
@@ -578,14 +578,14 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 						t.Fatalf("unexpected file in workspace: %s", entry.Name())
 					}
 				}
-				entries, err = os.ReadDir(path.Join(tempDir, mountpointDir))
+				mountEntries, err := os.ReadDir(path.Join(tempDir, mountpointDir))
 				require.NoError(t, err)
 				// .sourcegraph-executor dir lives in the mountpoint dir
 				additionalEntries := 0
 				if len(test.job.RepositoryDirectory) > 0 {
 					additionalEntries++
 				}
-				require.Len(t, entries, 1+additionalEntries+len(test.expectedWorkspaceFiles))
+				require.Len(t, mountEntries, 1+additionalEntries+len(test.expectedWorkspaceFiles))
 				// workspace files
 				for f, content := range test.expectedWorkspaceFiles {
 					b, err := os.ReadFile(path.Join(tempDir, mountpointDir, f))
@@ -593,8 +593,9 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 					assert.Equal(t, content, string(b))
 				}
 				// Docker scripts
-				entries, err = os.ReadDir(path.Join(tempDir, mountpointDir, ".sourcegraph-executor"))
-				assert.Len(t, entries, len(test.expectedDockerScripts))
+				scriptEntries, err := os.ReadDir(path.Join(tempDir, mountpointDir, ".sourcegraph-executor"))
+				require.NoError(t, err)
+				assert.Len(t, scriptEntries, len(test.expectedDockerScripts))
 				for f, commands := range test.expectedDockerScripts {
 					require.Contains(t, ws.ScriptFilenames(), f)
 					b, err := os.ReadFile(path.Join(tempDir, mountpointDir, ".sourcegraph-executor", f))

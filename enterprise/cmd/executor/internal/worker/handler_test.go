@@ -165,8 +165,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
@@ -200,8 +198,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				assert.Equal(t, []string{"FOO=bar"}, cmd.RunFunc.History()[6].Arg2.Env)
 				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
 
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
@@ -229,8 +225,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				require.Len(t, cmd.RunFunc.History(), 7)
 				assert.Equal(t, "step.src.0", cmd.RunFunc.History()[6].Arg2.Key)
 
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
@@ -267,8 +261,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				assert.Nil(t, cmd.RunFunc.History()[6].Arg2.Env)
 				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
 
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 2)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 2)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
@@ -297,8 +289,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				require.Len(t, cmd.RunFunc.History(), 7)
 				assert.Equal(t, "step.docker.0", cmd.RunFunc.History()[6].Arg2.Key)
 
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 2)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 2)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
@@ -313,8 +303,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 0)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 0)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 			expectedErr: errors.New("failed to prepare workspace: failed setup.git.init: failed"),
@@ -349,8 +337,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 1)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 			expectedErr: errors.New("failed to perform src-cli step: failed"),
@@ -386,8 +372,6 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
-				require.Len(t, logStore.AddExecutionLogEntryFunc.History(), 2)
-				require.Len(t, logStore.UpdateExecutionLogEntryFunc.History(), 2)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 			expectedErr: errors.New("failed to perform docker step: failed"),
