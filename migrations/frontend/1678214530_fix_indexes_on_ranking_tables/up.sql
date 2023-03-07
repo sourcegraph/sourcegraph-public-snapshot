@@ -1,6 +1,8 @@
 DROP INDEX IF EXISTS codeintel_ranking_definitions_symbol_name;
 DROP INDEX IF EXISTS codeintel_ranking_definitions_upload_id;
 DROP INDEX IF EXISTS codeintel_ranking_path_counts_inputs_graph_key_and_repository_id;
+DROP INDEX IF EXISTS codeintel_ranking_definitions_graph_key_id;
+DROP INDEX IF EXISTS codeintel_ranking_references_graph_key_id;
 DROP INDEX IF EXISTS codeintel_ranking_path_counts_inputs_graph_key_repository_id_id;
 DROP INDEX IF EXISTS codeintel_path_ranks_repository_id;
 DROP INDEX IF EXISTS codeintel_path_ranks_updated_at;
