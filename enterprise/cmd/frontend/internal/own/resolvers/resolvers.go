@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
@@ -36,7 +38,25 @@ type ownResolver struct {
 	ownService own.Service
 }
 
-func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
+func ownerText(o *codeownerspb.Owner) string {
+	if o == nil {
+		return ""
+	}
+	if o.Handle != "" {
+		return o.Handle
+	}
+	return o.Email
+}
+
+func (r *ownResolver) GitBlobOwnership(
+	ctx context.Context,
+	blob *graphqlbackend.GitTreeEntryResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	cursor, err := graphqlutil.DecodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
 	rs, err := r.ownService.RulesetForRepo(ctx, repoName, commitID)
@@ -47,13 +67,27 @@ func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend
 	if rs == nil {
 		return &ownershipConnectionResolver{db: r.db}, nil
 	}
-
 	owners := rs.FindOwners(blob.Path())
+	total := len(owners)
+	for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
+		owners = owners[1:]
+	}
+	var next *string
+	if args.First != nil && len(owners) > int(*args.First) {
+		cursor := ownerText(owners[*args.First])
+		next = &cursor
+		owners = owners[:*args.First]
+	}
 	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
 	if err != nil {
 		return nil, err
 	}
-	return &ownershipConnectionResolver{r.db, resolvedOwners}, nil
+	return &ownershipConnectionResolver{
+		db:             r.db,
+		total:          total,
+		next:           next,
+		resolvedOwners: resolvedOwners,
+	}, nil
 }
 
 func (r *ownResolver) PersonOwnerField(person *graphqlbackend.PersonResolver) string {
@@ -76,15 +110,17 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 // connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             database.DB
+	total          int
+	next           *string
 	resolvedOwners []codeowners.ResolvedOwner
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
-	return int32(len(r.resolvedOwners)), nil
+	return int32(r.total), nil
 }
 
 func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	return graphqlutil.EncodeCursor(r.next), nil
 }
 
 func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {

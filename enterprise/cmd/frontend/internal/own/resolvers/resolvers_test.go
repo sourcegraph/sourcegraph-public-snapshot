@@ -2,9 +2,12 @@ package resolvers_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/fs"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -165,4 +168,145 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 			"currentPath": "foo/bar.js",
 		},
 	})
+}
+
+// TestOwnershipPagination issues a number of queries using ownership(first) parameter
+// to limit number of responses. It expects to see correct pagination behavior, that is:
+// *  all results are eventually returned, in the expected order;
+// *  each request returns correct pageInfo and totalCount;
+func TestOwnershipPagination(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	rule := &codeownerspb.Rule{
+		Pattern: "*.js",
+		Owner: []*codeownerspb.Owner{
+			{Handle: "js-owner-1"},
+			{Handle: "js-owner-2"},
+			{Handle: "js-owner-3"},
+			{Handle: "js-owner-4"},
+			{Handle: "js-owner-5"},
+		},
+	}
+	own := fakeOwnService{
+		Ruleset: codeowners.NewRuleset(&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{rule},
+		}),
+	}
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "42", nil
+	}
+	git := fakeGitserver{}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, git, own))
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := `
+		query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
+			node(id: $repo) {
+				... on Repository {
+					commit(rev: $revision) {
+						blob(path: $currentPath) {
+							ownership(first: 2, after: $after) {
+								totalCount
+								pageInfo {
+									endCursor
+									hasNextPage
+								}
+								nodes {
+									owner {
+										...on Person {
+											displayName
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}`
+	var after string
+	var paginatedOwners [][]string
+	// Limit iterations to number of owners total, so that the test
+	// has a stop condition in case something malfunctions.
+	for i := 0; i < len(rule.Owner); i++ {
+		var responseData struct {
+			Node struct {
+				Commit struct {
+					Blob struct {
+						Ownership struct {
+							TotalCount int
+							PageInfo   struct {
+								EndCursor   *string
+								HasNextPage bool
+							}
+							Nodes []struct {
+								Owner struct {
+									DisplayName string
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		variables := map[string]any{
+			"repo":        string(relay.MarshalID("Repository", 42)),
+			"revision":    "revision",
+			"currentPath": "foo/bar.js",
+			"after":       after,
+		}
+		response := schema.Exec(ctx, query, "", variables)
+		for _, err := range response.Errors {
+			t.Errorf("GraphQL Exec, errors: %s", err)
+		}
+		if response.Data == nil {
+			t.Fatal("GraphQL response has no data.")
+		}
+		if err := json.Unmarshal(response.Data, &responseData); err != nil {
+			t.Fatalf("Cannot unmarshal GrapgQL JSON response: %s", err)
+		}
+		ownership := responseData.Node.Commit.Blob.Ownership
+		if got, want := ownership.TotalCount, len(rule.Owner); got != want {
+			t.Errorf("TotalCount, got %d want %d", got, want)
+		}
+		var owners []string
+		for _, n := range ownership.Nodes {
+			owners = append(owners, n.Owner.DisplayName)
+		}
+		paginatedOwners = append(paginatedOwners, owners)
+		if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage == hasCursor {
+			cursor := "<nil>"
+			if ownership.PageInfo.EndCursor != nil {
+				cursor = fmt.Sprintf("&%q", *ownership.PageInfo.EndCursor)
+			}
+			t.Errorf("PageInfo.HasNextPage %v but PageInfo.EndCursor %s", nextPage, cursor)
+		}
+		if ownership.PageInfo.HasNextPage {
+			after = *ownership.PageInfo.EndCursor
+		} else {
+			break
+		}
+	}
+	wantPaginatedOwners := [][]string{
+		{
+			"js-owner-1",
+			"js-owner-2",
+		},
+		{
+			"js-owner-3",
+			"js-owner-4",
+		},
+		{
+			"js-owner-5",
+		},
+	}
+	if diff := cmp.Diff(wantPaginatedOwners, paginatedOwners); diff != "" {
+		t.Errorf("returned owners -want+got: %s", diff)
+	}
 }
