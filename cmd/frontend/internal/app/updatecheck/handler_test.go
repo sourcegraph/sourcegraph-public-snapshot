@@ -380,6 +380,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"search_usage": null,
 		"growth_statistics": {"baz":"bonk"},
 		"saved_searches": null,
@@ -904,6 +905,7 @@ func TestSerializeOwn(t *testing.T) {
 	}
 
 	compareJSON(t, payload, `{
+		"access_request_enabled": "false",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
