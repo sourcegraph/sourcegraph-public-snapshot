@@ -16,6 +16,7 @@ import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
+import { getRepositoriesSettings } from './github/helpers'
 
 import styles from './CodeHostCreation.module.scss'
 
@@ -146,7 +147,29 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             },
         })
 
-        telemetryService.log('SetupWizardConnectRemoteCodeHost', { kind: codeHostKind }, { kind: codeHostKind })
+        // GitHub supports Form UI and particular configuration schema where we can track
+        // what modes user used to configure their GITHUB code host, so in case of GITHUB
+        // we send these modes with SetupWizardConnectRemoteCodeHost event
+        if (codeHostKind === ExternalServiceKind.GITHUB) {
+            const { isAffiliatedRepositories, isOrgsRepositories, isSetRepositories } = getRepositoriesSettings(
+                input.config
+            )
+            const eventProperties = {
+                code_host: codeHostKind,
+                isAffiliatedRepositories,
+                isOrgsRepositories,
+                isSetRepositories,
+            }
+
+            telemetryService.log('SetupWizardConnectRemoteCodeHost', eventProperties, eventProperties)
+        } else {
+            telemetryService.log(
+                'SetupWizardConnectRemoteCodeHost',
+                { code_host: codeHostKind },
+                { code_host: codeHostKind }
+            )
+        }
+
         // Reset local storage values
         setLocalValues(defaultConnectionValues)
         navigate('/setup/remote-repositories')

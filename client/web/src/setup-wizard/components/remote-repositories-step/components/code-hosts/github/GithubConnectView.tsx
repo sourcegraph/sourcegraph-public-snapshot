@@ -117,7 +117,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
 
     useEffect(() => {
         const view = getViewKindByIndex(activeTab)
-        telemetryService.log('SetupWizardViewedTab', { view }, { view })
+        telemetryService.log('SetupWizardCreationTabView', { view }, { view })
     }, [activeTab, telemetryService])
 
     return (
@@ -396,9 +396,9 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
 function getViewKindByIndex(index: number): string | null {
     switch (index) {
         case GithubConnectFormTab.Form:
-            return 'creation-form'
+            return 'form-ui'
         case GithubConnectFormTab.JSONC:
-            return 'jsonc-editor'
+            return 'json-editor'
 
         default:
             return null
