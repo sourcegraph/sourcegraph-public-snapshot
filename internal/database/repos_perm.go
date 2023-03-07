@@ -14,19 +14,19 @@ import (
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 
-type BypassAuthzReason = string
-
-const (
-	BypassAuthzReasonSiteAdmin       BypassAuthzReason = "Site Admin"
-	BypassAuthzReasonIsInternal      BypassAuthzReason = "Internal Request"
-	BypassAuthzReasonNoAuthzProvider BypassAuthzReason = "No Authz Provider Configured"
-)
+type BypassAuthzReasonsMap struct {
+	SiteAdmin       bool
+	IsInternal      bool
+	NoAuthzProvider bool
+}
 
 type AuthzQueryParameters struct {
 	BypassAuthz               bool
-	BypassAuthzReason         BypassAuthzReason
+	BypassAuthzReasons        BypassAuthzReasonsMap
 	UsePermissionsUserMapping bool
 	AuthenticatedUserID       int32
+	AuthzEnforceForSiteAdmins bool
+	UnifiedPermsEnabled       bool
 }
 
 func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
@@ -41,6 +41,8 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 	params = &AuthzQueryParameters{}
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	params.UsePermissionsUserMapping = globals.PermissionsUserMapping().Enabled
+	params.AuthzEnforceForSiteAdmins = conf.Get().AuthzEnforceForSiteAdmins
+	params.UnifiedPermsEnabled = conf.ExperimentalFeatures().UnifiedPermissions
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
 	// provider(s) and permissions user mapping are configured.
@@ -62,20 +64,29 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 	// so correctness is important here.
 	if a.IsInternal() {
 		params.BypassAuthz = true
-		params.BypassAuthzReason = BypassAuthzReasonIsInternal
-	} else if authzAllowByDefault && len(authzProviders) == 0 {
+		params.BypassAuthzReasons.IsInternal = true
+	}
+
+	if authzAllowByDefault && len(authzProviders) == 0 {
 		params.BypassAuthz = true
-		params.BypassAuthzReason = BypassAuthzReasonNoAuthzProvider
-	} else if a.IsAuthenticated() {
+		params.BypassAuthzReasons.NoAuthzProvider = true
+	}
+
+	if a.IsAuthenticated() {
 		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
-			return nil, err
+			if !params.BypassAuthz {
+				return nil, err
+			} else {
+				return params, nil
+			}
 		}
-		params.AuthenticatedUserID = currentUser.ID
-		params.BypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 
-		if params.BypassAuthz {
-			params.BypassAuthzReason = BypassAuthzReasonSiteAdmin
+		params.AuthenticatedUserID = currentUser.ID
+
+		if currentUser.SiteAdmin && !params.AuthzEnforceForSiteAdmins {
+			params.BypassAuthz = true
+			params.BypassAuthzReasons.SiteAdmin = true
 		}
 	}
 
@@ -94,45 +105,30 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	return params.ToAuthzQuery(), nil
 }
 
-//nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32) *sqlf.Query {
-	if bypassAuthz {
-		// if bypassAuthz is true, we don't care about any of the checks
+func GetUnrestrictedReposCond(unifiedPermsEnabled bool) *sqlf.Query {
+	if unifiedPermsEnabled {
 		return sqlf.Sprintf(`
-(
-    -- Bypass authz
-    TRUE
-)
-`)
+			-- Unrestricted repos are visible to all users
+			EXISTS (
+				SELECT
+				FROM user_repo_permissions
+				WHERE repo_id = repo.id AND user_id IS NULL
+			)
+		`)
 	}
 
-	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
+	return sqlf.Sprintf(`
+		-- Unrestricted repos are visible to all users
+		EXISTS (
+			SELECT
+			FROM repo_permissions
+			WHERE repo_id = repo.id
+			AND unrestricted
+		)
+	`)
+}
 
-	unrestrictedReposSQL := `
-	-- Unrestricted repos are visible to all users
-	EXISTS (
-		SELECT
-		FROM user_repo_permissions
-		WHERE repo_id = repo.id AND user_id IS NULL
-	)
-	`
-	if !unifiedPermsEnabled {
-		unrestrictedReposSQL = `
-	-- Unrestricted repos are visible to all users
-	EXISTS (
-		SELECT
-		FROM repo_permissions
-		WHERE repo_id = repo.id
-		AND unrestricted
-	)
-		`
-	}
-
-	conditions := []*sqlf.Query{sqlf.Sprintf(unrestrictedReposSQL)}
-
-	// Disregard unrestricted state when permissions user mapping is enabled
-	if !usePermissionsUserMapping {
-		const externalServiceUnrestrictedSQL = `
+var ExternalServiceUnrestrictedCondition = sqlf.Sprintf(`
 (
     NOT repo.private          -- Happy path of non-private repositories
     OR  EXISTS (              -- Each external service defines if repositories are unrestricted
@@ -146,9 +142,27 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
         )
 	)
 )
-`
-		externalServiceUnrestrictedQuery := sqlf.Sprintf(externalServiceUnrestrictedSQL)
-		conditions = append(conditions, externalServiceUnrestrictedQuery)
+`)
+
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32) *sqlf.Query {
+	if bypassAuthz {
+		// if bypassAuthz is true, we don't care about any of the checks
+		return sqlf.Sprintf(`
+(
+    -- Bypass authz
+    TRUE
+)
+`)
+	}
+
+	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
+
+	unrestrictedReposQuery := GetUnrestrictedReposCond(unifiedPermsEnabled)
+	conditions := []*sqlf.Query{unrestrictedReposQuery}
+
+	// Treat all external services as restricted when user mapping is enabled
+	if !usePermissionsUserMapping {
+		conditions = append(conditions, ExternalServiceUnrestrictedCondition)
 	}
 
 	restrictedRepositoriesSQL := `
