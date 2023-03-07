@@ -2,15 +2,12 @@ package graphql
 
 import (
 	"context"
-	"sort"
 	"strconv"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -20,7 +17,7 @@ import (
 )
 
 type rootResolver struct {
-	sentinelSvc             *sentinel.Service
+	sentinelSvc             SentinelService
 	autoindexSvc            sharedresolvers.AutoIndexingService
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
@@ -34,7 +31,7 @@ type rootResolver struct {
 
 func NewRootResolver(
 	observationCtx *observation.Context,
-	sentinelSvc *sentinel.Service,
+	sentinelSvc SentinelService,
 	autoindexSvc sharedresolvers.AutoIndexingService,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
@@ -269,7 +266,7 @@ func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Sy
 //
 
 type bulkLoaderFactory struct {
-	sentinelSvc *sentinel.Service
+	sentinelSvc SentinelService
 }
 
 func (f *bulkLoaderFactory) Create() *bulkLoader {
@@ -277,68 +274,27 @@ func (f *bulkLoaderFactory) Create() *bulkLoader {
 }
 
 type bulkLoader struct {
-	sync.RWMutex
-	sentinelSvc *sentinel.Service
-	ids         []int
-	cache       map[int]shared.Vulnerability
+	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
 }
 
-func NewBulkLoader(sentinelSvc *sentinel.Service) *bulkLoader {
+func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
 	return &bulkLoader{
-		sentinelSvc: sentinelSvc,
-		cache:       map[int]shared.Vulnerability{},
+		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
+			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
+		})),
 	}
 }
 
 func (l *bulkLoader) MarkVulnerability(id int) {
-	l.Lock()
-	l.ids = append(l.ids, id)
-	l.Unlock()
+	l.loader.Presubmit(id)
 }
 
 func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error) {
-	l.RLock()
-	vulnerability, ok := l.cache[id]
-	l.RUnlock()
-	if ok {
-		return vulnerability, true, nil
-	}
-
-	l.Lock()
-	defer l.Unlock()
-
-	if vulnerability, ok := l.cache[id]; ok {
-		return vulnerability, true, nil
-	}
-
-	m := map[int]struct{}{}
-	for _, x := range append(l.ids, id) {
-		if _, ok := l.cache[x]; !ok {
-			m[x] = struct{}{}
-		}
-	}
-	ids := make([]int, 0, len(m))
-	for x := range m {
-		ids = append(ids, x)
-	}
-	sort.Ints(ids)
-
-	vulnerabilities, err := l.sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
-	if err != nil {
-		return shared.Vulnerability{}, false, err
-	}
-
-	for _, vulnerability := range vulnerabilities {
-		l.cache[vulnerability.ID] = vulnerability
-	}
-	l.ids = nil
-
-	vulnerability, ok = l.cache[id]
-	return vulnerability, ok, nil
+	return l.loader.GetByID(ctx, id)
 }
 
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      *sentinel.Service
+	sentinelSvc      SentinelService
 	autoindexSvc     sharedresolvers.AutoIndexingService
 	uploadSvc        sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
@@ -445,7 +401,7 @@ func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
 //
 
 type vulnerabilityMatchConnectionResolver struct {
-	sentinelSvc      *sentinel.Service
+	sentinelSvc      SentinelService
 	autoindexSvc     sharedresolvers.AutoIndexingService
 	uploadSvc        sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService

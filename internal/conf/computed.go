@@ -280,6 +280,13 @@ func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
 	return "dev"
 }
 
+func CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix; val != "" {
+		return val
+	}
+	return ""
+}
+
 func CodeIntelRankingStaleResultAge() time.Duration {
 	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
 		return time.Duration(val) * time.Hour

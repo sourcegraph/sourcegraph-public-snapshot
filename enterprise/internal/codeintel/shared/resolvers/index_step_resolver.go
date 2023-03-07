@@ -20,8 +20,16 @@ func NewIndexStepResolver(siteAdminChecker SiteAdminChecker, index types.Index, 
 	}
 }
 
+func (r *indexStepResolver) Commands() []string    { return r.index.LocalSteps }
 func (r *indexStepResolver) IndexerArgs() []string { return r.index.IndexerArgs }
 func (r *indexStepResolver) Outfile() *string      { return strPtr(r.index.Outfile) }
+
+func (r *indexStepResolver) RequestedEnvVars() *[]string {
+	if len(r.index.RequestedEnvVars) == 0 {
+		return nil
+	}
+	return &r.index.RequestedEnvVars
+}
 
 func (r *indexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolver {
 	if r.entry != nil {
