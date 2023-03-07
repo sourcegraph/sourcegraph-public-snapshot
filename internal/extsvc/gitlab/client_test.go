@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,6 +121,8 @@ func TestClient_doWithBaseURL(t *testing.T) {
 }
 
 func TestRateLimitRetries(t *testing.T) {
+	rcache.SetupForTest(t)
+
 	ctx := context.Background()
 	hitRetryAfter := false
 	hitRateLimit := false
