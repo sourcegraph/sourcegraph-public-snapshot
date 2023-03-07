@@ -42,6 +42,7 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
+		siteAdminChecker: siteAdminChecker,
 		index:            index,
 		repoStore:        repoStore,
 		prefetcher:       prefetcher,
