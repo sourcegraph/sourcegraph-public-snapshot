@@ -547,6 +547,8 @@ type Completions struct {
 	AccessToken string `json:"accessToken"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
+	// Model description: The model used for completions.
+	Model string `json:"model"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
