@@ -21,6 +21,7 @@ export type FeatureFlagName =
     | 'search-ownership'
     | 'cody'
     | 'search-ranking'
+    | 'database-permission-sync-worker'
 
 interface OrgFlagOverride {
     orgID: string

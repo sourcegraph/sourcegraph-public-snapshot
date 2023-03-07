@@ -80,13 +80,3 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         }
     }
 `
-
-export const DB_BACKED_PERMISSIONS_SYNC_FEATURE_FLAG_QUERY = gql`
-    query DatabaseBackedPermsSyncFeatureFlag($name: String!) {
-        featureFlag(name: $name) {
-            ... on FeatureFlagBoolean {
-                value
-            }
-        }
-    }
-`

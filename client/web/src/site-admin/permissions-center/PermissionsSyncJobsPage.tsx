@@ -1,14 +1,11 @@
 import React from 'react'
 
-import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, AlertLink, Code, Container, H4, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import { DatabaseBackedPermsSyncFeatureFlagResult } from '../../graphql-operations'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
-import { DB_BACKED_PERMISSIONS_SYNC_FEATURE_FLAG_QUERY } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'
 
 interface Props extends TelemetryProps {}
@@ -18,22 +15,7 @@ const FEATURE_FLAG_NAME = 'database-permission-sync-worker'
 export const PermissionsSyncJobsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
 }) => {
-    const { data, loading, error } = useQuery<DatabaseBackedPermsSyncFeatureFlagResult>(
-        DB_BACKED_PERMISSIONS_SYNC_FEATURE_FLAG_QUERY,
-        {
-            variables: {
-                name: FEATURE_FLAG_NAME,
-            },
-        }
-    )
-
-    if (error) {
-        return <ConnectionError errors={[error.message]} />
-    }
-    if (loading) {
-        return <ConnectionLoading />
-    }
-    const enabled = (data?.featureFlag?.__typename === 'FeatureFlagBoolean' && data.featureFlag.value) || undefined
+    const [enabled] = useFeatureFlag(FEATURE_FLAG_NAME)
 
     return enabled ? (
         <PermissionsSyncJobsTable telemetryService={telemetryService} />
