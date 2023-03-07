@@ -55,12 +55,11 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratel
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, *repoName, false)
+		_, err = s.SyncRepo(ctx, repoName, false)
 		if err != nil {
-			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(*repoName)), log.Error(err))
+			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repoName)), log.Error(err))
 		}
 		erroredRepoGauge.Inc()
-		return nil
 	}
 
 	return err

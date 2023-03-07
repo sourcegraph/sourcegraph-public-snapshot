@@ -213,10 +213,8 @@ func TestListReposWithLastError(t *testing.T) {
 	type testCase struct {
 		name               string
 		testRepos          []testRepo
-		expectedReposFound []*api.RepoName
+		expectedReposFound []api.RepoName
 	}
-	repo1 := api.RepoName("github.com/sourcegraph/repo1")
-	repo2 := api.RepoName("github.com/sourcegraph/repo2")
 	testCases := []testCase{
 		{
 			name: "get repos with last error",
@@ -231,7 +229,7 @@ func TestListReposWithLastError(t *testing.T) {
 					cloudDefault: true,
 				},
 			},
-			expectedReposFound: []*api.RepoName{&repo1},
+			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo1"},
 		},
 		{
 			name: "filter out non cloud_default repos",
@@ -247,7 +245,7 @@ func TestListReposWithLastError(t *testing.T) {
 					hasLastError: true,
 				},
 			},
-			expectedReposFound: []*api.RepoName{&repo2},
+			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo2"},
 		},
 		{
 			name: "no cloud_default repos with non-empty last errors",

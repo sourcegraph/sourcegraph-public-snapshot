@@ -25061,7 +25061,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
-			defaultHook: func(context.Context) (r0 []*api.RepoName, r1 error) {
+			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -25154,7 +25154,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
-			defaultHook: func(context.Context) ([]*api.RepoName, error) {
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithLastError")
 			},
 		},
@@ -25932,15 +25932,15 @@ func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Results() []interf
 // the ListReposWithLastError method of the parent MockGitserverRepoStore
 // instance is invoked.
 type GitserverRepoStoreListReposWithLastErrorFunc struct {
-	defaultHook func(context.Context) ([]*api.RepoName, error)
-	hooks       []func(context.Context) ([]*api.RepoName, error)
+	defaultHook func(context.Context) ([]api.RepoName, error)
+	hooks       []func(context.Context) ([]api.RepoName, error)
 	history     []GitserverRepoStoreListReposWithLastErrorFuncCall
 	mutex       sync.Mutex
 }
 
 // ListReposWithLastError delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) ListReposWithLastError(v0 context.Context) ([]*api.RepoName, error) {
+func (m *MockGitserverRepoStore) ListReposWithLastError(v0 context.Context) ([]api.RepoName, error) {
 	r0, r1 := m.ListReposWithLastErrorFunc.nextHook()(v0)
 	m.ListReposWithLastErrorFunc.appendCall(GitserverRepoStoreListReposWithLastErrorFuncCall{v0, r0, r1})
 	return r0, r1
@@ -25949,7 +25949,7 @@ func (m *MockGitserverRepoStore) ListReposWithLastError(v0 context.Context) ([]*
 // SetDefaultHook sets function that is called when the
 // ListReposWithLastError method of the parent MockGitserverRepoStore
 // instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultHook(hook func(context.Context) ([]*api.RepoName, error)) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.defaultHook = hook
 }
 
@@ -25958,7 +25958,7 @@ func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushHook(hook func(context.Context) ([]*api.RepoName, error)) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -25966,20 +25966,20 @@ func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultReturn(r0 []*api.RepoName, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]*api.RepoName, error) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushReturn(r0 []*api.RepoName, r1 error) {
-	f.PushHook(func(context.Context) ([]*api.RepoName, error) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreListReposWithLastErrorFunc) nextHook() func(context.Context) ([]*api.RepoName, error) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -26019,7 +26019,7 @@ type GitserverRepoStoreListReposWithLastErrorFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*api.RepoName
+	Result0 []api.RepoName
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

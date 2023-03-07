@@ -53,7 +53,7 @@ type GitserverRepoStore interface {
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
-	ListReposWithLastError(ctx context.Context) ([]*api.RepoName, error)
+	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
 	// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
 	// are cloned on disk but have been deleted or blocked.
 	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
@@ -148,19 +148,9 @@ WHERE
 	AND es.cloud_default IS TRUE
 `
 
-func (s *gitserverRepoStore) ListReposWithLastError(ctx context.Context) ([]*api.RepoName, error) {
+func (s *gitserverRepoStore) ListReposWithLastError(ctx context.Context) ([]api.RepoName, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
 	return scanLastErroredRepos(rows, err)
-}
-
-type lastErroredRepo struct {
-	Name string
-}
-
-func scanLastErroredRepoRow(scanner dbutil.Scanner) (*api.RepoName, error) {
-	var name api.RepoName
-	err := scanner.Scan(&name)
-	return &name, err
 }
 
 const nonemptyLastErrorQuery = `
@@ -175,6 +165,11 @@ WHERE
 	AND repo.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
+
+func scanLastErroredRepoRow(scanner dbutil.Scanner) (name api.RepoName, err error) {
+	err = scanner.Scan(&name)
+	return name, err
+}
 
 var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
 
