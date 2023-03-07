@@ -26,8 +26,8 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
