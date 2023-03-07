@@ -71,7 +71,10 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 <Container className={styles.contentMain}>
                     <Routes>
                         <Route index={true} element={<CodeHostsPicker />} />
-                        <Route path=":codeHostType/create" element={<CodeHostCreation />} />
+                        <Route
+                            path=":codeHostType/create"
+                            element={<CodeHostCreation telemetryService={telemetryService} />}
+                        />
                         <Route
                             path=":codehostId/edit"
                             element={<CodeHostEdit onCodeHostDelete={setCodeHostToDelete} />}

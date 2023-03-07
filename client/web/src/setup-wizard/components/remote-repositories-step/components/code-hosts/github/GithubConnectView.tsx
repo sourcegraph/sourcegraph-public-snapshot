@@ -116,7 +116,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
     })
 
     useEffect(() => {
-        const view = getViewKindByIndex
+        const view = getViewKindByIndex(activeTab)
         telemetryService.log('SetupWizardViewedTab', { view }, { view })
     }, [activeTab, telemetryService])
 
