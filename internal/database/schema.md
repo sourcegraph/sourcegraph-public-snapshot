@@ -851,6 +851,7 @@ Indexes:
  id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
     "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
     "codeintel_path_ranks_graph_key" btree (graph_key, updated_at NULLS FIRST, id)
     "codeintel_path_ranks_repository_id_updated_at_id" btree (repository_id, updated_at NULLS FIRST, id)
 Triggers:

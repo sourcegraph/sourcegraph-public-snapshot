@@ -4,7 +4,6 @@ DROP INDEX IF EXISTS codeintel_ranking_path_counts_inputs_graph_key_and_reposito
 DROP INDEX IF EXISTS codeintel_ranking_definitions_graph_key_id;
 DROP INDEX IF EXISTS codeintel_ranking_references_graph_key_id;
 DROP INDEX IF EXISTS codeintel_ranking_path_counts_inputs_graph_key_repository_id_id;
-DROP INDEX IF EXISTS codeintel_path_ranks_repository_id;
 DROP INDEX IF EXISTS codeintel_path_ranks_updated_at;
 
 TRUNCATE codeintel_ranking_definitions CASCADE;
