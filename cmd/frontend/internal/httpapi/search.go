@@ -58,8 +58,6 @@ type searchIndexerGRPCServer struct {
 }
 
 func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *proto.SearchConfigurationRequest) (*proto.SearchConfigurationResponse, error) {
-	var parameters searchConfigurationParameters
-
 	repoIDs := make([]api.RepoID, 0, len(request.GetRepoIds()))
 	for _, repoID := range request.GetRepoIds() {
 		repoIDs = append(repoIDs, api.RepoID(repoID))
@@ -68,8 +66,10 @@ func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, reque
 	var fingerprint searchbackend.ConfigFingerprint
 	fingerprint.FromProto(request.GetFingerprint())
 
-	parameters.fingerprint = fingerprint
-	parameters.repoIDs = repoIDs
+	parameters := searchConfigurationParameters{
+		fingerprint: fingerprint,
+		repoIDs:     repoIDs,
+	}
 
 	r, err := s.server.doSearchConfiguration(ctx, parameters)
 	if err != nil {
