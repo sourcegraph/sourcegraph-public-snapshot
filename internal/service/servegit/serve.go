@@ -161,7 +161,10 @@ func (s *Serve) handler() http.Handler {
 	})
 
 	dirFn := func(name string) string {
-		return filepath.Join(string(filepath.Separator), filepath.FromSlash(name))
+		// The cloneURL we generate is an absolute path. But gitservice
+		// returns the name with the leading / missing. So we add it in before
+		// calling FromSlash.
+		return filepath.FromSlash("/" + name)
 	}
 	if mockDirFn != nil {
 		dirFn = mockDirFn
