@@ -31,17 +31,9 @@ See the [`sg` documentation](../background-information/sg/index.md) for more inf
 
 Follow the instructions on [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) for checking if you have an existing SSH for your current machine and setting one up if not.
 
-## Create the `sourcegraph` directory
-
-The `sg setup` tool expects to be run in a directory called sourcegraph. Open a terminal to create and move to that directory:
-
-```mkdir sourcegraph
-cd sourcegraph
-```
-
 ## Run `sg setup`
 
-Open a terminal and run the following command:
+In the directory where you want the `sourcegraph` repository to be checked out, open a terminal and run the following command:
 
 ```sh
 sg setup
