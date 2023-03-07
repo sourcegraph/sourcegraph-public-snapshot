@@ -25,8 +25,8 @@ WHEN (OLD.* IS DISTINCT FROM NEW.*)
 EXECUTE PROCEDURE func_package_repo_filters_updated_at();
 
 ALTER TABLE package_repo_filters
-    DROP CONSTRAINT IF EXISTS package_repo_filters_oneof_valid_glob,
-    ADD CONSTRAINT package_repo_filters_oneof_glob CHECK (
+    DROP CONSTRAINT IF EXISTS package_repo_filters_valid_oneof_glob,
+    ADD CONSTRAINT package_repo_filters_valid_oneof_glob CHECK (
         (
             (matcher ? 'VersionGlob' AND matcher->>'VersionGlob' <> '' AND matcher->>'PackageName' <> '' AND NOT(matcher ? 'PackageGlob')) OR
             (matcher ? 'PackageGlob' AND matcher->>'PackageGlob' <> '' AND NOT(matcher ? 'VersionGlob'))
