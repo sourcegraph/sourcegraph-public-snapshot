@@ -71,7 +71,7 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 pub enum SyntaxEngine {
     #[default]
     #[serde(rename = "syntect")]
@@ -79,6 +79,9 @@ pub enum SyntaxEngine {
 
     #[serde(rename = "tree-sitter")]
     TreeSitter,
+
+    #[serde(rename = "tree-sitter-syntax")]
+    TreeSitterSyntax,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -275,7 +278,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
     match q.engine {
-        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+        SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
             let sg_query = SourcegraphQuery {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),
@@ -295,19 +298,21 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             )
             .generate();
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
         }),
-        crate::SyntaxEngine::TreeSitter => {
+        SyntaxEngine::TreeSitter | SyntaxEngine::TreeSitterSyntax => {
             let language = q
                 .filetype
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            match treesitter_index(treesitter_language(&language), &q.code) {
+            let include_locals = q.engine == SyntaxEngine::TreeSitterSyntax;
+
+            match treesitter_index(treesitter_language(&language), &q.code, include_locals) {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                    Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
                 }
                 Err(Error::InvalidLanguage) => Err(json!({
                     "error": format!("{} is not a valid filetype for treesitter", language)
