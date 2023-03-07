@@ -48,6 +48,7 @@ export function useFeatureFlag(
         {
             variables: { flagName },
             fetchPolicy: 'cache-first',
+            // When updating the feature flag value with refetch, we want to skip the cache and rely on the network.
             nextFetchPolicy: 'network-only',
             skip: overriddenValueExists,
         }
