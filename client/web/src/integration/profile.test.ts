@@ -31,6 +31,7 @@ const USER: UserSettingsAreaUserFields = {
     emails: [{ email: 'test@example.com', verified: true, isPrimary: true }],
     organizations: { nodes: [] },
     tags: [],
+    scimControlled: false,
 }
 describe('User profile page', () => {
     let driver: Driver
@@ -170,6 +171,7 @@ describe('User Different Settings Page', () => {
                     organizations: { nodes: [] },
                     permissionsInfo: null,
                     tags: [],
+                    scimControlled: false,
                 },
             }),
         })
