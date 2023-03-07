@@ -67,7 +67,7 @@ func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
 }
 
 func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running 💈 %s...", bc.Name))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
 
 	// Run the binary for the first time.
 	cancel, err := bc.start(ctx, dir, parentEnv)

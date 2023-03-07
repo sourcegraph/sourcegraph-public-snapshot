@@ -7,6 +7,7 @@ import {
     ExternalServiceKind,
     FileExternalLinksResult,
     FileNamesResult,
+    FileTreeEntriesResult,
     RepoChangesetsStatsResult,
     ResolveRepoRevResult,
 } from '../graphql-operations'
@@ -29,6 +30,9 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
         },
     },
 })
+
+export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]): FileTreeEntriesResult =>
+    createTreeEntriesResult(url, toplevelFiles)
 
 export const createBlobContentResult = (
     content: string,

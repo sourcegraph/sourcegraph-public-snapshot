@@ -126,13 +126,17 @@ function useBlobPanelViews({
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
+                          productStatus: 'experimental' as const,
                           element: (
-                              <FileOwnershipPanel
-                                  key="ownership"
-                                  repoID={repoID}
-                                  revision={revision}
-                                  filePath={filePath}
-                              />
+                              <PanelContent>
+                                  <FileOwnershipPanel
+                                      key="ownership"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
                           ),
                       }
                     : null,

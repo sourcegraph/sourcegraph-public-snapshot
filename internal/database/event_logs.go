@@ -129,6 +129,10 @@ type EventLogStore interface {
 	// '%codeintel%' events in the event_logs table.
 	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
 
+	// OwnershipFeatureActivity returns (M|W|D)AUs for the most recent of each period
+	// for each of given event names.
+	OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)
+
 	WithTransact(context.Context, func(EventLogStore) error) error
 	With(other basestore.ShareableStore) EventLogStore
 	basestore.ShareableStore
@@ -1556,3 +1560,120 @@ SELECT
 FROM codeintel_langugage_support_requests
 GROUP BY language_id
 `
+
+func (l *eventLogStore) OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+	if len(eventNames) == 0 {
+		return map[string]*types.OwnershipUsageStatisticsActiveUsers{}, nil
+	}
+	var sqlEventNames []*sqlf.Query
+	for _, e := range eventNames {
+		sqlEventNames = append(sqlEventNames, sqlf.Sprintf("%s", e))
+	}
+	query := sqlf.Sprintf(eventActivityQuery, now, now, sqlf.Join(sqlEventNames, ","), now, now, now)
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+	stats := map[string]*types.OwnershipUsageStatisticsActiveUsers{}
+	for _, e := range eventNames {
+		var zero int32
+		stats[e] = &types.OwnershipUsageStatisticsActiveUsers{
+			DAU: &zero,
+			WAU: &zero,
+			MAU: &zero,
+		}
+	}
+	for rows.Next() {
+		var (
+			unit        string
+			eventName   string
+			timestamp   time.Time
+			activeUsers int32
+		)
+		if err := rows.Scan(&unit, &eventName, &timestamp, &activeUsers); err != nil {
+			return nil, err
+		}
+		switch unit {
+		case "day":
+			stats[eventName].DAU = &activeUsers
+		case "week":
+			stats[eventName].WAU = &activeUsers
+		case "month":
+			stats[eventName].MAU = &activeUsers
+		default:
+			return nil, errors.Newf("unexpected unit %q, this is a bug", unit)
+		}
+	}
+	return stats, err
+}
+
+// eventActivityQuery returns the most recent reading on (M|W|D)AU for given events.
+//
+// The query outputs one row per event name, per unit ("month", "week", "day" as strings).
+// Each row contains:
+//  1. "unit" which is either "month" or "week" or "day" indicating whether
+//     whether the associated user_activity referes to MAU, WAU or DAU.
+//  2. "name" which refers to the name of the event considered.
+//  2. "time_stamp" which indicates the beginning of unit time span (like the beginning
+//     of week or month).
+//  3. "active_users" which is the count of distinct active users during
+//     the relevant time span.
+//
+// There are 6 parameters (but just two values):
+//  1. Timestamp which truncated to this month is the time-based lower bound
+//     for events taken into account, twice.
+//  2. The list of event names to consider.
+//  3. The same timestamp again, three times.
+var eventActivityQuery = `
+WITH events AS (
+	SELECT
+	` + aggregatedUserIDQueryFragment + ` AS user_id,
+	` + makeDateTruncExpression("day", "timestamp") + ` AS day,
+	` + makeDateTruncExpression("week", "timestamp") + ` AS week,
+	` + makeDateTruncExpression("month", "timestamp") + ` AS month,
+	name AS name
+	FROM event_logs
+	-- Either: the beginning of current week and current month
+	-- can come first, so take the earliest as timestamp lower bound.
+	WHERE timestamp >= LEAST(
+		` + makeDateTruncExpression("month", "%s::timestamp") + `,
+		` + makeDateTruncExpression("week", "%s::timestamp") + `
+	)
+	AND name IN (%s)
+)
+(
+	SELECT DISTINCT ON (unit, name)
+		'month' AS unit,
+		e.name AS name,
+		e.month AS time_stamp,
+		COUNT(DISTINCT e.user_id) AS active_users
+	FROM events AS e
+	WHERE e.month >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+	GROUP BY unit, name, time_stamp
+	ORDER BY unit, name, time_stamp DESC
+)
+UNION ALL
+(
+SELECT DISTINCT ON (unit, name)
+	'week' AS unit,
+	e.name AS name,
+	e.week AS time_stamp,
+	COUNT(DISTINCT e.user_id) AS active_users
+FROM events AS e
+WHERE e.week >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+GROUP BY unit, name, time_stamp
+ORDER BY unit, name, time_stamp DESC
+)
+UNION ALL
+(
+SELECT DISTINCT ON (unit, name)
+	'day' AS unit,
+	e.name AS name,
+	e.day AS time_stamp,
+	COUNT(DISTINCT e.user_id) AS active_users
+FROM events AS e
+WHERE e.day >= ` + makeDateTruncExpression("day", "%s::timestamp") + `
+GROUP BY unit, name, time_stamp
+ORDER BY unit, name, time_stamp DESC
+)`

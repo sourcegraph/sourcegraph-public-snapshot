@@ -13,8 +13,6 @@ import {
 } from '../../graphql-operations'
 import { ExternalRepositoryIcon } from '../components/ExternalRepositoryIcon'
 
-import styles from './PermissionsSyncJobNode.module.scss'
-
 export interface ChangesetCloseNodeProps {
     node: PermissionsSyncJob
 }
@@ -84,29 +82,11 @@ const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetada
     },
 }
 
-export const PermissionsSyncJobNode: React.FunctionComponent<React.PropsWithChildren<ChangesetCloseNodeProps>> = ({
-    node,
-}) => (
-    <li className={styles.job}>
-        <span className={styles.jobSeparator} />
-        <>
-            <PermissionsSyncJobStatusBadge state={node.state} />
-            <PermissionsSyncJobSubject job={node} />
-            <PermissionsSyncJobReasonByline job={node} />
-            <PermissionsSyncJobNumbers job={node} added={true} />
-            <PermissionsSyncJobNumbers job={node} added={false} />
-            <div className="text-secondary">
-                <b>{node.permissionsFound}</b>
-            </div>
-        </>
-    </li>
-)
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({
+    state,
+}) => <Badge variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>{state}</Badge>
 
-const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({ state }) => (
-    <Badge variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>{state}</Badge>
-)
-
-const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
+export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
     <div>
         <div>
             {job.subject.__typename === 'Repository' ? (
@@ -130,7 +110,7 @@ const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJ
     </div>
 )
 
-const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
+export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
     <div>
         <div>{job.reason.group}</div>
         <Text className="mb-0 text-muted">
@@ -143,8 +123,7 @@ const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: Permissions
     </div>
 )
 
-// added/removed access for X repositories/users
-const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: PermissionsSyncJob; added: boolean }> = ({
+export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: PermissionsSyncJob; added: boolean }> = ({
     job,
     added,
 }) =>

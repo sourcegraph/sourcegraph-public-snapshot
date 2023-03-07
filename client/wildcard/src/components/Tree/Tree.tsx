@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -37,7 +37,7 @@ interface Props<N extends TreeNode>
     nodeClassName?: string
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, nodeClassName, expandedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -96,13 +96,21 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         marginLeft: getMarginLeft(level, isBranch),
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
+                    data-testid="tree-node"
                     data-tree-node-id={element.id}
+                    data-tree-active={isSelected}
+                    data-tree-selected={isSelected}
+                    data-tree-expanded={isExpanded}
                     className={classNames(styles.node, isSelected && styles.selected, nodeClassName)}
                 >
                     {isBranch ? (
                         // We already handle accessibility events for expansion in the <TreeView />
                         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                        <div className={classNames(styles.icon, styles.collapseIcon)} onClick={onClick}>
+                        <div
+                            className={classNames(styles.icon, styles.collapseIcon)}
+                            data-testid="tree-expand-icon"
+                            onClick={onClick}
+                        >
                             {isExpanded &&
                             element.children.length === 0 &&
                             (loadedIds ? !loadedIds.has(element.id) : true) ? (
@@ -133,9 +141,20 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
         [loadedIds, nodeClassName, renderNode]
     )
 
+    // <TreeView /> quirk:
+    //
+    // The root node (id = 0) is not a valid target to be expanded. If it is set accidentally, it
+    // can leave the tree in an invalid state where no tabIndex={0} item is rendered (because the
+    // tabIndex is assumed it has to be on the root node).
+    const validExpandedIds = useMemo(
+        () => (expandedIds ? expandedIds.filter(id => id !== 0) : expandedIds),
+        [expandedIds]
+    )
+
     return (
         <TreeView
             {...rest}
+            expandedIds={validExpandedIds}
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}

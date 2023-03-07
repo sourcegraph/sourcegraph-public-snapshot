@@ -34,7 +34,6 @@ func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
 		p.BypassAuthz,
 		p.UsePermissionsUserMapping,
 		p.AuthenticatedUserID,
-		authz.Read, // Note: We currently only support read for repository permissions.
 	)
 }
 
@@ -96,7 +95,7 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 }
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
 		return sqlf.Sprintf(`
@@ -109,33 +108,27 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 
 	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
-	unrestrictedReposUnifiedSQL := sqlf.Sprintf("")
-	if unifiedPermsEnabled {
-		format := `
-		EXISTS (
-			SELECT
-			FROM user_repo_permissions
-			WHERE repo_id = repo.id AND user_id IS NULL
-		)
-		OR
-		`
-		unrestrictedReposUnifiedSQL = sqlf.Sprintf(format)
-	}
-
-	const unrestrictedReposSQL = `
-(
+	unrestrictedReposSQL := `
 	-- Unrestricted repos are visible to all users
-	%s
+	EXISTS (
+		SELECT
+		FROM user_repo_permissions
+		WHERE repo_id = repo.id AND user_id IS NULL
+	)
+	`
+	if !unifiedPermsEnabled {
+		unrestrictedReposSQL = `
+	-- Unrestricted repos are visible to all users
 	EXISTS (
 		SELECT
 		FROM repo_permissions
 		WHERE repo_id = repo.id
 		AND unrestricted
 	)
-)
-`
-	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL, unrestrictedReposUnifiedSQL)
-	conditions := []*sqlf.Query{unrestrictedReposQuery}
+		`
+	}
+
+	conditions := []*sqlf.Query{sqlf.Sprintf(unrestrictedReposSQL)}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
 	if !usePermissionsUserMapping {
@@ -158,33 +151,29 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
-	restrictedRepositoriesUnifiedSQL := sqlf.Sprintf("")
-	if unifiedPermsEnabled {
-		const format = `
-		EXISTS (
-			SELECT repo_id FROM user_repo_permissions
-			WHERE
-				repo_id = repo.id
-			AND user_id = %s
-		) OR `
-		restrictedRepositoriesUnifiedSQL = sqlf.Sprintf(format, authenticatedUserID)
-	}
-
-	const restrictedRepositoriesSQL = `
-(
+	restrictedRepositoriesSQL := `
 	-- Restricted repositories require checking permissions
-	%s
+	EXISTS (
+		SELECT repo_id FROM user_repo_permissions
+		WHERE
+			repo_id = repo.id
+		AND user_id = %s
+	)
+	`
+	if !unifiedPermsEnabled {
+		restrictedRepositoriesSQL = `
+	-- Restricted repositories require checking permissions
     (
 		SELECT object_ids_ints @> INTSET(repo.id)
 		FROM user_permissions
 		WHERE
 			user_id = %s
-		AND permission = %s
+		AND permission = 'read'
 		AND object_type = 'repos'
 	)
-)
-`
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, restrictedRepositoriesUnifiedSQL, authenticatedUserID, perms.String())
+	`
+	}
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID)
 
 	conditions = append(conditions, restrictedRepositoriesQuery)
 

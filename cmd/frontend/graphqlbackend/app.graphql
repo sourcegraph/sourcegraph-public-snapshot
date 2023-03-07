@@ -1,0 +1,55 @@
+extend type Query {
+    """
+    Runs a host system native file picker and returns the directory picked. If
+    null the user canceled the operation. This is intended to be used by
+    Sourcegraph App.
+    """
+    localDirectoryPicker: LocalDirectory
+
+    """
+    Returns the local directory at dir. This is intended to be used by
+    Sourcegraph App.
+    """
+    localDirectory(dir: String!): LocalDirectory!
+}
+
+"""
+LocalDirectory represents a directory on the host machine. This is an API
+specific to Sourcegraph App.
+"""
+type LocalDirectory {
+    """
+    Path is an absolute path to a local directory that exists. If LocalDirectory
+    was created via picker this is the path picked.
+    """
+    path: String!
+
+    """
+    Repositories is the recursive list of repositories found under path.
+
+
+    Note: This field is blocking to compute. It uses heuristics to return a
+    best-effort list in 5s.
+    """
+    repositories: [LocalRepository!]!
+    # Question: Would it be better to be a connection with pagination? There
+    # are serious limitations to this due to it not being a DB query, which is
+    # why I chose a list.
+}
+
+"""
+LocalRepository represents a repository found recursively from a directory on
+the host machine. This is an API specific to Sourcegraph App.
+"""
+type LocalRepository {
+    """
+    The name of the local repository. This is usually the relative path from the
+    root this repository was found.
+    """
+    name: String!
+
+    """
+    The absolute path to a local repository.
+    """
+    path: String!
+}

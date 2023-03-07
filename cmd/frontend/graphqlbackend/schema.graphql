@@ -9240,6 +9240,11 @@ type Team implements Node {
     True, if the current user can modify this team.
     """
     viewerCanAdminister: Boolean!
+
+    """
+    The creator of this team. Null, if the user was deleted.
+    """
+    creator: User
 }
 
 """

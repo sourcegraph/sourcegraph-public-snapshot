@@ -110,6 +110,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"tsx":        EngineTreeSitter,
 		"java":       EngineTreeSitter,
 		"c":          EngineTreeSitter,
+		"go":         EngineTreeSitter,
 		"scala":      EngineTreeSitter,
 		"rust":       EngineTreeSitter,
 		"c#":         EngineTreeSitter,

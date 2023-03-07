@@ -78,8 +78,13 @@ type CodeownersFileInput struct {
 	RepoName     *string
 }
 
+type DeleteCodeownersFilesInput struct {
+	RepoID   *graphql.ID
+	RepoName *string
+}
+
 type DeleteCodeownersFileArgs struct {
-	RepositoryIDs []int32
+	Repositories []DeleteCodeownersFilesInput
 }
 
 type CodeownersIngestedFilesArgs struct {

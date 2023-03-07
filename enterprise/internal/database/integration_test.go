@@ -58,7 +58,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
-		{"UserIDsWithNoPerms", testPermsStore_UserIDsWithNoPerms(db)},
 		{"RepoIDsWithNoPerms", testPermsStore_RepoIDsWithNoPerms(db)},
 		{"UserIDsWithOldestPerms", testPermsStore_UserIDsWithOldestPerms(db)},
 		{"ReposIDsWithOldestPerms", testPermsStore_ReposIDsWithOldestPerms(db)},

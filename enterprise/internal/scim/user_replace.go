@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/elimity-com/scim"
-	"github.com/elimity-com/scim/optional"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -26,15 +25,15 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 			return err
 		}
 
-		// Only use the ID and external ID, drop the attributes
-		externalIDOptional := optional.String{}
-		if user.SCIMExternalID != "" {
-			externalIDOptional = optional.NewString(user.SCIMExternalID)
-		}
+		// Only use the ID, drop the attributes
 		userRes = scim.Resource{
 			ID:         strconv.FormatInt(int64(user.ID), 10),
-			ExternalID: externalIDOptional,
+			ExternalID: getOptionalExternalID(attributes),
 			Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
+			Meta: scim.Meta{
+				Created:      &user.CreatedAt,
+				LastModified: &user.UpdatedAt,
+			},
 		}
 
 		// Set attributes
@@ -48,7 +47,7 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		}
 
 		// Save user
-		return updateUser(r.Context(), tx, user, userRes)
+		return updateUser(r.Context(), tx, user, userRes.Attributes)
 	})
 	if err != nil {
 		return scim.Resource{}, err

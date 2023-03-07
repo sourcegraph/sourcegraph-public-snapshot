@@ -8,13 +8,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewCVEMatcher(store store.Store, metrics *Metrics, interval time.Duration) goroutine.BackgroundRoutine {
+func NewCVEMatcher(store store.Store, metrics *Metrics, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"codeintel.sentinel-cve-matcher", "TODO",
+		"codeintel.sentinel-cve-matcher", "Matches SCIP indexes against known vulnerabilities.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			// Currently unimplemented
+			numReferencesScanned, numVulnerabilityMatches, err := store.ScanMatches(ctx, batchSize)
+			if err != nil {
+				return err
+			}
+
+			metrics.numReferencesScanned.Add(float64(numReferencesScanned))
+			metrics.numVulnerabilityMatches.Add(float64(numVulnerabilityMatches))
 			return nil
 		}),
 	)
