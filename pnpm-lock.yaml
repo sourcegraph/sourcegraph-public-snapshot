@@ -358,12 +358,10 @@ importers:
       storybook-dark-mode: ^2.0.4
       stream-browserify: ^3.0.0
       stream-http: ^3.2.0
-      string-score: ^1.0.1
       string-width: ^4.2.0
       style-loader: ^3.3.1
       stylelint: ^14.3.0
       svgo: ^2.7.0
-      tabbable: ^5.1.5
       tagged-template-noop: ^2.1.1
       term-size: ^2.2.0
       terser-webpack-plugin: ^5.3.6
@@ -527,8 +525,6 @@ importers:
       sanitize-html: 2.3.3
       semver: 7.3.8
       stream-http: 3.2.0
-      string-score: 1.0.1
-      tabbable: 5.2.1
       tagged-template-noop: 2.1.1
       ts-key-enum: 2.0.8
       tslib: 2.1.0
@@ -30868,10 +30864,6 @@ packages:
       char-regex: 1.0.2
       strip-ansi: 6.0.1
     dev: true
-
-  /string-score/1.0.1:
-    resolution: {integrity: sha512-HRm/tlGZR3NCphwEa+D60qvtTCucu5yybc2S9BI9An/Zq01/r8EOyrKD0wOgZebpijR/iydGP4lPgCzzSiX+Ug==}
-    dev: false
 
   /string-width/1.0.2:
     resolution: {integrity: sha512-0XsVpQLnVCXHJfyEs8tC0zpTVIr5PKKsQtkT29IwupnPTjtPmQ3xT/4yCREF9hYkV/3M3kzcUTSAZT6a6h81tw==}

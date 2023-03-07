@@ -7,14 +7,12 @@ import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 import { Card, Icon, Button } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
-import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { CopyLinkIcon } from './CopyLinkIcon'
 import { toNativeEvent } from './helpers'
-import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
-import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
+import type { HoverContext, HoverOverlayBaseProps } from './HoverOverlay.types'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import { HoverOverlayLogo } from './HoverOverlayLogo'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
@@ -41,16 +39,6 @@ export interface HoverOverlayClassProps {
     actionItemPressedClassName?: string
 
     contentClassName?: string
-
-    /**
-     * Allows providing any custom className to style the notifications as desired.
-     */
-    getAlertClassName?: GetAlertClassName
-
-    /**
-     * Allows providing a specific variant style for use in branded Sourcegraph applications.
-     */
-    getAlertVariant?: GetAlertVariant
 }
 
 export interface HoverOverlayProps
@@ -58,7 +46,6 @@ export interface HoverOverlayProps
         ActionItemComponentProps,
         HoverOverlayClassProps,
         TelemetryProps,
-        Pick<HoverOverlayAlertsProps, 'onAlertDismissed'>,
         PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
@@ -121,10 +108,6 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
 
         actionItemStyleProps,
 
-        getAlertClassName,
-        getAlertVariant,
-        onAlertDismissed,
-
         useBrandedLogo,
     } = props
 
@@ -179,24 +162,9 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
                     badgeClassName={badgeClassName}
-                    errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
-                    errorAlertVariant={getAlertVariant?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
             </div>
-            {hoverOrError &&
-                hoverOrError !== LOADING &&
-                !isErrorLike(hoverOrError) &&
-                hoverOrError.alerts &&
-                hoverOrError.alerts.length > 0 && (
-                    <HoverOverlayAlerts
-                        hoverAlerts={hoverOrError.alerts}
-                        iconClassName={iconClassName}
-                        getAlertClassName={getAlertClassName}
-                        getAlertVariant={getAlertVariant}
-                        onAlertDismissed={onAlertDismissed}
-                    />
-                )}
             <div className={hoverOverlayStyle.actionsContainer}>
                 {actionsOrError !== undefined &&
                     actionsOrError !== null &&
@@ -220,7 +188,6 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         variant="actionItem"
                                         disabledDuringExecution={true}
                                         showLoadingSpinnerDuringExecution={true}
-                                        showInlineError={true}
                                         platformContext={platformContext}
                                         telemetryService={telemetryService}
                                         extensionsController={extensionsController}
