@@ -239,7 +239,8 @@ processable_symbols AS (
 				rrp.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
-				u.indexer = u2.indexer
+				u.indexer = u2.indexer AND
+				u.id != u2.id
 		) AND
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
 		-- process the one associated with the most recently processed upload record. This should
