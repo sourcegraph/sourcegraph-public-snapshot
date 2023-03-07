@@ -99,6 +99,7 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
     node,
     setSelectedPackage,
 }) => {
+    console.log(node)
     const PackageIconComponent = externalRepoIcon({ serviceType: node.kind })
 
     const packageRepository = node.repository
@@ -203,12 +204,12 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         const values = []
 
         for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
-            const packageRepoScheme = ExternalServicePackageMap[extSvc.kind]
+            const packageRepoKind = ExternalServicePackageMap[extSvc.kind]
 
-            if (packageRepoScheme) {
+            if (packageRepoKind) {
                 values.push({
-                    ...packageRepoScheme,
-                    args: { scheme: packageRepoScheme.value },
+                    ...packageRepoKind,
+                    args: { kind: packageRepoKind.value },
                 })
             }
         }
@@ -299,7 +300,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
             return data.packageRepoReferences
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'cache-and-network',
             useURL: true,
         },
     })

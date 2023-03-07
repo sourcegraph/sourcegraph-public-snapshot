@@ -19,9 +19,13 @@ const packageRepoMatchFragment = gql`
     }
 `
 
-export const packageRepoMatchesQuery = gql`
-    query PackageRepoMatches($scheme: PackageRepoReferenceKind!, $filter: PackageVersionOrNameMatcher!, $first: Int) {
-        packageReposMatches(packageReferenceKind: $scheme, matcher: $filter, first: $first) {
+export const packageRepoFilterQuery = gql`
+    query PackageRepoReferencesMatchingFilter(
+        $kind: PackageRepoReferenceKind!
+        $filter: PackageVersionOrNameFilterInput!
+        $first: Int
+    ) {
+        packageRepoReferencesMatchingFilter(kind: $kind, filter: $filter, first: $first) {
             nodes {
                 ...PackageRepoMatchFields
             }

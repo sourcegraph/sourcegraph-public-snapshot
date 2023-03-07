@@ -19,12 +19,19 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../components/FilteredConnection'
-import { PackageRepoReferenceKind, SiteAdminPackageFields } from '../../graphql-operations'
+import {
+    PackageRepoReferenceKind,
+    PackageRepoReferencesMatchingFilterResult,
+    PackageRepoReferencesMatchingFilterVariables,
+    SiteAdminPackageFields,
+} from '../../graphql-operations'
 
+import { packageRepoFilterQuery } from './backend'
 import { BlockType } from './BlockPackageModal'
 import { usePackageRepoMatchesMock } from './mocks'
 
 import styles from './BlockPackageModal.module.scss'
+import { useQuery } from '@sourcegraph/http-client'
 
 interface SinglePackageSingleVersionState {
     name: string
@@ -64,7 +71,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                 <div className={styles.inputRow}>
                     <Select
                         className={classNames('mr-1 mb-0', styles.select)}
-                        value={node.scheme}
+                        value={node.kind}
                         disabled={true}
                         isCustomStyle={true}
                         aria-label="Ecosystem"
@@ -168,11 +175,14 @@ interface VersionListProps {
     versionPattern: string
 }
 const VersionList: React.FunctionComponent<VersionListProps> = ({ name, versionPattern }) => {
-    const { data, loading, error } = usePackageRepoMatchesMock({
+    const { data, loading, error } = useQuery<
+        PackageRepoReferencesMatchingFilterResult,
+        PackageRepoReferencesMatchingFilterVariables
+    >(packageRepoFilterQuery, {
         variables: {
-            scheme: PackageRepoReferenceKind.NPMPACKAGES,
+            kind: PackageRepoReferenceKind.NPMPACKAGES,
             filter: {
-                versionMatcher: {
+                versionFilter: {
                     packageName: name,
                     versionGlob: versionPattern,
                 },
@@ -189,11 +199,12 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ name, versionP
         return <ErrorAlert error={error} />
     }
 
-    const packageNode = data.packageReposMatches.nodes[0]
+    const packageNode = data.packageRepoReferencesMatchingFilter.nodes[0]
     const versionCount = packageNode.versions.length
 
     return (
         <div className="mt-2">
+            beans
             <div className="d-flex justify-content-between">
                 <span>
                     {versionCount === 1 ? <>{versionCount} version matches</> : <>{versionCount} versions match</>} this
