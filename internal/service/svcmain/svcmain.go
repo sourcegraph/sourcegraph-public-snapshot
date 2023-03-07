@@ -3,10 +3,12 @@ package svcmain
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/output"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -28,6 +30,13 @@ type Config struct {
 
 // Main is called from the `main` function of the `sourcegraph-oss` and `sourcegraph` commands.
 func Main(services []sgservice.Service, config Config) {
+	// Unlike other sourcegraph binaries we expect Sourcegraph App to be run
+	// by a user instead of deployed to a cloud. So adjust the default output
+	// format before initializing log.
+	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok {
+		os.Setenv(log.EnvLogFormat, string(output.FormatConsole))
+	}
+
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
