@@ -107,7 +107,6 @@ func scipToHTML(
 ) {
 	manager := newHtmlManager(code, validLines, document.Occurrences, addRow, addText)
 	manager.process()
-	return
 }
 
 type htmlManager struct {
