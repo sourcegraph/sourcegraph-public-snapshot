@@ -9,7 +9,6 @@ steps:
   # https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
   - run: |
       while read -r file
-      for file in "${{ join repository.search_result_paths " " }}";
       do
         sed -i 's/replace-me/by-me/g;' "${file}"
       done < <(echo '${{ join repository.search_result_paths "\n" }}')
