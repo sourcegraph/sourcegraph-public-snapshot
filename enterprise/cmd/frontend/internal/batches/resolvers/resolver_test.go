@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	brbac "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/rbac"
+	br "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/rbac"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -2778,6 +2778,6 @@ func assignWritePermissionToUser(ctx context.Context, t *testing.T, db database.
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
-	perm := bt.CreateTestPermission(ctx, t, db, brbac.BatchChangesWritePermission)
+	perm := bt.CreateTestPermission(ctx, t, db, br.BatchChangesWritePermission)
 	bt.AssignPermissionToRole(ctx, t, db, perm.ID, role.ID)
 }
