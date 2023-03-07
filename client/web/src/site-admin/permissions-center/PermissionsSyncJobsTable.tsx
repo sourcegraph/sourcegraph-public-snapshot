@@ -1,5 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
+import { ApolloError } from '@apollo/client/errors'
 import { mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
 import { noop } from 'lodash'
 
@@ -45,7 +46,6 @@ import {
 } from './PermissionsSyncJobNode'
 
 import styles from './PermissionsSyncJobsTable.module.scss'
-import { ApolloError } from '@apollo/client/errors'
 
 interface Filters {
     reason: string
@@ -128,12 +128,12 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     const triggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
-            const onError = (error: ApolloError) => setNotification({ text: error.message, isError: true })
+            const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
             if (job.subject.__typename === 'Repository') {
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
                     onCompleted: () => setNotification({ text: 'Repository permissions sync successfully scheduled' }),
-                    onError: onError,
+                    onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
                     noop
@@ -142,7 +142,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 triggerUserSync({
                     variables: { user: job.subject.id },
                     onCompleted: () => setNotification({ text: 'User permissions sync successfully scheduled' }),
-                    onError: onError,
+                    onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
                     noop
