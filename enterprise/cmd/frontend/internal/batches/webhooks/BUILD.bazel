@@ -53,7 +53,7 @@ go_test(
     embed = [":webhooks"],
     tags = [
         # Test requires locally running DB so don't test on //...
-        "manual",
+        # "manual",
         # Test requires localhost
         "requires-network",
     ],

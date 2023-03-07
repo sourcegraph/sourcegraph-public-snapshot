@@ -34,6 +34,7 @@ go_test(
     ],
     embed = [":search"],
     deps = [
+        "//enterprise/internal/database",
         "//internal/api",
         "//internal/authz",
         "//internal/database",

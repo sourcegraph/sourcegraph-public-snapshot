@@ -41,6 +41,6 @@ go_test(
     #         created by testing.(*T).Run
     #             GOROOT/src/testing/testing.go:1493 +0x35f
     # TODO(bazel): fix test
-    tags = ["manual"],
+    # tags = ["manual"],
     deps = [":syncx"],
 )

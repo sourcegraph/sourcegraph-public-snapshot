@@ -41,7 +41,7 @@ go_test(
     #     --- FAIL: TestStitchAndApplyFrontendDefinitions/upgrade_3.29_->_3.42 (0.02s)
     #         stitch_test.go:246: failed to stitch definitions: failed to run git show: fatal: not a git repository (or any of the parent directories): .git: exit status 128
     # TODO(bazel): fix test; looks like this one requires a .git folder which doesn't exist in the sandbox
-    tags = ["manual"],
+    # tags = ["manual"],
     deps = [
         "//internal/database/connections/live",
         "//internal/database/dbtest",

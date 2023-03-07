@@ -40,7 +40,8 @@ go_test(
     #         fatal: clone of '/var/folders/0w/2qdthbhd3lqd1p96g4r99h2m0000gn/T/test2472820019/remotes/TestRepository_FileSystem_gitSubmodules292469376' into submodule path '/private/var/folders/0w/2qdthbhd3lqd1p96g4r99h2m0000gn/T/test2472820019/remotes/TestRepository_FileSystem_gitSubmodules3359572064/submod' failed
     # FAIL
     # TODO(bazel): fix test; git failures on this one
-    tags = ["manual"],
+    # TODO(JH) Fix
+    # tags = ["manual"],
     deps = [
         "//internal/actor",
         "//internal/api",

@@ -391,7 +391,7 @@ go_test(
     embed = [":graphqlbackend"],
     tags = [
         # Test requires locally running DB so don't test on //...
-        "manual",
+        # "manual",
         # Test requires localhost
         "requires-network",
     ],

@@ -26,7 +26,8 @@ go_test(
     #     diff_test.go:124: Unexpected error git: exit status 128
     # FAIL
     # TODO(bazel): fix test; failing on CI only
-    tags = ["manual"],
+    # TODO(JH) fix this
+    # tags = ["manual"],
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",

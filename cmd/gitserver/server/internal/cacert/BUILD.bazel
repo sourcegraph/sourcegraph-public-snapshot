@@ -20,6 +20,6 @@ go_test(
     # --- FAIL: TestSystem (0.00s)
     #     cacert_test.go:29: failed to parse system certificate:
     # TODO(bazel): fix test; failing on CI only
-    tags = ["manual"],
+    # tags = ["manual"],
     deps = [":cacert"],
 )

@@ -42,7 +42,7 @@ go_test(
     #                 Test:       	TestAddrValidation/git@sourcegraph.com
     # FAIL
     # TODO(bazel): fix test; failing on CI only
-    tags = ["manual"],
+    # tags = ["manual"],
     deps = [
         "//internal/conf",
         "//schema",
