@@ -6,14 +6,16 @@ type CodeIntelIndexerResolver interface {
 	Key() string
 	Name() string
 	URL() string
+	ImageName() *string
 }
 
 type codeIntelIndexerResolver struct {
-	indexer CodeIntelIndexer
+	indexer   CodeIntelIndexer
+	imageName string
 }
 
-func NewCodeIntelIndexerResolver(name string) CodeIntelIndexerResolver {
-	return NewCodeIntelIndexerResolverFrom(indexerFromName(name))
+func NewCodeIntelIndexerResolver(name, imageName string) CodeIntelIndexerResolver {
+	return NewCodeIntelIndexerResolverFrom(indexerFromName(name), imageName)
 }
 
 func indexerFromName(name string) CodeIntelIndexer {
@@ -34,8 +36,8 @@ func indexerFromName(name string) CodeIntelIndexer {
 	return CodeIntelIndexer{Name: name}
 }
 
-func NewCodeIntelIndexerResolverFrom(indexer CodeIntelIndexer) CodeIntelIndexerResolver {
-	return &codeIntelIndexerResolver{indexer: indexer}
+func NewCodeIntelIndexerResolverFrom(indexer CodeIntelIndexer, imageName string) CodeIntelIndexerResolver {
+	return &codeIntelIndexerResolver{indexer: indexer, imageName: imageName}
 }
 
 func (r *codeIntelIndexerResolver) Key() string {
@@ -52,4 +54,12 @@ func (r *codeIntelIndexerResolver) URL() string {
 	}
 
 	return "https://" + r.indexer.URN
+}
+
+func (r *codeIntelIndexerResolver) ImageName() *string {
+	if r.imageName == "" {
+		return nil
+	}
+
+	return &r.imageName
 }

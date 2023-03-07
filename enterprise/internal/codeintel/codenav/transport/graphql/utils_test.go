@@ -61,9 +61,6 @@ func TestResolveLocations(t *testing.T) {
 		return &sgtypes.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
 	})
 
-	db := database.NewStrictMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
@@ -72,12 +69,15 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
+	factory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gsClient)
+	locationResolver := factory.Create()
+
 	r1 := types.Range{Start: types.Position{Line: 11, Character: 12}, End: types.Position{Line: 13, Character: 14}}
 	r2 := types.Range{Start: types.Position{Line: 21, Character: 22}, End: types.Position{Line: 23, Character: 24}}
 	r3 := types.Range{Start: types.Position{Line: 31, Character: 32}, End: types.Position{Line: 33, Character: 34}}
 	r4 := types.Range{Start: types.Position{Line: 41, Character: 42}, End: types.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), sharedresolvers.NewCachedLocationResolver(db, gsClient), []types.UploadLocation{
+	locations, err := resolveLocations(context.Background(), locationResolver, []types.UploadLocation{
 		{Dump: types.Dump{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: "p1"},
 		{Dump: types.Dump{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: "p2"},
 		{Dump: types.Dump{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: "p3"},

@@ -8,21 +8,10 @@ import (
 )
 
 type operations struct {
-	// Configurations
-	getConfigurationPolicies      *observation.Operation
-	getConfigurationPoliciesByID  *observation.Operation
-	createConfigurationPolicy     *observation.Operation
-	updateConfigurationPolicy     *observation.Operation
-	deleteConfigurationPolicyByID *observation.Operation
-
-	// Retention Policy
+	updateConfigurationPolicy  *observation.Operation
 	getRetentionPolicyOverview *observation.Operation
-
-	// Repository
-	getPreviewRepositoryFilter                  *observation.Operation
-	getPreviewGitObjectFilter                   *observation.Operation
-	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
-	updateReposMatchingPatterns                 *observation.Operation
+	getPreviewRepositoryFilter *observation.Operation
+	getPreviewGitObjectFilter  *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -46,20 +35,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Configurations
-		getConfigurationPolicies:      op("GetConfigurationPolicies"),
-		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),
-		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
-		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
-
-		// Retention
+		updateConfigurationPolicy:  op("UpdateConfigurationPolicy"),
 		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
-
-		// Repository
-		getPreviewRepositoryFilter:                  op("GetPreviewRepositoryFilter"),
-		getPreviewGitObjectFilter:                   op("GetPreviewGitObjectFilter"),
-		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
-		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
+		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
+		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),
 	}
 }

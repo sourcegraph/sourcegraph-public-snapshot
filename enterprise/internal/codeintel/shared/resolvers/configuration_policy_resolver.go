@@ -9,25 +9,23 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type configurationPolicyResolver struct {
-	svc                 AutoIndexingService
+	repoStore           database.RepoStore
 	logger              sglog.Logger
 	configurationPolicy types.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(svc AutoIndexingService, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
-		svc:                 svc,
+		repoStore:           repoStore,
 		logger:              sglog.Scoped("configurationPolicyResolver", ""),
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
@@ -53,13 +51,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	db := r.svc.GetUnsafeDB()
-	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
-	if err != nil {
-		return nil, err
-	}
-
-	return NewRepositoryResolver(db, repo), nil
+	return NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

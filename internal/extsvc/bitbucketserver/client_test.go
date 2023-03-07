@@ -1155,7 +1155,7 @@ func TestAuth(t *testing.T) {
 			} else if have.Client.Client.Credentials.Token != "foo" {
 				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
 			} else if !key.Equal(have.Client.Client.PrivateKey) {
-				t.Errorf("unexpected key: have=%q want=%q", have.Client.Client.PrivateKey, key)
+				t.Errorf("unexpected key: have=%v want=%v", have.Client.Client.PrivateKey, key)
 			}
 		})
 	})

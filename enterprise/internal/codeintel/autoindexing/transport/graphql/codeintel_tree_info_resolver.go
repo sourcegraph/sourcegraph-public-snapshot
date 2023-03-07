@@ -83,7 +83,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolve
 				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 					confidence: indexJobInfered,
 					// drop the tag if it exists
-					indexer: codeinteltypes.NewCodeIntelIndexerResolver(job.Indexer),
+					indexer: codeinteltypes.NewCodeIntelIndexerResolver(job.Indexer, ""),
 				})
 			}
 		}
@@ -103,7 +103,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolve
 			resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 				confidence: confidence,
 				// expected that job hints don't include a tag in the indexer name
-				indexer: codeinteltypes.NewCodeIntelIndexerResolver(hint.Indexer),
+				indexer: codeinteltypes.NewCodeIntelIndexerResolver(hint.Indexer, ""),
 			})
 		}
 	}
