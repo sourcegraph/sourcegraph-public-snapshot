@@ -4,6 +4,11 @@ DROP INDEX IF EXISTS codeintel_ranking_definitions_graph_key_symbol_search;
 DROP INDEX IF EXISTS codeintel_path_ranks_graph_key;
 DROP INDEX IF EXISTS codeintel_path_ranks_repository_id_updated_at_id;
 
+TRUNCATE codeintel_ranking_definitions CASCADE;
+TRUNCATE codeintel_ranking_path_counts_inputs CASCADE;
+TRUNCATE codeintel_path_ranks CASCADE;
+TRUNCATE codeintel_path_ranks CASCADE;
+
 CREATE INDEX IF NOT EXISTS codeintel_ranking_path_counts_inputs_graph_key_and_repository_id ON codeintel_ranking_path_counts_inputs(graph_key, repository_id);
 CREATE INDEX IF NOT EXISTS codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs(graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed;
 CREATE INDEX IF NOT EXISTS codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions(upload_id);
