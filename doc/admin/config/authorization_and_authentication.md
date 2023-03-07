@@ -47,7 +47,7 @@ Built-in username/password authentication is Sourcegraph’s default authenticat
   "auth.providers": [
     {
       "type": "builtin",
-      "allowSignup": true 
+      "allowSignup": true
     }
   ]
 }
@@ -55,7 +55,7 @@ Built-in username/password authentication is Sourcegraph’s default authenticat
 
 Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
 
-Learn more about [built-in password authentication](../auth/index.md#builtin-password-authentication). 
+Learn more about [built-in password authentication](../auth/index.md#builtin-password-authentication).
 
 ### GitHub Enterprise or GitHub Cloud authentication and authorization
 
@@ -66,7 +66,7 @@ We support both authentication and permissions syncing (through OAuth) for GitHu
 
 In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step.
 
-Follow these steps to [configure authentication with GitHub via OAuth](../auth/index.md#github). 
+Follow these steps to [configure authentication with GitHub via OAuth](../auth/index.md#github).
 
 Once authentication with GitHub via OAuth is configured, follow [these steps to configure access permissions](../external_service/github.md#repository-permissions). Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
 
@@ -83,9 +83,9 @@ In this way, access to Sourcegraph will still be managed by your identity provid
 
 #### Option 2
 
-Alternatively, you can configure SAML authentication in Sourcegraph, and use GitLab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that GitLab is able to return a value in `identities.provider` for the `GET /users` endpoint ([GitLab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameID` in the SAML response. If that isn’t possible, you will need to use the first option. 
+Alternatively, you can configure SAML authentication in Sourcegraph, and use GitLab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that GitLab is able to return a value in `identities.provider` for the `GET /users` endpoint ([GitLab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameID` in the SAML response. If that isn’t possible, you will need to use the first option.
 
-To configure SAML auth with GitLab permissions, you will need to first [configure permissions from GitLab](../external_service/gitlab.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameID` passed by the identity provider will need to match the value of `identities.provider`. 
+To configure SAML auth with GitLab permissions, you will need to first [configure permissions from GitLab](../external_service/gitlab.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameID` passed by the identity provider will need to match the value of `identities.provider`.
 
 For example, if the GitLab API returns:
 
@@ -112,7 +112,7 @@ Then you will need to configure permission in Sourcegraph as:
 }
 ```
 
-And configure the identity provider to pass the email address as the `nameID`. 
+And configure the identity provider to pass the email address as the `nameID`.
 
 ### Bitbucket Server / Bitbucket Data Center authorization
 
@@ -121,12 +121,60 @@ We do not currently support OAuth for Bitbucket Server or Bitbucket Data Center.
 Follow the steps to [sync Bitbucket Server / Bitbucket Data Center permissions](../external_service/bitbucket_server.md#repository-permissions). Then, do one of the following:
 
 1. Create the user accounts in Sourcegraph with matching usernames. (Access using `builtin` auth.)
-2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket Server / Bitbucket Data Center, the `login` attribute is *not* optional. You need to pass the Bitbucket Server username as the `login` attribute. 
-3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket Server username value as the `usernameHeader`. 
+2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket Server / Bitbucket Data Center, the `login` attribute is _not_ optional. You need to pass the Bitbucket Server username as the `login` attribute.
+3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket Server username value as the `usernameHeader`.
+
+### Azure DevOps Services
+
+We support authentication through OAuth for Azure DevOps Services (https://dev.azure.com) and it is also a prerequisite for permissions syncing.
+
+#### Register a new OAuth app
+
+Visit the URL [here](https://app.vsaex.visualstudio.com/app/register) and follow the instructions below:
+
+1. In the `Application website` field set the URL of your Sourcegraph instance, for example, if the instance is https://sourcegraph.com, then use `https://sourcegraph.com` as the value of this field
+2. Similarly, set the Authorization callback URL to `https://sourcegraph.com/.auth/azuredevops/callback` if your Sourcegraph instance URL is https://sourcegraph.com`
+3. Authorize the following scopes:
+   - `User profile (read)`
+   - `Identity (read)`
+   - `Code (read)`
+   - `Project and team (read)`
+
+#### Configuring Sourcegraph auth.providers
+
+Add the following to the `auth.providers` key in the site config:
+
+```
+{
+  "auth.providers": [
+    {
+      "type": "azureDevOps",
+      "displayName": "Azure DevOps",
+      "clientID": $APP_ID_FROM_THE_PREVIOUS_STEP,
+      "clientSecret": $CLIENT_SECRET,
+      "apiScope": "vso.code,vso.identity,vso.project"
+    },
+  ]
+}
+```
+
+Ensure that you set the value of `App ID` as the `clientID` field and the value of `Client Secret` in the `clientSecret` field (not the `App secret`) from OAuth application. Finally ensure that the `apiScope` string is a comma separated string and reflects the scopes from your OAuth application accurately.
+
+Optionally, you may want to restrict the sign up to only users who belong to a specific list of organizations. To do this add the following to the `auth.providres` configuration above:
+
+```
+      "allowOrgs": ["your-org-1", "your-org-2"],
+```
+
+Finally, if you want to prevent new users from signing up to your Sourcegraph instance, set the following (default to `true`) in the `auth.providers` configuration above:
+
+```
+      "allowSignup": false
+```
 
 ### Explicit Permissions API authorization
 
-With any authentication mechanism, you can use our GraphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow the instructions for the [mutations needed within the GraphQL API](../permissions/api.md) to configure access.
+With any authentication mechanism, you can use our GraphQL API to set permissions for all repositories. If you choose to do this, this is the _only_ mechanism that can be used for permissions—all others will be ignored. Follow the instructions for the [mutations needed within the GraphQL API](../permissions/api.md) to configure access.
 
 ### OpenID Connect authentication
 
