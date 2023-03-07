@@ -224,6 +224,7 @@ interface State {
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
+    enabledCompletions?: boolean
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
@@ -387,6 +388,18 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
             )
         }
 
+        if (this.state.enabledCompletions) {
+            alerts.push(
+                <Alert key="cody-beta-notice" className={styles.alert} variant="info">
+                    By turning on completions for "Cody beta," you have read the{' '}
+                    <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
+                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    particular, some code snippets will be sent to a third-party language model provider when you use
+                    Cody questions.
+                </Alert>
+            )
+        }
+
         const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
@@ -470,6 +483,11 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
         if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
             window.location.reload()
         }
+
+        this.setState({
+            enabledCompletions:
+                !oldConfiguration?.completions?.enabled && Boolean(newConfiguration?.completions?.enabled),
+        })
 
         if (restartToApply) {
             window.context.needServerRestart = restartToApply

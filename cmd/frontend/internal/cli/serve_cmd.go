@@ -203,32 +203,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
-	var appResolver graphqlbackend.AppResolver
-
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
-		appResolver = graphqlbackend.NewAppResolver(logger, db)
+		enterpriseServices.OptionalResolver.AppResolver = graphqlbackend.NewAppResolver(logger, db)
 	}
 
 	schema, err := graphqlbackend.NewSchema(
 		db,
 		gitserver.NewClient(),
 		enterpriseServices.EnterpriseSearchJobs,
-		enterpriseServices.BatchChangesResolver,
-		enterpriseServices.CodeIntelResolver,
-		enterpriseServices.InsightsResolver,
-		enterpriseServices.AuthzResolver,
-		enterpriseServices.CodeMonitorsResolver,
-		enterpriseServices.LicenseResolver,
-		enterpriseServices.DotcomResolver,
-		enterpriseServices.SearchContextsResolver,
-		enterpriseServices.NotebooksResolver,
-		enterpriseServices.ComputeResolver,
-		enterpriseServices.InsightsAggregationResolver,
-		enterpriseServices.WebhooksResolver,
-		enterpriseServices.EmbeddingsResolver,
-		enterpriseServices.RBACResolver,
-		enterpriseServices.OwnResolver,
-		appResolver,
+		enterpriseServices.OptionalResolver,
 	)
 	if err != nil {
 		return err

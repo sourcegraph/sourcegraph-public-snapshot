@@ -1619,93 +1619,6 @@ CREATE SEQUENCE codeintel_langugage_support_requests_id_seq
 
 ALTER SEQUENCE codeintel_langugage_support_requests_id_seq OWNED BY codeintel_langugage_support_requests.id;
 
-CREATE TABLE codeintel_lockfile_references (
-    id integer NOT NULL,
-    repository_name text NOT NULL,
-    revspec text NOT NULL,
-    package_scheme text NOT NULL,
-    package_name text NOT NULL,
-    package_version text NOT NULL,
-    repository_id integer,
-    commit_bytea bytea,
-    last_check_at timestamp with time zone,
-    depends_on integer[] DEFAULT '{}'::integer[],
-    resolution_lockfile text,
-    resolution_repository_id integer,
-    resolution_commit_bytea bytea
-);
-
-COMMENT ON TABLE codeintel_lockfile_references IS 'Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.repository_name IS 'Encodes `reposource.PackageDependency.RepoName`. A name that is "globally unique" for a Sourcegraph instance. Used in `repo:...` queries.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.revspec IS 'Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_scheme IS 'Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_name IS 'Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_version IS 'Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.repository_id IS 'The identifier of the repo that resolves the associated name, if it is resolvable on this instance.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.commit_bytea IS 'The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.last_check_at IS 'Timestamp when background job last checked this row for repository resolution';
-
-COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_lockfile IS 'Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_repository_id IS 'ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_commit_bytea IS 'Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.';
-
-CREATE SEQUENCE codeintel_lockfile_references_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE codeintel_lockfile_references_id_seq OWNED BY codeintel_lockfile_references.id;
-
-CREATE TABLE codeintel_lockfiles (
-    id integer NOT NULL,
-    repository_id integer NOT NULL,
-    commit_bytea bytea NOT NULL,
-    codeintel_lockfile_reference_ids integer[] NOT NULL,
-    lockfile text,
-    fidelity text DEFAULT 'flat'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
-
-COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
-
-COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
-
-COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
-
-COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
-
-COMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';
-
-COMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';
-
-CREATE SEQUENCE codeintel_lockfiles_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
-
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
@@ -2516,15 +2429,6 @@ CREATE SEQUENCE insights_settings_migration_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE insights_settings_migration_jobs_id_seq OWNED BY insights_settings_migration_jobs.id;
-
-CREATE TABLE last_lockfile_scan (
-    repository_id integer NOT NULL,
-    last_lockfile_scan_at timestamp with time zone NOT NULL
-);
-
-COMMENT ON TABLE last_lockfile_scan IS 'Tracks the last time repository was checked for lockfile indexing.';
-
-COMMENT ON COLUMN last_lockfile_scan.last_lockfile_scan_at IS 'The last time this repository was considered for lockfile indexing.';
 
 CREATE TABLE lsif_configuration_policies (
     id integer NOT NULL,
@@ -4437,10 +4341,6 @@ ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfile_references_id_seq'::regclass);
-
-ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfiles_id_seq'::regclass);
-
 ALTER TABLE ONLY codeintel_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_path_ranks_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_definitions_id_seq'::regclass);
@@ -4695,12 +4595,6 @@ ALTER TABLE ONLY codeintel_autoindex_queue
 ALTER TABLE ONLY codeintel_commit_dates
     ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
 
-ALTER TABLE ONLY codeintel_lockfile_references
-    ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY codeintel_lockfiles
-    ADD CONSTRAINT codeintel_lockfiles_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_pkey PRIMARY KEY (id);
 
@@ -4808,9 +4702,6 @@ ALTER TABLE ONLY insights_query_runner_jobs_dependencies
 
 ALTER TABLE ONLY insights_query_runner_jobs
     ADD CONSTRAINT insights_query_runner_jobs_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY last_lockfile_scan
-    ADD CONSTRAINT last_lockfile_scan_pkey PRIMARY KEY (repository_id);
 
 ALTER TABLE ONLY lsif_configuration_policies
     ADD CONSTRAINT lsif_configuration_policies_pkey PRIMARY KEY (id);
@@ -5160,18 +5051,6 @@ CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
-
-CREATE INDEX codeintel_lockfile_references_last_check_at ON codeintel_lockfile_references USING btree (last_check_at);
-
-CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE ((repository_id IS NOT NULL) AND (commit_bytea IS NOT NULL));
-
-CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea);
-
-CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_lockfiles USING gin (codeintel_lockfile_reference_ids gin__int_ops);
-
-CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops);
-
-CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
 
 CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
 

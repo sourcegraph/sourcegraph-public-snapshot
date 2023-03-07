@@ -225,9 +225,6 @@ export interface ActionItem {
 }
 
 export enum ContributableMenu {
-    /** The global command palette. */
-    CommandPalette = 'commandPalette',
-
     /** The global navigation bar in the application. */
     GlobalNav = 'global/nav',
 

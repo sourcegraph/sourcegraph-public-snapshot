@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1125,10 +1124,8 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	return dedupeRanges(sortedRanges), nil
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+// TODO(#48681) - do not proxy this
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
 	return s.uploadSvc.GetDumpsByIDs(ctx, ids)
 }
 
@@ -1189,10 +1186,6 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 		attribute.String("filtered", uploadIDsToString(filtered)))
 
 	return filtered, nil
-}
-
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
