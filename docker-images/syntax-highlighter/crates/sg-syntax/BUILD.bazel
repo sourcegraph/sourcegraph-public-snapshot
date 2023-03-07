@@ -17,7 +17,7 @@ rust_library(
 rust_test(
     name = "unit_test",
     crate = ":sg-syntax",
-    data = glob(["src/snapshots/**"]),
+    data = glob(["src/snapshots/**"], allow_empty=False),
     aliases = aliases(
         normal_dev = True,
         proc_macro_dev = True,
