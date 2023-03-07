@@ -199,7 +199,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	}
 }
 
-func TestIterateWithNonemptyLastError(t *testing.T) {
+func TestListReposWithLastError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -259,7 +259,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 					hasLastError: false,
 				},
 			},
-			expectedReposFound: []api.RepoName{},
+			expectedReposFound: nil,
 		},
 	}
 
@@ -301,24 +301,13 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 				}
 			}
 
-			foundRepos := make([]api.RepoName, 0, len(tc.testRepos))
-
 			// Iterate and collect repos
-			err := db.GitserverRepos().IterateWithNonemptyLastError(ctx, func(repo api.RepoName) error {
-				foundRepos = append(foundRepos, repo)
-				return nil
-			})
+			foundRepos, err := db.GitserverRepos().ListReposWithLastError(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(foundRepos) != len(tc.expectedReposFound) {
-				t.Fatalf("expected %d repos with non empty last error, got %d", len(tc.expectedReposFound),
-					len(foundRepos))
-			}
-			for i, fr := range foundRepos {
-				if !fr.Equal(tc.expectedReposFound[i]) {
-					t.Fatalf("expected repo %s got %s instead", fr, tc.expectedReposFound[i])
-				}
+			if diff := cmp.Diff(tc.expectedReposFound, foundRepos); diff != "" {
+				t.Fatalf("mismatch in expected repos with last_error, (-want, +got)\n%s", diff)
 			}
 
 			total, err := db.GitserverRepos().TotalErroredCloudDefaultRepos(ctx)

@@ -10,6 +10,14 @@ def linter_dependencies():
   )
 
   go_repository(
+    name = "com_github_ashanbrown_forbidigo",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/ashanbrown/forbidigo",
+    sum = "h1:WXhzLjOlnuDYPYQo/eFlcFMi8X/kLfvWLYu6CSoebis=",
+    version = "v1.5.1",
+  )
+
+  go_repository(
       name = "com_github_gostaticanalysis_analysisutil",
       build_file_proto_mode = "disable_global",
       importpath = "github.com/gostaticanalysis/analysisutil",

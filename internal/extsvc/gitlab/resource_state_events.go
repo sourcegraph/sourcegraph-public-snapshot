@@ -30,8 +30,6 @@ func (c *Client) GetMergeRequestResourceStateEvents(ctx context.Context, project
 			return page, nil
 		}
 
-		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
-
 		parsedUrl, err := url.Parse(baseURL)
 		if err != nil {
 			return nil, err
