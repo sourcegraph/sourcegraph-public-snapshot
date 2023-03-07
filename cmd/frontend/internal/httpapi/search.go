@@ -320,14 +320,14 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
 	}
 
-	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
+	getRepoIndexOptions := func(repoID api.RepoID) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
 		}
 		// Replicate what database.Repos.GetByName would do here:
-		repo, ok := reposMap[api.RepoID(repoID)]
+		repo, ok := reposMap[repoID]
 		if !ok {
-			return nil, &database.RepoNotFoundErr{ID: api.RepoID(repoID)}
+			return nil, &database.RepoNotFoundErr{ID: repoID}
 		}
 
 		getVersion := func(branch string) (string, error) {
@@ -347,13 +347,13 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
 		var documentRanksVersion string
-		if t, ok := rankingLastUpdatedAt[api.RepoID(repoID)]; ok {
+		if t, ok := rankingLastUpdatedAt[repoID]; ok {
 			documentRanksVersion = t.String()
 		}
 
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
-			RepoID:     int32(repo.ID),
+			RepoID:     repo.ID,
 			Public:     !repo.Private,
 			Priority:   priority,
 			Fork:       repo.Fork,
@@ -365,25 +365,18 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 	}
 
 	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, parameters.repoIDs)
-	getSearchContextRevisions := func(repoID int32) ([]string, error) {
+	getSearchContextRevisions := func(repoID api.RepoID) ([]string, error) {
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
 		}
-		return revisionsForRepo[api.RepoID(repoID)], nil
-	}
-
-	// searchbackend uses int32 instead of api.RepoID currently, so build
-	// up a slice of that.
-	repoIDs := make([]int32, len(parameters.repoIDs))
-	for i := range parameters.repoIDs {
-		repoIDs[i] = int32(parameters.repoIDs[i])
+		return revisionsForRepo[repoID], nil
 	}
 
 	indexOptions := searchbackend.GetIndexOptions(
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
-		repoIDs...,
+		parameters.repoIDs...,
 	)
 
 	return &searchConfigurationResponse{

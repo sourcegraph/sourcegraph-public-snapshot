@@ -1,5 +1,6 @@
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
+import { exit } from 'process'
 
 import chalk from 'chalk'
 import commandExists from 'command-exists'
@@ -32,9 +33,9 @@ import {
     CreatedChangeset,
     createLatestRelease,
     createTag,
+    Edit,
     ensureTrackingIssues,
     getAuthenticatedGitHubClient,
-    getBackportLabelForRelease,
     getTrackingIssue,
     IssueLabel,
     localSourcegraphRepo,
@@ -44,6 +45,7 @@ import {
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
+import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace } from './static-updates'
 import {
     cacheFolder,
     changelogURL,
@@ -57,6 +59,7 @@ import {
     getLatestTag,
     getReleaseBlockers,
     nextSrcCliVersionInputWithAutodetect,
+    pullRequestBody,
     releaseBlockerUri,
     retryInput,
     timezoneLink,
@@ -85,7 +88,7 @@ export type StepID =
     | 'release:finalize'
     | 'release:announce'
     | 'release:close'
-    | 'release:multi-version-bake'
+    | 'release:bake-content'
     | 'release:prepare'
     | 'release:remove'
     | 'release:activate-release'
@@ -988,45 +991,73 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
-        id: 'release:multi-version-bake',
+        id: 'release:bake-content',
         description:
-            'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
+            'Bake constants and other static content into the release. Only required for minor / major versions.',
         run: async config => {
             const release = await getActiveRelease(config)
+            if (release.version.patch !== 0) {
+                console.log('content bake is only required for major / minor versions')
+                exit(1)
+            }
 
             const releaseBranch = release.branch
             const version = release.version.version
             ensureReleaseBranchUpToDate(releaseBranch)
 
-            const prConfig = {
-                edits: [
-                    `git remote set-branches --add origin '${releaseBranch}'`,
-                    `git fetch --depth 1 origin ${releaseBranch}`,
-                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
-                ],
-                repo: 'sourcegraph',
-                owner: 'sourcegraph',
-                body: 'Update the multi version upgrade constants',
-                title: `${version} multi version upgrade constants`,
-                commitMessage: `baking multi version upgrade files for version ${version}`,
+            const multiVersionSteps: Edit[] = [
+                `git remote set-branches --add origin '${releaseBranch}'`,
+                `git fetch --depth 1 origin ${releaseBranch}`,
+                combyReplace(
+                    'const maxVersionString = ":[1]"',
+                    version,
+                    'internal/database/migration/shared/data/cmd/generator/consts.go'
+                ),
+                'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+            ]
+            const srcCliSteps = await bakeSrcCliSteps(config)
+
+            const mainBranchEdits: Edit[] = [
+                ...multiVersionSteps,
+                ...srcCliSteps,
+                ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
+            ]
+
+            const releaseBranchEdits: Edit[] = [
+                ...multiVersionSteps,
+                ...srcCliSteps,
+                ...batchChangesInAppChangelog(release.version, false),
+            ]
+
+            const prDetails = {
+                body: pullRequestBody(`Bake constants and static content into version v${version}.`),
+                title: `v${version} bake constants and static content`,
+                commitMessage: `bake constants and static content for version v${version}`,
             }
 
             const sets = await createChangesets({
                 requiredCommands: ['comby', 'go'],
                 changes: [
                     {
-                        ...prConfig,
+                        ...prDetails,
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
                         base: 'main',
-                        head: `${version}-update-multi-version-upgrade`,
+                        head: `${version}-bake`,
+                        edits: mainBranchEdits,
+                        labels: [releaseBlockerLabel],
                     },
                     {
-                        ...prConfig,
+                        ...prDetails,
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
                         base: releaseBranch,
-                        head: `${version}-update-multi-version-upgrade-rb`,
+                        head: `${version}-bake-rb`,
+                        edits: releaseBranchEdits,
+                        labels: [releaseBlockerLabel],
                     },
                 ],
-                dryRun: false,
+                dryRun: config.dryRun.changesets,
             })
             console.log('Merge the following pull requests:\n')
             for (const set of sets) {
@@ -1036,18 +1067,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     },
     {
         id: 'release:src-cli',
-        description: 'Bake static content from src-cli. Only required for minor and major versions',
+        description: 'Release a new version of src-cli. Only required for minor and major versions',
         run: async config => {
             const release = await getActiveRelease(config)
+            if (release.version.patch !== 0) {
+                console.log('src-cli releases are only supported in this tool for major / minor releases')
+                exit(1)
+            }
             const client = await getAuthenticatedGitHubClient()
-
-            // ok, this seems weird that we're cloning src-cli here, so read on -
-            // We have docs that live in the main src/src repo about src-cli. Each version we update these docs for any changes
-            // from the most recent version of src-cli. Cool, makes sense.
-            // The thing is that these docs are generated from src-cli itself (a literal command, src docs).
-            // So our options are either to release a new version of src-cli, wait for the github action to be complete and THEN update the src/src repo,
-            // OR we can assume that main is going to be the new version (which it is). So we will clone it and execute the
-            // commands against the binary directly, saving ourselves a lot of time.
             const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
                 revision: 'main',
                 revisionMustExist: true,
@@ -1055,27 +1082,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const next = await nextSrcCliVersionInputWithAutodetect(workdir)
             setSrcCliVersion(config, next.version)
 
-            await createChangesets({
-                dryRun: config.dryRun.changesets,
-                requiredCommands: ['comby', 'go'],
-                changes: [
-                    {
-                        base: 'main',
-                        head: `update-src-cli-to-v${next.version}`,
-                        repo: 'sourcegraph',
-                        owner: 'sourcegraph',
-                        body: `Update src-cli to ${next.version}`,
-                        title: `update src-cli to ${next.version}`,
-                        commitMessage: `updating src-cli for ${next.version}`,
-                        edits: [
-                            `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${next.version}\\"" internal/src-cli/consts.go`,
-                            `cd ${workdir}/cmd/src && go build`,
-                            `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
-                        ],
-                        labels: [getBackportLabelForRelease(release), releaseBlockerLabel],
-                    },
-                ],
-            })
             if (!config.dryRun.changesets) {
                 // actually execute the release
                 await execa('bash', ['-c', 'yes | ./release.sh'], {

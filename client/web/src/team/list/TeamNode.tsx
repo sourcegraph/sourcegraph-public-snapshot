@@ -4,11 +4,11 @@ import { mdiAccount, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { Button, Link, Icon, Tooltip, useDebounce } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import { ListTeamFields } from '../../graphql-operations'
-import { TeamAvatar } from '../TeamAvatar'
 
 import { useChildTeams } from './backend'
 import { DeleteTeamModal } from './DeleteTeamModal'

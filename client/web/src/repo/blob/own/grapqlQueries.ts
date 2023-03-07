@@ -3,13 +3,22 @@ import { gql } from '@sourcegraph/http-client'
 import { gitCommitFragment } from '../../commits/RepositoryCommitsPage'
 
 const OWNER_FIELDS = gql`
-    fragment OwnerFields on Person {
-        email
-        avatarURL
-        displayName
-        user {
-            username
+    fragment OwnerFields on Owner {
+        __typename
+        ... on Person {
             displayName
+            email
+            avatarURL
+            user {
+                username
+                displayName
+                url
+            }
+        }
+        ... on Team {
+            name
+            teamDisplayName: displayName
+            avatarURL
             url
         }
     }

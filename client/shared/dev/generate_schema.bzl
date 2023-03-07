@@ -1,3 +1,5 @@
+"Schema generation rule"
+
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 

@@ -12,6 +12,7 @@ import {
     PropsWithChildren,
 } from 'react'
 
+import { ApolloClient, useApolloClient } from '@apollo/client'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -28,7 +29,7 @@ export interface StepConfiguration {
     name: string
     nextURL?: string
     component: ComponentType<{ className?: string }>
-    onNext?: () => void
+    onNext?: (client: ApolloClient<{}>) => void
 }
 
 interface SetupStepsContextData {
@@ -38,6 +39,7 @@ interface SetupStepsContextData {
     nextButtonPortal: HTMLDivElement | null
     setFooterPortal: (container: HTMLDivElement | null) => void
     setNextButtonPortal: (container: HTMLDivElement | null) => void
+    onSkip: () => void
     onPrevStep: () => void
     onNextStep: () => void
 }
@@ -49,6 +51,7 @@ const SetupStepsContext = createContext<SetupStepsContextData>({
     nextButtonPortal: null,
     setFooterPortal: noop,
     setNextButtonPortal: noop,
+    onSkip: noop,
     onPrevStep: noop,
     onNextStep: noop,
 })
@@ -57,6 +60,7 @@ interface SetupStepsProps {
     initialStepId: string | undefined
     steps: StepConfiguration[]
     children?: ReactNode
+    onSkip: () => void
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
@@ -65,10 +69,12 @@ interface SetupStepURLContext {
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, onStepChange, children } = props
+    const { initialStepId, steps, onSkip, onStepChange, children } = props
 
     const navigate = useNavigate()
     const location = useLocation()
+    const client = useApolloClient()
+
     const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
     const [footerPortal, setFooterPortal] = useState<HTMLDivElement | null>(null)
 
@@ -103,7 +109,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
 
-        activeStep.onNext?.()
+        activeStep.onNext?.(client)
 
         if (activeStep.nextURL) {
             navigate(activeStep.nextURL)
@@ -115,7 +121,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
             navigate(nextStep.path)
         }
-    }, [activeStepIndex, steps, navigate])
+    }, [activeStepIndex, steps, navigate, client])
 
     const handleGoToPrevStep = useCallback(() => {
         const prevStepIndex = activeStepIndex - 1
@@ -135,10 +141,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             nextButtonPortal,
             setFooterPortal,
             setNextButtonPortal,
+            onSkip,
             onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [steps, activeStepIndex, footerPortal, nextButtonPortal, handleGoToPrevStep, handleGoToNextStep]
+        [steps, activeStepIndex, footerPortal, nextButtonPortal, onSkip, handleGoToPrevStep, handleGoToNextStep]
     )
 
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
@@ -198,7 +205,7 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
 export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
     const { className, ...attributes } = props
 
-    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onPrevStep, onNextStep } =
+    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onSkip, onPrevStep, onNextStep } =
         useContext(SetupStepsContext)
 
     return (
@@ -208,9 +215,13 @@ export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
             </div>
             <div className={styles.footerNavigation}>
                 <div className={styles.footerInnerNavigation}>
+                    <Button variant="link" className={styles.footerSkip} onClick={onSkip}>
+                        Skip setup
+                    </Button>
+
                     {activeStepIndex > 0 && (
                         <Button variant="secondary" onClick={onPrevStep}>
-                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Go to previous step
+                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Previous
                         </Button>
                     )}
 

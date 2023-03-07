@@ -620,7 +620,8 @@ ON CONFLICT ON CONSTRAINT
 DO UPDATE SET
   object_ids_ints = excluded.object_ids_ints,
   updated_at = excluded.updated_at,
-  synced_at = excluded.synced_at
+  synced_at = excluded.synced_at,
+  migrated = TRUE
 `
 
 	if p.UpdatedAt.IsZero() {
@@ -1702,6 +1703,37 @@ AND expired_at IS NULL
 	return userIDs, nil
 }
 
+func UnifiedPermsEnabled() bool {
+	return conf.ExperimentalFeatures().UnifiedPermissions
+}
+
+const legacyUsersWithNoPermsQuery = `
+SELECT users.id, NULL
+FROM users
+LEFT OUTER JOIN user_permissions AS rp ON rp.user_id = users.id
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND rp.user_id IS NULL
+`
+
+const unifiedUsersWithNoPermsQuery = `
+WITH rp AS (
+	-- Filter out users with permissions
+	SELECT DISTINCT user_id FROM user_repo_permissions
+	UNION
+	-- Filter out users with completed sync jobs
+	SELECT user_id FROM permission_sync_jobs WHERE user_id IS NOT NULL
+)
+SELECT users.id, NULL
+FROM users
+LEFT OUTER JOIN rp ON rp.user_id = users.id
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND rp.user_id IS NULL
+`
+
 func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	// By default, site admins can access any repo
 	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
@@ -1710,18 +1742,13 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	q := sqlf.Sprintf(`
-SELECT users.id, NULL
-FROM users
-WHERE
-	users.deleted_at IS NULL
-AND %s
-AND NOT EXISTS (
-		SELECT
-		FROM user_permissions
-		WHERE user_id = users.id
-	)
-`, filterSiteAdmins)
+	query := unifiedUsersWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyUsersWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query, filterSiteAdmins)
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
@@ -1734,16 +1761,48 @@ AND NOT EXISTS (
 	return ids, nil
 }
 
+const legacyRepoIDsWithNoPermsQuery = `
+WITH rp AS (
+	SELECT perms.repo_id FROM repo_permissions AS perms
+	UNION
+	SELECT pending.repo_id FROM repo_pending_permissions AS pending
+)
+SELECT r.id, NULL
+FROM repo AS r
+LEFT OUTER JOIN rp ON rp.repo_id = r.id
+WHERE r.deleted_at IS NULL
+AND r.private = TRUE
+AND rp.repo_id IS NULL
+`
+
+const unifiedRepoIDsWithNoPermsQuery = `
+WITH rp AS (
+	-- Filter out repos with permissions
+	SELECT DISTINCT perms.repo_id FROM user_repo_permissions AS perms
+	UNION
+	-- Filter out repos with pending permissions
+	SELECT pending.repo_id FROM repo_pending_permissions AS pending
+	UNION
+	-- Filter out repos with sync jobs
+	SELECT syncs.repository_id AS repo_id FROM permission_sync_jobs AS syncs
+		WHERE syncs.repository_id IS NOT NULL
+)
+SELECT r.id, NULL
+FROM repo AS r
+LEFT OUTER JOIN rp ON rp.repo_id = r.id
+WHERE r.deleted_at IS NULL
+AND r.private = TRUE
+AND rp.repo_id IS NULL
+`
+
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
-	q := sqlf.Sprintf(`
-SELECT repo.id, NULL FROM repo
-WHERE repo.deleted_at IS NULL
-AND repo.private = TRUE
-AND repo.id NOT IN
-	(SELECT perms.repo_id FROM repo_permissions AS perms
-	 UNION
-	 SELECT pending.repo_id FROM repo_pending_permissions AS pending)
-`)
+	query := unifiedRepoIDsWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyRepoIDsWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query)
 
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
@@ -2135,8 +2194,8 @@ WITH accessible_repos AS (
 		repo.id,
 		repo.name
 	FROM repo
-	WHERE 
-		repo.deleted_at IS NULL 
+	WHERE
+		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
 	ORDER BY %s
 	%s -- Limit
@@ -2145,8 +2204,8 @@ WITH accessible_repos AS (
 SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
-	CASE 
-		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync' 
+	CASE
+		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync'
 		ELSE 'Unrestricted' -- If no user_permissions entry is found then the accessible repo must be unrestricted
 	END AS permission_reason
 FROM

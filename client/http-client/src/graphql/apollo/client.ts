@@ -1,5 +1,4 @@
 import { ApolloClient, createHttpLink, from, HttpOptions, InMemoryCache, NormalizedCacheObject } from '@apollo/client'
-import { LocalStorageWrapper, CachePersistor } from 'apollo3-cache-persist'
 import { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
 import { once } from 'lodash'
 
@@ -9,7 +8,6 @@ import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
 interface GetGraphqlClientOptions {
     headers?: Record<string, string>
-    isAuthenticated: boolean
     cache: InMemoryCache
     baseUrl?: string
     credentials?: 'include' | 'omit' | 'same-origin'
@@ -18,32 +16,9 @@ interface GetGraphqlClientOptions {
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
-/**
- * 🚨 SECURITY: Use two unique keys for authenticated and anonymous users
- * to avoid keeping private information in localStorage after logout.
- */
-const getApolloPersistCacheKey = (isAuthenticated: boolean): string =>
-    `apollo-cache-persist-${isAuthenticated ? 'authenticated' : 'anonymous'}`
-
 export const getGraphQLClient = once(async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-    const { headers, baseUrl, isAuthenticated, credentials, persistenceMapper, cache } = options
+    const { headers, baseUrl, credentials, cache } = options
     const uri = buildGraphQLUrl({ baseUrl })
-
-    if (persistenceMapper) {
-        const persistor = new CachePersistor({
-            cache,
-            persistenceMapper,
-            // Use max 4 MB for persistent cache. Leave 1 MB for other means out of 5 MB available.
-            // If exceeded, persistence will pause and app will start up cold on next launch.
-            maxSize: 1024 * 1024 * 4,
-            key: getApolloPersistCacheKey(isAuthenticated),
-            storage: new LocalStorageWrapper(window.localStorage),
-        })
-
-        // 🚨 SECURITY: Drop persisted cache item in case `isAuthenticated` value changed.
-        localStorage.removeItem(getApolloPersistCacheKey(!isAuthenticated))
-        await persistor.restore()
-    }
 
     const apolloClient = new ApolloClient({
         uri,

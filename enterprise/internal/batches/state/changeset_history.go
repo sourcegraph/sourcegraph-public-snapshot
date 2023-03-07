@@ -66,6 +66,7 @@ var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
 	btypes.ChangesetEventKindBitbucketServerMerged,
 	btypes.ChangesetEventKindGitHubMerged,
 	btypes.ChangesetEventKindGitLabMerged,
+	btypes.ChangesetEventKindAzureDevOpsPullRequestMerged,
 
 	// Reopened
 	btypes.ChangesetEventKindBitbucketServerReopened,
@@ -81,6 +82,8 @@ var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
 	btypes.ChangesetEventKindBitbucketServerApproved,
 	btypes.ChangesetEventKindBitbucketServerReviewed,
 	btypes.ChangesetEventKindGitLabApproved,
+	btypes.ChangesetEventKindAzureDevOpsPullRequestApproved,
+	btypes.ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
 
 	// Reviewed, not approved.
 	btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
@@ -88,6 +91,8 @@ var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
 	btypes.ChangesetEventKindBitbucketServerUnapproved,
 	btypes.ChangesetEventKindBitbucketServerDismissed,
 	btypes.ChangesetEventKindGitLabUnapproved,
+	btypes.ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
+	btypes.ChangesetEventKindAzureDevOpsPullRequestRejected,
 }
 
 type changesetStatesAtTime struct {
@@ -154,7 +159,8 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 		case btypes.ChangesetEventKindGitHubMerged,
 			btypes.ChangesetEventKindBitbucketServerMerged,
 			btypes.ChangesetEventKindGitLabMerged,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled:
+			btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled,
+			btypes.ChangesetEventKindAzureDevOpsPullRequestMerged:
 			currentExtState = btypes.ChangesetExternalStateMerged
 			pushStates(et)
 
@@ -203,7 +209,8 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 			btypes.ChangesetEventKindBitbucketServerReviewed,
 			btypes.ChangesetEventKindGitLabApproved,
 			btypes.ChangesetEventKindBitbucketCloudApproved,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestApproved:
+			btypes.ChangesetEventKindBitbucketCloudPullRequestApproved,
+			btypes.ChangesetEventKindAzureDevOpsPullRequestApproved:
 			s, err := e.ReviewState()
 			if err != nil {
 				return nil, err
@@ -247,6 +254,7 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 			btypes.ChangesetEventKindGitLabUnapproved,
 			btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
 			btypes.ChangesetEventKindBitbucketCloudPullRequestUnapproved:
+
 			author := e.ReviewAuthor()
 			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
 			if author == "" {
@@ -283,6 +291,13 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 				currentReviewState = newReviewState
 				pushStates(et)
 			}
+		case btypes.ChangesetEventKindAzureDevOpsPullRequestRejected,
+			btypes.ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
+			btypes.ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor:
+			currentReviewState = btypes.ChangesetReviewStateChangesRequested
+			author := e.ReviewAuthor()
+			lastReviewByAuthor[author] = currentReviewState
+			pushStates(et)
 		}
 	}
 

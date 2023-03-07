@@ -33,7 +33,7 @@ type fakeOwnService struct {
 	Ruleset *codeowners.Ruleset
 }
 
-func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error) {
+func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
 	return s.Ruleset, nil
 }
 
@@ -89,7 +89,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, resolvers.New(db, git, own))
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
 	if err != nil {
 		t.Fatal(err)
 	}
