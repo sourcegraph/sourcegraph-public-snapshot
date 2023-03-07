@@ -7458,7 +7458,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE NOT processed",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
