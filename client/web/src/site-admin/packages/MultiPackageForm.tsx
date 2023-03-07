@@ -33,13 +33,13 @@ import {
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import { addPackageRepoFilterMutation, packageRepoFilterQuery } from './backend'
+import { BlockPackageActions } from './BlockPackageActions'
 import { BlockType } from './BlockPackageModal'
 
 import styles from './BlockPackageModal.module.scss'
-import { BlockPackageActions } from './BlockPackageActions'
 
 interface MultiPackageState {
-    namePattern: string
+    nameFilter: string
     ecosystem: PackageRepoReferenceKind
 }
 
@@ -57,11 +57,11 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
     onDismiss,
 }) => {
     const [blockState, setBlockState] = useState<MultiPackageState>({
-        namePattern: '*',
+        nameFilter: '*',
         ecosystem: node.kind,
     })
     const [packageFetchLimit, setPackageFetchLimit] = useState(15)
-    const query = useDebounce(blockState.namePattern, 200)
+    const query = useDebounce(blockState.nameFilter, 200)
 
     const { data, loading, error } = useQuery<
         PackageRepoReferencesMatchingFilterResult,
@@ -111,7 +111,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                     behaviour: PackageMatchBehaviour.BLOCK,
                     filter: {
                         nameFilter: {
-                            packageGlob: blockState.namePattern,
+                            packageGlob: blockState.nameFilter,
                         },
                     },
                 },
@@ -162,12 +162,12 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                         </Select>
                         <Input
                             className="mr-2 flex-1"
-                            value={blockState.namePattern || ''}
+                            value={blockState.nameFilter || ''}
                             required={true}
-                            onChange={event => setBlockState({ ...blockState, namePattern: event.target.value })}
+                            onChange={event => setBlockState({ ...blockState, nameFilter: event.target.value })}
                             placeholder="Example: @types/*"
                         />
-                        <Tooltip content="Remove block pattern">
+                        <Tooltip content="Remove name filter">
                             <Button
                                 className={classNames('text-danger', styles.inputRowButton)}
                                 variant="icon"
@@ -197,7 +197,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                                                     {data.packageRepoReferencesMatchingFilter.totalCount} packages match
                                                 </>
                                             )}{' '}
-                                            this pattern
+                                            this filter
                                             {data.packageRepoReferencesMatchingFilter.nodes.length <
                                                 data.packageRepoReferencesMatchingFilter.totalCount && (
                                                 <>
@@ -256,7 +256,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ nodes }) => {
     if (nodes.length === 0) {
         return (
             <Alert variant="warning" className="mt-1">
-                This pattern does not match any package.
+                This filter does not match any package.
             </Alert>
         )
     }

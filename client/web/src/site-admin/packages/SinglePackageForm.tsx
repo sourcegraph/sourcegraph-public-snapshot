@@ -32,8 +32,8 @@ import {
 } from '../../graphql-operations'
 
 import { addPackageRepoFilterMutation, packageRepoFilterQuery } from './backend'
-import { BlockType } from './BlockPackageModal'
 import { BlockPackageActions } from './BlockPackageActions'
+import { BlockType } from './BlockPackageModal'
 
 import styles from './BlockPackageModal.module.scss'
 
@@ -44,7 +44,7 @@ interface SinglePackageSingleVersionState {
 
 interface SinglePackageMultiVersionState {
     name: string
-    versionPattern: string
+    versionFilter: string
 }
 
 type SinglePackageState = SinglePackageSingleVersionState | SinglePackageMultiVersionState
@@ -69,9 +69,9 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
         name: node.name,
         version: defaultVersion,
     })
-    const versionQuery = useDebounce('versionPattern' in blockState ? blockState.versionPattern : null, 200)
+    const versionQuery = useDebounce('versionFilter' in blockState ? blockState.versionFilter : null, 200)
 
-    const versionPatternResponse = useQuery<
+    const versionFilterResponse = useQuery<
         PackageRepoReferencesMatchingFilterResult,
         PackageRepoReferencesMatchingFilterVariables
     >(packageRepoFilterQuery, {
@@ -80,12 +80,12 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
             filter: {
                 versionFilter: {
                     packageName: blockState.name,
-                    versionGlob: (blockState as SinglePackageMultiVersionState).versionPattern,
+                    versionGlob: (blockState as SinglePackageMultiVersionState).versionFilter,
                 },
             },
             first: 100, // TODO: Limit?
         },
-        skip: !('versionPattern' in blockState),
+        skip: !('versionFilter' in blockState),
     })
 
     const [submitPackageFilter, submitPackageFilterResponse] = useMutation<
@@ -93,7 +93,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
         AddPackageRepoFilterVariables
     >(addPackageRepoFilterMutation, {})
 
-    const versionNode = versionPatternResponse.data?.packageRepoReferencesMatchingFilter?.nodes?.[0]
+    const versionNode = versionFilterResponse.data?.packageRepoReferencesMatchingFilter?.nodes?.[0]
     const versionCount = versionNode?.versions?.length || 0
 
     const isValid = useCallback((): boolean => {
@@ -101,7 +101,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
             return false
         }
 
-        if ('versionPattern' in blockState && versionCount === 0) {
+        if ('versionFilter' in blockState && versionCount === 0) {
             return false
         }
 
@@ -124,8 +124,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     filter: {
                         versionFilter: {
                             packageName: blockState.name,
-                            versionGlob:
-                                'versionPattern' in blockState ? blockState.versionPattern : blockState.version,
+                            versionGlob: 'versionFilter' in blockState ? blockState.versionFilter : blockState.version,
                         },
                     },
                 },
@@ -185,11 +184,10 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                             className={styles.inputRowButton}
                             variant="secondary"
                             outline={true}
-                            size="sm"
                             onClick={() => setType('multiple')}
                         >
                             <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" />
-                            Pattern
+                            Filter
                         </Button>
                     </Tooltip>
                 </div>
@@ -226,27 +224,26 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                                     className={styles.inputRowButton}
                                     variant="secondary"
                                     outline={true}
-                                    size="sm"
-                                    onClick={() => setBlockState({ name: node.name, versionPattern: '*' })}
+                                    onClick={() => setBlockState({ name: node.name, versionFilter: '*' })}
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" />
-                                    Pattern
+                                    Filter
                                 </Button>
                             </Tooltip>
                         </>
                     )}
-                    {'versionPattern' in blockState && (
+                    {'versionFilter' in blockState && (
                         <>
                             <Input
                                 name="multi-version-input"
                                 aria-labelledby="package-version"
                                 className="mr-2 flex-1"
-                                value={blockState.versionPattern || ''}
+                                value={blockState.versionFilter || ''}
                                 placeholder="e.g. v1.*"
                                 required={true}
-                                onChange={event => setBlockState({ ...blockState, versionPattern: event.target.value })}
+                                onChange={event => setBlockState({ ...blockState, versionFilter: event.target.value })}
                             />
-                            <Tooltip content="Remove version pattern">
+                            <Tooltip content="Remove version filter">
                                 <Button
                                     variant="icon"
                                     className="text-danger"
@@ -264,14 +261,14 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     )}
                 </div>
             </div>
-            {'versionPattern' in blockState && versionQuery !== null && (
+            {'versionFilter' in blockState && versionQuery !== null && (
                 <>
-                    {versionPatternResponse.loading || !versionPatternResponse.data ? (
+                    {versionFilterResponse.loading || !versionFilterResponse.data ? (
                         <LoadingSpinner className="d-block mx-auto mt-3" />
-                    ) : versionPatternResponse.error ? (
-                        <ErrorAlert error={versionPatternResponse.error} />
+                    ) : versionFilterResponse.error ? (
+                        <ErrorAlert error={versionFilterResponse.error} />
                     ) : (
-                        <VersionList node={versionPatternResponse.data.packageRepoReferencesMatchingFilter.nodes[0]} />
+                        <VersionList node={versionFilterResponse.data.packageRepoReferencesMatchingFilter.nodes[0]} />
                     )}
                 </>
             )}
@@ -296,7 +293,7 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ node }) => {
         <div className="mt-2">
             <div className="text-muted">
                 {versionCount === 1 ? <>{versionCount} version matches</> : <>{versionCount} versions match</>} this
-                pattern
+                filter
             </div>
             <ul className={classNames('list-group mt-1', styles.list)}>
                 {node.versions.map(({ id, version }) => (
