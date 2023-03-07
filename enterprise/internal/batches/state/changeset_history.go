@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -337,7 +337,7 @@ func initialExternalState(ch *btypes.Changeset, ce ChangesetEvents) btypes.Chang
 		if m.WorkInProgress {
 			open = false
 		}
-	case *azuredevops2.AnnotatedPullRequest:
+	case *adobatches.AnnotatedPullRequest:
 		if m.IsDraft {
 			open = false
 		}
