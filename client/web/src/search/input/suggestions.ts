@@ -167,11 +167,6 @@ interface CodeSymbol {
  */
 function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number): Option {
     const option = toRepoCompletion(result, from, to, 'repo:')
-    option.action.name = 'Add'
-    option.alternativeAction = {
-        type: 'goto',
-        url: `/${result.item.name}`,
-    }
     option.render = filterValueRenderer
     return option
 }
@@ -194,6 +189,10 @@ function toRepoCompletion(
             insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
             from,
             to,
+        },
+        alternativeAction: {
+            type: 'goto',
+            url: `/${item.name}`,
         },
     }
 }
@@ -266,6 +265,10 @@ function toFileCompletion(
             from,
             to,
         },
+        alternativeAction: {
+            type: 'goto',
+            url: item.url,
+        },
     }
 }
 
@@ -274,11 +277,6 @@ function toFileCompletion(
  */
 function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number): Option {
     const option = toFileCompletion(result, from, to, 'file:')
-    option.action.name = 'Add'
-    option.alternativeAction = {
-        type: 'goto',
-        url: result.item.url,
-    }
     option.render = filterValueRenderer
     return option
 }
@@ -407,7 +405,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                             ? ALL_FILTER_VALUE_LIST_SIZE
                                             : MULTIPLE_FILTER_VALUE_LIST_SIZE
                                     )
-                                    .map(item => toRepoSuggestion(item, from, to)),
+                                    .map(item => toRepoCompletion(item, from, to)),
                             },
                         ]
 
@@ -434,7 +432,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             {
                                 title: 'Files',
                                 options: entries
-                                    .map(item => toFileSuggestion(item, from, to))
+                                    .map(item => toFileCompletion(item, from, to))
                                     .slice(
                                         0,
                                         predicates.length === 0

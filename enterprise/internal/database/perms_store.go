@@ -620,7 +620,8 @@ ON CONFLICT ON CONSTRAINT
 DO UPDATE SET
   object_ids_ints = excluded.object_ids_ints,
   updated_at = excluded.updated_at,
-  synced_at = excluded.synced_at
+  synced_at = excluded.synced_at,
+  migrated = TRUE
 `
 
 	if p.UpdatedAt.IsZero() {
@@ -2135,8 +2136,8 @@ WITH accessible_repos AS (
 		repo.id,
 		repo.name
 	FROM repo
-	WHERE 
-		repo.deleted_at IS NULL 
+	WHERE
+		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
 	ORDER BY %s
 	%s -- Limit
@@ -2145,8 +2146,8 @@ WITH accessible_repos AS (
 SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
-	CASE 
-		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync' 
+	CASE
+		WHEN up.user_id IS NOT NULL THEN 'Permissions Sync'
 		ELSE 'Unrestricted' -- If no user_permissions entry is found then the accessible repo must be unrestricted
 	END AS permission_reason
 FROM

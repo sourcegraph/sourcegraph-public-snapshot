@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
@@ -801,7 +803,36 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    status,
 			})
 		}
-		// TODO: @varsanojida Add for ADO.
+	case *adobatches.AnnotatedPullRequest:
+		// There are two types of event that we create from an annotated pull
+		// request: review events, based on the reviewers within the pull
+		// request, and check events, based on the build statuses.
+
+		var kind ChangesetEventKind
+
+		for _, reviewer := range m.Reviewers {
+			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         reviewer.ID,
+				Kind:        kind,
+				Metadata:    reviewer,
+			})
+		}
+
+		for _, status := range m.Statuses {
+			if kind, err = ChangesetEventKindFor(status); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         strconv.Itoa(status.ID),
+				Kind:        kind,
+				Metadata:    status,
+			})
+		}
 	}
 	return events, nil
 }
@@ -1201,8 +1232,45 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
-	}
 
+	case *azuredevops.PullRequestMergedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestMerged, nil
+	case *azuredevops.PullRequestApprovedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
+	case *azuredevops.PullRequestRejectedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
+	case *azuredevops.PullRequestUpdatedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestUpdated, nil
+	case *azuredevops.Reviewer:
+		switch e.Vote {
+		case 10:
+			return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
+		case 5:
+			return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+		case 0:
+			return ChangesetEventKindAzureDevOpsPullRequesReviewed, nil
+		case -5:
+			return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
+		case -10:
+			return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
+		}
+
+	case *azuredevops.PullRequestBuildStatus:
+		switch e.State {
+		case azuredevops.PullRequestBuildStatusStateSucceeded:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded, nil
+		case azuredevops.PullRequestBuildStatusStateError:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildError, nil
+		case azuredevops.PullRequestBuildStatusStateFailed:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildFailed, nil
+		default:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
+		}
+	}
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
 }
 
@@ -1314,6 +1382,29 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 			return new(gitlab.MergeRequestMergedEvent), nil
 		case ChangesetEventKindGitLabReopened:
 			return new(gitlab.MergeRequestReopenedEvent), nil
+		}
+	case strings.HasPrefix(string(k), "azuredevops"):
+		switch k {
+		case ChangesetEventKindAzureDevOpsPullRequestMerged:
+			return new(azuredevops.PullRequestMergedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestApproved:
+			return new(azuredevops.PullRequestApprovedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
+			return new(azuredevops.PullRequestApprovedWithSuggestionsEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor:
+			return new(azuredevops.PullRequestWaitingForAuthorEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestRejected:
+			return new(azuredevops.PullRequestRejectedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildFailed:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildError:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildPending:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		default:
+			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)

@@ -56,11 +56,11 @@ combined_indexers AS (
 )
 SELECT DISTINCT u.indexer
 FROM combined_indexers u
-JOIN repo r ON r.id = u.repository_id
+JOIN repo ON repo.id = u.repository_id
 WHERE
 	%s AND
-	r.deleted_at IS NULL AND
-	r.blocked IS NULL
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL
 `
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -563,7 +563,9 @@ candidates AS (
 	SELECT u.id
 	FROM repo r
 	JOIN lsif_uploads u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' OR
+		r.blocked IS NOT NULL
 
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.

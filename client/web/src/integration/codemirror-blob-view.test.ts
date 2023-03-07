@@ -15,6 +15,7 @@ import {
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, EditorAPI } from './utils'
@@ -109,10 +110,17 @@ describe('CodeMirror blob view', () => {
             // files from TreeEntries request
             assert.deepStrictEqual(
                 allFilesInTheTree,
-                Object.entries(filePaths).map(([name, path]) => ({
-                    content: name,
-                    href: `${driver.sourcegraphBaseUrl}${path}`,
-                }))
+                Object.entries(filePaths)
+                    .filter(
+                        ([name]) =>
+                            name !==
+                            // This file is not part of the same directory so it won't be shown in this test case
+                            'this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java'
+                    )
+                    .map(([name, path]) => ({
+                        content: name,
+                        href: `${driver.sourcegraphBaseUrl}${path}`,
+                    }))
             )
         })
 
@@ -365,7 +373,10 @@ function createBlobPageData<T extends BlobInfo>({
     repoName: string
     blobInfo: T
 }): {
-    graphqlResults: Pick<WebGraphQlOperations, 'ResolveRepoRev' | 'FileExternalLinks' | 'Blob' | 'FileNames'> &
+    graphqlResults: Pick<
+        WebGraphQlOperations,
+        'ResolveRepoRev' | 'FileTreeEntries' | 'FileExternalLinks' | 'Blob' | 'FileNames'
+    > &
         Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'>
     filePaths: { [k in keyof T]: string }
 } {
@@ -382,6 +393,7 @@ function createBlobPageData<T extends BlobInfo>({
             FileExternalLinks: ({ filePath }) =>
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
+            FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             Blob: ({ filePath }) =>
                 createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
             FileNames: () => ({

@@ -90,7 +90,6 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 			definitions = append(definitions, shared.RankingDefinitions{
 				UploadID:     upload.ID,
 				SymbolName:   occ.Symbol,
-				Repository:   upload.Repo,
 				DocumentPath: filepath.Join(upload.Root, path),
 			})
 			seenDefinitions[occ.Symbol] = struct{}{}
@@ -147,6 +146,12 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	}
 	s.operations.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
 	s.operations.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
+
+	numRankRecordsDeleted, err := s.store.VacuumStaleRanks(ctx, getCurrentGraphKey(time.Now()))
+	if err != nil {
+		return err
+	}
+	s.operations.numRankRecordsDeleted.Add(float64(numRankRecordsDeleted))
 
 	return nil
 }

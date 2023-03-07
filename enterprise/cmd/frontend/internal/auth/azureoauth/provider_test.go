@@ -20,7 +20,7 @@ func newOauthProvider(oauth2Config oauth2.Config) *oauth.Provider {
 			AuthPrefix:   "/.auth/azuredevops",
 			OAuth2Config: func() oauth2.Config { return oauth2Config },
 			StateConfig:  oauth.GetStateConfig(stateCookie),
-			ServiceID:    "https://app.vssps.visualstudio.com/",
+			ServiceID:    "https://dev.azure.com/",
 			ServiceType:  extsvc.TypeAzureDevOps,
 		},
 	}
