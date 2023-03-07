@@ -7,7 +7,6 @@ import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H3, Text, H2 } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
@@ -44,8 +43,9 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
+interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
@@ -56,9 +56,9 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
 
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
-    isLightTheme,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     showSearchContext,
     assetsRoot,
     showQueryExamples,
@@ -92,6 +92,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             telemetryService={telemetryService}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            enableOwnershipSearch={enableOwnershipSearch}
                         />
                     </div>
                 </>

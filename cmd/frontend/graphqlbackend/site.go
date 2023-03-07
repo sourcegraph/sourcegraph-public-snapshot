@@ -1,24 +1,35 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	migratorshared "github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
@@ -33,7 +44,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{db: r.db, gqlID: siteGQLID}, nil
+	return newSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -48,12 +59,25 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return &siteResolver{db: r.db, gqlID: singletonSiteGQLID}
+	return newSiteResolver(r.logger, r.db)
+}
+
+func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
+	return newSiteResolver(logger, db)
+}
+
+func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
+	return &siteResolver{
+		logger: logger,
+		db:     db,
+		gqlID:  singletonSiteGQLID,
+	}
 }
 
 type siteResolver struct {
-	db    database.DB
-	gqlID string // == singletonSiteGQLID, not the site ID
+	logger log.Logger
+	db     database.DB
+	gqlID  string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
@@ -210,6 +234,130 @@ func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
-func (r *siteResolver) EnableLegacyExtensions() bool {
-	return conf.ExperimentalFeatures().EnableLegacyExtensions
+func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
+	// 🚨 SECURITY: Only site admins may view upgrade readiness information.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	return &upgradeReadinessResolver{
+		logger: r.logger.Scoped("upgradeReadiness", ""),
+		db:     r.db,
+	}, nil
+}
+
+type upgradeReadinessResolver struct {
+	logger log.Logger
+	db     database.DB
+
+	initOnce sync.Once
+	initErr  error
+	runner   cliutil.Runner
+	version  string
+}
+
+var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+	"Local file",
+	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	func(filename, _ string) string { return filename },
+	cliutil.ReadSchemaFromFile,
+)
+
+var schemaFactories = append(
+	migratorshared.DefaultSchemaFactories,
+	// Special schema factory for dev environment.
+	devSchemaFactory,
+)
+
+var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
+
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, _ error) {
+	r.initOnce.Do(func() {
+		r.runner, r.version, r.initErr = func() (cliutil.Runner, string, error) {
+			observationCtx := observation.NewContext(r.logger)
+			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+			if err != nil {
+				return nil, "", errors.Wrap(err, "new runner")
+			}
+
+			versionStr, ok, err := cliutil.GetRawServiceVersion(ctx, runner)
+			if err != nil {
+				return nil, "", errors.Wrap(err, "get service version")
+			} else if !ok {
+				return nil, "", errors.New("invalid service version")
+			}
+
+			// Return abbreviated commit hash from insiders version
+			if matches := insidersVersionPattern.FindStringSubmatch(versionStr); len(matches) > 0 {
+				return runner, matches[1], nil
+			}
+
+			v, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
+			if !ok {
+				return nil, "", errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+			}
+
+			if v.Dev {
+				return runner, "dev", nil
+			}
+
+			return runner, v.GitTagWithPatch(patch), nil
+		}()
+	})
+
+	return r.runner, r.version, r.initErr
+}
+
+func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
+	runner, version, err := r.init(ctx)
+	if err != nil {
+		return "", err
+	}
+	r.logger.Debug("schema drift", log.String("version", version))
+
+	var drift bytes.Buffer
+	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
+	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaFactories)
+	if err == cliutil.ErrDatabaseDriftDetected {
+		return drift.String(), nil
+	} else if err != nil {
+		return "", errors.Wrap(err, "check drift")
+	}
+	return "", nil
+}
+
+// isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
+// after the given version and not yet completed.
+func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.Migration) bool {
+	if m.Deprecated == nil {
+		return false
+	}
+	return oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1
+}
+
+func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
+	updateStatus := updatecheck.Last()
+	if updateStatus == nil {
+		return nil, errors.New("no latest update version available (reload in a few seconds)")
+	}
+	if !updateStatus.HasUpdate() {
+		return nil, nil
+	}
+	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
+	if !ok {
+		return nil, errors.Errorf("invalid latest update version %q", updateStatus.UpdateVersion)
+	}
+
+	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var requiredMigrations []*outOfBandMigrationResolver
+	for _, m := range migrations {
+		if isRequiredOutOfBandMigration(version, m) {
+			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
+		}
+	}
+	return requiredMigrations, nil
 }

@@ -13,21 +13,21 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type CloneURLToRepoNameFunc func(ctx context.Context, submoduleURL string) (api.RepoName, error)
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db     database.DB
-	commit *GitCommitResolver
+	cloneURLToRepoName CloneURLToRepoNameFunc
+	commit             *GitCommitResolver
 
 	contentOnce sync.Once
 	content     []byte
@@ -40,8 +40,10 @@ type GitTreeEntryResolver struct {
 	logger log.Logger
 }
 
-func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, logger: log.Scoped("git tree entry resolver", "")}
+func NewGitTreeEntryResolver(cloneURLToRepoName CloneURLToRepoNameFunc, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{
+		cloneURLToRepoName: cloneURLToRepoName,
+		commit:             commit, stat: stat, logger: log.Scoped("git tree entry resolver", "")}
 }
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
@@ -128,12 +130,17 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 		if strings.HasPrefix(submoduleURL, "../") {
 			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
 		}
-		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
+
+		repoName, err := r.cloneURLToRepoName(ctx, submoduleURL)
 		if err != nil {
 			log.Error(err)
 			return &url.URL{}
 		}
-		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
+		if repoName == "" {
+			log.Error(errors.Errorf("no matching code host found for %s", submoduleURL))
+			return &url.URL{}
+		}
+		return &url.URL{Path: "/" + string(repoName) + "@" + submodule.Commit()}
 	}
 	return r.urlPath(r.commit.repoRevURL())
 }
@@ -152,15 +159,4 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 
 	u.Path = path.Join(u.Path, "-", typ, r.Path())
 	return &u
-}
-
-func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
-	if err != nil {
-		return "", err
-	}
-	if repoName == "" {
-		return "", errors.Errorf("no matching code host found for %s", cloneURL)
-	}
-	return string(repoName), nil
 }

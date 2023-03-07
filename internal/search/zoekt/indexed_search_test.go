@@ -277,9 +277,9 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fakeZoekt := &searchbackend.FakeSearcher{
-				Result: &zoekt.SearchResult{Files: tt.args.results},
-				Repos:  zoektRepos,
+			fakeZoekt := &searchbackend.FakeStreamer{
+				Results: []*zoekt.SearchResult{{Files: tt.args.results}},
+				Repos:   zoektRepos,
 			}
 
 			var resultTypes result.Types
@@ -438,12 +438,14 @@ func TestZoektIndexedRepos(t *testing.T) {
 }
 
 func TestZoektSearchOptions(t *testing.T) {
+	documentRanksWeight := 42.0
+
 	cases := []struct {
-		name        string
-		context     context.Context
-		options     *Options
-		ranksWeight float64
-		want        *zoekt.SearchOptions
+		name            string
+		context         context.Context
+		options         *Options
+		rankingFeatures *schema.Ranking
+		want            *zoekt.SearchOptions
 	}{
 		{
 			name:    "test defaults",
@@ -514,9 +516,11 @@ func TestZoektSearchOptions(t *testing.T) {
 			},
 		},
 		{
-			name:        "test document ranks weight",
-			context:     context.Background(),
-			ranksWeight: 42.0,
+			name:    "test document ranks weight",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				DocumentRanksWeight: &documentRanksWeight,
+			},
 			options: &Options{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				NumRepos:       3,
@@ -535,16 +539,44 @@ func TestZoektSearchOptions(t *testing.T) {
 				DocumentRanksWeight: 42,
 			},
 		},
+		{
+			name:    "test flush wall time",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				FlushWallTimeMS: 3141,
+			},
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       3141000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.ranksWeight > 0.0 {
+			if tt.rankingFeatures != nil {
 				cfg := conf.Get()
-				cfg.ExperimentalFeatures.Ranking = &schema.Ranking{
-					DocumentRanksWeight: &tt.ranksWeight,
-				}
+				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
 				conf.Mock(cfg)
+
+				defer func() {
+					cfg.ExperimentalFeatures.Ranking = nil
+					conf.Mock(cfg)
+				}()
 			}
+
 			got := tt.options.ToSearch(tt.context)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("search options mismatch (-want +got):\n%s", diff)

@@ -5,7 +5,7 @@ expression: "dump_document(&document, &contents)"
   scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation",
 //^^^^^^^^^^^^^ Identifier 
 //              ^^^ Identifier 
-//                  ^^^ Identifier 
+//                  ^^^ IdentifierFunction 
 //                      ^^^^^^^^^^^^ StringLiteral 
 //                                    ^^^^^^^^^^ StringLiteral 
 //                                                ^^^^^^^^^^^^^^ StringLiteral 
@@ -33,7 +33,7 @@ expression: "dump_document(&document, &contents)"
   
   enablePlugins(BuildInfoPlugin)
 //^^^^^^^^^^^^^ Identifier 
-//              ^^^^^^^^^^^^^^^ Identifier 
+//              ^^^^^^^^^^^^^^^ IdentifierConstant 
   
   // configure sbt-buildinfo to send the externalDependencyClasspath to the main build, which allows using it for the IntelliJ project config
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
@@ -49,22 +49,22 @@ expression: "dump_document(&document, &contents)"
   buildClasspath := (Compile / externalDependencyClasspath).value.map(_.data).mkString(java.io.File.pathSeparator)
 //^^^^^^^^^^^^^^ Identifier 
 //               ^^ Identifier 
-//                   ^^^^^^^ Identifier 
+//                   ^^^^^^^ IdentifierConstant 
 //                           ^ Identifier 
 //                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                                          ^^^^^ Identifier 
-//                                                                ^^^ Identifier 
+//                                                                ^^^ IdentifierFunction 
 //                                                                      ^^^^ Identifier 
-//                                                                            ^^^^^^^^ Identifier 
+//                                                                            ^^^^^^^^ IdentifierFunction 
 //                                                                                     ^^^^ Identifier 
 //                                                                                          ^^ Identifier 
-//                                                                                             ^^^^ Identifier 
+//                                                                                             ^^^^ IdentifierConstant 
 //                                                                                                  ^^^^^^^^^^^^^ Identifier 
   
   buildInfoKeys := Seq[BuildInfoKey](buildClasspath)
 //^^^^^^^^^^^^^ Identifier 
 //              ^^ Identifier 
-//                 ^^^ Identifier 
+//                 ^^^ IdentifierConstant 
 //                     ^^^^^^^^^^^^ IdentifierType 
 //                                   ^^^^^^^^^^^^^^ Identifier 
   
@@ -84,7 +84,7 @@ expression: "dump_document(&document, &contents)"
   libraryDependencies ++= Seq(
 //^^^^^^^^^^^^^^^^^^^ Identifier 
 //                    ^^^ Identifier 
-//                        ^^^ Identifier 
+//                        ^^^ IdentifierConstant 
     "org.eclipse.jgit" % "org.eclipse.jgit" % "4.11.9.201909030838-r",
 //  ^^^^^^^^^^^^^^^^^^ StringLiteral 
 //                     ^ Identifier 
@@ -106,14 +106,14 @@ expression: "dump_document(&document, &contents)"
   )
   
   Global / concurrentRestrictions := Seq(
-//^^^^^^ Identifier 
+//^^^^^^ IdentifierConstant 
 //       ^ Identifier 
 //         ^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                ^^ Identifier 
-//                                   ^^^ Identifier 
+//                                   ^^^ IdentifierConstant 
     Tags.limitAll(1) // workaround for https://github.com/sbt/sbt/issues/2970
-//  ^^^^ Identifier 
-//       ^^^^^^^^ Identifier 
+//  ^^^^ IdentifierConstant 
+//       ^^^^^^^^ IdentifierFunction 
 //                ^ NumericLiteral 
 //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   )

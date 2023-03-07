@@ -43,6 +43,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
+	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
@@ -94,15 +95,6 @@ type Store interface {
 	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
-
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
-
-	ProcessStaleExportedUploads(
-		ctx context.Context,
-		graphKey string,
-		batchSize int,
-		deleter func(ctx context.Context, objectPrefix string) error,
-	) (totalDeleted int, err error)
 
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error

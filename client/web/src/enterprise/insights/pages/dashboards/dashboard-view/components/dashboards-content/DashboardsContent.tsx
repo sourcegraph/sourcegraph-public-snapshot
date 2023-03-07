@@ -3,7 +3,7 @@ import { FC, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

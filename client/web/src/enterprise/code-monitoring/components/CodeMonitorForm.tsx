@@ -2,13 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -21,7 +20,7 @@ import { FormTriggerArea } from './FormTriggerArea'
 
 import styles from './CodeMonitorForm.module.scss'
 
-export interface CodeMonitorFormProps extends ThemeProps {
+export interface CodeMonitorFormProps {
     authenticatedUser: AuthenticatedUser
     /**
      * A function that takes in a code monitor and emits an Observable with all or some
@@ -58,7 +57,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
     description,
-    isLightTheme,
     isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
@@ -207,7 +205,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                             cardBtnClassName={styles.cardButton}
                             cardLinkClassName={styles.cardLink}
                             cardClassName={styles.card}
-                            isLightTheme={isLightTheme}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>

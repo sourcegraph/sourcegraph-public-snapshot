@@ -6,13 +6,11 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/derision-test/glock"
-	"google.golang.org/api/option"
-
 	"github.com/sourcegraph/log"
+	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
@@ -37,7 +35,7 @@ func NewService(
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
-	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
+	policyMatcher := policies.NewMatcher(gsc, policies.RetentionExtractor, true, false)
 	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
@@ -77,9 +75,6 @@ func NewService(
 
 var (
 	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
-	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
-	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
-	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
 )
 
@@ -194,17 +189,6 @@ func NewExpirationTasks(observationCtx *observation.Context, uploadSvc *Service)
 				CommitBatchSize:        ConfigExpirationInst.CommitBatchSize,
 				PolicyBatchSize:        ConfigExpirationInst.PolicyBatchSize,
 			},
-		),
-	}
-}
-
-func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewRankingGraphExporter(
-			observationCtx,
-			uploadSvc,
-			ConfigExportInst.NumRankingRoutines,
-			ConfigExportInst.RankingInterval,
 		),
 	}
 }

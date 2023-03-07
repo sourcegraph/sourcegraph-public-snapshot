@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,10 +20,11 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
 	err := db.WithTransact(ctx, func(tx database.DB) error {
 		permissionStore := tx.Permissions()
-		roleStore := tx.Roles()
 		rolePermissionStore := tx.RolePermissions()
 
-		dbPerms, err := permissionStore.FetchAll(ctx)
+		dbPerms, err := permissionStore.List(ctx, database.PermissionListOpts{
+			PaginationArgs: &database.PaginationArgs{},
+		})
 		if err != nil {
 			return errors.Wrap(err, "fetching permissions from database")
 		}
@@ -47,30 +49,16 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				return errors.Wrap(err, "creating new permissions")
 			}
 
-			// Currently, we have only two system roles so we can just list the first two. In the future,
-			// it might be worth creating a new method called `FetchAll` or `ListWithoutPagination` to
-			// retrieve all system roles, but since we know currently there won't be more than two system
-			// roles at any given point in time, then this works.
-			firstParam := 2
-			systemRoles, err := roleStore.List(ctx, database.RolesListOptions{
-				PaginationArgs: &database.PaginationArgs{
-					First: &firstParam,
-				},
-				System: true,
-			})
-			if err != nil {
-				return errors.Wrap(err, "fetching system roles")
-			}
-
 			for _, permission := range permissions {
-				for _, role := range systemRoles {
-					_, err := rolePermissionStore.Create(ctx, database.CreateRolePermissionOpts{
-						PermissionID: permission.ID,
-						RoleID:       role.ID,
-					})
-					if err != nil {
-						return errors.Wrapf(err, "assigning permission to role: %s", role.Name)
-					}
+				// Assign the permission to both SITE_ADMINISTRATOR and USER roles. We do this so that we don't break the
+				// current experience and always assume that everyone has access until a site administrator revokes that
+				// access.
+				// Context: https://sourcegraph.slack.com/archives/C044BUJET7C/p1675292124253779?thread_ts=1675280399.192819&cid=C044BUJET7C
+				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
+					Roles:        []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole},
+					PermissionID: permission.ID,
+				}); err != nil {
+					return errors.Wrap(err, "assigning permission to system roles")
 				}
 			}
 		}

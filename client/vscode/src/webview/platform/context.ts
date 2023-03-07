@@ -24,9 +24,6 @@ export interface VSCodePlatformContext
         | 'updateSettings'
         | 'settings'
         | 'getGraphQLClient'
-        | 'showMessage'
-        | 'showInputBox'
-        | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
         | 'clientApplication'
@@ -60,9 +57,6 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         updateSettings: () => Promise.resolve(),
         telemetryService: new EventLogger(extensionCoreAPI),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
-        getScriptURLForExtension: () => undefined,
-        // TODO showInputBox
-        // TODO showMessage
         getStaticExtensions: () => getInlineExtensions(),
     }
 
@@ -72,7 +66,6 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
 export interface WebviewPageProps {
     extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>
     platformContext: VSCodePlatformContext
-    theme: 'theme-dark' | 'theme-light'
     authenticatedUser: AuthenticatedUser | null
     settingsCascade: SettingsCascadeOrError
     instanceURL: string

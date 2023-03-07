@@ -24,9 +24,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql)
 // used for unit testing.
 type MockAutoIndexingService struct {
-	// GetIndexByIDFunc is an instance of a mock function object controlling
-	// the behavior of the method GetIndexByID.
-	GetIndexByIDFunc *AutoIndexingServiceGetIndexByIDFunc
 	// GetIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexes.
 	GetIndexesFunc *AutoIndexingServiceGetIndexesFunc
@@ -39,6 +36,17 @@ type MockAutoIndexingService struct {
 	// GetUnsafeDBFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUnsafeDB.
 	GetUnsafeDBFunc *AutoIndexingServiceGetUnsafeDBFunc
+	// NumRepositoriesWithCodeIntelligenceFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// NumRepositoriesWithCodeIntelligence.
+	NumRepositoriesWithCodeIntelligenceFunc *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc
+	// RepositoryIDsWithConfigurationFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RepositoryIDsWithConfiguration.
+	RepositoryIDsWithConfigurationFunc *AutoIndexingServiceRepositoryIDsWithConfigurationFunc
+	// RepositoryIDsWithErrorsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepositoryIDsWithErrors.
+	RepositoryIDsWithErrorsFunc *AutoIndexingServiceRepositoryIDsWithErrorsFunc
 }
 
 // NewMockAutoIndexingService creates a new mock of the AutoIndexingService
@@ -46,11 +54,6 @@ type MockAutoIndexingService struct {
 // overwritten.
 func NewMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.Index, r1 bool, r2 error) {
-				return
-			},
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
 				return
@@ -71,6 +74,21 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 				return
 			},
 		},
+		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		RepositoryIDsWithConfigurationFunc: &AutoIndexingServiceRepositoryIDsWithConfigurationFunc{
+			defaultHook: func(context.Context, int, int) (r0 []shared.RepositoryWithAvailableIndexers, r1 int, r2 error) {
+				return
+			},
+		},
+		RepositoryIDsWithErrorsFunc: &AutoIndexingServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: func(context.Context, int, int) (r0 []shared.RepositoryWithCount, r1 int, r2 error) {
+				return
+			},
+		},
 	}
 }
 
@@ -79,11 +97,6 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 // overwritten.
 func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (types.Index, bool, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetIndexByID")
-			},
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexes")
@@ -104,6 +117,21 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 				panic("unexpected invocation of MockAutoIndexingService.GetUnsafeDB")
 			},
 		},
+		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.NumRepositoriesWithCodeIntelligence")
+			},
+		},
+		RepositoryIDsWithConfigurationFunc: &AutoIndexingServiceRepositoryIDsWithConfigurationFunc{
+			defaultHook: func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.RepositoryIDsWithConfiguration")
+			},
+		},
+		RepositoryIDsWithErrorsFunc: &AutoIndexingServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+				panic("unexpected invocation of MockAutoIndexingService.RepositoryIDsWithErrors")
+			},
+		},
 	}
 }
 
@@ -112,9 +140,6 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 // implementation, unless overwritten.
 func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: i.GetIndexByID,
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: i.GetIndexes,
 		},
@@ -127,121 +152,16 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
 			defaultHook: i.GetUnsafeDB,
 		},
+		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: i.NumRepositoriesWithCodeIntelligence,
+		},
+		RepositoryIDsWithConfigurationFunc: &AutoIndexingServiceRepositoryIDsWithConfigurationFunc{
+			defaultHook: i.RepositoryIDsWithConfiguration,
+		},
+		RepositoryIDsWithErrorsFunc: &AutoIndexingServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: i.RepositoryIDsWithErrors,
+		},
 	}
-}
-
-// AutoIndexingServiceGetIndexByIDFunc describes the behavior when the
-// GetIndexByID method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetIndexByIDFunc struct {
-	defaultHook func(context.Context, int) (types.Index, bool, error)
-	hooks       []func(context.Context, int) (types.Index, bool, error)
-	history     []AutoIndexingServiceGetIndexByIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetIndexByID delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetIndexByID(v0 context.Context, v1 int) (types.Index, bool, error) {
-	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
-	m.GetIndexByIDFunc.appendCall(AutoIndexingServiceGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetIndexByID method
-// of the parent MockAutoIndexingService instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Index, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexByID method of the parent MockAutoIndexingService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *AutoIndexingServiceGetIndexByIDFunc) PushHook(hook func(context.Context, int) (types.Index, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetIndexByIDFunc) SetDefaultReturn(r0 types.Index, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.Index, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetIndexByIDFunc) PushReturn(r0 types.Index, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.Index, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *AutoIndexingServiceGetIndexByIDFunc) nextHook() func(context.Context, int) (types.Index, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetIndexByIDFunc) appendCall(r0 AutoIndexingServiceGetIndexByIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetIndexByIDFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetIndexByIDFunc) History() []AutoIndexingServiceGetIndexByIDFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetIndexByIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetIndexByIDFuncCall is an object that describes an
-// invocation of method GetIndexByID on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetIndexByIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 types.Index
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AutoIndexingServiceGetIndexByIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetIndexByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // AutoIndexingServiceGetIndexesFunc describes the behavior when the
@@ -694,6 +614,353 @@ func (c AutoIndexingServiceGetUnsafeDBFuncCall) Args() []interface{} {
 // invocation.
 func (c AutoIndexingServiceGetUnsafeDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc describes the
+// behavior when the NumRepositoriesWithCodeIntelligence method of the
+// parent MockAutoIndexingService instance is invoked.
+type AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall
+	mutex       sync.Mutex
+}
+
+// NumRepositoriesWithCodeIntelligence delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockAutoIndexingService) NumRepositoriesWithCodeIntelligence(v0 context.Context) (int, error) {
+	r0, r1 := m.NumRepositoriesWithCodeIntelligenceFunc.nextHook()(v0)
+	m.NumRepositoriesWithCodeIntelligenceFunc.appendCall(AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// NumRepositoriesWithCodeIntelligence method of the parent
+// MockAutoIndexingService instance is invoked and the hook queue is empty.
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NumRepositoriesWithCodeIntelligence method of the parent
+// MockAutoIndexingService instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) appendCall(r0 AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall objects
+// describing the invocations of this function.
+func (f *AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc) History() []AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall is an
+// object that describes an invocation of method
+// NumRepositoriesWithCodeIntelligence on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceRepositoryIDsWithConfigurationFunc describes the
+// behavior when the RepositoryIDsWithConfiguration method of the parent
+// MockAutoIndexingService instance is invoked.
+type AutoIndexingServiceRepositoryIDsWithConfigurationFunc struct {
+	defaultHook func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error)
+	hooks       []func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error)
+	history     []AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall
+	mutex       sync.Mutex
+}
+
+// RepositoryIDsWithConfiguration delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) RepositoryIDsWithConfiguration(v0 context.Context, v1 int, v2 int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+	r0, r1, r2 := m.RepositoryIDsWithConfigurationFunc.nextHook()(v0, v1, v2)
+	m.RepositoryIDsWithConfigurationFunc.appendCall(AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RepositoryIDsWithConfiguration method of the parent
+// MockAutoIndexingService instance is invoked and the hook queue is empty.
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepositoryIDsWithConfiguration method of the parent
+// MockAutoIndexingService instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) PushHook(hook func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) SetDefaultReturn(r0 []shared.RepositoryWithAvailableIndexers, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) PushReturn(r0 []shared.RepositoryWithAvailableIndexers, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) nextHook() func(context.Context, int, int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) appendCall(r0 AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall objects
+// describing the invocations of this function.
+func (f *AutoIndexingServiceRepositoryIDsWithConfigurationFunc) History() []AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall is an object
+// that describes an invocation of method RepositoryIDsWithConfiguration on
+// an instance of MockAutoIndexingService.
+type AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.RepositoryWithAvailableIndexers
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceRepositoryIDsWithConfigurationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// AutoIndexingServiceRepositoryIDsWithErrorsFunc describes the behavior
+// when the RepositoryIDsWithErrors method of the parent
+// MockAutoIndexingService instance is invoked.
+type AutoIndexingServiceRepositoryIDsWithErrorsFunc struct {
+	defaultHook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)
+	hooks       []func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)
+	history     []AutoIndexingServiceRepositoryIDsWithErrorsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepositoryIDsWithErrors delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) RepositoryIDsWithErrors(v0 context.Context, v1 int, v2 int) ([]shared.RepositoryWithCount, int, error) {
+	r0, r1, r2 := m.RepositoryIDsWithErrorsFunc.nextHook()(v0, v1, v2)
+	m.RepositoryIDsWithErrorsFunc.appendCall(AutoIndexingServiceRepositoryIDsWithErrorsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RepositoryIDsWithErrors method of the parent MockAutoIndexingService
+// instance is invoked and the hook queue is empty.
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepositoryIDsWithErrors method of the parent MockAutoIndexingService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) PushHook(hook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) SetDefaultReturn(r0 []shared.RepositoryWithCount, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) PushReturn(r0 []shared.RepositoryWithCount, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) nextHook() func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) appendCall(r0 AutoIndexingServiceRepositoryIDsWithErrorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceRepositoryIDsWithErrorsFuncCall objects describing the
+// invocations of this function.
+func (f *AutoIndexingServiceRepositoryIDsWithErrorsFunc) History() []AutoIndexingServiceRepositoryIDsWithErrorsFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceRepositoryIDsWithErrorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceRepositoryIDsWithErrorsFuncCall is an object that
+// describes an invocation of method RepositoryIDsWithErrors on an instance
+// of MockAutoIndexingService.
+type AutoIndexingServiceRepositoryIDsWithErrorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.RepositoryWithCount
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceRepositoryIDsWithErrorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceRepositoryIDsWithErrorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // MockPolicyService is a mock implementation of the PolicyService interface

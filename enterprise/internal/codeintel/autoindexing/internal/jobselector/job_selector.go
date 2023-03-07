@@ -41,7 +41,7 @@ var (
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
-func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
 	repoName, err := s.store.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -53,6 +53,9 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	}
 	if script == "" {
 		script = overrideScript
+	}
+	if localOverrideScript != "" {
+		script = localOverrideScript
 	}
 
 	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
@@ -190,7 +193,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
 func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}
@@ -203,13 +206,6 @@ func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Conte
 func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
 		for _, dockerStep := range indexJob.Steps {
 			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,

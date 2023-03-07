@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
@@ -21,6 +22,7 @@ type Services struct {
 	PoliciesService     *policies.Service
 	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
+	SentinelService     *sentinel.Service
 }
 
 type ServiceDependencies struct {
@@ -39,7 +41,8 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	policiesSvc := policies.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, dependenciesSvc, policiesSvc, gitserverClient)
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
+	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
@@ -48,6 +51,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		PoliciesService:     policiesSvc,
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
+		SentinelService:     sentinelService,
 	}, nil
 }
 

@@ -3,12 +3,11 @@ import { useMemo } from 'react'
 import { ApolloClient, gql, useApolloClient } from '@apollo/client'
 
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { FormAPI, AsyncValidator, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
 
 import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../../../stores'
 import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
-import { AsyncValidator, useField, useFieldAPI, ValidationResult } from '../../form'
-import { FormAPI } from '../../form/hooks/useForm'
 import { insightRepositoriesValidator } from '../validators/validators'
 
 interface RepositoriesFields {
@@ -82,7 +81,6 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
         formApi,
         name: 'repositories',
         disabled: !isURLsListMode,
-        required: isRepoURLsListRequired,
         validators: {
             // Turn off any validations for the repositories' field in we are in all repos mode
             sync: isRepoURLsListRequired ? insightRepositoriesValidator : undefined,
@@ -94,7 +92,7 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
 
 function validateRepoQuery(value?: QueryState): ValidationResult {
     if (value && value.query.trim() === '') {
-        return 'Search repositories query is a required filed, please fill in the field.'
+        return 'Search repositories query is a required field, please fill in the field.'
     }
 }
 

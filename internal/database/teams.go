@@ -137,6 +137,8 @@ type TeamStore interface {
 	CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error
 	// DeleteTeam deletes the given team members from the database.
 	DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error
+	// IsTeamMember checks if the given user is a member of the given team.
+	IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error)
 }
 
 type teamStore struct {
@@ -511,7 +513,7 @@ func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.Team
 		"team_members",
 		batch.MaxNumPostgresParameters,
 		teamMemberInsertColumns,
-		"",
+		"ON CONFLICT DO NOTHING",
 		teamMemberStringColumns,
 		func(sc dbutil.Scanner) error {
 			i++
@@ -536,6 +538,25 @@ func (s *teamStore) DeleteTeamMember(ctx context.Context, members ...*types.Team
 
 const deleteTeamMemberQueryFmtstr = `
 DELETE FROM
+	team_members
+WHERE %s
+`
+
+func (s *teamStore) IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("team_id = %s", teamID),
+		sqlf.Sprintf("user_id = %s", userID),
+	}
+
+	q := sqlf.Sprintf(isTeamMemberQueryFmtstr, sqlf.Join(conds, "AND"))
+	ok, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	return ok, err
+}
+
+const isTeamMemberQueryFmtstr = `
+SELECT
+	COUNT(*) = 1
+FROM
 	team_members
 WHERE %s
 `

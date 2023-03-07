@@ -7,7 +7,6 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
-	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -18,13 +17,13 @@ import (
 
 // Init sets SCIMHandler to a real handler.
 func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
-	s.SCIMHandler = NewHandler(ctx, db, observationCtx)
+	s.SCIMHandler = newHandler(ctx, db, observationCtx)
 
 	return nil
 }
 
-// NewHandler creates and returns a new SCIM 2.0 handler.
-func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
+// newHandler creates and returns a new SCIM 2.0 handler.
+func newHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
 	config := scim.ServiceProviderConfig{
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,
@@ -57,7 +56,6 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 			return
 		}
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
-		observationCtx.Logger.Error("SCIM request", logger.String("method", r.Method), logger.String("path", r.URL.Path)) // TODO for debugging
 		server.ServeHTTP(w, r)
 	})
 

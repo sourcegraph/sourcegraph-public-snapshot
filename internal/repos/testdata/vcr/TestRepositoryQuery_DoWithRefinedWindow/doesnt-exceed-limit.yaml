@@ -1,0 +1,68 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"repo:tsenart/vegeta stars:\u003e=14000","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
+      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":20789,"forkCount":1280,"repositoryTopics":{"nodes":[{"topic":{"name":"load-testing"}},{"topic":{"name":"go"}},{"topic":{"name":"benchmarking"}},{"topic":{"name":"http"}}]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:41 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC64F0:3D15AF5:63ED65BD
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4963"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "37"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

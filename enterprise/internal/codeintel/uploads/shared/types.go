@@ -14,6 +14,10 @@ type SourcedCommits struct {
 	Commits        []string
 }
 
+type GetIndexersOptions struct {
+	RepositoryID int
+}
+
 type GetUploadsOptions struct {
 	RepositoryID            int
 	State                   string
@@ -22,6 +26,7 @@ type GetUploadsOptions struct {
 	VisibleAtTip            bool
 	DependencyOf            int
 	DependentOf             int
+	IndexerNames            []string
 	UploadedBefore          *time.Time
 	UploadedAfter           *time.Time
 	LastRetentionScanBefore *time.Time
@@ -198,4 +203,22 @@ type UploadLog struct {
 	TransitionColumns []map[string]*string
 	Reason            *string
 	Operation         string
+}
+
+type RankingDefinitions struct {
+	UploadID     int
+	SymbolName   string
+	DocumentPath string
+}
+
+type RankingReferences struct {
+	UploadID    int
+	SymbolNames []string
+}
+
+type ExportedUpload struct {
+	ID           int
+	Repo         string
+	Root         string
+	ObjectPrefix string
 }

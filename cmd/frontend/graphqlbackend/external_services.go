@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,26 +13,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-
-var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
-
 func externalServicesWritable() error {
-	if extsvcConfigFile != "" && !extsvcConfigAllowEdits {
+	if envvar.ExtsvcConfigFile() != "" && !envvar.ExtsvcConfigAllowEdits() {
 		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 	return nil
@@ -443,4 +442,81 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	}
 
 	return &EmptyResponse{}, nil
+}
+
+type externalServiceNamespacesArgs struct {
+	ID    *graphql.ID
+	Kind  string
+	Token string
+	Url   string
+}
+
+func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceNamespaceConnectionResolver{
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}, nil
+}
+
+type externalServiceNamespaceConnectionResolver struct {
+	args              *externalServiceNamespacesArgs
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceNamespace
+	totalCount int32
+	err        error
+}
+
+type externalServiceRepositoriesArgs struct {
+	ID           *graphql.ID
+	Kind         string
+	Token        string
+	Url          string
+	Query        string
+	ExcludeRepos []string
+	First        *int32
+}
+
+func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceRepositoryConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceRepositoryConnectionResolver{
+		db:                r.db,
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}, nil
+}
+
+type externalServiceRepositoryConnectionResolver struct {
+	args              *externalServiceRepositoriesArgs
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once  sync.Once
+	nodes []*types.ExternalServiceRepository
+	err   error
+}
+
+// NewSourceConfiguration returns a configuration string for defining a Source for discovery.
+// Only external service kinds that implement source discovery functions are returned.
+func NewSourceConfiguration(kind, url, token string) (string, error) {
+	switch kind {
+	case extsvc.KindGitHub:
+		cnxn := schema.GitHubConnection{
+			Url:   url,
+			Token: token,
+		}
+
+		marshalled, err := json.Marshal(cnxn)
+		return string(marshalled), err
+	default:
+		return "", errors.New(repos.UnimplementedDiscoverySource)
+	}
 }

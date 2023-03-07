@@ -7,7 +7,6 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
@@ -17,9 +16,11 @@ import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
@@ -41,7 +42,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         onUpdateBlocks,
         globbing,
         streamSearch,
-        isLightTheme,
         telemetryService,
         searchContextsEnabled,
         isSourcegraphDotCom,
@@ -81,7 +81,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             <NotebookComponent
                 globbing={globbing}
                 streamSearch={streamSearch}
-                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}

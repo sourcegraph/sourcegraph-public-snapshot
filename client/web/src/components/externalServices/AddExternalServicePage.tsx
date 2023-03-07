@@ -1,10 +1,10 @@
 import { FC, useEffect, useCallback, useState } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useApolloClient } from '@apollo/client'
+import { useNavigate } from 'react-router-dom'
 
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
@@ -16,7 +16,7 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends ThemeProps, TelemetryProps {
+interface Props extends TelemetryProps {
     externalService: AddExternalServiceOptions
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
@@ -30,7 +30,6 @@ interface Props extends ThemeProps, TelemetryProps {
  */
 export const AddExternalServicePage: FC<Props> = ({
     externalService,
-    isLightTheme,
     telemetryService,
     autoFocusForm,
     externalServicesFromFile,
@@ -80,15 +79,15 @@ export const AddExternalServicePage: FC<Props> = ({
         [getExternalServiceInput, telemetryService]
     )
 
+    const client = useApolloClient()
     useEffect(() => {
         if (createdExternalService && !isErrorLike(createdExternalService)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
+            refreshSiteFlags(client).catch((error: Error) => logger.error(error))
             navigate(`/site-admin/external-services/${createdExternalService.id}`)
         }
-    }, [createdExternalService, navigate])
+    }, [client, createdExternalService, navigate])
 
     return (
         <>
@@ -118,7 +117,6 @@ export const AddExternalServicePage: FC<Props> = ({
                         <H3>Instructions:</H3>
                         <div className="mb-4">{externalService.instructions}</div>
                         <ExternalServiceForm
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             error={isErrorLike(isCreating) ? isCreating : undefined}
                             input={getExternalServiceInput()}

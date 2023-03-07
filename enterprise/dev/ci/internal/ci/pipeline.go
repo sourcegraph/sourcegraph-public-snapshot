@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.4.0"
+	const minimumUpgradeableVersion = "4.5.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -175,7 +175,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests,
+			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
 
@@ -194,8 +194,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-			// addVsceIntegrationTests,
+			addVsceTests,
 		)
 
 	case runtype.AppSnapshotRelease:
@@ -240,10 +239,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(
+			imageBuildOps.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		publishOps := operations.NewNamedSet("Publish images")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"

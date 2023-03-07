@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -50,7 +49,7 @@ import (
 )
 
 var (
-	printLogo, _ = strconv.ParseBool(env.Get("LOGO", defaultPrintLogo(), "print Sourcegraph logo upon startup"))
+	printLogo = env.MustGetBool("LOGO", deploy.IsDeployTypeSingleProgram(deploy.Type()), "print Sourcegraph logo upon startup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -65,14 +64,6 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
-
-func defaultPrintLogo() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
-		return "true"
-	}
-	return "false"
-}
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
@@ -148,7 +139,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db)
+	ui.InitRouter(db, enterpriseServices.EnterpriseSearchJobs)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -212,21 +203,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
-	schema, err := graphqlbackend.NewSchema(db,
+	schema, err := graphqlbackend.NewSchema(
+		db,
 		gitserver.NewClient(),
-		enterpriseServices.BatchChangesResolver,
-		enterpriseServices.CodeIntelResolver,
-		enterpriseServices.InsightsResolver,
-		enterpriseServices.AuthzResolver,
-		enterpriseServices.CodeMonitorsResolver,
-		enterpriseServices.LicenseResolver,
-		enterpriseServices.DotcomResolver,
-		enterpriseServices.SearchContextsResolver,
-		enterpriseServices.NotebooksResolver,
-		enterpriseServices.ComputeResolver,
-		enterpriseServices.InsightsAggregationResolver,
-		enterpriseServices.WebhooksResolver,
-		enterpriseServices.RBACResolver,
+		enterpriseServices.EnterpriseSearchJobs,
+		enterpriseServices.OptionalResolver,
 	)
 	if err != nil {
 		return err
@@ -261,6 +242,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
 
+	// We only want to run this task once Sourcegraph is ready to serve user requests.
+	goroutine.Go(func() { bg.AppReady(logger) })
+
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
@@ -274,6 +258,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	// Create the external HTTP handler.
 	externalHandler := newExternalHTTPHandler(
 		db,
+		enterprise.EnterpriseSearchJobs,
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
@@ -286,6 +271,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
 			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:    enterprise.BatchesBitbucketCloudWebhook,
+			BatchesAzureDevOpsWebhook:       enterprise.BatchesAzureDevOpsWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
@@ -293,6 +279,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
+			NewCompletionsStreamHandler:     enterprise.NewCompletionsStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
@@ -328,6 +315,7 @@ func makeInternalAPI(
 	internalHandler := newInternalHTTPHandler(
 		schema,
 		db,
+		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,

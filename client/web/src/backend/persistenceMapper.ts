@@ -5,11 +5,7 @@ import { QueryFieldPolicy } from '@sourcegraph/shared/src/graphql-operations'
  * After the implementation of the `persistLink` which will support `@persist` directive
  * hardcoded query names will be deprecated.
  */
-export const QUERIES_TO_PERSIST: (keyof QueryFieldPolicy)[] = [
-    'viewerSettings',
-    'extensionRegistry',
-    'temporarySettings',
-]
+export const QUERIES_TO_PERSIST: (keyof QueryFieldPolicy)[] = ['viewerSettings']
 export const ROOT_QUERY_KEY = 'ROOT_QUERY'
 
 export interface CacheReference {
@@ -17,22 +13,23 @@ export interface CacheReference {
 }
 
 export interface CacheObject {
-    ROOT_QUERY: Record<string, unknown>
+    ROOT_QUERY?: {
+        __typename: 'Query'
+        [key: string]: unknown
+    }
     [cacheKey: string]: unknown
 }
 
 // Ensures that we persist data required only for `QUERIES_TO_PERSIST`. Everything else is ignored.
-export const persistenceMapper = (data: string): Promise<string> => {
-    const initialData = JSON.parse(data) as CacheObject
-
+export const persistenceMapper = (data: CacheObject): Promise<CacheObject> => {
     // If `ROOT_QUERY` cache is empty, return initial data right away.
-    if (!initialData[ROOT_QUERY_KEY] || Object.keys(initialData[ROOT_QUERY_KEY]).length === 0) {
-        return Promise.resolve(data)
+    if (!data[ROOT_QUERY_KEY] || Object.keys(data[ROOT_QUERY_KEY]).length === 0) {
+        return Promise.resolve(data as CacheObject)
     }
 
-    const dataToPersist: Record<string, unknown> = {
+    const dataToPersist: CacheObject = {
         [ROOT_QUERY_KEY]: {
-            __typename: initialData[ROOT_QUERY_KEY].__typename,
+            __typename: data[ROOT_QUERY_KEY].__typename,
         },
     }
 
@@ -48,8 +45,8 @@ export const persistenceMapper = (data: string): Promise<string> => {
         } else if (isCacheReference(entry)) {
             const referenceKey = entry.__ref
 
-            dataToPersist[referenceKey] = initialData[referenceKey]
-            findNestedCacheReferences(initialData[referenceKey])
+            dataToPersist[referenceKey] = data[referenceKey]
+            findNestedCacheReferences(data[referenceKey])
         } else if (entry && typeof entry === 'object') {
             for (const item of Object.values(entry)) {
                 findNestedCacheReferences(item)
@@ -65,7 +62,7 @@ export const persistenceMapper = (data: string): Promise<string> => {
      * 'User:01' should be persisted, to have a complete cached response to the `viewerSettings` query.
      */
     for (const queryName of QUERIES_TO_PERSIST) {
-        const entryToPersist = initialData[ROOT_QUERY_KEY][queryName]
+        const entryToPersist = data[ROOT_QUERY_KEY][queryName]
 
         if (entryToPersist) {
             Object.assign(dataToPersist[ROOT_QUERY_KEY] as object, {
@@ -76,7 +73,7 @@ export const persistenceMapper = (data: string): Promise<string> => {
         }
     }
 
-    return Promise.resolve(JSON.stringify(dataToPersist))
+    return Promise.resolve(dataToPersist)
 }
 
 function isCacheReference(entry: any): entry is CacheReference {

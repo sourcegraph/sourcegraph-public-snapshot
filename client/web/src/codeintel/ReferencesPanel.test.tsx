@@ -1,7 +1,9 @@
 import { within, fireEvent } from '@testing-library/react'
+import { createPath } from 'react-router-dom'
 
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
+import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ReferencesPanel } from './ReferencesPanel'
@@ -13,7 +15,14 @@ describe('ReferencesPanel', () => {
 
         const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
-                <ReferencesPanel {...defaultProps} />
+                <SettingsProvider
+                    settingsCascade={{
+                        final: { experimentalFeatures: { enableCodeMirrorFileView: false } },
+                        subjects: [],
+                    }}
+                >
+                    <ReferencesPanel {...defaultProps} />
+                </SettingsProvider>
             </MockedTestProvider>,
             { route: url }
         )
@@ -53,7 +62,7 @@ describe('ReferencesPanel', () => {
     })
 
     it('renders a code view when clicking on a location', async () => {
-        const { history, ...result } = await renderReferencesPanel()
+        const { locationRef, ...result } = await renderReferencesPanel()
 
         const definitionsList = result.getByTestId('definitions')
         const referencesList = result.getByTestId('references')
@@ -95,11 +104,11 @@ describe('ReferencesPanel', () => {
         expect(codeView).toHaveTextContent('package diff import')
 
         // Assert the current URL points at the reference panel
-        expect(history.createHref(history.location)).toBe(
-            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+        expect(createPath(locationRef.current!)).toBe(
+            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
         fireEvent.click(referenceButton)
-        expect(history.createHref(history.location)).toBe(fullReferenceURL)
+        expect(createPath(locationRef.current!)).toBe(fullReferenceURL)
     })
 })

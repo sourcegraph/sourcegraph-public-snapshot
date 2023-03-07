@@ -15,6 +15,9 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
                 totalCount
             }
         }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
+        }
     }
 `
 

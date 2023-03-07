@@ -3,7 +3,6 @@ import React from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -14,7 +13,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     COLLAPSABLE_SEARCH_RESULT,
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
@@ -34,7 +32,6 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
-        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
         authenticatedUser: null,
@@ -48,7 +45,6 @@ describe('StreamingSearchResults', () => {
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
-        isLightTheme: true,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
         searchAggregationEnabled: false,
@@ -60,13 +56,11 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <CompatRouter>
-                    <MockedTestProvider mocks={revisionsMockResponses}>
-                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                            {component}
-                        </SearchQueryStateStoreProvider>
-                    </MockedTestProvider>
-                </CompatRouter>
+                <MockedTestProvider mocks={revisionsMockResponses}>
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                        {component}
+                    </SearchQueryStateStoreProvider>
+                </MockedTestProvider>
             </BrowserRouter>
         )
     }
@@ -84,9 +78,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
@@ -109,7 +100,7 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
-            featureOverrides: [],
+            featureOverrides: ['-search-ranking'],
         })
     })
 

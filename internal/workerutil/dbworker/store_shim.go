@@ -45,16 +45,16 @@ func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []int) (knownIDs, canc
 	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
 }
 
-func (s *storeShim[T]) MarkComplete(ctx context.Context, id int) (bool, error) {
-	return s.Store.MarkComplete(ctx, id, store.MarkFinalOptions{})
+func (s *storeShim[T]) MarkComplete(ctx context.Context, rec T) (bool, error) {
+	return s.Store.MarkComplete(ctx, rec.RecordID(), store.MarkFinalOptions{})
 }
 
-func (s *storeShim[T]) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
-	return s.Store.MarkFailed(ctx, id, failureMessage, store.MarkFinalOptions{})
+func (s *storeShim[T]) MarkFailed(ctx context.Context, rec T, failureMessage string) (bool, error) {
+	return s.Store.MarkFailed(ctx, rec.RecordID(), failureMessage, store.MarkFinalOptions{})
 }
 
-func (s *storeShim[T]) MarkErrored(ctx context.Context, id int, errorMessage string) (bool, error) {
-	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
+func (s *storeShim[T]) MarkErrored(ctx context.Context, rec T, errorMessage string) (bool, error) {
+	return s.Store.MarkErrored(ctx, rec.RecordID(), errorMessage, store.MarkFinalOptions{})
 }
 
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.

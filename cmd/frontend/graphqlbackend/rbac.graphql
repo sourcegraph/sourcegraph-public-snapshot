@@ -78,6 +78,17 @@ type PermissionConnection {
 }
 
 """
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
+"""
+enum PermissionNamespace {
+    """
+    This represents the Batch Changes namespace.
+    """
+    BATCH_CHANGES
+}
+
+"""
 A permission
 """
 type Permission implements Node {
@@ -88,7 +99,7 @@ type Permission implements Node {
     """
     The namespace in which this permission belongs to.
     """
-    namespace: String!
+    namespace: PermissionNamespace!
     """
     The unique action which is granted to a bearer of this permission.
     """
@@ -159,7 +170,14 @@ extend type Mutation {
     """
     Creates a role.
     """
-    createRole(name: String!): Role!
+    createRole(name: String!, permissions: [ID!]!): Role!
+
+    """
+    Set permissions for role. This updates the permissions assigned to a role based on the `permissions` passed
+    in the argument. Permissions already assigned to the role that aren't part of the arguments of this mutation
+    will be revoked for the role.
+    """
+    setPermissions(role: ID!, permissions: [ID!]!): EmptyResponse!
 }
 
 extend type User {

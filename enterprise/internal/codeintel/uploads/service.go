@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -10,10 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -70,154 +66,54 @@ func newService(
 	}
 }
 
-func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
-	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
 	return s.store.GetCommitsVisibleToUpload(ctx, uploadID, limit, token)
 }
 
-func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (bool, *time.Time, error) {
 	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
-func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) {
-	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.RepoName(ctx, repositoryID)
-}
-
-func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.String("table", table),
-			log.String("column", column),
-			log.Int("processDelay in ms", int(processDelay.Milliseconds())),
-			log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-			log.Int("limit", limit),
-			log.String("now", now.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
+// TODO(#48681) - Move to autoindexing/internal/background
+func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-// NOTE: Used by autoindexing (for some reason?)
 func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
-	})
-	defer endObservation(1, observation.Args{})
+// TODO(#48681) - Used by autoindexing/transport/graphql
+func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error) {
+	return s.store.GetIndexers(ctx, opts)
+}
 
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error) {
 	return s.store.GetUploads(ctx, opts)
 }
 
-// TODO: Not being used in the resolver layer
-func (s *Service) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
 	return s.store.GetUploadByID(ctx, id)
 }
 
-func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
-	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))}})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]types.Upload, error) {
 	return s.store.GetUploadsByIDs(ctx, ids...)
 }
 
-func (s *Service) GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", repositoryID),
-			log.String("commit", commit),
-			log.Int("limit", limit),
-			log.Int("offset", offset),
-			log.String("orderedMonikers", fmt.Sprintf("%v", orderedMonikers)),
-			log.String("ignoreIDs", fmt.Sprintf("%v", ignoreIDs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetUploadIDsWithReferences(ctx, orderedMonikers, ignoreIDs, repositoryID, commit, limit, offset, trace)
+func (s *Service) GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) ([]int, int, int, error) {
+	return s.store.GetUploadIDsWithReferences(ctx, orderedMonikers, ignoreIDs, repositoryID, commit, limit, offset, nil)
 }
 
-func (s *Service) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) DeleteUploadByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
-func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error {
 	return s.store.DeleteUploads(ctx, opts)
 }
 
-func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("processDelayInMs", int(processDelay.Milliseconds())),
-			log.Int("limit", limit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
-}
-
 func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
-	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	return s.store.GetRepositoriesMaxStaleAge(ctx)
-}
-
-// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
-// repository and build a map from commits to the policies that apply to them.
-func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg background.ExpirerConfig, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
-	var (
-		offset   int
-		policies []types.ConfigurationPolicy
-	)
-
-	for {
-		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-			RepositoryID:     repositoryID,
-			ForDataRetention: true,
-			Limit:            cfg.PolicyBatchSize,
-			Offset:           offset,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
-		}
-
-		offset += len(policyBatch)
-		policies = append(policies, policyBatch...)
-
-		if len(policyBatch) == 0 || offset >= totalCount {
-			break
-		}
-	}
-
-	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -294,75 +190,35 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return dumps, nil
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.String("monikers", fmt.Sprintf("%v", monikers))},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]types.Dump, error) {
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("total_ids", len(ids)), log.String("ids", fmt.Sprintf("%v", ids))},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
 	return s.store.GetDumpsByIDs(ctx, ids)
 }
 
-func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
-	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("uploadID", uploadID)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error) {
 	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error) {
-	ctx, _, endObservation := s.operations.getAuditLogsForUpload.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("uploadID", uploadID)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]types.UploadLog, error) {
 	return s.store.GetAuditLogsForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) (_ []string, _ int, err error) {
-	ctx, _, endObservation := s.operations.getUploadDocumentsForPath.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("bundleID", bundleID), log.String("pathPattern", pathPattern)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
 }
 
-func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error) {
-	ctx, _, endObservation := s.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error) {
 	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
 }
 
-func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
 	return s.store.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
 }
 
-func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
-	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.String("repo", string(repo)), log.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
 

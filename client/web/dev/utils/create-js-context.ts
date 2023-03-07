@@ -22,6 +22,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     }
 
     const jsContext: SourcegraphContext = {
+        currentUser: null,
+        temporarySettings: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -39,11 +41,15 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         debug: true,
         emailEnabled: false,
         experimentalFeatures: {},
+        extsvcConfigAllowEdits: false,
+        extsvcConfigFileExists: false,
         isAuthenticatedUser: true,
         likelyDockerOnMac: false,
         needServerRestart: false,
         needsSiteInit: false,
+        needsRepositoryConfiguration: false,
         resetPasswordEnabled: true,
+        runningOnMacOS: true,
         sentryDSN: null,
         site: {
             'update.channel': 'release',
@@ -51,6 +57,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
+        sourcegraphAppMode: false,
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
@@ -65,7 +72,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
-        enableLegacyExtensions: false,
+        embeddingsEnabled: false,
         // Site-config overrides default JS context
         ...siteConfig,
     }

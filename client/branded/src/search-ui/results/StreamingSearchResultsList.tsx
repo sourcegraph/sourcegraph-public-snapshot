@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -19,11 +19,11 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
 import { FilePathSearchResult } from '../components/FilePathSearchResult'
+import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
 import { smartSearchClickedEvent } from '../util/events'
@@ -37,12 +37,12 @@ import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
-    extends ThemeProps,
-        SettingsCascadeProps,
+    extends SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -85,8 +85,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     fetchHighlightedFileLineRanges,
     settingsCascade,
     telemetryService,
-    isLightTheme,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     searchContextsEnabled,
     assetsRoot,
     platformContext,
@@ -223,6 +223,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
+                    case 'person':
+                    case 'team':
+                        return (
+                            <OwnerSearchResult
+                                index={index}
+                                result={result}
+                                as="li"
+                                onSelect={() => logSearchResultClicked(index, 'person')}
+                                containerClassName={resultClassName}
+                            />
+                        )
                 }
             }
 
@@ -287,7 +298,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                isLightTheme={isLightTheme}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}

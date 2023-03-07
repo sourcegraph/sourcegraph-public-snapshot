@@ -54,7 +54,7 @@ type ExternalServiceStore interface {
 	//
 	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 	// recalculated based on whether "authorization" field is presented in
-	// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
+	// `es.Config`. For Sourcegraph Dotcom, the `es.Unrestricted` will always be
 	// false (i.e. enforce permissions).
 	Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error
 
@@ -70,7 +70,7 @@ type ExternalServiceStore interface {
 	// each external service. If the latest sync did not have an error, the
 	// string will be empty. We exclude cloud_default external services as they
 	// are never synced.
-	GetLatestSyncErrors(ctx context.Context) (map[int64]string, error)
+	GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error)
 
 	// GetByID returns the external service for id.
 	//
@@ -1322,7 +1322,23 @@ LIMIT 1
 	return ok, err
 }
 
-func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
+type SyncError struct {
+	ServiceID int64
+	Message   string
+}
+
+var scanSyncErrors = basestore.NewSliceScanner(scanExternalServiceSyncErrorRow)
+
+func scanExternalServiceSyncErrorRow(scanner dbutil.Scanner) (*SyncError, error) {
+	var s SyncError
+	err := scanner.Scan(
+		&s.ServiceID,
+		&dbutil.NullString{S: &s.Message},
+	)
+	return &s, err
+}
+
+func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error) {
 	q := sqlf.Sprintf(`
 SELECT DISTINCT ON (es.id) es.id, essj.failure_message
 FROM external_services es
@@ -1334,26 +1350,7 @@ WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
 `)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	messages := make(map[int64]string)
-
-	for rows.Next() {
-		var svcID int64
-		var message sql.NullString
-		if err := rows.Scan(&svcID, &message); err != nil {
-			return nil, err
-		}
-		messages[svcID] = message.String
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return messages, nil
+	return scanSyncErrors(e.Query(ctx, q))
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -1597,6 +1594,22 @@ WHERE EXISTS(
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
 	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+
+	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
+	//
+	// All code hosts apart from Azure DevOps use the `authorization` pattern for enforcing
+	// permissions. Instead of continuing to use this pattern for Azure DevOps, it is simpler to add
+	// a boolean which has an explicit name and describes what it does better.
+	//
+	// The end result: we start to break away from the `authorization` pattern with an additional
+	// check for this new field - `enforcePermissions`.
+	//
+	// For existing auth providers, this is forwards compatible. While at the same time if they also
+	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
+	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
+	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
+		es.Unrestricted = !enforcePermissions.Bool()
+	}
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

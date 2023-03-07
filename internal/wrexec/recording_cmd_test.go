@@ -99,7 +99,7 @@ func TestRecordingCmd(t *testing.T) {
 	ctx := context.Background()
 	t.Run("with combinedOutput", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("md5sum", "-b", f.Name())
+		cmd := osexec.Command("cat", f.Name())
 		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
 		_, err := rcmd.CombinedOutput()
 		if err != nil {
@@ -113,7 +113,7 @@ func TestRecordingCmd(t *testing.T) {
 	})
 	t.Run("with Run", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("md5sum", "-b", f.Name())
+		cmd := osexec.Command("cat", f.Name())
 		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
 		rcmd.Run()
 
@@ -124,7 +124,7 @@ func TestRecordingCmd(t *testing.T) {
 	})
 	t.Run("with Output", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("md5sum", "-b", f.Name())
+		cmd := osexec.Command("cat", f.Name())
 		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
 		_, err := rcmd.Output()
 		if err != nil {
@@ -138,7 +138,7 @@ func TestRecordingCmd(t *testing.T) {
 	})
 	t.Run("with Start and Wait", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("md5sum", "-b", f.Name())
+		cmd := osexec.Command("cat", f.Name())
 		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
 
 		// We record the size so that we can see the list did not change between calls
@@ -207,8 +207,8 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("two concurrent commands have seperate recordings", func(t *testing.T) {
 		f1 := createTmpFile(t, "foobar")
 		f2 := createTmpFile(t, "fubar")
-		cmd1 := osexec.Command("md5sum", "-b", f1.Name())
-		cmd2 := osexec.Command("md5sum", "-b", f2.Name())
+		cmd1 := osexec.Command("cat", f1.Name())
+		cmd2 := osexec.Command("cat", f2.Name())
 		rcmd1 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd1)
 		rcmd2 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd2)
 

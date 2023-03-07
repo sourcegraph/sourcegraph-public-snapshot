@@ -28,7 +28,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
     <Badge
         variant={variant !== undefined ? variant : deleted ? 'danger' : 'secondary'}
         className={classNames('text-monospace', className)}
-        as={deleted ? 'del' : undefined}
+        as={deleted ? 'del' : 'span'}
         aria-label={deleted ? 'Deleted' : ''}
     >
         {!forkTarget || forkTarget.namespace === null ? (

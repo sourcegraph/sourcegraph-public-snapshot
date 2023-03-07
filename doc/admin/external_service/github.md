@@ -58,8 +58,8 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
-[permissions]: ../repo/permissions.md#github
-[permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
+[permissions]: #repository-permissions
+[permissions-caching]: #teams-and-organizations-permissions-caching
 [batch-changes]: ../../batch_changes/index.md
 [batch-changes-interactions]: ../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes
 
@@ -80,6 +80,8 @@ GitHub's fine-grained personal access tokens are not yet supported.
 ## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
+
+If Sourcegraph hits a rate limit imposed by GitHub.com, Sourcegraph will wait the appropriate amount of time specified by GitHub.com before retrying the request. This can be several minutes in extreme cases.
 
 ## GitHub Enterprise Server rate limits
 
@@ -106,8 +108,97 @@ If enabled, the default rate is set at 5000 per hour which can be configured via
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
-GitHub's per-user repository permissions, see "[Repository permissions](../repo/permissions.md#github)".
+Prerequisite for configuring repository permission syncing: [Add GitHub as an authentication provider](../auth/index.md#github).
+
+Then, add or edit the GitHub connection as described above and include the `authorization` field:
+
+```json
+{
+  // The GitHub URL used to set up the GitHub authentication provider must match this URL.
+  "url": "https://github.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {}
+}
+```
+
+This needs to be done for every github connection if there is more than one configured.
+
+A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories is required in order to list collaborators for each repository to perform a complete sync.
+
+> NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
+
+<span class="virtual-br"></span>
+
+> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks.md#user-permissions).
+
+<span class="virtual-br"></span>
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
+### Trigger permissions sync from GitHub webhooks
+
+Follow the link to [configure webhooks for permissions for Github](../config/webhooks.md#user-permissions)
+
+### Teams and organizations permissions caching
+
+<span class="badge badge-experimental">Experimental</span>
+
+> WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks.md#user-permissions)
+
+Github code host can leverage caching mechanisms to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full cycle of permissions sync due to reduced instances of being rate limited by the code host, and is useful for code hosts with very large numbers of users and repositories.
+
+Sourcegraph can leverage caching of GitHub [team](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/managing-team-access-to-an-organization-repository) and [organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization) permissions.
+
+> NOTE: You should only try this if your GitHub setup makes extensive use of GitHub teams and organizations to distribute access to repositories and your number of `users * avg_repositories` is greater than 250,000 (which roughly corresponds to the scale at which [GitHub rate limits might become an issue](../permissions/syncing.md#sync-duration)).
+<!-- 5,000 requests an hour * 100 items per page / 2-way sync = approx. 250,000 items before hitting a limit -->
+
+This caching behaviour can be enabled via the `authorization.groupsCacheTTL` field:
+
+```json
+{
+   "url": "https://github.example.com",
+   "token": "$PERSONAL_ACCESS_TOKEN",
+   "authorization": {
+     "groupsCacheTTL": 72, // hours
+   }
+}
+```
+
+In the corresponding [authorization provider](../auth/index.md#github) in [site configuration](./../config/site_config.md), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
+
+```json
+{
+  // ...
+  "auth.providers": [
+    {
+      "type": "github",
+      "url": "https://github.example.com",
+      "allowGroupsPermissionsSync": true,
+    }
+  ]
+}
+```
+
+A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories and organizations is required to fetch repository and team permissions and team memberships is required and cache them across syncs.
+Read-only access will *not* work with cached permissions sync, but will work with [regular GitHub permissions sync](#repository-permissions).
+
+When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
+
+Cache invaldiation happens automatically on certain webhook events, so it is recommended to configure webhook support when using cached permissions sync.
+Caches can also be [manually invalidated](#manually-invalidate-caches) if necessary.
+
+#### Manually invalidate caches
+
+To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegraph GraphQL API:
+
+```gql
+mutation {
+  scheduleUserPermissionsSync(user: "userid", options: {invalidateCaches: true}) {
+    alwaysNil
+  }
+}
+```
 
 ## User authentication
 

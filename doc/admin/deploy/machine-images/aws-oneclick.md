@@ -23,7 +23,7 @@ To learn more about Sourcegraph, check out [Sourcegraph 101](../../../getting-st
 
 This page describes how to launch a verified and pre-configured Sourcegraph instance in just ~10 minutes using our one-click CloudFormation template and standard AMIs.
 
-<small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
+<small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) installation options or our [script-install](../single-node/script.md) installation options.</small>
 
 ---
 
@@ -46,7 +46,7 @@ Using our wizard, a single EC2 instance will be created with the following:
 
 > NOTE: The instance will launch in the default VPC. If your AWS user does not have a default VPC, or the option `Auto-assign public IPv4 address` is not enabled for a subnet within that VPC, please see our [Manual AMI](aws-ami.md) instructions instead.
 
-<a href="aws-diagram.svg"><img src="aws-diagram.svg" height="100%"></img></a>
+<a href="aws-oneclick-diagram.png"><img src="aws-oneclick-diagram.png" height="100%"></img></a>
 
 ## Determine your instance size
 
@@ -63,7 +63,7 @@ The number of users and repositories you will use with Sourcegraph determines yo
 
 ## Deploy Sourcegraph 🎉
 
-> NOTE: For security, please follow [Amazon best practices](https://docs.aws.amazon.com/accounts/latest/reference/best-practices-root-user.html) and _do not deploy Sourcegraph using your AWS root user IAM account._
+> NOTE: For security, please follow [Amazon best practices](https://docs.aws.amazon.com/accounts/latest/reference/best-practices-root-user.html) and _do not deploy Sourcegraph using your AWS account root user._
 
 > NOTE: By default the CloudFormation template will create standard EBS volumes. If you have special EBS volume encryption requirements, please see the [AWS EBS Encryption guide](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html) and install Sourcegraph using our [Manual AMI](aws-ami.md) instructions instead.
 
@@ -111,10 +111,6 @@ By default Sourcegraph will be available over HTTP on the public internet. To se
 1. [Configure DNS and HTTPS/TLS](aws-ami.md#networking) using an AWS Load Balancer and AWS Certificate Manager.
 2. [Configure user authentication](../../../admin/auth/index.md) (SSO, SAML, OpenID Connect, etc.)
 3. [Review the new Network Security Group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to prevent access from the public internet and follow the principle of least privilege.
-
-### Share with your team
-
-[See here](/adopt/trial#3-share-with-the-trial-team) for some tips on how to share Sourcegraph with your team!
 
 ## Managing Sourcegraph
 

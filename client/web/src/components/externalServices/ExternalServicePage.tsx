@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
@@ -31,7 +33,6 @@ import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    isLightTheme: boolean
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
@@ -47,7 +48,6 @@ const NotFoundPage: FC = () => (
 
 export const ExternalServicePage: FC<Props> = props => {
     const {
-        isLightTheme,
         telemetryService,
         afterDeleteRoute,
         externalServicesFromFile,
@@ -55,6 +55,7 @@ export const ExternalServicePage: FC<Props> = props => {
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
 
+    const isLightTheme = useIsLightTheme()
     const { externalServiceID } = useParams()
     const navigate = useNavigate()
 
@@ -105,6 +106,7 @@ export const ExternalServicePage: FC<Props> = props => {
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!externalService) {
             return
@@ -116,13 +118,12 @@ export const ExternalServicePage: FC<Props> = props => {
         try {
             await deleteExternalService(externalService.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
             navigate(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, navigate, externalService])
+    }, [afterDeleteRoute, navigate, externalService, client])
 
     // If external service is undefined, we won't use doCheckConnection anyway,
     // that's why it's safe to pass an empty ID to useExternalServiceCheckConnectionByIdLazyQuery

@@ -10,7 +10,9 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 -->
 
-- [Getting started](index.md)
+- [Home](index.md)
+- [Getting started](getting-started/index.md)
+- [Tutorials](tutorials/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
   - [How-to guides](code_search/how-to/index.md)
@@ -53,6 +55,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
+  - [Repository permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
   - [FAQ](admin/faq.md)
@@ -67,6 +70,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - [App (experimental)](app/index.md)
+- [Cody (experimental)](cody/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)

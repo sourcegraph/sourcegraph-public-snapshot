@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
@@ -109,6 +108,7 @@ func TestListPackageRepoRefs(t *testing.T) {
 		// catch lack of ordering by ID at the right place
 		{
 			{Scheme: "npm", Name: "applesauce", Versions: []string{"1.2.3"}},
+			{Scheme: "somethingelse", Name: "banana", Versions: []string{"0.1.2"}},
 		},
 	}
 
@@ -118,18 +118,13 @@ func TestListPackageRepoRefs(t *testing.T) {
 		}
 	}
 
-	// want to mimic data that might exist because of the 2-step migration
-	if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES ('npm','foo','4.2.0')`)); err != nil {
-		t.Fatal(err)
-	}
-
 	var lastID int
 	for _, test := range [][]shared.PackageRepoReference{
 		{{Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}, {Scheme: "npm", Name: "banana"}},
-		{{Scheme: "npm", Name: "turtle"}, {Scheme: "npm", Name: "applesauce"}},
+		{{Scheme: "npm", Name: "turtle"}, {Scheme: "npm", Name: "applesauce"}, {Scheme: "somethingelse", Name: "banana"}},
 	} {
 		depRepos, total, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
-			Scheme: "npm",
+			Scheme: "",
 			After:  lastID,
 			Limit:  3,
 		})
@@ -137,8 +132,8 @@ func TestListPackageRepoRefs(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if total != 5 {
-			t.Errorf("unexpected total count of package repos: want=%d got=%d", 5, total)
+		if total != 6 {
+			t.Errorf("unexpected total count of package repos: want=%d got=%d", 6, total)
 		}
 
 		lastID = depRepos[len(depRepos)-1].ID

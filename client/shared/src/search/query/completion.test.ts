@@ -324,11 +324,6 @@ describe('getCompletionItems()', () => {
         ).toStrictEqual([
             {
                 // eslint-disable-next-line no-template-curly-in-string
-                insertText: 'contains.content(${1:TODO}) ',
-                label: 'contains.content(...)',
-            },
-            {
-                // eslint-disable-next-line no-template-curly-in-string
                 insertText: 'has.content(${1:TODO}) ',
                 label: 'has.content(...)',
             },
@@ -360,7 +355,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['contains.content(...)', 'has.content(...)', 'has.owner(...)', '^jsonrpc'])
+        ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -380,8 +375,6 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toStrictEqual([
-            // eslint-disable-next-line no-template-curly-in-string
-            'contains.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string
             'has.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string

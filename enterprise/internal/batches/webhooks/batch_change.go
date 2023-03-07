@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graphql-go/graphql/gqlerrors"
 
-	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,36 +28,93 @@ type batchChange struct {
 	ClosedAt      *time.Time  `json:"closed_at"`
 }
 
-func MarshalBatchChange(ctx context.Context, db basestore.ShareableStore, bc *types.BatchChange) ([]byte, error) {
-	namespaceID, err := bgql.MarshalNamespaceID(bc.NamespaceUserID, bc.NamespaceOrgID)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling namespace")
+// gqlBatchChangeQuery is a graphQL query that fetches all the required
+// batch change fields to craft the webhook payload from the internal API.
+const gqlBatchChangeQuery = `query BatchChange($id: ID!) {
+	node(id: $id) {
+		... on BatchChange {
+			id
+			namespace {
+				id
+			}
+			name
+			description
+			state
+			creator {
+				id
+			}
+			lastApplier {
+				id
+			}
+			url
+			createdAt
+			updatedAt
+			lastAppliedAt
+			closedAt
+		}
+	}
+}`
+
+type gqlBatchChangeResponse struct {
+	Data struct {
+		Node struct {
+			ID            graphql.ID `json:"id"`
+			Name          string     `json:"name"`
+			Description   string     `json:"description"`
+			State         string     `json:"state"`
+			URL           string     `json:"url"`
+			CreatedAt     time.Time  `json:"createdAt"`
+			UpdatedAt     time.Time  `json:"updatedAt"`
+			LastAppliedAt *time.Time `json:"lastAppliedAt"`
+			ClosedAt      *time.Time `json:"closedAt"`
+			Namespace     struct {
+				ID graphql.ID `json:"id"`
+			} `json:"namespace"`
+			Creator struct {
+				ID graphql.ID `json:"id"`
+			} `json:"creator"`
+			LastApplier struct {
+				ID *graphql.ID `json:"id"`
+			} `json:"lastApplier"`
+		}
+	}
+	Errors []gqlerrors.FormattedError
+}
+
+func marshalBatchChange(ctx context.Context, client httpcli.Doer, id graphql.ID) ([]byte, error) {
+	q := queryInfo{
+		Name:      "BatchChange",
+		Query:     gqlBatchChangeQuery,
+		Variables: map[string]any{"id": id},
 	}
 
-	namespace, err := database.NamespacesWith(db).GetByID(ctx, bc.NamespaceOrgID, bc.NamespaceUserID)
-	if err != nil {
-		return nil, errors.Wrap(err, "querying namespace")
+	var res gqlBatchChangeResponse
+	if err := makeRequest(ctx, q, client, &res); err != nil {
+		return nil, err
 	}
 
-	url, err := bc.URL(ctx, namespace.Name)
-	if err != nil {
-		return nil, errors.Wrap(err, "building URL")
+	if len(res.Errors) > 0 {
+		var combined error
+		for _, err := range res.Errors {
+			combined = errors.Append(combined, err)
+		}
+		return nil, combined
 	}
 
-	payload := batchChange{
-		ID:            bgql.MarshalBatchChangeID(bc.ID),
-		Namespace:     namespaceID,
-		Name:          bc.Name,
-		Description:   bc.Description,
-		State:         bc.State().ToGraphQL(),
-		Creator:       bgql.MarshalUserID(bc.CreatorID),
-		LastApplier:   nullableMap(bc.LastApplierID, bgql.MarshalUserID),
-		URL:           url,
-		CreatedAt:     bc.CreatedAt,
-		UpdatedAt:     bc.UpdatedAt,
-		LastAppliedAt: nullable(bc.LastAppliedAt),
-		ClosedAt:      nullable(bc.ClosedAt),
-	}
+	node := res.Data.Node
 
-	return json.Marshal(&payload)
+	return json.Marshal(batchChange{
+		ID:            node.ID,
+		Namespace:     node.Namespace.ID,
+		Name:          node.Name,
+		Description:   node.Description,
+		State:         node.State,
+		Creator:       node.Creator.ID,
+		LastApplier:   node.LastApplier.ID,
+		URL:           node.URL,
+		CreatedAt:     node.CreatedAt,
+		UpdatedAt:     node.UpdatedAt,
+		LastAppliedAt: node.LastAppliedAt,
+		ClosedAt:      node.ClosedAt,
+	})
 }

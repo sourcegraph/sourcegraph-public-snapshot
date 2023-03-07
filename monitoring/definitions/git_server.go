@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -19,6 +20,8 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
+	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
 		Title:       "Git Server",
@@ -34,6 +37,7 @@ func GitServer() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -271,6 +275,22 @@ func GitServer() *monitoring.Dashboard {
 						},
 						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerRepoManagement).Observable(),
 					},
+					{
+						{
+							Name:          "src_gitserver_repo_count",
+							Description:   "number of repositories on gitserver",
+							Query:         "src_gitserver_repo_count",
+							NoAlert:       true,
+							Panel:         monitoring.Panel().LegendFormat("repo count"),
+							Owner:         monitoring.ObservableOwnerRepoManagement,
+							MultiInstance: true,
+							Interpretation: `
+								This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+
+								It does not indicate any problems with the instance.
+							`,
+						},
+					},
 				},
 			},
 			shared.GitServer.NewAPIGroup(containerName),
@@ -464,6 +484,7 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
 			{
 				Title:  "Search",
 				Hidden: true,
@@ -522,6 +543,15 @@ func GitServer() *monitoring.Dashboard {
 				},
 				monitoring.ObservableOwnerRepoManagement,
 			),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:     "gitserver",
+					MetricNamespace: "gitserver",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${shard:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

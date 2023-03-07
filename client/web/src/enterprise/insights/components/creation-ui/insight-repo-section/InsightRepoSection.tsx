@@ -7,6 +7,7 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
     Code,
@@ -17,21 +18,16 @@ import {
     InputStatus,
     useDebounce,
     Link,
-} from '@sourcegraph/wildcard'
-
-import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../../../stores'
-import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import {
     FormGroup,
+    useFieldAPI,
     getDefaultInputProps,
     getDefaultInputStatus,
     getDefaultInputError,
-    getRepoQueryPreview,
-    RepositoriesField,
-    useFieldAPI,
-    MonacoField,
-} from '../../form'
+} from '@sourcegraph/wildcard'
+
+import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
+import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
+import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'
@@ -133,7 +129,7 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     return (
         <RepositoriesField
             id="repositories-id"
-            description="Find and choose up to 1 repository to run insight"
+            description="Find and choose at least 1 repository to run insight"
             placeholder="Search repositories..."
             aria-labelledby={ariaLabelledby}
             aria-invalid={!!repositories.meta.error}

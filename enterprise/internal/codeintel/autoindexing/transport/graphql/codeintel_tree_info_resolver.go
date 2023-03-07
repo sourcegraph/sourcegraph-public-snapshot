@@ -2,13 +2,14 @@ package graphql
 
 import (
 	"context"
-	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type preciseSupportInferenceConfidence string
@@ -63,10 +64,15 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 	return &resolvers, nil
 }
 
-func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]resolverstubs.GitTreePreciseCoverage, error) {
-	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolverstubs.GitTreePreciseCoverageErrorResolver, error) {
+	var limitErr error
+	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, "", true)
 	if err != nil {
-		return nil, err
+		if errors.As(err, &inference.LimitError{}) {
+			limitErr = err
+		} else {
+			return nil, err
+		}
 	}
 
 	var resolvers []resolverstubs.GitTreePreciseCoverage
@@ -77,15 +83,10 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]reso
 				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 					confidence: indexJobInfered,
 					// drop the tag if it exists
-					indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[strings.Split(job.Indexer, ":")[0]]),
+					indexer: codeinteltypes.NewCodeIntelIndexerResolver(job.Indexer, ""),
 				})
 			}
 		}
-	}
-
-	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, hint := range hints {
@@ -102,10 +103,28 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]reso
 			resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 				confidence: confidence,
 				// expected that job hints don't include a tag in the indexer name
-				indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[hint.Indexer]),
+				indexer: codeinteltypes.NewCodeIntelIndexerResolver(hint.Indexer, ""),
 			})
 		}
 	}
 
-	return &resolvers, nil
+	return &gitTreePreciseCoverageErrorResolver{resolvers: resolvers, limitErr: limitErr}, nil
+}
+
+type gitTreePreciseCoverageErrorResolver struct {
+	resolvers []resolverstubs.GitTreePreciseCoverage
+	limitErr  error
+}
+
+func (r *gitTreePreciseCoverageErrorResolver) Coverage() []resolverstubs.GitTreePreciseCoverage {
+	return r.resolvers
+}
+
+func (r *gitTreePreciseCoverageErrorResolver) LimitError() *string {
+	if r.limitErr != nil {
+		m := r.limitErr.Error()
+		return &m
+	}
+
+	return nil
 }

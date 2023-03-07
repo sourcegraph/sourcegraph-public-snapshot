@@ -4,16 +4,15 @@ import (
 	"context"
 	"sort"
 
-	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,10 +33,11 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	run := parallel.NewRun(conf.SearchSymbolsParallelism())
+	p := pool.New().
+		WithContext(ctx).
+		WithCancelOnError().
+		WithFirstError().
+		WithMaxGoroutines(conf.SearchSymbolsParallelism())
 
 	for _, repoRevs := range s.Repos {
 		repoRevs := repoRevs
@@ -47,10 +47,8 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		if len(repoRevs.Revs) == 0 {
 			continue
 		}
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
 
+		p.Go(func(ctx context.Context) error {
 			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
@@ -62,16 +60,12 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 			})
 			if err != nil {
 				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), attribute.String("error", err.Error()))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
 			}
+			return err
 		})
 	}
 
-	return nil, run.Wait()
+	return nil, p.Wait()
 }
 
 func (s *SymbolSearchJob) Name() string {

@@ -25,6 +25,7 @@ go_library(
         "//internal/lazyregexp",
         "//internal/search",
         "//internal/search/client",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/search/streaming/api",

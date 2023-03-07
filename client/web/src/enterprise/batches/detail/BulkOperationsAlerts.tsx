@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'

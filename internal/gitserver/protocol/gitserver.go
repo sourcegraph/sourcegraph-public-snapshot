@@ -6,9 +6,11 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,6 +22,42 @@ type SearchRequest struct {
 	IncludeDiff          bool
 	Limit                int
 	IncludeModifiedFiles bool
+}
+
+func (r *SearchRequest) ToProto() *proto.SearchRequest {
+	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
+	for _, rev := range r.Revisions {
+		revs = append(revs, rev.ToProto())
+	}
+	return &proto.SearchRequest{
+		Repo:                 string(r.Repo),
+		Revisions:            revs,
+		Query:                r.Query.ToProto(),
+		IncludeDiff:          r.IncludeDiff,
+		Limit:                int64(r.Limit),
+		IncludeModifiedFiles: r.IncludeModifiedFiles,
+	}
+}
+
+func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
+	query, err := NodeFromProto(p.GetQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	revisions := make([]RevisionSpecifier, 0, len(p.GetRevisions()))
+	for _, rev := range p.GetRevisions() {
+		revisions = append(revisions, RevisionSpecifierFromProto(rev))
+	}
+
+	return &SearchRequest{
+		Repo:                 api.RepoName(p.GetRepo()),
+		Revisions:            revisions,
+		Query:                query,
+		IncludeDiff:          p.GetIncludeDiff(),
+		Limit:                int(p.GetLimit()),
+		IncludeModifiedFiles: p.GetIncludeModifiedFiles(),
+	}, nil
 }
 
 type RevisionSpecifier struct {
@@ -34,6 +72,22 @@ type RevisionSpecifier struct {
 	// ExcludeRefGlob is a glob for references to exclude. See the
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
+}
+
+func (r *RevisionSpecifier) ToProto() *proto.RevisionSpecifier {
+	return &proto.RevisionSpecifier{
+		RevSpec:        r.RevSpec,
+		RefGlob:        r.RefGlob,
+		ExcludeRefGlob: r.ExcludeRefGlob,
+	}
+}
+
+func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
+	return RevisionSpecifier{
+		RevSpec:        p.GetRevSpec(),
+		RefGlob:        p.GetRefGlob(),
+		ExcludeRefGlob: p.GetExcludeRefGlob(),
+	}
 }
 
 type SearchEventMatches []CommitMatch
@@ -81,10 +135,114 @@ type CommitMatch struct {
 	ModifiedFiles []string             `json:",omitempty"`
 }
 
+func (cm *CommitMatch) ToProto() *proto.CommitMatch {
+	parents := make([]string, 0, len(cm.Parents))
+	for _, parent := range cm.Parents {
+		parents = append(parents, string(parent))
+	}
+	return &proto.CommitMatch{
+		Oid:           string(cm.Oid),
+		Author:        cm.Author.ToProto(),
+		Committer:     cm.Committer.ToProto(),
+		Parents:       parents,
+		Refs:          cm.Refs,
+		SourceRefs:    cm.SourceRefs,
+		Message:       matchedStringToProto(cm.Message),
+		Diff:          matchedStringToProto(cm.Diff),
+		ModifiedFiles: cm.ModifiedFiles,
+	}
+}
+
+func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
+	parents := make([]api.CommitID, 0, len(p.GetParents()))
+	for _, parent := range p.GetParents() {
+		parents = append(parents, api.CommitID(parent))
+	}
+	return CommitMatch{
+		Oid:           api.CommitID(p.GetOid()),
+		Author:        SignatureFromProto(p.GetAuthor()),
+		Committer:     SignatureFromProto(p.GetCommitter()),
+		Parents:       parents,
+		Refs:          p.GetRefs(),
+		SourceRefs:    p.GetSourceRefs(),
+		Message:       matchedStringFromProto(p.GetMessage()),
+		Diff:          matchedStringFromProto(p.GetDiff()),
+		ModifiedFiles: p.GetModifiedFiles(),
+	}
+}
+
+func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedString {
+	ranges := make([]result.Range, 0, len(p.GetRanges()))
+	for _, rr := range p.GetRanges() {
+		ranges = append(ranges, rangeFromProto(rr))
+	}
+	return result.MatchedString{
+		Content:       p.Content,
+		MatchedRanges: ranges,
+	}
+}
+
+func matchedStringToProto(ms result.MatchedString) *proto.CommitMatch_MatchedString {
+	rrs := make([]*proto.CommitMatch_Range, 0, len(ms.MatchedRanges))
+	for _, rr := range ms.MatchedRanges {
+		rrs = append(rrs, rangeToProto(rr))
+	}
+	return &proto.CommitMatch_MatchedString{
+		Content: ms.Content,
+		Ranges:  rrs,
+	}
+}
+
+func rangeToProto(r result.Range) *proto.CommitMatch_Range {
+	return &proto.CommitMatch_Range{
+		Start: locationToProto(r.Start),
+		End:   locationToProto(r.End),
+	}
+}
+
+func rangeFromProto(p *proto.CommitMatch_Range) result.Range {
+	return result.Range{
+		Start: locationFromProto(p.Start),
+		End:   locationFromProto(p.End),
+	}
+}
+
+func locationToProto(l result.Location) *proto.CommitMatch_Location {
+	return &proto.CommitMatch_Location{
+		Offset: uint32(l.Offset),
+		Line:   uint32(l.Line),
+		Column: uint32(l.Column),
+	}
+}
+
+func locationFromProto(p *proto.CommitMatch_Location) result.Location {
+	return result.Location{
+		Offset: int(p.Offset),
+		Line:   int(p.Line),
+		Column: int(p.Column),
+	}
+}
+
 type Signature struct {
 	Name  string `json:",omitempty"`
 	Email string `json:",omitempty"`
 	Date  time.Time
+}
+
+func (s *Signature) ToProto() *proto.CommitMatch_Signature {
+	return &proto.CommitMatch_Signature{
+		Name:  s.Name,
+		Email: s.Email,
+		Date:  timestamppb.New(s.Date),
+	}
+}
+
+func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
+	return Signature{
+		Name:  p.GetName(),
+		Email: p.GetEmail(),
+		Date:  p.GetDate().AsTime(),
+	}
 }
 
 // ExecRequest is a request to execute a command inside a git repository.
@@ -244,29 +402,6 @@ type CreateCommitFromPatchRequest struct {
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
 	Patch []byte
-	// TargetRef is the ref that will be created for this patch
-	TargetRef string
-	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
-	UniqueRef bool
-	// CommitInfo is the information that will be used when creating the commit from a patch
-	CommitInfo PatchCommitInfo
-	// Push specifies whether the target ref will be pushed to the code host: if
-	// nil, no push will be attempted, if non-nil, a push will be attempted.
-	Push *PushConfig
-	// GitApplyArgs are the arguments that will be passed to `git apply` along
-	// with `--cached`.
-	GitApplyArgs []string
-}
-
-// V1CreateCommitFromPatchRequest is the request information needed for creating
-// the simulated staging area git object for a repo.
-type V1CreateCommitFromPatchRequest struct {
-	// Repo is the repository to get information about.
-	Repo api.RepoName
-	// BaseCommit is the revision that the staging area object is based on
-	BaseCommit api.CommitID
-	// Patch is the diff contents to be used to create the staging area revision
-	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
 	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.

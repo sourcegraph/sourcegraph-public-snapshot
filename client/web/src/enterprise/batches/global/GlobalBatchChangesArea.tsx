@@ -1,11 +1,10 @@
 import React from 'react'
 
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -43,9 +42,10 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     'BatchChangeClosePage'
 )
 
-interface Props extends ThemeProps, TelemetryProps, SettingsCascadeProps {
+interface Props extends TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -54,6 +54,7 @@ interface Props extends ThemeProps, TelemetryProps, SettingsCascadeProps {
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     ...props
 }) => (
     <div className="w-100">
@@ -66,6 +67,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                         canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
                         isSourcegraphDotCom={isSourcegraphDotCom}
+                        isSourcegraphApp={isSourcegraphApp}
                         {...props}
                     />
                 }
