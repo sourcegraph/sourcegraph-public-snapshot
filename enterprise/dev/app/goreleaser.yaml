@@ -74,7 +74,7 @@ release:
   github:
     owner: sourcegraph
     # TODO(sqs): use just sourcegraph/sourcegraph?
-    name: sourcegraph-app
+    name: homebrew-app
   draft: true
   prerelease: auto
 
