@@ -1815,6 +1815,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/path-browserify",
     "//:node_modules/punycode",
     "//:node_modules/util",
+    "//:node_modules/events",
     "//:node_modules/webpack-manifest-plugin",
     "//:node_modules/webpack-stats-plugin",
     "//:node_modules/monaco-editor",
