@@ -97,14 +97,16 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:                 log.Scoped("github.v4", "github v4 client"),
-		urn:                 urn,
-		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
-		auth:                a,
-		httpClient:          cli,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
+		log:                    log.Scoped("github.v4", "github v4 client"),
+		urn:                    urn,
+		apiURL:                 apiURL,
+		githubDotCom:           urlIsGitHubDotCom(apiURL),
+		auth:                   a,
+		httpClient:             cli,
+		internalRateLimiter:    rl,
+		externalRateLimiter:    rlm,
+		waitForRateLimit:       true,
+		maxNumRateLimitRetries: 2,
 	}
 }
 

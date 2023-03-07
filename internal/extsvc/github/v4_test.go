@@ -4,21 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -86,6 +91,79 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 		update("GetAuthenticatedUserV4"),
 		user,
 	)
+}
+
+func TestV4Client_RateLimitRetry(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		secondaryLimitWasHit bool
+		primaryLimitWasHit   bool
+		succeeded            bool
+		numRequests          int
+	}{
+		"hit secondary limit": {
+			secondaryLimitWasHit: true,
+			succeeded:            true,
+			numRequests:          2,
+		},
+		"hit primary limit": {
+			primaryLimitWasHit: true,
+			succeeded:          true,
+			numRequests:        2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			numRequests := 0
+			succeeded := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				numRequests++
+				if tt.secondaryLimitWasHit {
+					w.Header().Add("retry-after", "1")
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+
+					tt.secondaryLimitWasHit = false
+					return
+				}
+
+				if tt.primaryLimitWasHit {
+					w.Header().Add("x-ratelimit-remaining", "0")
+					w.Header().Add("x-ratelimit-limit", "5000")
+					resetTime := time.Now().Add(time.Second)
+					w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+
+					tt.primaryLimitWasHit = false
+					return
+				}
+
+				succeeded = true
+				w.Write([]byte(`{"message": "Very nice"}`))
+			}))
+
+			t.Cleanup(srv.Close)
+
+			srvURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+
+			client := NewV4Client("test", srvURL, nil, nil)
+			_, err = client.GetAuthenticatedUser(ctx)
+			if tt.succeeded {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+
+			assert.Equal(t, tt.numRequests, numRequests)
+			assert.Equal(t, tt.succeeded, succeeded)
+		})
+	}
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {

@@ -1124,7 +1124,7 @@ func TestRateLimitRetry(t *testing.T) {
 
 	t.Run("retry maximum number of times", func(t *testing.T) {
 		test := buildNewtest(t, true, true)
-		test.client.numRateLimitRetries = 2
+		test.client.maxNumRateLimitRetries = 2
 
 		_, err := test.client.GetVersion(ctx)
 		require.NoError(t, err)
