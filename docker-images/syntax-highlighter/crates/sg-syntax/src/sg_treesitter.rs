@@ -1,172 +1,18 @@
-use paste::paste;
-use protobuf::Message;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::fmt::Write as _; // import without risk of name clashing
-use tree_sitter::Parser;
-use tree_sitter_highlight::Error;
-use tree_sitter_highlight::{Highlight, HighlightEvent};
 
-use rocket::serde::json::serde_json::json;
-use rocket::serde::json::Value as JsonValue;
-use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
+use protobuf::Message;
+use rocket::serde::json::{serde_json::json, Value as JsonValue};
+use scip::types::{Document, Occurrence, SyntaxKind};
+use scip_treesitter_languages::highlights::{
+    get_highlighting_configuration, get_syntax_kind_for_hl,
+};
+use tree_sitter::Parser;
+use tree_sitter_highlight::{
+    Error, Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
+};
 
 use crate::SourcegraphQuery;
-use scip::types::{Document, Occurrence, SyntaxKind};
-use sg_macros::include_project_file_optional;
-
-#[rustfmt::skip]
-// Table of (@CaptureGroup, SyntaxKind) mapping.
-//
-// Any capture defined in a query will be mapped to the following SyntaxKind via the highlighter.
-//
-// To extend what types of captures are included, simply add a line below that takes a particular
-// match group that you're interested in and map it to a new SyntaxKind.
-//
-// We can also define our own new capture types that we want to use and add to queries to provide
-// particular highlights if necessary.
-//
-// (I can also add per-language mappings for these if we want, but you could also just do that with
-//  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
-//  particularly new rust code to be written. You can just modify queries for that)
-const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("boolean",                 SyntaxKind::BooleanLiteral),
-    ("character",               SyntaxKind::CharacterLiteral),
-    ("comment",                 SyntaxKind::Comment),
-    ("conditional",             SyntaxKind::IdentifierKeyword),
-    ("constant",                SyntaxKind::IdentifierConstant),
-    ("identifier.constant",     SyntaxKind::IdentifierConstant),
-    ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("constant.null",           SyntaxKind::IdentifierNull),
-    ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunction),
-    ("identifier.function",     SyntaxKind::IdentifierFunction),
-    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("identifier",              SyntaxKind::Identifier),
-    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
-    ("tag.attribute",           SyntaxKind::TagAttribute),
-    ("include",                 SyntaxKind::IdentifierKeyword),
-    ("keyword",                 SyntaxKind::IdentifierKeyword),
-    ("keyword.function",        SyntaxKind::IdentifierKeyword),
-    ("keyword.return",          SyntaxKind::IdentifierKeyword),
-    ("method",                  SyntaxKind::IdentifierFunction),
-    ("number",                  SyntaxKind::NumericLiteral),
-    ("operator",                SyntaxKind::IdentifierOperator),
-    ("identifier.operator",     SyntaxKind::IdentifierOperator),
-    ("property",                SyntaxKind::Identifier),
-    ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
-    ("string",                  SyntaxKind::StringLiteral),
-    ("string.special",          SyntaxKind::StringLiteral),
-    ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
-    ("type",                    SyntaxKind::IdentifierType),
-    ("identifier.type",         SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
-    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
-    ("regex.join",              SyntaxKind::RegexJoin),
-    ("regex.escape",            SyntaxKind::RegexEscape),
-    ("regex.repeated",          SyntaxKind::RegexRepeated),
-    ("regex.wildcard",          SyntaxKind::RegexWildcard),
-    ("identifier",              SyntaxKind::Identifier),
-    ("variable",                SyntaxKind::Identifier),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
-    ("variable.parameter",      SyntaxKind::IdentifierParameter),
-    ("identifier.module",       SyntaxKind::IdentifierModule),
-    ("variable.module",         SyntaxKind::IdentifierModule),
-];
-
-/// Maps a highlight to a syntax kind.
-/// This only works if you've correctly used the highlight_names from MATCHES_TO_SYNTAX_KINDS
-fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {
-    MATCHES_TO_SYNTAX_KINDS[hl.0].1
-}
-
-/// Add a language highlight configuration to the CONFIGURATIONS global.
-///
-/// This makes it so you don't have to understand how configurations are added,
-/// just add the name of filetype that you want.
-macro_rules! create_configurations {
-    ( $($name: tt),* ) => {{
-        let mut m = HashMap::new();
-        let highlight_names = MATCHES_TO_SYNTAX_KINDS.iter().map(|hl| hl.0).collect::<Vec<&str>>();
-
-        $(
-            {
-                // Create HighlightConfiguration language
-                let mut lang = HighlightConfiguration::new(
-                    paste! { [<tree_sitter_ $name>]::language() },
-                    include_project_file_optional!("queries/", $name, "/highlights.scm"),
-                    include_project_file_optional!("queries/", $name, "/injections.scm"),
-                    include_project_file_optional!("queries/", $name, "/locals.scm"),
-                ).expect(stringify!("parser for '{}' must be compiled", $name));
-
-                // Associate highlights with configuration
-                lang.configure(&highlight_names);
-
-                // Insert into configurations, so we only create once at startup.
-                m.insert(stringify!($name), lang);
-            }
-        )*
-
-        // Manually insert the typescript and tsx languages because the
-        // tree-sitter-typescript crate doesn't have a language() function.
-        {
-            let highlights = vec![
-                include_project_file_optional!("queries/typescript/highlights.scm"),
-                include_project_file_optional!("queries/javascript/highlights.scm"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                paste! { tree_sitter_typescript::language_typescript() },
-                &highlights.join("\n"),
-                include_project_file_optional!("queries/", "typescript", "/injections.scm"),
-                include_project_file_optional!("queries/", "typescript", "/locals.scm"),
-            ).expect("parser for 'typescript' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert("typescript", lang);
-        }
-        {
-            let highlights = vec![
-                include_project_file_optional!("queries/tsx/highlights.scm"),
-                include_project_file_optional!("queries/typescript/highlights.scm"),
-                include_project_file_optional!("queries/javascript/highlights.scm"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                paste! { tree_sitter_typescript::language_tsx() },
-                &highlights.join("\n"),
-                include_project_file_optional!("queries/tsx/injections.scm"),
-                include_project_file_optional!("queries/tsx/locals.scm"),
-            ).expect("parser for 'tsx' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert("tsx", lang);
-        }
-
-        m
-    }}
-}
-
-lazy_static::lazy_static! {
-    static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!(
-            c,
-            cpp,
-            c_sharp,
-            go,
-            java,
-            javascript,
-            jsonnet,
-            python,
-            ruby,
-            rust,
-            scala,
-            sql,
-            xlsg
-        )
-    };
-}
 
 // Handle special cases where syntect language names don't match treesitter names.
 pub fn treesitter_language(syntect_language: &str) -> &str {
@@ -202,31 +48,12 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
 }
 
 pub fn index_language(filetype: &str, code: &str, include_locals: bool) -> Result<Document, Error> {
-    match CONFIGURATIONS.get(filetype) {
+    match get_highlighting_configuration(filetype) {
         Some(lang_config) => {
             index_language_with_config(filetype, code, lang_config, include_locals)
         }
         None => Err(Error::InvalidLanguage),
     }
-}
-
-pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
-    let config = CONFIGURATIONS.get(name)?;
-
-    // Create HighlightConfiguration language
-    let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
-        Ok(lang) => lang,
-        Err(_) => return None,
-    };
-
-    // Associate highlights with configuration
-    let highlight_names = MATCHES_TO_SYNTAX_KINDS
-        .iter()
-        .map(|hl| hl.0)
-        .collect::<Vec<&str>>();
-    lang.configure(&highlight_names);
-
-    Some(lang)
 }
 
 pub fn index_language_with_config(
@@ -247,7 +74,7 @@ pub fn index_language_with_config(
     // we are iterating in the higlighter.
     let mut highlighter = TSHighlighter::new();
     let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
-        CONFIGURATIONS.get(l)
+        get_highlighting_configuration(l)
     })?;
 
     let mut emitter = ScipEmitter::new();
@@ -641,9 +468,8 @@ mod test {
         io::Read,
     };
 
-    use crate::determine_filetype;
-
     use super::*;
+    use crate::determine_filetype;
 
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {

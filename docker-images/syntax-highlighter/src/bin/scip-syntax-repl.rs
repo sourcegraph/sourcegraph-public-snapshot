@@ -1,11 +1,11 @@
+#![allow(dead_code, unused, unused_imports)]
+// TODO: We can clean up this repl if it seems useful, but probably will delete since snapshots are
+// just better in every way now that we have working machinery for that
+
 use std::fs;
 
-use rustyline::config::Configurer;
-use rustyline::Config;
-use sg_syntax::dump_document_range;
-use sg_syntax::make_highlight_config;
-use sg_syntax::treesitter_index_with_config;
-use sg_syntax::DocumentFileRange;
+use rustyline::{config::Configurer, Config};
+use sg_syntax::{dump_document_range, treesitter_index_with_config, DocumentFileRange};
 
 fn main() {
     println!("========================================");
@@ -62,22 +62,15 @@ fn main() {
             break;
         }
 
-        let config = match make_highlight_config("c_sharp", &line) {
-            Some(config) => config,
-            None => {
-                eprintln!("=> Error when constructing configuration, probably invalid query.");
-                continue;
-            }
-        };
-
-        let document = match treesitter_index_with_config(&contents, &config) {
-            Ok(document) => document,
-            Err(err) => {
-                eprintln!("Failed to index document: {:?}", err);
-                return;
-            }
-        };
-
-        eprintln!("{}", dump_document_range(&document, &contents, &range));
+        let config = todo!();
+        // let document = match treesitter_index_with_config(&contents, &config) {
+        //     Ok(document) => document,
+        //     Err(err) => {
+        //         eprintln!("Failed to index document: {:?}", err);
+        //         return;
+        //     }
+        // };
+        //
+        // eprintln!("{}", dump_document_range(&document, &contents, &range));
     }
 }

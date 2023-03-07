@@ -4,26 +4,24 @@ use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
 use sg_treesitter::jsonify_err;
-use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
+    html::{highlighted_html_for_string, ClassStyle},
     parsing::{SyntaxReference, SyntaxSet},
 };
 
 mod sg_treesitter;
-pub use sg_treesitter::dump_document;
-pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as treesitter_index;
-pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
-pub use sg_treesitter::lsif_highlight;
-pub use sg_treesitter::make_highlight_config;
-pub use sg_treesitter::FileRange as DocumentFileRange;
-pub use sg_treesitter::PackedRange as LsifPackedRange;
+pub use sg_treesitter::{
+    dump_document, dump_document_range, index_language as treesitter_index,
+    index_language_with_config as treesitter_index_with_config, lsif_highlight,
+    FileRange as DocumentFileRange, PackedRange as LsifPackedRange,
+};
 
 mod sg_syntect;
-use crate::sg_treesitter::treesitter_language;
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
+
+use crate::sg_treesitter::treesitter_language;
 
 mod sg_sciptect;
 
@@ -71,6 +69,7 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
+// NOTE: Keep in sync: internal/gosyntect/gosyntect.go
 #[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 pub enum SyntaxEngine {
     #[default]
@@ -325,9 +324,9 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use syntect::parsing::SyntaxSet;
+
+    use super::*;
 
     #[test]
     fn cls_tex() {

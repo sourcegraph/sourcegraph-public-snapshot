@@ -1,0 +1,70 @@
+use tree_sitter::Language;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BundledParser {
+    C,
+    Cpp,
+    #[allow(non_camel_case_types)]
+    C_Sharp,
+    Go,
+    Java,
+    Javascript,
+    Jsonnet,
+    Perl,
+    Python,
+    Ruby,
+    Rust,
+    Scala,
+    Sql,
+    Xlsg,
+
+    // These two are special cases
+    Typescript,
+    Tsx,
+}
+
+impl BundledParser {
+    pub fn get_language(&self) -> Language {
+        match self {
+            BundledParser::C => tree_sitter_c::language(),
+            BundledParser::Cpp => tree_sitter_cpp::language(),
+            BundledParser::C_Sharp => tree_sitter_c_sharp::language(),
+            BundledParser::Go => tree_sitter_go::language(),
+            BundledParser::Java => tree_sitter_java::language(),
+            BundledParser::Javascript => tree_sitter_javascript::language(),
+            BundledParser::Jsonnet => tree_sitter_jsonnet::language(),
+            // BundledParser::Perl => tree_sitter_perl::language(),
+            BundledParser::Perl => todo!(),
+            BundledParser::Python => tree_sitter_python::language(),
+            BundledParser::Ruby => tree_sitter_ruby::language(),
+            BundledParser::Rust => tree_sitter_rust::language(),
+            BundledParser::Scala => tree_sitter_scala::language(),
+            BundledParser::Sql => tree_sitter_sql::language(),
+            BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
+            BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
+            BundledParser::Xlsg => tree_sitter_xlsg::language(),
+        }
+    }
+
+    pub fn get_parser(name: &str) -> Option<Self> {
+        match name {
+            "c" => Some(BundledParser::C),
+            "c++" => Some(BundledParser::Cpp),
+            "c_sharp" => Some(BundledParser::C_Sharp),
+            "go" => Some(BundledParser::Go),
+            "java" => Some(BundledParser::Java),
+            "javascript" => Some(BundledParser::Javascript),
+            "jsonnet" => Some(BundledParser::Jsonnet),
+            "perl" => Some(BundledParser::Perl),
+            "python" => Some(BundledParser::Python),
+            "ruby" => Some(BundledParser::Ruby),
+            "rust" => Some(BundledParser::Rust),
+            "scala" => Some(BundledParser::Scala),
+            "sql" => Some(BundledParser::Sql),
+            "typescript" => Some(BundledParser::Typescript),
+            "tsx" => Some(BundledParser::Tsx),
+            "xlsg" => Some(BundledParser::Xlsg),
+            _ => None,
+        }
+    }
+}

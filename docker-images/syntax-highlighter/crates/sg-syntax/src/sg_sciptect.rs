@@ -1,7 +1,8 @@
+use std::{collections::HashSet, fmt::Debug};
+
 use once_cell::sync::OnceCell;
 use protobuf::{EnumOrUnknown, SpecialFields};
 use scip::types::{Document, Occurrence, SyntaxKind};
-use std::{collections::HashSet, fmt::Debug};
 use syntect::{
     parsing::{BasicScopeStackOp, ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
@@ -79,12 +80,23 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("entity.name.type"), IdentifierType),
-
             // TODO: optimization opportunity, skip testing language-specific scopes.
-            (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.keyof.tsx"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.tsx"), IdentifierKeyword),
+            (
+                scope("keyword.operator.expression.keyof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.keyof.tsx"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.tsx"),
+                IdentifierKeyword,
+            ),
             (scope("storage.type.namespace.ts"), IdentifierKeyword),
             (scope("storage.type.namespace.tsx"), IdentifierKeyword),
             (scope("storage.type.module.js"), IdentifierKeyword),
@@ -108,7 +120,10 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.ts"), IdentifierKeyword),
             (scope("storage.type.tsx"), IdentifierKeyword),
             (scope("keyword.operator.logical.sql"), IdentifierKeyword),
-            (scope("keyword.operator.assignment.alias.sql"), IdentifierKeyword),
+            (
+                scope("keyword.operator.assignment.alias.sql"),
+                IdentifierKeyword,
+            ),
             (scope("meta.mapping.key.json"), StringLiteralKey),
             (scope("entity.name.tag.yaml"), StringLiteralKey),
             (scope("entity.other.attribute-name.class.css"), Identifier),
@@ -119,7 +134,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.function.scala"), IdentifierKeyword),
             (scope("storage.type.volatile.scala"), IdentifierKeyword),
             // (scope("entity.name.section.markdown"), IdentifierType),
-
             (scope("meta.tag"), Identifier),
             (scope("markup.bold"), Identifier),
             (scope("markup.underline"), Identifier),
@@ -151,7 +165,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("support.class"), IdentifierType),
             (scope("support.function"), IdentifierFunction),
             (scope("support.variable"), Identifier),
-
             (scope("entity.other.attribute-name"), TagAttribute),
             (scope("entity.name"), Identifier),
             (scope("entity.other"), Identifier),
