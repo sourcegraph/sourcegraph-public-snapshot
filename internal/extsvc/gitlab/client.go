@@ -177,7 +177,7 @@ type Client struct {
 	projCache              *rcache.Cache
 	Auth                   auth.Authenticator
 	externalRateLimiter    *ratelimit.Monitor
-	internalRateLimiter    *ratelimit.InstrumentedLimiter // Our internal rate limiter
+	internalRateLimiter    *ratelimit.InstrumentedLimiter
 	waitForRateLimit       bool
 	maxNumRateLimitRetries int
 }
@@ -232,11 +232,9 @@ func (c *Client) Urn() string {
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	if c.internalRateLimiter != nil {
-		err = c.internalRateLimiter.Wait(ctx)
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "rate limit")
-		}
+	err = c.internalRateLimiter.Wait(ctx)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "rate limit")
 	}
 
 	if c.waitForRateLimit {
