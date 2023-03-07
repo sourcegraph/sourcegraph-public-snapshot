@@ -753,8 +753,6 @@ type ExperimentalFeatures struct {
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
-	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
-	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
@@ -844,7 +842,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")
-	delete(m, "enablePostSignupFlow")
 	delete(m, "enableStorm")
 	delete(m, "eventLogging")
 	delete(m, "gitServerPinnedRepos")

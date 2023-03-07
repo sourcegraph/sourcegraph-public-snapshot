@@ -24,10 +24,7 @@ interface Props extends TelemetryProps {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<
-        SourcegraphContext,
-        'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
-    >
+    context: Pick<SourcegraphContext, 'authProviders' | 'authPasswordPolicy' | 'authMinPasswordLength'>
     isSourcegraphDotCom: boolean
     isLightTheme: boolean
 }
@@ -94,7 +91,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 authProviders: [],
                 authMinPasswordLength: context.authMinPasswordLength,
                 sourcegraphDotComMode: true,
-                experimentalFeatures: context.experimentalFeatures,
             }}
             buttonLabel="Sign up"
             experimental={true}
