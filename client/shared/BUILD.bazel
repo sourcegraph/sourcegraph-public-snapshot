@@ -210,6 +210,7 @@ ts_project(
         "src/components/Path.tsx",
         "src/components/PrefetchableFile.tsx",
         "src/components/RepoLink.tsx",
+        "src/components/TeamAvatar.tsx",
         "src/components/UserAvatar.tsx",
         "src/components/VirtualList.tsx",
         "src/components/icons.tsx",
