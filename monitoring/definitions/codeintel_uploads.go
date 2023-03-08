@@ -26,10 +26,8 @@ func CodeIntelUploads() *monitoring.Dashboard {
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewUploadsServiceGroup("${source:regex}"),
 			shared.CodeIntelligence.NewUploadsStoreGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsBackgroundGroup("${source:regex}"),
 			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup("${source:regex}"),
 			shared.CodeIntelligence.NewUploadsHTTPTransportGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsCleanupTaskGroup("${source:regex}"),
 			shared.CodeIntelligence.NewCommitGraphQueueGroup("${source:regex}"),
 			shared.CodeIntelligence.NewUploadsExpirationTaskGroup("${source:regex}"),
 		},
