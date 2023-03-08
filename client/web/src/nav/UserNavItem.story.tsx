@@ -6,6 +6,7 @@ import { Meta, Story } from '@storybook/react'
 import { WebStory } from '../components/WebStory'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 const config: Meta = {
     title: 'web/nav/UserNavItem',
@@ -70,6 +71,7 @@ const commonProps = (props: Args): UserNavItemProps => ({
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{

@@ -8,6 +8,7 @@ import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 describe('UserNavItem', () => {
     beforeAll(() => {
@@ -59,6 +60,7 @@ describe('UserNavItem', () => {
                             isSourcegraphApp={false}
                             codeHostIntegrationMessaging="browser-extension"
                             showFeedbackModal={() => undefined}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MockedTestProvider>
                 </MemoryRouter>
@@ -76,6 +78,7 @@ describe('UserNavItem', () => {
                     isSourcegraphApp={false}
                     codeHostIntegrationMessaging="browser-extension"
                     showFeedbackModal={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             </MockedTestProvider>
         )
