@@ -25,6 +25,10 @@ go_test(
     name = "batch_test",
     srcs = ["batch_test.go"],
     embed = [":batch"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/dbtest",
         "//internal/database/dbutil",

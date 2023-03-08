@@ -76,6 +76,10 @@ go_test(
         "usage_stats_test.go",
     ],
     embed = [":usagestats"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",

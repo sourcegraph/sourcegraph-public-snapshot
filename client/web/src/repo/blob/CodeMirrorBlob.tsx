@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -25,6 +26,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -32,6 +34,7 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
+import { focusCodeEditorShortcutLabel } from './codemirror/focus-code-editor-shortcut-label'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
@@ -162,6 +165,8 @@ const blameDecorationsCompartment = new Compartment()
 const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
 const wrapCodeCompartment = new Compartment()
+// Compartment to conditionally show focus code editor shortcut label
+const keyboardShortcutLabelCompartment = new Compartment()
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -182,6 +187,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
+
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
+    const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
@@ -299,13 +307,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
+            keyboardShortcutLabelCompartment.of(focusCodeEditorShortcutLabel(enableBlobPageSwitchAreasShortcuts)),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, enableBlobPageSwitchAreasShortcuts]
     )
 
     const editorRef = useRef<EditorView | null>(null)
@@ -347,6 +356,18 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }
         }
     }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
+
+    // Show focus code editor shortcut if blob page shortcuts experimental feature enabled
+    useEffect(() => {
+        const editor = editorRef.current
+        if (editor && enableBlobPageSwitchAreasShortcuts) {
+            editor.dispatch({
+                effects: keyboardShortcutLabelCompartment.reconfigure(
+                    focusCodeEditorShortcutLabel(enableBlobPageSwitchAreasShortcuts)
+                ),
+            })
+        }
+    }, [enableBlobPageSwitchAreasShortcuts])
 
     // Propagate props changes to extensions
     useEffect(() => {
@@ -432,6 +453,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
+            {enableBlobPageSwitchAreasShortcuts &&
+                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        allowDefault={true}
+                        onMatch={() => {
+                            editorRef.current?.contentDOM.focus()
+                        }}
+                    />
+                ))}
         </>
     )
 }
