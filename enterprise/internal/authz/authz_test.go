@@ -65,6 +65,7 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 }
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
@@ -496,7 +497,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				}
 				return svcs, nil
 			})
-			licensing.MockCheckFeatureError("")
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -514,6 +514,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 }
 
 func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
+	t.Cleanup(licensing.MockCheckFeatureError("failed"))
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
@@ -741,7 +742,6 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				return svcs, nil
 			})
 
-			licensing.MockCheckFeatureError("failed")
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
