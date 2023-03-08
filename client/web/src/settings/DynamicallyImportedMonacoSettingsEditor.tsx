@@ -29,6 +29,7 @@ interface Props<T extends object>
     saving?: boolean
 
     canEdit?: boolean
+    controlled?: boolean
 
     className?: string
 
@@ -79,10 +80,18 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     }
 
     private get effectiveValue(): string {
+        if (this.props.controlled) {
+            return this.props.value
+        }
+
         return this.state.value === undefined ? this.props.value : this.state.value
     }
 
     private get isDirty(): boolean {
+        if (this.props.controlled) {
+            return true
+        }
+
         return this.effectiveValue !== this.props.value
     }
 

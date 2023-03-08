@@ -70,7 +70,7 @@ type ExternalServiceStore interface {
 	// each external service. If the latest sync did not have an error, the
 	// string will be empty. We exclude cloud_default external services as they
 	// are never synced.
-	GetLatestSyncErrors(ctx context.Context) (map[int64]string, error)
+	GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error)
 
 	// GetByID returns the external service for id.
 	//
@@ -1322,7 +1322,23 @@ LIMIT 1
 	return ok, err
 }
 
-func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
+type SyncError struct {
+	ServiceID int64
+	Message   string
+}
+
+var scanSyncErrors = basestore.NewSliceScanner(scanExternalServiceSyncErrorRow)
+
+func scanExternalServiceSyncErrorRow(scanner dbutil.Scanner) (*SyncError, error) {
+	var s SyncError
+	err := scanner.Scan(
+		&s.ServiceID,
+		&dbutil.NullString{S: &s.Message},
+	)
+	return &s, err
+}
+
+func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error) {
 	q := sqlf.Sprintf(`
 SELECT DISTINCT ON (es.id) es.id, essj.failure_message
 FROM external_services es
@@ -1334,26 +1350,7 @@ WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
 `)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	messages := make(map[int64]string)
-
-	for rows.Next() {
-		var svcID int64
-		var message sql.NullString
-		if err := rows.Scan(&svcID, &message); err != nil {
-			return nil, err
-		}
-		messages[svcID] = message.String
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return messages, nil
+	return scanSyncErrors(e.Query(ctx, q))
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {

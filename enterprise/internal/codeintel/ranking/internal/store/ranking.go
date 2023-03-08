@@ -2,13 +2,13 @@ package store
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -65,7 +65,6 @@ func (s *store) InsertDefinitionsForRanking(
 		[]string{
 			"upload_id",
 			"symbol_name",
-			"repository",
 			"document_path",
 			"graph_key",
 		},
@@ -88,7 +87,6 @@ func insertDefinitions(
 			ctx,
 			def.UploadID,
 			def.SymbolName,
-			def.Repository,
 			def.DocumentPath,
 			rankingGraphKey,
 		); err != nil {
@@ -165,21 +163,19 @@ func (s *store) InsertPathCountInputs(
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	parts := strings.Split(derivativeGraphKey, "-")
-	if len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
-	// Remove last segment, which indicates the current time bucket
-	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -243,7 +239,8 @@ processable_symbols AS (
 				rrp.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
-				u.indexer = u2.indexer
+				u.indexer = u2.indexer AND
+				u.id != u2.id
 		) AND
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
 		-- process the one associated with the most recently processed upload record. This should
@@ -266,24 +263,25 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		rd.repository,
+		u.repository_id,
 		rd.document_path,
 		rd.graph_key,
 		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE rd.graph_key = %s
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	GROUP BY u.repository_id, rd.document_path, rd.graph_key
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
-		rx.repository,
+		rx.repository_id,
 		rx.document_path,
 		SUM(rx.count),
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository, rx.document_path
+	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 )
 SELECT
@@ -305,9 +303,9 @@ func (s *store) InsertPathRanks(
 	)
 	defer endObservation(1, observation.Args{})
 
-	// Unused, but here for validation
-	if parts := strings.Split(derivativeGraphKey, "-"); len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	_, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
@@ -337,17 +335,17 @@ WITH
 input_ranks AS (
 	SELECT
 		pci.id,
-		r.id AS repository_id,
+		pci.repository_id,
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
-	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
+	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
-	ORDER BY pci.graph_key, pci.repository, pci.id
+	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -358,10 +356,9 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
 	SELECT
 		temp.repository_id,
-		1,
 		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
@@ -372,7 +369,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id, precision) DO UPDATE SET
+	ON CONFLICT (repository_id) DO UPDATE SET
 		graph_key = EXCLUDED.graph_key,
 		payload = CASE
 			WHEN pr.graph_key != EXCLUDED.graph_key
@@ -548,17 +545,15 @@ func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string)
 	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	parts := strings.Split(derivativeGraphKey, "-")
-	if len(parts) < 2 {
-		return 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
-	// Remove last segment, which indicates the current time bucket
-	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
 		vacuumStaleRanksQuery,
 		derivativeGraphKey,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 	)))
 	return count, err
@@ -570,7 +565,7 @@ matching_graph_keys AS (
 	SELECT DISTINCT graph_key
 	FROM codeintel_path_ranks
 	-- Implicit delete anything with a different graph key root
-	WHERE graph_key != %s AND graph_key LIKE %s || '-%%'
+	WHERE graph_key != %s AND graph_key LIKE %s || '.%%'
 ),
 valid_graph_keys AS (
 	-- Select the current graph key as well as the highest graph key that

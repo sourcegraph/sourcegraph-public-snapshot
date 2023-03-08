@@ -2,6 +2,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
+load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
 # Gazelle config
@@ -14,7 +17,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go
+# gazelle:lang js,go,protobuf
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,8 +39,6 @@ ts_config(
         "//:node_modules/@sourcegraph/tsconfig",
     ],
 )
-
-load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 
 gazelle_binary(
     name = "gazelle-buf",
@@ -83,9 +84,6 @@ gazelle(
     ],
     command = "update-repos",
 )
-
-load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
-load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 
 # Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
 # See https://github.com/bazelbuild/rules_go/issues/3022
@@ -205,16 +203,12 @@ js_library(
 nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
+    vet = True,
     visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
-        "@org_golang_x_tools//go/analysis/passes/asmdecl:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/assign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomic:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/atomicalign:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/bools:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildssa:go_default_library",
-        "@org_golang_x_tools//go/analysis/passes/buildtag:go_default_library",
+        "//dev/linters/forbidigo",
+        "//dev/linters/ineffassign",
     ],
 )
 

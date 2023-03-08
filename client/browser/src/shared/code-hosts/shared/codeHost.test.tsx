@@ -15,7 +15,6 @@ import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
@@ -39,14 +38,6 @@ import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
 
 const RENDER = sinon.spy()
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'log',
-    [NotificationType.Success]: 'success',
-    [NotificationType.Info]: 'info',
-    [NotificationType.Warning]: 'warning',
-    [NotificationType.Error]: 'error',
-}
-
 const elementRenderedAtMount = (mount: Element): RenderResult | undefined => {
     const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
@@ -68,7 +59,6 @@ jest.mock('uuid', () => ({
 const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): Controller => ({
     executeCommand: () => Promise.resolve(),
     registerCommand: () => new Subscription(),
-    commandErrors: NEVER,
     unsubscribe: noop,
     extHostAPI: Promise.resolve(extensionHostAPI),
 })
@@ -149,7 +139,6 @@ describe('codeHost', () => {
                         name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
-                        notificationClassNames,
                     },
                     extensionsController: createMockController(extensionHostAPI),
                 })
@@ -159,27 +148,6 @@ describe('codeHost', () => {
             expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github')
             const renderedOverlay = elementRenderedAtMount(overlayMount!)
             expect(renderedOverlay).not.toBeUndefined()
-        })
-
-        test('renders the command palette if codeHost.getCommandPaletteMount is defined', async () => {
-            const { extensionHostAPI } = await integrationTestContext()
-            const commandPaletteMount = createTestElement()
-            subscriptions.add(
-                await handleCodeHost({
-                    ...commonArguments(),
-                    codeHost: {
-                        type: 'github',
-                        name: 'GitHub',
-                        check: () => true,
-                        getCommandPaletteMount: () => commandPaletteMount,
-                        codeViewResolvers: [],
-                        notificationClassNames,
-                    },
-                    extensionsController: createMockController(extensionHostAPI),
-                })
-            )
-            const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
-            expect(renderedCommandPalette).not.toBeUndefined()
         })
 
         test('detects code views based on selectors', async () => {
@@ -205,7 +173,6 @@ describe('codeHost', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
-                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
@@ -214,7 +181,7 @@ describe('codeHost', () => {
                                     getLineElementFromLineNumber: sinon.spy(),
                                     getLineNumberFromCodeElement: sinon.spy(),
                                 },
-                                resolveFileInfo: codeView => of(blobInfo),
+                                resolveFileInfo: () => of(blobInfo),
                                 getToolbarMount: () => toolbarMount,
                             }),
                         ],
@@ -284,7 +251,6 @@ describe('codeHost', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
-                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
                                 dom: {
@@ -349,7 +315,7 @@ describe('codeHost', () => {
             expect(getEditors(extensionAPI)).toEqual([])
         })
 
-        test('Hoverifies a view if the code host has no nativeTooltipResolvers', async () => {
+        test('Hoverifies a view', async () => {
             const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
                 roots: [],
                 viewers: [],
@@ -372,11 +338,10 @@ describe('codeHost', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
-                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom,
-                                resolveFileInfo: codeView =>
+                                resolveFileInfo: () =>
                                     of({
                                         blob: {
                                             rawRepoName: 'foo',
@@ -395,129 +360,6 @@ describe('codeHost', () => {
             await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
-        })
-
-        test('Does not hoverify a view if the code host has nativeTooltipResolvers and they are enabled from settings', async () => {
-            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
-                roots: [],
-                viewers: [],
-            })
-            const codeView = createTestElement()
-            codeView.id = 'code'
-            const codeElement = document.createElement('span')
-            codeElement.textContent = 'alert(1)'
-            codeView.append(codeElement)
-            const dom = {
-                getCodeElementFromTarget: sinon.spy(() => codeElement),
-                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineNumberFromCodeElement: sinon.spy(() => 1),
-            }
-            subscriptions.add(
-                await handleCodeHost({
-                    ...commonArguments(),
-                    codeHost: {
-                        type: 'github',
-                        name: 'GitHub',
-                        check: () => true,
-                        notificationClassNames,
-                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
-                        codeViewResolvers: [
-                            toCodeViewResolver('#code', {
-                                dom,
-                                resolveFileInfo: codeView =>
-                                    of({
-                                        blob: {
-                                            rawRepoName: 'foo',
-                                            filePath: '/bar.ts',
-                                            commitID: '1',
-                                        },
-                                    }),
-                            }),
-                        ],
-                    },
-                    extensionsController: createMockController(extensionHostAPI),
-                    platformContext: {
-                        ...createMockPlatformContext(),
-                        settings: of({
-                            subjects: [],
-                            final: {
-                                extensions: {},
-                                'codeHost.useNativeTooltips': true,
-                            },
-                        }),
-                    },
-                })
-            )
-            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
-
-            expect(getEditors(extensionAPI).length).toEqual(1)
-            await tick()
-
-            codeView.dispatchEvent(new MouseEvent('mouseover'))
-            sinon.assert.notCalled(dom.getCodeElementFromTarget)
-        })
-
-        test('Hides native tooltips if they are disabled from settings', async () => {
-            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
-                roots: [],
-                viewers: [],
-            })
-            const codeView = createTestElement()
-            codeView.id = 'code'
-            const codeElement = document.createElement('span')
-            codeElement.textContent = 'alert(1)'
-            codeView.append(codeElement)
-            const nativeTooltip = createTestElement()
-            nativeTooltip.classList.add('native')
-            const dom = {
-                getCodeElementFromTarget: sinon.spy(() => codeElement),
-                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineNumberFromCodeElement: sinon.spy(() => 1),
-            }
-            subscriptions.add(
-                await handleCodeHost({
-                    ...commonArguments(),
-                    codeHost: {
-                        type: 'github',
-                        name: 'GitHub',
-                        check: () => true,
-                        notificationClassNames,
-                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
-                        codeViewResolvers: [
-                            toCodeViewResolver('#code', {
-                                dom,
-                                resolveFileInfo: codeView =>
-                                    of({
-                                        blob: {
-                                            rawRepoName: 'foo',
-                                            filePath: '/bar.ts',
-                                            commitID: '1',
-                                        },
-                                    }),
-                            }),
-                        ],
-                    },
-                    extensionsController: createMockController(extensionHostAPI),
-                    platformContext: {
-                        ...createMockPlatformContext(),
-                        settings: of({
-                            subjects: [],
-                            final: {
-                                extensions: {},
-                                'codeHost.useNativeTooltips': false,
-                            },
-                        }),
-                    },
-                })
-            )
-            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
-            expect(getEditors(extensionAPI).length).toEqual(1)
-            await tick()
-            codeView.dispatchEvent(new MouseEvent('mouseover'))
-            sinon.assert.called(dom.getCodeElementFromTarget)
-            expect(nativeTooltip).toHaveAttribute('data-native-tooltip-hidden', 'true')
         })
     })
 

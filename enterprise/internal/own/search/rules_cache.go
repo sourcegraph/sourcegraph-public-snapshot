@@ -31,7 +31,7 @@ func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	}
 }
 
-func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
+func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
 	c.mu.RLock()
 	key := RulesKey{repoName, commitID}
 	if _, ok := c.rules[key]; ok {
@@ -43,7 +43,7 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoN
 	defer c.mu.Unlock()
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
-		file, err := c.ownService.RulesetForRepo(ctx, repoName, commitID)
+		file, err := c.ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
 		if err != nil || file == nil {
 			emptyRuleset := codeowners.NewRuleset(&codeownerspb.File{})
 			c.rules[key] = emptyRuleset

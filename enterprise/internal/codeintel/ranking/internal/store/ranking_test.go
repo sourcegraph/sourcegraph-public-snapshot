@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -37,19 +38,16 @@ func TestInsertDefinition(t *testing.T) {
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 	}
@@ -116,19 +114,16 @@ func TestInsertPathRanks(t *testing.T) {
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 	}
@@ -150,7 +145,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -160,7 +155,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Finally! Test InsertPathRanks
-	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, mockRankingGraphKey+"-123", 10)
+	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 10)
 	if err != nil {
 		t.Fatalf("unexpected error inserting path ranks: %s", err)
 	}
@@ -202,25 +197,21 @@ func TestInsertPathCountInputs(t *testing.T) {
 		{
 			UploadID:     42,
 			SymbolName:   "foo",
-			Repository:   "deadbeef",
 			DocumentPath: "foo.go",
 		},
 		{
 			UploadID:     42,
 			SymbolName:   "bar",
-			Repository:   "deadbeef",
 			DocumentPath: "bar.go",
 		},
 		{
 			UploadID:     43,
 			SymbolName:   "baz",
-			Repository:   "cafebabe",
 			DocumentPath: "baz.go",
 		},
 		{
 			UploadID:     43,
 			SymbolName:   "bonk",
-			Repository:   "cafebabe",
 			DocumentPath: "bonk.go",
 		},
 	}
@@ -268,7 +259,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs: should process existing rows
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -287,7 +278,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs: should process unprocessed rows only
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -308,7 +299,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Test InsertPathCountInputs: should do nothing, 94 covers the same project as 93
-	if _, _, err := store.InsertPathCountInputs(ctx, mockRankingGraphKey+"-123", 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -322,10 +313,10 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	expectedInputs := []pathCountsInput{
-		{Repository: "cafebabe", DocumentPath: "baz.go", Count: 1},
-		{Repository: "cafebabe", DocumentPath: "bonk.go", Count: 1},
-		{Repository: "deadbeef", DocumentPath: "bar.go", Count: 2},
-		{Repository: "deadbeef", DocumentPath: "foo.go", Count: 2},
+		{RepositoryID: 50, DocumentPath: "bar.go", Count: 2},
+		{RepositoryID: 50, DocumentPath: "foo.go", Count: 2},
+		{RepositoryID: 51, DocumentPath: "baz.go", Count: 1},
+		{RepositoryID: 51, DocumentPath: "bonk.go", Count: 1},
 	}
 	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
 		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
@@ -339,11 +330,11 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	mockDefinitions := []shared.RankingDefinitions{
-		{UploadID: 1, SymbolName: "foo", Repository: "deadbeef", DocumentPath: "foo.go"},
-		{UploadID: 1, SymbolName: "bar", Repository: "deadbeef", DocumentPath: "bar.go"},
-		{UploadID: 2, SymbolName: "foo", Repository: "deadbeef", DocumentPath: "foo.go"},
-		{UploadID: 2, SymbolName: "bar", Repository: "deadbeef", DocumentPath: "bar.go"},
-		{UploadID: 3, SymbolName: "baz", Repository: "deadbeef", DocumentPath: "baz.go"},
+		{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"},
+		{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"},
+		{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"},
+		{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"},
+		{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"},
 	}
 	mockReferences := []shared.RankingReferences{
 		{UploadID: 1, SymbolNames: []string{"foo"}},
@@ -425,7 +416,11 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		}
 	}
 
-	for _, graphKey := range []string{mockRankingGraphKey + "-123", mockRankingGraphKey + "-456", mockRankingGraphKey + "-789"} {
+	for _, graphKey := range []string{
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 789),
+	} {
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
 			SELECT $1, id FROM codeintel_ranking_references
@@ -433,7 +428,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
-			INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
 	`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
@@ -464,7 +459,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	assertCounts(3*7, 3*30)
 
 	// remove records associated with other ranking keys
-	metadataRecordsDeleted, inputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, mockRankingGraphKey+"-456")
+	metadataRecordsDeleted, inputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
 	}
@@ -491,16 +486,16 @@ func TestVacuumStaleRanks(t *testing.T) {
 	}
 
 	for r, key := range map[string]string{
-		"foo1": mockRankingGraphKey + "-123",
-		"foo2": mockRankingGraphKey + "-123",
-		"foo3": mockRankingGraphKey + "-123",
-		"foo4": mockRankingGraphKey + "-123",
-		"foo5": mockRankingGraphKey + "-123",
-		"bar":  mockRankingGraphKey + "-234",
-		"baz":  mockRankingGraphKey + "-345",
-		"bonk": mockRankingGraphKey + "-456",
+		"foo1": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		"foo2": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		"foo3": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		"foo4": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		"foo5": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		"bar":  rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234),
+		"baz":  rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345),
+		"bonk": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
 	} {
-		if err := store.setDocumentRanks(ctx, api.RepoName(r), 0, nil, key); err != nil {
+		if err := store.setDocumentRanks(ctx, api.RepoName(r), nil, key); err != nil {
 			t.Fatalf("failed to insert document ranks: %s", err)
 		}
 	}
@@ -527,7 +522,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 	assertNames([]string{"bar", "baz", "bonk", "foo1", "foo2", "foo3", "foo4", "foo5"})
 
 	// remove sufficiently stale records associated with other ranking keys
-	rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, mockRankingGraphKey+"-456")
+	rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale ranks: %s", err)
 	}
@@ -546,7 +541,7 @@ func getRankingDefinitions(
 	graphKey string,
 ) (_ []shared.RankingDefinitions, err error) {
 	query := fmt.Sprintf(
-		`SELECT upload_id, symbol_name, repository, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
+		`SELECT upload_id, symbol_name, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
 		graphKey,
 	)
 	rows, err := db.QueryContext(ctx, query)
@@ -559,16 +554,14 @@ func getRankingDefinitions(
 	for rows.Next() {
 		var uploadID int
 		var symbolName string
-		var repository string
 		var documentPath string
-		err = rows.Scan(&uploadID, &symbolName, &repository, &documentPath)
+		err = rows.Scan(&uploadID, &symbolName, &documentPath)
 		if err != nil {
 			return nil, err
 		}
 		definitions = append(definitions, shared.RankingDefinitions{
 			UploadID:     uploadID,
 			SymbolName:   symbolName,
-			Repository:   repository,
 			DocumentPath: documentPath,
 		})
 	}
@@ -610,7 +603,7 @@ func getRankingReferences(
 }
 
 type pathCountsInput struct {
-	Repository   string
+	RepositoryID int
 	DocumentPath string
 	Count        int
 }
@@ -622,11 +615,11 @@ func getPathCountsInputs(
 	graphKey string,
 ) (_ []pathCountsInput, err error) {
 	query := sqlf.Sprintf(`
-		SELECT repository, document_path, SUM(count)
+		SELECT repository_id, document_path, SUM(count)
 		FROM codeintel_ranking_path_counts_inputs
 		WHERE graph_key LIKE %s || '%%'
-		GROUP BY repository, document_path
-		ORDER BY repository, document_path
+		GROUP BY repository_id, document_path
+		ORDER BY repository_id, document_path
 	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
@@ -637,7 +630,7 @@ func getPathCountsInputs(
 	var pathCountsInputs []pathCountsInput
 	for rows.Next() {
 		var input pathCountsInput
-		if err := rows.Scan(&input.Repository, &input.DocumentPath, &input.Count); err != nil {
+		if err := rows.Scan(&input.RepositoryID, &input.DocumentPath, &input.Count); err != nil {
 			return nil, err
 		}
 

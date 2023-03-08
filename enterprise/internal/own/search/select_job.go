@@ -95,7 +95,7 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop

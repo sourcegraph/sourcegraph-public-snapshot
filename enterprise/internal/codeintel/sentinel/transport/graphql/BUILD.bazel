@@ -10,11 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/sentinel",
         "//enterprise/internal/codeintel/sentinel/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
         "//internal/codeintel/resolvers",
-        "//internal/gitserver",
+        "//internal/database",
         "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",

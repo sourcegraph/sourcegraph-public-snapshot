@@ -353,6 +353,8 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
+
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
 	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
 }

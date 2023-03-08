@@ -37,7 +37,6 @@ ts_project(
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node-fetch",  #keep
         "//:node_modules/@types/react",
-        "//:node_modules/apollo3-cache-persist",
         "//:node_modules/graphql",
         "//:node_modules/lodash",
         "//:node_modules/node-fetch",  #keep

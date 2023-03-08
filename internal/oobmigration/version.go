@@ -33,7 +33,7 @@ func newDevVersion(major, minor int) Version {
 	}
 }
 
-var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?$`)
+var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-\w*)?(?:\+[\w.]*)?$`)
 
 // NewVersionFromString parses the major and minor version from the given string. If
 // the string does not look like a parseable version, a false-valued flag is returned.

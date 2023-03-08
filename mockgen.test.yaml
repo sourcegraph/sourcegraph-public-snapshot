@@ -130,11 +130,6 @@
       interfaces:
         - UploadService
         - GitserverClient
-- filename: enterprise/internal/codeintel/policies/enterprise/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise
-  interfaces:
-    - GitserverClient
-  package: policies
 - filename: enterprise/internal/codeintel/codenav/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store

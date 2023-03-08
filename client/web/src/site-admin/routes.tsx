@@ -3,7 +3,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
+import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
@@ -244,6 +244,6 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/permissions-syncs',
-        render: props => <PermissionsSyncJobsTable {...props} />,
+        render: props => <PermissionsSyncJobsPage {...props} />,
     },
 ]

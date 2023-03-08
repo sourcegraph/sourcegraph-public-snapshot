@@ -185,7 +185,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		},
 		SourceConfig: sourceCfg,
 		StateConfig:  oauth.GetStateConfig(stateCookie),
-		ServiceID:    parsedURL.String(),
+		ServiceID:    azuredevops.AzureDevOpsAPIURL,
 		ServiceType:  extsvc.TypeAzureDevOps,
 		Login:        loginHandler,
 		Callback: func(config oauth2.Config) http.Handler {

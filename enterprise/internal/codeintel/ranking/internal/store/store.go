@@ -24,7 +24,7 @@ type Store interface {
 	Done(err error) error
 
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
 	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
@@ -119,14 +119,11 @@ FROM (
 WHERE s.name = %s
 `
 
-func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error) {
-	pathRanksWithPrecision := map[string][2]float64{}
+func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error) {
+	pathRanksWithPrecision := map[string]float64{}
 	scanner := func(s dbutil.Scanner) (bool, error) {
-		var (
-			precision  float64
-			serialized string
-		)
-		if err := s.Scan(&precision, &serialized); err != nil {
+		var serialized string
+		if err := s.Scan(&serialized); err != nil {
 			return false, err
 		}
 
@@ -136,11 +133,7 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (ma
 		}
 
 		for path, newRank := range pathRanks {
-			if oldRank, ok := pathRanksWithPrecision[path]; ok && oldRank[0] <= precision {
-				continue
-			}
-
-			pathRanksWithPrecision[path] = [2]float64{precision, newRank}
+			pathRanksWithPrecision[path] = newRank
 		}
 
 		return true, nil
@@ -153,9 +146,7 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (ma
 }
 
 const getDocumentRanksQuery = `
-SELECT
-	precision,
-	payload
+SELECT payload
 FROM codeintel_path_ranks pr
 JOIN repo r ON r.id = pr.repository_id
 WHERE
@@ -187,19 +178,19 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	return logmean, nil
 }
 
-func (s *store) setDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64, graphKey string) error {
+func (s *store) setDocumentRanks(ctx context.Context, repoName api.RepoName, ranks map[string]float64, graphKey string) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized, graphKey))
+	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, serialized, graphKey))
 }
 
 const setDocumentRanksQuery = `
-INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload, graph_key)
-VALUES ((SELECT id FROM repo WHERE name = %s), %s, %s, %s)
-ON CONFLICT (repository_id, precision) DO
+INSERT INTO codeintel_path_ranks AS pr (repository_id, payload, graph_key)
+VALUES ((SELECT id FROM repo WHERE name = %s), %s, %s)
+ON CONFLICT (repository_id) DO
 UPDATE
 	SET payload = EXCLUDED.payload
 `
