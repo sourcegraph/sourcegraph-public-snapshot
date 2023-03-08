@@ -18117,16 +18117,6 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "package_repo_versions_fk_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "package_repo_versions_last_checked_at",
           "IsPrimaryKey": false,
           "IsUnique": false,
