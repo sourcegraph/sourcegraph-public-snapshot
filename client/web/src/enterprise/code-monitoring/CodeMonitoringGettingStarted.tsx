@@ -11,6 +11,7 @@ import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 
 interface CodeMonitoringGettingStartedProps {
     authenticatedUser: AuthenticatedUser | null
@@ -75,6 +76,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
     }, [])
 
+    let ctaBannerUrl = 'https://about.sourcegraph.com'
+    if (isSourcegraphApp) {
+        ctaBannerUrl = addSourcegraphAppOutboundUrlParameters(ctaBannerUrl)
+    }
+
     return (
         <div>
             <Card className={classNames('mb-4 flex-column flex-lg-row', styles.hero)}>
@@ -109,7 +115,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     <CallToActionBanner variant="filled">
                         To monitor changes across your team's private repositories,{' '}
                         <Link
-                            to="https://about.sourcegraph.com"
+                            to={ctaBannerUrl}
                             onClick={() =>
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
                             }
