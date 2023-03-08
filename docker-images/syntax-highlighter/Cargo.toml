@@ -5,20 +5,27 @@ authors = [
     "TJ DeVries <devries.timothyj@gmail.com>",
     "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
 ]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 [dependencies]
-syntect = { git = "https://github.com/sourcegraph/syntect" }
-rocket = { version = "0.5.0-rc.1", features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+syntect = { workspace = true }
+rocket = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+scip = { workspace = true }
 sg-syntax = { path = "./crates/sg-syntax" }
 rustyline = "9.1.2"
-scip = { git = "https://github.com/sourcegraph/scip" }
 
 [workspace]
 members = [
     "crates/sg-macros",
     "crates/sg-syntax",
 ]
+
+[workspace.dependencies]
+syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+scip = { git = "https://github.com/sourcegraph/scip", rev = "7ff845ef5b78772f65463542d5f384967d329b2c" }

@@ -33,7 +33,6 @@ cmd/symbols/squirrel/test_repos/starlark
 
 # generated and hosted in GCS bucket
 cmd/sitemap
-docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/
 
 # temporary ignores
 internal/cmd/progress-bot
