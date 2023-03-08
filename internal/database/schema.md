@@ -1801,13 +1801,17 @@ Foreign-key constraints:
 
 # Table "public.lsif_dependency_repos"
 ```
- Column |  Type  | Collation | Nullable |                      Default                      
---------+--------+-----------+----------+---------------------------------------------------
- id     | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
- name   | text   |           | not null | 
- scheme | text   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name            | text                     |           | not null | 
+ scheme          | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_blocked" btree (blocked)
+    "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
     "lsif_dependency_repos_name_idx" btree (name)
 Referenced by:
     TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
@@ -2701,17 +2705,43 @@ Referenced by:
 
 ```
 
+# Table "public.package_repo_filters"
+```
+   Column   |           Type           | Collation | Nullable |                     Default                      
+------------+--------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                  |           | not null | nextval('package_repo_filters_id_seq'::regclass)
+ behaviour  | text                     |           | not null | 
+ scheme     | text                     |           | not null | 
+ matcher    | jsonb                    |           | not null | 
+ deleted_at | timestamp with time zone |           |          | 
+ updated_at | timestamp with time zone |           | not null | statement_timestamp()
+Indexes:
+    "package_repo_filters_pkey" PRIMARY KEY, btree (id)
+    "package_repo_filters_unique_matcher_per_scheme" UNIQUE, btree (scheme, matcher)
+Check constraints:
+    "package_repo_filters_behaviour_is_allow_or_block" CHECK (behaviour = ANY ('{BLOCK,ALLOW}'::text[]))
+    "package_repo_filters_is_pkgrepo_scheme" CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))
+    "package_repo_filters_valid_oneof_glob" CHECK (matcher ? 'VersionGlob'::text AND (matcher ->> 'VersionGlob'::text) <> ''::text AND (matcher ->> 'PackageName'::text) <> ''::text AND NOT matcher ? 'PackageGlob'::text OR matcher ? 'PackageGlob'::text AND (matcher ->> 'PackageGlob'::text) <> ''::text AND NOT matcher ? 'VersionGlob'::text)
+Triggers:
+    trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION func_package_repo_filters_updated_at()
+
+```
+
 # Table "public.package_repo_versions"
 ```
-   Column   |  Type  | Collation | Nullable |                      Default                      
-------------+--------+-----------+----------+---------------------------------------------------
- id         | bigint |           | not null | nextval('package_repo_versions_id_seq'::regclass)
- package_id | bigint |           | not null | 
- version    | text   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id      | bigint                   |           | not null | 
+ version         | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
+    "package_repo_versions_blocked" btree (blocked)
     "package_repo_versions_fk_idx" btree (package_id)
+    "package_repo_versions_last_checked_at" btree (last_checked_at)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
