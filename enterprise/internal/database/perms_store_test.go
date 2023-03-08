@@ -3120,9 +3120,9 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 	}
 
 	// mark sync jobs as completed for "private_repo" and "private_repo_2"
-	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repository_id) VALUES(%d)`, 1)
+	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id) VALUES(%d)`, 1)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repository_id) VALUES(%d)`, 3)
+	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id) VALUES(%d)`, 3)
 	execQuery(t, ctx, s, q)
 
 	// No private repositories have any permissions at this point
@@ -3131,10 +3131,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expIDs = []api.RepoID{}
-	if diff := cmp.Diff(expIDs, ids); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Nil(t, ids)
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
@@ -3225,7 +3222,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("Ignore userse that have synced recently", func(t *testing.T) {
+	t.Run("Ignore users that have synced recently", func(t *testing.T) {
 		// Should get no results, since the and age is 1 hour
 		results, err := s.UserIDsWithOldestPerms(ctx, 1, 1*time.Hour)
 		if err != nil {
