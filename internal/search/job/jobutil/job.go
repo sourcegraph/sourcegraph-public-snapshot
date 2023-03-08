@@ -86,7 +86,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol, inputs.Features))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
@@ -506,7 +506,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Features) int {
+func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
 	// If doing ownership search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
