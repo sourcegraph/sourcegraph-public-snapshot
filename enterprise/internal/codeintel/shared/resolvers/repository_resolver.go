@@ -2,6 +2,7 @@ package sharedresolvers
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,11 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepositoryResolver struct {
-	repo *types.Repo
+	repo      *types.Repo
+	gitclient gitserver.Client
 }
 
 func NewRepositoryFromID(ctx context.Context, repoStore database.RepoStore, id int) (*RepositoryResolver, error) {
@@ -27,7 +31,7 @@ func NewRepositoryFromID(ctx context.Context, repoStore database.RepoStore, id i
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
-	return &RepositoryResolver{repo: repo}
+	return &RepositoryResolver{repo: repo, gitclient: gitserver.NewClient()}
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
@@ -43,11 +47,22 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (resolverstubs.GitCommitResolver, error) {
-	return r.commitFromID(args, commitID)
+	return r.commitFromID(ctx, args, commitID)
 }
 
-func (r *RepositoryResolver) commitFromID(args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
+var pkgCodeHosts = [...]*extsvc.CodeHost{extsvc.JVMPackages, extsvc.NpmPackages, extsvc.GoModules, extsvc.PythonPackages, extsvc.RubyPackages, extsvc.RustPackages}
+
+func (r *RepositoryResolver) commitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
+	codehost := extsvc.CodeHostOf(r.repo.Name, pkgCodeHosts[:]...)
+
 	var inputRev *string
+	if codehost != nil && codehost.IsPackageHost() {
+		tags, err := r.gitclient.ListTags(ctx, r.repo.Name, string(commitID))
+		if err != nil {
+			return nil, err
+		}
+		// should only be exactly 1
+		inputRev = &tags[0].Name
 	if false {
 		value := "v1.2.3"
 		inputRev = &value
