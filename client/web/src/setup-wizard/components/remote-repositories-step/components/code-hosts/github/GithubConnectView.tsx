@@ -2,7 +2,6 @@ import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEven
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { noop } from 'lodash'
 
 import { modify } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
@@ -14,7 +13,6 @@ import {
     TabPanels,
     Input,
     Checkbox,
-    useLocalStorage,
     useField,
     useForm,
     FormInstance,
@@ -24,15 +22,14 @@ import {
     ErrorAlert,
     FORM_ERROR,
     AsyncValidator,
+    FormChangeEvent,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID } from '../../../../../../components/externalServices/backend'
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import {
-    AddExternalServiceInput,
     ExternalServiceCheckConnectionByIdResult,
     ExternalServiceCheckConnectionByIdVariables,
-    ExternalServiceKind,
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
@@ -43,18 +40,8 @@ import { getAccessTokenValue, getRepositoriesSettings } from './helpers'
 
 import styles from './GithubConnectView.module.scss'
 
-const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
-    displayName: codeHostExternalServices.github.defaultDisplayName,
-    config: `
-{
-    "url": "https://github.com",
-    "token": ""
-}
-`.trim(),
-}
-
 interface GithubConnectViewProps {
-    initialValues?: CodeHostConnectFormFields
+    initialValues: CodeHostConnectFormFields
     externalServiceId?: string
 
     /**
@@ -63,7 +50,8 @@ interface GithubConnectViewProps {
      * for all variations of this form (create, edit UI) but content is different
      */
     children: (state: CodeHostJSONFormState) => ReactNode
-    onSubmit: (input: AddExternalServiceInput) => Promise<any>
+    onSubmit: (values: CodeHostConnectFormFields) => Promise<any>
+    onChange?: (event: FormChangeEvent<CodeHostConnectFormFields>) => void
 }
 
 /**
@@ -72,30 +60,14 @@ interface GithubConnectViewProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { initialValues, externalServiceId, children, onSubmit } = props
-    const [localValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
-
-    const handleSubmit = useCallback(
-        async (values: CodeHostConnectFormFields): Promise<void> => {
-            // Perform public API code host connection create action
-            await onSubmit({
-                kind: ExternalServiceKind.GITHUB,
-                displayName: values.displayName,
-                config: values.config,
-            })
-
-            // Reset initial values after successful connect action
-            setInitialValues(DEFAULT_FORM_VALUES)
-        },
-        [setInitialValues, onSubmit]
-    )
+    const { initialValues, externalServiceId, children, onChange, onSubmit } = props
 
     return (
         <GithubConnectForm
-            initialValues={initialValues ?? localValues}
+            initialValues={initialValues}
             externalServiceId={externalServiceId}
-            onChange={initialValues ? noop : setInitialValues}
-            onSubmit={handleSubmit}
+            onChange={onChange}
+            onSubmit={onSubmit}
         >
             {children}
         </GithubConnectForm>
@@ -111,8 +83,8 @@ interface GithubConnectFormProps {
     initialValues: CodeHostConnectFormFields
     externalServiceId?: string
     children: (state: CodeHostJSONFormState) => ReactNode
-    onChange: (values: CodeHostConnectFormFields) => void
     onSubmit: (values: CodeHostConnectFormFields) => void
+    onChange?: (event: FormChangeEvent<CodeHostConnectFormFields>) => void
 }
 
 /**
@@ -126,8 +98,8 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
     const form = useForm<CodeHostConnectFormFields>({
         initialValues,
         touched: !!externalServiceId,
+        onChange,
         onSubmit,
-        onChange: event => onChange(event.values),
     })
 
     const displayName = useField({
