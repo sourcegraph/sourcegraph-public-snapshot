@@ -219,13 +219,13 @@ func (t *htmlManager) processOneOcc(occ *scip.Occurrence, lineCharacter int32) i
 	if startRow == endRow {
 		t.processSingleLineOcc(occ, startRow, startCharacter, endCharacter)
 	} else {
-		t.processMultiLineOcc(occ, lineCharacter, startRow, startCharacter, endRow, endCharacter)
+		t.processMultiLineOcc(occ, startRow, startCharacter, endRow, endCharacter)
 	}
 
 	return endCharacter
 }
 
-func (t *htmlManager) processMultiLineOcc(occ *scip.Occurrence, lineCharacter, startRow, startCharacter, endRow, endCharacter int32) {
+func (t *htmlManager) processMultiLineOcc(occ *scip.Occurrence, startRow, startCharacter, endRow, endCharacter int32) {
 	maxRow := int32(len(t.lines))
 
 	// Process the first line
