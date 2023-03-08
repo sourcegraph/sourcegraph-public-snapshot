@@ -64,9 +64,9 @@ git fetch --depth 100 sourcegraph
 	opt := Options{
 		Logger: log.New(io.Discard, "", 0),
 	}
-	if testing.Verbose() {
-		opt.Logger = log.Default()
-	}
+	// if testing.Verbose() {
+	opt.Logger = log.Default()
+	// }
 
 	if err := Combine(dir, opt); err != nil {
 		t.Fatal(err)
