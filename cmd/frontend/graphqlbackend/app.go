@@ -160,8 +160,7 @@ func (r *appResolver) LocalExternalServices(ctx context.Context) ([]LocalExterna
 		return nil, err
 	}
 
-	// We know that Sourcegraph App creates a single external service
-	localExternalServices := make([]LocalExternalServiceResolver, 0, 1)
+	localExternalServices := make([]LocalExternalServiceResolver, 0)
 	for _, externalService := range externalServices {
 		serviceConfig, err := externalService.Config.Decrypt(ctx)
 		if err != nil {
