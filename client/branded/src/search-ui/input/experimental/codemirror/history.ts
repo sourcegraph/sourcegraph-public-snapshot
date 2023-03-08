@@ -43,6 +43,7 @@ function createHistorySuggestionSource(
                         label: item.query,
                         icon: mdiClockOutline,
                         matches: positions,
+                        kind: 'history-query',
                         action: {
                             type: 'command',
                             name: `${item.resultCount}${item.limitHit ? '+' : ''} ${pluralize(

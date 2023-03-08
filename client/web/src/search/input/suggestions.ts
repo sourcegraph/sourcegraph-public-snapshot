@@ -184,6 +184,7 @@ function toRepoCompletion(
         label: valuePrefix + item.name,
         matches: positions,
         icon: mdiSourceRepository,
+        kind: 'repo',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
@@ -215,6 +216,7 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
         icon: item.starred ? mdiStar : ' ',
         description,
         matches: positions,
+        kind: 'context',
         action: {
             type: 'completion',
             insertValue: item.spec + ' ',
@@ -233,6 +235,7 @@ function toFilterCompletion(label: string, description: string | undefined, from
         icon: mdiFilterOutline,
         render: filterRenderer,
         description,
+        kind: 'filter',
         action: {
             type: 'completion',
             insertValue: label + ':',
@@ -256,6 +259,7 @@ function toFileCompletion(
         icon: mdiFileOutline,
         description: item.repository,
         matches: positions,
+        kind: 'file',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
@@ -287,6 +291,7 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
         matches: positions,
         description: shortenPath(item.path, 20),
         icon: getSymbolIconSVGPath(item.kind),
+        kind: 'symbol',
         action: {
             type: 'completion',
             insertValue: item.name + ' type:symbol ',
@@ -401,6 +406,7 @@ const contextActions: Group = {
         {
             label: 'Manage contexts',
             description: 'Add, edit, remove search contexts',
+            kind: 'command',
             action: {
                 type: 'goto',
                 name: 'Go to /contexts',
@@ -566,6 +572,7 @@ function staticFilterValueOptions(
 
         options = values.map(({ label }) => ({
             label,
+            kind: 'filter-value-select',
             action: {
                 type: 'completion',
                 from,
@@ -578,16 +585,19 @@ function staticFilterValueOptions(
         // input.
         options = defaultLanguages.map(label => ({
             label,
+            kind: 'filter-value-lang',
             action: {
                 type: 'completion',
                 from,
                 to,
+                insertValue: label + ' ',
             },
         }))
     } else {
         options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
             label: value.label,
             description: value.description,
+            kind: `filter-value-${resolvedFilter.type}`,
             action: {
                 type: 'completion',
                 from,
@@ -626,6 +636,7 @@ function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | un
         label: item.label,
         description: item.description,
         matches: positions,
+        kind: `filter-predicate-${type}`,
         action: {
             type: 'completion',
             from: value?.range.start ?? position,
