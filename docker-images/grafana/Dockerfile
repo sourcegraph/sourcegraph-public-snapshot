@@ -8,10 +8,12 @@ RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true
 RUN ls '/generated/grafana'
 
 # Prepare final image
-# when upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
+# When upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
-FROM grafana/grafana:7.5.17@sha256:15abb652aa82eeb9f45589278b34ae6ef0e96f74c389cadde31831eb0b1ce228 as production
+# We use a Grafana base image built by Chainguard
+# TODO(@willdollman): This image was manually uploaded to our registry 2023-03-08
+FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:e46d29f56d30911ee9995d81b8bfc0590586e1e7f39b4e8ed933ece19d7e4da1 as production
 LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"
@@ -26,32 +28,20 @@ LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=DL3020
+# This removes the Chainguard-supplied config and replaces it with our own
+USER root
+RUN rm -rf /sg_config_grafana/provisioning/dashboards/sourcegraph/
 ADD config /sg_config_grafana
 COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
-# hadolint ignore=DL3020
-ADD entry.sh /
-
-
-USER root
+# Overwrite default entrypoint with the local one
+COPY entry.sh /opt/grafana/
 
 # Create optional folders to avoid error logs about missing dirs
-RUN mkdir /sg_grafana_additional_dashboards
-RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_config_grafana/provisioning/plugins
+RUN chown grafana:root /sg_config_grafana/provisioning/plugins
 
-# @FIXME: Update redis image
-# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache \
-    'apk-tools>=2.12' \
-    'krb5-libs>=1.18.4' \
-    'libssl1.1>=1.1.1s-r0' \
-    'openssl>=1.1.1s-r0' \
-    'busybox>=1.32.1' \
-    'ncurses-libs>=6.2_p20210109-r1' \
-    'ncurses-terminfo-base>=6.2_p20210109-r1' \
-    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT ["/opt/grafana/entry.sh"]
