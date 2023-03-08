@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use scip::{types::Document, write_message_to_file};
-use scip_semantic::{languages::LocalConfiguration, locals::parse_tree};
+use scip_syntax::{languages::LocalConfiguration, locals::parse_tree};
 use walkdir::WalkDir;
 
 fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<Document> {
@@ -79,7 +79,7 @@ fn main() {
         ..Default::default()
     };
 
-    let mut config = scip_semantic::languages::go_locals();
+    let mut config = scip_syntax::languages::go_locals();
     index
         .documents
         .extend(parse_files(&mut config, directory, directory));

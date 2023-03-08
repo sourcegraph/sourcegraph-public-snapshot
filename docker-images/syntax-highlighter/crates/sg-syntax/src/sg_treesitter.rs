@@ -146,13 +146,13 @@ pub fn index_language_with_config(
 
         let tree = parser.parse(code.as_bytes(), None).expect("to parse tree");
 
-        let mut config = scip_semantic::languages::LocalConfiguration {
+        let mut config = scip_syntax::languages::LocalConfiguration {
             language,
             query,
             parser,
         };
 
-        let mut local_occs = scip_semantic::locals::parse_tree(&mut config, &tree, code.as_bytes())
+        let mut local_occs = scip_syntax::locals::parse_tree(&mut config, &tree, code.as_bytes())
             .expect("to get locals");
         local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
 

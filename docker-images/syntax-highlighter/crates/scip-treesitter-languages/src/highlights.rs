@@ -150,7 +150,7 @@ lazy_static::lazy_static! {
             Java,
             Javascript,
             Jsonnet,
-            // Perl,
+            Perl,
             Python,
             Ruby,
             Rust,
