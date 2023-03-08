@@ -1241,7 +1241,7 @@ WITH scim_accounts AS (
         account_data
     FROM user_external_accounts
     WHERE service_type = 'scim'
-      AND deleted_at IS NULL
+        AND deleted_at IS NULL
 )
 SELECT u.id,
        u.username,
