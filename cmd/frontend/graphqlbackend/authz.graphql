@@ -351,6 +351,31 @@ type PermissionsInfo {
         """
         query: String
     ): PermissionsInfoRepositoriesConnection
+    """
+    The connection for users who have access to the repository.
+    """
+    users(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter users based on username or display name.
+        """
+        query: String
+    ): PermissionsInfoUsersConnection
 }
 
 """
@@ -385,6 +410,46 @@ type PermissionsInfoRepositoryNode {
     repository: Repository
     """
     The reason why the current user has permission to access the repository.
+    """
+    reason: String!
+    """
+    The timestamp when the permission was last updated at.
+    """
+    updatedAt: DateTime
+}
+
+"""
+Connection for user permission who has access to the repository.
+"""
+type PermissionsInfoUsersConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoUserNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Repository permission node defining why the repository is accessible to the user.
+"""
+type PermissionsInfoUserNode {
+    """
+    The ID of the User.
+    """
+    id: ID!
+    """
+    The user corresponding to the permission.
+    """
+    user: User
+    """
+    The reason why the user has access to the repository.
     """
     reason: String!
     """

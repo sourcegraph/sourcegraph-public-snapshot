@@ -542,10 +542,6 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
 	return &permissionsInfoResolver{
 		db:           r.db,
 		ossDB:        r.ossDB,
@@ -581,10 +577,6 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	err = r.db.Perms().LoadUserPermissions(ctx, p)
 	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
-	}
-
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
 	}
 
 	return &permissionsInfoResolver{

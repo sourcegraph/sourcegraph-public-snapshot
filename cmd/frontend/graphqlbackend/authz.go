@@ -117,8 +117,9 @@ type PermissionsInfoResolver interface {
 	Permissions() []string
 	SyncedAt() *gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
-	Unrestricted() bool
+	Unrestricted(ctx context.Context) bool
 	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
+	Users(ctx context.Context, args PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoUserResolver], error)
 }
 
 type PermissionsInfoRepositoryResolver interface {
@@ -129,6 +130,18 @@ type PermissionsInfoRepositoryResolver interface {
 }
 
 type PermissionsInfoRepositoriesArgs struct {
+	graphqlutil.ConnectionResolverArgs
+	Query *string
+}
+
+type PermissionsInfoUserResolver interface {
+	ID() graphql.ID
+	User() *UserResolver
+	Reason() string
+	UpdatedAt() *gqlutil.DateTime
+}
+
+type PermissionsInfoUsersArgs struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
 }
