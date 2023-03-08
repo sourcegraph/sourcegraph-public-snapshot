@@ -1495,6 +1495,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     gerrit: GERRIT,
+    azuredevops: AZUREDEVOPS,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1503,7 +1504,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {

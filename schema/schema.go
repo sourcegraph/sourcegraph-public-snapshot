@@ -741,8 +741,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
 	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
-	// AzureDevOps description: Allow adding Azure DevOps code host connections
-	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -838,7 +836,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "accessRequest.enabled")
-	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
