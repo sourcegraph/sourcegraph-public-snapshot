@@ -38,7 +38,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
 
     useEffect(() => {
         if (status !== 'initial' && ownEnabled) {
-            telemetryService.log('repoPage:ownerTab:viewed')
+            telemetryService.log('repoPage:ownershipPage:viewed')
         }
     }, [status, ownEnabled, telemetryService])
 
