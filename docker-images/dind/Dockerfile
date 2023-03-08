@@ -6,6 +6,10 @@ RUN rm -f /usr/libexec/docker/cli-plugins/docker-compose && \
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
 ARG VERSION="unknown"
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 VOLUME /var/lib/docker
 EXPOSE 2375 2376
