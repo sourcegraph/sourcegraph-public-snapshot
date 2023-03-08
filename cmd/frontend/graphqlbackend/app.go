@@ -92,16 +92,15 @@ func (r *localDirectoryResolver) Path() string {
 }
 
 func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, error) {
-	var c servegit.Config
+	var c servegit.ServeConfig
 	c.Load()
-	c.Root = r.path
 
 	srv := &servegit.Serve{
-		Config: c,
-		Logger: log.Scoped("serve", ""),
+		ServeConfig: c,
+		Logger:      log.Scoped("serve", ""),
 	}
 
-	repos, err := srv.Repos()
+	repos, err := srv.Repos(r.path)
 	if err != nil {
 		return nil, err
 	}
