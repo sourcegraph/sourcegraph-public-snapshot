@@ -18,6 +18,9 @@ rust_library(
     ),
 )
 
+# This prevents bazel configure for generating buildfiles because it sees
+# some go files in that folder.
+# gazelle:exclude src/snapshots
 rust_test(
     name = "unit_test",
     size = "small",
