@@ -60,7 +60,7 @@ func (s *Service) serveS3(w http.ResponseWriter, r *http.Request) error {
 
 // GET /<bucket>
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
-func (s *Service) serveListObjectsV2(w http.ResponseWriter, r *http.Request, bucketName string) error {
+func (s *Service) serveListObjectsV2(w http.ResponseWriter, _ *http.Request, bucketName string) error {
 	// TODO: Actually implement this endpoint, https://github.com/sourcegraph/sourcegraph/issues/45594.
 	// NOTE: We currently always return an empty list of objects to make code intel ExpiredObjects checks not spam with errors.
 	w.WriteHeader(http.StatusOK)
