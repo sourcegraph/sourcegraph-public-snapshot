@@ -157,7 +157,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 	t.Cleanup(func() {
 		defer db.Close()
 
-		if t.Failed() {
+		if t.Failed() && os.Getenv("CI") != "true" {
 			t.Logf("DATABASE %s left intact for inspection", dbname)
 			return
 		}
