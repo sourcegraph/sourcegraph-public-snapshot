@@ -30,6 +30,13 @@ rust_test(
         proc_macro_dev = True,
     ),
     size = "small",
-    env = {"RUST_BACKTRACE": "1"},
+    env = {
+        "RUST_BACKTRACE": "1",
+        # NOTE: Outside of Bazel, insta relies on invoking `cargo` (via PATH)
+        # to locate the workspace root.
+        # https://sourcegraph.com/github.com/mitsuhiko/insta@1.14.0/-/blob/src/env.rs?L106-128
+        # Adding this environment variable skips that invocation,
+        # so tests don't need `cargo` access at runtime.
+        "INSTA_WORKSPACE_ROOT": ".",
+    },
 )
-

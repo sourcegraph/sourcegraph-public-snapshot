@@ -518,20 +518,8 @@ mod test {
 
     use super::*;
 
-    fn snapshot_test_init() {
-        // NOTE(varun): Outside of Bazel, insta relies on calling
-        // cargo (via PATH) to locate the workspace root. I couldn't
-        // figure out a way to make 'cargo' accessible directly,
-        // so we add this extra environment variable so that insta skips
-        // looking for cargo.
-        if std::env::var("BAZEL_TEST").is_ok() {
-            std::env::set_var("INSTA_WORKSPACE_ROOT", ".");
-        }
-    }
-
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
-        snapshot_test_init();
         let src = "// Hello World";
         let document = index_language("go", src)?;
         insta::assert_snapshot!(dump_document(&document, src));
@@ -541,7 +529,6 @@ mod test {
 
     #[test]
     fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
-        snapshot_test_init();
         let src = r#"package main
 
 const MySqlQuery = `
@@ -557,7 +544,6 @@ SELECT * FROM my_table
 
     #[test]
     fn test_highlight_csharp_file() -> Result<(), Error> {
-        snapshot_test_init();
         let src = "using System;";
         let document = index_language("c_sharp", src)?;
         insta::assert_snapshot!(dump_document(&document, src));
@@ -567,7 +553,6 @@ SELECT * FROM my_table
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
-        snapshot_test_init();
         let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
         let input_dir = crate_root.join("src").join("snapshots").join("files");
         let dir = read_dir(&input_dir).unwrap();

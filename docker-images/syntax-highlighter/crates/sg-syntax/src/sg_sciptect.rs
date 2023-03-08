@@ -538,16 +538,8 @@ mod test {
         assert_eq!(Document::default(), output);
     }
 
-    // Same as in src/sg_treesitter.rs
-    fn snapshot_test_init() {
-        if std::env::var("BAZEL_TEST").is_ok() {
-            std::env::set_var("INSTA_WORKSPACE_ROOT", ".");
-        }
-    }
-
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
-        snapshot_test_init();
         let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
