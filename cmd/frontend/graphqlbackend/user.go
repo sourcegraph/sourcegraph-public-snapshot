@@ -484,13 +484,15 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
 	id := r.ID()
 	args.User = &id
-	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
+	// return Roles(ctx, args)
+	return nil, nil
 }
 
 func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
 	id := r.ID()
 	args.User = &id
-	return EnterpriseResolvers.rbacResolver.Permissions(ctx, args)
+	// return Permissions(ctx, args)
+	return nil, nil
 }
 
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {

@@ -71,3 +71,9 @@ type SetRolesArgs struct {
 	User  graphql.ID
 	Roles []graphql.ID
 }
+
+type ErrIDIsZero struct{}
+
+func (e ErrIDIsZero) Error() string {
+	return "invalid node id"
+}
