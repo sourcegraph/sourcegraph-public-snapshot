@@ -5425,8 +5425,6 @@ CREATE INDEX user_repo_permissions_updated_at_idx ON user_repo_permissions USING
 
 CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id);
 
-CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id);
-
 CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_customer_id) WHERE (deleted_at IS NULL);
 
 CREATE INDEX users_created_at_idx ON users USING btree (created_at);

@@ -3582,7 +3582,6 @@ Indexes:
     "user_repo_permissions_source_idx" btree (source)
     "user_repo_permissions_updated_at_idx" btree (updated_at)
     "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
-    "user_repo_permissions_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
