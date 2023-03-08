@@ -50,6 +50,18 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
         return url
     }, [result])
 
+    const logSearchOwnerClicked = (): void => {
+        if (url.startsWith('mailto:')) {
+            telemetryService.log('searchResults:ownershipMailto:clicked')
+        }
+        if (url.startsWith('/users/')) {
+            telemetryService.log('searchResults:ownershipUsers:clicked')
+        }
+        if (url.startsWith('/teams/')) {
+            telemetryService.log('searchResults:ownershipTeams:clicked')
+        }
+    }
+
     const title = (
         <div className="d-flex align-items-center">
             {result.type === 'person' ? (
@@ -71,21 +83,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
             )}
 
             {url ? (
-                <Link
-                    to={url}
-                    className="text-muted"
-                    onClick={() => {
-                        if (url.startsWith('mailto:')) {
-                            telemetryService.log('searchResults:ownershipMailto:clicked')
-                        }
-                        if (url.startsWith('/users/')) {
-                            telemetryService.log('searchResults:ownershipUsers:clicked')
-                        }
-                        if (url.startsWith('/teams/')) {
-                            telemetryService.log('searchResults:ownershipTeams:clicked')
-                        }
-                    }}
-                >
+                <Link to={url} className="text-muted" onClick={logSearchOwnerClicked}>
                     {displayName}
                 </Link>
             ) : (
