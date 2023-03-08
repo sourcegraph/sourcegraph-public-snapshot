@@ -289,7 +289,7 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
         icon: getSymbolIconSVGPath(item.kind),
         action: {
             type: 'completion',
-            insertValue: item.name + ' type:symbol ',
+            insertValue: item.name + ' type:symbol file:' + item.path + ' ',
             from,
             to,
         },
